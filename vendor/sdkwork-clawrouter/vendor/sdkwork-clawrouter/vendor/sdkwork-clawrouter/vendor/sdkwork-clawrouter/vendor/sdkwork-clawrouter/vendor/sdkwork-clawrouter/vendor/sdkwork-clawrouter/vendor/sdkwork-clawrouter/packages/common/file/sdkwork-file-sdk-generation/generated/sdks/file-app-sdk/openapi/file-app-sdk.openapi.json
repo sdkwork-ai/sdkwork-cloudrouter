@@ -1,0 +1,2398 @@
+{
+  "components": {
+    "schemas": {
+      "CopyDriveNodeRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "idempotencyKey": {
+            "description": "Idempotency key for drive node copy.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Optional copied node display name.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "targetParentNodeId": {
+            "description": "Target parent drive node id.",
+            "type": "string"
+          },
+          "targetSpaceId": {
+            "description": "Target drive space id when copying across spaces.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "idempotencyKey",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "CreateDriveFolderRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "idempotencyKey": {
+            "description": "Idempotency key for drive folder creation.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Folder display name.",
+            "type": "string"
+          },
+          "parentNodeId": {
+            "description": "Parent drive node id. Omit for root.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "idempotencyKey",
+          "name",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "CreateFileBindingRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "fileId": {
+            "description": "Stable file id to bind.",
+            "type": "string"
+          },
+          "purpose": {
+            "description": "File slot code.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "target": {
+            "$ref": "#/components/schemas/FileUploadTarget"
+          },
+          "versionId": {
+            "description": "Optional stable file version id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fileId",
+          "purpose",
+          "requestId",
+          "target"
+        ],
+        "type": "object"
+      },
+      "DeleteFileBindingRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "bindingId": {
+            "description": "Stable file binding id to remove.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bindingId",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "DeleteFileBindingResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "bindingId": {
+            "description": "Removed file binding id.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bindingId",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "DeleteFileRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "deleteMode": {
+            "description": "Delete mode, such as trash or purge when policy allows it.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "DeleteFileResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "fileId": {
+            "description": "Stable file id.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "status": {
+            "description": "File status after delete request.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fileId",
+          "requestId",
+          "status"
+        ],
+        "type": "object"
+      },
+      "DriveChange": {
+        "additionalProperties": false,
+        "properties": {
+          "changeId": {
+            "description": "Stable drive change id.",
+            "type": "string"
+          },
+          "eventType": {
+            "description": "Drive change event type.",
+            "type": "string"
+          },
+          "occurredAt": {
+            "description": "Change occurrence time.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "resourceId": {
+            "description": "Changed resource id.",
+            "type": "string"
+          },
+          "resourceType": {
+            "description": "Changed resource type.",
+            "type": "string"
+          },
+          "sequenceNo": {
+            "description": "Monotonic sequence number within the drive space.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "spaceId": {
+            "description": "Drive space id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "changeId",
+          "eventType",
+          "resourceId",
+          "resourceType",
+          "sequenceNo",
+          "spaceId"
+        ],
+        "type": "object"
+      },
+      "DriveChangeListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DriveChange"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "description": "Cursor for the next result page.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "DriveNode": {
+        "additionalProperties": false,
+        "properties": {
+          "depth": {
+            "description": "Node depth.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "fileId": {
+            "description": "Stable file id for file nodes.",
+            "type": "string"
+          },
+          "mimeType": {
+            "description": "Display MIME type.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Node display name.",
+            "type": "string"
+          },
+          "nodeId": {
+            "description": "Stable drive node id.",
+            "type": "string"
+          },
+          "nodeType": {
+            "description": "Drive node type.",
+            "enum": [
+              "root",
+              "folder",
+              "file",
+              "shortcut",
+              "mount",
+              "external_link"
+            ],
+            "type": "string"
+          },
+          "parentNodeId": {
+            "description": "Parent node id.",
+            "type": "string"
+          },
+          "pathSegment": {
+            "description": "Normalized path segment.",
+            "type": "string"
+          },
+          "sizeBytes": {
+            "description": "Display file size in bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "spaceId": {
+            "description": "Drive space id.",
+            "type": "string"
+          },
+          "trashed": {
+            "description": "Whether the node is in trash.",
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "description": "Last update time.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "depth",
+          "name",
+          "nodeId",
+          "nodeType",
+          "pathSegment",
+          "spaceId",
+          "trashed"
+        ],
+        "type": "object"
+      },
+      "DriveNodeListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DriveNode"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "description": "Cursor for the next result page.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "DriveNodeMutationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "node": {
+            "$ref": "#/components/schemas/DriveNode"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "node",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "DriveSpace": {
+        "additionalProperties": false,
+        "properties": {
+          "appId": {
+            "description": "Owning app id for app drive spaces.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Drive space display name.",
+            "type": "string"
+          },
+          "organizationId": {
+            "description": "Owning organization id.",
+            "type": "string"
+          },
+          "ownerUserId": {
+            "description": "Owning user id.",
+            "type": "string"
+          },
+          "rootNodeId": {
+            "description": "Root node id.",
+            "type": "string"
+          },
+          "spaceId": {
+            "description": "Stable drive space id.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Drive space status.",
+            "enum": [
+              "active",
+              "archived",
+              "disabled"
+            ],
+            "type": "string"
+          },
+          "type": {
+            "description": "Drive space type.",
+            "enum": [
+              "user_drive",
+              "organization_drive",
+              "team_drive",
+              "project_drive",
+              "app_drive",
+              "system_library",
+              "shared_drive",
+              "trash_space"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "spaceId",
+          "status",
+          "type"
+        ],
+        "type": "object"
+      },
+      "DriveSpaceListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DriveSpace"
+            },
+            "type": "array"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "FileAccessUrl": {
+        "additionalProperties": false,
+        "properties": {
+          "expiresAt": {
+            "description": "Short-lived URL expiration time.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          },
+          "url": {
+            "description": "Short-lived access URL returned only for immediate download or preview.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expiresAt",
+          "requestId",
+          "url"
+        ],
+        "type": "object"
+      },
+      "FileBinding": {
+        "additionalProperties": false,
+        "properties": {
+          "bindingId": {
+            "description": "Stable binding id.",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Display name.",
+            "type": "string"
+          },
+          "fileId": {
+            "description": "Stable file id.",
+            "type": "string"
+          },
+          "purpose": {
+            "description": "File slot code.",
+            "type": "string"
+          },
+          "target": {
+            "$ref": "#/components/schemas/FileUploadTarget"
+          },
+          "versionId": {
+            "description": "Stable version id.",
+            "type": "string"
+          },
+          "visibility": {
+            "description": "File visibility.",
+            "enum": [
+              "private",
+              "restricted",
+              "shared"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "fileId",
+          "purpose",
+          "target",
+          "visibility"
+        ],
+        "type": "object"
+      },
+      "FileBindingDetailResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "binding": {
+            "$ref": "#/components/schemas/FileBinding"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "binding",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "FileBindingListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FileRef"
+            },
+            "type": "array"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "FileBindingMutationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "fileRef": {
+            "$ref": "#/components/schemas/FileRef"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fileRef",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "FileDetailResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "fileRef": {
+            "$ref": "#/components/schemas/FileRef"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fileRef",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "FileListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FileRef"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "description": "Cursor for the next result page.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "FileMutationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "fileRef": {
+            "$ref": "#/components/schemas/FileRef"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fileRef",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "FileRef": {
+        "additionalProperties": false,
+        "properties": {
+          "bindingId": {
+            "description": "Stable business binding id.",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Display name.",
+            "type": "string"
+          },
+          "fileId": {
+            "description": "Stable file id.",
+            "type": "string"
+          },
+          "purpose": {
+            "description": "File slot code.",
+            "type": "string"
+          },
+          "versionId": {
+            "description": "Stable file version id.",
+            "type": "string"
+          },
+          "visibility": {
+            "description": "File visibility.",
+            "enum": [
+              "private",
+              "restricted",
+              "shared"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "fileId",
+          "purpose",
+          "visibility"
+        ],
+        "type": "object"
+      },
+      "FileUploadTarget": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "description": "Business target id.",
+            "type": "string"
+          },
+          "type": {
+            "description": "Business target type.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type"
+        ],
+        "type": "object"
+      },
+      "FileVersionListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FileVersionRef"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "description": "Cursor for the next result page.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "FileVersionRef": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "description": "Version creation time.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "fileId": {
+            "description": "Stable file id.",
+            "type": "string"
+          },
+          "sizeBytes": {
+            "description": "Version logical size in bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "status": {
+            "description": "File version status.",
+            "type": "string"
+          },
+          "versionId": {
+            "description": "Stable file version id.",
+            "type": "string"
+          },
+          "versionNo": {
+            "description": "Monotonic version number.",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "fileId",
+          "sizeBytes",
+          "status",
+          "versionId",
+          "versionNo"
+        ],
+        "type": "object"
+      },
+      "IssueFileAccessUrlRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "fileId": {
+            "description": "Stable file id.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "versionId": {
+            "description": "Optional stable file version id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fileId",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "MoveDriveNodeRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "targetParentNodeId": {
+            "description": "Target parent drive node id.",
+            "type": "string"
+          },
+          "targetSpaceId": {
+            "description": "Target drive space id when moving across spaces.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId",
+          "targetParentNodeId"
+        ],
+        "type": "object"
+      },
+      "RestoreDriveNodeRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "StorageQuota": {
+        "additionalProperties": false,
+        "properties": {
+          "quotaLimitBytes": {
+            "description": "Total quota limit in bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          },
+          "scopeId": {
+            "description": "Quota scope id.",
+            "type": "string"
+          },
+          "scopeType": {
+            "description": "Quota scope type.",
+            "enum": [
+              "tenant",
+              "organization",
+              "user",
+              "space",
+              "app"
+            ],
+            "type": "string"
+          },
+          "singleFileLimitBytes": {
+            "description": "Optional single-file upload limit in bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "usedBillableBytes": {
+            "description": "Current billable bytes used by the scope.",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "quotaLimitBytes",
+          "requestId",
+          "scopeId",
+          "scopeType",
+          "usedBillableBytes"
+        ],
+        "type": "object"
+      },
+      "StorageSpaceUsageListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StorageUsageSnapshot"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "description": "Cursor for the next result page.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "StorageUsageSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "fileCount": {
+            "description": "Number of files.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "objectCount": {
+            "description": "Number of objects.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "quotaLimitBytes": {
+            "description": "Quota limit in bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          },
+          "retainedBytes": {
+            "description": "Retained bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "scopeId": {
+            "description": "Usage scope id.",
+            "type": "string"
+          },
+          "scopeType": {
+            "description": "Usage scope type.",
+            "enum": [
+              "tenant",
+              "organization",
+              "user",
+              "space",
+              "app",
+              "business_domain"
+            ],
+            "type": "string"
+          },
+          "trashBytes": {
+            "description": "Trash bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "usedBillableBytes": {
+            "description": "Billable bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "usedLogicalBytes": {
+            "description": "Logical bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "usedPhysicalBytes": {
+            "description": "Physical bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "variantBytes": {
+            "description": "Variant bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "versionCount": {
+            "description": "Number of versions.",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "fileCount",
+          "objectCount",
+          "requestId",
+          "retainedBytes",
+          "scopeId",
+          "scopeType",
+          "trashBytes",
+          "usedBillableBytes",
+          "usedLogicalBytes",
+          "usedPhysicalBytes",
+          "variantBytes",
+          "versionCount"
+        ],
+        "type": "object"
+      },
+      "TrashDriveNodeRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "UpdateDriveNodeRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "description": "Drive node display name.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "UpdateFileBindingRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "displayName": {
+            "description": "Binding display name.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "sortOrder": {
+            "description": "Binding sort order.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "visibility": {
+            "description": "Binding visibility.",
+            "enum": [
+              "private",
+              "restricted",
+              "shared"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "UpdateFileRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "displayName": {
+            "description": "File display name.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "visibility": {
+            "description": "File visibility.",
+            "enum": [
+              "private",
+              "restricted",
+              "shared"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId"
+        ],
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "SDKWork File App API",
+    "version": "2026.05.file-platform.api.v1"
+  },
+  "openapi": "3.1.2",
+  "paths": {
+    "/app/v3/api/drive/changes": {
+      "get": {
+        "description": "List drive changes using a cursor for synchronization.",
+        "operationId": "drive.changes.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "requestId",
+            "required": true,
+            "schema": {
+              "description": "Client request id for tracing.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "spaceId",
+            "required": false,
+            "schema": {
+              "description": "Drive space id filter.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "description": "Change cursor.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "Page size.",
+              "maximum": 500,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveChangeListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List drive changes",
+        "tags": [
+          "drive"
+        ]
+      }
+    },
+    "/app/v3/api/drive/nodes/{nodeId}": {
+      "patch": {
+        "description": "Rename or update drive node metadata.",
+        "operationId": "drive.nodes.update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "nodeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDriveNodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveNodeMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Update drive node",
+        "tags": [
+          "drive"
+        ]
+      }
+    },
+    "/app/v3/api/drive/nodes/{nodeId}/copy": {
+      "post": {
+        "description": "Copy a drive node according to policy.",
+        "operationId": "drive.nodes.copy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "nodeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopyDriveNodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveNodeMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Copy drive node",
+        "tags": [
+          "drive"
+        ]
+      }
+    },
+    "/app/v3/api/drive/nodes/{nodeId}/move": {
+      "post": {
+        "description": "Move a drive node to another parent.",
+        "operationId": "drive.nodes.move",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "nodeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveDriveNodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveNodeMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Move drive node",
+        "tags": [
+          "drive"
+        ]
+      }
+    },
+    "/app/v3/api/drive/nodes/{nodeId}/restore": {
+      "post": {
+        "description": "Restore a trashed drive node.",
+        "operationId": "drive.nodes.restore",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "nodeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreDriveNodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveNodeMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Restore drive node",
+        "tags": [
+          "drive"
+        ]
+      }
+    },
+    "/app/v3/api/drive/nodes/{nodeId}/trash": {
+      "post": {
+        "description": "Move a drive node to trash.",
+        "operationId": "drive.nodes.trash",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "nodeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrashDriveNodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveNodeMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Trash drive node",
+        "tags": [
+          "drive"
+        ]
+      }
+    },
+    "/app/v3/api/drive/spaces": {
+      "get": {
+        "description": "List drive spaces available to the caller.",
+        "operationId": "drive.spaces.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "requestId",
+            "required": true,
+            "schema": {
+              "description": "Client request id for tracing.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveSpaceListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List drive spaces",
+        "tags": [
+          "drive"
+        ]
+      }
+    },
+    "/app/v3/api/drive/spaces/{spaceId}/folders": {
+      "post": {
+        "description": "Create a folder in a drive space.",
+        "operationId": "drive.folders.create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "spaceId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDriveFolderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveNodeMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Create folder",
+        "tags": [
+          "drive"
+        ]
+      }
+    },
+    "/app/v3/api/drive/spaces/{spaceId}/nodes": {
+      "get": {
+        "description": "List nodes under a drive space parent.",
+        "operationId": "drive.nodes.list",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "spaceId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "requestId",
+            "required": true,
+            "schema": {
+              "description": "Client request id for tracing.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "parentNodeId",
+            "required": false,
+            "schema": {
+              "description": "Parent drive node id.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "description": "Pagination cursor.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "Page size.",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveNodeListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List drive nodes",
+        "tags": [
+          "drive"
+        ]
+      }
+    },
+    "/app/v3/api/file_bindings": {
+      "get": {
+        "description": "List stable file references bound to a business target.",
+        "operationId": "fileBindings.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "requestId",
+            "required": true,
+            "schema": {
+              "description": "Client request id for tracing.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "purpose",
+            "required": false,
+            "schema": {
+              "description": "File slot code filter.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "targetType",
+            "required": true,
+            "schema": {
+              "description": "Business target type.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "targetId",
+            "required": true,
+            "schema": {
+              "description": "Business target id.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileBindingListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List file bindings",
+        "tags": [
+          "fileBindings"
+        ]
+      },
+      "post": {
+        "description": "Bind a stable file reference to a business target and slot.",
+        "operationId": "fileBindings.create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFileBindingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileBindingMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Create file binding",
+        "tags": [
+          "fileBindings"
+        ]
+      }
+    },
+    "/app/v3/api/file_bindings/{bindingId}": {
+      "delete": {
+        "description": "Remove a file binding from a business target.",
+        "operationId": "fileBindings.delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bindingId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteFileBindingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteFileBindingResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Delete file binding",
+        "tags": [
+          "fileBindings"
+        ]
+      },
+      "patch": {
+        "description": "Update binding metadata or ordering.",
+        "operationId": "fileBindings.update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bindingId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFileBindingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileBindingDetailResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Update file binding",
+        "tags": [
+          "fileBindings"
+        ]
+      }
+    },
+    "/app/v3/api/files": {
+      "get": {
+        "description": "List stable file references visible to the caller.",
+        "operationId": "files.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "requestId",
+            "required": true,
+            "schema": {
+              "description": "Client request id for tracing.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "description": "Pagination cursor.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "Page size.",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "purpose",
+            "required": false,
+            "schema": {
+              "description": "File slot code filter.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "targetType",
+            "required": false,
+            "schema": {
+              "description": "Business target type filter.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "targetId",
+            "required": false,
+            "schema": {
+              "description": "Business target id filter.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List files",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/app/v3/api/files/{fileId}": {
+      "delete": {
+        "description": "Trash or delete a file according to policy.",
+        "operationId": "files.delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fileId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteFileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteFileResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Delete file",
+        "tags": [
+          "files"
+        ]
+      },
+      "get": {
+        "description": "Read a stable file reference and display metadata.",
+        "operationId": "files.retrieve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fileId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "requestId",
+            "required": true,
+            "schema": {
+              "description": "Client request id for tracing.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "versionId",
+            "required": false,
+            "schema": {
+              "description": "Stable file version id.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileDetailResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Get file",
+        "tags": [
+          "files"
+        ]
+      },
+      "patch": {
+        "description": "Update user-editable file metadata.",
+        "operationId": "files.update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fileId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Update file",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/app/v3/api/files/{fileId}/download_url": {
+      "post": {
+        "description": "Issue a short-lived download URL after permission checks.",
+        "operationId": "files.downloadUrl.create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fileId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueFileAccessUrlRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileAccessUrl"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Create download URL",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/app/v3/api/files/{fileId}/preview_url": {
+      "post": {
+        "description": "Issue a short-lived preview URL after permission checks.",
+        "operationId": "files.previewUrl.create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fileId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueFileAccessUrlRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileAccessUrl"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Create preview URL",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/app/v3/api/files/{fileId}/versions": {
+      "get": {
+        "description": "List file versions visible to the caller.",
+        "operationId": "files.versions.list",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fileId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "requestId",
+            "required": true,
+            "schema": {
+              "description": "Client request id for tracing.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "description": "Pagination cursor.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "Page size.",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileVersionListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List file versions",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/app/v3/api/storage/quotas/current": {
+      "get": {
+        "description": "Read current quota for the caller.",
+        "operationId": "storage.quotas.current.retrieve",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "requestId",
+            "required": true,
+            "schema": {
+              "description": "Client request id for tracing.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scopeType",
+            "required": true,
+            "schema": {
+              "description": "Quota scope type.",
+              "enum": [
+                "tenant",
+                "organization",
+                "user",
+                "space",
+                "app"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scopeId",
+            "required": true,
+            "schema": {
+              "description": "Quota scope id.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageQuota"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Get current storage quota",
+        "tags": [
+          "storage"
+        ]
+      }
+    },
+    "/app/v3/api/storage/usage/current": {
+      "get": {
+        "description": "Read current usage for an authorized scope.",
+        "operationId": "storage.usage.retrieve",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "requestId",
+            "required": true,
+            "schema": {
+              "description": "Client request id for tracing.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scopeType",
+            "required": true,
+            "schema": {
+              "description": "Usage scope type.",
+              "enum": [
+                "tenant",
+                "organization",
+                "user",
+                "space",
+                "app",
+                "business_domain"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scopeId",
+            "required": true,
+            "schema": {
+              "description": "Usage scope id.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageUsageSnapshot"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Get current storage usage",
+        "tags": [
+          "storage"
+        ]
+      }
+    },
+    "/app/v3/api/storage/usage/spaces": {
+      "get": {
+        "description": "List usage by drive space for the caller.",
+        "operationId": "storage.usage.spaces.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "requestId",
+            "required": true,
+            "schema": {
+              "description": "Client request id for tracing.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "description": "Pagination cursor.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "Page size.",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageSpaceUsageListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List drive space usage",
+        "tags": [
+          "storage"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/app/v3/api"
+    }
+  ],
+  "tags": [
+    {
+      "name": "files"
+    },
+    {
+      "name": "drive"
+    },
+    {
+      "name": "fileBindings"
+    },
+    {
+      "name": "storage"
+    },
+    {
+      "name": "oss"
+    },
+    {
+      "name": "fileSlots"
+    },
+    {
+      "name": "security"
+    },
+    {
+      "name": "audit"
+    }
+  ]
+}

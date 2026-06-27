@@ -1,0 +1,5902 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.route.manifest",
+  "packageName": "sdkwork-commerce-api-server",
+  "surface": "app-api",
+  "owner": "sdkwork-commerce",
+  "domain": "commerce",
+  "capability": "commerce",
+  "apiAuthority": "sdkwork-commerce-app-api",
+  "sdkFamily": "sdkwork-commerce-app-sdk",
+  "prefix": "/app/v3/api",
+  "source": {
+    "crateRoot": "crates/sdkwork-commerce-api-server",
+    "crateImport": "sdkwork_commerce_api_server",
+    "openapiAuthority": "apis/app-api/commerce/commerce-app-api.openapi.json"
+  },
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/app/v3/api/accounts/current/summary",
+      "operationId": "accounts.current.summary.retrieve",
+      "tags": [
+        "accounts"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "accounts_current_summary_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/addresses",
+      "operationId": "addresses.list",
+      "tags": [
+        "addresses"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "addresses_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/addresses",
+      "operationId": "addresses.create",
+      "tags": [
+        "addresses"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "addresses_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/app/v3/api/addresses/{addressId}",
+      "operationId": "addresses.delete",
+      "tags": [
+        "addresses"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "addresses_delete"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/app/v3/api/addresses/{addressId}",
+      "operationId": "addresses.update",
+      "tags": [
+        "addresses"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "addresses_update"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/addresses/{addressId}/default_selection",
+      "operationId": "addresses.defaultSelection.create",
+      "tags": [
+        "addresses"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "addresses_defaultSelection_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/after_sales/requests",
+      "operationId": "afterSales.requests.list",
+      "tags": [
+        "afterSales"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.afterSales.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "afterSales_requests_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/after_sales/requests",
+      "operationId": "afterSales.requests.create",
+      "tags": [
+        "afterSales"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.afterSales.write"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "afterSales_requests_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      },
+      "rateLimitTier": "default"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/after_sales/requests/{afterSalesRequestId}",
+      "operationId": "afterSales.requests.retrieve",
+      "tags": [
+        "afterSales"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.afterSales.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "afterSales_requests_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/app/v3/api/after_sales/requests/{afterSalesRequestId}",
+      "operationId": "afterSales.requests.update",
+      "tags": [
+        "afterSales"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.afterSales.write"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "afterSales_requests_update"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/after_sales/requests/{afterSalesRequestId}/events",
+      "operationId": "afterSales.events.list",
+      "tags": [
+        "afterSales"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.afterSales.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "afterSales_events_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/after_sales/requests/{afterSalesRequestId}/return_shipments",
+      "operationId": "afterSales.returnShipments.list",
+      "tags": [
+        "afterSales"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.afterSales.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "afterSales_returnShipments_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/after_sales/requests/{afterSalesRequestId}/return_shipments",
+      "operationId": "afterSales.returnShipments.create",
+      "tags": [
+        "afterSales"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.afterSales.write"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "afterSales_returnShipments_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      },
+      "rateLimitTier": "default"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/billing/history",
+      "operationId": "billing.history.list",
+      "tags": [
+        "billing"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "billing_history_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/cart/current",
+      "operationId": "cart.current.retrieve",
+      "tags": [
+        "cart"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "cart_current_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/cart/items",
+      "operationId": "cart.items.create",
+      "tags": [
+        "cart"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "cart_items_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/app/v3/api/cart/items/{cartItemId}",
+      "operationId": "cart.items.delete",
+      "tags": [
+        "cart"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "cart_items_delete"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/app/v3/api/cart/items/{cartItemId}",
+      "operationId": "cart.items.update",
+      "tags": [
+        "cart"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "cart_items_update"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/catalog/attributes",
+      "operationId": "catalog.attributes.list",
+      "tags": [
+        "catalog"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "catalog_attributes_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/catalog/categories",
+      "operationId": "catalog.categories.list",
+      "tags": [
+        "catalog"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "catalog_categories_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/catalog/categories/{categoryId}",
+      "operationId": "catalog.categories.retrieve",
+      "tags": [
+        "catalog"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "catalog_categories_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/catalog/products",
+      "operationId": "catalog.products.list",
+      "tags": [
+        "catalog"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "catalog_products_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/catalog/products/{productId}",
+      "operationId": "catalog.products.retrieve",
+      "tags": [
+        "catalog"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "catalog_products_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/catalog/skus/{skuId}",
+      "operationId": "catalog.skus.retrieve",
+      "tags": [
+        "catalog"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "catalog_skus_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/catalog/skus/{skuId}/prices",
+      "operationId": "catalog.skus.prices.retrieve",
+      "tags": [
+        "catalog"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "catalog_skus_prices_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/catalog/spus",
+      "operationId": "catalog.spus.list",
+      "tags": [
+        "catalog"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "catalog_spus_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/catalog/spus/{spuId}",
+      "operationId": "catalog.spus.retrieve",
+      "tags": [
+        "catalog"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "catalog_spus_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/checkout/sessions",
+      "operationId": "checkout.sessions.create",
+      "tags": [
+        "checkout"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "checkout_sessions_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/checkout/sessions/{checkoutSessionId}",
+      "operationId": "checkout.sessions.retrieve",
+      "tags": [
+        "checkout"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "checkout_sessions_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/checkout/sessions/{checkoutSessionId}/orders",
+      "operationId": "checkout.sessions.orders.create",
+      "tags": [
+        "checkout"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "checkout_sessions_orders_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/checkout/sessions/{checkoutSessionId}/quotes",
+      "operationId": "checkout.sessions.quotes.create",
+      "tags": [
+        "checkout"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "checkout_sessions_quotes_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/fulfillments",
+      "operationId": "fulfillments.list",
+      "tags": [
+        "fulfillments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "fulfillments_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/fulfillments/{fulfillmentId}",
+      "operationId": "fulfillments.retrieve",
+      "tags": [
+        "fulfillments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "fulfillments_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/invoices",
+      "operationId": "invoices.list",
+      "tags": [
+        "invoices"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "invoices_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/invoices",
+      "operationId": "invoices.create",
+      "tags": [
+        "invoices"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "invoices_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/invoices/{invoiceId}",
+      "operationId": "invoices.retrieve",
+      "tags": [
+        "invoices"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "invoices_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/app/v3/api/invoices/{invoiceId}",
+      "operationId": "invoices.update",
+      "tags": [
+        "invoices"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "invoices_update"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/invoices/{invoiceId}/cancellations",
+      "operationId": "invoices.cancellations.create",
+      "tags": [
+        "invoices"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "invoices_cancellations_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/invoices/{invoiceId}/items",
+      "operationId": "invoices.items.list",
+      "tags": [
+        "invoices"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "invoices_items_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/invoices/{invoiceId}/submissions",
+      "operationId": "invoices.submissions.create",
+      "tags": [
+        "invoices"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "invoices_submissions_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/invoices/mine",
+      "operationId": "invoices.mine.list",
+      "tags": [
+        "invoices"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "invoices_mine_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/invoices/statistics",
+      "operationId": "invoices.statistics.retrieve",
+      "tags": [
+        "invoices"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "invoices_statistics_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/benefits",
+      "operationId": "memberships.benefits.list",
+      "tags": [
+        "memberships"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "memberships_benefits_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/current",
+      "operationId": "memberships.current.retrieve",
+      "tags": [
+        "memberships"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "memberships_current_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/current/status",
+      "operationId": "memberships.current.status.retrieve",
+      "tags": [
+        "memberships"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "memberships_current_status_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/package_groups",
+      "operationId": "memberships.packageGroups.list",
+      "tags": [
+        "memberships"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "memberships_packageGroups_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/package_groups/{packageGroupId}",
+      "operationId": "memberships.packageGroups.retrieve",
+      "tags": [
+        "memberships"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "memberships_packageGroups_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/package_groups/{packageGroupId}/packages",
+      "operationId": "memberships.packageGroups.packages.list",
+      "tags": [
+        "memberships"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "memberships_packageGroups_packages_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/packages",
+      "operationId": "memberships.packages.list",
+      "tags": [
+        "memberships"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "memberships_packages_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/packages/{packageId}",
+      "operationId": "memberships.packages.retrieve",
+      "tags": [
+        "memberships"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "memberships_packages_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/plans",
+      "operationId": "memberships.plans.list",
+      "tags": [
+        "memberships"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "memberships_plans_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/points/balance",
+      "operationId": "memberships.points.balance.retrieve",
+      "tags": [
+        "memberships"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "memberships_points_balance_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/memberships/points/daily_rewards",
+      "operationId": "memberships.points.dailyRewards.create",
+      "tags": [
+        "memberships"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "memberships_points_dailyRewards_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/points/daily_rewards/status",
+      "operationId": "memberships.points.dailyRewards.status.retrieve",
+      "tags": [
+        "memberships"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "memberships_points_dailyRewards_status_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/points/history",
+      "operationId": "memberships.points.history.list",
+      "tags": [
+        "memberships"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "memberships_points_history_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/memberships/privileges/speed_ups",
+      "operationId": "memberships.privileges.speedUps.create",
+      "tags": [
+        "memberships"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "memberships_privileges_speedUps_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/privileges/usage",
+      "operationId": "memberships.privileges.usage.retrieve",
+      "tags": [
+        "memberships"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "memberships_privileges_usage_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/memberships/purchases",
+      "operationId": "memberships.purchases.create",
+      "tags": [
+        "memberships"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "memberships_purchases_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/memberships/purchases/renew",
+      "operationId": "memberships.purchases.renew",
+      "tags": [
+        "memberships"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "memberships_purchases_renew"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/memberships/purchases/upgrade",
+      "operationId": "memberships.purchases.upgrade",
+      "tags": [
+        "memberships"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "memberships_purchases_upgrade"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/orders",
+      "operationId": "orders.list",
+      "tags": [
+        "orders"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "orders_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/orders",
+      "operationId": "orders.create",
+      "tags": [
+        "orders"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "orders_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/orders/{orderId}",
+      "operationId": "orders.retrieve",
+      "tags": [
+        "orders"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "orders_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/orders/{orderId}/cancel",
+      "operationId": "orders.cancel",
+      "tags": [
+        "orders"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "orders_cancel"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/orders/{orderId}/cancellations",
+      "operationId": "orders.cancellations.create",
+      "tags": [
+        "orders"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "orders_cancellations_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/orders/{orderId}/events",
+      "operationId": "orders.events.list",
+      "tags": [
+        "orders"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "orders_events_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/orders/{orderId}/payment_success",
+      "operationId": "orders.paymentSuccess.retrieve",
+      "tags": [
+        "orders"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "orders_paymentSuccess_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/orders/{orderId}/payments",
+      "operationId": "payments.orderPayments.list",
+      "tags": [
+        "payments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "payments_orderPayments_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/orders/{orderId}/payments",
+      "operationId": "orders.pay",
+      "tags": [
+        "orders"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "orders_pay"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/orders/{orderId}/status",
+      "operationId": "orders.status.retrieve",
+      "tags": [
+        "orders"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "orders_status_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/orders/statistics",
+      "operationId": "orders.statistics.retrieve",
+      "tags": [
+        "orders"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "orders_statistics_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/payments",
+      "operationId": "payments.create",
+      "tags": [
+        "payments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "payments_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/payments/{paymentId}/close",
+      "operationId": "payments.close",
+      "tags": [
+        "payments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "payments_close"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/payments/attempts/{paymentAttemptId}",
+      "operationId": "payments.attempts.retrieve",
+      "tags": [
+        "payments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "payments_attempts_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/payments/checkout/{paymentId}",
+      "operationId": "payments.checkout.retrieve",
+      "tags": [
+        "payments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "payments_checkout_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/payments/intents",
+      "operationId": "payments.intents.create",
+      "tags": [
+        "payments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "payments_intents_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/payments/intents/{paymentIntentId}",
+      "operationId": "payments.intents.retrieve",
+      "tags": [
+        "payments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "payments_intents_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/payments/intents/{paymentIntentId}/attempts",
+      "operationId": "payments.intents.attempts.create",
+      "tags": [
+        "payments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "payments_intents_attempts_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/payments/intents/{paymentIntentId}/cancel",
+      "operationId": "payments.intents.cancel",
+      "tags": [
+        "payments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "payments_intents_cancel"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/payments/methods",
+      "operationId": "payments.methods.list",
+      "tags": [
+        "payments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "payments_methods_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/payments/reconciliations",
+      "operationId": "payments.reconcile",
+      "tags": [
+        "payments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "payments_reconcile"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/payments/records",
+      "operationId": "payments.records.list",
+      "tags": [
+        "payments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "payments_records_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/payments/records/{paymentId}",
+      "operationId": "payments.records.retrieve",
+      "tags": [
+        "payments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "payments_records_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/payments/statistics",
+      "operationId": "payments.statistics.retrieve",
+      "tags": [
+        "payments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "payments_statistics_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/payments/status/{paymentId}",
+      "operationId": "payments.status.retrieve",
+      "tags": [
+        "payments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "payments_status_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/payments/status/out_trade_no/{outTradeNo}",
+      "operationId": "payments.status.retrieveByOutTradeNo",
+      "tags": [
+        "payments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "payments_status_retrieveByOutTradeNo"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/promotions/codes/redemptions",
+      "operationId": "promotions.codes.redemptions.create",
+      "tags": [
+        "promotions"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "promotions_codes_redemptions_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/promotions/discount_applications",
+      "operationId": "promotions.discountApplications.create",
+      "tags": [
+        "promotions"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "promotions_discountApplications_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/promotions/discount_applications/{applicationId}/releases",
+      "operationId": "promotions.discountApplications.release",
+      "tags": [
+        "promotions"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "promotions_discountApplications_release"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/promotions/discount_applications/{applicationId}/rollback",
+      "operationId": "promotions.discountApplications.rollback",
+      "tags": [
+        "promotions"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "promotions_discountApplications_rollback"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/promotions/discount_applications/{applicationId}/settlements",
+      "operationId": "promotions.discountApplications.settle",
+      "tags": [
+        "promotions"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "promotions_discountApplications_settle"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/promotions/discount_applications/reversals",
+      "operationId": "promotions.discountApplications.reversals.create",
+      "tags": [
+        "promotions"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "promotions_discountApplications_reversals_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/promotions/offers",
+      "operationId": "promotions.offers.list",
+      "tags": [
+        "promotions"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "promotions_offers_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/promotions/offers/{offerId}",
+      "operationId": "promotions.offers.retrieve",
+      "tags": [
+        "promotions"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "promotions_offers_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/promotions/user_coupon_claims",
+      "operationId": "promotions.userCoupons.claims.create",
+      "tags": [
+        "promotions"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "promotions_userCoupons_claims_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/promotions/user_coupons",
+      "operationId": "promotions.userCoupons.list",
+      "tags": [
+        "promotions"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "promotions_userCoupons_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/promotions/user_coupons/{userCouponId}",
+      "operationId": "promotions.userCoupons.retrieve",
+      "tags": [
+        "promotions"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "promotions_userCoupons_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/promotions/user_coupons/wallet",
+      "operationId": "promotions.userCoupons.wallet.list",
+      "tags": [
+        "promotions"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "promotions_userCoupons_wallet_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/promotions/user_coupons/wallet/{userCouponId}",
+      "operationId": "promotions.userCoupons.wallet.retrieve",
+      "tags": [
+        "promotions"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "promotions_userCoupons_wallet_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/recharges/orders",
+      "operationId": "recharges.orders.create",
+      "tags": [
+        "recharges"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "recharges_orders_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/recharges/orders/{orderId}",
+      "operationId": "recharges.orders.retrieve",
+      "tags": [
+        "recharges"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "recharges_orders_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/recharges/orders/{orderId}/cancellations",
+      "operationId": "recharges.orders.cancel",
+      "tags": [
+        "recharges"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "recharges_orders_cancel"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/recharges/packages",
+      "operationId": "recharges.packages.list",
+      "tags": [
+        "recharges"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "public",
+        "required": false,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "recharges_packages_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/recharges/settings",
+      "operationId": "recharges.settings.retrieve",
+      "tags": [
+        "recharges"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "public",
+        "required": false,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "recharges_settings_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/refunds",
+      "operationId": "refunds.list",
+      "tags": [
+        "refunds"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "refunds_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/refunds",
+      "operationId": "refunds.create",
+      "tags": [
+        "refunds"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "refunds_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/refunds/{refundId}",
+      "operationId": "refunds.retrieve",
+      "tags": [
+        "refunds"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "refunds_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shipments/{shipmentId}",
+      "operationId": "shipments.retrieve",
+      "tags": [
+        "shipments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shipments_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shipments/{shipmentId}/packages",
+      "operationId": "shipments.packages.list",
+      "tags": [
+        "shipments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shipments_packages_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shipments/{shipmentId}/tracking_events",
+      "operationId": "shipments.trackingEvents.list",
+      "tags": [
+        "shipments"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shipments_trackingEvents_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops",
+      "operationId": "shops.list",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/{shopId}",
+      "operationId": "shops.retrieve",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current",
+      "operationId": "shops.current.retrieve",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/applications",
+      "operationId": "shops.current.applications.list",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_applications_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/shops/current/applications",
+      "operationId": "shops.current.applications.create",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.write"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_applications_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      },
+      "rateLimitTier": "default"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/brand_authorizations",
+      "operationId": "shops.current.brandAuthorizations.list",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_brandAuthorizations_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/app/v3/api/shops/current/brand_authorizations",
+      "operationId": "shops.current.brandAuthorizations.upsert",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.write"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_brandAuthorizations_upsert"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      },
+      "rateLimitTier": "default"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/business_hours",
+      "operationId": "shops.current.businessHours.retrieve",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_businessHours_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/app/v3/api/shops/current/business_hours",
+      "operationId": "shops.current.businessHours.update",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.write"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_businessHours_update"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      },
+      "rateLimitTier": "default"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/category_bindings",
+      "operationId": "shops.current.categoryBindings.list",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_categoryBindings_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/app/v3/api/shops/current/category_bindings",
+      "operationId": "shops.current.categoryBindings.upsert",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.write"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_categoryBindings_upsert"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      },
+      "rateLimitTier": "default"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/channels",
+      "operationId": "shops.current.channels.list",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_channels_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/app/v3/api/shops/current/channels/{channelId}",
+      "operationId": "shops.current.channels.update",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.write"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_channels_update"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      },
+      "rateLimitTier": "default"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/customer_services",
+      "operationId": "shops.current.customerServices.list",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_customerServices_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/app/v3/api/shops/current/customer_services",
+      "operationId": "shops.current.customerServices.upsert",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.write"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_customerServices_upsert"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      },
+      "rateLimitTier": "default"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/dashboard",
+      "operationId": "shops.current.dashboard.retrieve",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_dashboard_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/deposit_account",
+      "operationId": "shops.current.depositAccount.retrieve",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_depositAccount_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/fulfillment_profile",
+      "operationId": "shops.current.fulfillmentProfile.retrieve",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_fulfillmentProfile_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/app/v3/api/shops/current/fulfillment_profile",
+      "operationId": "shops.current.fulfillmentProfile.update",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.write"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_fulfillmentProfile_update"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      },
+      "rateLimitTier": "default"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/inventory/stocks",
+      "operationId": "shops.current.inventory.stocks.list",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_inventory_stocks_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/shops/current/inventory/stocks/{stockId}/adjustments",
+      "operationId": "shops.current.inventory.stocks.adjustments.create",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_inventory_stocks_adjustments_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/orders",
+      "operationId": "shops.current.orders.list",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_orders_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/orders/{orderId}",
+      "operationId": "shops.current.orders.retrieve",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_orders_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/shops/current/orders/{orderId}/fulfillments",
+      "operationId": "shops.current.orders.fulfillments.create",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_orders_fulfillments_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/policies",
+      "operationId": "shops.current.policies.list",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_policies_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/app/v3/api/shops/current/policies/{policyId}",
+      "operationId": "shops.current.policies.update",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.write"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_policies_update"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      },
+      "rateLimitTier": "default"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/products",
+      "operationId": "shops.current.products.list",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_products_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/shops/current/products",
+      "operationId": "shops.current.products.create",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_products_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/app/v3/api/shops/current/products/{productId}",
+      "operationId": "shops.current.products.update",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_products_update"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/shops/current/products/{productId}/publish",
+      "operationId": "shops.current.products.publish",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_products_publish"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/shops/current/products/{productId}/unpublish",
+      "operationId": "shops.current.products.unpublish",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_products_unpublish"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/qualifications",
+      "operationId": "shops.current.qualifications.list",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_qualifications_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/app/v3/api/shops/current/qualifications",
+      "operationId": "shops.current.qualifications.upsert",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.write"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_qualifications_upsert"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      },
+      "rateLimitTier": "default"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/readiness",
+      "operationId": "shops.current.readiness.retrieve",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_readiness_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/return_addresses",
+      "operationId": "shops.current.returnAddresses.list",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_returnAddresses_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/app/v3/api/shops/current/return_addresses",
+      "operationId": "shops.current.returnAddresses.upsert",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.write"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_returnAddresses_upsert"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      },
+      "rateLimitTier": "default"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/risk_signals",
+      "operationId": "shops.current.riskSignals.list",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_riskSignals_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/service_areas",
+      "operationId": "shops.current.serviceAreas.list",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_serviceAreas_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/shops/current/service_areas",
+      "operationId": "shops.current.serviceAreas.create",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.write"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_serviceAreas_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      },
+      "rateLimitTier": "default"
+    },
+    {
+      "method": "PATCH",
+      "path": "/app/v3/api/shops/current/service_areas/{serviceAreaId}",
+      "operationId": "shops.current.serviceAreas.update",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.write"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_serviceAreas_update"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      },
+      "rateLimitTier": "default"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/settlement_profile",
+      "operationId": "shops.current.settlementProfile.retrieve",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_settlementProfile_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/app/v3/api/shops/current/settlement_profile",
+      "operationId": "shops.current.settlementProfile.update",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.write"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_settlementProfile_update"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      },
+      "rateLimitTier": "default"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/settlements",
+      "operationId": "shops.current.settlements.list",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_settlements_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/shipping_templates",
+      "operationId": "shops.current.shippingTemplates.list",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_shippingTemplates_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/app/v3/api/shops/current/shipping_templates",
+      "operationId": "shops.current.shippingTemplates.upsert",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.write"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_shippingTemplates_upsert"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      },
+      "rateLimitTier": "default"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/status_events",
+      "operationId": "shops.current.statusEvents.list",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_statusEvents_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shops/current/verifications",
+      "operationId": "shops.current.verifications.list",
+      "tags": [
+        "shops"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization",
+        "permission": "commerce.shops.self.read"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "shops_current_verifications_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/accounts",
+      "operationId": "wallet.accounts.list",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_accounts_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/accounts/{accountId}",
+      "operationId": "wallet.accounts.retrieve",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_accounts_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/accounts/overview",
+      "operationId": "wallet.accounts.overview.retrieve",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_accounts_overview_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/accounts/points",
+      "operationId": "wallet.accounts.points.retrieve",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_accounts_points_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/accounts/tokens",
+      "operationId": "wallet.accounts.tokens.retrieve",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_accounts_tokens_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/wallet/adjustments",
+      "operationId": "wallet.adjustments.create",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_adjustments_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/exchange_rate",
+      "operationId": "wallet.exchangeRate.retrieve",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_exchangeRate_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/exchange_rules",
+      "operationId": "wallet.exchangeRules.list",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_exchangeRules_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/wallet/holds",
+      "operationId": "wallet.holds.create",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_holds_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/wallet/holds/releases",
+      "operationId": "wallet.holds.releases.create",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_holds_releases_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/wallet/holds/settlements",
+      "operationId": "wallet.holds.settlements.create",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_holds_settlements_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/ledger_entries",
+      "operationId": "wallet.ledgerEntries.list",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_ledgerEntries_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/ledger_entries/{ledgerEntryId}",
+      "operationId": "wallet.ledgerEntries.retrieve",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_ledgerEntries_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/ledger_entries/points",
+      "operationId": "wallet.ledgerEntries.points.list",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_ledgerEntries_points_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/overview",
+      "operationId": "wallet.overview.retrieve",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_overview_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/wallet/point_exchanges",
+      "operationId": "wallet.pointExchanges.create",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_pointExchanges_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/point_exchanges/{exchangeNo}",
+      "operationId": "wallet.pointExchanges.retrieve",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_pointExchanges_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/wallet/point_transfers",
+      "operationId": "wallet.pointTransfers.create",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_pointTransfers_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/points/exchanges/rules",
+      "operationId": "wallet.points.exchangeRules.list",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_points_exchangeRules_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/requests/{requestNo}",
+      "operationId": "wallet.requests.retrieve",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_requests_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/tokens",
+      "operationId": "wallet.tokens.retrieve",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_tokens_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/wallet/topup_transfers",
+      "operationId": "wallet.topupTransfers.create",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_topupTransfers_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/transactions",
+      "operationId": "wallet.transactions.list",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_transactions_list"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/transactions/{transactionId}",
+      "operationId": "wallet.transactions.retrieve",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_transactions_retrieve"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/wallet/withdrawal_transfers",
+      "operationId": "wallet.withdrawalTransfers.create",
+      "tags": [
+        "wallet"
+      ],
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api",
+      "auth": {
+        "mode": "dual-token",
+        "required": true,
+        "tenantScope": "tenant",
+        "dataScope": "organization"
+      },
+      "handler": {
+        "module": "crate",
+        "name": "wallet_withdrawalTransfers_create"
+      },
+      "schemas": {
+        "request": null,
+        "response": "CommerceApiResult",
+        "problem": "ProblemDetail"
+      },
+      "ownership": {
+        "owner": "sdkwork-commerce",
+        "apiAuthority": "sdkwork-commerce-app-api"
+      },
+      "source": {
+        "file": "apis/app-api/commerce/commerce-app-api.openapi.json"
+      }
+    }
+  ]
+}

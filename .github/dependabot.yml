@@ -1,0 +1,141 @@
+# SDKWork Claw Router Dependabot configuration
+# Aligns with sdkwork-specs/SUPPLY_CHAIN_SECURITY_SPEC.md and
+# sdkwork-specs/DEPENDENCY_MANAGEMENT_SPEC.md.
+#
+# Updates are grouped per ecosystem and scheduled across the week to spread
+# CI load. Every update opens a PR; merges require green `pnpm verify:fast`
+# plus the touched ecosystem's audit gate (cargo-deny / pnpm audit).
+
+version: 2
+
+updates:
+  # Rust workspace dependencies (Cargo.lock)
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
+    groups:
+      rust-core:
+        patterns:
+          - "anyhow"
+          - "thiserror"
+          - "serde"
+          - "serde_json"
+          - "toml"
+          - "tokio"
+          - "tracing"
+          - "tracing-subscriber"
+      rust-http:
+        patterns:
+          - "axum"
+          - "hyper"
+          - "hyper-util"
+          - "hyper-rustls"
+          - "tower"
+          - "tower-http"
+          - "http-body-util"
+      rust-db:
+        patterns:
+          - "sqlx"
+          - "redis"
+      rust-crypto:
+        patterns:
+          - "ring"
+          - "hmac"
+          - "sha2"
+          - "base64"
+          - "hex"
+      rpc:
+        patterns:
+          - "prost"
+          - "prost-types"
+          - "tonic"
+          - "tonic-prost"
+          - "tonic-health"
+          - "tonic-reflection"
+    commit-message:
+      prefix: "chore(deps-rust)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "rust"
+
+  # Root pnpm workspace (tooling + scripts)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "02:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
+    groups:
+      node-tooling:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "chore(deps-npm-root)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "npm"
+
+  # PC application pnpm workspace
+  - package-ecosystem: "npm"
+    directory: "/apps/sdkwork-clawrouter-pc"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "02:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 10
+    groups:
+      react-core:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "react-router"
+          - "react-router-dom"
+      build-tooling:
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+          - "typescript"
+          - "turbo"
+      testing:
+        patterns:
+          - "vitest"
+          - "@testing-library/*"
+          - "jsdom"
+      linting:
+        patterns:
+          - "eslint"
+          - "@typescript-eslint/*"
+          - "prettier"
+    commit-message:
+      prefix: "chore(deps-npm-pc)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "frontend"
+
+  # GitHub Actions workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "sunday"
+      time: "02:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(deps-gha)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"

@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.iam.module",
+  "moduleId": "clawrouter",
+  "catalogVersion": "1.0.0",
+  "domain": "clawrouter",
+  "owner": "sdkwork-clawrouter",
+  "displayName": "SDKWork Claw Router Gateway",
+  "permissions": {
+    "catalog": [
+      {
+        "code": "clawrouter.console.access",
+        "name": "Access Claw Router console surface",
+        "resource": "console",
+        "action": "access",
+        "status": "active",
+        "since": "1.0.0",
+        "replacementCode": null
+      },
+      {
+        "code": "clawrouter.admin.access",
+        "name": "Access Claw Router admin surface",
+        "resource": "admin",
+        "action": "access",
+        "status": "active",
+        "since": "1.0.0",
+        "replacementCode": null
+      },
+      {
+        "code": "clawrouter.gateway.read",
+        "name": "Read gateway runtime and routing configuration",
+        "resource": "gateway",
+        "action": "read",
+        "status": "active",
+        "since": "1.0.0",
+        "replacementCode": null
+      },
+      {
+        "code": "clawrouter.gateway.manage",
+        "name": "Manage gateway runtime and routing configuration",
+        "resource": "gateway",
+        "action": "manage",
+        "status": "active",
+        "since": "1.0.0",
+        "replacementCode": null
+      },
+      {
+        "code": "clawrouter.system.read",
+        "name": "Read Claw Router installation and system status",
+        "resource": "system",
+        "action": "read",
+        "status": "active",
+        "since": "1.0.0",
+        "replacementCode": null
+      }
+    ],
+    "openapiAuthorities": [
+      "clawrouter-app-api",
+      "clawrouter-backend-api",
+      "clawrouter-open-api"
+    ]
+  },
+  "roles": {
+    "domainStandardRoles": [],
+    "roleGrantExtensions": [],
+    "roleExclusions": []
+  },
+  "directory": {
+    "organizationTemplates": [],
+    "departmentTemplates": [],
+    "positionTemplates": [],
+    "membershipTemplates": []
+  },
+  "policyConditions": {
+    "supportedAttributes": []
+  },
+  "oauthScopeMappings": [],
+  "dependencies": {
+    "requiresModules": [
+      "iam-kernel"
+    ]
+  }
+}

@@ -1,0 +1,121 @@
+fragment: operations/backend-commerce-finance
+frontend_operations:
+- route: /admin/finance
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-finance/src/financeService.ts
+  operation: backendAuditCommerceEventsList
+  operation_id: audit.commerceEvents.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/audit/commerce_events
+  sdk_domain: commerce
+  read_sources:
+  - commerce_usage_settlement
+  query_parameters: []
+  response_schema:
+    name: backendAuditCommerceEventsListResponse
+    type: object
+    additionalProperties: true
+    properties: {}
+- route: /admin/finance/order-revenue
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-finance/src/financeService.ts
+  operation: backendCommerceReportsOrderRevenueList
+  operation_id: commerceReports.orderRevenue.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/commerce_reports/order_revenue
+  sdk_domain: commerce
+  read_sources:
+  - commerce_usage_settlement
+  query_parameters: []
+  response_schema:
+    name: backendCommerceReportsOrderRevenueListResponse
+    type: object
+    additionalProperties: true
+    properties: {}
+- route: /admin/finance/payment-reconciliation
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-finance/src/financeService.ts
+  operation: backendCommerceReportsPaymentReconciliationRetrieve
+  operation_id: commerceReports.paymentReconciliation.retrieve
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/commerce_reports/payment_reconciliation
+  sdk_domain: commerce
+  read_sources:
+  - commerce_usage_settlement
+  query_parameters: []
+  response_schema:
+    name: backendCommerceReportsPaymentReconciliationRetrieveResponse
+    type: object
+    additionalProperties: true
+    properties: {}
+- route: /admin/finance
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-finance/src/financeService.ts
+  operation: backendCommerceReportsRefundsList
+  operation_id: commerceReports.refunds.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/commerce_reports/refunds
+  sdk_domain: commerce
+  read_sources:
+  - commerce_usage_settlement
+  query_parameters: []
+  response_schema:
+    name: backendCommerceReportsRefundsListResponse
+    type: object
+    additionalProperties: true
+    properties: {}
+- route: /admin/finance/invoices
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-finance/src/financeService.ts
+  operation: backendInvoicesList
+  operation_id: invoices.management.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/invoices
+  sdk_domain: commerce
+  read_sources:
+  - commerce_usage_settlement
+  query_parameters: []
+  response_schema:
+    name: backendInvoicesListResponse
+    type: object
+    additionalProperties: true
+    properties: {}
+- route: /admin/finance/invoices
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-finance/src/financeService.ts
+  operation: backendInvoicesRetrieve
+  operation_id: invoices.management.retrieve
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/invoices/{invoiceId}
+  sdk_domain: commerce
+  read_sources:
+  - commerce_usage_settlement
+  query_parameters: []
+  response_schema:
+    name: backendInvoicesRetrieveResponse
+    type: object
+    additionalProperties: true
+    properties: {}
+- route: /admin/finance/invoices
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-finance/src/financeService.ts
+  operation: backendInvoicesTitlesList
+  operation_id: invoices.titles.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/invoices/titles
+  sdk_domain: commerce
+  read_sources:
+  - commerce_usage_settlement
+  query_parameters: []
+  response_schema:
+    name: backendInvoicesTitlesListResponse
+    type: object
+    additionalProperties: true
+    properties: {}

@@ -1,0 +1,50 @@
+{
+  "name": "@sdkwork/mcp-h5",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.app.json && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.app.json"
+  },
+  "dependencies": {
+    "@sdkwork/drive-app-sdk": "workspace:*",
+    "@sdkwork/utils": "workspace:*",
+    "sdkwork-mcp-app-sdk-generated-typescript": "workspace:*",
+    "@sdkwork/mcp-h5-mcp": "workspace:*",
+    "@sdkwork/mcp-h5-core": "workspace:*",
+    "@sdkwork/mcp-h5-commons": "workspace:*",
+    "@sdkwork/mcp-h5-shell": "workspace:*",
+    "@sdkwork/sdk-common": "workspace:*",
+    "clsx": "catalog:",
+    "lucide-react": "catalog:",
+    "motion": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-router-dom": "^7.17.0",
+    "tailwind-merge": "catalog:",
+    "@tiptap/extension-placeholder": "catalog:",
+    "@tiptap/pm": "catalog:",
+    "@tiptap/react": "catalog:",
+    "@tiptap/starter-kit": "catalog:",
+    "emoji-picker-react": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  },
+  "sdkwork": {
+    "workspace": "sdkwork-mcp",
+    "architecture": "h5-react",
+    "domain": "intelligence",
+    "capability": "mcp",
+    "status": "ready"
+  }
+}

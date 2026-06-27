@@ -1,0 +1,70 @@
+tables:
+- table: ai_channel_resource
+  domain: ai
+  profile: relation_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: tenant_entity
+  source_tables:
+  - ai_channel
+  - ai_resource
+  - ai_resource_group
+  frontend_routes:
+  - /admin/channel
+  - /admin/channel/resources
+  api_surfaces:
+  - backend
+  - worker
+  not_null_columns:
+  - uuid
+  - tenant_id
+  - organization_id
+  - status
+  - channel_id
+  - grant_type
+  unique_constraints:
+  - columns:
+    - uuid
+    source: column_unique
+  columns:
+    channel_id: int64
+    provider_code: string(64)
+    channel_code: string(64)
+    resource_id: int64
+    resource_code:
+      type: string(192)
+      constraints: NOT NULL DEFAULT ''
+    resource_group_id: int64
+    resource_group_code:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    grant_type:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'allow'
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    weight:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    effective_from: instant
+    effective_to: instant
+  indexes:
+  - name: uk_ai_channel_resource
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - channel_id
+    - resource_code
+    - resource_group_code
+  - name: idx_ai_channel_resource_lookup
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - channel_id
+    - grant_type
+    - priority
+    - id

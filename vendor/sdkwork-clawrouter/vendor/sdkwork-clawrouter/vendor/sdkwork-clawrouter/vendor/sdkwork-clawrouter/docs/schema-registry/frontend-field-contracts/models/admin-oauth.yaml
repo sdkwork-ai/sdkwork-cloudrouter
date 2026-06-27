@@ -1,0 +1,14 @@
+fragment: models/admin-oauth
+frontend_models:
+- route: /admin/oauth
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-oauth/src/oauthAdminService.ts
+  interface: OAuthListParams
+  fields:
+  - page
+  - pageSize
+  - providerCode
+  - status
+  - resourceAccountKind
+  - q
+  data_sources:
+  - ops_audit_log

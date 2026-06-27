@@ -1,0 +1,11 @@
+{
+  "extends": "../../../../../sdkwork-appbase/tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "types": [],
+    "ignoreDeprecations": "5.0"
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
+}

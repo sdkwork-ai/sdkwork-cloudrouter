@@ -1,0 +1,44 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sdkwork-clawrouter-db-upgrade
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: upgrade
+          image: registry.sdkwork.com/apps/sdkwork-clawrouter:0.3.0
+          command: ["clawrouterctl", "upgrade"]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          env:
+            - name: SDKWORK_CLAW_DEPLOYMENT_PROFILE
+              value: cloud
+            - name: SDKWORK_CLAW_RUNTIME_TARGET
+              value: container
+            - name: SDKWORK_CLAW_CONFIG_FILE
+              value: /etc/sdkwork/clawrouter.toml
+          volumeMounts:
+            - name: config
+              mountPath: /etc/sdkwork
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          secret:
+            secretName: sdkwork-clawrouter-config
+        - name: tmp
+          emptyDir: {}

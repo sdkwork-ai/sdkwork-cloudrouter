@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "sdkwork-mcp-h5-mcp",
+    "displayName": "sdkwork-mcp-h5-mcp",
+    "version": "0.1.0",
+    "type": "typescript-package",
+    "root": "apps/sdkwork-mcp-h5/packages/sdkwork-mcp-h5-mcp",
+    "domain": "intelligence",
+    "capability": "mcp",
+    "surface": "app",
+    "languages": [
+      "typescript"
+    ],
+    "generated": false,
+    "manifests": [
+      "package.json"
+    ]
+  },
+  "contracts": {
+    "publicExports": [
+      "."
+    ],
+    "sdkClients": [
+      "sdkwork-mcp-app-sdk"
+    ],
+    "dependencyComposition": "../../../specs/dependency.composition.json"
+  }
+}

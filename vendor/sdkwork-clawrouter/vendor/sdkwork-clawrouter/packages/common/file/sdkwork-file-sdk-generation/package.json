@@ -1,0 +1,35 @@
+{
+  "name": "@sdkwork/file-sdk-generation",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "SDKWork file platform SDK generation manifest and OpenAPI artifacts.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "artifacts:check": "node ../../../../scripts/materialize-file-sdk-artifacts.mjs --check",
+    "artifacts:write": "node ../../../../scripts/materialize-file-sdk-artifacts.mjs --apply",
+    "typecheck": "node ../../../../apps/sdkwork-clawrouter-pc/node_modules/typescript/bin/tsc -p tsconfig.json --noEmit",
+    "test": "node ../../../../apps/sdkwork-clawrouter-pc/node_modules/vitest/vitest.mjs run tests --pool vmThreads"
+  },
+  "dependencies": {
+    "@sdkwork/file-api-contracts": "workspace:*",
+    "@sdkwork/file-contracts": "workspace:*"
+  },
+  "sdkwork": {
+    "architecture": "common",
+    "capability": "file-sdk-generation",
+    "domain": "file",
+    "packageType": "sdk-generation-manifest-package",
+    "status": "standard"
+  }
+}

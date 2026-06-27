@@ -1,0 +1,18 @@
+{
+  "catalogCode": "sdkwork-ai-routing",
+  "schemaVersion": "ai-routing-seed.v1",
+  "source": "bundled",
+  "description": "Bundled AI routing resource taxonomy and resource groups for zero-touch development and release installation.",
+  "sections": {
+    "resources": [
+      "core-resources.json",
+      "openai-resources.json",
+      "vendor-native-resources.json"
+    ],
+    "resourceGroups": [
+      "admin-api-groups.json",
+      "official-provider-groups.json",
+      "relay-provider-groups.json"
+    ]
+  }
+}

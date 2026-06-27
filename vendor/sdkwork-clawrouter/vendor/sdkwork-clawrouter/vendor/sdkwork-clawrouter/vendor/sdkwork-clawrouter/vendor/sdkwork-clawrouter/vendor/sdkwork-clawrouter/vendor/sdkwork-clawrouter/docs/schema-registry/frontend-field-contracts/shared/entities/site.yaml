@@ -1,0 +1,86 @@
+fragment: shared/entities/site
+x_response_entities:
+  site_runtime_settings:
+    name: SiteRuntimeSettingsResponse
+    type: object
+    additionalProperties: false
+    required:
+    - siteName
+    - shortName
+    - description
+    - logo
+    - icon
+    - favicon
+    - brandColor
+    - accentColor
+    - footerCopyright
+    - icpRecordNumber
+    - icpRecordUrl
+    - policeRecordNumber
+    - policeRecordUrl
+    - seoTitle
+    - seoDescription
+    - supportUrl
+    - docsUrl
+    - privacyUrl
+    - termsUrl
+    - customCss
+    properties:
+      siteName:
+        type: string
+        minLength: 1
+        maxLength: 255
+      shortName:
+        type: string
+        maxLength: 255
+      description:
+        type: string
+        maxLength: 4096
+      logo:
+        $ref: '#/components/schemas/MediaResource'
+      icon:
+        $ref: '#/components/schemas/MediaResource'
+      favicon:
+        $ref: '#/components/schemas/MediaResource'
+      brandColor:
+        type: string
+        pattern: ^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$
+      accentColor:
+        type: string
+        pattern: ^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$
+      footerCopyright:
+        type: string
+        maxLength: 4096
+      icpRecordNumber:
+        type: string
+        maxLength: 255
+      icpRecordUrl:
+        type: string
+        maxLength: 2048
+      policeRecordNumber:
+        type: string
+        maxLength: 255
+      policeRecordUrl:
+        type: string
+        maxLength: 2048
+      seoTitle:
+        type: string
+        maxLength: 255
+      seoDescription:
+        type: string
+        maxLength: 4096
+      supportUrl:
+        type: string
+        maxLength: 2048
+      docsUrl:
+        type: string
+        maxLength: 2048
+      privacyUrl:
+        type: string
+        maxLength: 2048
+      termsUrl:
+        type: string
+        maxLength: 2048
+      customCss:
+        type: string
+        maxLength: 20000

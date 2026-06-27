@@ -1,0 +1,26 @@
+[package]
+name = "sdkwork-claw-security"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[dependencies]
+# Workspace dependencies
+base64.workspace = true
+hmac.workspace = true
+sha2.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+# Asymmetric cryptography
+rsa.workspace = true
+p256.workspace = true
+ed25519-dalek.workspace = true
+rand.workspace = true
+
+# SDKWork utilities
+sdkwork-utils-rust.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

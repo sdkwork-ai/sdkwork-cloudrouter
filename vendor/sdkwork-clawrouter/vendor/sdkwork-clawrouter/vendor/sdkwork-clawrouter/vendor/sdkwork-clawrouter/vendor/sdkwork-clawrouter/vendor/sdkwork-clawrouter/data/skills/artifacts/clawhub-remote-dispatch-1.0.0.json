@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "agent-skill-artifact.v1",
+  "artifactRef": "clawhub://skills/remote-dispatch@1.0.0",
+  "version": "1.0.0",
+  "runtime": "metadata",
+  "entrypoint": "clawhub.skills.remote_dispatch",
+  "skill": {
+    "id": 8202,
+    "skillKey": "clawhub-remote-dispatch",
+    "name": "Remote Dispatch — 多端远程协同"
+  },
+  "source": {
+    "vendor": "clawhub",
+    "slug": "remote-dispatch",
+    "url": "https://clawhub.ai/skills/remote-dispatch",
+    "fetchedAt": "2026-06-22T01:26:13.984Z",
+    "rawDetailPath": "data/skills/clawhub/raw/details/remote-dispatch-3599025a44381eea.json"
+  },
+  "instructions": [
+    "Display this bundled ClawHub metadata entry from the local SDKWork Skills seed.",
+    "Do not execute remote code from this artifact until the community package has passed SDKWork review.",
+    "多端协同/Dispatch 远程桌面操控。受 Claude Dispatch 功能启发——手机发指令，电脑执行。将 QQBot 收到的远程指令转化为 desktop actions：截图回传、打开浏览器搜索、操作桌面应用、文件操作。需要 computer-use skill 配合使用。"
+  ],
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "sourceUrl": {
+        "type": "string"
+      },
+      "slug": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": true
+  },
+  "metadata": {
+    "owner": {
+      "handle": "lxr-666",
+      "userId": "s176n6k4kdjk3zgm2knbvvy03n88p8tk",
+      "displayName": "LXR-666",
+      "image": "https://avatars.githubusercontent.com/u/173941598?v=4"
+    },
+    "stats": {
+      "comments": 0,
+      "downloads": 0,
+      "installsAllTime": 0,
+      "installsCurrent": 0,
+      "stars": 0,
+      "versions": 1
+    },
+    "latestVersion": {
+      "version": "1.0.0",
+      "createdAt": 1782087936173,
+      "changelog": "Remote Dispatch 1.0.0\n\n- Initial release inspired by Claude Dispatch, enabling remote desktop control via QQBot.\n- Supports commands such as screenshot, open browser/search, clipboard read/write, window management, and file operations.\n- Requires the computer-use skill for desktop action execution.\n- Includes confirmation and privacy precautions for sensitive operations.\n- Designed for multi-device collaboration with mobile-to-desktop command flow.",
+      "license": "MIT-0"
+    }
+  },
+  "checksumHash": "sha256:36253fb1a56780064e1ab9ead209c685b0632f11117845c7882102f823678fdc"
+}

@@ -1,0 +1,753 @@
+fragment: operations/app-runtime
+frontend_operations:
+- route: /playground
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  operation: listRuntimeInvocations
+  operation_id: invocations.list
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/runtime/invocations
+  sdk_domain: runtime
+  summary: List runtime invocations
+  description: Lists first-class runtime invocation records for product chat turns and agent sessions, scoped by the active tenant, organization, and user.
+  read_sources:
+  - ai_runtime_invocation
+  - ai_chat_conversation
+  - ai_chat_turn
+  - ai_agent_session
+  query_parameters:
+  - name: page
+    schema:
+      type: integer
+      format: int64
+      minimum: 1
+  - name: page_size
+    schema:
+      type: integer
+      format: int64
+      minimum: 1
+      maximum: 100
+  - name: conversation_id
+    schema:
+      type: string
+      maxLength: 128
+  - name: chat_turn_id
+    schema:
+      type: string
+      maxLength: 128
+  - name: agent_session_id
+    schema:
+      type: string
+      maxLength: 128
+  - name: runtime
+    schema:
+      type: string
+      maxLength: 128
+  - name: status
+    schema:
+      type: string
+      maxLength: 64
+  response_schema:
+    name: RuntimeInvocationListResponse
+    type: object
+    additionalProperties: false
+    required:
+    - items
+    properties:
+      items:
+        type: array
+        maxItems: 100
+        items: &id001
+          name: RuntimeInvocationItem
+          type: object
+          additionalProperties: false
+          required:
+          - id
+          - invocationNo
+          - invocationType
+          - runtime
+          - attemptNo
+          - status
+          - streaming
+          - createdAt
+          properties:
+            id:
+              type: string
+              minLength: 1
+              maxLength: 128
+            invocationNo:
+              type: integer
+              format: int64
+              minimum: 0
+            invocationType:
+              type: string
+              minLength: 1
+              maxLength: 128
+            runtime:
+              type: string
+              minLength: 1
+              maxLength: 128
+            endpoint:
+              type: string
+              nullable: true
+              maxLength: 128
+            attemptNo:
+              type: integer
+              format: int64
+              minimum: 0
+            status:
+              type: string
+              enum:
+              - pending
+              - running
+              - streaming
+              - completed
+              - failed
+              - cancelled
+            conversationId:
+              type: string
+              nullable: true
+              maxLength: 128
+            chatTurnId:
+              type: string
+              nullable: true
+              maxLength: 128
+            chatItemId:
+              type: string
+              nullable: true
+              maxLength: 128
+            agentSessionId:
+              type: string
+              nullable: true
+              maxLength: 128
+            agentRunId:
+              type: string
+              nullable: true
+              maxLength: 128
+            agentRunStepId:
+              type: string
+              nullable: true
+              maxLength: 128
+            requestId:
+              type: string
+              nullable: true
+              maxLength: 128
+            traceId:
+              type: string
+              nullable: true
+              maxLength: 128
+            providerResponseId:
+              type: string
+              nullable: true
+              maxLength: 128
+            providerSessionId:
+              type: string
+              nullable: true
+              maxLength: 128
+            providerConversationId:
+              type: string
+              nullable: true
+              maxLength: 128
+            providerStepId:
+              type: string
+              nullable: true
+              maxLength: 128
+            model:
+              type: string
+              nullable: true
+              maxLength: 128
+            provider:
+              type: string
+              nullable: true
+              maxLength: 128
+            toolName:
+              type: string
+              nullable: true
+              maxLength: 128
+            toolCallId:
+              type: string
+              nullable: true
+              maxLength: 128
+            cwd:
+              type: string
+              nullable: true
+              maxLength: 2048
+            sandboxPolicy:
+              type: string
+              nullable: true
+              maxLength: 128
+            approvalPolicy:
+              type: string
+              nullable: true
+              maxLength: 128
+            permissionMode:
+              type: string
+              nullable: true
+              maxLength: 128
+            streaming:
+              type: boolean
+            startedAt:
+              type: string
+              nullable: true
+              maxLength: 64
+            completedAt:
+              type: string
+              nullable: true
+              maxLength: 64
+            latencyMs:
+              type: integer
+              format: int64
+              nullable: true
+              minimum: 0
+            ttftMs:
+              type: integer
+              format: int64
+              nullable: true
+              minimum: 0
+            exitCode:
+              type: integer
+              format: int64
+              nullable: true
+            finishReason:
+              type: string
+              nullable: true
+              maxLength: 128
+            errorType:
+              type: string
+              nullable: true
+              maxLength: 128
+            errorCode:
+              type: string
+              nullable: true
+              maxLength: 128
+            errorMessageMasked:
+              type: string
+              nullable: true
+              maxLength: 1024
+            createdAt:
+              type: string
+              minLength: 1
+              maxLength: 64
+- route: /playground
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  operation: createRuntimeInvocation
+  operation_id: invocations.create
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/runtime/invocations
+  sdk_domain: runtime
+  summary: Create runtime invocation
+  description: Creates one normalized runtime invocation for Claude Code, Gemini, Codex, OpenAI-compatible providers, tools, MCP calls, skills, or custom runtime adapters. The server generates the runtime request id.
+  read_sources:
+  - ai_chat_conversation
+  - ai_chat_turn
+  - ai_agent_session
+  write_tables:
+  - ai_runtime_invocation
+  idempotency_required: true
+  request_schema:
+    name: RuntimeInvocationCreateRequest
+    type: object
+    additionalProperties: false
+    required:
+    - runtime
+    properties:
+      invocationType:
+        type: string
+        maxLength: 128
+      runtime:
+        type: string
+        minLength: 1
+        maxLength: 128
+      endpoint:
+        type: string
+        maxLength: 128
+      status:
+        type: string
+        enum:
+        - pending
+        - running
+        - streaming
+        - completed
+        - failed
+        - cancelled
+      conversationId:
+        type: string
+        maxLength: 128
+      chatTurnId:
+        type: string
+        maxLength: 128
+      chatItemId:
+        type: string
+        maxLength: 128
+      agentSessionId:
+        type: string
+        maxLength: 128
+      agentRunId:
+        type: string
+        maxLength: 128
+      agentRunStepId:
+        type: string
+        maxLength: 128
+      traceId:
+        type: string
+        maxLength: 128
+      model:
+        type: string
+        maxLength: 128
+      provider:
+        type: string
+        maxLength: 128
+      toolName:
+        type: string
+        maxLength: 128
+      toolCallId:
+        type: string
+        maxLength: 128
+      cwd:
+        type: string
+        maxLength: 2048
+      sandboxPolicy:
+        type: string
+        maxLength: 128
+      approvalPolicy:
+        type: string
+        maxLength: 128
+      permissionMode:
+        type: string
+        maxLength: 128
+      streaming:
+        type: boolean
+      requestJson:
+        type: object
+        additionalProperties: true
+      metadata:
+        type: object
+        additionalProperties: true
+  response_schema: &id002
+    name: RuntimeInvocationResponse
+    type: object
+    additionalProperties: false
+    required:
+    - item
+    properties:
+      item: *id001
+- route: /playground
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  operation: retrieveRuntimeInvocation
+  operation_id: invocations.retrieve
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/runtime/invocations/{invocationId}
+  sdk_domain: runtime
+  summary: Retrieve runtime invocation
+  description: Returns one runtime invocation by stable id with provider, model, execution policy, status, latency, and finish metadata.
+  read_sources:
+  - ai_runtime_invocation
+  path_params:
+  - invocationId
+  query_parameters: []
+  response_schema: *id001
+- route: /playground
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  operation: completeRuntimeInvocation
+  operation_id: invocations.submit
+  kind: action
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/runtime/invocations/{invocationId}/complete
+  sdk_domain: runtime
+  summary: Complete runtime invocation
+  description: Completes one runtime invocation with provider response ids, finish reason, latency, exit status, response snapshot, and usage snapshot.
+  read_sources:
+  - ai_runtime_invocation
+  write_tables:
+  - ai_runtime_invocation
+  path_params:
+  - invocationId
+  idempotency_required: true
+  request_schema:
+    name: RuntimeInvocationCompleteRequest
+    type: object
+    additionalProperties: false
+    properties:
+      status:
+        type: string
+        enum:
+        - pending
+        - running
+        - streaming
+        - completed
+        - failed
+        - cancelled
+      providerResponseId:
+        type: string
+        maxLength: 128
+      providerSessionId:
+        type: string
+        maxLength: 128
+      providerConversationId:
+        type: string
+        maxLength: 128
+      providerStepId:
+        type: string
+        maxLength: 128
+      finishReason:
+        type: string
+        maxLength: 128
+      latencyMs:
+        type: integer
+        format: int64
+        minimum: 0
+      ttftMs:
+        type: integer
+        format: int64
+        minimum: 0
+      exitCode:
+        type: integer
+        format: int64
+      errorType:
+        type: string
+        maxLength: 128
+      errorCode:
+        type: string
+        maxLength: 128
+      errorMessageMasked:
+        type: string
+        maxLength: 1024
+      responseJson:
+        type: object
+        additionalProperties: true
+      usageJson:
+        name: UsageSnapshot
+        type: object
+        additionalProperties: true
+        properties:
+          inputTokens:
+            type: integer
+            format: int64
+            minimum: 0
+          outputTokens:
+            type: integer
+            format: int64
+            minimum: 0
+          cachedTokens:
+            type: integer
+            format: int64
+            minimum: 0
+          totalTokens:
+            type: integer
+            format: int64
+            minimum: 0
+      metadata:
+        type: object
+        additionalProperties: true
+  response_schema: *id002
+- route: /playground
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  operation: listRuntimeEvents
+  operation_id: invocationEvents.list
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/runtime/invocations/{invocationId}/events
+  sdk_domain: runtime
+  summary: List runtime invocation events
+  description: Lists ordered stream and lifecycle events emitted by one runtime invocation.
+  read_sources:
+  - ai_runtime_invocation
+  - ai_runtime_invocation_event
+  path_params:
+  - invocationId
+  query_parameters:
+  - name: page
+    schema:
+      type: integer
+      format: int64
+      minimum: 1
+  - name: page_size
+    schema:
+      type: integer
+      format: int64
+      minimum: 1
+      maximum: 100
+  response_schema: &id003
+    name: RuntimeEventListResponse
+    type: object
+    additionalProperties: false
+    required:
+    - items
+    properties:
+      items:
+        type: array
+        maxItems: 100
+        items: &id004
+          name: RuntimeEventItem
+          type: object
+          additionalProperties: false
+          required:
+          - id
+          - invocationId
+          - eventNo
+          - eventType
+          - eventSource
+          - payloadJson
+          - createdAt
+          properties:
+            id:
+              type: string
+              minLength: 1
+              maxLength: 128
+            invocationId:
+              type: string
+              minLength: 1
+              maxLength: 128
+            eventNo:
+              type: integer
+              format: int64
+              minimum: 0
+            eventType:
+              type: string
+              minLength: 1
+              maxLength: 128
+            eventSource:
+              type: string
+              minLength: 1
+              maxLength: 128
+            payloadJson:
+              type: object
+              additionalProperties: true
+            textDelta:
+              type: string
+              nullable: true
+              maxLength: 262144
+            createdAt:
+              type: string
+              minLength: 1
+              maxLength: 64
+- route: /playground
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  operation: streamRuntimeEvents
+  operation_id: invocationEventStreams.list
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/runtime/invocations/{invocationId}/events/stream
+  sdk_domain: runtime
+  summary: Stream runtime invocation events
+  description: Streams ordered runtime invocation events as JSON SSE frames for Chat and Agent interactive playback.
+  read_sources:
+  - ai_runtime_invocation
+  - ai_runtime_invocation_event
+  path_params:
+  - invocationId
+  query_parameters: []
+  response_schema: *id003
+- route: /playground
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  operation: createRuntimeEvent
+  operation_id: invocationEvents.create
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/runtime/invocations/{invocationId}/events
+  sdk_domain: runtime
+  summary: Create runtime invocation event
+  description: Stores one provider, tool, adapter, or system event under a runtime invocation, including text deltas and provider-native payload snapshots.
+  read_sources:
+  - ai_runtime_invocation
+  write_tables:
+  - ai_runtime_invocation_event
+  path_params:
+  - invocationId
+  idempotency_required: true
+  request_schema:
+    name: RuntimeEventCreateRequest
+    type: object
+    additionalProperties: false
+    required:
+    - eventType
+    properties:
+      eventType:
+        type: string
+        minLength: 1
+        maxLength: 128
+      eventSource:
+        type: string
+        maxLength: 128
+      payloadJson:
+        type: object
+        additionalProperties: true
+      textDelta:
+        type: string
+        maxLength: 262144
+      metadata:
+        type: object
+        additionalProperties: true
+  response_schema:
+    name: RuntimeEventResponse
+    type: object
+    additionalProperties: false
+    required:
+    - item
+    properties:
+      item: *id004
+- route: /playground
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  operation: listRuntimeArtifacts
+  operation_id: artifacts.list
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/runtime/invocations/{invocationId}/artifacts
+  sdk_domain: runtime
+  summary: List runtime artifacts
+  description: Lists files, text outputs, JSON documents, logs, patches, screenshots, and other artifacts produced by one runtime invocation.
+  read_sources:
+  - ai_runtime_invocation
+  - ai_runtime_artifact
+  path_params:
+  - invocationId
+  query_parameters:
+  - name: page
+    schema:
+      type: integer
+      format: int64
+      minimum: 1
+  - name: page_size
+    schema:
+      type: integer
+      format: int64
+      minimum: 1
+      maximum: 100
+  response_schema:
+    name: RuntimeArtifactListResponse
+    type: object
+    additionalProperties: false
+    required:
+    - items
+    properties:
+      items:
+        type: array
+        maxItems: 100
+        items: &id005
+          name: RuntimeArtifactItem
+          type: object
+          additionalProperties: false
+          required:
+          - id
+          - invocationId
+          - artifactType
+          - createdAt
+          properties:
+            id:
+              type: string
+              minLength: 1
+              maxLength: 128
+            invocationId:
+              type: string
+              minLength: 1
+              maxLength: 128
+            artifactType:
+              type: string
+              minLength: 1
+              maxLength: 128
+            name:
+              type: string
+              nullable: true
+              maxLength: 512
+            mimeType:
+              type: string
+              nullable: true
+              maxLength: 128
+            contentText:
+              type: string
+              nullable: true
+              maxLength: 262144
+            storageKey:
+              type: string
+              nullable: true
+              maxLength: 2048
+            resource:
+              $ref: '#/components/schemas/MediaResource'
+              nullable: true
+            sha256:
+              type: string
+              nullable: true
+              maxLength: 128
+            sizeBytes:
+              type: integer
+              format: int64
+              nullable: true
+              minimum: 0
+            createdAt:
+              type: string
+              minLength: 1
+              maxLength: 64
+- route: /playground
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  operation: createRuntimeArtifact
+  operation_id: artifacts.create
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/runtime/invocations/{invocationId}/artifacts
+  sdk_domain: runtime
+  summary: Create runtime artifact
+  description: Stores one artifact produced by a runtime invocation and inherits chat turn, chat item, agent session, and agent run linkage from the invocation.
+  read_sources:
+  - ai_runtime_invocation
+  write_tables:
+  - ai_runtime_artifact
+  path_params:
+  - invocationId
+  idempotency_required: true
+  request_schema:
+    name: RuntimeArtifactCreateRequest
+    type: object
+    additionalProperties: false
+    required:
+    - artifactType
+    properties:
+      artifactType:
+        type: string
+        minLength: 1
+        maxLength: 128
+      name:
+        type: string
+        maxLength: 512
+      mimeType:
+        type: string
+        maxLength: 128
+      contentText:
+        type: string
+        maxLength: 262144
+      contentJson:
+        type: object
+        additionalProperties: true
+      storageKey:
+        type: string
+        maxLength: 2048
+      resource:
+        $ref: '#/components/schemas/MediaResource'
+      sha256:
+        type: string
+        maxLength: 128
+      sizeBytes:
+        type: integer
+        format: int64
+        minimum: 0
+      metadata:
+        type: object
+        additionalProperties: true
+  response_schema:
+    name: RuntimeArtifactResponse
+    type: object
+    additionalProperties: false
+    required:
+    - item
+    properties:
+      item: *id005

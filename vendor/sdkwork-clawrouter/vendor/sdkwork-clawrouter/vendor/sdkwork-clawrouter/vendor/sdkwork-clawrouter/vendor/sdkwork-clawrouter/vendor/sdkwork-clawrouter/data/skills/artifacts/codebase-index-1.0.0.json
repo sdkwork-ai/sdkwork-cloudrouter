@@ -1,0 +1,19 @@
+{
+  "artifactRef": "builtin://sdkwork.skills.codebase_index@1.0.0",
+  "version": "1.0.0",
+  "runtime": "builtin",
+  "skill": {
+    "id": 8102
+  },
+  "instructions": [
+    "Index repository files for semantic retrieval.",
+    "Return ranked file and symbol matches for agent context."
+  ],
+  "inputSchema": {
+    "type": "object"
+  },
+  "outputSchema": {
+    "type": "object"
+  },
+  "checksumHash": "sha256:b1c87789123c14342dcb7ef03bea600bbe851aa6daf52f00f861b4aebe37e972"
+}

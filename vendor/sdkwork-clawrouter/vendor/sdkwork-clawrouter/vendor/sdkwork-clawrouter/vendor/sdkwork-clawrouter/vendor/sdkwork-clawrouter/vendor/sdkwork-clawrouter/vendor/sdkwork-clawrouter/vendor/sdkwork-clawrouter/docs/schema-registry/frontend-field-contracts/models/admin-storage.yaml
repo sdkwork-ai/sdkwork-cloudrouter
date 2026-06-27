@@ -1,0 +1,61 @@
+fragment: models/admin-storage
+frontend_models:
+- route: /admin/storage/providers
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts
+  interface: StorageProviderListParams
+  fields: []
+  data_sources:
+  - dr_drive_storage_provider
+- route: /admin/storage/buckets
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts
+  interface: StorageBucketListParams
+  fields:
+  - cursor
+  - limit
+  - logicalScope
+  - providerId
+  - status
+  data_sources:
+  - dr_drive_space
+- route: /admin/storage/default-buckets
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts
+  interface: StorageDefaultBucketListParams
+  fields:
+  - logicalScope
+  data_sources:
+  - dr_drive_space_app_upload_profile
+- route: /admin/storage/quotas
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts
+  interface: StorageQuotaListParams
+  fields: []
+  data_sources:
+  - dr_drive_space_version_policy
+- route: /admin/storage/usage
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts
+  interface: StorageUsageListParams
+  fields:
+  - cursor
+  - limit
+  - scopeType
+  - scopeId
+  data_sources:
+  - dr_drive_storage_object
+- route: /admin/storage/reconciliation
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts
+  interface: StorageReconciliationRunListParams
+  fields:
+  - cursor
+  - limit
+  - status
+  - runType
+  data_sources:
+  - dr_drive_maintenance_job
+- route: /admin/storage/garbage-collection
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts
+  interface: StorageGarbageCollectionJobListParams
+  fields:
+  - cursor
+  - limit
+  - status
+  data_sources:
+  - dr_drive_maintenance_job

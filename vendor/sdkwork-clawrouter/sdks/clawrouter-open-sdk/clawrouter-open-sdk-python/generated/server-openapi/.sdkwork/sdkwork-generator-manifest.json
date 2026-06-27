@@ -1,0 +1,1843 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "sdk": {
+    "name": "clawrouter-open-sdk",
+    "version": "0.1.0",
+    "language": "python",
+    "sdkType": "ai",
+    "packageName": "sdkwork-clawrouter-open-sdk"
+  },
+  "generatedFiles": [
+    {
+      "path": "bin/publish-core.mjs",
+      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+    },
+    {
+      "path": "bin/publish.ps1",
+      "sha256": "b383d4f7233b567acd36fa2ff644448730007738901cf1770cb02746f88fbb05"
+    },
+    {
+      "path": "bin/publish.sh",
+      "sha256": "6fd65ff5011e48b24018ab691edd8803c4b1fd293d013b75d1adb3bcd26f7cde"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "fb941a0806986a54fc192f98a98f6d9c282b8d350b2b19a3e71dda404e92d545"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "7840cc7d2b36ff364ac16c2fc5ec15b861bfe96854eecf81fb59b00edb8b1447"
+    },
+    {
+      "path": "MANIFEST.in",
+      "sha256": "f2cf38b31e047a89d07df480670b1ee93a5fa3b9f69706acf0abcdd145ef7e3c"
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "ff5a30f2ea776b890eba01f499c5ce7a8848d67acff18e316ba257fe6f0f64f0"
+    },
+    {
+      "path": "README.md",
+      "sha256": "bb2cbca963d88863cf4e8407eb89eb818360ed72a68bf19581207bbd4ce0190b"
+    },
+    {
+      "path": "requirements.txt",
+      "sha256": "5f3072c051f89b9af1b681381406e0b2466895fb150660d583c85c84396001c8"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/__init__.py",
+      "sha256": "f9ec1f6b6b6dd0d61972eb98bd3e0056d723a4b2eb708c2ee1ba17f29582dc36"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/__init__.py",
+      "sha256": "4c265642a172a89ce1e65871d4ad1a458de7cf4aa9ed71341c203d7a38760898"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/assistants.py",
+      "sha256": "f3d4e8155418c594a03e63fb1322fb3e546e30e6e04a3de21cdac51ed19ab1f8"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/audio_suno.py",
+      "sha256": "3cc43af6445fd9d579dcab01500e4caf6b7eca084520d220b214e10989d19ab9"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/audio.py",
+      "sha256": "5380439c82e2f80e044ac7d349cf22f82081d0d269f8c53fd5372b35c610e71b"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/batches_anthropic.py",
+      "sha256": "32336eba1329a0c049fb4b0867248538704747b49cefe1ac7f74934457f063fe"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/batches.py",
+      "sha256": "99556b5313c5208bfede693e2d740528ba379efc9609bba3e74a8ecc7692ecca"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/chat_anthropic.py",
+      "sha256": "cdbe3224614e8353d015400694f599b1f6d2cbdf58cb92a922e3b40fb5ecb44d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/chat_google.py",
+      "sha256": "07a098504635af11d481fdd2c0a0f6eee342208c4a7f318c78ce5a4badd776e5"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/chat.py",
+      "sha256": "f52b3a0749df172f448e3aeac682e40507563c062abedd6b5499ea1f4b2b82a2"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/completion.py",
+      "sha256": "3d843eb2d7436d34e1094b9b7d9c74ed5d154150b181b7c8873c5ea33931ef2c"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/container.py",
+      "sha256": "13489c6d59a203ab9355000cee48fac67f6f5c4b293135baa377a19d70f657fb"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/conversation.py",
+      "sha256": "871f7a45c19a1a9abd002cebb471301de3603428f4a5a42f3840957b60a4298d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/embeddings_google.py",
+      "sha256": "e4ec908e71fb21adadde27adf5eb78ced91a19451054b05a8aaac240a1e13625"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/embeddings.py",
+      "sha256": "36d65ca521dd249ac27d7293edaef1b8ca6f74f1e74725de3c35885eb731f3ae"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/eval.py",
+      "sha256": "44467e60a9fb87354365843c0933a148199fe92cc5f421db93a4a57ef8a19484"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/files_anthropic.py",
+      "sha256": "40ed91ba8afd534171e7ef7c621119043835048ae01de119dd259ce5f3fea0d5"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/files_google.py",
+      "sha256": "e21ed7f5c41a84979686ce7f474f73b586d2528aaa9916a9343c295fd25edf91"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/files.py",
+      "sha256": "9e9a454c35c394219b0793ad99762ce01a322db3f30a7f71e2b9d6b71168fbb8"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/fine_tuning.py",
+      "sha256": "8a7938abb16a861919b6a5a919ba15607abb97e3f73208bf5dbddffcaf78153d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/images_midjourney.py",
+      "sha256": "cb9db55b7354beb7740342174368f8905cf6ef54805bab8cf2b841f9cec59ef5"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/images_nano_banana.py",
+      "sha256": "3c986717bcd736983c7c76a0339b519a21e0506d5aac30e20a642ba8950c38fe"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/images_vidu.py",
+      "sha256": "49f72640c7c87ccea980b3b78e36122d318ef5a0e391de13ab15d39930b6aa8f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/images.py",
+      "sha256": "a09537cd4effcefe6cde102a693effc9cf64179732c8939974c01c5b8fa2b456"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/models.py",
+      "sha256": "bdfdc5a29d45263747a9f253cf75bb81e2e32af76bb2e8397af0d8d0275b019e"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/moderations.py",
+      "sha256": "586a57263d6f70c6d5a1574c0148fe8ee2b1bc14ed6bcd46190994036eb28444"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/organization.py",
+      "sha256": "99dcf69a85d5b0af2ad83acf25cef50e7b87b990c71b7ce46f743248126b63b5"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/project.py",
+      "sha256": "a2eae03726b32f44fca626037cd83223dfcf4b3e11eecd92d82f56d90488cafc"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/realtime.py",
+      "sha256": "717b1dd35356c5d13feba713c3182caef0850d6494f7a7907c4b5dd144ab8d9a"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/responses_google.py",
+      "sha256": "b5943ab1beb298d8cd0d294a16e0321c366220c4abc8950b24a7291a4b45521d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/responses.py",
+      "sha256": "429c03162f8574bf65d4fad5d5298a13ce907df5f82fa1ac8f9d99d61a163e5f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/skill.py",
+      "sha256": "5a081f71ab49a77781b30618c2ca855cb95274d295793ab2caa073cd9703b6a9"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/threads.py",
+      "sha256": "f996f433afa7a691b3b6ebd974a244735444c21f901edd864fa8462323acb1f7"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/uploads.py",
+      "sha256": "2e36e1bd38f99c341af623a35ba6a480e1bc378bee3c803406a7b54459545e17"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/vector_stores.py",
+      "sha256": "9d7e51ad1f5cc2035c11fbee13c69cc2719fe369615cfb03930469f99685bea8"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/video.py",
+      "sha256": "1535a5cdcd372322162d47d41572f344d7a16a6a3033c6100625a769461d4636"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/videos_kling.py",
+      "sha256": "e4b7788574b82a975178a2707fde2e98276a83a33c5488758e007a36c78e8282"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/videos_vidu.py",
+      "sha256": "08730c7943f81ffd9abe24e8f44924e09f551ab25966686fefe63633234b19ac"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/api/videos_volcengine.py",
+      "sha256": "253f6f10360593f22053e4359570c10d742fd57f5d15130392113559044ea00e"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/client.py",
+      "sha256": "10f6e2b9b93a5c32d4cd17449c373dac0c96eb662b7f40f6acf5fd5e23ac1c6c"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/http_client.py",
+      "sha256": "2f2d56fa537b032e1eee8825f89944b6ff78d919e5a1c684d21325cfcc7bc398"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/__init__.py",
+      "sha256": "8c9f154cb4fadb210c486463baa6dd5a34042b616a21932bc8bd2828c0e81666"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_content_block_param.py",
+      "sha256": "72f7899eca15e133150f0cb7e7f4659d1bc0bac92d0a04b19f06dfcf3587b8b0"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_content_block.py",
+      "sha256": "8360dca3908fc095a678815152a333f773d15d8f950d8e0056746b5c9cc6e7c0"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_content_source.py",
+      "sha256": "7b0f038750bffc1529caa9be3d783819a4205f6a6705c2fc0e8b18996cc718ce"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_count_message_tokens_request.py",
+      "sha256": "cd0fb2255fce8c58cb599e6e82675a2682abe740ca1e71d451ffc84cb2c65a4d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_count_message_tokens_response.py",
+      "sha256": "4a770a269683401cf5097f12c48ade04fae2df4a80ca701db222b34cfd7fcb62"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_delete_response.py",
+      "sha256": "2002c61ab6ebd4cbacf15203a0b5eba71b6a50a744ee3617eb263726804b43d8"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_file_list_response.py",
+      "sha256": "216271d40327e4d0d5a9b912c19b07b1c1a214f969cf1b0647e9a16c8344f864"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_file_upload_multipart_request.py",
+      "sha256": "4e993b2d53bfb5d7c8dfbb4ab64a1935efa7fd764207f7c4b9495ec9428f2406"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_file.py",
+      "sha256": "5c11a57ec4e4898867108e90c5fde88c5b4b30754b125808bb3d82eae26ef44a"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_message_batch_create_request.py",
+      "sha256": "8a5f278d67fb04fc30da48b4f2881a8b12da7ad4336093a7ef29250706ba274f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_message_batch_list_response.py",
+      "sha256": "f0cb6978c8132006f8b7d5fa9964db0000ff0e1b4d74254678f490595ffdee40"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_message_batch_request_counts.py",
+      "sha256": "9c2c0a603250d45a5325b5cb164403578ae7ed0ea512fc8a5ba29c1300fb34eb"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_message_batch_request.py",
+      "sha256": "0f56d40fa59be98b2296fe0f6e5ae43e2ea368a3205e650a84b4c14a1bb0e9a2"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_message_batch.py",
+      "sha256": "dd32c231c06ddf30411339f113fe0379526ec15f346e6e9ad5f4e4caa77c92e6"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_message_create_request.py",
+      "sha256": "a6111dc08377fd9be71f9fe523dc26226905809dffd16dc8ddaba8a544721f7c"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_message_param.py",
+      "sha256": "a7a46c23b80f3078fa0a661d3e845e26b1e2b676c3a9326f39608267a3709ca0"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_message.py",
+      "sha256": "618bf9d46177faf7dc67613e9273a5f53a8b846a86b138161da2a7034af84e45"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_thinking_config.py",
+      "sha256": "3b4a08e97fbefcafe354ca1e698cfc80d823f7cca94d33120d90d4e09df774c0"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_tool_choice.py",
+      "sha256": "44cfa058f851275559b557dc48fcbe612b87fd8c6f8fa0212b0048d29ad2db94"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_tool.py",
+      "sha256": "837b8406271c5d03feaff8970ad9f33f195f7aa4227e21250df9a5077a2ee6fe"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/anthropic_usage.py",
+      "sha256": "af956eaf533ae2bf4d77e627ee856f097f876410dd22741456744e813f55cb1b"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/create_completion_choice.py",
+      "sha256": "94468a226a5af45932e8d7a5c917283c66e0443559e4f2ec58244cc79f54b814"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/create_completion_logprobs.py",
+      "sha256": "69bab73ab331e39bf21f71eea58a4239671bc8df934236c930036ff237fb290f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/delete_result.py",
+      "sha256": "a51f2b841a21de0e825eace785bd13a79bb368db52dc89d864b4cbce77bf3c05"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/get_organization_audio_speeches_usage_item.py",
+      "sha256": "a9654ce5a4c9cb66454e2787da87abfd3ba12f384dc690d9bb7234241778982e"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/get_organization_audio_transcriptions_usage_item.py",
+      "sha256": "57d88e522e9ce2bcae03a0c96f404fb36b65ea1bbfc9c6d873e01e7228273071"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/get_organization_code_interpreter_sessions_usage_item.py",
+      "sha256": "938e3b3c102c6418df740a7eb79dffc065b42c6c32283b1b53ab92adf3d43961"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/get_organization_completions_usage_item.py",
+      "sha256": "0e146e5aa4997f6a0df798c98f0b5d987c135ac2e9fb928969385cae38d9c308"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/get_organization_costs_item.py",
+      "sha256": "5da83f195f8c1bbcf3b2b890cc5ad1febd2fd8e11d4642307bc3879331ca68b5"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/get_organization_embeddings_usage_item.py",
+      "sha256": "4756f37847e168b6340529cfadaa2f5128a1ea92691808b5a85b8dc1461cda0f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/get_organization_images_usage_item.py",
+      "sha256": "12bf44d475c775596192033453c4a7801d39059abafcbc416010b5e26d443b65"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/get_organization_moderations_usage_item.py",
+      "sha256": "af9eac9de5e7decb582e39b3d1b9f1f69902063bc8624d94d0de063d72864e19"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/get_organization_vector_stores_usage_item.py",
+      "sha256": "e176981618a1600d4f208a06f507bc8236fbfa46929c5982a631b124c603b7bf"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_batch_embed_contents_request.py",
+      "sha256": "cefda12e75fdc64057ec108847db81e55896140617c510fd276c1da25695059a"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_batch_embed_contents_response.py",
+      "sha256": "b5b924433ca3fae7e2d777859813dbc0fff296439e9750f2d05de483fd6f19d7"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_blob.py",
+      "sha256": "00eb378c46c94f46293ce018b4edc74e176f4983dd7a8b70f33cd16037de0668"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_cached_content_create_request.py",
+      "sha256": "44846c7394a3a9d9f755d285e7d25db605e4e34eb14856940c5e45c1e652c8a9"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_cached_content_list_response.py",
+      "sha256": "d7a43407a9bfaf868080c1d36cb0c5e1a69d63266275af5b402db2dab2de7839"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_cached_content_usage_metadata.py",
+      "sha256": "dad771bcd18d0ac0cb09b6b553115ef5bd3b2b301925be454bbe167c94bf5ad4"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_cached_content.py",
+      "sha256": "30ea2296b553736163363e16e2baec134c8bcd417e40f9096a29b0acf5d3cefd"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_candidate.py",
+      "sha256": "51cdbf3d63855f7ae5957ac39d1e15c5122a1d4520436774e46fdd9a13fa726e"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_citation_metadata.py",
+      "sha256": "cf1cf0b0b773ba2f0aa2729cfb1f4d3aafd24d0980b1d5a03559cc2a4f54482e"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_citation_source.py",
+      "sha256": "6cb2940874789694032ebe0039976c4799545062171da295b219e3b7fc2c5792"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_code_execution_result.py",
+      "sha256": "de0aa8adff779d4783a6051dff8c0c1c80366de21f9a09946c8e3e63899c8310"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_code_execution_tool.py",
+      "sha256": "a49193e1af4c9e4b4ad59f4fe71e4ed6072f8334161aa8234b156f967f9fbfaf"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_content_embedding.py",
+      "sha256": "12dd1637fd3b4a492608edffaf23d455d196eae133faf464be8f77f333861767"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_content.py",
+      "sha256": "790fdc1d99c6c38bb5f3a0a9dd40c634cf8dd4163af04f33e85b4d27368721c0"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_count_tokens_request.py",
+      "sha256": "635a0c3bf5f8e4b7a9279b34f9336bf966e2e06f23830a23394473128c3e0076"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_count_tokens_response.py",
+      "sha256": "4bd01307ea4956ca39a64cd49d5acfd53797216731d7ec06198c820ebc5c4397"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_dynamic_retrieval_config.py",
+      "sha256": "0d775da8aabf102324ce113fa794c1a30125ac51f3c0adf589cc37286322bbc5"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_embed_content_request.py",
+      "sha256": "190558f59234b83b2a2fb8851bdd3d8df0bdd910be20983eb15c6559ef6c8c91"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_embed_content_response.py",
+      "sha256": "9401fb1fa85b0a2501b67c4be924e51ddd5d5bc6befb118d982292220f3a9b0b"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_empty_response.py",
+      "sha256": "d2a75b706adf823a232d6cc61f3b7651a497eaabbf7ed1f93ab1e287dd2680f5"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_executable_code.py",
+      "sha256": "1fb1011b0dcccab47dca25d538dd4be3a2eae504501b444ac004095663ed9398"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_file_data.py",
+      "sha256": "e019b4bd0203bd4f267aded810d44dc6e1357f8f0fb2d519da8f19567d6531e7"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_file_list_response.py",
+      "sha256": "9a378cd9ff3d282b096096518a83ad2fdc0719be89f5ec0120cc3869e92c9ac1"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_file_upload_multipart_request.py",
+      "sha256": "5a723a85b6c63d7aa1708c78e3373ddde5e5089d26a4fa36c83cad3b529f1604"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_file.py",
+      "sha256": "221ade30e2d3b8b6ac69da1b67e59a8af594ae6140ab7267faa28bcadc191a2e"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_function_call.py",
+      "sha256": "e11a1f01f292a47eca77782f717221daa24e1e8aee8c328d911d86477deef1e4"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_function_calling_config.py",
+      "sha256": "5a7d80d1911fc0f4759bb2bb32b7924d19ce8416206fe9cd3b77a9a594caacdb"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_function_declaration.py",
+      "sha256": "54b0cd022c8f6bb2e63938135e7a4a734f8b6f6f7f516ab83abf5298f0e08605"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_function_response.py",
+      "sha256": "896e8abe3c74f5c34ccfbf2bf4c820707f4e6c0baf266b556dfd21960bebf84f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_generate_content_request.py",
+      "sha256": "099c4522b6c6be725af9599f3fcd4f96a24b7816032f60ed7c32082688cef4ba"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_generate_content_response.py",
+      "sha256": "cd2a2f4bb6475240eabf3110920e6afd0f93993925fda848faa434bddf5136c8"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_generation_config.py",
+      "sha256": "210ab49145ccdf5883041e1e6e0b945c6abe741af6c0d4d49f027150cf49c0f8"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_part.py",
+      "sha256": "cf62276a8c2230bff13275c46389838206075f67f1e09473e24960df9903912b"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_prompt_feedback.py",
+      "sha256": "d0e1d302a0074dd29cb8994f33dbdadc6432f7820b8bf866c27e76a8945b0634"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_safety_rating.py",
+      "sha256": "d436b30fe551416323cd1355656972f5fd7a0d2cfd0cce0aa712185937f6e7bd"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_safety_setting.py",
+      "sha256": "749f87d5499784fc80ee2fb86658bc44c303eb330c8b46712be1ad4d79ae54d6"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_schema.py",
+      "sha256": "ad3caaad9f9e3cda2dfa68e061858eb4305f0e890b2851aa71e9887bb2b57855"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_search_tool.py",
+      "sha256": "56fcce9dd2df9fceb95908bc5c03181cf464974b7e1c45ba574959be292903a5"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_thinking_config.py",
+      "sha256": "025aeaebf71b9ac6442a1cc633e526a65e16f06fe44eefd5e5dcfc8502f159b0"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_tool_config.py",
+      "sha256": "cf76d45d2a8633559411f887bf9c72d7d8586ac25aaefcac3c90e8e1c342a69f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_tool.py",
+      "sha256": "33b692b25b85c91680d1d65dc4bd3db19c300c28c5fbf2424df25407919792e5"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_url_context_tool.py",
+      "sha256": "77059307b911ed31a25cd358467c84a447e1e986af64aa763fcb13ace3d55088"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/google_usage_metadata.py",
+      "sha256": "e3ef2ff30d7452f4d3506b885fa45ab4bd5aa6f0d8851e2d7df4fcd568f2e963"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/kling_video_generation_request.py",
+      "sha256": "b89896d2446052a59549f424f7eecfe1f87a13da38ad1b9f0aa031a11e1ff1dc"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/kling_video_generation_task.py",
+      "sha256": "35bf50b396c5ff2b25f6780a53f841e8f3490eddb0e694aa45015856e50cadc3"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_assistants_item.py",
+      "sha256": "18b00440d326f126cfe7430473fde6fe12e33e2b4e035adfee670dde56841dc9"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_batches_item.py",
+      "sha256": "e5d24ac788fadd154dad5fc62df6dc6c8d3c721ae28fab5c5244cf642a92388b"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_chat_completion_messages_item.py",
+      "sha256": "390b9dce764e8b36eab5419daa54a4c4047d8a2d9f4fd6e595282fc8465a9a67"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_chat_completions_item.py",
+      "sha256": "c827ad61369cb2ae488710f5b86a48de840c96f81fedd02d0c363aaead63e8ac"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_container_files_item.py",
+      "sha256": "9f465698f7501afec4b5e710bbf29938d8d36c96af5cd29057b8c8e0f20e37d7"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_containers_item.py",
+      "sha256": "341f82ae6f59156d4097f747daf557d95a8ed0d125630f1a416a4cc09ee0bd8b"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_eval_run_output_items_item.py",
+      "sha256": "92f12b044728dac0c36dfda7f5d6f45b09449f23995f4f3a3875143fa26c358e"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_eval_runs_item.py",
+      "sha256": "7d82a44299efc2008ed4e3f6d8bd56b4653a4aafb36b1ffc084c02ba10c40fb9"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_evals_item.py",
+      "sha256": "2e784b8c33128b4a8ed8b8802d83396692dd80e1d59488d88dad9b0cc30a6b20"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_files_item.py",
+      "sha256": "137fe600c58ca861cf9ce6c3fa060c93be1282e10773e480d110750419bd2108"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_fine_tuning_checkpoint_permissions_item.py",
+      "sha256": "5d128a48fb5e9e99916847a91ebf28207758a22db90434126f9db40b3b69a5f2"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_fine_tuning_job_checkpoints_item.py",
+      "sha256": "c8c55d52c305c3ecb4d48c43ea81c0b3dfb91bae1f5bff79f2b7d82d55bbf0c5"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_fine_tuning_job_events_item.py",
+      "sha256": "cb8cce7eab04731b6a2d4f89dd64de767233815da0593d9358b0ff3897a4cdba"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_fine_tuning_jobs_item.py",
+      "sha256": "274310867defc961632ae49108cc2c495ddb2231b93bd971a4b5302a254e8dd1"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_messages_item.py",
+      "sha256": "b541983c2e8d0a7ba0d90e2f966b781c8dffbd16726943108b1240ed927e1aa3"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_admin_api_keys_item.py",
+      "sha256": "67112652a4b79da1562fcac1f88e054539003704b243bbfe5f25d6388c55dde1"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_audit_logs_item.py",
+      "sha256": "c120a2f35bea43da2939e698084cc5744638b666eec4c07531f95162e46308f4"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_certificates_item.py",
+      "sha256": "73e5e317d335e66599d51b39276e79ce5e975da427703b5c1b45dc181bef8814"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_group_roles_item.py",
+      "sha256": "c389a83f546060099451cc056eaccd525c59e82811a3b3c2a48e3e358090aed9"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_group_users_item.py",
+      "sha256": "f07d41ae03443e1f188b56b0da5ecd8d0902bfe7f64b5b3aa39667d07a2481c8"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_groups_item.py",
+      "sha256": "cc035468d56001c464ae01b3071ee0ee2269e38d1ac83d97c3ecbc9e44335ad1"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_invites_item.py",
+      "sha256": "dd02c6695fb87a01e84609069922a5f428785cbe90e25ed76bb3e83b27ce9d14"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_projects_item.py",
+      "sha256": "abf71e3fd316e25a415424e1362b5befb2262ee6b4d1a5548c0246df4363b2c7"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_roles_item.py",
+      "sha256": "d7ca1efa9dc109fe283bb02802cd40d502eb5dd2ea1d78302c255f795994541d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_user_roles_item.py",
+      "sha256": "9071c1cd3208241fd8d2a6d44e6bfd4c9e23a503e6160d7de873c1f5e3bf743f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_users_item.py",
+      "sha256": "f13d826b68a0d1084f28daf5a23ab14a58c562a376fe5f3db8317cde68ab04df"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_project_api_keys_item.py",
+      "sha256": "16de08b3d0b39a484afe3b747cbaec309c4c62f2c59d0ef9b91b113e79fa0abd"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_project_certificates_item.py",
+      "sha256": "f1f4462bcaaf850b96424cdb5b50a67e9280e659ab6b817004cb4a6941bf514c"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_project_group_roles_item.py",
+      "sha256": "9b9d41d3f06155d81773e7da1e8d8f5b8dac922825f199c1535b6a447489c77b"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_project_groups_item.py",
+      "sha256": "4cee554addebbb0aec302d79920193e0f80bb5201cf695f4e256a30e3204eeed"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_project_rate_limits_item.py",
+      "sha256": "094d731815d9b9d034afac8370b9a18dbf5499e3874bbc273f7112ab2223dfe4"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_project_roles_item.py",
+      "sha256": "a65444a2c0e6abe44df275eee98a2591489bbd7a65d8ed1de8e576bf9480442f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_project_service_accounts_item.py",
+      "sha256": "232349a3ba33c07e68640b54793783088143830a8837ecd55af402a3aaf53224"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_project_user_roles_item.py",
+      "sha256": "bebf7a156b80289535dd869ee3c691758cdf2c90aece9b5dc03bb508d2990723"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_project_users_item.py",
+      "sha256": "6e9b9bb369f983c420f9dc09f6a3ba051f0ab6ced5b5d93cfecc598395cbb66a"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_response_input_items_item.py",
+      "sha256": "667541e3a7ea7c38e196a9843cb3697372df8d831fc68ea2597cad0377ace1f8"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_run_steps_item.py",
+      "sha256": "63ad07b31268dc42ce557caac206f5d8f5b9909de02fa3f63c7966bb63deb05f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_runs_item.py",
+      "sha256": "a395b3f34cfb976de892d40c677b70b712d4a43e0399783ca116ab336b6d9814"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_skill_versions_item.py",
+      "sha256": "0f141bd2c9c9798269189de0fb2961a64fe1caaf45a601764d02d71affb91f86"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_skills_item.py",
+      "sha256": "ac08c5446a9d0139d579645873ce6c80292307dcaf702a845fc228e3dd6bf5ad"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_vector_store_file_batch_files_item.py",
+      "sha256": "542475141e2a81261bd2252b0b3f5afe8431829ba087d3434f7e1f2765b0339c"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_vector_store_files_item.py",
+      "sha256": "9c97b5c7b1b14414a99cca52556281d8b4d9c07a98f712ff70dc9995763aae7f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_vector_stores_item.py",
+      "sha256": "30c26004b1e523ec816a069c126b84a526091cb4e21f1667495b398aed9647fb"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_videos_item.py",
+      "sha256": "11cb9fcd6d46245f7280fb63d341b338c2dad10934c65865dbcc291070463a36"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_voice_consents_item.py",
+      "sha256": "ea30109610bcc8622611a352934368ed61c6e0cc33245bea8f89fdc2ca80cc7c"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/list_voices_item.py",
+      "sha256": "bb8a55fcef48c9c6afe86624712744ec81867b90833e2787955bf78a29c698a1"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/midjourney_image_generation_request.py",
+      "sha256": "6323ffcb4921d846743f3e2c52d35f34b33c2eb2207bb31f620792da675df05a"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/midjourney_image_generation_task.py",
+      "sha256": "3678c7ff0a8e090e28cd46205e0ebd47e942a0b61dfcd2cb0d7e33a14937a21c"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/nano_banana_image_generation_request.py",
+      "sha256": "b37f074e9974cd5d2de130d9170d49defe99eb7dc7b37c2973f0815b1696471d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/nano_banana_image_generation_task.py",
+      "sha256": "c0d4422d37192eb706b846b20b46de4b51c446294defb4de961c2c1eb397852e"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_annotation.py",
+      "sha256": "16843f6d82aca84d52369b734d68139c7150fbb7df45c107ae0cc1d7b34ea019"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_assistant_create_request.py",
+      "sha256": "252e07b71c360855ba163eb5db5312de21be319549fa091ed42a03802f01d2ac"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_assistant_list.py",
+      "sha256": "bcd677d4a1a82125ee1cf8330fbab3db8678fa9980dc1b84af6b079615d6de74"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_assistant_update_request.py",
+      "sha256": "50a53f017be16554a1640393092be116902e3f16ba39e1c5a72a34c0ad054d0e"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_assistant.py",
+      "sha256": "3aae01c684423803cbb10563c65145302ab78f8cea4d1d4157e5fde605848b6f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_audio_transcription_multipart_request.py",
+      "sha256": "c16e32c5805a867720a7a75cd2c622ac8bf38368d8805fa3c01fe906bc6dd65e"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_audio_transcription_request.py",
+      "sha256": "8e41cfa61ae1c287a046f5ac1b0996c726dc7b2ed1d220bdf2e3f4f74294be96"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_audio_transcription.py",
+      "sha256": "e52fbe65c0f13e54aa6b9034b1b446691ffe4e3a370698c9ee7b388c43788e22"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_audio_translation_multipart_request.py",
+      "sha256": "538bd10572c969c02bc07435bb759648627c31091aa8a6b24f0cb1b1e0bf2eaf"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_audio_translation_request.py",
+      "sha256": "da174bf01faa95f0f91219a490f6e6e16555c00fc60932474c500ac4b0c4eced"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_audio_translation.py",
+      "sha256": "fe9fa7fab9caea7ff65abd0b36bae2c3c1eef8b47b5d112960642a5610977273"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_batch_create_request.py",
+      "sha256": "218c2dbb41ebf518cc8e7dced318b74a200f8e47be8d330f6a937b17cbb158d3"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_batch_list.py",
+      "sha256": "59b704892232c7b93b83cdefc6892b20d0f34cb9f52df487c6a938dcb058e112"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_batch_request_counts.py",
+      "sha256": "ec02adfeaede663381cdced6fc5216686bdb8e2455c341a8bdacf84531745181"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_batch.py",
+      "sha256": "04c07fe98ef2523a5384f78276a80dc2512efc2567eb644e13ad9a30cd957f37"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_certificate_activation_request.py",
+      "sha256": "660238186e81d6f7d500e46d7c2cf87ae264f5d9b1af3206c03053829db8b0cb"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_certificate_list.py",
+      "sha256": "b7e50df64ba01e5f829bcc4ee402d9199e36928da746c79fe49dd2f93a6a40c4"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_certificate_upload_multipart_request.py",
+      "sha256": "975ea7a1e59c809dea19715f9ba614f61c60653c8b6adb5806a76873fad2b72e"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_certificate.py",
+      "sha256": "a06bc027fd2e5f8dfbeec6fd6a12c5231e4c9f944f68a7568efbcf0c714c0391"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_chat_audio_config.py",
+      "sha256": "01bfad64753a0421de785de45cfee6c676f5373334affb69da4cfde687e39341"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_chat_completion_choice.py",
+      "sha256": "4b4c3c64ee48a237ea05f5f70e17c716e2efa034ae4950de30cc560d593249c1"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_chat_completion_list.py",
+      "sha256": "d7c33a920956faf65919ffb67e81d61ed0b78cd9d55183b4917e5de1952e8415"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_chat_completion_message_list.py",
+      "sha256": "fe602e3a5de2c2baf862c4d4fac8e3abf2599b54da1b7c73c5d0252d53d050d1"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_chat_completion_request.py",
+      "sha256": "8045fb74a02f38b2f0a9c0cbb336d82903220dcd52d30d032615c37c8eef30c7"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_chat_completion_update_request.py",
+      "sha256": "05451bd54d6167b95c970ed112a56d3a23052740558cb71ccc75a13bca1e220b"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_chat_completion.py",
+      "sha256": "8a615b87bed936d10288aa3fda67a250cc7364ecfb75ace344faec08a3957cd7"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_chat_content_part.py",
+      "sha256": "52f391e512218ebcf329dc542bf27106196ff0550d56f06be3e5b53494190b5d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_chat_file.py",
+      "sha256": "fae65034ffbaef378cad7e88761c347365a518aa86cfad77c74aa6bcf9e7e9ed"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_chat_image_url.py",
+      "sha256": "27df95d47553f462d6d0ab4b3f843ebf7e77d1a73e79751ea6bca6433359e4c6"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_chat_input_audio.py",
+      "sha256": "253d85dc93de0aaed1befe4b38c61d1060384de54291c790f5fe701836d08586"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_chat_message.py",
+      "sha256": "aad1b6af36b3e579d497cbdc25a86d41b3a460a77b1f90b822e765749f6cfcf3"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_choice_logprobs.py",
+      "sha256": "2a3f2616387df63dc0f3afbf51cf2cd6e09bfecb4ecb317c426e4eff62b2c4ac"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_completion_create_request.py",
+      "sha256": "7eb92f56b1d9c937007f65eb462d9d4dbd1a943ce5b9249ebe0132ed28ab82d0"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_completion_tokens_details.py",
+      "sha256": "aa90a18350c1103759e3ca3ee8c0b3e2902a30f044c0055313d912a7837faf43"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_completion.py",
+      "sha256": "4ad172e3459eac61bffafcc70253fc8b784937eb49af32eff5f275846364d2c4"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_container_create_request.py",
+      "sha256": "889cfc2e319ad84fa1ebb23e761236a4a5b22e5f3d46ab6b60ddec7363b5d4ba"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_container_file_create_multipart_request.py",
+      "sha256": "f7f60a1278dbb05c526b70db90939be6cf3c0535a95812a990ad25ac1ab26054"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_container_file_list.py",
+      "sha256": "5008ca57c38fff888fd92cbc165d948d33b60ac9e75c5346c0aadcc212b9131c"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_container_file.py",
+      "sha256": "ba8c3e3c327e04083d77eccd2ee99d7ca530899324706fcd7440d4c322a253af"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_container_list.py",
+      "sha256": "30c9533210505735e531e6906d014556753e8f60b5300e9f1a8544c1a9006815"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_container.py",
+      "sha256": "8a8ae5ef7112f42118f9b29a712e2add7874d92f145ed05244a4e47da25903f4"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_conversation_content_part.py",
+      "sha256": "0fd2f7e0fa140d788621abea848b3fa1cd9878a53cc7740f193ee227edb8bf82"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_conversation_create_request.py",
+      "sha256": "547f7c01e2d4127a4fab19b647d7f1ce21a82559c9da2b36d5e8d9e9642b3681"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_conversation_item_create_request.py",
+      "sha256": "2d154a5e004352a1769adcb1feea9925f16245ce217b5ab9d8a0b6c8c43ab9d8"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_conversation_item_list.py",
+      "sha256": "baa47c9e891ef525e81c859dd04b3a350e6c0b13b534e9244bd6b957e96a16da"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_conversation_item.py",
+      "sha256": "6977145f0f0c9c2b09b3f97193bed264b4f8b54ded92384559dbf057a47bba53"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_conversation_list.py",
+      "sha256": "10ac718104b614990a958253aa29e29528087df9d32b9b256f24ed849c19d64b"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_conversation_reference.py",
+      "sha256": "ad50f84563c45f5239399cb5912e0c8913d92ba8ff2bcf3cb8f5726341be3825"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_conversation_update_request.py",
+      "sha256": "027e6e709439725ab443314ac0e17537d7528b8f2d3df6e1baf78f9c24a6b5b9"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_conversation.py",
+      "sha256": "96ba2f4d51e5e6d4291e72cd527152990846fa789831bba4fa7f790d09303de9"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_embedding_list.py",
+      "sha256": "e6b3c2bb3632b266de194c5671438a7c3f9684a2fd1f29013eb8bdc1e294c577"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_embedding_usage.py",
+      "sha256": "b47d907f694f3435458008e9ffa9a6f42a5db0a0ea0151cc592a04ca19ddd389"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_embedding.py",
+      "sha256": "0af252768ae084c0791e44d4b769dc7c6d8ff0f5b77fcc259bf3a70f22ee56eb"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_embeddings_request.py",
+      "sha256": "e7ec69290a196164afad4f16c9e79adbd5448bf60aa8c253321faaa62d8bcef6"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_error_envelope.py",
+      "sha256": "e094670271cb6b50afb5066371794e0817b5d2923c06c884f941f93ca7d424ed"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_error.py",
+      "sha256": "220d13054d1e8f59a816c5f968a9d4af970c68fc9de337599539b6adf4ad3d37"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval_create_request.py",
+      "sha256": "673cecaf8ceed0a0cf5557938f6533398add44e46ff556b061eed9ed67466eb0"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval_list.py",
+      "sha256": "f506946782171e909071538003c8c8989e0e67b7e8cbd5edbc68c4280f450033"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval_run_create_request.py",
+      "sha256": "902ec466a4387e661a4a6c142f69550f9dce6bc8a58c13eb5417ee68cac70550"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval_run_list.py",
+      "sha256": "f6baad213178978ce99f14e9edf9f5a03cbf7ae9142368a93eac8cfe7b719e3f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval_run_output_item_list.py",
+      "sha256": "761afa10646e3ad37ea6d651e84d041b334224e7579a3a672617f914cd36d6f9"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval_run_output_item.py",
+      "sha256": "c1789165974051a52bb8e6dc9630f0e07ed012e20e4fe13b82858a63bf22aadc"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval_run_result_counts.py",
+      "sha256": "54e2931bcd3f51aeca3d9c4848f4e99b588065bc9872c5eafc9e579de2a22739"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval_run.py",
+      "sha256": "919027f7d92faf3f97bb159139e1f6d9a53a92a3a19abb2b43c1d8600d39e929"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval_update_request.py",
+      "sha256": "8fc3d1dffb63c4f1bd65966c846f93eab4b758415c9121e9104e6bb42450146f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval.py",
+      "sha256": "e2341274fb08b6613b4bf00e72574243c1a0101f8da0b7736fdc8ddd01bee299"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_file_list.py",
+      "sha256": "461e2cb55b8d2fe26746b7a7aa44dde7bd2d5b7386d99baaebd7c095e83d9211"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_file_reference_input.py",
+      "sha256": "5bb15f92fd616cb7885df1757e0703628f0ce213f3a58ae78358bc096c939c33"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_file_reference_object.py",
+      "sha256": "d538b87fb75e95cae101b067e1826b727c2aab9bd9c9c4ffad38e71f4a2a9f10"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_file_upload_request.py",
+      "sha256": "cc88dbd7072301cba73cb78ee01b8145cab44eac9d38d3cc2a7f000ea5f47d4a"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_file.py",
+      "sha256": "efce0a9118ff8d981b7d97c757ad3f6abb754097922ee91e2e9b02741b1b8843"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_checkpoint_permission_create_request.py",
+      "sha256": "59ea0559f65133a30684f17d429b0623a625fa8b9d93a2923919f43e16f7ab78"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_checkpoint_permission_list.py",
+      "sha256": "38c977eaa848a994de46c01e436e395e22869fe72ba7a8385745c53070351d33"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_checkpoint_permission.py",
+      "sha256": "d36d16ea0ae541a47fd531320fdd5adaa39bc30be81921b54b120e402c4fdeb1"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_grader_run_request.py",
+      "sha256": "ea0c38bad90f754337eebeac4d18849584953409e2a051740e5aa0c8e0dbca23"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_grader_run_result.py",
+      "sha256": "aacfc6a34f090e1ec2e7f6588169eab8bfdd07f305e3bd8d2ff49b36ff7d8af4"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_grader_validate_request.py",
+      "sha256": "ca174164b1e644b980bb644a860f1a5e2674deb71130e2e4677885581da061e9"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_grader_validation_result.py",
+      "sha256": "49dfbc23739197e7ac6b1c5c3ded92d1888267521bd5fd9442dd638733a7b6a7"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_job_checkpoint_list.py",
+      "sha256": "22431e84e960c4f7e28dbb68b758fbca3ae3cbfcae208d1d89a043b226c60152"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_job_checkpoint.py",
+      "sha256": "6d94a8cad9659aae0e8accdd04ac4f4a89c0dbb7694a1f9d517c7131ff06ea6a"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_job_create_request.py",
+      "sha256": "885f68e68dbcf0f085875d2d2268c0a82131b15a0b323f297fe2a837d0878364"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_job_event_list.py",
+      "sha256": "b716e037344dfa917c9f29a2d717ad0d40f3d71ad7a85f41c4dd039c758646d7"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_job_event.py",
+      "sha256": "fe8af9cfd3753bcd8350e5b24552efc337f3ef204138d5df61bbab681ef057e0"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_job_list.py",
+      "sha256": "9caeb4c68046f44783ca38e87c056f3c83396da270d7fe584e11061de4f0b2ed"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_job.py",
+      "sha256": "adb9f0e5d508b281c6c4836487465a4b0d6e6626b7609bf1e3302dfe7b97de2f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_function_call_choice.py",
+      "sha256": "43294d69db44755cf52c0cd6f9874d32679fb4a55c3ce5495f8abb67a8b6de9b"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_function_call.py",
+      "sha256": "9168ba09fb9f4f66c5f87feb61f213884f9e7dc693854b91ceedd374f409f86d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_function_definition.py",
+      "sha256": "fdb303280e33f85346467147ec5705ccffc3757c2c2d0286d3740d4bfd4551e5"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_image_edit_multipart_request.py",
+      "sha256": "28ace4aa11640fa7537d74743dca5b637d42afacc565dd0bd887dea177d941ba"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_image_edit_request.py",
+      "sha256": "a4546375586e9b0a0e4695237d2fd72c1f384b0d265e7ec3df4ad32ea59a83de"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_image_generation_request.py",
+      "sha256": "51bc76c68a808c685054c059832bf3d282c0049be0cbab80df028081f9db56f8"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_image_list.py",
+      "sha256": "b006884b7e5d12277d2ef6b96ad7044174d93fa8938decc885d131f907596569"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_image_reference_input_list.py",
+      "sha256": "20ed291c95f9efd33b9a06d391e4b3e5ec7e16cd53dc4e696f6606cbabe2c6e8"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_image_reference_input.py",
+      "sha256": "840b3de140c10c68406ed449a9b645deb7cb24c3e084178d43d48506cd05b634"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_image_reference_object.py",
+      "sha256": "9f01ae203e8976fec392c44910b67f00ebdc9aa190aa8bafbceb771a21b81072"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_image_variation_multipart_request.py",
+      "sha256": "498e68367b8abca87db1af63e8b79cb4477b79208c7f075e2e9c262a87298159"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_image_variation_request.py",
+      "sha256": "aa45e9c9c333854be3f9e5181fa8ea9030c12f6c924196c8bb28776a15f78ad1"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_image.py",
+      "sha256": "1397541d5f47c8caca14d90bc9177d09044039cb59f59b3697b2fabfe6a84088"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_incomplete_details.py",
+      "sha256": "a5e3efef47c7bb0a0160f1a794d0a213f46d4bca5144c9d22a96710d2b2fba94"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_json_schema_format.py",
+      "sha256": "8f8d2cc7f26ff67a7827e85964d836f78b425306a050534c9e010412cdd65d1e"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_json_schema.py",
+      "sha256": "414b40513500a108d69430cd83845787f449a3077c4541f6bd4bc71b28343e38"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_model_list.py",
+      "sha256": "3e31d9186030e4cbf02aad6d976c3492f7109bc12c47ff26ba81685816942b85"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_model.py",
+      "sha256": "d431aa531bbb5a82682aa4705552da16ba28fc9a51f73c8411ddac472fd7481d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_moderation_create_request.py",
+      "sha256": "7caa1d0eaa846a74fad6d1a34e4f5eea1c68f8b1d45172ecca1142bd1e4e3ab1"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_moderation_result.py",
+      "sha256": "3983daeed71a38c75571735bcbd213a002f49ab60908b15f0b785d0b4164a88a"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_moderation.py",
+      "sha256": "2ce6ee9c20dd0821b6e0fae76e5cddf77057de6b2df24d95c5da2eeef256ae2b"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_named_function_choice.py",
+      "sha256": "b94f9f511e7a226e9f3fb856051515c463b8bd37a672618b2b2315c5bfcb0140"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_named_tool_choice_function.py",
+      "sha256": "02e245bb59a38e5f342c5b6f57ab361220eff794496b4b06383fb19e926992dd"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_named_tool_choice.py",
+      "sha256": "851394125e367de0e23c12fa9d042a8574abccb98ad2f3ef8f0ccd2790c9851a"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_admin_api_key_create_request.py",
+      "sha256": "5dccbb37b9e6b04b92368fa018c70b5b7abaa03e9cc43201a463ef37be6fc8e0"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_admin_api_key_list.py",
+      "sha256": "6e57bffe8ca2f7f5e9a05ca4fb81483e5007d8655e98ede32f54f8585111f2d0"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_admin_api_key.py",
+      "sha256": "32ec1c4916d913b810027d6725889392cec7baa1b27d2e0f5c182b89787ff042"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_audit_log_list.py",
+      "sha256": "2579ff4b8386a46d89f1f13dda0d36b5dd6521bf78fe294d014b40685ef57093"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_audit_log.py",
+      "sha256": "ae312f4e9f2f4923a904d294e82b1690d8043f8d7f2b2ee537c58ce20c8ec7b6"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_cost_bucket.py",
+      "sha256": "d9eeac5c9558013197a887ffe0aa4840a0c06cbd7128ff26f8ed842267646e26"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_cost_list.py",
+      "sha256": "34c183b066cb7594380e68a766ea51825eef79bec3b34fe2abb368c7fb008761"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_group_create_request.py",
+      "sha256": "3c998ae3f80d3ec4599b416b19126917fedd16fa86547d4cdaaee88390c04c4d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_group_list.py",
+      "sha256": "c3e8d7d0bfc8d0d71e29c8962782ec454611aeb6701c87a98300bba344dd844b"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_group_update_request.py",
+      "sha256": "a5c80fec1cca9ef168c7491172c6e1308534e76b94c2bfff9624c5343fee1c0c"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_group_user_create_request.py",
+      "sha256": "1406db7e2967333794f75c789b1410e23dbca6eded2cfe3f2ad41cd29640222f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_group.py",
+      "sha256": "999e66620535fa7907d64180a81f05a24b73a1a709a65a705d9ac9c01754c50d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_invite_create_request.py",
+      "sha256": "e57b91157b66d150dae113f36a4ebc014c290373ba99f7e0e4d7921e4e4044f3"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_invite_list.py",
+      "sha256": "b3beae5f30dc4b87aab53987dcacd5b49165b52ab2148eef79b0957f2dd527a6"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_invite.py",
+      "sha256": "e40ce9fb35c8b07fae09c917278753a4def8d9cf0cbcbd153ef322bc08cd5ae1"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_usage_bucket.py",
+      "sha256": "2a2f4b646c30208e45c634591230e332fe3319b777a0ec886011cd79570e0425"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_usage_list.py",
+      "sha256": "4dad1356d3b559e8e1db5c7377e36725500043773e51ac64fd027c69a7ad7657"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_user_list.py",
+      "sha256": "f8c529a3f6fa6807b5282cb84090bb84b03fd560115d189e97e289d52e954bba"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_user_update_request.py",
+      "sha256": "53141ded6aafb04195d13425634c9c9d0a0587d6e4b2b0f11f5e5c8606c4ca6c"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_user.py",
+      "sha256": "b87c2462befa5b8a3735775be15a4bbb97ac9471029db3ce9ec3bdbbdcad09fe"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_prediction_config.py",
+      "sha256": "40841be0364a35daf88944719a1e31d8e084fa1d4c405bb64cf39d68cc01e5d2"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_api_key_list.py",
+      "sha256": "6c8a16ba7e1a271f686782cc1124c354066ccdf05f0a0f173a620f0f517a3f3f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_api_key.py",
+      "sha256": "e637087f6ca83dc817ca6729aa3d88ebabb21875d5d07befa847f17ac255fb31"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_create_request.py",
+      "sha256": "ddad01960fb30b7bedcf69186a51719fcc27fb34af7f3ae1919085cb1d18b4d5"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_group_create_request.py",
+      "sha256": "85af11b985e0d1422ca17dc8338f796889ffe381116e1aeadadbbc9ad971375c"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_list.py",
+      "sha256": "0c3337e321493b90448e5b3b299ecf9563d34ee94a13f1515028b61254ec1910"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_rate_limit_list.py",
+      "sha256": "db2cead695534c45f845728d6f022e4b5a66ecc70ddc37486b8ce57d3aa85d3c"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_rate_limit_update_request.py",
+      "sha256": "c7abf4a98ac7ef29ef2f8ab1dddd5e9a4ed399cac7a6c66a9db7ca7415890d0f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_rate_limit.py",
+      "sha256": "b34ffad173f7696e6001356f42f89145c2cc45ccca39953f2f82b0b76f4bb9ae"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_service_account_create_request.py",
+      "sha256": "ac8139acc58ad28ca19684814f1575a96b6004c47a2df8ca0803db4a023a4d85"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_service_account_list.py",
+      "sha256": "ef18f9efecb818778d3701e907aa8832ceaa050aad8af81b8b8bc1f51717997d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_service_account.py",
+      "sha256": "de3f729dfddee6bd8de54c7aa3b0528f9bf431f8278713f4f360ff0180882093"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_update_request.py",
+      "sha256": "7b0d2f4431ebd59912bde719d70dc17d402ba0a7cb706843a48636ba88bd8377"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_user_create_request.py",
+      "sha256": "1e224cf637bfbce758d5da24d9971b7781251134b986f45e660f655ec2589648"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_user_list.py",
+      "sha256": "0c8d66bd50135c993d38b25cfe9b8721f5eda5204b0526e81af2928f2f1b92e5"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_user_update_request.py",
+      "sha256": "272bbe3ead239ae1e1a4cf001bda4cae0f50ea40e2e09c5189a575018c4f4757"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_user.py",
+      "sha256": "74bb7d88d346db1b867dfd3b75c0afef88086b847f2d6178520bd168cc2587a5"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project.py",
+      "sha256": "8e2e3516750698156d5c0495094a2ed96c7c196c074b239d70faee243ddeb769"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_prompt_reference.py",
+      "sha256": "5da26dfd107b43699cd9bb2cba6a3e9648f078ed06199971a12d58b7db1f6de4"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_prompt_tokens_details.py",
+      "sha256": "904c890da91cefb53fdf9dfc5c75121b50e348b70905ea8ba5e183eb70356f41"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_realtime_call_action_request.py",
+      "sha256": "f4872b5797c4b605c8ccc3d860813d677fb668197fc1a2ab1584c3b9458959a5"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_realtime_call_create_request.py",
+      "sha256": "e3d0c89e6b95031c9154a7a5bdff449f9a36c6425269a08f2a8cab8d73c20a7f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_realtime_call_multipart_request.py",
+      "sha256": "4511aa0217c2398ce2ef4f35e6e212458f60803ea4e056500ad3bab2b2df9a90"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_realtime_call_refer_request.py",
+      "sha256": "f2a2f93c0c6c5cb9af60b4c408c90e739e4150cf0dd5d4cd13d839f0f94e9d11"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_realtime_call.py",
+      "sha256": "69512ed8b3734878a9575381f67665862bf2f764b529ba1e5cb7842befc536e3"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_realtime_client_secret_create_request.py",
+      "sha256": "7549696fc3a8bbc6c80ac955ca2e291211005e42f3d6fa4507268b2d7bb1f5f1"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_realtime_client_secret_value.py",
+      "sha256": "9eaaab6961340b4ac9292a7d0f89fd0834a9c32c0d3fb42e7cc56c9312b58a7b"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_realtime_client_secret.py",
+      "sha256": "a6f6f642e6ee43428885c97937e06c5392a18f5353eb26996eaff42d016c19de"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_realtime_session_create_request.py",
+      "sha256": "48893a70681f9dea2ff239f198b881a8635b9a468d283a0c380cd3d30b1b1bfc"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_realtime_session.py",
+      "sha256": "e68c5f562a7c59dad9ee8059e3586b7005b38d32e82822d1db54fd6ea1f8a626"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_realtime_transcription_session_create_request.py",
+      "sha256": "5ca3a59d6dc05d4d55394cf6acb2fe31fee0d6f7cd654bbd074ae12253904575"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_realtime_transcription_session.py",
+      "sha256": "921abb74dac886655a7b0335b399df3e1af0c03053f8515e7ccc07b4450347fb"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_realtime_translation_session_create_request.py",
+      "sha256": "836090b8fb53a54f4f64138b6543fc6e18eed02b717b964e4467777bf4614ffa"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_realtime_translation_session.py",
+      "sha256": "91dcb55ffd13f7000365eac88cc68bbb941fdf4910a94ab845e1eee618adf403"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_reasoning_config.py",
+      "sha256": "6aa0585fcf0c24587766ca886f7be34c2a43b55038dfd53a313974b259992293"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_response_compact_request.py",
+      "sha256": "f70dfd6fbe2a1f91e2efa8cecaf84c2e4b2268449e565e92a4b70d8c485cdfb5"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_response_error.py",
+      "sha256": "04b4b6dc0604c252482e1f9386a8105040b07d3978bcb59f89afe09366b1c396"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_response_format.py",
+      "sha256": "80577fcb28836cc166f46a369e6c0d8abee6d51f9d5c286f705d358ffafcf5b4"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_response_input_content_part.py",
+      "sha256": "60fe4a6f7b91794ed0acaab3e1efbc01ca27586d2107e065faea98b456515b5c"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_response_input_item_list.py",
+      "sha256": "26dbc6ff2f5dc01adc69842db2429f7692bad81cee91b980862cf0d2b7a3b9d9"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_response_input_item.py",
+      "sha256": "0c3972553fd19307a5ed83a5110777743c1cbe7e05ec4a84773c8231a98a374a"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_response_input_token_count_request.py",
+      "sha256": "59e8ca728d9319676ca310055f689aa1ea11063e0e3ac3d9ce5a97ecc83dac5e"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_response_input_token_count.py",
+      "sha256": "77c7d98eaa3a2840556762afa7c17067261effcab142f0c6b25a97bc52cf56fa"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_response_input_tokens_details.py",
+      "sha256": "6bec61873a983f85b6d8a9e4eea5acac952e0db862fbf0565784df496ad80458"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_response_output_content.py",
+      "sha256": "9f15b509387cb427e074458db164235ee29fce6f9add1e84bdccc9dc4c88f110"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_response_output_item.py",
+      "sha256": "297b3bf9179667b275e0b4b4dd2ac011c036587cec465ba7f08885cda83a0d17"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_response_output_tokens_details.py",
+      "sha256": "5b9b4b4db327ef837efade8b0876795e3e7359ccb070b7b9206ef0da9b6441ae"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_response_usage.py",
+      "sha256": "89fd399e314c7cc0f29f9139e173be0d0a8b8359de6afa988a7a0260d8f38e5d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_response.py",
+      "sha256": "da88737e56e0b99fd407669cab7873372a2fb2e83594cfa1a7ef81f9b2fdc560"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_responses_request.py",
+      "sha256": "c4b778ff0115dae187ff045ec8e938c0bfb8d8e3fed0f387a6a6329fd34ea449"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_role_assignment_create_request.py",
+      "sha256": "d876f962a4f03cd5fdd3912f9f7c5ec6459a8b9432f8fa0ea2021500df1c9eb7"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_role_assignment_list.py",
+      "sha256": "a0f63170eeb0f345f8f9fe879db5ff11770150e922dd1af31685517e65f29f77"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_role_assignment.py",
+      "sha256": "10c77829c8ccd2dc00822578b67dce9cb71802afb1151bda5f07aae349ae4dd8"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_role_create_request.py",
+      "sha256": "95683e0b1620a59f9c8fe0047c682cc93ce09bee6b9d45bb075c8130e82eedf9"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_role_list.py",
+      "sha256": "504e8ea5617ef74b46a0d3471ad4d282c0ef3c18cfe4079b9912fe73dabece12"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_role_update_request.py",
+      "sha256": "d63b6f11bc65b593fdaddeadb46516d50ad88e593726e9484dbfc3ac15c7734f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_role.py",
+      "sha256": "0eb3e761f4c9415eaceb5b63c5d23d21d2f646b35370555c849f42eda9c042ac"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_run_create_request.py",
+      "sha256": "43c38cc3e9d7fcf15771dfdd297c0703faff7d18de0a1bc22bf6e6cc53b14cc1"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_run_list.py",
+      "sha256": "3d00274258e6994dcf44021cf66b6b93c5c6eae847774412d8af44675d133b54"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_run_step_list.py",
+      "sha256": "b13cd4de6c423434826636bdc77ca7cce31af77f0cda791dd09481f8a5287ee4"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_run_step.py",
+      "sha256": "e93bdf2ed7d786a2c6c5a7577f2552ba3432c2ab559774d35eae77e444761d68"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_run_submit_tool_outputs_request.py",
+      "sha256": "1e2bcd70e34cfc78d2560df1a129e54599011412ffd8fbeac3e3246736619367"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_run_update_request.py",
+      "sha256": "231e8f29b7bfae9e0e7e67b21be686a138f1767aff00bb3ffdd3211e48f6f352"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_run.py",
+      "sha256": "029e3c4c43bce05504b0d351249fa3510825cf3df2151bf20166df33ed8d9f82"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_skill_create_multipart_request.py",
+      "sha256": "606652b68b8a0cfcfcbefdf201ee8781ae64ea43206cbbf2e3e4eeb8d270d203"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_skill_list.py",
+      "sha256": "2549d90318793dc1761c840bab1eef20e7c73ddb34035a37a142c6291a791b33"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_skill_update_request.py",
+      "sha256": "13729c4f830038975070b764631415d2c30bcdb8923b609ba2c0c715f37fd66b"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_skill_version_create_multipart_request.py",
+      "sha256": "caebc960d02f5aa1d9288dfd6a0ca4acc0d96df9e3feb93aa89c2582095fce51"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_skill_version_list.py",
+      "sha256": "dd3e6cc74873066015d15f5996f8cfccb87edf8181fffaff025bcfa38c0d72d4"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_skill_version.py",
+      "sha256": "769e1f0f95bad4f3c1440f50bc9ad0af535edacd49724ef80726ccb216251d22"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_skill.py",
+      "sha256": "265d41a2c49550309d1c48e72baa2d63287b8f751ad1a99b9c46cb9a39e58524"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_speech_create_request.py",
+      "sha256": "011af4900317e6959b79d390e78f55d8c8e1cc7583e7940fec4ce72ebd31cf88"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_stream_options.py",
+      "sha256": "9b23a7789b9da867a2ec5fb1904dcee7ce614faa9d912a700db5090ef45952be"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_text_config.py",
+      "sha256": "d87f5ff504ceb82877f22552d14f1c8bf490e752c29093b8fcdb79064ae571ea"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_thread_and_run_create_request.py",
+      "sha256": "d91f876987bd61c7f74e92917d09401d0961889e1e8e18e6975cf8d2d7e63f7b"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_thread_create_request.py",
+      "sha256": "fde8198f59118e00d82fe00678026579c89859408fa542b0caea26fd5f3d16be"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_thread_message_create_request.py",
+      "sha256": "530b7fbfb369d26925ab3db6d902b7aacfd50c87cd5ecf70933788fe62b1828f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_thread_message_list.py",
+      "sha256": "d39eb1ff9bf1a0b674f3d5a00a40ce78416a50c9814fc4e2ccb615764cabed79"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_thread_message_update_request.py",
+      "sha256": "4e56ace8919d367c475a8c281d57bda16cc664d7ebd4fa661825d85c9f20a66e"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_thread_message.py",
+      "sha256": "56eb8b1dd614a1c045e7f214edda8f52f8c9eb7e76304921d22213ae6cc4c2a4"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_thread_update_request.py",
+      "sha256": "9af2808c2f357c0426a2e336bbd4d5ad2e4c4bbc0478a9a05830aefeadcfbdaa"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_thread.py",
+      "sha256": "4937d045b5ff5d0c6e9616d3c987a3fd24ed96a6f0f9bb0100968ce8c76a6130"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_token_logprob.py",
+      "sha256": "c6924ff87ceabd23db26b5cb2af95224f3287307637bf0925b8baacae0c7e732"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_token_usage.py",
+      "sha256": "949298c187f4b8240c16ea8dd625855cb96b2d596bc7b875e9273fc1cc1fd6e6"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_tool_call.py",
+      "sha256": "fa61b9dbb76b8a03ceb286c3587bb65c2e7ccbb1061ebe8e33afef4831f29ecd"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_tool_choice.py",
+      "sha256": "23acacca8cdca72757c032551e892fda5c0292c21b4166223733c41d289b627d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_tool.py",
+      "sha256": "02c8d5e225d12e254860681e7ba8195299feeaf3d25329531bfe3366b0bfbe03"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_top_logprob.py",
+      "sha256": "a95de89d08aeab98864ea08a18ff6cc6f9d82d04073438ef93e97ff1e68a1ab8"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_upload_complete_request.py",
+      "sha256": "71451205d2cfb5d4da87ccf8f8aa1695de2acfc4dd045180f4f06fa33f0d2c27"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_upload_create_request.py",
+      "sha256": "9cfec20c210e014b5add2711e2d7af5803927674776dfe6fe56e075e257670fd"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_upload_part_multipart_request.py",
+      "sha256": "5205f80355866fc08bb5bcca39861b38ff331b5c9075f7462ba74a2be4644ada"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_upload_part.py",
+      "sha256": "de122b4e0c762d3ca4dc5d1aae8d7d4c237332ed1a8230bddd9cbb5f1442564b"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_upload.py",
+      "sha256": "c41547a731293e859707851a37720fbfc8aba0c104c107f6f75576e40c3b4c16"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_vector_store_create_request.py",
+      "sha256": "e0c70c0c242a5d361eacbc49cac5f723c4cb15e5cdf30a0f9a8f5186db2d4885"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_vector_store_file_batch_create_request.py",
+      "sha256": "4d196b885d92f4e904e1372f6aeb82d84770a713fa98d337fde80a975c071767"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_vector_store_file_batch.py",
+      "sha256": "f20789d18b698847dc5d965e6f98e21e46097b78401d34a167690b7f769848e6"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_vector_store_file_counts.py",
+      "sha256": "2d1adff3f6f6bd56011c29494bff93f6fd496c909b6da2673f3c815f3c6f1f3c"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_vector_store_file_create_request.py",
+      "sha256": "6269dfba79d382cada37ce405768fffa487e831b222e237ab8d6dd2bc1b62592"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_vector_store_file_list.py",
+      "sha256": "8a58eaa6e319ab8a562369ad603cf8586fa567493f384eebf0b1e11149edcb1c"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_vector_store_file_update_request.py",
+      "sha256": "de35ce632772ca7a145f23716ec028a3e5439104a759d1939ca7239353dd6d61"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_vector_store_file.py",
+      "sha256": "762eddedf466277f3ebaaf9a51c0a2f323eaacf87ffddeb50db2634f8d2b8773"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_vector_store_list.py",
+      "sha256": "3c1a7548b8de24c331c5e0ae0a6d306290fc929fad547fa59f061b18abb3eeec"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_vector_store_search_request.py",
+      "sha256": "c25c0477c92ce41908c7aea035d400f57d54bf4dc76ab688e1283ca8ae63db97"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_vector_store_search_response.py",
+      "sha256": "ba79fa49fbf63a6798cff51f4d18997819272f00c50883a277c5ff5dbf0cde11"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_vector_store_search_result.py",
+      "sha256": "70a1655bf5c2bb6f32bd8cd35e11d8b21d7d33c127fac3262c3d4b21e643b772"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_vector_store_update_request.py",
+      "sha256": "002eaeac4c6a04eeae95687c576dc2797df43c2dd1cd68b9f34a2bd968d18704"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_vector_store.py",
+      "sha256": "bcc4802bce30a35503a505e9c688aa95454f17555b83fa8bf8ae4317ef1bff49"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_video_character_create_request.py",
+      "sha256": "85346343a0b6c57564b01a7494a60cc4442c8c7314618849f0826d3bf512b357"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_video_character_multipart_request.py",
+      "sha256": "b6f170bee7c8cc7b21d687ef61374293b80921a334cbcb458c770a623a673e7a"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_video_character.py",
+      "sha256": "4e2a7e05f09eeeee6675bfd3c3fb0791ce2ec5008b334b9296858b04e8e0d37f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_video_create_request.py",
+      "sha256": "29ad05e2380417ac8f54819a351faabd1bfe32aaa4cba616a8e68cfbe291c677"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_video_edit_request.py",
+      "sha256": "8b8ad1f73559fb9e28dc08b9332d2642190f1af3d6d4a114b14c146d9fa9c05f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_video_extend_request.py",
+      "sha256": "8fb8a09eae7b6e5551b152fd35eceba38f3c45985b57303e7e242882cb60554d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_video_list.py",
+      "sha256": "fed96915a34b1568a9cc24ef1f4902e53045817f2084494a13e27545b1d23121"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_video_remix_request.py",
+      "sha256": "ae9d32ffad0f11626011900b1652e8f2234ce78035672e95f97af5d7dab0f0c1"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_video.py",
+      "sha256": "9f61e5121e90e6ca0164098890a6fc7f35436c13ea806008b4df9d5d6561bd2c"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_voice_consent_create_request.py",
+      "sha256": "41ecdb84aac662021b55c33d126e5df767b7699995cb7f0f582837671d3192eb"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_voice_consent_list.py",
+      "sha256": "0cb28ec5fe7a557e7baffce80ee522b4f0f3fa041d2d1c59d4d48c189c562969"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_voice_consent_multipart_request.py",
+      "sha256": "1713947d0118e449c6eea4e7ee94036c42c1ea4afc5b16cce0a1d653cd85d3e0"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_voice_consent_update_request.py",
+      "sha256": "cd5eeab0ed8b3c0feaa8a5b57005584a9bcca1e43439bf5ef6d70392afb7af05"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_voice_consent.py",
+      "sha256": "9c1da2e49f80d7cce1fba49d7d597eeed166f1dece834fe6dbe6aa85ba43b0dc"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_voice_create_multipart_request.py",
+      "sha256": "8bc3b0e94943db6e38b7044d11c5a05a173339f1253c6918ce212c70f1a86604"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_voice_create_request.py",
+      "sha256": "eb4cdf6d7c4aff436ca36f96280543ca4a4ef2e2d472f1a048d9c1d1a5db8d4c"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_voice_list.py",
+      "sha256": "2406b8e92fa4912ab7d40bc73402940b91a908e9521500a6e051ed3531a414bb"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_voice.py",
+      "sha256": "947555d244e686df74a04f83bf27898ccbfd3a617379fc85651867f71ac76c57"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/provider_generated_media.py",
+      "sha256": "080d54273892f034263b69247c3c0b2decb999ab9a6bd1c51df9faf41adc3ab6"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/provider_json_schema.py",
+      "sha256": "e5d33173979eb48f03d3e03114245e98cb9acbcd8753d202c5ec3be46ec65b63"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/provider_task_error.py",
+      "sha256": "3f9b28badc5abee9bdcb39a94f59b7de0ae7f52e1b0321f616d8486836705fab"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/provider_task_result.py",
+      "sha256": "030572518c2318cdc07b7a0c52c2fb9cf57736037451c1b11e1a3b1b719eb18d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/suno_music_generation_request.py",
+      "sha256": "324ca53f1bfa04958dde663ef75864945c1f9d0e7e68a0b8cf004e531627e79a"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/suno_music_generation_response.py",
+      "sha256": "511fa432d35ff32f20a1598f6bc97e62d647fcbd3097fec05dfad9d777398d54"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/suno_music_generation_task_response.py",
+      "sha256": "cfa538ead42b6f429824e7324ff2743b738c62f6d0a565abee1426b481c4d7eb"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/suno_music_track.py",
+      "sha256": "f696b8a434e049a1224c71b15ec6a7c3c5eb63f9c579ad5c17dc760621a4c92d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/vidu_creation.py",
+      "sha256": "4caad5a1f70e7c3cf7421889cf0c94358143ba077ba0a7d1f14de15be8f40f98"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/vidu_image_generation_task.py",
+      "sha256": "d84084dbc3732d8e127d81c41dad07374cca6ed9ee01b84803cce974ed16ce4b"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/vidu_image_to_video_request.py",
+      "sha256": "805d6ad6cbac609b5813e521101d74c09d3064b7e2b37cedf72b26d91fc8063d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/vidu_reference_to_image_request.py",
+      "sha256": "61ed6d45f4ac69b41d0ac83353c0711ca9ceb56973ba3f9d6469f651aab898df"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/vidu_reference_to_video_request.py",
+      "sha256": "1f135ee1bbf767242b0c01bb57d6f747740359e79e55c79c6110846cec01a195"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/vidu_start_end_to_video_request.py",
+      "sha256": "a9879c0c39edde556f66d6d6a05c7efa690fec73e12441c22ec7e51ce8dfda8c"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/vidu_task_creations_response.py",
+      "sha256": "21f14f1afa665c7c3992c385066a981f584b2208f577886fe0bd9d3dca96871a"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/vidu_text_to_video_request.py",
+      "sha256": "913dae32a9d10bff060bb10d8ccf49f16da839a2fc63acae184f50bd3d271c93"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/vidu_video_generation_task.py",
+      "sha256": "e792779d54527ba869eef7b5466dc067806ee11daab686a8e9ce02b410d156f5"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/volcengine_content_generation_task_create_request.py",
+      "sha256": "18db2aa87aed98f182d60e8939f2255b7d990e11a570585cfc5a46e9441662b6"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/volcengine_content_generation_task_create_response.py",
+      "sha256": "43944f97536be9ee6e255ba27e3ee75d7f095633a1d6655567facfde7bf3dd4d"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/volcengine_content_generation_task.py",
+      "sha256": "4f168a17c3cdefdd7d8402f348e46e142f90f6b856e7d9f627a4bb63fe21b11f"
+    },
+    {
+      "path": "sdkwork_clawrouter_open_sdk/models/volcengine_content_part.py",
+      "sha256": "534fe6ff5de66b17f26ef80e32554f5bc005b33cf6b6c0341b3f96b37d6d216b"
+    },
+    {
+      "path": "sdkwork-sdk.json",
+      "sha256": "4aba770e79008f59ad91b9712096a29d5145007c30050715f3af51236cc027d8"
+    },
+    {
+      "path": "setup.py",
+      "sha256": "843ac26c38a41abae578250bc0f9419194b320a0f67327d941037a4268f6cfe7"
+    }
+  ],
+  "scaffoldFiles": [
+    "custom/README.md"
+  ],
+  "customRoots": [
+    "custom/"
+  ]
+}

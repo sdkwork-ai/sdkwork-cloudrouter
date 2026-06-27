@@ -1,0 +1,325 @@
+{
+  "kind": "ai-routing.resource-groups",
+  "items": [
+    {
+      "groupCode": "official.openai.full",
+      "groupName": "Official OpenAI Full API",
+      "groupType": "official",
+      "selectionMode": "all",
+      "description": "OpenAI official account resources covering model APIs, management APIs, media APIs, Codex, and realtime.",
+      "sortOrder": 100,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.openai"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.responses"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.chat_completions"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.conversations"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.completions"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.embeddings"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images.generations"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images.edits"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images.variations"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio.transcriptions"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio.translations"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio.speech"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.files"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.uploads"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.batches"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.fine_tuning"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.realtime"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.videos"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.models"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.moderations"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.assistants"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.threads"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.vector_stores"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.codex"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.evals"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.chatkit.sessions"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.containers"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.skills"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.administration"
+        }
+      ]
+    },
+    {
+      "groupCode": "official.gemini.full",
+      "groupName": "Official Gemini Full API",
+      "groupType": "official",
+      "selectionMode": "all",
+      "description": "Gemini official account resources including language, embedding, live, image, video, and Nano Banana image generation.",
+      "sortOrder": 110,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.gemini"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.generate_content"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.stream_generate_content"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.embed_content"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.live"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.nano_banana.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.video_generation"
+        }
+      ]
+    },
+    {
+      "groupCode": "official.anthropic.claude_code",
+      "groupName": "Official Claude Code",
+      "groupType": "official",
+      "selectionMode": "all",
+      "description": "Anthropic Claude Code session routing resources.",
+      "sortOrder": 120,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.anthropic"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.anthropic.claude_code"
+        }
+      ]
+    },
+    {
+      "groupCode": "official.kling.full",
+      "groupName": "Official Kling Full API",
+      "groupType": "official",
+      "selectionMode": "all",
+      "description": "Kling official account resources including text-to-video, image-to-video, image generation, and task query.",
+      "sortOrder": 130,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.kling"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.text_to_video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.image_to_video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.task_query"
+        }
+      ]
+    },
+    {
+      "groupCode": "official.jimeng.full",
+      "groupName": "Official Jimeng Full API",
+      "groupType": "official",
+      "selectionMode": "all",
+      "description": "Jimeng official account resources including image generation, video generation, and task query.",
+      "sortOrder": 140,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.jimeng"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.jimeng.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.jimeng.video_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.jimeng.task_query"
+        }
+      ]
+    },
+    {
+      "groupCode": "official.volcengine.full",
+      "groupName": "Official Volcengine Full API",
+      "groupType": "official",
+      "selectionMode": "all",
+      "description": "Volcengine official account resources including image generation, video generation, and task query.",
+      "sortOrder": 150,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.volcengine"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.volcengine.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.volcengine.video_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.volcengine.task_query"
+        }
+      ]
+    },
+    {
+      "groupCode": "official.minimax.music",
+      "groupName": "Official MiniMax Music API",
+      "groupType": "official",
+      "selectionMode": "all",
+      "description": "MiniMax official account resources including music generation.",
+      "sortOrder": 155,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.minimax"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.minimax.music_generation"
+        }
+      ]
+    },
+    {
+      "groupCode": "official.vidu.full",
+      "groupName": "Official Vidu Full API",
+      "groupType": "official",
+      "selectionMode": "all",
+      "description": "Vidu official account resources including image and start-end video generation.",
+      "sortOrder": 160,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.vidu"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.reference_to_image"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.start_end_to_video"
+        }
+      ]
+    }
+  ]
+}

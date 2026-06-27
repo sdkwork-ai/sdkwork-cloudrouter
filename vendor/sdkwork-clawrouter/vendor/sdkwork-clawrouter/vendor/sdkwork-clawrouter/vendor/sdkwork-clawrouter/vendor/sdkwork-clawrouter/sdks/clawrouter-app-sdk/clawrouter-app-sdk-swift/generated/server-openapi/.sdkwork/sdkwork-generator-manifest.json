@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "sdk": {
+    "name": "clawrouter-app-sdk",
+    "version": "0.1.0",
+    "language": "swift",
+    "sdkType": "app",
+    "protocol": "http",
+    "packageName": "ClawRouterAppSdk"
+  },
+  "generatedFiles": [
+    {
+      "path": "bin/publish-core.mjs",
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+    },
+    {
+      "path": "bin/publish.ps1",
+      "sha256": "65eb75fb276e53c0cc7cca96fd8d630515c132fc6a4cba6ae3a6e1f77fa9c471"
+    },
+    {
+      "path": "bin/publish.sh",
+      "sha256": "1b078b9002190ca5d9f2c89b8de3e47cecf730f5a570992c383dad9f76362f40"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "fb941a0806986a54fc192f98a98f6d9c282b8d350b2b19a3e71dda404e92d545"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "7840cc7d2b36ff364ac16c2fc5ec15b861bfe96854eecf81fb59b00edb8b1447"
+    },
+    {
+      "path": "Package.swift",
+      "sha256": "0b2ba00e452cb80708acafdfe2621cb5dd6e4babaaa7fd8b68dd1e8c0cf5eb7a"
+    },
+    {
+      "path": "README.md",
+      "sha256": "e9776a036a43e2b2834a8a5b9db1d8ab2ddab86d887912a7d3ebb6dbda827790"
+    },
+    {
+      "path": "sdkwork-sdk.json",
+      "sha256": "162c4883099b7bb509f181e96a22eb6520dd90588ffbfdf2a0f1908672f3667c"
+    },
+    {
+      "path": "Sources/API/AiApi.swift",
+      "sha256": "71baca5813117f0651c17b2ef0bf8a8f437ab91690db6c83f33ef085932c140e"
+    },
+    {
+      "path": "Sources/API/API.swift",
+      "sha256": "e77666089a110589e1a284e0bd48c399de513127507539c41778de9693b4311c"
+    },
+    {
+      "path": "Sources/API/ApiPaths.swift",
+      "sha256": "f978f942e51e38e4d2f20612672d0139ffb021ce9cba32b52a75c4c7b7b1b277"
+    },
+    {
+      "path": "Sources/API/ChatApi.swift",
+      "sha256": "f4139a264c843995b313e91253b24d8c21e13ba2e0892a30bcb1fb0d045b1404"
+    },
+    {
+      "path": "Sources/API/IamApi.swift",
+      "sha256": "a02e7e2cef9447b3b43c7ae77062078814e2ed35b924b39dc7c0981d822b9189"
+    },
+    {
+      "path": "Sources/API/NotificationApi.swift",
+      "sha256": "81b4cba8c83e1f9bf97f123986ac6eb45123d4e585b44d31bb1238cb09b69f1e"
+    },
+    {
+      "path": "Sources/API/RuntimeApi.swift",
+      "sha256": "6763376f28523fbe2393274149006a60aad283a6d422ae61063c4f68b56f54a4"
+    },
+    {
+      "path": "Sources/API/SystemApi.swift",
+      "sha256": "5c3754838bd9cd35cc2941c7273d2d6248e6723e23f3dbc859a0e79e6e6c6b40"
+    },
+    {
+      "path": "Sources/HTTP/HttpClient.swift",
+      "sha256": "1bf6cd5c7aa0964a38c0e701185540a129e8653987a6f11521055c9beb1d7b9a"
+    },
+    {
+      "path": "Sources/Models.swift",
+      "sha256": "d75be868fb3f392ef1bf707759fce5ceb1af072dac4bbba74e1c73855df910f3"
+    },
+    {
+      "path": "Sources/SdkworkAppClient.swift",
+      "sha256": "2905153b5f2fad3db28135df2d0147cc7f5117578dbbdb67ffc55764278d0f1a"
+    }
+  ],
+  "scaffoldFiles": [
+    "custom/README.md"
+  ],
+  "customRoots": [
+    "custom/"
+  ]
+}

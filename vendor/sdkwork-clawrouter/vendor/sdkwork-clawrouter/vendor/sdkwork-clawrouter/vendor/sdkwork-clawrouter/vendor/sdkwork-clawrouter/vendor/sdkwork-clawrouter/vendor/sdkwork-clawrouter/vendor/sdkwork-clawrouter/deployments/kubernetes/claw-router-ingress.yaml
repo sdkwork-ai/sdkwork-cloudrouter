@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sdkwork-clawrouter-edge
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api.sdkwork.com
+      secretName: sdkwork-clawrouter-edge-tls
+  rules:
+    - host: api.sdkwork.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sdkwork-clawrouter-edge
+                port:
+                  number: 3900

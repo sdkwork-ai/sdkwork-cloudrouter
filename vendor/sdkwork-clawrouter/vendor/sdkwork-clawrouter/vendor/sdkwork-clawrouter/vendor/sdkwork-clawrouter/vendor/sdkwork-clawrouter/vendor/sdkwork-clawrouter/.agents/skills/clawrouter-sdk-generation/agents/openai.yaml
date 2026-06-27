@@ -1,0 +1,4 @@
+interface:
+  display_name: "ClawRouter SDK Generation"
+  short_description: "Regenerate ClawRouter app and backend SDKs"
+  default_prompt: "Regenerate the ClawRouter SDKs from project OpenAPI specs."

@@ -1,0 +1,83 @@
+{
+  "schema": "sdkwork-clawrouter-frontend-static-source-manifest",
+  "snapshots": {
+    "static-route:/": {
+      "id": "static-route:/",
+      "mode": "curated_seed_content",
+      "observed_at": "2026-05-03",
+      "route": "/",
+      "schema_tables": [
+        "ai_model",
+        "ai_model_vendor"
+      ],
+      "source_hash": "sha256:f63b231458243fbb30878759d3c5a28c5d264cb69dab51382e90adef4fed9fa9",
+      "source_ref": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-home/src/pages/Home.tsx"
+    },
+    "static-route:/docs": {
+      "id": "static-route:/docs",
+      "mode": "generated_reference_snapshot",
+      "observed_at": "2026-05-03",
+      "route": "/docs",
+      "schema_tables": [
+        "content_doc_page",
+        "content_openapi_snapshot",
+        "content_sdk_release"
+      ],
+      "source_hash": "sha256:b73157d1c2fb83b210fec889d4bddfa2e7e2919e53d312962d7019f1132a1fec",
+      "source_ref": "apps/sdkwork-clawrouter-pc/src/App.tsx"
+    },
+    "static-route:/models": {
+      "id": "static-route:/models",
+      "mode": "published_catalog_snapshot",
+      "observed_at": "2026-05-03",
+      "route": "/models",
+      "schema_tables": [
+        "ai_model_vendor",
+        "ai_model",
+        "ai_model_capability",
+        "ai_model_pricing"
+      ],
+      "source_hash": "sha256:1a39f7aca1804c49586d590c26c8799e5bc49b4eb475123b8480944007ceb270",
+      "source_ref": "docs/schema-registry/sdkwork-clawrouter.tables.yaml"
+    },
+    "static-route:/product-docs": {
+      "id": "static-route:/product-docs",
+      "mode": "generated_reference_snapshot",
+      "observed_at": "2026-05-03",
+      "route": "/product-docs",
+      "schema_tables": [
+        "content_doc_page",
+        "content_openapi_snapshot"
+      ],
+      "source_hash": "sha256:b73157d1c2fb83b210fec889d4bddfa2e7e2919e53d312962d7019f1132a1fec",
+      "source_ref": "apps/sdkwork-clawrouter-pc/src/App.tsx"
+    },
+    "static-route:/rankings": {
+      "id": "static-route:/rankings",
+      "mode": "published_catalog_snapshot",
+      "observed_at": "2026-05-03",
+      "route": "/rankings",
+      "schema_tables": [
+        "ai_model_rank_snapshot",
+        "ai_usage_fact"
+      ],
+      "source_hash": "sha256:1a39f7aca1804c49586d590c26c8799e5bc49b4eb475123b8480944007ceb270",
+      "source_ref": "docs/schema-registry/sdkwork-clawrouter.tables.yaml"
+    },
+    "static-route:/sdk-reference": {
+      "id": "static-route:/sdk-reference",
+      "mode": "generated_reference_snapshot",
+      "observed_at": "2026-06-20",
+      "route": "/sdk-reference",
+      "schema_tables": [
+        "content_doc_page",
+        "content_openapi_snapshot",
+        "content_sdk_release"
+      ],
+      "source_hash": "sha256:b73157d1c2fb83b210fec889d4bddfa2e7e2919e53d312962d7019f1132a1fec",
+      "source_ref": "apps/sdkwork-clawrouter-pc/src/App.tsx"
+    }
+  },
+  "source": "docs/schema-registry/frontend-static-source-snapshots.yaml",
+  "version": 1
+}

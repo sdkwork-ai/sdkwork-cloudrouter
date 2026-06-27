@@ -1,0 +1,18 @@
+[package]
+name = "sdkwork-commerce-bootstrap-manifest"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "SDKWork commerce local/private bootstrap manifest composition."
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+sdkwork_commerce_contract_service.workspace = true
+sdkwork_commerce_service_host.workspace = true
+sdkwork_commerce_storage_repository_sqlx.workspace = true
+sdkwork_commerce_api_server.workspace = true
+sdkwork_commerce_tauri_host.workspace = true
+sdkwork_commerce_rpc.workspace = true
+sdkwork_rpc_core.workspace = true

@@ -1,0 +1,1473 @@
+{
+  "openapi": "3.1.2",
+  "info": {
+    "title": "SDKWork MCP App API",
+    "version": "0.1.0",
+    "x-sdkwork-owner": "sdkwork-mcp",
+    "x-sdkwork-api-authority": "sdkwork-mcp.app"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:18100"
+    }
+  ],
+  "tags": [
+    {
+      "name": "mcp",
+      "description": "MCP API resources.",
+      "x-sdk-nested-resource-surface": true
+    }
+  ],
+  "paths": {
+    "/app/v3/api/mcp/categories": {
+      "get": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP mcp.listCategories",
+        "operationId": "mcp.listCategories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpServerCategoryListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-mcp",
+        "x-sdkwork-api-authority": "sdkwork-mcp.app",
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-resource": "mcp",
+        "x-sdkwork-public": false,
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-request-context": "WebRequestContext"
+      }
+    },
+    "/app/v3/api/mcp/servers": {
+      "get": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP mcp.listServers",
+        "operationId": "mcp.listServers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpServerListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-mcp",
+        "x-sdkwork-api-authority": "sdkwork-mcp.app",
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-resource": "mcp",
+        "x-sdkwork-public": false,
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-request-context": "WebRequestContext"
+      }
+    },
+    "/app/v3/api/mcp/servers/{serverKey}": {
+      "get": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP mcp.getServer",
+        "operationId": "mcp.getServer",
+        "parameters": [
+          {
+            "name": "serverKey",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpServerRecordResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-mcp",
+        "x-sdkwork-api-authority": "sdkwork-mcp.app",
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-resource": "mcp",
+        "x-sdkwork-public": false,
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-request-context": "WebRequestContext"
+      }
+    },
+    "/app/v3/api/mcp/servers/{serverId}/tools": {
+      "get": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP mcp.listTools",
+        "operationId": "mcp.listTools",
+        "parameters": [
+          {
+            "name": "serverId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpToolListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-mcp",
+        "x-sdkwork-api-authority": "sdkwork-mcp.app",
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-resource": "mcp",
+        "x-sdkwork-public": false,
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-request-context": "WebRequestContext"
+      }
+    },
+    "/app/v3/api/mcp/servers/{serverId}/tools/{toolKey}": {
+      "get": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP mcp.getTool",
+        "operationId": "mcp.getTool",
+        "parameters": [
+          {
+            "name": "serverId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "toolKey",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpToolRecordResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-mcp",
+        "x-sdkwork-api-authority": "sdkwork-mcp.app",
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-resource": "mcp",
+        "x-sdkwork-public": false,
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-request-context": "WebRequestContext"
+      }
+    },
+    "/app/v3/api/mcp/servers/{serverId}/resources": {
+      "get": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP mcp.listResources",
+        "operationId": "mcp.listResources",
+        "parameters": [
+          {
+            "name": "serverId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpResourceListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-mcp",
+        "x-sdkwork-api-authority": "sdkwork-mcp.app",
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-resource": "mcp",
+        "x-sdkwork-public": false,
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-request-context": "WebRequestContext"
+      }
+    },
+    "/app/v3/api/mcp/servers/{serverId}/prompts": {
+      "get": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP mcp.listPrompts",
+        "operationId": "mcp.listPrompts",
+        "parameters": [
+          {
+            "name": "serverId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpPromptListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-mcp",
+        "x-sdkwork-api-authority": "sdkwork-mcp.app",
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-resource": "mcp",
+        "x-sdkwork-public": false,
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-request-context": "WebRequestContext"
+      }
+    },
+    "/app/v3/api/mcp/invocations": {
+      "get": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP mcp.listInvocations",
+        "operationId": "mcp.listInvocations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpInvocationListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-mcp",
+        "x-sdkwork-api-authority": "sdkwork-mcp.app",
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-resource": "mcp",
+        "x-sdkwork-public": false,
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-request-context": "WebRequestContext"
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "AuthToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "AccessToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Access-Token"
+      }
+    },
+    "schemas": {
+      "ProblemDetail": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "type",
+          "title",
+          "status"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri-reference"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 599
+          },
+          "detail": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "McpServerCategoryRecord": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "id",
+          "uuid",
+          "category_code",
+          "name",
+          "lifecycle_status"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "uuid": {
+            "type": "string"
+          },
+          "category_code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "parent_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sort_order": {
+            "type": "integer"
+          },
+          "icon_ref": {
+            "type": "string",
+            "nullable": true
+          },
+          "lifecycle_status": {
+            "type": "string"
+          }
+        }
+      },
+      "McpServerRecord": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "id",
+          "uuid",
+          "server_key",
+          "name",
+          "transport",
+          "visibility",
+          "data_scope",
+          "health_status",
+          "lifecycle_status"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "uuid": {
+            "type": "string"
+          },
+          "server_key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "category_id": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "category_code": {
+            "type": "string",
+            "nullable": true
+          },
+          "transport": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string"
+          },
+          "data_scope": {
+            "type": "string"
+          },
+          "health_status": {
+            "type": "string"
+          },
+          "lifecycle_status": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "icon_ref": {
+            "type": "string",
+            "nullable": true,
+            "description": "Canonical sdkwork-drive node reference.",
+            "pattern": "^drive://spaces/[^/]+/nodes/[^/]+$"
+          }
+        }
+      },
+      "McpConnectorRecord": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "id",
+          "uuid",
+          "server_id",
+          "connector_key",
+          "transport",
+          "publish_status",
+          "lifecycle_status"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "uuid": {
+            "type": "string"
+          },
+          "server_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "connector_key": {
+            "type": "string"
+          },
+          "transport": {
+            "type": "string"
+          },
+          "publish_status": {
+            "type": "string"
+          },
+          "lifecycle_status": {
+            "type": "string"
+          },
+          "endpoint_url": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "McpToolRecord": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "id",
+          "uuid",
+          "server_id",
+          "connector_id",
+          "tool_key",
+          "name",
+          "enabled",
+          "lifecycle_status"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "uuid": {
+            "type": "string"
+          },
+          "server_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "connector_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tool_key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "lifecycle_status": {
+            "type": "string"
+          },
+          "risk_level": {
+            "type": "string"
+          },
+          "requires_approval": {
+            "type": "boolean"
+          }
+        }
+      },
+      "McpResourceRecord": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "id",
+          "uuid",
+          "server_id",
+          "connector_id",
+          "resource_key",
+          "uri",
+          "name",
+          "enabled",
+          "lifecycle_status"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "uuid": {
+            "type": "string"
+          },
+          "server_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "connector_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "resource_key": {
+            "type": "string"
+          },
+          "uri": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "lifecycle_status": {
+            "type": "string"
+          }
+        }
+      },
+      "McpPromptRecord": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "id",
+          "uuid",
+          "server_id",
+          "connector_id",
+          "prompt_key",
+          "name",
+          "enabled",
+          "lifecycle_status"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "uuid": {
+            "type": "string"
+          },
+          "server_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "connector_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "prompt_key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "lifecycle_status": {
+            "type": "string"
+          }
+        }
+      },
+      "McpInvocationRecord": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "id",
+          "uuid",
+          "server_id",
+          "invocation_kind",
+          "target_key",
+          "status",
+          "invoked_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "uuid": {
+            "type": "string"
+          },
+          "server_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "invocation_kind": {
+            "type": "string"
+          },
+          "target_key": {
+            "type": "string"
+          },
+          "request_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "trace_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "idempotency_key": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string"
+          },
+          "invoked_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "McpServerCategoryListResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/McpServerCategoryRecord"
+            }
+          }
+        }
+      },
+      "McpServerCategoryRecordResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/McpServerCategoryRecord"
+          }
+        }
+      },
+      "McpServerListResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/McpServerRecord"
+            }
+          }
+        }
+      },
+      "McpServerRecordResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/McpServerRecord"
+          }
+        }
+      },
+      "McpConnectorListResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/McpConnectorRecord"
+            }
+          }
+        }
+      },
+      "McpToolListResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/McpToolRecord"
+            }
+          }
+        }
+      },
+      "McpToolRecordResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/McpToolRecord"
+          }
+        }
+      },
+      "McpResourceListResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/McpResourceRecord"
+            }
+          }
+        }
+      },
+      "McpPromptListResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/McpPromptRecord"
+            }
+          }
+        }
+      },
+      "McpInvocationListResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/McpInvocationRecord"
+            }
+          }
+        }
+      },
+      "McpInvocationRecordResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/McpInvocationRecord"
+          }
+        }
+      },
+      "AppendMcpInvocationCommand": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "server_id",
+          "invocation_kind",
+          "target_key"
+        ],
+        "properties": {
+          "server_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "connector_id": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "invocation_kind": {
+            "type": "string",
+            "enum": [
+              "tool",
+              "resource",
+              "prompt"
+            ]
+          },
+          "target_key": {
+            "type": "string"
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "trace_id": {
+            "type": "string"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "request_json": {
+            "type": "string"
+          },
+          "response_json": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "error_message": {
+            "type": "string"
+          },
+          "duration_ms": {
+            "type": "integer"
+          }
+        }
+      },
+      "CreateMcpServerCommand": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "server_key",
+          "name",
+          "transport"
+        ],
+        "properties": {
+          "server_key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "transport": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string"
+          },
+          "category_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "category_code": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "icon_ref": {
+            "type": "string",
+            "pattern": "^drive://spaces/[^/]+/nodes/[^/]+$"
+          }
+        }
+      },
+      "UpdateMcpServerCommand": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "transport": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string"
+          },
+          "category_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "category_code": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "icon_ref": {
+            "type": "string",
+            "pattern": "^drive://spaces/[^/]+/nodes/[^/]+$"
+          },
+          "lifecycle_status": {
+            "type": "string"
+          }
+        }
+      },
+      "UpsertMcpServerCategoryCommand": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "category_code",
+          "name"
+        ],
+        "properties": {
+          "category_code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "parent_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sort_order": {
+            "type": "integer"
+          },
+          "icon_ref": {
+            "type": "string",
+            "pattern": "^drive://spaces/[^/]+/nodes/[^/]+$"
+          }
+        }
+      },
+      "UpsertMcpConnectorCommand": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "connector_key",
+          "transport"
+        ],
+        "properties": {
+          "connector_key": {
+            "type": "string"
+          },
+          "transport": {
+            "type": "string"
+          },
+          "endpoint_url": {
+            "type": "string"
+          },
+          "command_ref": {
+            "type": "string"
+          },
+          "args_json": {
+            "type": "string"
+          },
+          "env_schema_json": {
+            "type": "string"
+          },
+          "auth_type": {
+            "type": "string"
+          },
+          "secret_ref": {
+            "type": "string"
+          },
+          "timeout_ms": {
+            "type": "integer"
+          },
+          "retry_policy_json": {
+            "type": "string"
+          },
+          "publish_status": {
+            "type": "string"
+          },
+          "lifecycle_status": {
+            "type": "string"
+          }
+        }
+      },
+      "UpsertMcpToolCommand": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "connector_id",
+          "tool_key",
+          "name"
+        ],
+        "properties": {
+          "connector_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tool_key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "input_schema_json": {
+            "type": "string"
+          },
+          "output_schema_json": {
+            "type": "string"
+          },
+          "risk_level": {
+            "type": "string"
+          },
+          "requires_approval": {
+            "type": "boolean"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "sort_weight": {
+            "type": "integer"
+          }
+        }
+      },
+      "UpsertMcpResourceCommand": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "connector_id",
+          "resource_key",
+          "uri",
+          "name"
+        ],
+        "properties": {
+          "connector_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "resource_key": {
+            "type": "string"
+          },
+          "uri": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "mime_type": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UpsertMcpPromptCommand": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "connector_id",
+          "prompt_key",
+          "name"
+        ],
+        "properties": {
+          "connector_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "prompt_key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "arguments_schema_json": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "x-sdkwork-owner": "sdkwork-mcp",
+  "x-sdkwork-api-authority": "sdkwork-mcp.app",
+  "x-sdkwork-domain": "intelligence",
+  "x-sdkwork-standard-profile": "sdkwork-v3"
+}

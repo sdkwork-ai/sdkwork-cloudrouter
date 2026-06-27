@@ -1,0 +1,2 @@
+include README.md
+recursive-include sdkwork_clawrouter_open_sdk *.py

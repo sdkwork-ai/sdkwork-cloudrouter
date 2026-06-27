@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.mcp.admin-permissions",
+  "roles": [
+    {
+      "roleCode": "mcp-admin-super",
+      "label": "MCP Super Admin",
+      "permissions": [
+        "mcp.admin.server.manage",
+        "mcp.admin.category.manage",
+        "mcp.admin.invocation.read",
+        "mcp.admin.marketplace.read"
+      ]
+    },
+    {
+      "roleCode": "mcp-admin-operator",
+      "label": "MCP Operator",
+      "permissions": [
+        "mcp.admin.server.manage",
+        "mcp.admin.category.manage",
+        "mcp.admin.invocation.read",
+        "mcp.admin.marketplace.read"
+      ]
+    }
+  ],
+  "permissions": [
+    {
+      "code": "mcp.admin.server.manage",
+      "label": "Manage MCP servers, connectors, tools, resources, and prompts"
+    },
+    {
+      "code": "mcp.admin.category.manage",
+      "label": "Manage MCP marketplace categories"
+    },
+    {
+      "code": "mcp.admin.invocation.read",
+      "label": "Read MCP invocation audit logs"
+    },
+    {
+      "code": "mcp.admin.marketplace.read",
+      "label": "Read MCP marketplace admin metadata"
+    }
+  ]
+}

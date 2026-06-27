@@ -1,0 +1,207 @@
+# Claw Router SLO Alerting Rules
+# Based on multi-window burn rate alerting for error budgets
+#
+# SLO Target: 99.9% availability (0.1% error budget)
+# Measurement Window: 30 days
+# Error Budget: 0.1% * 30d = 43.2 minutes of allowed errors
+
+groups:
+  - name: clawrouter-slo-availability
+    interval: 30s
+    rules:
+      # Fast burn: 1% errors in 1 hour
+      - alert: ClawRouterSLOAvailabilityFastBurn
+        expr: |
+          (
+            1 - (
+              sum(rate(clawrouter_requests_total{status="success"}[1h]))
+              /
+              sum(rate(clawrouter_requests_total[1h]))
+            )
+          ) > (0.1 / 100) * 14.4
+        for: 5m
+        labels:
+          severity: critical
+          slo: availability
+          burn_rate: fast
+        annotations:
+          summary: "Claw Router availability SLO at risk - fast burn"
+          description: |
+            Availability has burned through more than 10% of the error budget
+            in the last hour. Current error rate: {{ $value | humanizePercentage }}
+          runbook_url: "https://docs.clawrouter.example.com/runbooks/slo-availability"
+
+      # Medium burn: 1% errors in 6 hours
+      - alert: ClawRouterSLOAvailabilityMediumBurn
+        expr: |
+          (
+            1 - (
+              sum(rate(clawrouter_requests_total{status="success"}[6h]))
+              /
+              sum(rate(clawrouter_requests_total[6h]))
+            )
+          ) > (0.1 / 100) * 6
+        for: 30m
+        labels:
+          severity: warning
+          slo: availability
+          burn_rate: medium
+        annotations:
+          summary: "Claw Router availability SLO at risk - medium burn"
+          description: |
+            Availability has burned through more than 10% of the error budget
+            in the last 6 hours. Current error rate: {{ $value | humanizePercentage }}
+          runbook_url: "https://docs.clawrouter.example.com/runbooks/slo-availability"
+
+      # Slow burn: 1% errors in 3 days
+      - alert: ClawRouterSLOAvailabilitySlowBurn
+        expr: |
+          (
+            1 - (
+              sum(rate(clawrouter_requests_total{status="success"}[3d]))
+              /
+              sum(rate(clawrouter_requests_total[3d]))
+            )
+          ) > (0.1 / 100)
+        for: 3h
+        labels:
+          severity: warning
+          slo: availability
+          burn_rate: slow
+        annotations:
+          summary: "Claw Router availability SLO at risk - slow burn"
+          description: |
+            Availability has burned through more than 10% of the error budget
+            in the last 3 days. Current error rate: {{ $value | humanizePercentage }}
+          runbook_url: "https://docs.clawrouter.example.com/runbooks/slo-availability"
+
+  - name: clawrouter-slo-latency
+    interval: 30s
+    rules:
+      # P95 latency SLO breach
+      - alert: ClawRouterSLOP95LatencyBreach
+        expr: clawrouter_slo_latency_p95_seconds > 0.050
+        for: 10m
+        labels:
+          severity: warning
+          slo: latency
+          percentile: p95
+        annotations:
+          summary: "Claw Router P95 latency exceeds SLO target"
+          description: |
+            P95 latency is {{ $value | humanizeDuration }} which exceeds
+            the 50ms SLO target. This may indicate:
+            - Provider API slowdown
+            - Circuit breaker activation
+            - Resource contention
+          runbook_url: "https://docs.clawrouter.example.com/runbooks/slo-latency"
+
+      # P99 latency SLO breach (critical)
+      - alert: ClawRouterSLOP99LatencyBreach
+        expr: clawrouter_slo_latency_p99_seconds > 0.100
+        for: 5m
+        labels:
+          severity: critical
+          slo: latency
+          percentile: p99
+        annotations:
+          summary: "Claw Router P99 latency exceeds SLO target"
+          description: |
+            P99 latency is {{ $value | humanizeDuration }} which exceeds
+            the 100ms SLO target. This indicates severe latency issues.
+          runbook_url: "https://docs.clawrouter.example.com/runbooks/slo-latency"
+
+  - name: clawrouter-slo-throughput
+    interval: 60s
+    rules:
+      # Low throughput alert
+      - alert: ClawRouterSLOThroughputLow
+        expr: clawrouter_slo_throughput_rps < 100
+        for: 15m
+        labels:
+          severity: warning
+          slo: throughput
+        annotations:
+          summary: "Claw Router throughput below SLO target"
+          description: |
+            Current throughput is {{ $value | humanize }} RPS which is below
+            the 1000 RPS SLO target. This may indicate:
+            - Client-side issues
+            - Authentication/authorization failures
+            - Provider API issues
+
+  - name: clawrouter-availability
+    interval: 30s
+    rules:
+      # High error rate
+      - alert: ClawRouterHighErrorRate
+        expr: |
+          sum(rate(clawrouter_requests_total{status="failure"}[5m]))
+          /
+          sum(rate(clawrouter_requests_total[5m])) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Claw Router error rate is elevated"
+          description: |
+            Error rate is {{ $value | humanizePercentage }} over the last 5 minutes.
+            This exceeds the 1% threshold.
+
+      # Very high error rate (service degraded)
+      - alert: ClawRouterVeryHighErrorRate
+        expr: |
+          sum(rate(clawrouter_requests_total{status="failure"}[5m]))
+          /
+          sum(rate(clawrouter_requests_total[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Claw Router error rate is critically high"
+          description: |
+            Error rate is {{ $value | humanizePercentage }} over the last 5 minutes.
+            This exceeds the 5% critical threshold. Immediate investigation required.
+
+      # Service down (no successful requests for 5 minutes)
+      - alert: ClawRouterServiceDown
+        expr: |
+          sum(rate(clawrouter_requests_total{status="success"}[5m])) == 0
+          and
+          sum(rate(clawrouter_requests_total[5m])) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Claw Router service is returning errors only"
+          description: |
+            No successful requests in the last 5 minutes despite traffic being received.
+            All requests are failing.
+
+  - name: clawrouter-infrastructure
+    interval: 60s
+    rules:
+      # Prometheus target down
+      - alert: ClawRouterMetricsUnavailable
+        expr: up{job="clawrouter"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Claw Router metrics endpoint is unavailable"
+          description: "Prometheus cannot scrape the Claw Router metrics endpoint."
+
+      # High memory usage
+      - alert: ClawRouterHighMemoryUsage
+        expr: |
+          process_resident_memory_bytes{job="clawrouter"}
+          /
+          system_memory_bytes * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Claw Router memory usage is high"
+          description: |
+            Memory usage is at {{ $value | humanizePercentage }} of available memory.
+            Consider scaling or investigating memory leaks.

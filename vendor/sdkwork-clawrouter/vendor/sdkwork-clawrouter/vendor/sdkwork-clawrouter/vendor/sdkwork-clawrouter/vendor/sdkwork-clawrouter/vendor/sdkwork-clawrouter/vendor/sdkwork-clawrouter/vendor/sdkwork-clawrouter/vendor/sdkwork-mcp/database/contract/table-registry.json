@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.database.table-registry",
+  "tables": [
+    {
+      "table_name": "ai_mcp_server_category",
+      "owner": "mcp-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "module": "registry"
+    },
+    {
+      "table_name": "ai_mcp_server",
+      "owner": "mcp-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "module": "registry"
+    },
+    {
+      "table_name": "ai_mcp_connector",
+      "owner": "mcp-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "module": "connector"
+    },
+    {
+      "table_name": "ai_mcp_tool",
+      "owner": "mcp-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "module": "capability"
+    },
+    {
+      "table_name": "ai_mcp_resource",
+      "owner": "mcp-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "module": "capability"
+    },
+    {
+      "table_name": "ai_mcp_prompt",
+      "owner": "mcp-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "module": "capability"
+    },
+    {
+      "table_name": "ai_mcp_invocation_log",
+      "owner": "mcp-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "module": "observability"
+    },
+    {
+      "table_name": "ai_mcp_server_binding",
+      "owner": "mcp-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "planned",
+      "module": "registry"
+    },
+    {
+      "table_name": "ai_mcp_tool_approval",
+      "owner": "mcp-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "planned",
+      "module": "capability"
+    },
+    {
+      "table_name": "ai_mcp_capability_sync_job",
+      "owner": "mcp-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "planned",
+      "module": "capability"
+    }
+  ]
+}

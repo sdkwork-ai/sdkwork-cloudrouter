@@ -1,0 +1,45 @@
+name: Verify Application
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Alignment check
+        run: pnpm check:alignment
+
+      - name: API standard extensions
+        run: pnpm api:standard-extensions:check
+
+      - name: Install PC workspace dependencies
+        working-directory: apps/sdkwork-clawrouter-pc
+        run: pnpm install --frozen-lockfile
+
+      - name: Product verification (CI)
+        run: pnpm verify:ci --parallel --concurrency 4

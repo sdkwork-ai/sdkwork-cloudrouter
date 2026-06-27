@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.naming-migration",
+  "application": "sdkwork-clawrouter",
+  "authority": "../sdkwork-specs/NAMING_SPEC.md",
+  "approvedAt": "2026-06-18",
+  "completedAt": "2026-06-24",
+  "reviewBy": "2026-12-31",
+  "legacyCrates": [],
+  "completedMigrations": [
+    {
+      "from": "services/sdkwork-claw-product",
+      "to": "services/sdkwork-clawrouter-router-service",
+      "completedAt": "2026-06-22"
+    },
+    {
+      "from": "services/sdkwork-claw-app",
+      "to": "services/sdkwork-clawrouter-standalone-gateway",
+      "completedAt": "2026-06-22"
+    },
+    {
+      "from": "services/sdkwork-claw-admin",
+      "to": "services/sdkwork-clawrouter-admin-gateway",
+      "completedAt": "2026-06-22"
+    },
+    {
+      "from": "crates/sdkwork-claw-product-test-support",
+      "to": "crates/sdkwork-clawrouter-router-service-test-support",
+      "completedAt": "2026-06-22"
+    },
+    {
+      "from": "services/sdkwork-claw-gateway",
+      "to": "crates/sdkwork-clawrouter-cloud-gateway",
+      "completedAt": "2026-06-22"
+    },
+    {
+      "from": "services/sdkwork-clawrouter-cloud-gateway",
+      "to": "crates/sdkwork-clawrouter-cloud-gateway",
+      "completedAt": "2026-06-24",
+      "notes": "Retired bare application gateway crate per APPLICATION_GATEWAY_SPEC.md"
+    },
+    {
+      "from": "services/sdkwork-clawrouter-cloud-gateway (edge/all-in-one entrypoint)",
+      "to": "crates/sdkwork-clawrouter-standalone-gateway",
+      "completedAt": "2026-06-24",
+      "notes": "Standalone deployment-profile gateway split from cloud gateway library"
+    },
+    {
+      "from": "../sdkwork-api-gateway",
+      "to": "../sdkwork-api-cloud-gateway",
+      "completedAt": "2026-06-24",
+      "notes": "Platform sibling repo and crate family renamed per APPLICATION_GATEWAY_SPEC.md"
+    }
+  ],
+  "pendingMigrations": [],
+  "canonicalApplicationCode": "clawrouter",
+  "legacyRepositoryStems": []
+}

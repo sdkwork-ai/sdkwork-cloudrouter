@@ -1,0 +1,19 @@
+{
+  "workspace": "sdkwork-mcp-backend-sdk",
+  "sdkOwner": "sdkwork-mcp",
+  "apiAuthority": "sdkwork-mcp.backend",
+  "authoritySpec": "../../apis/backend-api/mcp/mcp-backend-api.openapi.json",
+  "generationInputSpec": "../../apis/backend-api/mcp/mcp-backend-api.openapi.json",
+  "sdkDependencies": [],
+  "derivedSpecs": {
+    "default": "../../apis/backend-api/mcp/mcp-backend-api.openapi.json"
+  },
+  "discoverySurface": {
+    "sdkTarget": "backend",
+    "apiPrefix": "/backend/v3/api",
+    "generatedProtocols": [
+      "http-openapi"
+    ],
+    "manualTransports": []
+  }
+}

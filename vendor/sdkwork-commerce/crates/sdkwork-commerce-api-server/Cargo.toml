@@ -1,0 +1,66 @@
+[package]
+name = "sdkwork-commerce-api-server"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "SDKWork canonical commerce HTTP route contracts for Rust local/private deployments."
+build = "build.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[build-dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[dependencies]
+axum = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio", "sqlite", "postgres"] }
+sdkwork_commerce_account_service.workspace = true
+sdkwork_commerce_catalog_service.workspace = true
+sdkwork_commerce_contract_service.workspace = true
+sdkwork_commerce_invoice_service.workspace = true
+sdkwork_commerce_order_service.workspace = true
+sdkwork_commerce_payment_service.workspace = true
+sdkwork_commerce_promotion_service.workspace = true
+sdkwork_commerce_shop_service.workspace = true
+sdkwork_routes_shop_backend_api.workspace = true
+sdkwork_routes_shop_app_api.workspace = true
+sdkwork_routes_merchandise_app_api.workspace = true
+sdkwork_routes_catalog_app_api.workspace = true
+sdkwork_commerce_catalog_repository_sqlx.workspace = true
+sdkwork_routes_order_app_api.workspace = true
+sdkwork_routes_order_backend_api.workspace = true
+sdkwork_routes_payment_app_api.workspace = true
+sdkwork_routes_payment_backend_api.workspace = true
+sdkwork_routes_account_app_api.workspace = true
+sdkwork_routes_promotion_app_api.workspace = true
+sdkwork_routes_invoice_app_api.workspace = true
+sdkwork_routes_inventory_backend_api.workspace = true
+sdkwork_routes_inventory_app_api.workspace = true
+sdkwork_commerce_order_repository_sqlx.workspace = true
+sdkwork_commerce_payment_repository_sqlx.workspace = true
+sdkwork_commerce_account_repository_sqlx.workspace = true
+sdkwork_commerce_promotion_repository_sqlx.workspace = true
+sdkwork_commerce_invoice_repository_sqlx.workspace = true
+sdkwork_commerce_merchandise_repository_sqlx.workspace = true
+sdkwork_commerce_service_host.workspace = true
+sdkwork_commerce_storage_repository_sqlx.workspace = true
+sdkwork-web-core.workspace = true
+sdkwork-web-axum.workspace = true
+sdkwork-web-contract.workspace = true
+sdkwork-iam-web-adapter.workspace = true
+sdkwork_iam_context_service.workspace = true
+
+[dev-dependencies]
+http-body-util = "0.1"
+sdkwork_commerce_membership_repository_sqlx.workspace = true
+sdkwork_commerce_router_composition.workspace = true
+tokio = { version = "1.51", features = ["macros", "rt-multi-thread"] }
+tower = { version = "0.5", features = ["util"] }
+
+[[bin]]
+name = "sdkwork-commerce-standalone-gateway"
+path = "src/main.rs"

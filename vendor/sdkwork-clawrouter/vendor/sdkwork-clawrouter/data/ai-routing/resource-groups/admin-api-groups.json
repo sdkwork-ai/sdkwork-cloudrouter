@@ -1,0 +1,679 @@
+{
+  "kind": "ai-routing.resource-groups",
+  "items": [
+    {
+      "groupCode": "api.all",
+      "groupName": "All APIs",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "All bundled API endpoint resources maintained by the relay taxonomy.",
+      "sortOrder": 1,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.responses"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.chat_completions"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.conversations"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.completions"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.embeddings"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images.generations"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images.edits"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images.variations"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio.transcriptions"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio.translations"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio.speech"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.files"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.uploads"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.batches"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.fine_tuning"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.realtime"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.videos"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.models"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.moderations"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.assistants"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.threads"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.vector_stores"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.codex"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.evals"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.chatkit.sessions"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.containers"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.skills"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.administration"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.anthropic.claude_code"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.generate_content"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.stream_generate_content"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.embed_content"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.live"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.nano_banana.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.video_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.text_to_video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.image_to_video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.jimeng.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.jimeng.video_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.jimeng.task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.volcengine.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.volcengine.video_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.volcengine.task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.minimax.music_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.reference_to_image"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.start_end_to_video"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.openai_compatible.all",
+      "groupName": "All OpenAI Compatible APIs",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "OpenAI-compatible API endpoints exposed through OpenAI-style protocol surfaces.",
+      "sortOrder": 2,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.responses"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.chat_completions"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.completions"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.embeddings"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images.generations"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images.edits"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images.variations"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio.transcriptions"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio.translations"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio.speech"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.realtime"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.videos"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.codex"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.openai.codex",
+      "groupName": "OpenAI Codex API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "OpenAI Codex API resources.",
+      "sortOrder": 3,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.codex"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.containers"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.skills"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.openai.chat",
+      "groupName": "OpenAI Chat API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "OpenAI chat and assistant-style API resources.",
+      "sortOrder": 4,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.responses"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.chat_completions"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.conversations"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.completions"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.assistants"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.threads"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.chatkit.sessions"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.openai.image",
+      "groupName": "OpenAI Image API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "OpenAI image API resources.",
+      "sortOrder": 5,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images.generations"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images.edits"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images.variations"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.openai.audio",
+      "groupName": "OpenAI Audio API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "OpenAI audio, speech, and realtime API resources.",
+      "sortOrder": 6,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio.transcriptions"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio.translations"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio.speech"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.realtime"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.openai.embeddings",
+      "groupName": "OpenAI Embeddings API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "OpenAI embeddings API resources.",
+      "sortOrder": 7,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.embeddings"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.claude.code",
+      "groupName": "Claude Code API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Anthropic Claude Code API resources.",
+      "sortOrder": 8,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.anthropic.claude_code"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.gemini.chat",
+      "groupName": "Gemini Chat API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Gemini chat generation API resources.",
+      "sortOrder": 9,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.generate_content"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.stream_generate_content"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.claude.all",
+      "groupName": "Claude All APIs",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "All Anthropic Claude API resources currently exposed by the relay.",
+      "sortOrder": 10,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.anthropic.claude_code"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.google.all",
+      "groupName": "Google All APIs",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "All Google Gemini API resources.",
+      "sortOrder": 11,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.generate_content"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.stream_generate_content"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.embed_content"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.live"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.nano_banana.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.video_generation"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.kling.all",
+      "groupName": "Kling All APIs",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "All Kling API resources.",
+      "sortOrder": 12,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.text_to_video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.image_to_video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.task_query"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.kling.image",
+      "groupName": "Kling Image API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Kling image generation API resources.",
+      "sortOrder": 13,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.image_generation"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.kling.video",
+      "groupName": "Kling Video API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Kling video generation API resources.",
+      "sortOrder": 14,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.text_to_video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.image_to_video"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.minimax.music",
+      "groupName": "Minimax Music API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Minimax music generation API resources.",
+      "sortOrder": 15,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.minimax.music_generation"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.volcengine.image",
+      "groupName": "Volcengine Image API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Volcengine image generation API resources.",
+      "sortOrder": 16,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.jimeng.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.volcengine.image_generation"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.volcengine.video",
+      "groupName": "Volcengine Video API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Volcengine video generation API resources.",
+      "sortOrder": 17,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.jimeng.video_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.volcengine.video_generation"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.vidu.image",
+      "groupName": "Vidu Image API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Vidu image generation API resources.",
+      "sortOrder": 18,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.reference_to_image"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.vidu.video",
+      "groupName": "Vidu Video API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Vidu video generation API resources.",
+      "sortOrder": 19,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.start_end_to_video"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.google.image",
+      "groupName": "Google Image API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Google Gemini image generation API resources.",
+      "sortOrder": 20,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.nano_banana.image_generation"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.google.video",
+      "groupName": "Google Video API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Google Gemini video generation API resources.",
+      "sortOrder": 21,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.video_generation"
+        }
+      ]
+    }
+  ]
+}

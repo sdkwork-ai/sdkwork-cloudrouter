@@ -1,0 +1,547 @@
+fragment: operations/backend-iam
+frontend_operations:
+- route: /admin/user
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-user/src/userService.ts
+  operation: fetchUsers
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/iam/users
+  openapi_exposed: false
+  read_sources:
+  - iam_user
+  - commerce_account
+  - iam_role
+  - iam_user_role
+  - iam_user_login_event
+  query_parameters: []
+  response_schema:
+    name: AdminUsersResponse
+    required:
+    - items
+    properties:
+      items:
+        type: array
+        items:
+          name: AdminUserItem
+          type: object
+          additionalProperties: false
+          required:
+          - id
+          - email
+          - username
+          - role
+          - group
+          - balance
+          - status
+          - lastActive
+          - lastUsed
+          - createdAt
+          properties:
+            id:
+              type: integer
+              minimum: 1
+            email:
+              type: string
+              format: email
+              minLength: 3
+              maxLength: 254
+            username:
+              type: string
+              maxLength: 128
+            role:
+              type: string
+              maxLength: 128
+            group:
+              type: string
+              maxLength: 128
+            balance:
+              type: string
+              maxLength: 64
+            status:
+              type: string
+              enum:
+              - active
+              - banned
+            lastActive:
+              type: string
+              maxLength: 64
+            lastUsed:
+              type: string
+              maxLength: 64
+            createdAt:
+              type: string
+              maxLength: 64
+- route: /admin/user
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-user/src/userService.ts
+  operation: fetchApiKeysMap
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/iam/api_keys
+  openapi_exposed: false
+  read_sources:
+  - iam_gateway_api_key
+  query_parameters: []
+  response_schema:
+    name: AdminApiKeysMapResponse
+    type: object
+    additionalProperties:
+      type: array
+      items:
+        name: AdminApiKeyItem
+        type: object
+        additionalProperties: false
+        required:
+        - id
+        - name
+        - key
+        - used
+        - status
+        properties:
+          id:
+            type: string
+            minLength: 1
+            maxLength: 128
+          name:
+            type: string
+            minLength: 1
+            maxLength: 128
+          key:
+            type: string
+            minLength: 1
+            maxLength: 256
+          used:
+            type: string
+            maxLength: 64
+          status:
+            type: string
+            maxLength: 64
+    properties: {}
+- route: /admin/organization
+  source: &adminOrganizationService apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts
+  operation: loadDirectory
+  operation_scope: app_shell
+  operation_id: admin.organization.directory.load
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/iam/users
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources: &adminOrganizationReadSources
+  - iam_user
+  - iam_organization
+  - iam_organization_membership
+  - iam_role
+  - iam_permission
+  - iam_role_permission
+  - iam_user_role
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: createOrganization
+  operation_id: organizations.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/iam/organizations
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_organization
+  write_tables: &adminOrganizationWriteTables
+  - iam_organization
+  - ops_audit_log
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: updateOrganization
+  operation_id: organizations.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/iam/organizations/{organizationId}
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_organization
+  write_tables: *adminOrganizationWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: deleteOrganization
+  operation_id: organizations.delete
+  kind: delete
+  api_surface: backend
+  api_method: DELETE
+  api_path: /backend/v3/api/iam/organizations/{organizationId}
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_organization
+  write_tables: *adminOrganizationWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: createDepartment
+  operation_id: departments.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/iam/departments
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_organization
+  write_tables: *adminOrganizationWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: updateDepartment
+  operation_id: departments.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/iam/departments/{departmentId}
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_organization
+  write_tables: *adminOrganizationWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: deleteDepartment
+  operation_id: departments.delete
+  kind: delete
+  api_surface: backend
+  api_method: DELETE
+  api_path: /backend/v3/api/iam/departments/{departmentId}
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_organization
+  write_tables: *adminOrganizationWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: listDepartments
+  operation_id: departments.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/iam/departments
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_organization
+  - iam_organization_membership
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: createMembership
+  operation_id: organizationMemberships.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/iam/organization_memberships
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_user
+  - iam_organization
+  write_tables: &adminOrganizationMemberWriteTables
+  - iam_organization_membership
+  - ops_audit_log
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: updateMembership
+  operation_id: organizationMemberships.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/iam/organization_memberships/{membershipId}
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_organization_membership
+  write_tables: *adminOrganizationMemberWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: deactivateMembership
+  operation_id: organizationMemberships.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/iam/organization_memberships/{membershipId}
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_organization_membership
+  write_tables: *adminOrganizationMemberWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: createDepartmentAssignment
+  operation_id: departmentAssignments.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/iam/department_assignments
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_organization
+  - iam_organization_membership
+  write_tables: *adminOrganizationMemberWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: updateDepartmentAssignment
+  operation_id: departmentAssignments.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/iam/department_assignments/{assignmentId}
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_organization_membership
+  write_tables: *adminOrganizationMemberWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: deactivateDepartmentAssignment
+  operation_id: departmentAssignments.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/iam/department_assignments/{assignmentId}
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_organization_membership
+  write_tables: *adminOrganizationMemberWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: createPosition
+  operation_id: positions.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/iam/positions
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_organization
+  write_tables: *adminOrganizationWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: updatePosition
+  operation_id: positions.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/iam/positions/{positionId}
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_organization
+  write_tables: *adminOrganizationWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: deletePosition
+  operation_id: positions.delete
+  kind: delete
+  api_surface: backend
+  api_method: DELETE
+  api_path: /backend/v3/api/iam/positions/{positionId}
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_organization
+  write_tables: *adminOrganizationWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: createPositionAssignment
+  operation_id: positionAssignments.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/iam/position_assignments
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_organization
+  - iam_organization_membership
+  write_tables: *adminOrganizationMemberWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: updatePositionAssignment
+  operation_id: positionAssignments.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/iam/position_assignments/{assignmentId}
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_organization_membership
+  write_tables: *adminOrganizationMemberWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: deactivatePositionAssignment
+  operation_id: positionAssignments.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/iam/position_assignments/{assignmentId}
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_organization_membership
+  write_tables: *adminOrganizationMemberWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: createRole
+  operation_id: roles.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/iam/roles
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_role
+  write_tables: &adminRoleWriteTables
+  - iam_role
+  - ops_audit_log
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: updateRole
+  operation_id: roles.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/iam/roles/{roleId}
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_role
+  write_tables: *adminRoleWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: deleteRole
+  operation_id: roles.delete
+  kind: delete
+  api_surface: backend
+  api_method: DELETE
+  api_path: /backend/v3/api/iam/roles/{roleId}
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_role
+  write_tables: *adminRoleWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: bindRole
+  operation_id: roleBindings.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/iam/role_bindings
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_role
+  - iam_organization_membership
+  write_tables: &adminRoleBindingWriteTables
+  - iam_user_role
+  - ops_audit_log
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: deleteRoleBinding
+  operation_id: roleBindings.delete
+  kind: delete
+  api_surface: backend
+  api_method: DELETE
+  api_path: /backend/v3/api/iam/role_bindings/{roleBindingId}
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_user_role
+  write_tables: *adminRoleBindingWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: createPermission
+  operation_id: permissions.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/iam/permissions
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_permission
+  write_tables: &adminPermissionWriteTables
+  - iam_permission
+  - ops_audit_log
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: updatePermission
+  operation_id: permissions.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/iam/permissions/{permissionId}
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_permission
+  write_tables: *adminPermissionWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: deletePermission
+  operation_id: permissions.delete
+  kind: delete
+  api_surface: backend
+  api_method: DELETE
+  api_path: /backend/v3/api/iam/permissions/{permissionId}
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_permission
+  write_tables: *adminPermissionWriteTables
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: listRolePermissions
+  operation_id: roles.permissions.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/iam/roles/{roleId}/permissions
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_role
+  - iam_permission
+  - iam_role_permission
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: grantRolePermission
+  operation_id: roles.permissions.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/iam/roles/{roleId}/permissions
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_role
+  - iam_permission
+  write_tables: &adminRolePermissionWriteTables
+  - iam_role_permission
+  - ops_audit_log
+- route: /admin/organization
+  source: *adminOrganizationService
+  operation: revokeRolePermission
+  operation_id: roles.permissions.delete
+  kind: delete
+  api_surface: backend
+  api_method: DELETE
+  api_path: /backend/v3/api/iam/roles/{roleId}/permissions/{permissionId}
+  sdk_domain: iam
+  openapi_exposed: false
+  read_sources:
+  - iam_role_permission
+  write_tables: *adminRolePermissionWriteTables

@@ -1,0 +1,160 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Sdkwork.ClawRouter.Open.Models;
+using SdkHttpClient = Sdkwork.ClawRouter.Open.Http.HttpClient;
+
+namespace Sdkwork.ClawRouter.Open.Api
+{
+    public class VideosViduApi
+    {
+        private readonly SdkHttpClient _client;
+
+        public VideosViduApi(SdkHttpClient client)
+        {
+            _client = client;
+        }
+
+        /// <summary>
+        /// Vidu image to video
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Open.Models.ViduVideoGenerationTask?> CreateEntV2Img2videoAsync(Sdkwork.ClawRouter.Open.Models.ViduImageToVideoRequest body)
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Open.Models.ViduVideoGenerationTask>(ApiPaths.AiPath("/vidu/ent/v2/img2video"), body, null, null, "application/json");
+        }
+
+        /// <summary>
+        /// Vidu reference to video
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Open.Models.ViduVideoGenerationTask?> CreateEntV2Reference2videoAsync(Sdkwork.ClawRouter.Open.Models.ViduReferenceToVideoRequest body)
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Open.Models.ViduVideoGenerationTask>(ApiPaths.AiPath("/vidu/ent/v2/reference2video"), body, null, null, "application/json");
+        }
+
+        /// <summary>
+        /// Vidu start-end to video
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Open.Models.ViduVideoGenerationTask?> CreateEntV2StartEnd2videoAsync(Sdkwork.ClawRouter.Open.Models.ViduStartEndToVideoRequest body)
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Open.Models.ViduVideoGenerationTask>(ApiPaths.AiPath("/vidu/ent/v2/start-end2video"), body, null, null, "application/json");
+        }
+
+        /// <summary>
+        /// Vidu get task creations
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Open.Models.ViduTaskCreationsResponse?> ListEntV2TasksCreationsAsync(string taskId)
+        {
+            return await _client.GetAsync<Sdkwork.ClawRouter.Open.Models.ViduTaskCreationsResponse>(ApiPaths.AiPath($"/vidu/ent/v2/tasks/{SerializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false))}/creations"));
+        }
+
+        /// <summary>
+        /// Vidu text to video
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Open.Models.ViduVideoGenerationTask?> CreateEntV2Text2videoAsync(Sdkwork.ClawRouter.Open.Models.ViduTextToVideoRequest body)
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Open.Models.ViduVideoGenerationTask>(ApiPaths.AiPath("/vidu/ent/v2/text2video"), body, null, null, "application/json");
+        }
+
+        private sealed record PathParameterSpec(string Name, string Style, bool Explode);
+
+        private static string SerializePathParameter(object? value, PathParameterSpec spec)
+        {
+            if (value is null)
+            {
+                return string.Empty;
+            }
+            var style = string.IsNullOrWhiteSpace(spec.Style) ? "simple" : spec.Style;
+            if (value is System.Collections.IDictionary dictionary)
+            {
+                return SerializePathObject(spec.Name, dictionary, style, spec.Explode);
+            }
+            if (value is System.Collections.IEnumerable enumerable && value is not string)
+            {
+                return SerializePathArray(spec.Name, enumerable, style, spec.Explode);
+            }
+            return PathPrimitivePrefix(spec.Name, style) + Uri.EscapeDataString(value.ToString() ?? string.Empty);
+        }
+
+        private static string SerializePathArray(string name, System.Collections.IEnumerable values, string style, bool explode)
+        {
+            var serialized = new List<string>();
+            foreach (var item in values)
+            {
+                if (item is not null)
+                {
+                    serialized.Add(Uri.EscapeDataString(item.ToString() ?? string.Empty));
+                }
+            }
+            if (serialized.Count == 0)
+            {
+                return PathPrefix(name, style);
+            }
+            if (style == "matrix")
+            {
+                if (explode)
+                {
+                    var parts = new List<string>();
+                    foreach (var item in serialized)
+                    {
+                        parts.Add(";" + name + "=" + item);
+                    }
+                    return string.Join(string.Empty, parts);
+                }
+                return ";" + name + "=" + string.Join(",", serialized);
+            }
+            var separator = explode ? "." : ",";
+            return PathPrefix(name, style) + string.Join(separator, serialized);
+        }
+
+        private static string SerializePathObject(string name, System.Collections.IDictionary values, string style, bool explode)
+        {
+            var entries = new List<string>();
+            var exploded = new List<string>();
+            foreach (System.Collections.DictionaryEntry item in values)
+            {
+                if (item.Value is null)
+                {
+                    continue;
+                }
+                var escapedKey = Uri.EscapeDataString(item.Key.ToString() ?? string.Empty);
+                var escapedValue = Uri.EscapeDataString(item.Value.ToString() ?? string.Empty);
+                if (explode)
+                {
+                    exploded.Add(style == "matrix" ? ";" + escapedKey + "=" + escapedValue : escapedKey + "=" + escapedValue);
+                }
+                else
+                {
+                    entries.Add(escapedKey);
+                    entries.Add(escapedValue);
+                }
+            }
+            if (style == "matrix")
+            {
+                return explode ? string.Join(string.Empty, exploded) : ";" + name + "=" + string.Join(",", entries);
+            }
+            if (explode)
+            {
+                var separator = style == "label" ? "." : ",";
+                return PathPrefix(name, style) + string.Join(separator, exploded);
+            }
+            return PathPrefix(name, style) + string.Join(",", entries);
+        }
+
+        private static string PathPrefix(string name, string style)
+        {
+            return style switch
+            {
+                "label" => ".",
+                "matrix" => ";" + name,
+                _ => string.Empty,
+            };
+        }
+
+        private static string PathPrimitivePrefix(string name, string style)
+        {
+            return style == "matrix" ? ";" + name + "=" : PathPrefix(name, style);
+        }
+
+
+    }
+}

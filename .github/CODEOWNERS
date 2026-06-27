@@ -1,0 +1,84 @@
+# SDKWork Claw Router CODEOWNERS
+# Each line: pattern <owner1> <owner2> ...
+# Owners must be GitHub usernames or team names (@sdkwork/<team>).
+
+# Repository-wide defaults
+*                           @sdkwork/clawrouter-platform
+
+# Rust gateway and core services
+/crates/sdkwork-claw-http/                  @sdkwork/clawrouter-security
+/crates/sdkwork-claw-security/              @sdkwork/clawrouter-security
+/crates/sdkwork-claw-config/                @sdkwork/clawrouter-platform
+/crates/sdkwork-claw-observability/         @sdkwork/clawrouter-observability
+/crates/sdkwork-claw-contract/              @sdkwork/clawrouter-platform
+/crates/sdkwork-claw-core/                  @sdkwork/clawrouter-platform
+/crates/sdkwork-claw-paas-plugin/           @sdkwork/clawrouter-platform
+/crates/sdkwork-claw-test-support/          @sdkwork/clawrouter-platform
+
+# Provider adapters
+/crates/sdkwork-claw-provider-adapter-contract/  @sdkwork/clawrouter-provider
+/crates/sdkwork-claw-provider-adapter-core/      @sdkwork/clawrouter-provider
+/crates/sdkwork-claw-provider-adapter-http/      @sdkwork/clawrouter-provider
+/crates/sdkwork-claw-provider-adapter-registry/  @sdkwork/clawrouter-provider
+/crates/provider-adapters/                       @sdkwork/clawrouter-provider
+/services/sdkwork-claw-provider-adapter/         @sdkwork/clawrouter-provider
+
+# Gateway assemblies
+/crates/sdkwork-clawrouter-cloud-gateway/       @sdkwork/clawrouter-gateway
+/crates/sdkwork-clawrouter-standalone-gateway/  @sdkwork/clawrouter-gateway
+/crates/sdkwork-clawrouter-gateway-assembly/    @sdkwork/clawrouter-gateway
+
+# Route crates
+/crates/sdkwork-routes-*/           @sdkwork/clawrouter-api
+
+# Backend services
+/services/sdkwork-clawrouter-router-service/    @sdkwork/clawrouter-gateway
+/services/sdkwork-clawrouter-admin-api-server/  @sdkwork/clawrouter-api
+/services/sdkwork-clawrouter-app-api-server/    @sdkwork/clawrouter-api
+/services/sdkwork-claw-installer/               @sdkwork/clawrouter-release
+
+# SQL repositories
+/crates/sdkwork-clawrouter-admin-*-repository-sqlx/    @sdkwork/clawrouter-data
+/crates/sdkwork-clawrouter-app-*-repository-sqlx/      @sdkwork/clawrouter-data
+/crates/sdkwork-clawrouter-settlements-*-repository-sqlx/  @sdkwork/clawrouter-data
+/crates/sdkwork-clawrouter-database-host/         @sdkwork/clawrouter-data
+
+# Frontend PC application
+/apps/sdkwork-clawrouter-pc/                     @sdkwork/clawrouter-frontend
+/packages/                                       @sdkwork/clawrouter-frontend
+
+# SDK families
+/sdks/                                           @sdkwork/clawrouter-sdk
+
+# API contracts and OpenAPI
+/apis/                                           @sdkwork/clawrouter-api
+/generated/openapi/                              @sdkwork/clawrouter-api
+/generated/api/                                  @sdkwork/clawrouter-api
+/generated/types/                                @sdkwork/clawrouter-api
+
+# Database schema and migrations
+/database/                                       @sdkwork/clawrouter-data
+/docs/schema-registry/                           @sdkwork/clawrouter-data
+/generated/schema/                               @sdkwork/clawrouter-data
+
+# Deployment, k8s, nginx
+/deployments/                                    @sdkwork/clawrouter-release
+/etc/nginx/                                      @sdkwork/clawrouter-release
+
+# CI / release governance
+/.github/                                        @sdkwork/clawrouter-release
+/sdkwork.workflow.json                           @sdkwork/clawrouter-release
+/scripts/                                        @sdkwork/clawrouter-release
+
+# Security and IAM
+/SECURITY.md                                     @sdkwork/clawrouter-security
+/.github/ISSUE_TEMPLATE/security_report.yml      @sdkwork/clawrouter-security
+
+# Documentation
+/docs/                                           @sdkwork/clawrouter-docs
+/README.md                                       @sdkwork/clawrouter-docs
+/AGENTS.md                                       @sdkwork/clawrouter-platform
+
+# Specs and standards alignment
+/specs/                                          @sdkwork/clawrouter-platform
+/docs/standard-alignment-audit.md                @sdkwork/clawrouter-platform

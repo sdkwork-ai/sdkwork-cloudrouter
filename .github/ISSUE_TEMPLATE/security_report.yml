@@ -1,0 +1,80 @@
+name: Security Report
+description: Private security vulnerability report — visible only to maintainers
+title: "security: <short non-revealing description>"
+labels: ["security", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do NOT include exploit payloads, secrets, or PII in this report.**
+        If full reproduction requires sensitive material, ask a maintainer for an
+        encrypted channel. See `SECURITY.md` for the SLA and disclosure policy.
+  - type: input
+    id: version
+    attributes:
+      label: Affected Claw Router version
+      placeholder: "0.3.0 (run `clawrouter --version`)"
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Self-assessed severity
+      options:
+        - Critical (RCE, data breach, tenant isolation bypass)
+        - High (privilege escalation, auth bypass)
+        - Medium (DoS, information disclosure)
+        - Low (hardening gap, defense in depth)
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected component
+      options:
+        - gateway (OpenAI-compatible /v1)
+        - admin-api (backend management)
+        - app-api (portal backend)
+        - edge server (all-in-one)
+        - installer (clawrouterctl)
+        - portal (React PC app)
+        - sdk (generated client)
+        - database / migrations
+        - k8s / deployment
+        - supply chain (dependency, artifact, SBOM)
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: High-level description of the issue. Do NOT include exploit details yet.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: What can an attacker achieve? (data leakage, lateral movement, DoS, etc.)
+    validations:
+      required: true
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: Suggested mitigation
+      description: If you have a remediation in mind, describe it.
+  - type: input
+    id: reporter
+    attributes:
+      label: Reporter contact (optional)
+      placeholder: "GitHub username, email, or PGP key fingerprint for credit"
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Acknowledgement
+      options:
+        - label: I have read SECURITY.md and will not publicly disclose until coordinated with maintainers
+          required: true
+        - label: I have NOT included live secrets, tokens, or production PII in this report
+          required: true

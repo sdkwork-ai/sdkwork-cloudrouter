@@ -1,0 +1,3297 @@
+fragment: shared/entities/admin
+x_response_entities:
+  admin_announcement_item:
+    name: AdminAnnouncementItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - title
+    - target
+    - status
+    - showAsPopup
+    - date
+    - content
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      title:
+        type: string
+        minLength: 1
+        maxLength: 200
+      target:
+        type: string
+        enum:
+        - all
+        - vip
+        - free
+        - beta
+      status:
+        type: string
+        enum:
+        - published
+        - draft
+      showAsPopup:
+        type: boolean
+      date:
+        type: string
+        minLength: 1
+        maxLength: 64
+      content:
+        type: string
+        minLength: 1
+        maxLength: 20000
+  admin_announcement_create_request:
+    name: AdminAnnouncementCreateRequest
+    type: object
+    additionalProperties: false
+    required:
+    - title
+    - target
+    - status
+    - showAsPopup
+    - content
+    properties:
+      title:
+        type: string
+        minLength: 1
+        maxLength: 200
+      target:
+        type: string
+        enum:
+        - all
+        - vip
+        - free
+        - beta
+      status:
+        type: string
+        enum:
+        - published
+        - draft
+      showAsPopup:
+        type: boolean
+      content:
+        type: string
+        minLength: 1
+        maxLength: 20000
+  admin_announcement_update_request:
+    name: AdminAnnouncementUpdateRequest
+    type: object
+    additionalProperties: false
+    properties:
+      title:
+        type: string
+        minLength: 1
+        maxLength: 200
+      target:
+        type: string
+        enum:
+        - all
+        - vip
+        - free
+        - beta
+      status:
+        type: string
+        enum:
+        - published
+        - draft
+      showAsPopup:
+        type: boolean
+      content:
+        type: string
+        minLength: 1
+        maxLength: 20000
+  admin_announcement_mutation_response:
+    name: AdminAnnouncementMutationResponse
+    type: object
+    additionalProperties: false
+    required:
+    - item
+    properties:
+      item:
+        $ref: '#/x_response_entities/admin_announcement_item'
+  admin_announcements_response:
+    name: AdminAnnouncementsResponse
+    type: object
+    additionalProperties: false
+    required:
+    - items
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/x_response_entities/admin_announcement_item'
+  admin_announcements_delete_response:
+    name: AnnouncementsDeleteResult
+    type: object
+    additionalProperties: false
+    required:
+    - deleted
+    properties:
+      deleted:
+        type: boolean
+  admin_referral_stats_response:
+    name: AdminReferralStatsResponse
+    type: object
+    additionalProperties: false
+    required:
+    - items
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/x_response_entities/admin_referral_stat_item'
+  admin_agent_version_item: &id002
+    name: AdminAgentVersionItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - versionNo
+    - releaseStatus
+    - systemPrompt
+    - toolPolicy
+    - memoryPolicy
+    - mcpPolicy
+    - skillPolicy
+    - runtimePolicy
+    - createdAt
+    - updatedAt
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      versionNo:
+        type: integer
+        format: int64
+        minimum: 1
+      releaseStatus:
+        type: string
+        enum:
+        - draft
+        - published
+        - archived
+      model:
+        type: string
+        nullable: true
+        maxLength: 128
+      systemPrompt:
+        type: string
+        maxLength: 32768
+      toolPolicy: &id001
+        name: AgentPolicy
+        type: object
+        additionalProperties: true
+        description: Open JSON policy document validated by the agent runtime for model, tool, memory, MCP, skill, or execution settings.
+      memoryPolicy: *id001
+      mcpPolicy: *id001
+      skillPolicy: *id001
+      runtimePolicy: *id001
+      createdAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+      updatedAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+  admin_agent_capabilities: &id003
+    name: AdminAgentCapabilities
+    type: object
+    additionalProperties: false
+    required:
+    - memoryEnabled
+    - mcpServerCount
+    - skillBindingCount
+    properties:
+      memoryEnabled:
+        type: boolean
+      mcpServerCount:
+        type: integer
+        format: int64
+        minimum: 0
+      skillBindingCount:
+        type: integer
+        format: int64
+        minimum: 0
+  admin_agent_item:
+    name: AdminAgentItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - ownerUserId
+    - code
+    - name
+    - description
+    - visibility
+    - status
+    - createdAt
+    - updatedAt
+    - defaultVersion
+    - capabilities
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      ownerUserId:
+        type: integer
+        format: int64
+        minimum: 1
+      code:
+        type: string
+        minLength: 1
+        maxLength: 96
+        pattern: ^[a-z0-9][a-z0-9-]{0,95}$
+      name:
+        type: string
+        minLength: 1
+        maxLength: 128
+      description:
+        type: string
+        maxLength: 1024
+      visibility:
+        type: string
+        enum:
+        - private
+        - organization
+        - public
+      status:
+        type: string
+        enum:
+        - active
+        - disabled
+      avatar:
+        $ref: '#/components/schemas/MediaResource'
+        nullable: true
+      templateSource:
+        type: string
+        nullable: true
+        maxLength: 128
+      createdAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+      updatedAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+      defaultVersion: *id002
+      capabilities: *id003
+  admin_channel_item:
+    name: AdminChannelItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - channelId
+    - name
+    - vendor
+    - channelType
+    - protocol
+    - accessType
+    - credentialRotation
+    - credentials
+    - capabilities
+    - resourceCodes
+    - isMultimodal
+    - weight
+    - status
+    - balance
+    - errors
+    - createdAt
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      channelId:
+        type: string
+        minLength: 1
+        maxLength: 128
+        pattern: ^[1-9][0-9]*$
+      name:
+        type: string
+        minLength: 1
+        maxLength: 128
+      vendor:
+        type: string
+        minLength: 1
+        maxLength: 64
+      channelType:
+        type: string
+        enum:
+        - official
+        - relay
+      protocol:
+        type: string
+        minLength: 1
+        maxLength: 64
+      accessType:
+        type: string
+        minLength: 1
+        maxLength: 64
+      credentialRotation:
+        type: string
+        enum:
+        - default
+        - priority
+        - round_robin
+        - weighted_round_robin
+        - random
+      credentials:
+        type: array
+        minItems: 0
+        maxItems: 64
+        items:
+          name: AdminChannelCredentialItem
+          type: object
+          additionalProperties: false
+          required:
+          - id
+          - credentialId
+          - name
+          - baseUrl
+          - secretRef
+          - maskedLabel
+          - priority
+          - weight
+          - status
+          - errors
+          properties:
+            id:
+              type: string
+              minLength: 1
+              maxLength: 128
+            credentialId:
+              type: string
+              minLength: 1
+              maxLength: 128
+              pattern: ^[1-9][0-9]*$
+            name:
+              type: string
+              minLength: 1
+              maxLength: 128
+            baseUrl:
+              type: string
+              minLength: 1
+              maxLength: 512
+              pattern: ^https?://[^\\s]+$
+            secretRef:
+              type: string
+              minLength: 1
+              maxLength: 256
+              pattern: ^(vault|secret)://[^\\s]+$
+            apiKey:
+              type: string
+              maxLength: 4096
+              description: Plaintext provider API key returned only to authenticated admin management responses when available.
+            maskedLabel:
+              type: string
+              minLength: 1
+              maxLength: 128
+            priority:
+              type: integer
+              format: int64
+              minimum: 1
+              maximum: 1000000
+            weight:
+              type: integer
+              format: int64
+              minimum: 1
+              maximum: 10000
+            status:
+              type: string
+              enum:
+              - active
+              - disabled
+              - error
+            errors:
+              type: integer
+              format: int64
+              minimum: 0
+      createdAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+      expiresAt:
+        type: string
+        nullable: true
+        maxLength: 64
+        description: Optional channel account expiration timestamp. Null or absence means the channel account never expires.
+      capabilities:
+        type: array
+        maxItems: 16
+        items:
+          type: string
+          enum:
+          - llm
+          - image
+          - audio
+          - music
+          - sfx
+          - video
+      resourceCodes:
+        type: array
+        maxItems: 256
+        uniqueItems: true
+        items:
+          type: string
+          minLength: 1
+          maxLength: 192
+          pattern: ^[A-Za-z0-9._-]+$
+      isMultimodal:
+        type: boolean
+      timeoutMs:
+        type: integer
+        format: int64
+        minimum: 1
+        maximum: 600000
+      retryPolicy:
+        name: ProviderRetryPolicy
+        type: object
+        additionalProperties: false
+        required:
+        - maxAttempts
+        - retryableStatusCodes
+        properties:
+          maxAttempts:
+            type: integer
+            minimum: 1
+            maximum: 5
+          retryableStatusCodes:
+            type: array
+            maxItems: 8
+            uniqueItems: true
+            items:
+              type: integer
+              enum:
+              - 408
+              - 409
+              - 425
+              - 429
+              - 500
+              - 502
+              - 503
+              - 504
+          backoffMs:
+            type: integer
+            minimum: 0
+            maximum: 2000
+      circuitBreakerPolicy:
+        name: ProviderCircuitBreakerPolicy
+        type: object
+        additionalProperties: false
+        required:
+        - failureThreshold
+        properties:
+          failureThreshold:
+            type: integer
+            minimum: 1
+            maximum: 100
+      weight:
+        type: integer
+        format: int64
+        minimum: 1
+        maximum: 10000
+      status:
+        type: string
+        enum:
+        - active
+        - disabled
+        - error
+      balance:
+        type: string
+        maxLength: 64
+      errors:
+        type: integer
+        format: int64
+        minimum: 0
+  admin_provider_secret_item:
+    name: AdminProviderSecretItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - providerCode
+    - accountCode
+    - name
+    - authType
+    - secretRef
+    - maskedLabel
+    - status
+    - createdAt
+    - updatedAt
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      providerCode:
+        type: string
+        minLength: 1
+        maxLength: 64
+      accountCode:
+        type: string
+        minLength: 1
+        maxLength: 64
+      name:
+        type: string
+        minLength: 1
+        maxLength: 128
+      authType:
+        type: string
+        maxLength: 64
+      secretRef:
+        type: string
+        minLength: 1
+        maxLength: 256
+        pattern: ^(vault|secret)://[^\\s]+$
+      maskedLabel:
+        type: string
+        minLength: 1
+        maxLength: 256
+      status:
+        type: string
+        enum:
+        - active
+        - disabled
+      createdAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+      updatedAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+  admin_channel_group_item:
+    name: AdminChannelGroupItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - groupCode
+    - groupName
+    - providerCode
+    - priceReferenceMode
+    - rateMultiplier
+    - officialPriceMultiplier
+    - groupType
+    - accountCount
+    - capacity
+    - usage
+    - status
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      groupCode:
+        type: string
+        minLength: 1
+        maxLength: 64
+      groupName:
+        type: string
+        minLength: 1
+        maxLength: 128
+      providerCode:
+        type: string
+        minLength: 1
+        maxLength: 64
+      priceReferenceMode:
+        type: string
+        enum:
+        - multiplier
+        - official_price
+      rateMultiplier:
+        type: number
+        minimum: 0.01
+        maximum: 100
+      officialPriceMultiplier:
+        type: number
+        minimum: 0.01
+        maximum: 100
+      groupType:
+        type: string
+        enum:
+        - public
+        - dedicated
+      accountCount:
+        name: AdminCountPair
+        type: object
+        additionalProperties: false
+        required:
+        - available
+        - total
+        properties:
+          available:
+            type: number
+            minimum: 0
+          total:
+            type: number
+            minimum: 0
+      capacity:
+        name: AdminCapacityPair
+        type: object
+        additionalProperties: false
+        required:
+        - used
+        - total
+        properties:
+          used:
+            type: number
+            minimum: 0
+          total:
+            type: number
+            minimum: 0
+      usage:
+        name: AdminUsagePair
+        type: object
+        additionalProperties: false
+        required:
+        - today
+        - total
+        properties:
+          today:
+            type: number
+            minimum: 0
+          total:
+            type: number
+            minimum: 0
+      status:
+        type: string
+        enum:
+        - active
+        - disabled
+  promotion_offer_record:
+    name: PromotionOfferRecord
+    type: object
+    additionalProperties: false
+    required:
+    - offer_no
+    - offer_code
+    - name
+    - offer_type
+    - audience_scope
+    - combinability
+    - status
+    - tenant_id
+    - created_at
+    - updated_at
+    properties:
+      offer_no:
+        type: string
+        minLength: 1
+        maxLength: 128
+      offer_code:
+        type: string
+        minLength: 1
+        maxLength: 128
+      name:
+        type: string
+        minLength: 1
+        maxLength: 128
+      offer_type:
+        type: string
+        minLength: 1
+        maxLength: 64
+      audience_scope:
+        type: string
+        minLength: 1
+        maxLength: 64
+      combinability:
+        type: string
+        minLength: 1
+        maxLength: 64
+      status:
+        type: string
+        minLength: 1
+        maxLength: 64
+      tenant_id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      organization_id:
+        type: string
+        nullable: true
+        maxLength: 128
+      current_offer_version_id:
+        type: string
+        nullable: true
+        maxLength: 128
+      description:
+        type: string
+        nullable: true
+        maxLength: 1024
+      starts_at:
+        type: string
+        nullable: true
+        maxLength: 64
+      ends_at:
+        type: string
+        nullable: true
+        maxLength: 64
+      created_by:
+        type: string
+        nullable: true
+        maxLength: 128
+      updated_by:
+        type: string
+        nullable: true
+        maxLength: 128
+      created_at:
+        type: string
+        minLength: 1
+        maxLength: 64
+      updated_at:
+        type: string
+        minLength: 1
+        maxLength: 64
+  promotion_coupon_stock_record:
+    name: PromotionCouponStockRecord
+    type: object
+    additionalProperties: false
+    required:
+    - stock_no
+    - name
+    - title
+    - offer_id
+    - offer_version_id
+    - stock_type
+    - code_mode
+    - issue_channel
+    - currency_code
+    - activation_status
+    - can_resend
+    - overspend_policy
+    - status
+    - tenant_id
+    - created_at
+    - updated_at
+    properties:
+      stock_no:
+        type: string
+        minLength: 1
+        maxLength: 128
+      name:
+        type: string
+        minLength: 1
+        maxLength: 128
+      title:
+        type: string
+        minLength: 1
+        maxLength: 128
+      offer_id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      offer_version_id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      stock_type:
+        type: string
+        minLength: 1
+        maxLength: 64
+      code_mode:
+        type: string
+        minLength: 1
+        maxLength: 64
+      issue_channel:
+        type: string
+        minLength: 1
+        maxLength: 64
+      currency_code:
+        type: string
+        pattern: ^[A-Z]{3}$
+      activation_status:
+        type: string
+        minLength: 1
+        maxLength: 64
+      can_resend:
+        type: boolean
+      status:
+        type: string
+        minLength: 1
+        maxLength: 64
+      tenant_id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      organization_id:
+        type: string
+        nullable: true
+        maxLength: 128
+      code_prefix:
+        type: string
+        nullable: true
+        maxLength: 32
+      total_quantity:
+        type: string
+        nullable: true
+        maxLength: 32
+      starts_at:
+        type: string
+        nullable: true
+        maxLength: 64
+      expires_at:
+        type: string
+        nullable: true
+        maxLength: 64
+      cancel_until:
+        type: string
+        nullable: true
+        maxLength: 64
+      per_subject_limit:
+        type: string
+        nullable: true
+        maxLength: 32
+      max_claims_per_subject:
+        type: integer
+        nullable: true
+        format: int64
+        minimum: 0
+      max_claims_per_natural_person:
+        type: integer
+        nullable: true
+        format: int64
+        minimum: 0
+      budget_account_id:
+        type: string
+        nullable: true
+        maxLength: 128
+      budget_warning_threshold_bps:
+        type: integer
+        nullable: true
+        minimum: 0
+        maximum: 10000
+      budget_stop_threshold_bps:
+        type: integer
+        nullable: true
+        minimum: 0
+        maximum: 10000
+      overspend_policy:
+        type: string
+        minLength: 1
+        maxLength: 64
+      stock_creator_merchant_id:
+        type: string
+        nullable: true
+        maxLength: 128
+      created_by:
+        type: string
+        nullable: true
+        maxLength: 128
+      updated_by:
+        type: string
+        nullable: true
+        maxLength: 128
+      created_at:
+        type: string
+        minLength: 1
+        maxLength: 64
+      updated_at:
+        type: string
+        minLength: 1
+        maxLength: 64
+  promotion_code_record:
+    name: PromotionCodeRecord
+    type: object
+    additionalProperties: false
+    required:
+    - code_no
+    - offer_id
+    - offer_version_id
+    - stock_id
+    - code_type
+    - promotion_code_hash
+    - activation_status
+    - can_resend
+    - currency_code
+    - status
+    - tenant_id
+    - created_at
+    - updated_at
+    properties:
+      code_no:
+        type: string
+        minLength: 1
+        maxLength: 128
+      offer_id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      offer_version_id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      stock_id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      code_type:
+        type: string
+        minLength: 1
+        maxLength: 64
+      promotion_code_hash:
+        type: string
+        minLength: 1
+        maxLength: 256
+      promotion_code_last4:
+        type: string
+        nullable: true
+        maxLength: 8
+      claim_code_hash:
+        type: string
+        nullable: true
+        maxLength: 256
+      claim_code_suffix:
+        type: string
+        nullable: true
+        maxLength: 16
+      channel_code:
+        type: string
+        nullable: true
+        maxLength: 64
+      activation_status:
+        type: string
+        minLength: 1
+        maxLength: 64
+      can_resend:
+        type: boolean
+      currency_code:
+        type: string
+        pattern: ^[A-Z]{3}$
+      status:
+        type: string
+        minLength: 1
+        maxLength: 64
+      tenant_id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      organization_id:
+        type: string
+        nullable: true
+        maxLength: 128
+      starts_at:
+        type: string
+        nullable: true
+        maxLength: 64
+      expires_at:
+        type: string
+        nullable: true
+        maxLength: 64
+      activated_at:
+        type: string
+        nullable: true
+        maxLength: 64
+      canceled_at:
+        type: string
+        nullable: true
+        maxLength: 64
+      cancel_until:
+        type: string
+        nullable: true
+        maxLength: 64
+      created_by:
+        type: string
+        nullable: true
+        maxLength: 128
+      updated_by:
+        type: string
+        nullable: true
+        maxLength: 128
+      created_at:
+        type: string
+        minLength: 1
+        maxLength: 64
+      updated_at:
+        type: string
+        minLength: 1
+        maxLength: 64
+  admin_model_vendor_item:
+    name: AdminModelVendorItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - vendorCode
+    - name
+    - status
+    - color
+    - description
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      vendorCode:
+        type: string
+        minLength: 1
+        maxLength: 64
+      name:
+        type: string
+        minLength: 1
+        maxLength: 128
+      status:
+        type: string
+        enum:
+        - active
+        - inactive
+      color:
+        type: string
+        minLength: 1
+        maxLength: 64
+      description:
+        type: string
+        maxLength: 512
+  admin_ai_model_region_price_input:
+    name: AdminAiModelRegionPrice
+    type: object
+    additionalProperties: false
+    description: Regional official reference pricing input for admin AI model commands.
+    required:
+    - regionCode
+    - priceIn
+    - priceOut
+    properties:
+      regionCode:
+        type: string
+        minLength: 1
+        maxLength: 64
+        pattern: ^[a-z][a-z0-9_-]{0,63}$
+        description: Model catalog pricing region code.
+      priceIn:
+        type: string
+        pattern: ^[0-9]+(\.[0-9]{1,12})?$
+        description: Official reference input unit price in USD.
+      priceOut:
+        type: string
+        pattern: ^[0-9]+(\.[0-9]{1,12})?$
+        description: Official reference output unit price in USD.
+      cacheReadPrice:
+        type: string
+        pattern: ^$|^[0-9]+(\.[0-9]{1,12})?$
+        description: Optional official reference cache-read unit price in USD.
+      cacheWritePrice:
+        type: string
+        pattern: ^$|^[0-9]+(\.[0-9]{1,12})?$
+        description: Optional official reference cache-write unit price in USD.
+  admin_ai_model_item:
+    name: AdminAiModelItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - vendorId
+    - vendorCode
+    - model
+    - displayName
+    - name
+    - type
+    - regionPrices
+    - status
+    - calls
+    - description
+    - modalities
+    - inputModalities
+    - outputModalities
+    - apiFormat
+    - capabilityIntro
+    - limitations
+    - supportedLanguages
+    - useCases
+    - trainingDataCutoff
+    - contextTokens
+    - maxOutputTokens
+    - supportsStreaming
+    - supportsTools
+    - supportsJsonSchema
+    - releaseStage
+    - shelfState
+    - routingState
+    - replacementModel
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      vendorId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      vendorCode:
+        type: string
+        minLength: 1
+        maxLength: 64
+      model:
+        type: string
+        minLength: 1
+        maxLength: 256
+        pattern: ^[A-Za-z0-9._:/-]+$
+        description: Runtime model identifier used for provider calls, routing, and pricing keys.
+      displayName:
+        type: string
+        minLength: 1
+        maxLength: 128
+        description: Product display name. Falls back to model when no display name is configured.
+      name:
+        type: string
+        minLength: 1
+        maxLength: 128
+        description: Compatibility display alias. Equal to displayName.
+      type:
+        type: string
+        enum:
+        - Chat
+        - Image
+        - Audio
+        - Embedding
+        - Music
+        - SoundEffect
+        - Video
+      regionPrices:
+        type: array
+        minItems: 1
+        maxItems: 32
+        items:
+          name: AdminAiModelRegionPrice
+          type: object
+          additionalProperties: false
+          description: Regional official reference pricing returned by admin AI model payloads.
+          required:
+          - regionCode
+          - priceIn
+          - priceOut
+          properties:
+            regionCode:
+              type: string
+              minLength: 1
+              maxLength: 64
+              pattern: ^[a-z][a-z0-9_-]{0,63}$
+              description: Model catalog pricing region code.
+            priceIn:
+              type: string
+              pattern: ^[0-9]+(\.[0-9]{1,12})?$
+              description: Official reference input unit price in USD.
+            priceOut:
+              type: string
+              pattern: ^[0-9]+(\.[0-9]{1,12})?$
+              description: Official reference output unit price in USD.
+            cacheReadPrice:
+              type: string
+              pattern: ^$|^[0-9]+(\.[0-9]{1,12})?$
+              description: Optional official reference cache-read unit price in USD.
+            cacheWritePrice:
+              type: string
+              pattern: ^$|^[0-9]+(\.[0-9]{1,12})?$
+              description: Optional official reference cache-write unit price in USD.
+      status:
+        type: string
+        enum:
+        - active
+        - inactive
+      calls:
+        type: string
+        maxLength: 64
+      description:
+        type: string
+        nullable: true
+        maxLength: 2048
+      modalities:
+        type: array
+        maxItems: 16
+        items:
+          type: string
+          minLength: 1
+          maxLength: 64
+      inputModalities:
+        type: array
+        maxItems: 16
+        items:
+          type: string
+          minLength: 1
+          maxLength: 64
+      outputModalities:
+        type: array
+        maxItems: 16
+        items:
+          type: string
+          minLength: 1
+          maxLength: 64
+      apiFormat:
+        type: string
+        nullable: true
+        maxLength: 128
+      capabilityIntro:
+        type: string
+        nullable: true
+        maxLength: 4096
+      limitations:
+        type: array
+        maxItems: 64
+        items:
+          type: string
+          minLength: 1
+          maxLength: 512
+      supportedLanguages:
+        type: array
+        maxItems: 128
+        items:
+          type: string
+          minLength: 1
+          maxLength: 128
+      useCases:
+        type: array
+        maxItems: 64
+        items:
+          type: string
+          minLength: 1
+          maxLength: 256
+      trainingDataCutoff:
+        type: string
+        nullable: true
+        maxLength: 128
+      contextTokens:
+        type: integer
+        format: int64
+        nullable: true
+        minimum: 0
+      maxOutputTokens:
+        type: integer
+        format: int64
+        nullable: true
+        minimum: 0
+      supportsStreaming:
+        type: boolean
+      supportsTools:
+        type: boolean
+      supportsJsonSchema:
+        type: boolean
+      releaseStage:
+        type: integer
+        format: int64
+        nullable: true
+      shelfState:
+        type: integer
+        format: int64
+        nullable: true
+      routingState:
+        type: integer
+        format: int64
+        nullable: true
+      replacementModel:
+        type: string
+        nullable: true
+        maxLength: 128
+  admin_skill_category_item:
+    name: AdminSkillCategoryItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - name
+    - sortWeight
+    - visible
+    - status
+    - type
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      name:
+        type: string
+        minLength: 1
+        maxLength: 255
+      description:
+        type: string
+        maxLength: 512
+      code:
+        type: string
+        maxLength: 128
+        pattern: ^[A-Za-z0-9_-]+$
+      icon:
+        $ref: '#/components/schemas/MediaResource'
+      sortWeight:
+        type: integer
+        format: int32
+        minimum: -1000000
+        maximum: 1000000
+      parentId:
+        type: string
+        nullable: true
+        maxLength: 128
+      path:
+        type: string
+        maxLength: 1024
+        pattern: ^/
+      visible:
+        type: boolean
+      status:
+        type: integer
+        format: int32
+      type:
+        type: integer
+        format: int32
+        enum:
+        - 19
+        - 20
+  admin_skill_package_item:
+    name: AdminSkillPackageItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - packageKey
+    - name
+    - enabled
+    - featured
+    - sortWeight
+    - tags
+    - createdAt
+    - updatedAt
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      packageKey:
+        type: string
+        minLength: 1
+        maxLength: 128
+        pattern: ^[A-Za-z0-9_-]+$
+      name:
+        type: string
+        minLength: 1
+        maxLength: 255
+      summary:
+        type: string
+        maxLength: 512
+      description:
+        type: string
+        maxLength: 4000
+      icon:
+        $ref: '#/components/schemas/MediaResource'
+      cover:
+        $ref: '#/components/schemas/MediaResource'
+      categoryId:
+        type: string
+        nullable: true
+        maxLength: 128
+      enabled:
+        type: boolean
+      featured:
+        type: boolean
+      sortWeight:
+        type: integer
+        format: int32
+        minimum: -1000000
+        maximum: 1000000
+      tags:
+        type: array
+        maxItems: 64
+        uniqueItems: true
+        items:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: ^[A-Za-z0-9._:-]+$
+      latestPublishedAt:
+        type: string
+        maxLength: 64
+      createdAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+      updatedAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+  admin_skill_item:
+    name: AdminSkillItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - skillKey
+    - name
+    - sourceType
+    - marketStatus
+    - visibility
+    - reviewStatus
+    - builtin
+    - isBuiltin
+    - enabled
+    - featured
+    - recommendWeight
+    - currency
+    - installCount
+    - ratingAvg
+    - ratingCount
+    - tags
+    - capabilities
+    - configSchema
+    - defaultConfig
+    - createdAt
+    - updatedAt
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      skillKey:
+        type: string
+        minLength: 1
+        maxLength: 128
+        pattern: ^[A-Za-z0-9_-]+$
+      name:
+        type: string
+        minLength: 1
+        maxLength: 255
+      summary:
+        type: string
+        maxLength: 512
+      description:
+        type: string
+        maxLength: 4000
+      icon:
+        $ref: '#/components/schemas/MediaResource'
+      cover:
+        $ref: '#/components/schemas/MediaResource'
+      categoryId:
+        type: string
+        nullable: true
+        maxLength: 128
+      packageId:
+        type: string
+        nullable: true
+        maxLength: 128
+      provider:
+        type: string
+        maxLength: 128
+      version:
+        type: string
+        maxLength: 64
+      versionName:
+        type: string
+        maxLength: 64
+      runtime:
+        type: string
+        maxLength: 64
+      entrypoint:
+        type: string
+        maxLength: 255
+      manifestUrl:
+        type: string
+        maxLength: 500
+      repositoryUrl:
+        type: string
+        maxLength: 500
+      homepageUrl:
+        type: string
+        maxLength: 500
+      documentationUrl:
+        type: string
+        maxLength: 500
+      licenseName:
+        type: string
+        maxLength: 128
+      sourceType:
+        type: string
+        enum:
+        - OFFICIAL
+        - COMMUNITY
+        - ENTERPRISE
+        - PRIVATE
+        - CUSTOM
+      marketStatus:
+        type: string
+        enum:
+        - DRAFT
+        - PUBLISHED
+        - OFFLINE
+        - DEPRECATED
+      visibility:
+        type: string
+        enum:
+        - PUBLIC
+        - PRIVATE
+        - UNLISTED
+      reviewStatus:
+        type: string
+        enum:
+        - PENDING
+        - APPROVED
+        - REJECTED
+      reviewComment:
+        type: string
+        maxLength: 1000
+      reviewedBy:
+        type: string
+        maxLength: 128
+      reviewedAt:
+        type: string
+        maxLength: 64
+      builtin:
+        type: boolean
+      isBuiltin:
+        type: boolean
+      enabled:
+        type: boolean
+      featured:
+        type: boolean
+      recommendWeight:
+        type: integer
+        format: int32
+        minimum: -1000000
+        maximum: 1000000
+      price:
+        type: string
+        nullable: true
+        pattern: ^\d+(?:\.\d{1,12})?$
+      currency:
+        type: string
+        minLength: 1
+        maxLength: 16
+        pattern: ^[A-Z]+$
+      installCount:
+        type: string
+        pattern: ^\d+$
+      ratingAvg:
+        type: string
+        pattern: ^\d+(?:\.\d{1,2})?$
+      ratingCount:
+        type: string
+        pattern: ^\d+$
+      tags:
+        type: array
+        maxItems: 64
+        uniqueItems: true
+        items:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: ^[A-Za-z0-9._:-]+$
+      capabilities:
+        type: array
+        maxItems: 64
+        uniqueItems: true
+        items:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: ^[A-Za-z0-9._:-]+$
+      configSchema:
+        type: object
+        additionalProperties: true
+      defaultConfig:
+        type: object
+        additionalProperties: true
+      latestPublishedAt:
+        type: string
+        maxLength: 64
+      createdAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+      updatedAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+  admin_skill_asset_item:
+    name: AdminSkillAssetItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - skillId
+    - targetType
+    - targetId
+    - assetType
+    - asset
+    - sortOrder
+    - status
+    - createdAt
+    - updatedAt
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      skillId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      targetType:
+        type: integer
+        format: int32
+        enum:
+        - 35
+      targetId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      artifactId:
+        type: string
+        nullable: true
+        maxLength: 128
+      assetType:
+        type: integer
+        format: int32
+        minimum: 0
+      asset:
+        $ref: '#/components/schemas/MediaResource'
+      thumbnail:
+        $ref: '#/components/schemas/MediaResource'
+        nullable: true
+      title:
+        type: string
+        nullable: true
+        maxLength: 255
+      altText:
+        type: string
+        nullable: true
+        maxLength: 512
+      mimeType:
+        type: string
+        nullable: true
+        maxLength: 128
+      width:
+        type: integer
+        format: int32
+        nullable: true
+        minimum: 0
+      height:
+        type: integer
+        format: int32
+        nullable: true
+        minimum: 0
+      durationSeconds:
+        type: string
+        nullable: true
+        maxLength: 64
+      fileSize:
+        type: integer
+        format: int64
+        nullable: true
+        minimum: 0
+      sortOrder:
+        type: integer
+        format: int32
+        minimum: 0
+      status:
+        type: integer
+        format: int32
+        minimum: 0
+      publishedAt:
+        type: string
+        nullable: true
+        maxLength: 64
+      createdAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+      updatedAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+  admin_skill_artifact_item:
+    name: AdminSkillArtifactItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - skillId
+    - targetType
+    - targetId
+    - artifactType
+    - version
+    - platformType
+    - osName
+    - artifactSizeBytes
+    - frameworks
+    - status
+    - createdAt
+    - updatedAt
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      skillId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      targetType:
+        type: integer
+        format: int32
+        enum:
+        - 35
+      targetId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      artifactType:
+        type: integer
+        format: int32
+        minimum: 0
+      version:
+        type: string
+        minLength: 1
+        maxLength: 64
+      platformType:
+        type: string
+        minLength: 1
+        maxLength: 128
+      osName:
+        type: string
+        minLength: 1
+        maxLength: 128
+      artifactRef:
+        type: string
+        nullable: true
+        maxLength: 1024
+      artifact:
+        $ref: '#/components/schemas/MediaResource'
+        nullable: true
+      artifactSizeBytes:
+        type: integer
+        format: int64
+        minimum: 0
+      runtime:
+        type: string
+        nullable: true
+        maxLength: 64
+      frameworks:
+        type: array
+        maxItems: 64
+        uniqueItems: true
+        example:
+        - Rust service
+        - OpenAI-compatible
+        - React portal
+        items:
+          type: string
+          minLength: 1
+          maxLength: 64
+      licenseName:
+        type: string
+        nullable: true
+        maxLength: 128
+      checksumHash:
+        type: string
+        nullable: true
+        maxLength: 128
+        pattern: ^sha256:[a-f0-9]{64}$
+      releaseNotes:
+        type: string
+        nullable: true
+        maxLength: 4000
+      status:
+        type: integer
+        format: int32
+        minimum: 0
+      publishedAt:
+        type: string
+        nullable: true
+        maxLength: 64
+      deprecatedAt:
+        type: string
+        nullable: true
+        maxLength: 64
+      createdAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+      updatedAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+  admin_rate_limit_item:
+    name: AdminRateLimitItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      ruleName:
+        type: string
+        maxLength: 128
+      targetIp:
+        type: string
+        maxLength: 256
+      keyPrefix:
+        type: string
+        maxLength: 128
+      user:
+        type: string
+        maxLength: 128
+      model:
+        type: string
+        maxLength: 128
+      channelGroup:
+        type: string
+        maxLength: 128
+      channelGroupId:
+        type: string
+        maxLength: 128
+      channelGroupName:
+        type: string
+        maxLength: 128
+      rps:
+        type: integer
+        minimum: 0
+      rpm:
+        type: integer
+        minimum: 0
+      rpd:
+        type: integer
+        minimum: 0
+      tpm:
+        type: integer
+        minimum: 0
+      burst:
+        type: integer
+        minimum: 0
+      blockDuration:
+        type: string
+        maxLength: 64
+      status:
+        type: string
+        enum:
+        - active
+        - inactive
+        - exhausted
+  admin_firewall_item:
+    name: AdminFirewallItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - type
+    - value
+    - reason
+    - time
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      type:
+        type: string
+        minLength: 1
+        maxLength: 64
+      value:
+        type: string
+        minLength: 1
+        maxLength: 256
+      reason:
+        type: string
+        minLength: 1
+        maxLength: 512
+      time:
+        type: string
+        minLength: 1
+        maxLength: 64
+  admin_user_item:
+    name: AdminUserItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - email
+    - username
+    - role
+    - group
+    - balance
+    - status
+    - lastActive
+    - lastUsed
+    - createdAt
+    properties:
+      id:
+        type: integer
+        minimum: 1
+      email:
+        type: string
+        format: email
+        minLength: 3
+        maxLength: 254
+      username:
+        type: string
+        maxLength: 128
+      role:
+        type: string
+        maxLength: 128
+      group:
+        type: string
+        maxLength: 128
+      balance:
+        type: string
+        maxLength: 64
+      status:
+        type: string
+        enum:
+        - active
+        - banned
+      lastActive:
+        type: string
+        maxLength: 64
+      lastUsed:
+        type: string
+        maxLength: 64
+      createdAt:
+        type: string
+        maxLength: 64
+  admin_api_key_item: &id021
+    name: AdminApiKeyItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - name
+    - key
+    - used
+    - status
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      name:
+        type: string
+        minLength: 1
+        maxLength: 128
+      key:
+        type: string
+        minLength: 1
+        maxLength: 256
+      used:
+        type: string
+        maxLength: 64
+      status:
+        type: string
+        maxLength: 64
+  admin_delete_response:
+    name: AdminDeleteResponse
+    type: object
+    additionalProperties: false
+    required:
+    - deleted
+    properties:
+      deleted:
+        type: boolean
+  admin_pie_chart_item: &id012
+    name: AdminPieChartItem
+    type: object
+    additionalProperties: false
+    required:
+    - name
+    - value
+    - color
+    properties:
+      name:
+        type: string
+        minLength: 1
+        maxLength: 128
+      value:
+        type: number
+        minimum: 0
+      color:
+        type: string
+        minLength: 1
+        maxLength: 64
+  admin_dashboard_traffic_item:
+    name: AdminDashboardTrafficItem
+    type: object
+    additionalProperties: false
+    required:
+    - time
+    - tokens
+    - requests
+    - cost
+    properties:
+      time:
+        type: string
+        minLength: 1
+        maxLength: 64
+      tokens:
+        type: number
+        minimum: 0
+      requests:
+        type: number
+        minimum: 0
+      cost:
+        type: number
+        minimum: 0
+  admin_dashboard_recent_usage_item:
+    name: AdminDashboardRecentUsageItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - user
+    - isApiUser
+    - model
+    - type
+    - billingMode
+    - time
+    - status
+    - cost
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      user:
+        type: string
+        minLength: 1
+        maxLength: 254
+      isApiUser:
+        type: boolean
+      model:
+        type: string
+        minLength: 1
+        maxLength: 128
+      type:
+        type: string
+        minLength: 1
+        maxLength: 64
+      billingMode:
+        type: string
+        minLength: 1
+        maxLength: 64
+      usageIn:
+        type: number
+        minimum: 0
+      usageOut:
+        type: number
+        minimum: 0
+      usageCount:
+        type: number
+        minimum: 0
+      time:
+        type: string
+        minLength: 1
+        maxLength: 64
+      status:
+        type: string
+        minLength: 1
+        maxLength: 64
+      cost:
+        type: string
+        pattern: ^-?\d+(?:\.\d{1,6})?$
+  admin_analytics_summary:
+    name: AdminAnalyticsSummary
+    type: object
+    additionalProperties: false
+    required:
+    - totalUsers
+    - activeUsers
+    - activeModels
+    - totalRequests
+    - successfulRequests
+    - failedRequests
+    - totalTokens
+    - totalPoints
+    - upstreamCost
+    - averageTokensPerRequest
+    - averagePointsPerRequest
+    - errorRate
+    properties:
+      totalUsers:
+        type: integer
+        format: int64
+        minimum: 0
+      activeUsers:
+        type: integer
+        format: int64
+        minimum: 0
+      activeModels:
+        type: integer
+        format: int64
+        minimum: 0
+      totalRequests:
+        type: integer
+        format: int64
+        minimum: 0
+      successfulRequests:
+        type: integer
+        format: int64
+        minimum: 0
+      failedRequests:
+        type: integer
+        format: int64
+        minimum: 0
+      totalTokens:
+        type: number
+        minimum: 0
+      totalPoints:
+        type: number
+        minimum: 0
+      upstreamCost:
+        type: number
+        minimum: 0
+      averageTokensPerRequest:
+        type: number
+        minimum: 0
+      averagePointsPerRequest:
+        type: number
+        minimum: 0
+      errorRate:
+        type: number
+        minimum: 0
+  admin_analytics_trend_point:
+    name: AdminAnalyticsTrendPoint
+    type: object
+    additionalProperties: false
+    required:
+    - time
+    - requests
+    - tokens
+    - points
+    - users
+    properties:
+      time:
+        type: string
+        minLength: 1
+        maxLength: 64
+      requests:
+        type: number
+        minimum: 0
+      tokens:
+        type: number
+        minimum: 0
+      points:
+        type: number
+        minimum: 0
+      users:
+        type: integer
+        format: int64
+        minimum: 0
+  admin_analytics_user_rank_item: &id013
+    name: AdminAnalyticsUserRankItem
+    type: object
+    additionalProperties: false
+    required:
+    - rank
+    - userId
+    - userName
+    - requestCount
+    - totalTokens
+    - points
+    - modelDistribution
+    properties:
+      rank:
+        type: integer
+        format: int64
+        minimum: 1
+      userId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      userName:
+        type: string
+        minLength: 1
+        maxLength: 254
+      email:
+        type: string
+        nullable: true
+        maxLength: 254
+      requestCount:
+        type: integer
+        format: int64
+        minimum: 0
+      totalTokens:
+        type: number
+        minimum: 0
+      points:
+        type: number
+        minimum: 0
+      modelDistribution:
+        type: array
+        maxItems: 12
+        items: *id012
+  admin_analytics_user_rankings:
+    name: AdminAnalyticsUserRankings
+    type: object
+    additionalProperties: false
+    required:
+    - points
+    - tokens
+    - requests
+    properties:
+      points:
+        type: array
+        maxItems: 50
+        items: *id013
+      tokens:
+        type: array
+        maxItems: 50
+        items: *id013
+      requests:
+        type: array
+        maxItems: 50
+        items: *id013
+  admin_analytics_model_rank_item: &id014
+    name: AdminAnalyticsModelRankItem
+    type: object
+    additionalProperties: false
+    required:
+    - rank
+    - model
+    - catalogKey
+    - vendor
+    - modality
+    - requestCount
+    - totalTokens
+    - points
+    - upstreamCost
+    - userCount
+    - averageTokensPerRequest
+    - errorRate
+    properties:
+      rank:
+        type: integer
+        format: int64
+        minimum: 1
+      model:
+        type: string
+        minLength: 1
+        maxLength: 256
+      catalogKey:
+        type: string
+        minLength: 1
+        maxLength: 256
+      vendor:
+        type: string
+        minLength: 1
+        maxLength: 128
+      modality:
+        type: string
+        minLength: 1
+        maxLength: 64
+      requestCount:
+        type: integer
+        format: int64
+        minimum: 0
+      totalTokens:
+        type: number
+        minimum: 0
+      points:
+        type: number
+        minimum: 0
+      upstreamCost:
+        type: number
+        minimum: 0
+      userCount:
+        type: integer
+        format: int64
+        minimum: 0
+      averageTokensPerRequest:
+        type: number
+        minimum: 0
+      errorRate:
+        type: number
+        minimum: 0
+  admin_analytics_model_rankings:
+    name: AdminAnalyticsModelRankings
+    type: object
+    additionalProperties: false
+    required:
+    - points
+    - tokens
+    - requests
+    properties:
+      points:
+        type: array
+        maxItems: 50
+        items: *id014
+      tokens:
+        type: array
+        maxItems: 50
+        items: *id014
+      requests:
+        type: array
+        maxItems: 50
+        items: *id014
+  admin_analytics_insight:
+    name: AdminAnalyticsInsight
+    type: object
+    additionalProperties: false
+    required:
+    - key
+    - title
+    - value
+    - severity
+    - detail
+    properties:
+      key:
+        type: string
+        minLength: 1
+        maxLength: 128
+      title:
+        type: string
+        minLength: 1
+        maxLength: 200
+      value:
+        type: string
+        minLength: 1
+        maxLength: 64
+      severity:
+        type: string
+        enum:
+        - info
+        - warning
+        - critical
+      detail:
+        type: string
+        minLength: 1
+        maxLength: 512
+  admin_cache_runtime_target: &id015
+    type: string
+    enum:
+    - desktop_packaged
+    - service
+  admin_cache_provider_kind: &id016
+    type: string
+    enum:
+    - local_cache
+    - redis_cache
+  admin_cache_summary: &id017
+    name: AdminCacheSummary
+    type: object
+    additionalProperties: false
+    required:
+    - runtimeTarget
+    - totalInstances
+    - totalNamespaces
+    - totalEntries
+    - expiredEntries
+    - cacheHits
+    - cacheMisses
+    - cacheWrites
+    - cacheDeletes
+    - cacheRefreshes
+    - cacheInspections
+    - cacheErrors
+    properties:
+      runtimeTarget: *id015
+      totalInstances:
+        type: integer
+        format: int64
+        minimum: 0
+      totalNamespaces:
+        type: integer
+        format: int64
+        minimum: 0
+      totalEntries:
+        type: integer
+        format: int64
+        minimum: 0
+      expiredEntries:
+        type: integer
+        format: int64
+        minimum: 0
+      cacheHits:
+        type: integer
+        format: int64
+        minimum: 0
+      cacheMisses:
+        type: integer
+        format: int64
+        minimum: 0
+      cacheWrites:
+        type: integer
+        format: int64
+        minimum: 0
+      cacheDeletes:
+        type: integer
+        format: int64
+        minimum: 0
+      cacheRefreshes:
+        type: integer
+        format: int64
+        minimum: 0
+      cacheInspections:
+        type: integer
+        format: int64
+        minimum: 0
+      cacheErrors:
+        type: integer
+        format: int64
+        minimum: 0
+  admin_cache_instance: &id018
+    name: AdminCacheInstance
+    type: object
+    additionalProperties: false
+    required:
+    - name
+    - providerKind
+    - purpose
+    - keyPrefix
+    - defaultTtlSeconds
+    - supportsInspect
+    - supportsRefresh
+    - supportsDelete
+    - entryCount
+    - expiredEntryCount
+    - cacheHits
+    - cacheMisses
+    - cacheWrites
+    - cacheDeletes
+    - cacheRefreshes
+    - cacheInspections
+    - cacheErrors
+    - status
+    properties:
+      name:
+        type: string
+        minLength: 1
+        maxLength: 128
+      providerKind: *id016
+      purpose:
+        type: string
+        minLength: 1
+        maxLength: 256
+      keyPrefix:
+        type: string
+        minLength: 1
+        maxLength: 128
+      defaultTtlSeconds:
+        type: integer
+        format: int64
+        minimum: 1
+      maxEntries:
+        type: integer
+        format: int64
+        nullable: true
+        minimum: 1
+      connectionProfileName:
+        type: string
+        nullable: true
+        maxLength: 128
+      supportsInspect:
+        type: boolean
+      supportsRefresh:
+        type: boolean
+      supportsDelete:
+        type: boolean
+      entryCount:
+        type: integer
+        format: int64
+        minimum: 0
+      expiredEntryCount:
+        type: integer
+        format: int64
+        minimum: 0
+      cacheHits:
+        type: integer
+        format: int64
+        minimum: 0
+      cacheMisses:
+        type: integer
+        format: int64
+        minimum: 0
+      cacheWrites:
+        type: integer
+        format: int64
+        minimum: 0
+      cacheDeletes:
+        type: integer
+        format: int64
+        minimum: 0
+      cacheRefreshes:
+        type: integer
+        format: int64
+        minimum: 0
+      cacheInspections:
+        type: integer
+        format: int64
+        minimum: 0
+      cacheErrors:
+        type: integer
+        format: int64
+        minimum: 0
+      status:
+        type: string
+        minLength: 1
+        maxLength: 64
+  admin_cache_namespace_policy: &id019
+    name: AdminCacheNamespacePolicy
+    type: object
+    additionalProperties: false
+    required:
+    - namespace
+    - instanceName
+    - ttlSeconds
+    - scope
+    - sensitivity
+    - failureMode
+    - consistency
+    - jitterPercent
+    - staleWhileRevalidateSeconds
+    - tags
+    - enabled
+    properties:
+      namespace:
+        type: string
+        minLength: 1
+        maxLength: 160
+      instanceName:
+        type: string
+        minLength: 1
+        maxLength: 128
+      ttlSeconds:
+        type: integer
+        format: int64
+        minimum: 1
+      scope:
+        type: string
+        minLength: 1
+        maxLength: 64
+      sensitivity:
+        type: string
+        minLength: 1
+        maxLength: 64
+      failureMode:
+        type: string
+        enum:
+        - fail_closed
+        - origin_fallback
+        - serve_stale
+        - bypass_cache
+      consistency:
+        type: string
+        enum:
+        - relaxed
+        - bounded_stale
+        - coordination_critical
+      jitterPercent:
+        type: integer
+        format: int64
+        minimum: 0
+        maximum: 100
+      staleWhileRevalidateSeconds:
+        type: integer
+        format: int64
+        minimum: 0
+      tags:
+        type: array
+        maxItems: 16
+        items:
+          type: string
+          minLength: 1
+          maxLength: 64
+      enabled:
+        type: boolean
+  admin_cache_overview_response:
+    name: AdminCacheOverviewResponse
+    type: object
+    additionalProperties: false
+    required:
+    - summary
+    - instances
+    - namespacePolicies
+    properties:
+      summary: *id017
+      instances:
+        type: array
+        maxItems: 32
+        items: *id018
+      namespacePolicies:
+        type: array
+        maxItems: 128
+        items: *id019
+  admin_cache_operation_response:
+    name: AdminCacheOperationResponse
+    type: object
+    additionalProperties: false
+    required:
+    - operation
+    - deletedEntries
+    - refreshedEntries
+    - status
+    properties:
+      operation:
+        type: string
+        minLength: 1
+        maxLength: 64
+      instanceName:
+        type: string
+        nullable: true
+        maxLength: 128
+      namespace:
+        type: string
+        nullable: true
+        maxLength: 160
+      cacheKey:
+        type: string
+        nullable: true
+        maxLength: 512
+      deletedEntries:
+        type: integer
+        format: int64
+        minimum: 0
+      refreshedEntries:
+        type: integer
+        format: int64
+        minimum: 0
+      status:
+        type: string
+        minLength: 1
+        maxLength: 64
+  admin_cache_key_item: &id020
+    name: AdminCacheKeyItem
+    type: object
+    additionalProperties: false
+    required:
+    - key
+    - namespace
+    - instanceName
+    - status
+    properties:
+      key:
+        type: string
+        minLength: 1
+        maxLength: 512
+      namespace:
+        type: string
+        minLength: 1
+        maxLength: 160
+      instanceName:
+        type: string
+        minLength: 1
+        maxLength: 128
+      status:
+        type: string
+        enum:
+        - active
+        - expired
+      expiresInSeconds:
+        type: integer
+        format: int64
+        nullable: true
+        minimum: 0
+  admin_cache_key_list_response:
+    name: AdminCacheKeyListResponse
+    type: object
+    additionalProperties: false
+    required:
+    - namespace
+    - instanceName
+    - scannedItems
+    - returnedItems
+    - limit
+    - hasMore
+    - scanComplete
+    - nextCursor
+    - items
+    properties:
+      namespace:
+        type: string
+        minLength: 1
+        maxLength: 160
+      instanceName:
+        type: string
+        minLength: 1
+        maxLength: 128
+      scannedItems:
+        type: integer
+        format: int64
+        minimum: 0
+      returnedItems:
+        type: integer
+        format: int64
+        minimum: 0
+      limit:
+        type: integer
+        format: int64
+        nullable: true
+        minimum: 1
+        maximum: 1000
+      hasMore:
+        type: boolean
+      scanComplete:
+        type: boolean
+      nextCursor:
+        type: string
+        nullable: true
+        maxLength: 2048
+      items:
+        type: array
+        maxItems: 1000
+        items: *id020
+  admin_transaction_record_item:
+    name: AdminTransactionRecordItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - time
+    - userId
+    - type
+    - amount
+    - balance
+    - description
+    - status
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      time:
+        type: string
+        minLength: 1
+        maxLength: 64
+      userId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      type:
+        type: string
+        enum:
+        - recharge
+        - refund
+        - consume
+      amount:
+        type: string
+        pattern: ^-?\d+(?:\.\d{1,2})?$
+      balance:
+        type: string
+        pattern: ^-?\d+(?:\.\d{1,2})?$
+      description:
+        type: string
+        minLength: 1
+        maxLength: 512
+      status:
+        type: string
+        enum:
+        - success
+        - failed
+        - pending
+  admin_usage_statement_item:
+    name: AdminUsageStatementItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - userId
+    - period
+    - totalTokens
+    - totalCost
+    - status
+    - dueDate
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      userId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      period:
+        type: string
+        minLength: 1
+        maxLength: 64
+      totalTokens:
+        type: integer
+        format: int64
+        minimum: 0
+      totalCost:
+        type: string
+        pattern: ^-?\d+(?:\.\d{1,2})?$
+      status:
+        type: string
+        enum:
+        - paid
+        - unpaid
+        - overdue
+      dueDate:
+        type: string
+        minLength: 1
+        maxLength: 64
+  promotion_code_redemption_record:
+    name: PromotionCodeRedemptionRecord
+    type: object
+    additionalProperties: false
+    required:
+    - redemption_no
+    - request_no
+    - idempotency_key
+    - offer_id
+    - offer_version_id
+    - stock_id
+    - subject_type
+    - subject_id
+    - submitted_code_hash
+    - currency_code
+    - result_status
+    - redemption_channel
+    - occurred_at
+    - tenant_id
+    - created_at
+    properties:
+      redemption_no:
+        type: string
+        minLength: 1
+        maxLength: 128
+      request_no:
+        type: string
+        minLength: 1
+        maxLength: 128
+      idempotency_key:
+        type: string
+        minLength: 1
+        maxLength: 128
+      offer_id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      offer_version_id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      stock_id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      code_id:
+        type: string
+        nullable: true
+        maxLength: 128
+      user_coupon_id:
+        type: string
+        nullable: true
+        maxLength: 128
+      subject_type:
+        type: string
+        minLength: 1
+        maxLength: 64
+      subject_id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      owner_user_id:
+        type: string
+        nullable: true
+        maxLength: 128
+      submitted_code_hash:
+        type: string
+        minLength: 1
+        maxLength: 256
+      submitted_code_suffix:
+        type: string
+        nullable: true
+        maxLength: 16
+      currency_code:
+        type: string
+        pattern: ^[A-Z]{3}$
+      result_status:
+        type: string
+        minLength: 1
+        maxLength: 64
+      failure_code:
+        type: string
+        nullable: true
+        maxLength: 64
+      failure_message:
+        type: string
+        nullable: true
+        maxLength: 512
+      redemption_channel:
+        type: string
+        minLength: 1
+        maxLength: 64
+      redemption_scene:
+        type: string
+        nullable: true
+        maxLength: 64
+      occurred_at:
+        type: string
+        minLength: 1
+        maxLength: 64
+      tenant_id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      organization_id:
+        type: string
+        nullable: true
+        maxLength: 128
+      created_at:
+        type: string
+        minLength: 1
+        maxLength: 64
+  admin_recharge_record_item:
+    name: AdminRechargeRecordItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - tradeNo
+    - userId
+    - user
+    - amount
+    - usd_credited
+    - method
+    - status
+    - time
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      tradeNo:
+        type: string
+        minLength: 1
+        maxLength: 128
+      userId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      user:
+        type: string
+        minLength: 1
+        maxLength: 128
+      amount:
+        type: string
+        pattern: ^\$?\d+(?:\.\d{1,2})?$
+      usd_credited:
+        type: string
+        pattern: ^\d+$
+      method:
+        type: string
+        minLength: 1
+        maxLength: 64
+      status:
+        type: string
+        enum:
+        - success
+        - pending
+        - failed
+        - closed
+      time:
+        type: string
+        minLength: 1
+        maxLength: 64
+  admin_referral_stat_item:
+    name: AdminReferralStatItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - inviter
+    - total_invited
+    - total_revenue
+    - bonus_awarded
+    - link
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      inviter:
+        type: string
+        minLength: 1
+        maxLength: 128
+      total_invited:
+        type: integer
+        format: int64
+        minimum: 0
+      total_revenue:
+        type: string
+        pattern: ^\$?\d+(?:\.\d{1,2})?$
+      bonus_awarded:
+        type: string
+        pattern: ^\$?\d+(?:\.\d{1,2})?$
+      link:
+        type: string
+        minLength: 1
+        maxLength: 2048
+  admin_monitor_node_item:
+    name: AdminMonitorNodeItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - name
+    - region
+    - status
+    - cpu
+    - memory
+    - uptime
+    - ip
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      name:
+        type: string
+        minLength: 1
+        maxLength: 128
+      region:
+        type: string
+        minLength: 1
+        maxLength: 128
+      status:
+        type: string
+        enum:
+        - online
+        - warning
+        - offline
+      cpu:
+        type: number
+        minimum: 0
+      memory:
+        type: number
+        minimum: 0
+      uptime:
+        type: string
+        minLength: 1
+        maxLength: 64
+      ip:
+        type: string
+        minLength: 1
+        maxLength: 128
+  admin_monitor_alert_item:
+    name: AdminMonitorAlertItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - severity
+    - title
+    - message
+    - time
+    - status
+    - source
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      severity:
+        type: string
+        enum:
+        - critical
+        - warning
+        - info
+      title:
+        type: string
+        minLength: 1
+        maxLength: 200
+      message:
+        type: string
+        minLength: 1
+        maxLength: 1000
+      time:
+        type: string
+        minLength: 1
+        maxLength: 64
+      status:
+        type: string
+        enum:
+        - active
+        - resolved
+      source:
+        type: string
+        minLength: 1
+        maxLength: 128
+  admin_monitor_performance_item:
+    name: AdminMonitorPerformanceItem
+    type: object
+    additionalProperties: false
+    required:
+    - time
+    - cpu
+    - memory
+    - network
+    properties:
+      time:
+        type: string
+        minLength: 1
+        maxLength: 64
+      cpu:
+        type: number
+        minimum: 0
+      memory:
+        type: number
+        minimum: 0
+      network:
+        type: number
+        minimum: 0
+  admin_record_log_item:
+    name: AdminRecordLogItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - user
+    - requestId
+    - time
+    - tokenName
+    - group
+    - type
+    - model
+    - providerNativeModel
+    - requestedModelCatalogKey
+    - status
+    - httpStatus
+    - httpMethod
+    - errorCode
+    - errorType
+    - errorMessage
+    - totalTime
+    - ttft
+    - isStream
+    - inputTokens
+    - cacheReadTokens
+    - outputTokens
+    - cost
+    - multiplier
+    - baseInputPrice
+    - baseOutputPrice
+    - cacheReadPrice
+    - path
+    - reasoningEffort
+    - ip
+    - userAgent
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      user:
+        type: string
+        minLength: 1
+        maxLength: 128
+      requestId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      time:
+        type: string
+        minLength: 1
+        maxLength: 64
+      tokenName:
+        type: string
+        minLength: 1
+        maxLength: 128
+      group:
+        type: string
+        minLength: 1
+        maxLength: 128
+      type:
+        type: string
+        minLength: 1
+        maxLength: 64
+      model:
+        type: string
+        minLength: 1
+        maxLength: 128
+      providerNativeModel:
+        type: string
+        maxLength: 128
+      requestedModelCatalogKey:
+        type: string
+        maxLength: 256
+      status:
+        type: string
+        enum:
+        - success
+        - error
+      httpStatus:
+        type: integer
+        format: int64
+        minimum: 0
+      httpMethod:
+        type: string
+        enum:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+        - HEAD
+      errorCode:
+        type: string
+        maxLength: 128
+      errorType:
+        type: string
+        maxLength: 128
+      errorMessage:
+        type: string
+        maxLength: 2048
+      totalTime:
+        type: string
+        minLength: 1
+        maxLength: 64
+      ttft:
+        type: string
+        minLength: 1
+        maxLength: 64
+      isStream:
+        type: boolean
+      inputTokens:
+        type: integer
+        format: int64
+        minimum: 0
+      cacheReadTokens:
+        type: integer
+        format: int64
+        minimum: 0
+      outputTokens:
+        type: integer
+        format: int64
+        minimum: 0
+      cost:
+        type: string
+        pattern: ^-?\d+(?:\.\d{1,6})?$
+      multiplier:
+        type: string
+        pattern: ^-?\d+(?:\.\d{1,6})?$
+      baseInputPrice:
+        type: string
+        pattern: ^-?\d+(?:\.\d{1,6})?$
+      baseOutputPrice:
+        type: string
+        pattern: ^-?\d+(?:\.\d{1,6})?$
+      cacheReadPrice:
+        type: string
+        pattern: ^-?\d+(?:\.\d{1,6})?$
+      path:
+        type: string
+        minLength: 1
+        maxLength: 512
+      reasoningEffort:
+        type: string
+        maxLength: 64
+      ip:
+        type: string
+        minLength: 1
+        maxLength: 128
+      userAgent:
+        type: string
+        maxLength: 1024
+        description: Full HTTP User-Agent header captured from the gateway request. Empty when the client omitted the header.
+  admin_api_keys_map_response:
+    name: AdminApiKeysMapResponse
+    type: object
+    additionalProperties:
+      type: array
+      items: *id021
+    properties: {}

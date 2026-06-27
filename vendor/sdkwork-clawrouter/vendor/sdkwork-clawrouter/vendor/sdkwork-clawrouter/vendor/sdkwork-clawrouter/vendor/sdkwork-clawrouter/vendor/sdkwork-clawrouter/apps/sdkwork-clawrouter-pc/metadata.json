@@ -1,0 +1,8 @@
+{
+  "name": "claw-router10",
+  "description": "Enterprise-grade AI API aggregation platform. Access LLMs, Image, Video, and Music models through a unified API.",
+  "requestFramePermissions": [
+    "display-capture"
+  ],
+  "majorCapabilities": []
+}

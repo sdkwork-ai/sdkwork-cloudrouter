@@ -1,0 +1,28 @@
+{
+  "extends": "../../../../../sdkwork-appbase/tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@sdkwork/drive-app-sdk": [
+        "../../../../../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript/src/index.ts"
+      ],
+      "@sdkwork/file-api-contracts": [
+        "../sdkwork-file-api-contracts/src/index.ts"
+      ],
+      "@sdkwork/file-contracts": [
+        "../sdkwork-file-contracts/src/index.ts"
+      ],
+      "@sdkwork/file-sdk-ports": [
+        "../sdkwork-file-sdk-ports/src/index.ts"
+      ],
+      "@sdkwork/file-service": [
+        "../sdkwork-file-service/src/index.ts"
+      ]
+    },
+    "types": [],
+    "ignoreDeprecations": "5.0"
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
+}

@@ -1,0 +1,113 @@
+tables:
+- table: integration_proxy
+  domain: integration
+  profile: credential_ref
+  compliance_level: L3
+  system_of_record: true
+  write_owner: provider-service
+  common_columns: tenant_entity
+  frontend_routes:
+  - /console/providers
+  api_surfaces:
+  - app
+  - backend
+  columns:
+    proxy_code: string(64)
+    proxy_type: enum_int32
+    endpoint: string(512)
+    secret_ref: string(256)
+    secret_hash: string(128)
+    region: string(64)
+    health_status: enum_int32
+    last_checked_at: instant
+    description: string(512)
+  indexes:
+  - name: uk_integration_proxy_tenant_code
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - proxy_code
+  security:
+    stores_secret_plaintext: false
+    audit_required: true
+- table: integration_webhook_endpoint
+  domain: integration
+  profile: webhook
+  compliance_level: L3
+  system_of_record: true
+  write_owner: webhook-service
+  common_columns: user_entity
+  frontend_routes:
+  - /console/settings
+  api_surfaces:
+  - app
+  - backend
+  columns:
+    endpoint_code: string(64)
+    name: string(128)
+    target_url: string(1024)
+    secret_ref: string(256)
+    secret_hash: string(128)
+    event_types: json
+    signing_alg: string(64)
+    retry_policy: json
+    last_success_at: instant
+    last_failure_at: instant
+    failure_count: int64
+  indexes:
+  - name: uk_integration_webhook_endpoint_tenant_code
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - endpoint_code
+  - name: idx_integration_webhook_endpoint_tenant_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - updated_at
+    - id
+  security:
+    stores_secret_plaintext: false
+    audit_required: true
+- table: integration_provider_health_snapshot
+  domain: ai
+  profile: projection
+  compliance_level: L2
+  system_of_record: false
+  write_owner: ops-worker
+  common_columns: event_log
+  source_tables:
+  - ai_provider
+  - ai_channel
+  frontend_routes:
+  - /admin/channel
+  - /admin/monitor
+  api_surfaces:
+  - backend
+  - worker
+  columns:
+    provider_id: int64
+    channel_id: int64
+    provider_account_id: int64
+    check_type: enum_int32
+    health_status: enum_int32
+    latency_ms: int32
+    http_status: int32
+    error_code: string(128)
+    error_message_masked: string(1024)
+    quota_snapshot: json
+    checked_at: instant
+  indexes:
+  - name: idx_integration_provider_health_provider_time
+    columns:
+    - provider_id
+    - checked_at
+    - id
+  - name: idx_integration_provider_health_channel_time
+    columns:
+    - channel_id
+    - checked_at
+    - id

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.dependency.composition",
+  "applicationCode": "mcp",
+  "clientArchitecture": "h5",
+  "surfaces": [
+    {
+      "surface": "app",
+      "corePackage": "@sdkwork/mcp-h5-core",
+      "sdkClients": [],
+      "reusableModules": [],
+      "hostAdapters": [],
+      "dependencyApiExports": [],
+      "dependencyApiSurfaces": []
+    }
+  ],
+  "buildToolEntries": {
+    "pnpm": {
+      "workspacePackages": [
+        "@sdkwork/mcp-h5-commons",
+        "@sdkwork/mcp-h5-core",
+        "@sdkwork/mcp-h5-mcp",
+        "@sdkwork/mcp-h5-shell"
+      ]
+    }
+  }
+}

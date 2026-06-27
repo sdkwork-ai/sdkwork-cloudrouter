@@ -1,0 +1,16 @@
+{
+  "name": "@sdkwork/mcp-h5-shell",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "sdkwork": {
+    "workspace": "sdkwork-mcp",
+    "architecture": "h5-react",
+    "domain": "intelligence",
+    "capability": "shell",
+    "status": "ready"
+  }
+}

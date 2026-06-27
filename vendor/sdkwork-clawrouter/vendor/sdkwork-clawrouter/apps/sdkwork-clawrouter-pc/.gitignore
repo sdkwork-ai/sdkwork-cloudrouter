@@ -1,0 +1,11 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env*.example
+
+# Host profile env files (.env.development, …) are ignored via .env*
+config/*.local.toml

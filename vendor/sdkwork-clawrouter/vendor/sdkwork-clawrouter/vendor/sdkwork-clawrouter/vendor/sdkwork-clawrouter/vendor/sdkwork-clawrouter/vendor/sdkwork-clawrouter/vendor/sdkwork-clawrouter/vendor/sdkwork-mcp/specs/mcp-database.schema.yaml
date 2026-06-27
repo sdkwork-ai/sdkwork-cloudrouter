@@ -1,0 +1,11 @@
+schemaVersion: 1
+moduleId: mcp
+tablePrefix: ai_mcp_
+tables:
+  - ai_mcp_server_category
+  - ai_mcp_server
+  - ai_mcp_connector
+  - ai_mcp_tool
+  - ai_mcp_resource
+  - ai_mcp_prompt
+  - ai_mcp_invocation_log

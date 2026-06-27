@@ -1,0 +1,201 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { AlignLeft, Activity, Server, Timer } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { BusinessStatePanel } from '@sdkwork/clawroutes-pc-commons';
+import { GatewayService, type GatewayTrace } from './gatewayService';
+
+type TranslationFunction = ReturnType<typeof useTranslation>['t'];
+
+type GatewaySummary = {
+  total: number;
+  success: number;
+  failed: number;
+  uniqueChannels: number;
+};
+
+function getLoadErrorMessage(error: unknown, fallback: string, t: TranslationFunction): string {
+  if (error instanceof Error) {
+    const message = error.message.trim();
+    if (message.startsWith('console.')) {
+      return t(message, fallback);
+    }
+    if (message) {
+      return message;
+    }
+  }
+  return fallback;
+}
+
+function summarizeTraces(traces: GatewayTrace[]): GatewaySummary {
+  return traces.reduce<GatewaySummary>(
+    (summary, trace) => {
+      summary.total += 1;
+      if (trace.status >= 200 && trace.status < 400) {
+        summary.success += 1;
+      } else {
+        summary.failed += 1;
+      }
+      return summary;
+    },
+    {
+      total: 0,
+      success: 0,
+      failed: 0,
+      uniqueChannels: new Set(traces.map((trace) => trace.channel).filter(Boolean)).size,
+    },
+  );
+}
+
+export function GatewayView() {
+  const { t } = useTranslation();
+  const [traces, setTraces] = useState<GatewayTrace[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const loadTraces = useCallback(async (isActive: () => boolean = () => true) => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const data = await GatewayService.fetchTraces();
+      if (isActive()) {
+        setTraces(data);
+      }
+    } catch (error) {
+      if (isActive()) {
+        setLoadError(getLoadErrorMessage(error, t('console.gateway.states.loadErrorFallback', '网关追踪加载失败。'), t));
+      }
+    } finally {
+      if (isActive()) {
+        setLoading(false);
+      }
+    }
+  }, [t]);
+
+  useEffect(() => {
+    let active = true;
+    void loadTraces(() => active);
+    return () => {
+      active = false;
+    };
+  }, [loadTraces]);
+
+  const summary = useMemo(() => summarizeTraces(traces), [traces]);
+
+  return (
+    <div className="min-h-[calc(100vh-72px)] w-full mx-auto space-y-6 bg-slate-50 p-[5px] animate-in fade-in duration-500 dark:bg-[#121212] lg:space-y-8">
+      <div className="space-y-1 px-1">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{t('console.gateway.title')}</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400">{t('console.gateway.subtitle')}</p>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white dark:bg-[#0d1117] border border-slate-200 dark:border-white/10 p-2 rounded-xl shadow-sm">
+        <SummaryItem icon={<AlignLeft className="w-4 h-4 text-blue-500" />} label={t('console.gateway.summary.traceRows', '追踪行数')} value={summary.total.toString()} />
+        <SummaryItem icon={<Activity className="w-4 h-4 text-emerald-500" />} label={t('console.gateway.summary.successful', '成功请求')} value={summary.success.toString()} />
+        <SummaryItem icon={<Timer className="w-4 h-4 text-rose-500" />} label={t('console.gateway.summary.failed', '失败请求')} value={summary.failed.toString()} />
+        <SummaryItem icon={<Server className="w-4 h-4 text-indigo-500" />} label={t('console.gateway.summary.channels', '渠道数')} value={summary.uniqueChannels.toString()} />
+      </div>
+
+      <div className="space-y-4 flex flex-col items-start w-full">
+        <div className="flex items-center justify-between w-full mb-2">
+          <h3 className="font-semibold text-slate-900 dark:text-white">{t('console.gateway.table.title', '请求追踪')}</h3>
+          <span className="text-xs text-slate-500 dark:text-slate-400">{t('console.gateway.table.description', '最近的网关请求历史。')}</span>
+        </div>
+
+        <div className="bg-white dark:bg-[#0d1117] border border-slate-200 dark:border-white/10 rounded-xl shadow-sm overflow-hidden flex flex-col w-full min-h-[420px]">
+          {loading ? (
+            <BusinessStatePanel
+              kind="loading"
+              title={t('console.gateway.states.loading', '正在加载网关追踪...')}
+              className="min-h-[420px] border-0 bg-transparent"
+            />
+          ) : loadError ? (
+            <BusinessStatePanel
+              kind="error"
+              title={t('console.gateway.states.loadErrorTitle', '网关追踪加载失败')}
+              description={loadError}
+              onRetry={() => void loadTraces()}
+              className="min-h-[420px] border-0 bg-transparent"
+            />
+          ) : traces.length === 0 ? (
+            <BusinessStatePanel
+              kind="empty"
+              title={t('console.gateway.states.emptyTitle', '暂无网关追踪')}
+              description={t('console.gateway.states.emptyDescription', '当流量到达路由器后，网关请求追踪会显示在这里。')}
+              className="min-h-[420px] border-0 bg-transparent"
+            />
+          ) : (
+            <GatewayTraceTable traces={traces} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SummaryItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="p-4 border-l first:border-l-0 border-slate-100 dark:border-white/5">
+      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1">
+        {icon}
+        {label}
+      </div>
+      <div className="text-lg text-slate-900 dark:text-white font-bold">{value}</div>
+    </div>
+  );
+}
+
+function GatewayTraceTable({ traces }: { traces: GatewayTrace[] }) {
+  const { t } = useTranslation();
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm whitespace-nowrap">
+        <thead className="bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-white/10">
+          <tr>
+            <th className="px-5 py-3 font-medium">{t('console.gateway.table.traceId', '追踪 ID')}</th>
+            <th className="px-5 py-3 font-medium">{t('console.gateway.table.timestamp', '时间')}</th>
+            <th className="px-5 py-3 font-medium">{t('console.gateway.table.clientIp', '客户端 IP')}</th>
+            <th className="px-5 py-3 font-medium">{t('console.gateway.table.method', '方法')}</th>
+            <th className="px-5 py-3 font-medium">{t('console.gateway.table.endpoint', '端点')}</th>
+            <th className="px-5 py-3 font-medium text-center">{t('console.gateway.table.status', '状态')}</th>
+            <th className="px-5 py-3 font-medium text-right">{t('console.gateway.table.duration', '耗时')}</th>
+            <th className="px-5 py-3 font-medium">{t('console.gateway.table.routedChannel', '路由渠道')}</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-200 dark:divide-white/5 text-slate-700 dark:text-slate-300">
+          {traces.map((trace) => (
+            <tr key={trace.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors font-mono text-xs">
+              <td className="px-5 py-3 font-bold text-slate-900 dark:text-white">{trace.id}</td>
+              <td className="px-5 py-3 text-slate-500">{trace.time}</td>
+              <td className="px-5 py-3 text-slate-500">{trace.ip}</td>
+              <td className="px-5 py-3">
+                <span
+                  className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
+                    trace.method === 'POST'
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                      : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                  }`}
+                >
+                  {trace.method}
+                </span>
+              </td>
+              <td className="px-5 py-3 text-slate-500">{trace.endpoint}</td>
+              <td className="px-5 py-3 text-center">
+                <span
+                  className={`inline-block px-1.5 py-0.5 rounded text-[10px] uppercase font-bold ${
+                    trace.status >= 200 && trace.status < 400
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+                      : 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400'
+                  }`}
+                >
+                  {trace.status}
+                </span>
+              </td>
+              <td className="px-5 py-3 text-right">{trace.duration}</td>
+              <td className="px-5 py-3 text-slate-500">{trace.channel}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}

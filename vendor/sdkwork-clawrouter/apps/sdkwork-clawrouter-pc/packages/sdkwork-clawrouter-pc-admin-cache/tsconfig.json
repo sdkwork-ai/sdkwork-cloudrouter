@@ -1,0 +1,44 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@sdkwork/clawrouter-app-sdk": [
+        "../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/index.ts"
+      ],
+      "@sdkwork/clawrouter-backend-sdk": [
+        "../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/index.ts"
+      ],
+      "@sdkwork/clawrouter-open-sdk": [
+        "../../sdks/clawrouter-open-sdk/clawrouter-open-sdk-typescript/generated/server-openapi/src/index.ts"
+      ],
+      "@sdkwork/clawroutes-pc-commons/api-result": [
+        "./packages/sdkwork-clawroutes-pc-commons/src/api-result.ts"
+      ],
+      "@sdkwork/clawroutes-pc-commons/sdk-clients": [
+        "./packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts"
+      ],
+      "@sdkwork/clawroutes-pc-commons/components/BusinessState": [
+        "./packages/sdkwork-clawroutes-pc-commons/src/components/BusinessState.tsx"
+      ],
+      "@sdkwork/clawroutes-pc-commons/components/ConfirmDialog": [
+        "./packages/sdkwork-clawroutes-pc-commons/src/components/ConfirmDialog.tsx"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "../sdkwork-clawroutes-pc-commons/src/api-result.ts",
+    "../sdkwork-clawroutes-pc-commons/src/sdk-clients.ts",
+    "../sdkwork-clawroutes-pc-commons/src/app-session-token.ts",
+    "../sdkwork-clawroutes-pc-commons/src/sdk-base-url.ts",
+    "../sdkwork-clawroutes-pc-commons/src/utils/env.ts",
+    "../sdkwork-clawroutes-pc-commons/src/components/BusinessState.tsx",
+    "../sdkwork-clawroutes-pc-commons/src/components/ConfirmDialog.tsx",
+    "../../src/typecheck-shims.d.ts"
+  ],
+  "exclude": [
+    "dist/**",
+    "node_modules/**"
+  ]
+}

@@ -1,0 +1,550 @@
+tables:
+- table: ops_gateway_instance
+  domain: ops
+  profile: core_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ops-service
+  common_columns: tenant_entity
+  frontend_routes:
+  - /console/dashboard
+  - /console/gateway
+  - /admin/monitor
+  - /admin/service-nodes
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    instance_code: string(128)
+    deployment_mode: enum_int32
+    region: string(64)
+    cell: string(64)
+    version_name: string(64)
+    host_name: string(128)
+    ip_address_hash: string(128)
+    ip_address_masked: string(64)
+    node_name: string(128)
+    pod_name: string(128)
+    container_id_hash: string(128)
+    desktop_device_hash: string(128)
+    runtime_type: enum_int32
+    orchestrator: enum_int32
+    started_at: instant
+    last_heartbeat_at: instant
+    health_status: enum_int32
+    config_hash: string(128)
+  indexes:
+  - name: uk_ops_gateway_instance_code
+    unique: true
+    columns:
+    - instance_code
+  - name: idx_ops_gateway_instance_region_status
+    columns:
+    - region
+    - cell
+    - health_status
+    - last_heartbeat_at
+- table: ops_gateway_heartbeat
+  domain: ops
+  profile: event_log
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ops-agent
+  common_columns: event_log
+  frontend_routes:
+  - /admin/monitor
+  api_surfaces:
+  - backend
+  - worker
+  columns:
+    instance_id: int64
+    heartbeat_at: instant
+    cpu_percent: decimal
+    memory_percent: decimal
+    disk_percent: decimal
+    network_in_bytes: int64
+    network_out_bytes: int64
+    active_connections: int64
+    uptime_seconds: int64
+    open_file_count: int64
+    thread_count: int64
+    payload: json
+  indexes:
+  - name: idx_ops_gateway_heartbeat_instance_time
+    columns:
+    - instance_id
+    - heartbeat_at
+    - id
+- table: ops_config_snapshot
+  domain: ops
+  profile: snapshot
+  compliance_level: L3
+  system_of_record: true
+  write_owner: control-plane
+  common_columns: event_log
+  frontend_routes:
+  - /auth/login
+  - /console/routing
+  - /console/providers
+  - /admin/group
+  - /admin/cache
+  - /admin/settings
+  - /admin/runtime-region
+  - /admin/site
+  - /admin/channel
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    snapshot_no: string(128)
+    config_scope: enum_int32
+    config_type: enum_int32
+    source_table: string(128)
+    source_ids: json
+    config_payload: json
+    config_hash: string(128)
+    published_at: instant
+    published_by: int64
+    rollback_from_snapshot_id: int64
+  indexes:
+  - name: uk_ops_config_snapshot_no
+    unique: true
+    columns:
+    - snapshot_no
+  - name: idx_ops_config_snapshot_tenant_scope
+    columns:
+    - tenant_id
+    - organization_id
+    - config_scope
+    - config_type
+    - created_at
+    - id
+  security:
+    audit_required: true
+- table: ops_audit_log
+  domain: ops
+  profile: audit_log
+  compliance_level: L3
+  system_of_record: true
+  write_owner: audit-service
+  common_columns: audit_log
+  frontend_routes:
+  - /sdk-reference
+  - /console/routing
+  - /console/api-keys
+  - /admin/cache
+  - /admin/user
+  - /admin/organization
+  - /admin/settings
+  - /admin/runtime-region
+  - /admin/site
+  - /admin/group
+  - /admin/model
+  - /admin/model/resources
+  - /admin/model/sites
+  - /admin/model/mappings
+  - /admin/app
+  - /admin/prompts
+  - /admin/mcp
+  - /admin/messaging
+  - /admin/messaging/diagnostics
+  - /admin/messaging/providers
+  - /admin/messaging/rate-limits
+  - /admin/messaging/route-rules
+  - /admin/messaging/send-requests
+  - /admin/messaging/sender-identities
+  - /admin/messaging/suppressions
+  - /admin/messaging/templates
+  - /admin/messaging/verification-policies
+  - /admin/channel
+  - /admin/channel/resources
+  - /admin/storage
+  - /admin/storage/providers
+  - /admin/storage/buckets
+  - /admin/storage/default-buckets
+  - /admin/storage/quotas
+  - /admin/storage/usage
+  - /admin/storage/reconciliation
+  - /admin/storage/garbage-collection
+  - /admin/marketing
+  - /admin/ratelimit
+  - /admin/oauth
+  - /console/wallet
+  - /console/recharge
+  - /console/checkout
+  - /console/memberships
+  - /console/settlements
+  - /admin/catalog
+  - /admin/inventory
+  - /admin/orders
+  - /admin/payments
+  - /admin/memberships
+  - /admin/wallet
+  - /admin/finance
+  - /admin/catalog/categories
+  - /admin/catalog/products
+  - /admin/catalog/products/new
+  - /admin/catalog/products/:productId/edit
+  - /admin/catalog/skus
+  - /admin/catalog/attributes
+  - /admin/catalog/prices
+  - /admin/inventory/stocks
+  - /admin/inventory/reservations
+  - /admin/inventory/ledger
+  - /admin/orders/orders
+  - /admin/orders/refunds
+  - /admin/orders/fulfillments
+  - /admin/orders/shipments
+  - /admin/payments/providers
+  - /admin/payments/provider-accounts
+  - /admin/payments/methods
+  - /admin/payments/channels
+  - /admin/payments/route-rules
+  - /admin/payments/intents
+  - /admin/payments/attempts
+  - /admin/payments/webhook-events
+  - /admin/payments/reconciliation-runs
+  - /admin/memberships/packages
+  - /admin/memberships/vip-packages
+  - /admin/memberships/plans
+  - /admin/memberships/members
+  - /admin/memberships/entitlements
+  - /admin/oauth/overview
+  - /admin/oauth/login
+  - /admin/oauth/login/mini-programs
+  - /admin/oauth/provider-catalog
+  - /admin/oauth/integrations
+  - /admin/oauth/clients
+  - /admin/oauth/resource-accounts
+  - /admin/oauth/resource-accounts/official-accounts
+  - /admin/oauth/resource-accounts/mini-programs
+  - /admin/oauth/resource-authorizations
+  - /admin/oauth/webhooks
+  - /admin/oauth/operational-resources
+  - /admin/oauth/account-links
+  - /admin/oauth/grants
+  - /admin/oauth/callback-diagnostics
+  - /admin/oauth/diagnostic-runs
+  - /admin/service-providers
+  - /admin/service-providers/accounts
+  - /admin/service-providers/dashboard
+  - /admin/service-providers/providers
+  - /admin/service-providers/relations
+  - /admin/service-providers/downstreams
+  - /admin/service-providers/members
+  - /admin/service-providers/bindings
+  - /admin/service-providers/contracts
+  - /admin/service-providers/pricing
+  - /admin/service-providers/usage
+  - /admin/service-providers/wallet
+  - /admin/service-providers/statements
+  - /admin/service-providers/reconciliation
+  - /admin/service-providers/adjustments
+  - /admin/service-providers/risk
+  - /admin/service-providers/audit
+  - /admin/memberships/recharge-packages
+  - /admin/wallet/recharge-orders
+  - /admin/wallet/wallet-accounts
+  - /admin/wallet/wallet-ledger
+  - /admin/wallet/exchange-rules
+  - /admin/finance/invoice-titles
+  - /admin/finance/invoices
+  - /admin/marketing/offers
+  - /admin/marketing/promotion-coupon-stocks
+  - /admin/marketing/promotion-codes
+  - /admin/marketing/discount-applications
+  - /admin/marketing/offers
+  - /admin/marketing/promotion-coupon-stocks
+  - /admin/marketing/promotion-codes
+  - /admin/marketing/discount-applications
+  - /admin/finance/payment-reconciliation
+  - /admin/finance/order-revenue
+  - /admin/finance/refunds-report
+  - /admin/finance/audit-events
+  - /admin/marketing/referrals
+  - /admin/storage
+  - /admin/storage/providers
+  - /admin/storage/buckets
+  - /admin/storage/default-buckets
+  - /admin/storage/quotas
+  - /admin/storage/usage
+  - /admin/storage/reconciliation
+  - /admin/storage/garbage-collection
+  - /admin/drive
+  - /admin/drive/spaces
+  - /admin/drive/nodes
+  - /admin/drive/permissions
+  - /admin/drive/share-links
+  - /admin/drive/audit
+  - /
+  - /admin/marketing/budget-ledger
+  - /admin/marketing/discount-allocations
+  - /admin/marketing/events
+  - /admin/marketing/external-bindings
+  - /admin/marketing/promotion-code-redemptions
+  - /admin/marketing/promotion-coupon-ledger
+  - /admin/marketing/user-coupons
+  - /admin/oauth/login-platforms
+  - /admin/oauth/mini-programs
+  - /admin/oauth/official-accounts
+  - /api-reference
+  - /auth/oauth/callback/:provider
+  - /console/user
+  - /docs
+  - /product-docs
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    operator_type: enum_int32
+    operator_name_snapshot: string(128)
+    target_uuid: string(64)
+    client_ip_hash: string(128)
+    user_agent_hash: string(128)
+    before_hash: string(128)
+    after_hash: string(128)
+    change_summary: json
+    risk_level: enum_int32
+    approval_id: int64
+  indexes:
+  - name: idx_ops_audit_log_tenant_operator_created
+    columns:
+    - tenant_id
+    - organization_id
+    - operator_type
+    - operator_id
+    - created_at
+    - id
+  - name: idx_ops_audit_log_tenant_target_created
+    columns:
+    - tenant_id
+    - organization_id
+    - target_type
+    - target_id
+    - created_at
+    - id
+  - name: idx_ops_audit_log_request
+    columns:
+    - tenant_id
+    - organization_id
+    - request_id
+  lifecycle:
+    partition_by: created_at_month
+    online_retention: 24mo
+    archive_retention: 5y
+  security:
+    audit_required: true
+    append_only: true
+- table: ops_job_execution
+  domain: ops
+  profile: event_log
+  compliance_level: L2
+  system_of_record: true
+  write_owner: job-runtime
+  common_columns: event_log
+  frontend_routes:
+  - /admin/model
+  api_surfaces:
+  - backend
+  - worker
+  columns:
+    job_name: string(128)
+    job_type: enum_int32
+    trigger_type: enum_int32
+    started_at: instant
+    ended_at: instant
+    duration_ms: int64
+    execution_status: enum_int32
+    processed_count: int64
+    success_count: int64
+    failure_count: int64
+    failure_reason: string(1024)
+    payload: json
+  semantic_contracts:
+    model_ranking_refresh:
+      job_name: model_ranking_refresh
+      job_type:
+        code: 20
+        label: model_ranking_refresh
+      trigger_types:
+        scheduled: 1
+        manual: 2
+      execution_status:
+        running: 1
+        succeeded: 2
+        failed: 3
+        empty: 4
+        skipped: 5
+      time_fields:
+        started_at: instant_utc
+        ended_at: instant_utc
+      payload_contract:
+        required_fields:
+        - rankScope
+        - snapshotDate
+        - snapshotPeriod
+        - windowStart
+        - windowEnd
+        - generatedCount
+        - sourceCount
+        - refreshIntervalSeconds
+        - cacheMaxAgeSeconds
+        - nextRefreshAt
+        - status
+        - attemptCount
+        - retryCount
+        - consecutiveFailureCount
+        - alertRecommended
+        - sourceTables
+        source_tables:
+        - ai_usage_fact
+        - ai_model
+        - ai_model_rank_snapshot
+      runtime_contract:
+        scheduler_owner: sdkwork-clawrouter-standalone-gateway
+        startup_policy:
+          run_on_startup_default: true
+          env: SDKWORK_CLAW_MODEL_RANKING_RUN_ON_STARTUP
+        interval:
+          default_millis: 3600000
+          min_millis: 60000
+          env: SDKWORK_CLAW_MODEL_RANKING_INTERVAL_MILLIS
+        timeout:
+          default_millis: 300000
+          min_millis: 5000
+          max_millis: 3600000
+          env: SDKWORK_CLAW_MODEL_RANKING_RUN_TIMEOUT_MILLIS
+        retry:
+          max_retry_attempts_default: 1
+          max_retry_attempts_max: 5
+          retry_backoff_millis_default: 1000
+          retry_backoff_millis_min: 100
+          retry_backoff_millis_max: 60000
+          max_retry_attempts_env: SDKWORK_CLAW_MODEL_RANKING_MAX_RETRY_ATTEMPTS
+          retry_backoff_millis_env: SDKWORK_CLAW_MODEL_RANKING_RETRY_BACKOFF_MILLIS
+        concurrency_lock:
+          scope:
+          - worker_instance
+          - tenant_id
+          - organization_id
+          - rank_scope
+          overlap_behavior: audit_skipped
+          skipped_execution_status: 5
+        cache_invalidation:
+          invalidate_after_status:
+          - succeeded
+          - empty
+          skip_after_status:
+          - failed
+          - skipped
+          - disabled
+          scope:
+          - tenant_id
+          - organization_id
+          - rank_scope
+        delayed_alerting:
+          alert_after_consecutive_failures_default: 3
+          alert_after_consecutive_failures_min: 1
+          alert_after_consecutive_failures_max: 100
+          alert_after_consecutive_failures_env: SDKWORK_CLAW_MODEL_RANKING_ALERT_AFTER_CONSECUTIVE_FAILURES
+          alert_recommended_payload_field: alertRecommended
+          alert_severity_payload_field: alertSeverity
+  indexes:
+  - name: idx_ops_job_execution_name_started
+    columns:
+    - job_name
+    - started_at
+    - id
+  - name: idx_ops_job_execution_status_started
+    columns:
+    - execution_status
+    - started_at
+    - id
+  - name: idx_ops_job_execution_model_ranking_scope_started
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - job_type
+    - job_name
+    - started_at
+    - id
+- table: ops_alert_event
+  domain: ops
+  profile: event_log
+  compliance_level: L2
+  system_of_record: true
+  write_owner: alert-service
+  common_columns: event_log
+  frontend_routes:
+  - /admin/monitor
+  api_surfaces:
+  - backend
+  - worker
+  columns:
+    alert_no: string(128)
+    severity: enum_int32
+    source: string(128)
+    title: string(200)
+    message: string(1024)
+    alert_status: enum_int32
+    first_seen_at: instant
+    last_seen_at: instant
+    resolved_at: instant
+    resolved_by: int64
+  indexes:
+  - name: uk_ops_alert_event_no
+    unique: true
+    columns:
+    - alert_no
+  - name: idx_ops_alert_event_status_severity
+    columns:
+    - alert_status
+    - severity
+    - last_seen_at
+    - id
+- table: ops_metric_snapshot
+  domain: ops
+  profile: projection
+  compliance_level: L2
+  system_of_record: false
+  write_owner: metrics-worker
+  common_columns: projection
+  source_tables:
+  - ai_usage_fact
+  - ai_request_trace
+  - integration_provider_health_snapshot
+  - ops_gateway_heartbeat
+  - ai_channel_group_metric_snapshot
+  frontend_routes:
+  - /console/dashboard
+  - /admin/dashboard
+  - /admin/monitor
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    metric_scope: enum_int32
+    metric_name: string(128)
+    metric_period: enum_int32
+    period_start: instant
+    period_end: instant
+    dimension_key: string(128)
+    dimension_value: string(256)
+    metric_value: decimal
+    metric_unit: string(64)
+    payload: json
+  indexes:
+  - name: uk_ops_metric_snapshot
+    unique: true
+    columns:
+    - metric_scope
+    - metric_name
+    - metric_period
+    - period_start
+    - dimension_key
+    - dimension_value

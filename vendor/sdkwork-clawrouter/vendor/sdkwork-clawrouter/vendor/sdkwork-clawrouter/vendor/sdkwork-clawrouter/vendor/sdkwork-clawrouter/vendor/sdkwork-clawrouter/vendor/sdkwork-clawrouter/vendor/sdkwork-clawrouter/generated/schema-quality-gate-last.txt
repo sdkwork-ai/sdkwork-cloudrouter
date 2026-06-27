@@ -1,0 +1,168 @@
+﻿services/sdkwork-claw-admin/Cargo.toml must depend on sdkwork-claw-http
+services/sdkwork-claw-admin/src/lib.rs must build routers through sdkwork_claw_http::service_router
+services/sdkwork-claw-app/Cargo.toml must depend on sdkwork-claw-http
+services/sdkwork-claw-app/src/lib.rs must build routers through sdkwork_claw_http::service_router
+duplicate Rust Axum method route DELETE /app/v3/api/auth/sessions/current: services/sdkwork-claw-product/src/api/app_auth.rs:509, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:65
+duplicate Rust Axum method route DELETE /backend/v3/api/iam/api_keys/{api_key_id}: services/sdkwork-claw-product/src/api/admin_user.rs:139, services/sdkwork-claw-product/src/api/admin_user.rs:161
+duplicate Rust Axum method route GET /app/v3/api/auth/sessions/current: services/sdkwork-claw-product/src/api/app_auth.rs:509, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:65
+duplicate Rust Axum method route GET /app/v3/api/iam/department_assignments: services/sdkwork-claw-product/src/api/app_iam_directory.rs:131, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:155
+duplicate Rust Axum method route GET /app/v3/api/iam/departments: services/sdkwork-claw-product/src/api/app_iam_directory.rs:126, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:150
+duplicate Rust Axum method route GET /app/v3/api/iam/departments/tree: services/sdkwork-claw-product/src/api/app_iam_directory.rs:127, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:151
+duplicate Rust Axum method route GET /app/v3/api/iam/organization_memberships: services/sdkwork-claw-product/src/api/app_iam_directory.rs:122, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:146
+duplicate Rust Axum method route GET /app/v3/api/iam/organizations: services/sdkwork-claw-product/src/api/app_iam_directory.rs:117, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:141
+duplicate Rust Axum method route GET /app/v3/api/iam/organizations/tree: services/sdkwork-claw-product/src/api/app_iam_directory.rs:118, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:142
+duplicate Rust Axum method route GET /app/v3/api/iam/position_assignments: services/sdkwork-claw-product/src/api/app_iam_directory.rs:136, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:160
+duplicate Rust Axum method route GET /app/v3/api/iam/positions: services/sdkwork-claw-product/src/api/app_iam_directory.rs:135, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:159
+duplicate Rust Axum method route GET /app/v3/api/iam/role_bindings: services/sdkwork-claw-product/src/api/app_iam_directory.rs:140, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:164
+duplicate Rust Axum method route GET /app/v3/api/iam/users/current: services/sdkwork-claw-product/src/api/app_user_profile.rs:48, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:128
+duplicate Rust Axum method route GET /app/v3/api/system/iam/runtime: services/sdkwork-claw-product/src/api/app_auth.rs:496, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:165
+duplicate Rust Axum method route GET /app/v3/api/system/iam/verification_policy: services/sdkwork-claw-product/src/api/app_auth.rs:500, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:166
+duplicate Rust Axum method route GET /uploads/courses/{*filePath}: services/sdkwork-claw-product/src/api/app_course.rs:276, services/sdkwork-claw-product/src/api/app_course.rs:306
+duplicate Rust Axum method route PATCH /app/v3/api/auth/sessions/current: services/sdkwork-claw-product/src/api/app_auth.rs:509, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:65
+duplicate Rust Axum method route POST /app/v3/api/auth/password_reset_requests: services/sdkwork-claw-product/src/api/app_auth.rs:479, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:73
+duplicate Rust Axum method route POST /app/v3/api/auth/password_resets: services/sdkwork-claw-product/src/api/app_auth.rs:483, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:77
+duplicate Rust Axum method route POST /app/v3/api/auth/registrations: services/sdkwork-claw-product/src/api/app_auth.rs:470, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:72
+duplicate Rust Axum method route POST /app/v3/api/auth/sessions: services/sdkwork-claw-product/src/api/app_auth.rs:508, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:56
+duplicate Rust Axum method route POST /app/v3/api/auth/sessions/refresh: services/sdkwork-claw-product/src/api/app_auth.rs:515, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:71
+duplicate Rust Axum method route POST /app/v3/api/courses/applications: services/sdkwork-claw-product/src/api/app_course.rs:266, services/sdkwork-claw-product/src/api/app_course.rs:302
+duplicate Rust Axum method route POST /app/v3/api/courses/applications/videos: services/sdkwork-claw-product/src/api/app_course.rs:262, services/sdkwork-claw-product/src/api/app_course.rs:298
+duplicate Rust Axum method route POST /app/v3/api/oauth/authorization_urls: services/sdkwork-claw-product/src/api/app_auth.rs:487, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:82
+duplicate Rust Axum method route POST /app/v3/api/oauth/sessions: services/sdkwork-claw-product/src/api/app_auth.rs:491, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:114
+duplicate Rust Axum method route POST /backend/v3/api/iam/api_keys: services/sdkwork-claw-product/src/api/admin_user.rs:138, services/sdkwork-claw-product/src/api/admin_user.rs:160
+api contract manifest is stale: E:\sdkwork-space\sdkwork-clawrouter\generated\api\api-contract-manifest.json
+app GET /app/v3/api/iam/users/current result schema UsersCurrentRetrieveResult.data references missing component schema IamUserResponse
+app components.schemas.UsersCurrentRetrieveResult.properties.data.allOf[0] references missing component schema IamUserResponse
+backend inventory.ledgerEntries.list SDK query serialization must include OpenAPI query parameter sku_id
+backend inventory.ledgerEntries.list SDK query serialization must include OpenAPI query parameter warehouse_id
+backend inventory.ledgerEntries.list SDK query serialization must include OpenAPI query parameter source_type
+backend inventory.ledgerEntries.list SDK query serialization must include OpenAPI query parameter source_id
+backend inventory.ledgerEntries.list SDK type file is missing: commerce-inventory-ledger-list-response.ts
+backend inventory.ledgerEntries.list SDK types index must export CommerceInventoryLedgerListResponse
+backend inventory.ledgerEntries.list SDK type file is missing: inventory-ledger-entries-list-result.ts
+backend inventory.ledgerEntries.list SDK types index must export InventoryLedgerEntriesListResult
+backend inventory.ledgerEntries.list SDK method must return Promise<InventoryLedgerEntriesListResult>
+backend inventory.ledgerEntries.list SDK client call must use InventoryLedgerEntriesListResult
+backend memberships.plans.delete SDK type file is missing: memberships-plans-delete-result.ts
+backend memberships.plans.delete SDK types index must export MembershipsPlansDeleteResult
+backend memberships.plans.delete SDK method must return Promise<MembershipsPlansDeleteResult>
+backend memberships.plans.delete SDK client call must use MembershipsPlansDeleteResult
+app users.current.retrieve response schema component is missing: IamUserResponse
+java legacy contract audit is missing: E:\sdkwork-space\sdkwork-clawrouter\generated\schema\legacy\java-legacy-contract-audit.json
+frontend route missing from schema manifest: /admin/oauth/login-platforms
+frontend route missing from schema manifest: /admin/oauth/mini-programs
+frontend route missing from schema manifest: /admin/oauth/official-accounts
+frontend route missing field contract: /admin/oauth/login-platforms
+frontend route missing field contract: /admin/oauth/mini-programs
+frontend route missing field contract: /admin/oauth/official-accounts
+route /apps requires table ai_skill_action
+route /apps requires table ai_skill_asset
+route /apps requires table ai_skill_artifact
+route /apps/:id requires table ai_skill_action
+route /apps/:id requires table ai_skill_asset
+route /apps/:id requires table ai_skill_artifact
+table c_category requires column type for route /skills-hub
+route /forum requires table content_reaction
+table content_comment requires column content for route /forum
+table content_reaction requires column content_type for route /forum
+table content_reaction requires column content_id for route /forum
+table content_reaction requires column rating for route /forum
+route /forum/:id requires table content_reaction
+table content_comment requires column content for route /forum/:id
+table content_reaction requires column content_type for route /forum/:id
+table content_reaction requires column content_id for route /forum/:id
+table content_reaction requires column rating for route /forum/:id
+table c_category requires column type for route /courses
+table c_category requires column group_name for route /courses
+table content_comment requires column content for route /courses
+table c_category requires column type for route /courses/:id
+table c_category requires column group_name for route /courses/:id
+table content_comment requires column content for route /courses/:id
+route /admin/dashboard requires table iam_user
+route /admin/dashboard requires table iam_organization_membership
+table c_category requires column type for route /admin/prompts
+table c_category requires column type for route /admin/mcp
+route /admin/group requires table ai_api_key
+route /admin/group requires table ai_model
+route /admin/group requires table ai_model_pricing
+route /admin/group requires table ai_model_provider_route
+route /admin/group requires table ai_provider_route
+route /admin/group requires table ai_routing_policy
+route /admin/group requires table ai_routing_rule
+route /admin/app requires table studio_app_template
+route /admin/app requires table ai_skill_action
+route /admin/app requires table ai_skill_asset
+route /admin/app requires table ai_skill_artifact
+table c_category requires column type for route /admin/app
+route /admin/app requires unregistered table studio_app_template
+route /admin/courses requires table content_forum_comment
+route /admin/courses/dashboard requires table content_forum_comment
+route /admin/courses/comments requires table content_forum_comment
+route /admin/skill requires table ai_user_agent_skill
+table c_category requires column type for route /admin/skill
+frontend contract route is not in portal App.tsx: /admin/oauth/overview
+frontend contract route is not in portal App.tsx: /admin/oauth/login
+frontend contract route is not in portal App.tsx: /admin/oauth/login/mini-programs
+frontend contract route is not in portal App.tsx: /admin/oauth/provider-catalog
+frontend contract route is not in portal App.tsx: /admin/oauth/integrations
+frontend contract route is not in portal App.tsx: /admin/oauth/clients
+frontend contract route is not in portal App.tsx: /admin/oauth/secrets
+frontend contract route is not in portal App.tsx: /admin/oauth/surfaces
+frontend contract route is not in portal App.tsx: /admin/oauth/flow-configs
+frontend contract route is not in portal App.tsx: /admin/oauth/scope-profiles
+frontend contract route is not in portal App.tsx: /admin/oauth/claim-mappings
+frontend contract route is not in portal App.tsx: /admin/oauth/policies
+frontend contract route is not in portal App.tsx: /admin/oauth/tenant-bindings
+frontend contract route is not in portal App.tsx: /admin/oauth/operator-platforms
+frontend contract route is not in portal App.tsx: /admin/oauth/resource-accounts
+frontend contract route is not in portal App.tsx: /admin/oauth/resource-accounts/official-accounts
+frontend contract route is not in portal App.tsx: /admin/oauth/resource-accounts/mini-programs
+frontend contract route is not in portal App.tsx: /admin/oauth/resource-authorizations
+frontend contract route is not in portal App.tsx: /admin/oauth/webhooks
+frontend contract route is not in portal App.tsx: /admin/oauth/operational-resources
+frontend contract route is not in portal App.tsx: /admin/oauth/account-links
+frontend contract route is not in portal App.tsx: /admin/oauth/grants
+frontend contract route is not in portal App.tsx: /admin/oauth/callback-diagnostics
+frontend contract route is not in portal App.tsx: /admin/oauth/diagnostic-runs
+portal dev and browser:dev scripts must run Vite directly with native config loading
+frontend route missing delivery classification: /admin/oauth/login-platforms
+frontend route missing delivery classification: /admin/oauth/mini-programs
+frontend route missing delivery classification: /admin/oauth/official-accounts
+frontend route classification is not in portal App.tsx: /admin/oauth/account-links
+frontend route classification is not in portal App.tsx: /admin/oauth/callback-diagnostics
+frontend route classification is not in portal App.tsx: /admin/oauth/claim-mappings
+frontend route classification is not in portal App.tsx: /admin/oauth/clients
+frontend route classification is not in portal App.tsx: /admin/oauth/diagnostic-runs
+frontend route classification is not in portal App.tsx: /admin/oauth/flow-configs
+frontend route classification is not in portal App.tsx: /admin/oauth/grants
+frontend route classification is not in portal App.tsx: /admin/oauth/integrations
+frontend route classification is not in portal App.tsx: /admin/oauth/login
+frontend route classification is not in portal App.tsx: /admin/oauth/login/mini-programs
+frontend route classification is not in portal App.tsx: /admin/oauth/operational-resources
+frontend route classification is not in portal App.tsx: /admin/oauth/operator-platforms
+frontend route classification is not in portal App.tsx: /admin/oauth/overview
+frontend route classification is not in portal App.tsx: /admin/oauth/policies
+frontend route classification is not in portal App.tsx: /admin/oauth/provider-catalog
+frontend route classification is not in portal App.tsx: /admin/oauth/resource-accounts
+frontend route classification is not in portal App.tsx: /admin/oauth/resource-accounts/mini-programs
+frontend route classification is not in portal App.tsx: /admin/oauth/resource-accounts/official-accounts
+frontend route classification is not in portal App.tsx: /admin/oauth/resource-authorizations
+frontend route classification is not in portal App.tsx: /admin/oauth/scope-profiles
+frontend route classification is not in portal App.tsx: /admin/oauth/secrets
+frontend route classification is not in portal App.tsx: /admin/oauth/surfaces
+frontend route classification is not in portal App.tsx: /admin/oauth/tenant-bindings
+frontend route classification is not in portal App.tsx: /admin/oauth/webhooks
+schema content route / curated seed static source manifest schema table plus_app is not in provenance_tables
+sdk-backed route /admin/catalog must use getClawRouterBackendSdkClient
+sdk-backed route /admin/catalog/categories must use getClawRouterBackendSdkClient
+sdk-backed route /admin/catalog/products must use getClawRouterBackendSdkClient
+sdk-backed route /admin/catalog/products/new must use getClawRouterBackendSdkClient
+sdk-backed route /admin/catalog/products/:productId/edit must use getClawRouterBackendSdkClient
+sdk-backed route /admin/catalog/skus must use getClawRouterBackendSdkClient
+sdk-backed route /admin/catalog/attributes must use getClawRouterBackendSdkClient
+sdk-backed route /admin/catalog/prices must use getClawRouterBackendSdkClient
+schema content route /admin/drive generated reference static source manifest source_hash must match source_ref content
+schema content route /admin/drive/spaces generated reference static source manifest source_hash must match source_ref content
+schema content route /admin/drive/nodes generated reference static source manifest source_hash must match source_ref content
+schema content route /admin/drive/permissions generated reference static source manifest source_hash must match source_ref content
+schema content route /admin/drive/share-links generated reference static source manifest source_hash must match source_ref content
+schema content route /admin/drive/audit generated reference static source manifest source_hash must match source_ref content

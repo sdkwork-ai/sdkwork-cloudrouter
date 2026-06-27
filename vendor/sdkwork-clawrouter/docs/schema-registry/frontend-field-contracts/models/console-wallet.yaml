@@ -1,0 +1,68 @@
+fragment: models/console-wallet
+frontend_models:
+- route: /console/wallet
+  source: apps/sdkwork-clawrouter-pc/src/commerce/commerceViewModels.ts
+  interface: SdkworkWalletOverview
+  fields:
+  - account
+  - account.availablePoints
+  - account.cashAvailable
+  - account.cashFrozen
+  - account.frozenPoints
+  - account.hasPayPassword
+  - account.level
+  - account.levelName
+  - account.status
+  - account.tokenBalance
+  - account.totalEarned
+  - account.totalPoints
+  - account.totalSpent
+  - isAuthenticated
+  - pointsToCashRate
+  - rechargePackages
+  - rechargePackages.id
+  - rechargePackages.points
+  - rechargePackages.priceCny
+  - rechargePackages.title
+  - transactions
+  - transactions.id
+  - transactions.cashAmountCny
+  - transactions.createdAt
+  - transactions.pointsDelta
+  - transactions.status
+  - transactions.title
+  data_sources:
+  - commerce_wallet_account
+  - commerce_wallet_transaction
+- route: /console/wallet
+  source: apps/sdkwork-clawrouter-pc/src/commerce/commerceViewModels.ts
+  interface: SdkworkWalletRechargeResult
+  fields:
+  - cashAmountCny
+  - paymentMethod
+  - points
+  - processedAt
+  - remainingPoints
+  - requestNo
+  - status
+  - transactionId
+  data_sources:
+  - commerce_order
+  - commerce_payment_intent
+  - commerce_wallet_transaction
+- route: /console/wallet
+  source: apps/sdkwork-clawrouter-pc/src/commerce/commerceViewModels.ts
+  interface: SdkworkWalletWithdrawResult
+  fields:
+  - amountCny
+  - destinationCode
+  - estimatedArrivalTime
+  - frozenCashAmountCny
+  - processedAt
+  - requestNo
+  - remainingCashAvailable
+  - status
+  - transactionId
+  data_sources:
+  - commerce_wallet_account
+  - commerce_wallet_transaction

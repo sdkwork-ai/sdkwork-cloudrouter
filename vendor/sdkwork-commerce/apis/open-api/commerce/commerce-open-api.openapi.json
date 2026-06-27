@@ -1,0 +1,28 @@
+{
+  "openapi": "3.1.2",
+  "paths": {},
+  "components": {
+    "securitySchemes": {},
+    "schemas": {}
+  },
+  "info": {
+    "title": "SDKWork Commerce Open API",
+    "version": "1.0.0",
+    "description": "Public commerce contract for SDKWork Commerce owned Open API operations.",
+    "x-sdkwork-owner": "sdkwork-commerce",
+    "x-sdkwork-api-authority": "sdkwork-commerce-open-api",
+    "x-sdkwork-sdk-family": "sdkwork-commerce-sdk",
+    "x-sdkwork-audience": "Public commerce integrations."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:18082",
+      "description": "Local sdkwork-commerce runtime"
+    }
+  ],
+  "tags": [],
+  "x-sdkwork-owner": "sdkwork-commerce",
+  "x-sdkwork-api-authority": "sdkwork-commerce-open-api",
+  "x-sdkwork-domain": "commerce",
+  "x-sdkwork-standard-profile": "sdkwork-commerce-open-v3"
+}

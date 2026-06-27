@@ -1,0 +1,72 @@
+fragment: operations/backend-commerce-inventory
+frontend_operations:
+- route: /admin/inventory/reservations
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-inventory/src/inventoryService.ts
+  operation: listInventoryReservations
+  operation_id: inventory.reservations.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/inventory/reservations
+  sdk_domain: commerce
+  read_sources:
+  - ops_audit_log
+  query_parameters: []
+  response_schema:
+    name: listInventoryReservationsResponse
+    type: object
+    additionalProperties: true
+    properties: {}
+- route: /admin/inventory/stocks
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-inventory/src/inventoryService.ts
+  operation: listInventoryStocks
+  operation_id: inventory.stocks.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/inventory/stocks
+  sdk_domain: commerce
+  read_sources:
+  - ops_audit_log
+  query_parameters: []
+  response_schema:
+    name: listInventoryStocksResponse
+    type: object
+    additionalProperties: true
+    properties: {}
+- route: /admin/inventory
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-inventory/src/inventoryService.ts
+  operation: updateInventoryStock
+  operation_id: inventory.stocks.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/inventory/stocks/{stockId}
+  sdk_domain: commerce
+  read_sources:
+  - ops_audit_log
+  query_parameters: []
+  response_schema:
+    name: updateInventoryStockResponse
+    type: object
+    additionalProperties: true
+    properties: {}
+  write_tables:
+  - ops_audit_log
+- route: /admin/inventory/ledger
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-inventory/src/inventoryService.ts
+  operation: listInventoryLedgerEntries
+  operation_id: inventory.movements.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/inventory/movements
+  sdk_domain: commerce
+  read_sources:
+  - ops_audit_log
+  query_parameters: []
+  response_schema:
+    name: listInventoryLedgerEntriesResponse
+    type: object
+    additionalProperties: true
+    properties: {}

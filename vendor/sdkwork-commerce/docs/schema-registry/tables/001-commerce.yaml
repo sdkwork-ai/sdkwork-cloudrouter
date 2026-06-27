@@ -1,0 +1,1513 @@
+tables:
+- table: commerce_idempotency_key
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop_application
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop_verification
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop_status_event
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop_channel
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop_fulfillment_profile
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop_settlement_profile
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop_metric_snapshot
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop_readiness
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop_business_hour
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop_service_area
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop_policy
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop_deposit_account
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop_risk_signal
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop_category_binding
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop_brand_authorization
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop_qualification
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop_customer_service
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop_return_address
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shop_shipping_template
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_account
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_account_ledger_entry
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_billing_prehold
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_billing_history
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: benefit_definition
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: entitlement_grant
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: entitlement_account
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: entitlement_ledger_entry
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: membership_plan
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: membership_plan_version
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: membership_plan_benefit
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: membership_package_group
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: membership_package
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: membership_subscription
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: membership_period
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: promotion_offer
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: promotion_offer_version
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: promotion_coupon_stock
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: promotion_code
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: promotion_user_coupon
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: promotion_coupon_ledger_entry
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: promotion_discount_application
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: promotion_discount_allocation
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_product_category
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_product_attribute
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_product_attribute_value
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_product_spu
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_product_spu_category
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_product_sku
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_product_sku_attribute
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_product_media
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_price_list
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_price_list_item
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_recharge_package
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_inventory_stock
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_inventory_reservation
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_inventory_movement
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_cart
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_cart_item
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_user_address
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_checkout_session
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_checkout_line
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_checkout_quote
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_order_address_snapshot
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_order
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_order_item
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_order_amount_breakdown
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_order_event
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_order_cancellation
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_fulfillment_order
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_fulfillment_item
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shipment
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shipment_package
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_shipment_tracking_event
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_digital_delivery
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_intent
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_attempt
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_webhook_event
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_method
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_provider
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_provider_account
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_channel
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_route_rule
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_provider_capability
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_operation_attempt
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_route_decision
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_capture
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_webhook_delivery
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_statement
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_statement_item
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_reconciliation_run
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_reconciliation_item
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_fee
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_dispute
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_payment_dispute_event
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_refund
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_refund_item
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_refund_attempt
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_refund_event
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_after_sales_request
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_after_sales_item
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_after_sales_return_shipment
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_after_sales_event
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_exchange_rule
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_invoice_title
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_invoice
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+- table: commerce_invoice_item
+  domain: commerce
+  profile: commerce_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: true
+  write_owner: commerce-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64

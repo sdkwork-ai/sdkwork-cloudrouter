@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "@sdkwork/commerce-pc-shell",
+    "displayName": "SDKWork Commerce PC Shell",
+    "version": "0.1.0",
+    "type": "react-package",
+    "root": "sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-shell",
+    "domain": "commerce",
+    "declaredDomain": "commerce",
+    "capability": "shell",
+    "surface": "app",
+    "status": "ready",
+    "languages": [
+      "typescript",
+      "react"
+    ],
+    "generated": false,
+    "private": true,
+    "manifests": [
+      "package.json"
+    ]
+  },
+  "canonicalSpecs": [
+    {
+      "file": "APP_CLIENT_ARCHITECTURE_ALIGNMENT_SPEC.md",
+      "path": "../../../../../../sdkwork-specs/APP_CLIENT_ARCHITECTURE_ALIGNMENT_SPEC.md",
+      "purpose": "Client shell role and dependency direction."
+    },
+    {
+      "file": "APP_PC_ARCHITECTURE_SPEC.md",
+      "path": "../../../../../../sdkwork-specs/APP_PC_ARCHITECTURE_SPEC.md",
+      "purpose": "PC app shell ownership."
+    },
+    {
+      "file": "APP_PC_REACT_UI_SPEC.md",
+      "path": "../../../../../../sdkwork-specs/APP_PC_REACT_UI_SPEC.md",
+      "purpose": "PC React app-side shell behavior."
+    },
+    {
+      "file": "CODE_STYLE_SPEC.md",
+      "path": "../../../../../../sdkwork-specs/CODE_STYLE_SPEC.md",
+      "purpose": "Authored source structure and generated code boundaries."
+    },
+    {
+      "file": "NAMING_SPEC.md",
+      "path": "../../../../../../sdkwork-specs/NAMING_SPEC.md",
+      "purpose": "Canonical SDKWork naming rules."
+    },
+    {
+      "file": "TYPESCRIPT_CODE_SPEC.md",
+      "path": "../../../../../../sdkwork-specs/TYPESCRIPT_CODE_SPEC.md",
+      "purpose": "TypeScript package exports."
+    },
+    {
+      "file": "FRONTEND_CODE_SPEC.md",
+      "path": "../../../../../../sdkwork-specs/FRONTEND_CODE_SPEC.md",
+      "purpose": "Frontend authored source structure."
+    },
+    {
+      "file": "FRONTEND_SPEC.md",
+      "path": "../../../../../../sdkwork-specs/FRONTEND_SPEC.md",
+      "purpose": "Frontend shell and UI-service-SDK layering."
+    },
+    {
+      "file": "UI_ARCHITECTURE_SPEC.md",
+      "path": "../../../../../../sdkwork-specs/UI_ARCHITECTURE_SPEC.md",
+      "purpose": "UI architecture selection and package ownership."
+    },
+    {
+      "file": "COMPONENT_SPEC.md",
+      "path": "../../../../../../sdkwork-specs/COMPONENT_SPEC.md",
+      "purpose": "Local component manifest contract."
+    }
+  ],
+  "contracts": {
+    "publicExports": [
+      "."
+    ],
+    "runtimeEntrypoints": [
+      "package.json#scripts.typecheck"
+    ],
+    "sdkClients": [],
+    "sdkDependencies": [],
+    "events": [],
+    "configKeys": [
+      "package.json#sdkwork"
+    ],
+    "routeManifest": null
+  },
+  "integration": {
+    "authority": "Commerce PC shell owns app shell layout and route navigation rendering.",
+    "dependencyPolicy": "The shell consumes shared helpers through public exports and receives page content from root composition.",
+    "sdkPolicy": "Shell must not construct SDK clients, call backend APIs, or own business services.",
+    "languagePolicy": "React and TypeScript source follows frontend package rules."
+  },
+  "verification": {
+    "commands": [
+      "pnpm --filter @sdkwork/commerce-pc-shell typecheck",
+      "node --test sdks/test/verify-commerce-standard-architecture.test.mjs"
+    ]
+  },
+  "metadata": {
+    "managedBy": "codex",
+    "standardVersion": "2026-06-12"
+  }
+}

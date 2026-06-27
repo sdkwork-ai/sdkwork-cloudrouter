@@ -1,0 +1,334 @@
+schema_version: 1
+kind: sdkwork.database.schema
+module_id: commerce
+contract_version: 1.0.0
+owner_team: commerce-platform
+compliance_level: L2
+engines:
+  - postgres
+table_prefix: commerce_
+tables:
+  - name: commerce_idempotency_key
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop_application
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop_verification
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop_status_event
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop_channel
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop_fulfillment_profile
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop_settlement_profile
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop_metric_snapshot
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop_readiness
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop_business_hour
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop_service_area
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop_policy
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop_deposit_account
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop_risk_signal
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop_category_binding
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop_brand_authorization
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop_qualification
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop_customer_service
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop_return_address
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shop_shipping_template
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_account
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_account_ledger_entry
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_billing_prehold
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_billing_history
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: benefit_definition
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: entitlement_grant
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: entitlement_account
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: entitlement_ledger_entry
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: membership_plan
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: membership_plan_version
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: membership_plan_benefit
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: membership_package_group
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: membership_package
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: membership_subscription
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: membership_period
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: promotion_offer
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: promotion_offer_version
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: promotion_coupon_stock
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: promotion_code
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: promotion_user_coupon
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: promotion_coupon_ledger_entry
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: promotion_discount_application
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: promotion_discount_allocation
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_product_category
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_product_attribute
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_product_attribute_value
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_product_spu
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_product_spu_category
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_product_sku
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_product_sku_attribute
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_product_media
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_price_list
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_price_list_item
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_recharge_package
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_inventory_stock
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_inventory_reservation
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_inventory_movement
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_cart
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_cart_item
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_user_address
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_checkout_session
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_checkout_line
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_checkout_quote
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_order_address_snapshot
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_order
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_order_item
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_order_amount_breakdown
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_order_event
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_order_cancellation
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_fulfillment_order
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_fulfillment_item
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shipment
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shipment_package
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_shipment_tracking_event
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_digital_delivery
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_intent
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_attempt
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_webhook_event
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_method
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_provider
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_provider_account
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_channel
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_route_rule
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_provider_capability
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_operation_attempt
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_route_decision
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_capture
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_webhook_delivery
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_statement
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_statement_item
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_reconciliation_run
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_reconciliation_item
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_fee
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_dispute
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_payment_dispute_event
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_refund
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_refund_item
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_refund_attempt
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_refund_event
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_after_sales_request
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_after_sales_item
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_after_sales_return_shipment
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_after_sales_event
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_exchange_rule
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_invoice_title
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_invoice
+    lifecycle_status: active
+    owner: commerce-platform
+  - name: commerce_invoice_item
+    lifecycle_status: active
+    owner: commerce-platform

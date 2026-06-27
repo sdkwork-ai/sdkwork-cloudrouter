@@ -1,0 +1,71 @@
+[package]
+name = "sdkwork-clawrouter-router-service"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+axum.workspace = true
+base64.workspace = true
+bytes.workspace = true
+futures-util.workspace = true
+getrandom.workspace = true
+hmac.workspace = true
+hex.workspace = true
+http-body-util.workspace = true
+hyper.workspace = true
+hyper-rustls.workspace = true
+hyper-util.workspace = true
+prometheus.workspace = true
+ring.workspace = true
+redis.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+sdkwork-models.workspace = true
+sdkwork_models_contract_service.workspace = true
+sdkwork_models_catalog_service.workspace = true
+sdkwork_models_catalog_repository_sqlx.workspace = true
+sdkwork_models_database_bootstrap.workspace = true
+sdkwork-claw-contract.workspace = true
+sdkwork-claw-config.workspace = true
+sdkwork-claw-core.workspace = true
+sdkwork-claw-http.workspace = true
+sdkwork-claw-provider-adapter-contract.workspace = true
+sdkwork-claw-provider-adapter-http.workspace = true
+sdkwork-claw-provider-adapter-registry.workspace = true
+sdkwork-id-core.workspace = true
+sdkwork_iam_directory_repository_sqlx.workspace = true
+sdkwork_commerce_core.workspace = true
+sdkwork_commerce_storage_sqlx.workspace = true
+sdkwork_commerce_bootstrap.workspace = true
+sdkwork_commerce_membership_sqlx.workspace = true
+sdkwork_commerce_payment.workspace = true
+sdkwork_commerce_invoice.workspace = true
+sdkwork-sdk-generator-client.workspace = true
+sdkwork-database-config.workspace = true
+sdkwork-database-sqlx.workspace = true
+sdkwork-database-repository.workspace = true
+sdkwork-iam-bootstrap.workspace = true
+sdkwork-iam-web-adapter.workspace = true
+sdkwork-iam-embedded-application-bootstrap.workspace = true
+sdkwork-clawrouter-database-host = { path = "../../crates/sdkwork-clawrouter-database-host" }
+sdkwork-utils-rust.workspace = true
+sdkwork-web-core.workspace = true
+sdkwork-web-store-redis.workspace = true
+sdkwork-clawrouter-admin-monitor-repository-sqlx.workspace = true
+sdkwork-clawrouter-admin-dashboard-repository-sqlx.workspace = true
+sdkwork-clawrouter-admin-analytics-repository-sqlx.workspace = true
+sdkwork-clawrouter-app-providers-repository-sqlx.workspace = true
+sdkwork-clawrouter-settlements-dashboard-repository-sqlx.workspace = true
+sdkwork-clawrouter-app-gateway-traces-repository-sqlx.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+tower.workspace = true
+sdkwork-claw-test-support.workspace = true
+sdkwork-clawrouter-router-service-test-support = { path = "../../crates/sdkwork-clawrouter-router-service-test-support" }

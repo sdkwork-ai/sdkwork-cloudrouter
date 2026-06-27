@@ -1,0 +1,53 @@
+fragment: operations/backend-models-catalog-admin
+frontend_operations:
+- route: /admin/model
+  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  operation: fetchAllModels
+  operation_id: models.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/ai/models
+  sdk_domain: intelligence
+  read_sources:
+  - ai_model_vendor
+  query_parameters: []
+  response_schema:
+    name: fetchAllModelsResponse
+    type: object
+    additionalProperties: true
+    properties: {}
+- route: /admin/model
+  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  operation: fetchInitializedCatalog
+  operation_id: models.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/ai/models
+  sdk_domain: intelligence
+  read_sources:
+  - ai_model_vendor
+  query_parameters: []
+  response_schema:
+    name: fetchInitializedCatalogResponse
+    type: object
+    additionalProperties: true
+    properties: {}
+- route: /admin/model
+  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  operation: fetchModelsPage
+  operation_id: ai.models.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/ai/models
+  sdk_domain: intelligence
+  read_sources:
+  - ai_model_vendor
+  query_parameters: []
+  response_schema:
+    name: fetchModelsPageResponse
+    type: object
+    additionalProperties: true
+    properties: {}

@@ -1,0 +1,121 @@
+syntax = "proto3";
+
+package sdkwork.commerce.backend.v3;
+
+import "sdkwork/common/v1/pagination.proto";
+import "sdkwork/common/v1/runtime.proto";
+
+option java_package = "com.sdkwork.commerce.backend.v3";
+option java_multiple_files = true;
+option go_package = "github.com/sdkwork/commerce-rpc-go/sdkwork/commerce/backend/v3;commercebackendv3";
+
+service PaymentAdminService {
+  rpc ListPaymentProviderAccounts(ListPaymentProviderAccountsRequest) returns (ListPaymentProviderAccountsResponse);
+  rpc CreatePaymentProviderAccount(CreatePaymentProviderAccountRequest) returns (CreatePaymentProviderAccountResponse);
+  rpc ListPaymentMethods(ListPaymentMethodsRequest) returns (ListPaymentMethodsResponse);
+  rpc ListPaymentChannels(ListPaymentChannelsRequest) returns (ListPaymentChannelsResponse);
+  rpc ListPaymentIntents(ListPaymentIntentsRequest) returns (ListPaymentIntentsResponse);
+  rpc ListPaymentAttempts(ListPaymentAttemptsRequest) returns (ListPaymentAttemptsResponse);
+  rpc ListPaymentReconciliationRuns(ListPaymentReconciliationRunsRequest) returns (ListPaymentReconciliationRunsResponse);
+}
+
+message PaymentProviderAccount {
+  string provider_account_id = 1;
+  string provider_code = 2;
+  string status = 3;
+}
+
+message PaymentMethod {
+  string payment_method_id = 1;
+  string code = 2;
+}
+
+message PaymentChannel {
+  string payment_channel_id = 1;
+  string code = 2;
+}
+
+message PaymentIntent {
+  string payment_intent_id = 1;
+  string status = 2;
+}
+
+message PaymentAttempt {
+  string payment_attempt_id = 1;
+  string status = 2;
+}
+
+message PaymentReconciliationRun {
+  string reconciliation_run_id = 1;
+  string status = 2;
+}
+
+message ListPaymentProviderAccountsRequest {
+  sdkwork.common.v1.PageRequest page = 1;
+}
+
+message ListPaymentProviderAccountsResponse {
+  repeated PaymentProviderAccount accounts = 1;
+  sdkwork.common.v1.PageResponse page = 2;
+  sdkwork.common.v1.ResponseMetadata metadata = 15;
+}
+
+message CreatePaymentProviderAccountRequest {
+  string provider_code = 1;
+  string display_name = 2;
+}
+
+message CreatePaymentProviderAccountResponse {
+  PaymentProviderAccount account = 1;
+  sdkwork.common.v1.ResponseMetadata metadata = 15;
+}
+
+message ListPaymentMethodsRequest {
+  sdkwork.common.v1.PageRequest page = 1;
+}
+
+message ListPaymentMethodsResponse {
+  repeated PaymentMethod methods = 1;
+  sdkwork.common.v1.PageResponse page = 2;
+  sdkwork.common.v1.ResponseMetadata metadata = 15;
+}
+
+message ListPaymentChannelsRequest {
+  sdkwork.common.v1.PageRequest page = 1;
+}
+
+message ListPaymentChannelsResponse {
+  repeated PaymentChannel channels = 1;
+  sdkwork.common.v1.PageResponse page = 2;
+  sdkwork.common.v1.ResponseMetadata metadata = 15;
+}
+
+message ListPaymentIntentsRequest {
+  sdkwork.common.v1.PageRequest page = 1;
+}
+
+message ListPaymentIntentsResponse {
+  repeated PaymentIntent intents = 1;
+  sdkwork.common.v1.PageResponse page = 2;
+  sdkwork.common.v1.ResponseMetadata metadata = 15;
+}
+
+message ListPaymentAttemptsRequest {
+  sdkwork.common.v1.PageRequest page = 1;
+}
+
+message ListPaymentAttemptsResponse {
+  repeated PaymentAttempt attempts = 1;
+  sdkwork.common.v1.PageResponse page = 2;
+  sdkwork.common.v1.ResponseMetadata metadata = 15;
+}
+
+message ListPaymentReconciliationRunsRequest {
+  sdkwork.common.v1.PageRequest page = 1;
+}
+
+message ListPaymentReconciliationRunsResponse {
+  repeated PaymentReconciliationRun runs = 1;
+  sdkwork.common.v1.PageResponse page = 2;
+  sdkwork.common.v1.ResponseMetadata metadata = 15;
+}

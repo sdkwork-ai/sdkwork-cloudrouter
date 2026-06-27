@@ -1,0 +1,39 @@
+fragment: models/console-account
+frontend_models:
+- route: /console/account
+  source: apps/sdkwork-clawrouter-pc/src/commerce/commerceViewModels.ts
+  interface: SdkworkBillingDashboardData
+  fields:
+  - summary
+  - summary.activeSubscriptionPlans
+  - summary.availablePoints
+  - summary.bestOfferSavingsCny
+  - summary.currentLevelName
+  - summary.totalSpentCny
+  - digest
+  - digest.budgetAmountCny
+  - digest.budgetRemainingCny
+  - digest.monthSpendCny
+  - digest.outstandingAmountCny
+  - digest.projectedMonthSpendCny
+  - digest.savingsOpportunityCny
+  - digest.todaySpendCny
+  - breakdowns
+  - paymentAttention
+  - paymentAttention.actionablePayments
+  - paymentAttention.outstandingAmountCny
+  - invoiceAttention
+  - invoiceAttention.pendingInvoices
+  - posture
+  - alerts
+  - recentUsage
+  - topAction
+  data_sources:
+  - commerce_account
+  - commerce_invoice
+  - commerce_payment_intent
+  - commerce_membership
+  - commerce_wallet_account
+  - iam_user
+  - iam_organization
+  - ai_usage_fact

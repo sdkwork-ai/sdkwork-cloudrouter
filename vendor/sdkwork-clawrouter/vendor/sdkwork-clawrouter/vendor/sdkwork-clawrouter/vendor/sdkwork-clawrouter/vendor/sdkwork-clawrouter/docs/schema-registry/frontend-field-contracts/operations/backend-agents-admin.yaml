@@ -1,0 +1,19 @@
+fragment: operations/backend-agents-admin
+frontend_operations:
+- route: /admin/agents
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-agents/src/agentService.ts
+  operation: listManagedAgents
+  operation_id: ai.agents.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/ai/agents
+  sdk_domain: agent
+  read_sources:
+  - ops_audit_log
+  query_parameters: []
+  response_schema:
+    name: listManagedAgentsResponse
+    type: object
+    additionalProperties: true
+    properties: {}

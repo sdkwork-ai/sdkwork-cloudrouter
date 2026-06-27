@@ -1,0 +1,372 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "@sdkwork/clawroutes-pc-commons",
+    "displayName": "SDKWork Claw Router Commons",
+    "version": "0.1.0",
+    "type": "node-package",
+    "root": "sdkwork-clawrouter/apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons",
+    "domain": "platform",
+    "declaredDomain": null,
+    "capability": "router",
+    "status": "standardizing",
+    "languages": [
+      "typescript"
+    ],
+    "generated": false,
+    "private": true,
+    "manifests": [
+      "package.json"
+    ]
+  },
+  "canonicalSpecs": [
+    {
+      "file": "COMPONENT_SPEC.md",
+      "path": "../../../../../sdkwork-specs/COMPONENT_SPEC.md",
+      "purpose": "Local component specs directory and manifest rules."
+    },
+    {
+      "file": "APP_SDK_INTEGRATION_SPEC.md",
+      "path": "../../../../../sdkwork-specs/APP_SDK_INTEGRATION_SPEC.md",
+      "purpose": "App SDK dependency composition and runtime SDK wiring rules."
+    },
+    {
+      "file": "CONFIG_SPEC.md",
+      "path": "../../../../../sdkwork-specs/CONFIG_SPEC.md",
+      "purpose": "Runtime configuration, environment, SDK bootstrap, and feature flag rules."
+    },
+    {
+      "file": "DOCUMENTATION_SPEC.md",
+      "path": "../../../../../sdkwork-specs/DOCUMENTATION_SPEC.md",
+      "purpose": "Module README, examples, ADR, changelog, and runbook rules."
+    },
+    {
+      "file": "DOMAIN_SPEC.md",
+      "path": "../../../../../sdkwork-specs/DOMAIN_SPEC.md",
+      "purpose": "Canonical domain ownership and naming."
+    },
+    {
+      "file": "FRONTEND_SPEC.md",
+      "path": "../../../../../sdkwork-specs/FRONTEND_SPEC.md",
+      "purpose": "UI, service, SDK, accessibility, and frontend runtime rules."
+    },
+    {
+      "file": "GOVERNANCE_SPEC.md",
+      "path": "../../../../../sdkwork-specs/GOVERNANCE_SPEC.md",
+      "purpose": "Standard ownership, exception, compatibility, and migration rules."
+    },
+    {
+      "file": "I18N_SPEC.md",
+      "path": "../../../../../sdkwork-specs/I18N_SPEC.md",
+      "purpose": "User-facing language, locale, message catalog, and fallback rules."
+    },
+    {
+      "file": "MODULE_SPEC.md",
+      "path": "../../../../../sdkwork-specs/MODULE_SPEC.md",
+      "purpose": "Reusable package contract and dependency direction."
+    },
+    {
+      "file": "README.md",
+      "path": "../../../../../sdkwork-specs/README.md",
+      "purpose": "SDKWork root standards entrypoint."
+    },
+    {
+      "file": "SDK_SPEC.md",
+      "path": "../../../../../sdkwork-specs/SDK_SPEC.md",
+      "purpose": "SDK generation and SDK integration rules."
+    },
+    {
+      "file": "SDK_WORKSPACE_GENERATION_SPEC.md",
+      "path": "../../../../../sdkwork-specs/SDK_WORKSPACE_GENERATION_SPEC.md",
+      "purpose": "Application-root SDK workspace and dependency SDK generation boundary rules."
+    },
+    {
+      "file": "TEST_SPEC.md",
+      "path": "../../../../../sdkwork-specs/TEST_SPEC.md",
+      "purpose": "Contract, frontend, SDK, security, parity, and documentation verification rules."
+    },
+    {
+      "file": "CODE_STYLE_SPEC.md",
+      "path": "../../../../../sdkwork-specs/CODE_STYLE_SPEC.md",
+      "purpose": "Authored source structure and generated code boundaries."
+    },
+    {
+      "file": "NAMING_SPEC.md",
+      "path": "../../../../../sdkwork-specs/NAMING_SPEC.md",
+      "purpose": "Canonical SDKWork naming rules."
+    },
+    {
+      "file": "TYPESCRIPT_CODE_SPEC.md",
+      "path": "../../../../../sdkwork-specs/TYPESCRIPT_CODE_SPEC.md",
+      "purpose": "TypeScript and Node package rules."
+    },
+    {
+      "file": "APPLICATION_SPEC.md",
+      "path": "../../../../../sdkwork-specs/APPLICATION_SPEC.md",
+      "purpose": "Application shell and module composition rules."
+    },
+    {
+      "file": "APP_MANIFEST_SPEC.md",
+      "path": "../../../../../sdkwork-specs/APP_MANIFEST_SPEC.md",
+      "purpose": "SDKWork app manifest and release metadata rules."
+    },
+    {
+      "file": "DEPLOYMENT_SPEC.md",
+      "path": "../../../../../sdkwork-specs/DEPLOYMENT_SPEC.md",
+      "purpose": "SaaS, private, and local deployment parity rules."
+    }
+  ],
+  "contracts": {
+    "publicExports": [
+      ".",
+      "./runtime",
+      "./api-result",
+      "./sdk-clients",
+      "./sdk-request-boundary",
+      "./components/BusinessState",
+      "./components/ConfirmDialog",
+      "./components/CopyButton",
+      "./idempotency",
+      "./utils/env"
+    ],
+    "runtimeEntrypoints": [
+      "../../../../../specs/dependency-api-surfaces.json",
+      "package.json#scripts.dev",
+      "package.json#scripts.build",
+      "package.json#scripts.typecheck"
+    ],
+    "sdkClients": [
+      {
+        "sdkFamily": "clawrouter-app-sdk",
+        "packageName": "@sdkwork/clawrouter-app-sdk",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createClawRouterAppSdkClient",
+        "getter": "getClawRouterAppSdkClient",
+        "runtimeIntegration": {
+          "mode": "same-origin-mounted",
+          "sameOriginAllowed": true,
+          "baseUrlEnv": "VITE_CLAWROUTER_APP_API_BASE_URL",
+          "publicBaseUrlEnv": "PORTAL_PUBLIC_APP_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "claw-router-global"
+        }
+      },
+      {
+        "sdkFamily": "clawrouter-backend-sdk",
+        "packageName": "@sdkwork/clawrouter-backend-sdk",
+        "surface": "backend-api",
+        "apiPrefix": "/backend/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createClawRouterBackendSdkClient",
+        "getter": "getClawRouterBackendSdkClient",
+        "runtimeIntegration": {
+          "mode": "same-origin-mounted",
+          "sameOriginAllowed": true,
+          "baseUrlEnv": "VITE_CLAWROUTER_BACKEND_API_BASE_URL",
+          "publicBaseUrlEnv": "PORTAL_PUBLIC_BACKEND_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "claw-router-global"
+        }
+      },
+      {
+        "sdkFamily": "clawrouter-open-sdk",
+        "packageName": "@sdkwork/clawrouter-open-sdk",
+        "surface": "open-api",
+        "apiPrefix": "/v1",
+        "sourceExport": "./sdk-clients",
+        "factory": "createClawRouterAiSdkClient",
+        "getter": "getClawRouterAiSdkClient",
+        "runtimeIntegration": {
+          "mode": "same-origin-mounted",
+          "sameOriginAllowed": true,
+          "baseUrlEnv": "VITE_CLAWROUTER_OPEN_API_BASE_URL",
+          "publicBaseUrlEnv": "PORTAL_PUBLIC_OPEN_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "credentialProvider": "api-key"
+        }
+      },
+      {
+        "sdkFamily": "sdkwork-iam-app-sdk",
+        "packageName": "@sdkwork/iam-app-sdk",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createSdkworkAppbaseAppSdkClient",
+        "getter": "getSdkworkAppbaseAppSdkClient",
+        "dependencyApiSurface": "sdkwork-iam-app-sdk",
+        "runtimeIntegration": {
+          "mode": "external-service",
+          "sameOriginAllowed": false,
+          "requiredBaseUrlEnv": "VITE_SDKWORK_APPBASE_APP_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "claw-router-global"
+        }
+      },
+      {
+        "sdkFamily": "sdkwork-iam-backend-sdk",
+        "packageName": "@sdkwork/iam-backend-sdk",
+        "surface": "backend-api",
+        "apiPrefix": "/backend/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createSdkworkAppbaseBackendSdkClient",
+        "getter": "getSdkworkAppbaseBackendSdkClient",
+        "dependencyApiSurface": "sdkwork-iam-backend-sdk",
+        "runtimeIntegration": {
+          "mode": "external-service",
+          "sameOriginAllowed": false,
+          "requiredBaseUrlEnv": "VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "claw-router-global"
+        }
+      },
+      {
+        "sdkFamily": "sdkwork-commerce-app-sdk",
+        "packageName": "sdkwork-commerce-app-sdk-generated-typescript",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createSdkworkCommerceAppSdkClient",
+        "getter": "getSdkworkCommerceAppSdkClient",
+        "dependencyApiSurface": "sdkwork-commerce-app-sdk",
+        "runtimeIntegration": {
+          "mode": "external-service",
+          "sameOriginAllowed": false,
+          "requiredBaseUrlEnv": "VITE_SDKWORK_COMMERCE_APP_API_BASE_URL",
+          "publicBaseUrlEnv": "PORTAL_PUBLIC_COMMERCE_APP_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "claw-router-global"
+        }
+      },
+      {
+        "sdkFamily": "sdkwork-commerce-backend-sdk",
+        "packageName": "sdkwork-commerce-backend-sdk-generated-typescript",
+        "surface": "backend-api",
+        "apiPrefix": "/backend/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createSdkworkCommerceBackendSdkClient",
+        "getter": "getSdkworkCommerceBackendSdkClient",
+        "dependencyApiSurface": "sdkwork-commerce-backend-sdk",
+        "runtimeIntegration": {
+          "mode": "external-service",
+          "sameOriginAllowed": false,
+          "requiredBaseUrlEnv": "VITE_SDKWORK_COMMERCE_BACKEND_API_BASE_URL",
+          "publicBaseUrlEnv": "PORTAL_PUBLIC_COMMERCE_BACKEND_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "claw-router-global"
+        }
+      },
+      {
+        "sdkFamily": "sdkwork-models-backend-sdk",
+        "packageName": "@sdkwork/models-backend-sdk",
+        "surface": "backend-api",
+        "apiPrefix": "/backend/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createModelsBackendSdkClient",
+        "getter": "getModelsBackendSdkClient",
+        "dependencyApiSurface": "sdkwork-models-backend-sdk",
+        "runtimeIntegration": {
+          "mode": "same-origin-mounted",
+          "sameOriginAllowed": true,
+          "baseUrlEnv": "VITE_SDKWORK_MODELS_BACKEND_API_BASE_URL",
+          "fallbackBaseUrlEnv": "VITE_CLAWROUTER_BACKEND_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "claw-router-global"
+        }
+      },
+      {
+        "sdkFamily": "sdkwork-models-app-sdk",
+        "packageName": "@sdkwork/models-app-sdk",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createModelsAppSdkClient",
+        "getter": "getModelsAppSdkClient",
+        "dependencyApiSurface": "sdkwork-models-app-sdk",
+        "runtimeIntegration": {
+          "mode": "same-origin-mounted",
+          "sameOriginAllowed": true,
+          "baseUrlEnv": "VITE_SDKWORK_MODELS_APP_API_BASE_URL",
+          "fallbackBaseUrlEnv": "VITE_CLAWROUTER_APP_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "claw-router-global"
+        }
+      },
+      {
+        "sdkFamily": "sdkwork-drive-app-sdk",
+        "packageName": "@sdkwork/drive-app-sdk",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createSdkworkDriveAppSdkClient",
+        "getter": "getSdkworkDriveAppSdkClient",
+        "runtimeIntegration": {
+          "mode": "dependency-app-api",
+          "sameOriginAllowed": true,
+          "baseUrlEnv": "VITE_SDKWORK_DRIVE_APP_API_BASE_URL",
+          "fallbackBaseUrlEnv": "VITE_CLAWROUTER_APP_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "claw-router-global"
+        }
+      },
+      {
+        "sdkFamily": "sdkwork-drive-backend-sdk",
+        "packageName": "sdkwork-drive-backend-sdk-generated-typescript",
+        "surface": "backend-api",
+        "apiPrefix": "/backend/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createSdkworkDriveBackendSdkClient",
+        "getter": "getSdkworkDriveBackendSdkClient",
+        "dependencyApiSurface": "sdkwork-drive-backend-sdk",
+        "runtimeIntegration": {
+          "mode": "dependency-backend-api",
+          "sameOriginAllowed": true,
+          "baseUrlEnv": "VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL",
+          "fallbackBaseUrlEnv": "VITE_CLAWROUTER_BACKEND_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "claw-router-global"
+        }
+      },
+      {
+        "sdkFamily": "sdkwork-generations-app-sdk",
+        "packageName": "sdkwork-generations-app-sdk-generated-typescript",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createSdkworkGenerationsAppSdkClient",
+        "getter": "getSdkworkGenerationsAppSdkClient",
+        "runtimeIntegration": {
+          "mode": "dependency-app-api",
+          "sameOriginAllowed": true,
+          "baseUrlEnv": "VITE_SDKWORK_GENERATIONS_APP_API_BASE_URL",
+          "fallbackBaseUrlEnv": "VITE_CLAWROUTER_APP_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "claw-router-global"
+        }
+      }
+    ],
+    "events": [],
+    "configKeys": [
+      "../../../../../specs/dependency-api-surfaces.json"
+    ],
+    "routeManifest": null,
+    "dependencyApiSurfaces": "../../../../../specs/dependency-api-surfaces.json"
+  },
+  "integration": {
+    "authority": "Root SDKWork specs remain authoritative. Local specs may extend but must not contradict them.",
+    "dependencyPolicy": "Consumers integrate through public package exports, declared runtime entrypoints, generated SDK clients, or documented adapters only.",
+    "sdkPolicy": "Generated SDK clients are injected through service/runtime boundaries; reusable UI must not create raw HTTP clients or manual auth headers.",
+    "languagePolicy": "Language-specific packages follow their native manifest and build tools while preserving the same component contract."
+  },
+  "verification": {
+    "commands": [
+      "pnpm --filter sdkwork-clawroutes-pc-commons typecheck"
+    ]
+  },
+  "metadata": {
+    "managedBy": "apps/scripts/initialize-component-specs.mjs",
+    "standardVersion": "2026-05-13"
+  }
+}

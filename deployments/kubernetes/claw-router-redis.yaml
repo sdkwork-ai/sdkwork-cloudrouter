@@ -1,0 +1,299 @@
+# Redis HA deployment for sdkwork-clawrouter.
+# Provides 3-pod Redis Sentinel topology (1 primary + 2 replicas + 3 sentinels)
+# with authentication, AOF persistence, and automatic failover.
+#
+# Production hardening:
+# - Authentication via Secret (requirepass + masterauth)
+# - AOF + RDB persistence on PVC
+# - Sentinel sidecars for automatic failover
+# - securityContext: runAsNonRoot, readOnlyRootFilesystem
+# - NetworkPolicy restricts access to clawrouter components only
+#
+# For managed Redis (ElastiCache/Memorystore), replace this manifest with
+# ExternalName Service pointing to the managed endpoint.
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sdkwork-clawrouter-redis-auth
+  labels:
+    app: sdkwork-clawrouter
+    component: redis
+type: Opaque
+stringData:
+  # IMPORTANT: override these in production via sealed-secrets or external-secrets.
+  redis-password: "clawrouter-redis-change-me"
+  # redis-url is consumed by gateway/admin-api/app-api/edge via SDKWORK_CLAW_REDIS_URL.
+  redis-url: "redis://:clawrouter-redis-change-me@sdkwork-clawrouter-redis:6379/0"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sdkwork-clawrouter-redis-config
+  labels:
+    app: sdkwork-clawrouter
+    component: redis
+data:
+  redis.conf: |
+    bind 0.0.0.0
+    protected-mode yes
+    port 6379
+    appendonly yes
+    appendfsync everysec
+    save 900 1
+    save 300 10
+    save 60 10000
+    maxmemory 512mb
+    maxmemory-policy allkeys-lru
+    tcp-keepalive 300
+    timeout 0
+    loglevel notice
+    databases 16
+    slowlog-log-slower-than 10000
+    slowlog-max-len 128
+  sentinel.conf: |
+    port 26379
+    bind 0.0.0.0
+    protected-mode no
+    dir /data
+    sentinel monitor mymaster sdkwork-clawrouter-redis-0.sdkwork-clawrouter-redis-headless 6379 2
+    sentinel down-after-milliseconds mymaster 5000
+    sentinel failover-timeout mymaster 30000
+    sentinel parallel-syncs mymaster 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sdkwork-clawrouter-redis-headless
+  labels:
+    app: sdkwork-clawrouter
+    component: redis
+spec:
+  clusterIP: None
+  selector:
+    app: sdkwork-clawrouter
+    component: redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: redis
+    - name: sentinel
+      port: 26379
+      targetPort: sentinel
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sdkwork-clawrouter-redis
+  labels:
+    app: sdkwork-clawrouter
+    component: redis
+spec:
+  selector:
+    app: sdkwork-clawrouter
+    component: redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: redis
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sdkwork-clawrouter-redis
+  labels:
+    app: sdkwork-clawrouter
+    component: redis
+spec:
+  serviceName: sdkwork-clawrouter-redis-headless
+  replicas: 3
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      app: sdkwork-clawrouter
+      component: redis
+  template:
+    metadata:
+      labels:
+        app: sdkwork-clawrouter
+        component: redis
+    spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: sdkwork-clawrouter
+                  component: redis
+              topologyKey: kubernetes.io/hostname
+      initContainers:
+        - name: init
+          image: redis:7-alpine
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              # Pod 0 bootstraps as primary; others join as replicas.
+              POD_ORDINAL="${HOSTNAME##*-}"
+              if [ "${POD_ORDINAL}" = "0" ]; then
+                echo "primary" > /data/role
+              else
+                echo "replica" > /data/role
+              fi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          args:
+            - redis-server
+            - /etc/redis/redis.conf
+            - --requirepass
+            - $(REDIS_PASSWORD)
+            - --masterauth
+            - $(REDIS_PASSWORD)
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sdkwork-clawrouter-redis-auth
+                  key: redis-password
+          ports:
+            - name: redis
+              containerPort: 6379
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 768Mi
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "redis-cli -a $(REDIS_PASSWORD) ping | grep PONG"
+            periodSeconds: 10
+            timeoutSeconds: 3
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "redis-cli -a $(REDIS_PASSWORD) ping | grep PONG"
+            periodSeconds: 5
+            timeoutSeconds: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/redis
+              readOnly: true
+            - name: data
+              mountPath: /data
+        - name: sentinel
+          image: redis:7-alpine
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              # Resolve current primary from sentinel consensus.
+              POD_ORDINAL="${HOSTNAME##*-}"
+              if [ "${POD_ORDINAL}" = "0" ]; then
+                PRIMARY_HOST="${HOSTNAME}.sdkwork-clawrouter-redis-headless"
+              else
+                PRIMARY_HOST="sdkwork-clawrouter-redis-0.sdkwork-clawrouter-redis-headless"
+              fi
+              # Rewrite sentinel config with resolved primary and auth.
+              cp /etc/redis/sentinel.conf /tmp/sentinel.conf
+              echo "sentinel auth-pass mymaster ${REDIS_PASSWORD}" >> /tmp/sentinel.conf
+              sed -i "s|sdkwork-clawrouter-redis-0.sdkwork-clawrouter-redis-headless|${PRIMARY_HOST}|g" /tmp/sentinel.conf
+              exec redis-server /tmp/sentinel.conf --sentinel
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sdkwork-clawrouter-redis-auth
+                  key: redis-password
+          ports:
+            - name: sentinel
+              containerPort: 26379
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          livenessProbe:
+            tcpSocket:
+              port: sentinel
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: sentinel
+            periodSeconds: 5
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/redis
+              readOnly: true
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: sdkwork-clawrouter-redis-config
+        - name: tmp
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 5Gi
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: sdkwork-clawrouter-redis
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: sdkwork-clawrouter
+      component: redis

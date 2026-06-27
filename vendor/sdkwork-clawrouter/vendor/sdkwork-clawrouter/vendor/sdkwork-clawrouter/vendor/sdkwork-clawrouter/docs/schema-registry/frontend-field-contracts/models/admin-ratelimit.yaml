@@ -1,0 +1,99 @@
+fragment: models/admin-ratelimit
+frontend_models:
+- route: /admin/ratelimit
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  interface: FirewallCreateInput
+  fields:
+  - type
+  - value
+  - reason
+  data_sources:
+  - iam_gateway_risk_rule
+- route: /admin/ratelimit
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  interface: FirewallRule
+  fields:
+  - id
+  - type
+  - value
+  - reason
+  - time
+  data_sources:
+  - iam_gateway_risk_rule
+- route: /admin/ratelimit
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  interface: IpLimitCreateInput
+  fields:
+  - ruleName
+  - targetIp
+  - rps
+  - rpm
+  - blockDuration
+  data_sources:
+  - iam_gateway_risk_rule
+  - ai_quota_policy
+- route: /admin/ratelimit
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  interface: IpLimitRule
+  fields:
+  - id
+  - ruleName
+  - targetIp
+  - rps
+  - rpm
+  - blockDuration
+  - status
+  data_sources:
+  - iam_gateway_risk_rule
+- route: /admin/ratelimit
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  interface: ModelLimitCreateInput
+  fields:
+  - model
+  - channelGroup
+  - rpm
+  - tpm
+  data_sources:
+  - ai_quota_policy
+  - ai_channel_group
+- route: /admin/ratelimit
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  interface: ModelLimitRule
+  fields:
+  - id
+  - model
+  - channelGroup
+  - channelGroupId
+  - channelGroupName
+  - rpm
+  - tpm
+  - status
+  data_sources:
+  - ai_quota_policy
+  - ai_channel_group
+- route: /admin/ratelimit
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  interface: TokenLimitCreateInput
+  fields:
+  - keyPrefix
+  - user
+  - rps
+  - rpd
+  - burst
+  data_sources:
+  - ai_quota_policy
+  - iam_gateway_api_key
+- route: /admin/ratelimit
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  interface: TokenLimitRule
+  fields:
+  - id
+  - keyPrefix
+  - user
+  - rps
+  - rpd
+  - burst
+  - status
+  data_sources:
+  - ai_quota_policy
+  - iam_gateway_api_key

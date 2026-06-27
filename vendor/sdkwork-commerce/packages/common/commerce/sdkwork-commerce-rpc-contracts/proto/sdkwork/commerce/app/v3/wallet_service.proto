@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package sdkwork.commerce.app.v3;
+
+import "sdkwork/common/v1/money.proto";
+import "sdkwork/common/v1/pagination.proto";
+import "sdkwork/common/v1/runtime.proto";
+
+option java_package = "com.sdkwork.commerce.app.v3";
+option java_multiple_files = true;
+option go_package = "github.com/sdkwork/commerce-rpc-go/sdkwork/commerce/app/v3;commerceappv3";
+
+service WalletService {
+  rpc RetrieveWalletOverview(RetrieveWalletOverviewRequest) returns (RetrieveWalletOverviewResponse);
+  rpc ListWalletAccounts(ListWalletAccountsRequest) returns (ListWalletAccountsResponse);
+  rpc ListWalletLedgerEntries(ListWalletLedgerEntriesRequest) returns (ListWalletLedgerEntriesResponse);
+}
+
+message WalletAccount {
+  string account_id = 1;
+  string account_type = 2;
+  sdkwork.common.v1.Money balance = 3;
+}
+
+message WalletLedgerEntry {
+  string ledger_entry_id = 1;
+  string account_id = 2;
+  string direction = 3;
+  sdkwork.common.v1.Money amount = 4;
+  string reason = 5;
+}
+
+message RetrieveWalletOverviewRequest {}
+
+message RetrieveWalletOverviewResponse {
+  repeated WalletAccount accounts = 1;
+  sdkwork.common.v1.ResponseMetadata metadata = 15;
+}
+
+message ListWalletAccountsRequest {
+  sdkwork.common.v1.PageRequest page = 1;
+}
+
+message ListWalletAccountsResponse {
+  repeated WalletAccount accounts = 1;
+  sdkwork.common.v1.PageResponse page = 2;
+  sdkwork.common.v1.ResponseMetadata metadata = 15;
+}
+
+message ListWalletLedgerEntriesRequest {
+  string account_id = 1;
+  sdkwork.common.v1.PageRequest page = 2;
+}
+
+message ListWalletLedgerEntriesResponse {
+  repeated WalletLedgerEntry entries = 1;
+  sdkwork.common.v1.PageResponse page = 2;
+  sdkwork.common.v1.ResponseMetadata metadata = 15;
+}

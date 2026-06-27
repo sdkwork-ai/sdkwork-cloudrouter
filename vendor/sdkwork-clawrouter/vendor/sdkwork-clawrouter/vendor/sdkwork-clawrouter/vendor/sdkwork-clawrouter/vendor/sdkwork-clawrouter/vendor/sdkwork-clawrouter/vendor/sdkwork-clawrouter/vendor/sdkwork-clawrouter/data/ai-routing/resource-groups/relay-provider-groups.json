@@ -1,0 +1,173 @@
+{
+  "kind": "ai-routing.resource-groups",
+  "items": [
+    {
+      "groupCode": "relay.openai_compatible.llm",
+      "groupName": "OpenAI Compatible LLM Relay",
+      "groupType": "relay",
+      "selectionMode": "any",
+      "description": "Relay account group for OpenAI-compatible LLM endpoints.",
+      "sortOrder": 200,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.openai_compatible"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.responses"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.chat_completions"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.completions"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.embeddings"
+        }
+      ]
+    },
+    {
+      "groupCode": "relay.openai_compatible.media",
+      "groupName": "OpenAI Compatible Media Relay",
+      "groupType": "relay",
+      "selectionMode": "any",
+      "description": "Relay account group for OpenAI-compatible image and audio endpoints.",
+      "sortOrder": 210,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.openai_compatible"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images.generations"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images.edits"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.images.variations"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio.transcriptions"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio.translations"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.audio.speech"
+        }
+      ]
+    },
+    {
+      "groupCode": "relay.cn.visual_generation",
+      "groupName": "China Visual Generation Relay",
+      "groupType": "relay",
+      "selectionMode": "any",
+      "description": "Relay account group for Kling, Jimeng, and Volcengine image/video APIs.",
+      "sortOrder": 220,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.kling"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.jimeng"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.volcengine"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.vidu"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.text_to_video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.image_to_video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.jimeng.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.jimeng.video_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.jimeng.task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.volcengine.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.volcengine.video_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.volcengine.task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.reference_to_image"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.start_end_to_video"
+        }
+      ]
+    },
+    {
+      "groupCode": "relay.minimax.music",
+      "groupName": "MiniMax Music Relay",
+      "groupType": "relay",
+      "selectionMode": "any",
+      "description": "Relay account group for MiniMax music generation APIs.",
+      "sortOrder": 230,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.minimax"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.minimax.music_generation"
+        }
+      ]
+    }
+  ]
+}

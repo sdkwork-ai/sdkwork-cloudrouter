@@ -1,0 +1,1526 @@
+fragment: operations/app-ai
+frontend_operations:
+- route: /console/api-keys
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
+  operation: fetchGroups
+  operation_id: channelGroups.list
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/ai/channel_groups
+  read_sources:
+  - ai_channel_group
+  - ai_channel_group_metric_snapshot
+  - ai_pricing_plan
+  query_parameters: []
+  response_schema:
+    name: AppChannelGroupListResponse
+    required:
+    - items
+    properties:
+      items:
+        type: array
+        items:
+          name: AppChannelGroup
+          type: object
+          additionalProperties: false
+          required:
+          - id
+          - code
+          - name
+          - rate
+          properties:
+            id:
+              type: string
+              minLength: 1
+              maxLength: 128
+            code:
+              type: string
+              minLength: 1
+              maxLength: 128
+            name:
+              type: string
+              minLength: 1
+              maxLength: 128
+            rate:
+              type: string
+              nullable: true
+              maxLength: 64
+- route: /models
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts
+  operation: fetchModels
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/ai/models
+  openapi_exposed: false
+  read_sources:
+  - ai_model_vendor
+  - ai_model
+  - ai_model_capability
+  - ai_model_pricing
+  - ai_channel_group
+  - ai_channel_group_member
+  query_parameters: &appModelCatalogQueryParameters
+  - name: billing_meter
+    schema:
+      type: string
+  - name: vendor_code
+    schema:
+      type: string
+  - name: vendor_codes
+    schema:
+      type: array
+      maxItems: 32
+      items:
+        type: string
+        minLength: 1
+        maxLength: 64
+    style: form
+    explode: false
+  - name: modalities
+    schema:
+      type: array
+      maxItems: 32
+      items:
+        type: string
+        minLength: 1
+        maxLength: 64
+    style: form
+    explode: false
+  - name: capabilities
+    schema:
+      type: array
+      maxItems: 64
+      items:
+        type: string
+        minLength: 1
+        maxLength: 64
+    style: form
+    explode: false
+  - name: categories
+    schema:
+      type: array
+      maxItems: 32
+      items:
+        type: string
+        minLength: 1
+        maxLength: 64
+    style: form
+    explode: false
+  - name: groups
+    schema:
+      type: array
+      maxItems: 32
+      items:
+        type: string
+        minLength: 1
+        maxLength: 64
+    style: form
+    explode: false
+  - name: q
+    schema:
+      type: string
+  - name: limit
+    schema:
+      type: integer
+      format: int64
+      minimum: 1
+      maximum: 1000
+  response_schema: &appModelCatalogResponse
+    name: AppModelCatalogResponse
+    required:
+    - items
+    - groups
+    properties:
+      items:
+        type: array
+        maxItems: 1000
+        items:
+          name: AppModelCatalogItem
+          type: object
+          additionalProperties: false
+          required:
+          - catalogKey
+          - model
+          - displayName
+          - vendorCode
+          - vendor
+          - capabilities
+          - groups
+          - categories
+          - description
+          - modalities
+          - inputModalities
+          - outputModalities
+          - apiFormat
+          - capabilityIntro
+          - limitations
+          - supportedLanguages
+          - useCases
+          - trainingDataCutoff
+          - contextTokens
+          - maxOutputTokens
+          - supportsStreaming
+          - supportsTools
+          - supportsJsonSchema
+          - releaseStage
+          - shelfState
+          - routingState
+          - replacementModel
+          - providerCodes
+          - officialReferencePrices
+          - priceAvailability
+          properties:
+            catalogKey:
+              type: string
+              minLength: 3
+              maxLength: 256
+            model:
+              type: string
+              minLength: 1
+              maxLength: 128
+            displayName:
+              type: string
+              minLength: 1
+              maxLength: 128
+            vendorCode:
+              type: string
+              minLength: 1
+              maxLength: 64
+            vendor:
+              type: string
+              minLength: 1
+              maxLength: 64
+            capabilities:
+              type: array
+              maxItems: 64
+              items:
+                type: string
+                minLength: 1
+                maxLength: 64
+            groups:
+              type: array
+              maxItems: 32
+              items:
+                type: string
+                minLength: 1
+                maxLength: 64
+            categories:
+              type: array
+              maxItems: 5
+              items:
+                type: string
+                enum:
+                - Recommended
+                - Open Source
+                - Proprietary
+                - Free
+                - New
+            description:
+              type: string
+              nullable: true
+              maxLength: 2048
+            modalities:
+              type: array
+              maxItems: 16
+              items:
+                type: string
+                minLength: 1
+                maxLength: 64
+            inputModalities:
+              type: array
+              maxItems: 16
+              items:
+                type: string
+                minLength: 1
+                maxLength: 64
+            outputModalities:
+              type: array
+              maxItems: 16
+              items:
+                type: string
+                minLength: 1
+                maxLength: 64
+            apiFormat:
+              type: string
+              nullable: true
+              maxLength: 128
+            capabilityIntro:
+              type: string
+              nullable: true
+              maxLength: 4096
+            limitations:
+              type: array
+              maxItems: 64
+              items:
+                type: string
+                minLength: 1
+                maxLength: 512
+            supportedLanguages:
+              type: array
+              maxItems: 128
+              items:
+                type: string
+                minLength: 1
+                maxLength: 128
+            useCases:
+              type: array
+              maxItems: 64
+              items:
+                type: string
+                minLength: 1
+                maxLength: 256
+            trainingDataCutoff:
+              type: string
+              nullable: true
+              maxLength: 128
+            contextTokens:
+              type: integer
+              format: int64
+              nullable: true
+              minimum: 0
+            maxOutputTokens:
+              type: integer
+              format: int64
+              nullable: true
+              minimum: 0
+            supportsStreaming:
+              type: boolean
+            supportsTools:
+              type: boolean
+            supportsJsonSchema:
+              type: boolean
+            releaseStage:
+              type: integer
+              format: int64
+              nullable: true
+            shelfState:
+              type: integer
+              format: int64
+              nullable: true
+            routingState:
+              type: integer
+              format: int64
+              nullable: true
+            replacementModel:
+              type: string
+              nullable: true
+              maxLength: 128
+            providerCodes:
+              type: array
+              maxItems: 256
+              items:
+                type: string
+                minLength: 1
+                maxLength: 64
+            officialReferencePrices:
+              type: array
+              maxItems: 64
+              description: Complete public official reference prices keyed by regionCode and billing meter. Customer, upstream, provider, and channel prices are never exposed here.
+              items:
+                name: AppModelCatalogReferencePrice
+                type: object
+                additionalProperties: false
+                required:
+                - regionCode
+                - billingMeter
+                - unitPrice
+                - currency
+                properties:
+                  regionCode:
+                    type: string
+                    minLength: 1
+                    maxLength: 64
+                    description: Deployment or pricing region for this public reference price. Region is never encoded in catalogKey.
+                  billingMeter:
+                    type: string
+                    minLength: 1
+                    maxLength: 64
+                  unitPrice:
+                    type: string
+                    minLength: 1
+                    maxLength: 64
+                    description: Decimal unit price in the native official reference currency.
+                  currency:
+                    type: string
+                    minLength: 3
+                    maxLength: 3
+            priceAvailability:
+              name: AppModelCatalogPriceAvailability
+              type: object
+              additionalProperties: false
+              required:
+              - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                  - reference
+                  - unavailable
+                reason:
+                  type: string
+                  nullable: true
+      groups:
+        type: array
+        maxItems: 128
+        description: Complete admin-maintained channel group catalog for the model library sidebar. Groups are returned even when the current model filter result contains no matching model.
+        items:
+          name: AppModelCatalogGroupOption
+          type: object
+          additionalProperties: false
+          required:
+          - key
+          - label
+          - modelCount
+          properties:
+            key:
+              type: string
+              minLength: 1
+              maxLength: 64
+            label:
+              type: string
+              minLength: 1
+              maxLength: 128
+            modelCount:
+              type: integer
+              format: int64
+              minimum: 0
+- route: /rankings
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/src/rankingService.ts
+  operation: fetchModelVendors
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/ai/model_vendors
+  openapi_exposed: false
+  summary: List ranking vendor filters
+  description: Lists service-backed model vendor filter options for the public rankings page.
+  read_sources:
+  - ai_model_vendor
+  - ai_model
+  query_parameters: []
+  response_schema:
+    name: RankingVendorOptionsResponse
+    type: object
+    additionalProperties: false
+    required:
+    - items
+    properties:
+      items:
+        type: array
+        maxItems: 500
+        items:
+          name: RankingVendorOption
+          type: object
+          additionalProperties: false
+          required:
+          - label
+          - code
+          - modelCount
+          properties:
+            label:
+              type: string
+              minLength: 1
+              maxLength: 128
+            code:
+              type: string
+              minLength: 1
+              maxLength: 64
+            modelCount:
+              type: integer
+              format: int64
+              minimum: 0
+- route: /rankings
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/src/rankingService.ts
+  operation: fetchModelRankings
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/ai/model_rankings
+  openapi_exposed: false
+  read_sources:
+  - ai_model_rank_snapshot
+  query_parameters:
+  - name: rank_scope
+    schema:
+      type: string
+  - name: vendor_code
+    schema:
+      type: string
+  - name: modality
+    schema:
+      type: string
+  - name: q
+    schema:
+      type: string
+  - name: limit
+    schema:
+      type: integer
+      format: int64
+      minimum: 1
+      maximum: 200
+  response_schema:
+    name: ModelRankingsSnapshot
+    required:
+    - source
+    - items
+    - history
+    properties:
+      source:
+        name: ModelRankingsSource
+        type: object
+        additionalProperties: false
+        required:
+        - sourceLabel
+        - sourceDescription
+        - observedAt
+        - snapshotDate
+        - snapshotPeriod
+        - windowStart
+        - windowEnd
+        - generatedAt
+        - refreshIntervalSeconds
+        - nextRefreshAt
+        - cacheMaxAgeSeconds
+        - rankScope
+        - sourceTables
+        properties:
+          sourceLabel:
+            type: string
+            minLength: 1
+            maxLength: 128
+          sourceDescription:
+            type: string
+            minLength: 1
+            maxLength: 512
+          observedAt:
+            type: string
+            maxLength: 64
+          snapshotDate:
+            type: string
+            minLength: 1
+            maxLength: 64
+          snapshotPeriod:
+            type: string
+            minLength: 1
+            maxLength: 32
+          windowStart:
+            type: string
+            maxLength: 64
+          windowEnd:
+            type: string
+            maxLength: 64
+          generatedAt:
+            type: string
+            maxLength: 64
+          refreshIntervalSeconds:
+            type: integer
+            format: int64
+            minimum: 1
+          nextRefreshAt:
+            type: string
+            maxLength: 64
+          cacheMaxAgeSeconds:
+            type: integer
+            format: int64
+            minimum: 1
+          rankScope:
+            type: string
+            minLength: 1
+            maxLength: 64
+          sourceTables:
+            type: array
+            maxItems: 8
+            items:
+              type: string
+              minLength: 1
+              maxLength: 128
+      items:
+        type: array
+        maxItems: 200
+        items:
+          name: ModelRankingItem
+          type: object
+          additionalProperties: false
+          required:
+          - id
+          - rank
+          - prevRank
+          - name
+          - vendor
+          - vendorCode
+          - modality
+          - baseVolume
+          - costIndicator
+          - latency
+          - isNew
+          - color
+          - strengths
+          - requests
+          - tokens
+          - cost
+          - currency
+          properties:
+            id:
+              type: string
+              minLength: 1
+              maxLength: 256
+              description: Stable model catalog identity; must match ranking history catalogKey and must not include snapshot date prefixes.
+            rank:
+              type: integer
+              format: int64
+              minimum: 1
+            prevRank:
+              type: integer
+              format: int64
+              minimum: 0
+            name:
+              type: string
+              minLength: 1
+              maxLength: 128
+            vendor:
+              type: string
+              minLength: 1
+              maxLength: 128
+            vendorCode:
+              type: string
+              minLength: 1
+              maxLength: 64
+            modality:
+              type: string
+              enum:
+              - LLM
+              - Image
+              - Audio
+              - Video
+              - Music
+              - Embedding
+              - Rerank
+              - Unknown
+            baseVolume:
+              type: integer
+              format: int64
+              minimum: 0
+            costIndicator:
+              type: integer
+              format: int64
+              minimum: 1
+              maximum: 5
+            latency:
+              type: integer
+              format: int64
+              minimum: 0
+            contextSize:
+              type: string
+              nullable: true
+              maxLength: 64
+            isNew:
+              type: boolean
+            color:
+              type: string
+              minLength: 1
+              maxLength: 64
+            winRate:
+              type: number
+              nullable: true
+              minimum: 0
+              maximum: 100
+            pricing:
+              type: string
+              nullable: true
+              maxLength: 128
+            license:
+              type: string
+              nullable: true
+              enum:
+              - Open Source
+              - Proprietary
+            strengths:
+              type: array
+              maxItems: 16
+              items:
+                type: string
+                minLength: 1
+                maxLength: 64
+            requests:
+              type: integer
+              format: int64
+              minimum: 0
+            tokens:
+              type: integer
+              format: int64
+              minimum: 0
+            cost:
+              type: number
+              minimum: 0
+            currency:
+              type: string
+              minLength: 1
+              maxLength: 16
+            trendScore:
+              type: number
+              nullable: true
+      history:
+        type: array
+        maxItems: 60
+        items:
+          name: ModelRankingHistoryPoint
+          type: object
+          additionalProperties: false
+          required:
+          - date
+          - index
+          - entries
+          properties:
+            date:
+              type: string
+              minLength: 1
+              maxLength: 64
+            index:
+              type: integer
+              format: int64
+              minimum: 0
+            entries:
+              type: array
+              maxItems: 500
+              items:
+                name: ModelRankingHistoryEntry
+                type: object
+                additionalProperties: false
+                required:
+                - model
+                - catalogKey
+                - rank
+                - volume
+                - color
+                properties:
+                  model:
+                    type: string
+                    minLength: 1
+                    maxLength: 128
+                  catalogKey:
+                    type: string
+                    minLength: 1
+                    maxLength: 256
+                  rank:
+                    type: integer
+                    format: int64
+                    minimum: 0
+                  volume:
+                    type: integer
+                    format: int64
+                    minimum: 0
+                  color:
+                    type: string
+                    minLength: 1
+                    maxLength: 64
+- route: /console/dashboard
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts
+  operation: fetchDashboardOverview
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/ai/dashboard/overview
+  read_sources:
+  - ai_usage_fact
+  - ai_request_trace
+  - ai_model_rank_snapshot
+  - ops_notification_message
+  - ops_metric_snapshot
+  - ops_gateway_instance
+  query_parameters:
+  - name: time_range
+    schema:
+      type: string
+      enum:
+      - hourly
+      - daily
+      - monthly
+      - yearly
+  - name: start_time
+    schema:
+      type: string
+      maxLength: 64
+  - name: end_time
+    schema:
+      type: string
+      maxLength: 64
+  response_schema:
+    name: DashboardOverviewResponse
+    required:
+    - summary
+    - requestSparkline
+    - multimodalSparkline
+    - performanceSparkline
+    - chartData
+    - topModels
+    - announcements
+    - warnings
+    properties:
+      summary:
+        type: object
+        additionalProperties: false
+        name: DashboardOverviewSummary
+        required:
+        - availableCredits
+        - usedCredits
+        - requestCount
+        - totalUsedCredits
+        - totalRequestCount
+        - errorCount
+        - imageRequests
+        - videoRequests
+        - audioRequests
+        - musicRequests
+        - rpm
+        - tpm
+        properties:
+          availableCredits:
+            type: number
+          usedCredits:
+            type: number
+          requestCount:
+            type: integer
+            format: int64
+          totalUsedCredits:
+            type: number
+          totalRequestCount:
+            type: integer
+            format: int64
+          errorCount:
+            type: integer
+            format: int64
+          imageRequests:
+            type: integer
+            format: int64
+          videoRequests:
+            type: integer
+            format: int64
+          audioRequests:
+            type: integer
+            format: int64
+          musicRequests:
+            type: integer
+            format: int64
+          rpm:
+            type: number
+          tpm:
+            type: number
+      requestSparkline:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: DashboardSparklinePoint
+          required:
+          - value
+          properties:
+            value:
+              type: number
+      multimodalSparkline:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: DashboardSparklinePoint
+          required:
+          - value
+          properties:
+            value:
+              type: number
+      performanceSparkline:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: DashboardSparklinePoint
+          required:
+          - value
+          properties:
+            value:
+              type: number
+      chartData:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: DashboardChartPoint
+          required:
+          - time
+          - llm (Text)
+          - image (Midjourney/DALL-E)
+          - video (Runway/Sora)
+          - audio (Whisper)
+          - music (Suno)
+          properties:
+            time:
+              type: string
+            llm (Text):
+              type: number
+            image (Midjourney/DALL-E):
+              type: number
+            video (Runway/Sora):
+              type: number
+            audio (Whisper):
+              type: number
+            music (Suno):
+              type: number
+      topModels:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: DashboardTopModel
+          required:
+          - rank
+          - name
+          - supplier
+          - modality
+          - requests
+          - cost
+          - trend
+          - isUp
+          properties:
+            rank:
+              type: integer
+              format: int64
+            name:
+              type: string
+            supplier:
+              type: string
+            modality:
+              type: string
+              enum:
+              - text
+              - image
+              - video
+              - audio
+              - music
+              - unknown
+            requests:
+              type: integer
+              format: int64
+            cost:
+              type: number
+            trend:
+              type: string
+            isUp:
+              type: boolean
+      announcements:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: DashboardAnnouncement
+          required:
+          - id
+          - text
+          - time
+          - type
+          properties:
+            id:
+              type: integer
+              format: int64
+            text:
+              type: string
+            time:
+              type: string
+            type:
+              type: string
+              enum:
+              - success
+              - info
+              - warning
+              - error
+              - unknown
+      configurationDomains:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: DashboardConfigurationDomain
+          required:
+          - id
+          - name
+          - domain
+          - ip
+          - status
+          - remark
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            domain:
+              type: string
+            ip:
+              type: string
+            status:
+              type: string
+              enum:
+              - online
+              - warning
+              - offline
+              - unknown
+            remark:
+              type: string
+      warnings:
+        type: array
+        items:
+          type: string
+- route: /console/gateway
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-gateway/src/gatewayService.ts
+  operation: fetchTraces
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/ai/gateway/traces
+  read_sources:
+  - ai_request_trace
+  - ops_gateway_instance
+  query_parameters: []
+  response_schema:
+    name: GatewayTracesResponse
+    required:
+    - items
+    properties:
+      items:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: GatewayTrace
+          required:
+          - id
+          - time
+          - ip
+          - endpoint
+          - method
+          - status
+          - duration
+          - channel
+          properties:
+            id:
+              type: string
+            time:
+              type: string
+            ip:
+              type: string
+              description: Masked client IP address.
+            endpoint:
+              type: string
+            method:
+              type: string
+              enum: [GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD]
+            status:
+              type: integer
+              format: int32
+            duration:
+              type: string
+              description: HTTP latency display value, for example 128ms.
+            channel:
+              type: string
+- route: /console/api-keys
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts
+  operation: fetchRoutingChannels
+  operation_scope: app_shell
+  operation_id: routing.channels.list
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/ai/routing/channels
+  read_sources:
+  - ai_channel
+  - ai_channel_credential
+  - ai_channel_resource
+  - ai_resource
+  - ai_resource_group
+  query_parameters: []
+  response_schema:
+    name: RoutingChannelsResponse
+    required:
+    - items
+    properties:
+      items:
+        type: array
+        items:
+          name: RoutingChannelItem
+          type: object
+          additionalProperties: false
+          required:
+          - id
+          - name
+          - vendor
+          - provider
+          - providerCode
+          - protocol
+          - accessType
+          - baseUrl
+          - apiKey
+          - models
+          - capabilities
+          - isMultimodal
+          - weight
+          - status
+          - latency
+          - rpm
+          - balance
+          - errors
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            vendor:
+              type: string
+            provider:
+              type: string
+            providerCode:
+              type: string
+            protocol:
+              type: string
+            accessType:
+              type: string
+            baseUrl:
+              type: string
+            apiKey:
+              type: string
+              description: Masked credential label from the selected upstream credential. Raw secret material is never returned.
+            models:
+              type: array
+              items:
+                type: string
+            capabilities:
+              type: array
+              items:
+                type: string
+            isMultimodal:
+              type: boolean
+            timeoutMs:
+              type: integer
+              format: int64
+              nullable: true
+            retryPolicy:
+              name: RoutingRetryPolicy
+              type: object
+              additionalProperties: false
+              nullable: true
+              required:
+              - maxAttempts
+              - retryableStatusCodes
+              - backoffMs
+              properties:
+                maxAttempts:
+                  type: integer
+                  format: int64
+                retryableStatusCodes:
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
+                backoffMs:
+                  type: integer
+                  format: int64
+            circuitBreakerPolicy:
+              name: RoutingCircuitBreakerPolicy
+              type: object
+              additionalProperties: false
+              nullable: true
+              required:
+              - failureThreshold
+              properties:
+                failureThreshold:
+                  type: integer
+                  format: int64
+            weight:
+              type: integer
+              format: int64
+            status:
+              type: string
+            latency:
+              type: string
+            rpm:
+              type: integer
+              format: int64
+            balance:
+              type: string
+            errors:
+              type: integer
+              format: int64
+- route: /console/api-keys
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts
+  operation: fetchRoutingApiKeys
+  operation_scope: app_shell
+  operation_id: routing.apiKeys.list
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/ai/routing/api_keys
+  read_sources:
+  - iam_gateway_api_key
+  - ai_usage_fact
+  query_parameters: []
+  response_schema:
+    name: RoutingApiKeysResponse
+    required:
+    - items
+    properties:
+      items:
+        type: array
+        items:
+          name: RoutingApiKeyItem
+          type: object
+          additionalProperties: false
+          required:
+          - id
+          - name
+          - displayKey
+          - status
+          - totalUsage
+          - createdAt
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            displayKey:
+              type: string
+            copyableKey:
+              type: string
+              nullable: true
+              description: Returned only when the app API key secret codec is configured for the trusted console subject.
+            status:
+              type: string
+            totalUsage:
+              type: string
+            createdAt:
+              type: string
+- route: /console/gateway
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts
+  operation: fetchRoutingRequestTraces
+  operation_scope: app_shell
+  operation_id: routing.requestTraces.list
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/ai/routing/request_traces
+  read_sources:
+  - ai_request_trace
+  - ai_routing_decision_log
+  - ai_usage_fact
+  query_parameters: []
+  response_schema:
+    name: RoutingRequestTracesResponse
+    required:
+    - items
+    properties:
+      items:
+        type: array
+        items:
+          name: RoutingRequestTraceItem
+          type: object
+          additionalProperties: false
+          required:
+          - id
+          - time
+          - model
+          - channel
+          - status
+          - duration
+          - tokens
+          - traceId
+          - requestId
+          - requestPath
+          - httpMethod
+          - requestPayloadHash
+          - responsePayloadHash
+          - requestBytes
+          - responseBytes
+          - providerErrorCode
+          - errorType
+          - errorMessageMasked
+          - startedAt
+          - endedAt
+          - streaming
+          properties:
+            id:
+              type: string
+            time:
+              type: string
+            model:
+              type: string
+            channel:
+              type: string
+            status:
+              type: integer
+              format: int64
+            duration:
+              type: string
+            tokens:
+              type: integer
+              format: int64
+            traceId:
+              type: string
+            requestId:
+              type: string
+            requestPath:
+              type: string
+            httpMethod:
+              type: string
+            requestPayloadHash:
+              type: string
+            responsePayloadHash:
+              type: string
+            requestBytes:
+              type: integer
+              format: int64
+            responseBytes:
+              type: integer
+              format: int64
+            providerErrorCode:
+              type: string
+            errorType:
+              type: string
+            errorMessageMasked:
+              type: string
+            startedAt:
+              type: string
+            endedAt:
+              type: string
+            streaming:
+              type: boolean
+- route: /console/usage
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts
+  operation: fetchRoutingUsage
+  operation_scope: app_shell
+  operation_id: routing.usage.list
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/ai/routing/usage
+  read_sources:
+  - ai_request_trace
+  - ai_usage_fact
+  - ai_routing_decision_log
+  query_parameters: []
+  response_schema:
+    name: RoutingUsageSnapshot
+    required:
+    - chartData
+    - modelStats
+    properties:
+      chartData:
+        type: array
+        items:
+          name: RoutingUsageData
+          type: object
+          additionalProperties: false
+          required:
+          - time
+          - requests
+          - latency
+          properties:
+            time:
+              type: string
+            requests:
+              type: integer
+              format: int64
+            latency:
+              type: integer
+              format: int64
+      modelStats:
+        type: array
+        items:
+          name: RoutingModelStats
+          type: object
+          additionalProperties: false
+          required:
+          - m
+          - req
+          - sr
+          - tok
+          - lat
+          properties:
+            m:
+              type: string
+            req:
+              type: string
+            sr:
+              type: string
+            tok:
+              type: string
+            lat:
+              type: string
+- route: /console/usage
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-usage/src/usageService.ts
+  operation: fetchLogs
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/ai/usage/logs
+  read_sources:
+  - ai_request_trace
+  - ai_usage_fact
+  - ai_routing_decision_log
+  query_parameters:
+  - name: page
+    schema:
+      type: integer
+      format: int64
+      minimum: 1
+  - name: page_size
+    schema:
+      type: integer
+      format: int64
+      minimum: 1
+      maximum: 200
+  - name: q
+    schema:
+      type: string
+      maxLength: 128
+  - name: status
+    schema:
+      type: string
+      maxLength: 64
+  - name: start_time
+    schema:
+      type: string
+      maxLength: 64
+  - name: end_time
+    schema:
+      type: string
+      maxLength: 64
+  response_schema:
+    name: UsageLogsResponse
+    required:
+    - logs
+    - total
+    - page
+    - pageSize
+    properties:
+      logs:
+        type: array
+        items:
+          name: UsageLogItem
+          type: object
+          additionalProperties: false
+          required:
+          - id
+          - requestId
+          - time
+          - tokenName
+          - group
+          - type
+          - model
+          - providerNativeModel
+          - requestedModelCatalogKey
+          - regionCode
+          - status
+          - httpStatus
+          - errorCode
+          - errorType
+          - errorMessage
+          - totalTime
+          - ttft
+          - isStream
+          - inputTokens
+          - cacheReadTokens
+          - outputTokens
+          - cost
+          - multiplier
+          - baseInputPrice
+          - baseOutputPrice
+          - cacheReadPrice
+          - path
+          - reasoningEffort
+          - ip
+          - userAgent
+          properties:
+            id:
+              type: string
+            requestId:
+              type: string
+            time:
+              type: string
+            tokenName:
+              type: string
+            group:
+              type: string
+              description: Maintained channel group display name. Falls back to the recorded group snapshot when the group has been removed or renamed outside the read model.
+            type:
+              type: string
+            model:
+              type: string
+              description: Provider native model id used in the upstream provider request, kept as the visible model value for usage tables.
+            providerNativeModel:
+              type: string
+              description: Provider native model id, for example gpt-5.5.
+            requestedModelCatalogKey:
+              type: string
+              description: Routed base catalog model identity in vendor/model form, for example openai/gpt-5.5. Region-specific pricing or ranking keys are stored separately from the routed model identity.
+            regionCode:
+              type: string
+              maxLength: 64
+              description: Deployment region used by the selected endpoint and pricing resolver. This is not part of the model catalog identity.
+            status:
+              type: string
+            httpStatus:
+              type: integer
+              format: int64
+            errorCode:
+              type: string
+            errorType:
+              type: string
+            errorMessage:
+              type: string
+            totalTime:
+              type: string
+            ttft:
+              type: string
+            isStream:
+              type: boolean
+            inputTokens:
+              type: integer
+              format: int64
+            cacheReadTokens:
+              type: integer
+              format: int64
+            outputTokens:
+              type: integer
+              format: int64
+            cost:
+              type: string
+              format: decimal
+              description: Customer-facing spend amount for the request, normalized to 9 decimal places for console display. Uses customer_charge_amount from the usage ledger and never exposes upstream cost fields.
+            multiplier:
+              type: string
+              format: decimal
+            baseInputPrice:
+              type: string
+              format: decimal
+            baseOutputPrice:
+              type: string
+              format: decimal
+            cacheReadPrice:
+              type: string
+              format: decimal
+            path:
+              type: string
+            reasoningEffort:
+              type: string
+            ip:
+              type: string
+            userAgent:
+              type: string
+              maxLength: 1024
+              description: Full HTTP User-Agent header captured from the gateway request. Empty when the client omitted the header.
+      total:
+        type: integer
+        format: int64
+      page:
+        type: integer
+        format: int64
+      pageSize:
+        type: integer
+        format: int64

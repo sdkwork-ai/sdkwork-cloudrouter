@@ -1,0 +1,145 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sdkwork-clawrouter-cloud-gateway
+  labels:
+    app: sdkwork-clawrouter
+    component: gateway
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sdkwork-clawrouter
+      component: gateway
+  template:
+    metadata:
+      labels:
+        app: sdkwork-clawrouter
+        component: gateway
+    spec:
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: sdkwork-clawrouter
+              component: gateway
+      containers:
+        - name: gateway
+          image: registry.sdkwork.com/apps/sdkwork-clawrouter:0.3.0
+          command: ["sdkwork-clawrouter-cloud-gateway"]
+          ports:
+            - containerPort: 18080
+              name: http
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          env:
+            - name: SDKWORK_CLAW_DEPLOYMENT_PROFILE
+              value: cloud
+            - name: SDKWORK_CLAW_RUNTIME_TARGET
+              value: container
+            - name: SDKWORK_CLAW_CONFIG_FILE
+              value: /etc/sdkwork/clawrouter.toml
+            - name: SDKWORK_CLAW_GATEWAY_BIND
+              value: 0.0.0.0:18080
+            - name: SDKWORK_CLAW_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sdkwork-clawrouter-config
+                  key: redis-url
+            - name: SDKWORK_CLAW_USAGE_SETTLEMENT_WORKER_ENABLED
+              value: "true"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/sdkwork
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      volumes:
+        - name: config
+          secret:
+            secretName: sdkwork-clawrouter-config
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sdkwork-clawrouter-cloud-gateway
+spec:
+  selector:
+    app: sdkwork-clawrouter
+    component: gateway
+  ports:
+    - name: http
+      port: 18080
+      targetPort: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: sdkwork-clawrouter-cloud-gateway
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: sdkwork-clawrouter
+      component: gateway
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: sdkwork-clawrouter-cloud-gateway
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: sdkwork-clawrouter-cloud-gateway
+  minReplicas: 2
+  maxReplicas: 12
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

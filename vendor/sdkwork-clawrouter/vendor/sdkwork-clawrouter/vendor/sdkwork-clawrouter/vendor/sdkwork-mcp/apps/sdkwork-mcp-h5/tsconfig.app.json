@@ -1,0 +1,42 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@sdkwork/mcp-h5-core": [
+        "./packages/sdkwork-mcp-h5-core/src/index.ts"
+      ],
+      "@sdkwork/mcp-h5-core/services": [
+        "./packages/sdkwork-mcp-h5-core/src/services/index.ts"
+      ],
+      "@sdkwork/mcp-h5-commons": [
+        "./packages/sdkwork-mcp-h5-commons/src/index.ts"
+      ],
+      "@sdkwork/mcp-h5-mcp": [
+        "./packages/sdkwork-mcp-h5-mcp/src/index.ts"
+      ],
+      "@sdkwork/mcp-h5-shell": [
+        "./packages/sdkwork-mcp-h5-shell/src/index.ts"
+      ],
+      "sdkwork-mcp-app-sdk-generated-typescript/src/*": [
+        "../../sdks/sdkwork-mcp-app-sdk/sdkwork-mcp-app-sdk-typescript/generated/server-openapi/src/*"
+      ],
+      "@sdkwork/sdk-common": [
+        "../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/src/index.ts"
+      ],
+      "@sdkwork/iam-contracts": [
+        "../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-contracts/src/index.ts"
+      ],
+      "@sdkwork/utils": [
+        "../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "src",
+    "packages/sdkwork-mcp-h5-core/src",
+    "packages/sdkwork-mcp-h5-commons/src",
+    "packages/sdkwork-mcp-h5-mcp/src",
+    "packages/sdkwork-mcp-h5-shell/src",
+    "src/vite-env.d.ts"
+  ]
+}

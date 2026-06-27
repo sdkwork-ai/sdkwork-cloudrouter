@@ -1,0 +1,94 @@
+name: Bug Report
+description: Report a defect in SDKWork Claw Router
+title: "bug(<scope>): <short description>"
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report.
+        For security vulnerabilities, use the *Report a vulnerability* link in the
+        Security tab instead — do NOT use this template for security issues.
+  - type: input
+    id: version
+    attributes:
+      label: Claw Router version
+      placeholder: "0.3.0 (run `clawrouter --version`)"
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected component
+      options:
+        - gateway (OpenAI-compatible /v1)
+        - admin-api (backend management)
+        - app-api (portal backend)
+        - edge server (all-in-one)
+        - installer (clawrouterctl)
+        - portal (React PC app)
+        - sdk (generated client)
+        - database / migrations
+        - k8s / deployment
+        - ci / release
+        - documentation
+        - other
+    validations:
+      required: true
+  - type: input
+    id: deployment-profile
+    attributes:
+      label: Deployment profile
+      placeholder: "standalone / cloud / desktop; postgres / sqlite; unified-process / split-services"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened? Include error messages, status codes, and stack traces.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: Minimal, deterministic steps to reproduce.
+      placeholder: |
+        1. Start clawrouter with config ...
+        2. Send request to /v1/chat/completions with body ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / metrics / traces
+      description: Relevant tracing output, Prometheus metrics, or audit logs. Redact secrets.
+      render: shell
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: OS, Rust toolchain, Node version, Postgres version, Redis version, K8s version.
+      placeholder: "OS: Ubuntu 24.04; Rust: 1.78.0; Node: 20.11; PG: 16.3; Redis: 7.2"
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submit checks
+      options:
+        - label: I have searched existing issues and this is not a duplicate
+          required: true
+        - label: I have redacted all secrets, tokens, and PII from the report
+          required: true
+        - label: This is not a security vulnerability (use Security tab for those)
+          required: true

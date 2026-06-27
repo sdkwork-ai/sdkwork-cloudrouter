@@ -1,0 +1,23 @@
+{
+  "apiPrefix": "/backend/v3/api",
+  "archiveName": "sdkwork-file-backend-sdk-typescript-0.1.0.zip",
+  "derivedSpecs": {},
+  "generationInputSpec": "openapi/file-backend-sdk.openapi.json",
+  "generator": "sdkwork-openapi-typescript",
+  "languages": [
+    {
+      "clientName": "SdkworkFileBackendClient",
+      "language": "typescript",
+      "packageName": "@sdkwork/file-backend-sdk",
+      "packageRoot": "file-backend-sdk-typescript"
+    }
+  ],
+  "packageName": "@sdkwork/file-backend-sdk",
+  "schemaVersion": "sdkwork.sdk-family.assembly.v1",
+  "surface": "backend",
+  "synchronizedArtifacts": [
+    "openapi/file-backend-sdk.sdkgen.json"
+  ],
+  "transportPolicy": "generated-sdk-only",
+  "workspace": "file-backend-sdk"
+}

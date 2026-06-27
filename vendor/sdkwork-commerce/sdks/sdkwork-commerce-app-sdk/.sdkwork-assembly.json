@@ -1,0 +1,42 @@
+{
+  "workspace": "sdkwork-commerce-app-sdk",
+  "sdkFamily": "sdkwork-commerce-app-sdk",
+  "title": "SDKWork Commerce App API SDK",
+  "apiVersion": "0.1.0",
+  "openapiVersion": "3.1.2",
+  "authoritySpec": "../../apis/app-api/commerce/commerce-app-api.openapi.json",
+  "generationInputSpec": "../../apis/app-api/commerce/commerce-app-api.openapi.json",
+  "derivedSpecs": {
+    "default": "../../apis/app-api/commerce/commerce-app-api.openapi.json"
+  },
+  "sdkOwner": "sdkwork-commerce",
+  "apiAuthority": "sdkwork-commerce-app-api",
+  "discoverySurface": {
+    "sdkTarget": "app",
+    "apiPrefix": "/app/v3/api",
+    "schemaUrl": "/app/v3/openapi.json",
+    "generatedProtocols": [
+      "http-openapi"
+    ],
+    "manualTransports": []
+  },
+  "sdkDependencies": [
+    {
+      "workspace": "sdkwork-iam-app-sdk",
+      "role": "appbase-app-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/app/v3/api",
+      "apiAuthority": "sdkwork-iam-app-api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/iam-app-sdk",
+        "rust": "sdkwork-iam-app-sdk",
+        "java": "com.sdkwork:sdkwork-iam-app-sdk",
+        "python": "sdkwork-iam-app-sdk",
+        "go": "github.com/sdkwork/sdkwork-iam-app-sdk"
+      }
+    }
+  ],
+  "dependencyApiExports": []
+}

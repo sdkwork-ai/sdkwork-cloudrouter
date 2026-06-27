@@ -1,0 +1,14 @@
+{
+  "name": "@sdkwork/clawrouter-pc-admin-ratelimit",
+  "version": "1.0.0",
+  "license": "SEE LICENSE IN ../../../../LICENSE",
+  "type": "module",
+  "main": "src/index.tsx",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.90.12",
+    "@sdkwork/clawroutes-pc-commons": "workspace:*"
+  }
+}

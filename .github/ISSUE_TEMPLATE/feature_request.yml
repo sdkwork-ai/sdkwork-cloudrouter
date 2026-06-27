@@ -1,0 +1,65 @@
+name: Feature Request
+description: Propose a new capability or enhancement for SDKWork Claw Router
+title: "feat(<scope>): <short description>"
+labels: ["enhancement", "triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What pain point or unmet need motivates this feature?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the desired capability, API surface, or behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What workarounds or alternative designs did you evaluate?
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected component
+      options:
+        - gateway (OpenAI-compatible /v1)
+        - admin-api (backend management)
+        - app-api (portal backend)
+        - edge server (all-in-one)
+        - installer (clawrouterctl)
+        - portal (React PC app)
+        - sdk (generated client)
+        - database / migrations
+        - k8s / deployment
+        - ci / release
+        - documentation
+        - other
+    validations:
+      required: true
+  - type: checkboxes
+    id: commercial
+    attributes:
+      label: Commercial relevance
+      options:
+        - label: Blocks a commercial deployment
+        - label: Required for SLO / SLA compliance
+        - label: Required for security or compliance
+        - label: Improves developer experience
+        - label: Nice to have
+  - type: input
+    id: spec
+    attributes:
+      label: Relevant sdkwork-spec
+      placeholder: "e.g. API_SPEC §15, OBSERVABILITY_SPEC §3"
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submit checks
+      options:
+        - label: I have searched existing issues and this is not a duplicate
+          required: true

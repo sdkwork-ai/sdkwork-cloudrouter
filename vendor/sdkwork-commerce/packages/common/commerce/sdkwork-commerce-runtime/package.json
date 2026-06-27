@@ -1,0 +1,35 @@
+{
+  "name": "@sdkwork/commerce-runtime",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "SDKWork commerce runtime composition for SaaS, local, and private deployments.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "pnpm --dir ../../../.. exec vitest run packages/common/commerce/sdkwork-commerce-runtime/tests --config vitest.config.ts --configLoader native --pool vmThreads"
+  },
+  "dependencies": {
+    "@sdkwork/commerce-contracts": "workspace:*",
+    "@sdkwork/commerce-sdk-ports": "workspace:*",
+    "@sdkwork/commerce-service": "workspace:*",
+    "@sdkwork/runtime-bootstrap": "workspace:*"
+  },
+  "sdkwork": {
+    "architecture": "common",
+    "capability": "commerce-runtime",
+    "domain": "commerce",
+    "packageType": "runtime",
+    "status": "standard"
+  }
+}

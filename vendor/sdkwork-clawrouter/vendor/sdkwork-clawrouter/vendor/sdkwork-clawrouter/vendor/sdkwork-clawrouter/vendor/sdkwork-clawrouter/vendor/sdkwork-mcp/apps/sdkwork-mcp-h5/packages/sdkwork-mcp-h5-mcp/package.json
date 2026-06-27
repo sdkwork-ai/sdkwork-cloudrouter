@@ -1,0 +1,25 @@
+{
+  "name": "@sdkwork/mcp-h5-mcp",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@sdkwork/mcp-h5-commons": "workspace:*",
+    "@sdkwork/mcp-h5-core": "workspace:*",
+    "@sdkwork/mcp-h5-shell": "workspace:*",
+    "sdkwork-mcp-app-sdk-generated-typescript": "workspace:*",
+    "motion": "catalog:",
+    "react": "catalog:",
+    "react-router-dom": "^7.17.0"
+  },
+  "sdkwork": {
+    "workspace": "sdkwork-mcp",
+    "architecture": "h5-react",
+    "domain": "intelligence",
+    "capability": "mcp",
+    "status": "ready"
+  }
+}

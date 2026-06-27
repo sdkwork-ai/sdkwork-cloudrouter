@@ -1,0 +1,11 @@
+{
+  "name": "@sdkwork/commerce-rpc-contracts",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "SDKWork commerce gRPC/protobuf contracts for app and backend service surfaces.",
+  "files": [
+    "proto",
+    "README.md"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "artifactRef": "builtin://sdkwork.skills.agent_harness@1.0.0",
+  "version": "1.0.0",
+  "runtime": "builtin",
+  "skill": {
+    "id": 8103
+  },
+  "instructions": [
+    "Compose agent harness configuration from SDKWork runtime contracts.",
+    "Validate tool, memory, and routing bindings before execution."
+  ],
+  "inputSchema": {
+    "type": "object"
+  },
+  "outputSchema": {
+    "type": "object"
+  },
+  "checksumHash": "sha256:efd4dc852fc235cfcd04438b1ede092358cbb3928c24aca232afd434c58bd2e6"
+}

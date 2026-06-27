@@ -1,0 +1,40 @@
+fragment: models/admin-monitor
+frontend_models:
+- route: /admin/monitor
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts
+  interface: Alert
+  fields:
+  - id
+  - severity
+  - title
+  - message
+  - time
+  - status
+  - source
+  data_sources:
+  - ops_alert_event
+- route: /admin/monitor
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts
+  interface: PerformanceDatum
+  fields:
+  - time
+  - cpu
+  - memory
+  - network
+  data_sources:
+  - ops_metric_snapshot
+- route: /admin/monitor
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts
+  interface: SysNode
+  fields:
+  - id
+  - name
+  - region
+  - status
+  - cpu
+  - memory
+  - uptime
+  - ip
+  data_sources:
+  - ops_gateway_instance
+  - ops_gateway_heartbeat

@@ -1,0 +1,79 @@
+fragment: models/playground
+frontend_models:
+- route: /playground
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundTypes.ts
+  interface: PlaygroundHistoryItem
+  fields:
+  - id
+  - date
+  - prompt
+  - type
+  - modelInfo
+  - modelCatalogKey
+  - url
+  - images
+  - videos
+  - aspectRatio
+  - durationSeconds
+  - activeIndex
+  - status
+  - outputText
+  - generationConfig
+  - createdAt
+  - updatedAt
+  data_sources:
+  - ai_usage_fact
+- route: /playground
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundTypes.ts
+  interface: GenerationAgentRunCreateInput
+  fields:
+  - prompt
+  - targetType
+  - selectedModel
+  - generationConfig
+  - referenceAssets
+  - referenceImages
+  - referenceMode
+  derived_fields:
+  - onDelta
+  - onArtifact
+  - referenceAssets.kind
+  - referenceAssets.role
+  - referenceAssets.name
+  - referenceAssets.mimeType
+  - referenceAssets.resource
+  - referenceAssets.sizeBytes
+  - referenceImages.name
+  - referenceImages.mimeType
+  - referenceImages.resource
+  - referenceImages.sizeBytes
+  data_sources:
+  - ai_usage_fact
+  - ai_model
+  - ai_model_capability
+- route: /playground
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundTypes.ts
+  interface: PlaygroundReferenceImageInput
+  fields:
+  - name
+  - mimeType
+  - resource
+  - sizeBytes
+  data_sources:
+  - ai_runtime_artifact
+  source_refs:
+  - sdkwork-drive:dr_drive_node
+- route: /playground
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundTypes.ts
+  interface: PlaygroundReferenceAssetInput
+  fields:
+  - kind
+  - role
+  - name
+  - mimeType
+  - resource
+  - sizeBytes
+  data_sources:
+  - ai_runtime_artifact
+  source_refs:
+  - sdkwork-drive:dr_drive_node

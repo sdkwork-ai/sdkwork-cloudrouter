@@ -1,0 +1,33 @@
+[runtime]
+environment = "test"
+config_profile = "test"
+build_mode = "test"
+deployment_mode = "desktop"
+runtime_target = "test-runner"
+app_key = "sdkwork-commerce-pc"
+
+[sdk_base_urls]
+sdk_base_url = "http://127.0.0.1:19080"
+app_api_base_url = "http://127.0.0.1:19082/app/v3/api"
+backend_api_base_url = "http://127.0.0.1:19083/backend/v3/api"
+
+[auth]
+token_manager_mode = "test"
+token_storage = "memory"
+access_token_header = "Access-Token"
+auth_token_header = "Authorization"
+refresh_enabled = false
+
+[desktop]
+native_host = "tauri"
+local_service_enabled = false
+user_config_file = "~/.sdkwork/commerce-pc/config/sdkwork-commerce-pc.test.toml"
+secure_storage_provider = "memory"
+
+[database]
+engine = "sqlite"
+file = "~/.sdkwork/commerce-pc/data/sdkwork-commerce-pc-test.sqlite"
+max_connections = 1
+
+[redis]
+enabled = false

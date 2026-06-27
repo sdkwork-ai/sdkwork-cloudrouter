@@ -1,0 +1,25 @@
+{
+  "name": "@sdkwork/mcp-pc-commons",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./runtime": "./src/runtime.ts",
+    "./driveUri": "./src/driveUri.ts"
+  },
+  "dependencies": {
+    "@sdkwork/utils": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "sdkwork": {
+    "workspace": "sdkwork-mcp",
+    "architecture": "pc-commons",
+    "domain": "intelligence",
+    "capability": "commons",
+    "status": "ready"
+  }
+}

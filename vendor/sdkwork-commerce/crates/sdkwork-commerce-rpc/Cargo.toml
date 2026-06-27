@@ -1,0 +1,48 @@
+[package]
+name = "sdkwork-commerce-rpc"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "SDKWork commerce RPC service manifests and bootstrap adapter contracts."
+
+[lib]
+name = "sdkwork_commerce_rpc"
+path = "src/lib.rs"
+
+[features]
+default = []
+server = [
+    "dep:async-trait",
+    "dep:sdkwork_commerce_contract_service",
+    "dep:sdkwork_commerce_rpc_proto",
+    "dep:sdkwork_iam_context_service",
+    "dep:serde_json",
+    "dep:tokio",
+    "dep:tokio-stream",
+    "dep:tonic",
+    "dep:tonic-health",
+    "dep:tonic-prost",
+    "dep:tonic-reflection",
+]
+
+[dependencies]
+sdkwork_rpc_core.workspace = true
+async-trait = { workspace = true, optional = true }
+sdkwork_commerce_contract_service = { workspace = true, optional = true }
+sdkwork_commerce_rpc_proto = { workspace = true, optional = true }
+sdkwork_iam_context_service = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+tokio = { workspace = true, optional = true }
+tokio-stream = { workspace = true, optional = true }
+tonic = { workspace = true, optional = true }
+tonic-health = { workspace = true, optional = true }
+tonic-prost = { workspace = true, optional = true }
+tonic-reflection = { workspace = true, optional = true }
+
+[dev-dependencies]
+sdkwork_commerce_service_host.workspace = true
+serde_json.workspace = true
+
+[[test]]
+name = "commerce_rpc_contract"
+required-features = ["server"]

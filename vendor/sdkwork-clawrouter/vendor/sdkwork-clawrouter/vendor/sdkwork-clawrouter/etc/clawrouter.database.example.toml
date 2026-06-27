@@ -1,0 +1,25 @@
+# Claw Router database configuration example.
+# Copy this file to the runtime config location or pass it with:
+#   pnpm db:status -- --config-file ./etc/clawrouter.database.example.toml
+#
+# Prefer password_file for production. Use password only when the TOML file is
+# stored as a protected secret-bearing file.
+
+[database]
+engine = "postgresql"
+host = "db.internal"
+port = 5432
+database = "sdkwork_ai_prod"
+schema = "sdkwork_ai_prod"
+username = "sdkwork_ai_prod"
+password_file = "./database.secret"
+ssl_mode = "require"
+max_connections = 16
+
+# Alternative local SQLite shape. Keep this as a reference section only; the
+# runtime parser reads [database], so move these values into [database] when
+# intentionally using SQLite.
+[database_sqlite_example]
+engine = "sqlite"
+url = "sqlite://target/dev/clawrouter.sqlite"
+max_connections = 1

@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.database-store-migration",
+  "application": "sdkwork-clawrouter",
+  "authority": "../sdkwork-specs/DATABASE_SPEC.md",
+  "approvedAt": "2026-06-21",
+  "reviewBy": "2026-12-31",
+  "targetPattern": "crates/sdkwork-clawrouter-<capability>-repository-sqlx",
+  "legacyInventory": {
+    "path": "services/sdkwork-clawrouter-router-service/src/infrastructure/sql",
+    "glob": "**/*_store.rs"
+  },
+  "migratedStores": [
+    {
+      "capability": "admin-monitor",
+      "crate": "crates/sdkwork-clawrouter-admin-monitor-repository-sqlx",
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_monitor_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_monitor_read_store.rs"
+      ],
+      "status": "MIGRATED"
+    },
+    {
+      "capability": "app-gateway-traces",
+      "crate": "crates/sdkwork-clawrouter-app-gateway-traces-repository-sqlx",
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_gateway_traces_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/app_gateway_traces_read_store.rs"
+      ],
+      "status": "MIGRATED"
+    },
+    {
+      "capability": "app-iam-directory",
+      "crate": "../sdkwork-iam/crates/sdkwork-iam-directory-repository-sqlx",
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/api/app_iam_directory.rs",
+        "crates/sdkwork-clawrouter-app-iam-directory-repository-sqlx"
+      ],
+      "status": "RETIRED_TO_SDKWORK_IAM"
+    },
+    {
+      "capability": "admin-dashboard",
+      "crate": "crates/sdkwork-clawrouter-admin-dashboard-repository-sqlx",
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_dashboard_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_dashboard_read_store.rs"
+      ],
+      "status": "MIGRATED"
+    },
+    {
+      "capability": "admin-analytics",
+      "crate": "crates/sdkwork-clawrouter-admin-analytics-repository-sqlx",
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_analytics_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_analytics_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sql_admin_analytics.rs"
+      ],
+      "status": "MIGRATED"
+    },
+    {
+      "capability": "app-user-profile",
+      "crate": "../sdkwork-iam/crates/sdkwork-iam-directory-repository-sqlx",
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/api/app_user_profile.rs",
+        "services/sdkwork-clawrouter-router-service/src/ports/app_user_profile_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/app_user_profile_repository_adapter.rs"
+      ],
+      "status": "RETIRED_TO_SDKWORK_IAM"
+    },
+    {
+      "capability": "app-providers",
+      "crate": "crates/sdkwork-clawrouter-app-providers-repository-sqlx",
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_providers_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/app_providers_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/provider_classification.rs"
+      ],
+      "status": "MIGRATED"
+    },
+    {
+      "capability": "settlements-dashboard",
+      "crate": "crates/sdkwork-clawrouter-settlements-dashboard-repository-sqlx",
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/settlements_dashboard_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/settlements_dashboard_read_store.rs"
+      ],
+      "status": "MIGRATED"
+    },
+    {
+      "capability": "usage-logs",
+      "crate": "crates/sdkwork-clawrouter-usage-logs-repository-sqlx",
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/usage_logs_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/ports/usage_logs_read_store.rs"
+      ],
+      "status": "PENDING",
+      "priority": "HIGH",
+      "notes": "High-volume table, consider partitioning strategy"
+    },
+    {
+      "capability": "app-routing",
+      "crate": "crates/sdkwork-clawrouter-app-routing-repository-sqlx",
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_routing_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/app_routing_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/ports/app_routing_read_store.rs"
+      ],
+      "status": "PENDING",
+      "priority": "HIGH",
+      "notes": "Core routing logic"
+    },
+    {
+      "capability": "admin-user",
+      "crate": "crates/sdkwork-clawrouter-admin-user-repository-sqlx",
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_user_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_user_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_user_store.rs"
+      ],
+      "status": "PENDING",
+      "priority": "HIGH",
+      "notes": "User management core"
+    },
+    {
+      "capability": "admin-model",
+      "crate": "crates/sdkwork-clawrouter-admin-model-repository-sqlx",
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_model_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_model_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_model_store.rs"
+      ],
+      "status": "PENDING",
+      "priority": "MEDIUM"
+    },
+    {
+      "capability": "api-key",
+      "crate": "crates/sdkwork-clawrouter-api-key-repository-sqlx",
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/api_key_command_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/api_key_command_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/ports/api_key_command_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/ports/api_key_management_read_store.rs"
+      ],
+      "status": "PENDING",
+      "priority": "HIGH",
+      "notes": "Security critical"
+    },
+    {
+      "capability": "app-chat",
+      "crate": "crates/sdkwork-clawrouter-app-chat-repository-sqlx",
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_chat_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/app_chat_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/ports/app_chat_store.rs"
+      ],
+      "status": "PENDING",
+      "priority": "MEDIUM"
+    },
+    {
+      "capability": "admin-channel",
+      "crate": "crates/sdkwork-clawrouter-admin-channel-repository-sqlx",
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_channel_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_channel_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_channel_store.rs"
+      ],
+      "status": "PENDING",
+      "priority": "MEDIUM"
+    },
+    {
+      "capability": "admin-catalog",
+      "crate": "crates/sdkwork-clawrouter-admin-catalog-repository-sqlx",
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_catalog_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_catalog_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_catalog_store.rs"
+      ],
+      "status": "PENDING",
+      "priority": "MEDIUM"
+    },
+    {
+      "capability": "settings",
+      "crate": "crates/sdkwork-clawrouter-settings-repository-sqlx",
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/settings_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/settings_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/ports/settings_store.rs"
+      ],
+      "status": "PENDING",
+      "priority": "LOW"
+    }
+  ],
+  "migrationStats": {
+    "totalStores": 45,
+    "migrated": 6,
+    "pending": 11,
+    "retired": 2,
+    "completionPercentage": 42
+  },
+  "nextPriorities": [
+    "usage-logs",
+    "app-routing",
+    "api-key",
+    "admin-user"
+  ]
+}

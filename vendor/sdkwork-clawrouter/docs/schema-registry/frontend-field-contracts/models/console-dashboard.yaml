@@ -1,0 +1,53 @@
+fragment: models/console-dashboard
+frontend_models:
+- route: /console/dashboard
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts
+  interface: Announcement
+  fields:
+  - id
+  - text
+  - textI18nKey
+  - time
+  - timeI18nKey
+  - type
+  data_sources:
+  - ops_notification_message
+- route: /console/dashboard
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts
+  interface: DashboardData
+  fields:
+  - time
+  - llm (Text)
+  - image (Midjourney/DALL-E)
+  - video (Runway/Sora)
+  - audio (Whisper)
+  - music (Suno)
+  data_sources:
+  - ai_usage_fact
+- route: /console/dashboard
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts
+  interface: ModelUsage
+  fields:
+  - rank
+  - name
+  - supplier
+  - modality
+  - requests
+  - cost
+  - trend
+  - isUp
+  data_sources:
+  - ai_model_rank_snapshot
+  - ai_usage_fact
+- route: /console/dashboard
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts
+  interface: ConfigurationDomain
+  fields:
+  - id
+  - name
+  - domain
+  - ip
+  - status
+  - remark
+  data_sources:
+  - ops_gateway_instance

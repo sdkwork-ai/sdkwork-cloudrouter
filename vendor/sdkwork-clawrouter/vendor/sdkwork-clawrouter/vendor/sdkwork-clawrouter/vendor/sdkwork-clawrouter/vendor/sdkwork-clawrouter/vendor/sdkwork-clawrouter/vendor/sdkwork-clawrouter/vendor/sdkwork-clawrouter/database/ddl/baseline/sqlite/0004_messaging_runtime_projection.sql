@@ -1,0 +1,1 @@
+-- Retired: messaging SoR is owned by sdkwork-appbase-messaging and consumed via messaging SDK only.

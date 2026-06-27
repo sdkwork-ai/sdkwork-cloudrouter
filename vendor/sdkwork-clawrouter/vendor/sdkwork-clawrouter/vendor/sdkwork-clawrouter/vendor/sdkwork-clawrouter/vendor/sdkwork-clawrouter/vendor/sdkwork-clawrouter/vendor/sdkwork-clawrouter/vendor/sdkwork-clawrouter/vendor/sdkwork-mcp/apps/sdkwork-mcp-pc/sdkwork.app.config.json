@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 3,
+  "kind": "sdkwork.app",
+  "app": {
+    "key": "sdkwork-mcp-pc",
+    "name": "SDKWork MCP PC",
+    "displayName": "SDKWork MCP Hub",
+    "description": "PC application for MCP Hub, console skill management, and admin operations.",
+    "vendor": "SDKWork",
+    "appType": "APP_REACT",
+    "versionSource": "package.json",
+    "identifiers": {
+      "desktopAppId": "com.sdkwork.mcp.pc",
+      "containerImage": "registry.sdkwork.com/apps/sdkwork-mcp-pc"
+    }
+  },
+  "backend": {
+    "profileKey": "backend-root-admin",
+    "platform": "WEB",
+    "appId": "sdkwork-mcp-pc",
+    "tenantId": "100001",
+    "organizationId": "0"
+  },
+  "runtime": {
+    "family": "desktop",
+    "framework": "react",
+    "runtimes": ["WEB"],
+    "supportedDeploymentProfiles": ["cloud"],
+    "defaultDeploymentProfile": "cloud"
+  },
+  "metadata": {
+    "component": "sdkwork-mcp-pc",
+    "surface": "pc"
+  }
+}

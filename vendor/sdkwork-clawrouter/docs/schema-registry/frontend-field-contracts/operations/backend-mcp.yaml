@@ -1,0 +1,576 @@
+fragment: operations/backend-mcp
+frontend_operations:
+- route: /admin/mcp
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts
+  operation: listMcpServers
+  operation_id: servers.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/mcp/servers
+  sdk_domain: mcp
+  summary: List MCP servers
+  description: Lists vertical MCP server definitions with unified category references and operational health.
+  read_sources:
+  - ai_mcp_server
+  - c_category
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int64, minimum: 1 }
+  - name: page_size
+    schema: { type: integer, format: int64, minimum: 1, maximum: 200 }
+  - name: q
+    schema: { type: string, maxLength: 128 }
+  - name: transport
+    schema: { type: string, maxLength: 64 }
+  - name: visibility
+    schema: { type: string, maxLength: 64 }
+  - name: status
+    schema: { type: string, maxLength: 64 }
+  - name: category_id
+    schema: { type: string, maxLength: 128 }
+  response_schema:
+    name: AdminMcpServerListResponse
+    type: object
+    additionalProperties: false
+    required: [items]
+    properties:
+      items:
+        type: array
+        maxItems: 200
+        items: &adminMcpServerItem
+          name: AdminMcpServerItem
+          type: object
+          additionalProperties: false
+          required: [id, uuid, tenantId, organizationId, serverKey, name, transport, visibility, healthStatus, status, tags, createdAt, updatedAt]
+          properties:
+            id: { type: integer, format: int64, minimum: 1 }
+            uuid: { type: string, minLength: 1, maxLength: 128 }
+            tenantId: { type: integer, format: int64, minimum: 1 }
+            organizationId: { type: integer, format: int64, minimum: 1 }
+            serverKey: { type: string, minLength: 1, maxLength: 128 }
+            name: { type: string, minLength: 1, maxLength: 255 }
+            description: { type: string, nullable: true, maxLength: 4000 }
+            categoryId: { type: string, nullable: true, maxLength: 128 }
+            categoryCode: { type: string, nullable: true, maxLength: 128 }
+            transport: { type: string, maxLength: 64 }
+            visibility: { type: string, maxLength: 64 }
+            ownerUserId: { type: integer, nullable: true, format: int64 }
+            latestRevisionId: { type: integer, nullable: true, format: int64 }
+            publishedRevisionId: { type: integer, nullable: true, format: int64 }
+            healthStatus: { type: string, maxLength: 64 }
+            lastCheckedAt: { type: string, nullable: true, maxLength: 64 }
+            lastErrorMasked: { type: string, nullable: true, maxLength: 1024 }
+            status: { type: string, maxLength: 64 }
+            tags:
+              type: array
+              maxItems: 32
+              items: { type: string, maxLength: 64 }
+            publishedAt: { type: string, nullable: true, maxLength: 64 }
+            deprecatedAt: { type: string, nullable: true, maxLength: 64 }
+            createdAt: { type: string, minLength: 1, maxLength: 64 }
+            updatedAt: { type: string, minLength: 1, maxLength: 64 }
+- route: /admin/mcp
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts
+  operation: getMcpServer
+  operation_id: servers.retrieve
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/mcp/servers/{serverId}
+  sdk_domain: mcp
+  summary: Retrieve MCP server
+  description: Retrieves one MCP server definition for detailed governance.
+  read_sources:
+  - ai_mcp_server
+  - c_category
+  query_parameters: []
+  response_schema:
+    name: AdminMcpServerMutationResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item: *adminMcpServerItem
+- route: /admin/mcp
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts
+  operation: createMcpServer
+  operation_id: servers.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/mcp/servers
+  sdk_domain: mcp
+  idempotency_required: true
+  summary: Create MCP server
+  description: Creates an MCP server definition; classification is only by unified category references.
+  read_sources:
+  - ai_mcp_server
+  - c_category
+  write_tables:
+  - ai_mcp_server
+  - ops_audit_log
+  request_schema:
+    name: AdminMcpServerCreateRequest
+    type: object
+    additionalProperties: false
+    required: [serverKey, name]
+    properties:
+      serverKey: { type: string, minLength: 1, maxLength: 128, pattern: "^[A-Za-z0-9_.:-]+$" }
+      name: { type: string, minLength: 1, maxLength: 255 }
+      description: { type: string, maxLength: 4000 }
+      categoryId: { type: string, maxLength: 128 }
+      transport: { type: string, maxLength: 64 }
+      visibility: { type: string, maxLength: 64 }
+      tags:
+        type: array
+        maxItems: 32
+        items: { type: string, maxLength: 64 }
+  response_schema:
+    name: AdminMcpServerMutationResponse
+    schema:
+      $ref: "#/components/schemas/AdminMcpServerMutationResponse"
+- route: /admin/mcp
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts
+  operation: updateMcpServer
+  operation_id: servers.update
+  kind: update
+  api_surface: backend
+  api_method: PUT
+  api_path: /backend/v3/api/mcp/servers/{serverId}
+  sdk_domain: mcp
+  summary: Update MCP server
+  description: Updates MCP server metadata, lifecycle state, and unified category reference.
+  read_sources:
+  - ai_mcp_server
+  - c_category
+  write_tables:
+  - ai_mcp_server
+  - ops_audit_log
+  request_schema:
+    name: AdminMcpServerUpdateRequest
+    type: object
+    additionalProperties: false
+    properties:
+      serverKey: { type: string, maxLength: 128, pattern: "^[A-Za-z0-9_.:-]+$" }
+      name: { type: string, maxLength: 255 }
+      description: { type: string, nullable: true, maxLength: 4000 }
+      categoryId: { type: string, nullable: true, maxLength: 128 }
+      transport: { type: string, maxLength: 64 }
+      visibility: { type: string, maxLength: 64 }
+      status: { type: string, maxLength: 64 }
+      tags:
+        type: array
+        maxItems: 32
+        items: { type: string, maxLength: 64 }
+  response_schema:
+    name: AdminMcpServerMutationResponse
+    schema:
+      $ref: "#/components/schemas/AdminMcpServerMutationResponse"
+- route: /admin/mcp
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts
+  operation: listMcpServerRevisions
+  operation_id: servers.revisions.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/mcp/servers/{serverId}/revisions
+  sdk_domain: mcp
+  summary: List MCP server revisions
+  description: Lists immutable connection revisions for one MCP server.
+  read_sources:
+  - ai_mcp_server
+  - ai_mcp_server_revision
+  query_parameters: []
+  response_schema:
+    name: AdminMcpServerRevisionListResponse
+    type: object
+    additionalProperties: false
+    required: [items]
+    properties:
+      items:
+        type: array
+        maxItems: 200
+        items: &adminMcpServerRevisionItem
+          name: AdminMcpServerRevisionItem
+          type: object
+          additionalProperties: false
+          required: [id, uuid, tenantId, organizationId, serverId, revisionNo, transport, argsJson, envSchema, authType, timeoutMs, retryPolicy, configHash, lifecycleStatus, status, createdBy, createdAt, updatedAt]
+          properties:
+            id: { type: integer, format: int64, minimum: 1 }
+            uuid: { type: string, minLength: 1, maxLength: 128 }
+            tenantId: { type: integer, format: int64, minimum: 1 }
+            organizationId: { type: integer, format: int64, minimum: 1 }
+            serverId: { type: integer, format: int64, minimum: 1 }
+            revisionNo: { type: string, minLength: 1, maxLength: 128 }
+            transport: { type: string, maxLength: 64 }
+            endpointUrl: { type: string, nullable: true, maxLength: 1024 }
+            command: { type: string, nullable: true, maxLength: 1024 }
+            argsJson: &jsonArray
+              type: array
+              items: { type: string }
+            envSchema: &jsonObject
+              type: object
+              additionalProperties: true
+            authType: { type: string, maxLength: 64 }
+            secretRef: { type: string, nullable: true, maxLength: 512 }
+            timeoutMs: { type: integer, format: int32, minimum: 100, maximum: 300000 }
+            retryPolicy: *jsonObject
+            configHash: { type: string, minLength: 1, maxLength: 128 }
+            lifecycleStatus: { type: string, maxLength: 64 }
+            status: { type: string, maxLength: 64 }
+            createdBy: { type: integer, format: int64, minimum: 1 }
+            publishedAt: { type: string, nullable: true, maxLength: 64 }
+            deprecatedAt: { type: string, nullable: true, maxLength: 64 }
+            createdAt: { type: string, minLength: 1, maxLength: 64 }
+            updatedAt: { type: string, minLength: 1, maxLength: 64 }
+- route: /admin/mcp
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts
+  operation: createMcpServerRevision
+  operation_id: servers.revisions.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/mcp/servers/{serverId}/revisions
+  sdk_domain: mcp
+  idempotency_required: true
+  summary: Create MCP server revision
+  description: Creates a connection revision with transport endpoint, auth reference, timeout, retry, and environment schema.
+  read_sources:
+  - ai_mcp_server
+  - ai_mcp_server_revision
+  write_tables:
+  - ai_mcp_server
+  - ai_mcp_server_revision
+  - ops_audit_log
+  request_schema:
+    name: AdminMcpServerRevisionCreateRequest
+    type: object
+    additionalProperties: false
+    required: [revisionNo]
+    properties:
+      revisionNo: { type: string, minLength: 1, maxLength: 128, pattern: "^[A-Za-z0-9_.:-]+$" }
+      transport: { type: string, maxLength: 64 }
+      endpointUrl: { type: string, maxLength: 1024 }
+      command: { type: string, maxLength: 1024 }
+      argsJson: *jsonArray
+      envSchema: *jsonObject
+      authType: { type: string, maxLength: 64 }
+      secretRef: { type: string, maxLength: 512 }
+      timeoutMs: { type: integer, format: int32, minimum: 100, maximum: 300000 }
+      retryPolicy: *jsonObject
+  response_schema:
+    name: AdminMcpServerRevisionMutationResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item: *adminMcpServerRevisionItem
+- route: /admin/mcp
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts
+  operation: publishMcpServerRevision
+  operation_id: revisions.publish
+  kind: action
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/mcp/revisions/{revisionId}/publish
+  sdk_domain: mcp
+  request_body_required: false
+  summary: Publish MCP server revision
+  description: Publishes an MCP server revision and makes it active for discovery and runtime binding.
+  read_sources:
+  - ai_mcp_server
+  - ai_mcp_server_revision
+  write_tables:
+  - ai_mcp_server
+  - ai_mcp_server_revision
+  - ops_audit_log
+  response_schema:
+    name: AdminMcpServerRevisionMutationResponse
+    schema:
+      $ref: "#/components/schemas/AdminMcpServerRevisionMutationResponse"
+- route: /admin/mcp
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts
+  operation: discoverMcpTools
+  operation_id: servers.tools.refresh
+  kind: action
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/mcp/servers/{serverId}/discover
+  sdk_domain: mcp
+  request_body_required: false
+  summary: Discover MCP tools
+  description: Discovers tool definitions from the published MCP server revision and records normalized tool schemas.
+  read_sources:
+  - ai_mcp_server
+  - ai_mcp_server_revision
+  - ai_mcp_tool
+  write_tables:
+  - ai_mcp_tool
+  - ops_audit_log
+  response_schema:
+    name: AdminMcpDiscoveryResponse
+    type: object
+    additionalProperties: false
+    required: [serverId, discoveredCount, tools, checkedAt]
+    properties:
+      serverId: { type: integer, format: int64, minimum: 1 }
+      discoveredCount: { type: integer, format: int64, minimum: 0 }
+      tools:
+        type: array
+        maxItems: 200
+        items: &adminMcpToolItem
+          name: AdminMcpToolItem
+          type: object
+          additionalProperties: false
+          required: [id, uuid, tenantId, organizationId, serverId, toolKey, name, inputSchema, outputSchema, riskLevel, requiresApproval, enabled, status, rateLimitPolicy, schemaHash, sortWeight, createdAt, updatedAt]
+          properties:
+            id: { type: integer, format: int64, minimum: 1 }
+            uuid: { type: string, minLength: 1, maxLength: 128 }
+            tenantId: { type: integer, format: int64, minimum: 1 }
+            organizationId: { type: integer, format: int64, minimum: 1 }
+            serverId: { type: integer, format: int64, minimum: 1 }
+            serverRevisionId: { type: integer, nullable: true, format: int64 }
+            toolKey: { type: string, minLength: 1, maxLength: 128 }
+            name: { type: string, minLength: 1, maxLength: 255 }
+            description: { type: string, nullable: true, maxLength: 4000 }
+            inputSchema: *jsonObject
+            outputSchema: *jsonObject
+            riskLevel: { type: string, maxLength: 64 }
+            requiresApproval: { type: boolean }
+            enabled: { type: boolean }
+            status: { type: string, maxLength: 64 }
+            rateLimitPolicy: *jsonObject
+            schemaHash: { type: string, minLength: 1, maxLength: 128 }
+            discoveredAt: { type: string, nullable: true, maxLength: 64 }
+            lastInvokedAt: { type: string, nullable: true, maxLength: 64 }
+            sortWeight: { type: integer, format: int32 }
+            createdAt: { type: string, minLength: 1, maxLength: 64 }
+            updatedAt: { type: string, minLength: 1, maxLength: 64 }
+      checkedAt: { type: string, minLength: 1, maxLength: 64 }
+- route: /admin/mcp
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts
+  operation: checkMcpServerHealth
+  operation_id: servers.healthChecks.create
+  kind: action
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/mcp/servers/{serverId}/health_check
+  sdk_domain: mcp
+  request_body_required: false
+  summary: Check MCP server health
+  description: Performs an operator-triggered MCP health check and records redacted diagnostic state.
+  read_sources:
+  - ai_mcp_server
+  - ai_mcp_server_revision
+  write_tables:
+  - ai_mcp_server
+  - ops_audit_log
+  response_schema:
+    name: AdminMcpHealthCheckResponse
+    type: object
+    additionalProperties: false
+    required: [serverId, healthy, healthStatus, checkedAt]
+    properties:
+      serverId: { type: integer, format: int64, minimum: 1 }
+      healthy: { type: boolean }
+      healthStatus: { type: string, maxLength: 64 }
+      checkedAt: { type: string, minLength: 1, maxLength: 64 }
+      latencyMs: { type: integer, nullable: true, format: int64 }
+      errorMasked: { type: string, nullable: true, maxLength: 1024 }
+- route: /admin/mcp
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts
+  operation: listMcpTools
+  operation_id: servers.tools.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/mcp/servers/{serverId}/tools
+  sdk_domain: mcp
+  summary: List MCP tools
+  description: Lists normalized tool schemas discovered for one MCP server.
+  read_sources:
+  - ai_mcp_server
+  - ai_mcp_server_revision
+  - ai_mcp_tool
+  query_parameters: []
+  response_schema:
+    name: AdminMcpToolListResponse
+    type: object
+    additionalProperties: false
+    required: [items]
+    properties:
+      items:
+        type: array
+        maxItems: 200
+        items: *adminMcpToolItem
+- route: /admin/mcp
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts
+  operation: updateMcpTool
+  operation_id: tools.update
+  kind: update
+  api_surface: backend
+  api_method: PUT
+  api_path: /backend/v3/api/mcp/tools/{toolId}
+  sdk_domain: mcp
+  summary: Update MCP tool
+  description: Updates governance metadata for one MCP tool, including risk level, approval, enabled state, and rate limits.
+  read_sources:
+  - ai_mcp_server
+  - ai_mcp_tool
+  write_tables:
+  - ai_mcp_tool
+  - ops_audit_log
+  request_schema:
+    name: AdminMcpToolUpdateRequest
+    type: object
+    additionalProperties: false
+    properties:
+      name: { type: string, maxLength: 255 }
+      description: { type: string, nullable: true, maxLength: 4000 }
+      inputSchema: *jsonObject
+      outputSchema: *jsonObject
+      riskLevel: { type: string, maxLength: 64 }
+      requiresApproval: { type: boolean }
+      enabled: { type: boolean }
+      status: { type: string, maxLength: 64 }
+      rateLimitPolicy: *jsonObject
+      sortWeight: { type: integer, format: int32 }
+  response_schema:
+    name: AdminMcpToolMutationResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item: *adminMcpToolItem
+- route: /admin/mcp
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts
+  operation: listMcpBindings
+  operation_id: servers.bindings.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/mcp/servers/{serverId}/bindings
+  sdk_domain: mcp
+  summary: List MCP bindings
+  description: Lists owner bindings and policy snapshots for one MCP server.
+  read_sources:
+  - ai_mcp_server
+  - ai_mcp_server_revision
+  - ai_mcp_tool
+  - ai_mcp_binding
+  query_parameters: []
+  response_schema:
+    name: AdminMcpBindingListResponse
+    type: object
+    additionalProperties: false
+    required: [items]
+    properties:
+      items:
+        type: array
+        maxItems: 200
+        items: &adminMcpBindingItem
+          name: AdminMcpBindingItem
+          type: object
+          additionalProperties: false
+          required: [id, uuid, tenantId, organizationId, serverId, ownerType, ownerId, allowedTools, deniedTools, policyJson, priority, enabled, status, snapshotJson, createdAt, updatedAt]
+          properties:
+            id: { type: integer, format: int64, minimum: 1 }
+            uuid: { type: string, minLength: 1, maxLength: 128 }
+            tenantId: { type: integer, format: int64, minimum: 1 }
+            organizationId: { type: integer, format: int64, minimum: 1 }
+            serverId: { type: integer, format: int64, minimum: 1 }
+            serverRevisionId: { type: integer, nullable: true, format: int64 }
+            toolId: { type: integer, nullable: true, format: int64 }
+            ownerType: { type: string, maxLength: 64 }
+            ownerId: { type: integer, format: int64, minimum: 1 }
+            allowedTools: *jsonArray
+            deniedTools: *jsonArray
+            policyJson: *jsonObject
+            priority: { type: integer, format: int32 }
+            enabled: { type: boolean }
+            status: { type: string, maxLength: 64 }
+            snapshotJson: *jsonObject
+            createdAt: { type: string, minLength: 1, maxLength: 64 }
+            updatedAt: { type: string, minLength: 1, maxLength: 64 }
+- route: /admin/mcp
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts
+  operation: createMcpBinding
+  operation_id: servers.bindings.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/mcp/servers/{serverId}/bindings
+  sdk_domain: mcp
+  idempotency_required: true
+  summary: Create MCP binding
+  description: Creates an owner binding for an MCP server, optional revision, and optional tool scope.
+  read_sources:
+  - ai_mcp_server
+  - ai_mcp_server_revision
+  - ai_mcp_tool
+  - ai_mcp_binding
+  write_tables:
+  - ai_mcp_binding
+  - ops_audit_log
+  request_schema:
+    name: AdminMcpBindingCreateRequest
+    type: object
+    additionalProperties: false
+    required: [ownerType, ownerId]
+    properties:
+      serverRevisionId: { type: integer, nullable: true, format: int64, minimum: 1 }
+      toolId: { type: integer, nullable: true, format: int64, minimum: 1 }
+      ownerType: { type: string, minLength: 1, maxLength: 64 }
+      ownerId: { type: integer, format: int64, minimum: 1 }
+      allowedTools: *jsonArray
+      deniedTools: *jsonArray
+      policyJson: *jsonObject
+      priority: { type: integer, format: int32 }
+      enabled: { type: boolean }
+      status: { type: string, maxLength: 64 }
+  response_schema:
+    name: AdminMcpBindingMutationResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item: *adminMcpBindingItem
+- route: /admin/mcp
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts
+  operation: updateMcpBinding
+  operation_id: servers.bindings.update
+  kind: update
+  api_surface: backend
+  api_method: PUT
+  api_path: /backend/v3/api/mcp/bindings/{bindingId}
+  sdk_domain: mcp
+  summary: Update MCP binding
+  description: Updates an MCP binding owner, revision or tool scope, allow/deny policy, priority, enablement, and status.
+  read_sources:
+  - ai_mcp_server
+  - ai_mcp_server_revision
+  - ai_mcp_tool
+  - ai_mcp_binding
+  write_tables:
+  - ai_mcp_binding
+  - ops_audit_log
+  request_schema:
+    name: AdminMcpBindingUpdateRequest
+    type: object
+    additionalProperties: false
+    properties:
+      serverRevisionId: { type: integer, nullable: true, format: int64, minimum: 1 }
+      toolId: { type: integer, nullable: true, format: int64, minimum: 1 }
+      ownerType: { type: string, maxLength: 64 }
+      ownerId: { type: integer, format: int64, minimum: 1 }
+      allowedTools: *jsonArray
+      deniedTools: *jsonArray
+      policyJson: *jsonObject
+      priority: { type: integer, format: int32 }
+      enabled: { type: boolean }
+      status: { type: string, maxLength: 64 }
+  response_schema:
+    name: AdminMcpBindingMutationResponse
+    schema:
+      $ref: "#/components/schemas/AdminMcpBindingMutationResponse"

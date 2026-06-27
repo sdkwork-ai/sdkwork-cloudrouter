@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "sdkwork-mcp-pc-commons",
+    "displayName": "sdkwork-mcp-pc-commons",
+    "version": "0.1.0",
+    "type": "typescript-package",
+    "root": "apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-commons",
+    "domain": "intelligence",
+    "capability": "commons",
+    "surface": "app",
+    "languages": ["typescript"],
+    "generated": false,
+    "manifests": ["package.json"]
+  },
+  "contracts": {
+    "publicExports": ["."],
+    "sdkClients": []
+  }
+}

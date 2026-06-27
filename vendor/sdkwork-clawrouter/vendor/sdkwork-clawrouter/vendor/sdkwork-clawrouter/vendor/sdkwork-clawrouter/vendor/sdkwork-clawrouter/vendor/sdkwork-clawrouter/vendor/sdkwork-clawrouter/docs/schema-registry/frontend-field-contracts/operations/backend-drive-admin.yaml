@@ -1,0 +1,87 @@
+fragment: operations/backend-drive-admin
+frontend_operations:
+- route: /admin/drive/nodes
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/driveService.ts
+  operation: listDriveNodes
+  operation_id: drive.nodes.list
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/drive/spaces/{spaceId}/nodes
+  sdk_domain: drive
+  read_sources:
+  - ops_audit_log
+  query_parameters: []
+  response_schema:
+    name: listDriveNodesResponse
+    type: object
+    additionalProperties: true
+    properties: {}
+- route: /admin/drive/permissions
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/driveService.ts
+  operation: listDrivePermissions
+  operation_id: drive.permissions.list
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/drive/nodes/{nodeId}/permissions
+  sdk_domain: drive
+  read_sources:
+  - ops_audit_log
+  query_parameters: []
+  response_schema:
+    name: listDrivePermissionsResponse
+    type: object
+    additionalProperties: true
+    properties: {}
+- route: /admin/drive/share-links
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/driveService.ts
+  operation: listDriveShareLinks
+  operation_id: drive.shareLinks.list
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/drive/nodes/{nodeId}/share_links
+  sdk_domain: drive
+  read_sources:
+  - ops_audit_log
+  query_parameters: []
+  response_schema:
+    name: listDriveShareLinksResponse
+    type: object
+    additionalProperties: true
+    properties: {}
+- route: /admin/drive/spaces
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/driveService.ts
+  operation: listDriveSpaces
+  operation_id: drive.spaces.list
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/drive/spaces
+  sdk_domain: drive
+  read_sources:
+  - ops_audit_log
+  query_parameters: []
+  response_schema:
+    name: listDriveSpacesResponse
+    type: object
+    additionalProperties: true
+    properties: {}
+- route: /admin/drive/audit
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/driveService.ts
+  operation: listDriveAuditEvents
+  operation_id: drive.audit.list
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/drive/audit/events
+  sdk_domain: drive
+  read_sources:
+  - ops_audit_log
+  query_parameters: []
+  response_schema:
+    name: listDriveAuditEventsResponse
+    type: object
+    additionalProperties: true
+    properties: {}

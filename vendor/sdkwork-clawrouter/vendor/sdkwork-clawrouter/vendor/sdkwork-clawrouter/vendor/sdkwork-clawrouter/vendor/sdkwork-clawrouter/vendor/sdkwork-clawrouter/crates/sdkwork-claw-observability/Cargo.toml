@@ -1,0 +1,10 @@
+[package]
+name = "sdkwork-claw-observability"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[dependencies]
+sdkwork-claw-config.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

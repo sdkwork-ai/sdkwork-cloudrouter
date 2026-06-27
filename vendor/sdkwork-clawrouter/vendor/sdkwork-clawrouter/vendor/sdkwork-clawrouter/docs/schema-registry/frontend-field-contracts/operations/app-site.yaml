@@ -1,0 +1,109 @@
+fragment: operations/app-site
+frontend_operations:
+- route: /
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/siteBranding.ts
+  operation: fetchSiteBranding
+  operation_scope: app_shell
+  operation_id: site.runtime.retrieve
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/system/site/runtime
+  sdk_domain: site
+  summary: Retrieve public site runtime branding settings
+  description: Returns public site identity, theme, SEO, support, and legal link settings without requiring an app session.
+  read_sources:
+  - ops_config_snapshot
+  query_parameters:
+  - name: tenant_code
+    schema:
+      type: string
+      maxLength: 64
+  - name: organization_code
+    schema:
+      type: string
+      maxLength: 64
+  response_schema:
+    name: SiteRuntimeSettingsResponse
+    type: object
+    additionalProperties: false
+    required:
+    - siteName
+    - shortName
+    - description
+    - logo
+    - icon
+    - favicon
+    - brandColor
+    - accentColor
+    - footerCopyright
+    - icpRecordNumber
+    - icpRecordUrl
+    - policeRecordNumber
+    - policeRecordUrl
+    - seoTitle
+    - seoDescription
+    - supportUrl
+    - docsUrl
+    - privacyUrl
+    - termsUrl
+    - customCss
+    properties:
+      siteName:
+        type: string
+        minLength: 1
+        maxLength: 255
+      shortName:
+        type: string
+        maxLength: 255
+      description:
+        type: string
+        maxLength: 4096
+      logo:
+        $ref: '#/components/schemas/MediaResource'
+      icon:
+        $ref: '#/components/schemas/MediaResource'
+      favicon:
+        $ref: '#/components/schemas/MediaResource'
+      brandColor:
+        type: string
+        pattern: ^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$
+      accentColor:
+        type: string
+        pattern: ^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$
+      footerCopyright:
+        type: string
+        maxLength: 4096
+      icpRecordNumber:
+        type: string
+        maxLength: 255
+      icpRecordUrl:
+        type: string
+        maxLength: 2048
+      policeRecordNumber:
+        type: string
+        maxLength: 255
+      policeRecordUrl:
+        type: string
+        maxLength: 2048
+      seoTitle:
+        type: string
+        maxLength: 255
+      seoDescription:
+        type: string
+        maxLength: 4096
+      supportUrl:
+        type: string
+        maxLength: 2048
+      docsUrl:
+        type: string
+        maxLength: 2048
+      privacyUrl:
+        type: string
+        maxLength: 2048
+      termsUrl:
+        type: string
+        maxLength: 2048
+      customCss:
+        type: string
+        maxLength: 20000

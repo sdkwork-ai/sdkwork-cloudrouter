@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "agent-skill-manifest.v1",
+  "id": 8203,
+  "uuid": "skill-clawhub-codebase-index",
+  "skillKey": "clawhub-codebase-index",
+  "name": "Codebase Index — 代码库索引系统",
+  "summary": "代码库索引与理解系统。扫描项目目录，提取所有符号定义（类、函数、变量、导入），构建可搜索的 JSON 索引，支持按名称/类型/文件查询。受 Claude Code 的 codebase indexing 启发，100% 原创实现，使用 Python ast + ripgrep。",
+  "version": "1.0.0",
+  "runtime": "metadata",
+  "entrypoint": "clawhub.skills.codebase_index",
+  "provider": "ClawHub",
+  "licenseName": "MIT-0",
+  "capabilities": [
+    "clawhub.metadata"
+  ],
+  "configSchema": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "defaultConfig": {
+    "portal": {
+      "developer": "LXR-666",
+      "features": [
+        "代码库索引与理解系统。扫描项目目录，提取所有符号定义（类、函数、变量、导入），构建可搜索的 JSON 索引，支持按名称/类型/文件查询。受 Claude Code 的 codebase in."
+      ],
+      "frameworks": [
+        "ClawHub",
+        "Agent Skill",
+        "Python"
+      ],
+      "sizeText": "Metadata",
+      "clawhubImage": "clawhub://skills/codebase-index@1.0.0",
+      "screenshots": [
+        "https://avatars.githubusercontent.com/u/173941598?v=4"
+      ]
+    },
+    "source": {
+      "vendor": "clawhub",
+      "slug": "codebase-index",
+      "url": "https://clawhub.ai/skills/codebase-index"
+    }
+  },
+  "source": {
+    "vendor": "clawhub",
+    "slug": "codebase-index",
+    "url": "https://clawhub.ai/skills/codebase-index",
+    "fetchedAt": "2026-06-22T01:26:13.984Z",
+    "rawDetailPath": "data/skills/clawhub/raw/details/codebase-index-68c90d26aad1ba37.json"
+  },
+  "artifacts": [
+    {
+      "artifactRef": "clawhub://skills/codebase-index@1.0.0",
+      "artifact": {
+        "kind": "document",
+        "source": "provider_asset",
+        "uri": "data/skills/artifacts/clawhub-codebase-index-1.0.0.json"
+      },
+      "version": "1.0.0",
+      "runtime": "metadata",
+      "checksumHash": "sha256:a05cebed0a589c4485d067cb82e106ddd296fa58e4aba963955da293465f1705",
+      "artifactSizeBytes": 2568
+    }
+  ],
+  "permissions": {
+    "network": false,
+    "filesystem": "none",
+    "secrets": []
+  },
+  "publishedAt": "2026-06-22T00:25:46.969Z"
+}

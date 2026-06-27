@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "sdkwork-clawrouter-pc-admin-oauth",
+    "displayName": "SDKWork Claw Router Admin OAuth",
+    "version": "0.0.1",
+    "type": "node-package",
+    "root": "sdkwork-claw-router/apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-oauth",
+    "domain": "iam",
+    "declaredDomain": null,
+    "capability": "oauth",
+    "surface": "backend-admin",
+    "status": "standardizing",
+    "languages": [
+      "typescript"
+    ],
+    "generated": false,
+    "private": true,
+    "manifests": [
+      "package.json"
+    ]
+  },
+  "canonicalSpecs": [
+    {
+      "file": "README.md",
+      "path": "../../../../../sdkwork-specs/README.md",
+      "purpose": "SDKWork root standards entrypoint."
+    },
+    {
+      "file": "CODE_STYLE_SPEC.md",
+      "path": "../../../../../sdkwork-specs/CODE_STYLE_SPEC.md",
+      "purpose": "Authored source structure and generated code boundaries."
+    },
+    {
+      "file": "NAMING_SPEC.md",
+      "path": "../../../../../sdkwork-specs/NAMING_SPEC.md",
+      "purpose": "Canonical SDKWork naming rules."
+    },
+    {
+      "file": "TYPESCRIPT_CODE_SPEC.md",
+      "path": "../../../../../sdkwork-specs/TYPESCRIPT_CODE_SPEC.md",
+      "purpose": "TypeScript and Node package rules."
+    },
+    {
+      "file": "FRONTEND_CODE_SPEC.md",
+      "path": "../../../../../sdkwork-specs/FRONTEND_CODE_SPEC.md",
+      "purpose": "Frontend and UI service SDK flow rules."
+    },
+    {
+      "file": "BACKEND_UI_SPEC.md",
+      "path": "../../../../../sdkwork-specs/BACKEND_UI_SPEC.md",
+      "purpose": "Backend-admin UI package boundary rules."
+    },
+    {
+      "file": "SDK_SPEC.md",
+      "path": "../../../../../sdkwork-specs/SDK_SPEC.md",
+      "purpose": "SDK integration and generated SDK ownership rules."
+    }
+  ],
+  "contracts": {
+    "publicExports": [
+      "src/index.tsx"
+    ],
+    "runtimeEntrypoints": [
+      "package.json#scripts.typecheck"
+    ],
+    "sdkClients": [
+      "@sdkwork/iam-backend-sdk"
+    ],
+    "events": [],
+    "configKeys": [],
+    "routeManifest": null
+  },
+  "integration": {
+    "authority": "Appbase IAM owns OAuth API, database, provider ingress, and generated backend SDK surface.",
+    "dependencyPolicy": "Consumers integrate through public package exports only.",
+    "sdkPolicy": "Services use getSdkworkAppbaseBackendSdkClient and appbase backend SDK OAuth resources under iamOauth.iam.oauth.* with a direct iam.oauth.* compatibility fallback. Raw HTTP, manual auth headers, and Claw Router backend SDK access are forbidden.",
+    "languagePolicy": "TypeScript package code follows the PC backend-admin UI package rules."
+  },
+  "verification": {
+    "commands": [
+      "pnpm --filter sdkwork-clawrouter-pc-admin-oauth typecheck",
+      "pnpm --dir apps/sdkwork-clawrouter-pc exec tsx admin-oauth-runtime.test.ts"
+    ]
+  },
+  "metadata": {
+    "managedBy": "codex",
+    "standardVersion": "2026-06-09"
+  }
+}

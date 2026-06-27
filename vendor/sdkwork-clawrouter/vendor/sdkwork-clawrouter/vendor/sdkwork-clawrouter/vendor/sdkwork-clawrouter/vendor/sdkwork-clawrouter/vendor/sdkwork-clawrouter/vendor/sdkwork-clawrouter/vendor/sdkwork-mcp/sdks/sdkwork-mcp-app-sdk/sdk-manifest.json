@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "sdkName": "sdkwork-mcp-app-sdk",
+  "sdkOwner": "sdkwork-mcp",
+  "apiAuthority": "sdkwork-mcp.app",
+  "sdkFamily": "sdkwork-mcp-app-sdk",
+  "sdkType": "app",
+  "apiPrefix": "/app/v3/api",
+  "generationInputSpec": "../../apis/app-api/mcp/mcp-app-api.openapi.json",
+  "sdkDependencies": [],
+  "generatedPackages": {
+    "typescript": {
+      "language": "typescript",
+      "packageName": "sdkwork-mcp-app-sdk-generated-typescript",
+      "generatedOutput": "sdkwork-mcp-app-sdk-typescript/generated/server-openapi"
+    }
+  },
+  "generatorName": "@sdkwork/sdk-generator",
+  "generatorPath": "E:\\sdkwork-space\\sdkwork-sdk-generator\\bin\\sdkgen.js",
+  "baseUrl": "http://127.0.0.1:18100",
+  "standardProfile": "sdkwork-v3",
+  "fixedSdkVersion": "0.1.0",
+  "ownerOnlyOperationCount": 8,
+  "operations": [
+    {
+      "method": "GET",
+      "operationId": "mcp.getServer",
+      "path": "/app/v3/api/mcp/servers/{serverKey}"
+    },
+    {
+      "method": "GET",
+      "operationId": "mcp.getTool",
+      "path": "/app/v3/api/mcp/servers/{serverId}/tools/{toolKey}"
+    },
+    {
+      "method": "GET",
+      "operationId": "mcp.listCategories",
+      "path": "/app/v3/api/mcp/categories"
+    },
+    {
+      "method": "GET",
+      "operationId": "mcp.listInvocations",
+      "path": "/app/v3/api/mcp/invocations"
+    },
+    {
+      "method": "GET",
+      "operationId": "mcp.listPrompts",
+      "path": "/app/v3/api/mcp/servers/{serverId}/prompts"
+    },
+    {
+      "method": "GET",
+      "operationId": "mcp.listResources",
+      "path": "/app/v3/api/mcp/servers/{serverId}/resources"
+    },
+    {
+      "method": "GET",
+      "operationId": "mcp.listServers",
+      "path": "/app/v3/api/mcp/servers"
+    },
+    {
+      "method": "GET",
+      "operationId": "mcp.listTools",
+      "path": "/app/v3/api/mcp/servers/{serverId}/tools"
+    }
+  ],
+  "managedBy": "tools/mcp_sdk_generator_runner.mjs"
+}

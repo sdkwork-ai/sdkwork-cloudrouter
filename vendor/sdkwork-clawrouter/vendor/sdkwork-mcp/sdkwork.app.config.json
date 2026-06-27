@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 3,
+  "kind": "sdkwork.app",
+  "app": {
+    "key": "sdkwork-mcp",
+    "name": "SDKWork MCP",
+    "displayName": "SDKWork MCP",
+    "description": "MCP server registry, connectors, tools, resources, and prompts for SDKWork intelligence platform.",
+    "vendor": "SDKWork",
+    "officialWebsiteUrl": "https://sdkwork.com/apps/sdkwork-mcp",
+    "appType": "APP_HTML",
+    "identifiers": {
+      "desktopAppId": "com.sdkwork.mcp.desktop",
+      "containerImage": "registry.sdkwork.com/apps/sdkwork-mcp"
+    }
+  },
+  "backend": {
+    "profileKey": "backend-root-admin",
+    "platform": "WEB",
+    "appId": "sdkwork-mcp",
+    "tenantId": "100001",
+    "organizationId": "0"
+  },
+  "runtime": {
+    "family": "web",
+    "framework": "web",
+    "runtimes": [
+      "WEB",
+      "BROWSER",
+      "MOBILE"
+    ],
+    "defaultPlatform": "WEB",
+    "supportedDeploymentProfiles": [
+      "standalone",
+      "cloud"
+    ],
+    "defaultDeploymentProfile": "standalone"
+  },
+  "metadata": {
+    "domain": "intelligence",
+    "capability": "mcp",
+    "component": "sdkwork-mcp"
+  }
+}

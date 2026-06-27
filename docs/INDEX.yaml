@@ -1,0 +1,152 @@
+schemaVersion: 1
+kind: sdkwork.docs.index
+repository: sdkwork-clawrouter
+canon:
+  prd: docs/product/prd/PRD.md
+  techArchitecture: docs/architecture/tech/TECH_ARCHITECTURE.md
+  standardAlignmentAudit: docs/standard-alignment-audit.md
+  schemaRegistryCatalog: docs/schema-registry/table-catalog.md
+  productionRunbook: deployments/runbooks/production-operations.md
+  securityPolicy: SECURITY.md
+  contributingGuide: CONTRIBUTING.md
+entries:
+  # Canon product documents
+  - id: PRD-0001
+    path: docs/product/prd/PRD.md
+    kind: prd
+    status: active
+    owner: clawrouter-platform
+    title: SDKWork Claw Router Product Requirements
+  - id: PRD-0002
+    path: docs/product/prd/PRD-00-design.md
+    kind: prd
+    status: active
+    owner: clawrouter-platform
+    title: Claw Router design shard
+  - id: PRD-0003
+    path: docs/product/prd/PRD-01-prd-sdkwork-clawrouter.md
+    kind: prd
+    status: active
+    owner: clawrouter-platform
+    title: Claw Router detailed PRD
+  - id: TECH-0001
+    path: docs/architecture/tech/TECH_ARCHITECTURE.md
+    kind: adr
+    status: active
+    owner: clawrouter-platform
+    title: Technical architecture index
+  - id: AUDIT-0001
+    path: docs/standard-alignment-audit.md
+    kind: audit
+    status: active
+    owner: clawrouter-platform
+    title: SDKWork standard alignment audit
+  - id: SCHEMA-0001
+    path: docs/schema-registry/table-catalog.md
+    kind: schema
+    status: active
+    owner: clawrouter-data
+    title: Schema registry table catalog
+  - id: OPS-0001
+    path: deployments/runbooks/production-operations.md
+    kind: runbook
+    status: active
+    owner: clawrouter-release
+    title: Production operations runbook
+  - id: SEC-0001
+    path: SECURITY.md
+    kind: policy
+    status: active
+    owner: clawrouter-security
+    title: Security policy
+  - id: CONTRIB-0001
+    path: CONTRIBUTING.md
+    kind: policy
+    status: active
+    owner: clawrouter-platform
+    title: Contributing guide
+  - id: REL-0001
+    path: docs/release/CHANGELOG.md
+    kind: changelog
+    status: active
+    owner: clawrouter-release
+    title: Release changelog
+  - id: REL-0002
+    path: docs/release/VERSION.md
+    kind: version
+    status: active
+    owner: clawrouter-release
+    title: Current release version
+  - id: INSTALL-ZH-0001
+    path: docs/installation/zh-CN/
+    kind: guide
+    status: active
+    owner: clawrouter-release
+    title: Installation guides (Simplified Chinese)
+  - id: INSTALL-EN-0001
+    path: docs/installation/en-US/
+    kind: guide
+    status: active
+    owner: clawrouter-release
+    title: Installation guides (English)
+domains:
+  - id: gateway
+    name: Gateway
+    owner: clawrouter-gateway
+    description: OpenAI-compatible gateway, provider relay, dispatch executor, circuit breaker, idempotency
+    documents:
+      - TECH-0001
+      - OPS-0001
+  - id: commerce
+    name: Commerce
+    owner: clawrouter-data
+    description: Billing ledger, usage settlement, payment adapter, financial compliance
+    documents:
+      - SCHEMA-0001
+  - id: iam
+    name: IAM
+    owner: clawrouter-security
+    description: Authentication, tenant isolation, signing keys, web request principal
+    documents:
+      - SEC-0001
+  - id: security
+    name: Security
+    owner: clawrouter-security
+    description: Hardening defaults, supply chain, artifact signing, SBOM, vulnerability response
+    documents:
+      - SEC-0001
+      - AUDIT-0001
+  - id: observability
+    name: Observability
+    owner: clawrouter-observability
+    description: Metrics, tracing, structured logs, SLO/SLI, alerting
+    documents:
+      - TECH-0001
+      - OPS-0001
+  - id: release
+    name: Release
+    owner: clawrouter-release
+    description: Versioning, changelog, package matrix, signing, SBOM, dependabot
+    documents:
+      - REL-0001
+      - REL-0002
+      - INSTALL-ZH-0001
+      - INSTALL-EN-0001
+  - id: deployment
+    name: Deployment
+    owner: clawrouter-release
+    description: Kubernetes manifests, nginx, installer CLI, topology configs
+    documents:
+      - OPS-0001
+  - id: frontend
+    name: Frontend
+    owner: clawrouter-frontend
+    description: React PC application, console, admin, playground, i18n, theming
+    documents:
+      - TECH-0001
+  - id: docs
+    name: Documentation
+    owner: clawrouter-docs
+    description: Documentation index, contributing guide, code of conduct
+    documents:
+      - CONTRIB-0001

@@ -1,0 +1,592 @@
+tables:
+- table: integration_provider_account
+  domain: integration
+  profile: provider_account_secret_ref
+  compliance_level: L3
+  system_of_record: true
+  write_owner: integration-service
+  common_columns: tenant_entity
+  source_tables:
+  - ai_provider
+  - messaging_provider
+  frontend_routes:
+  - /admin/channel
+  - /admin/channel/secrets
+  - /admin/integration/provider-secrets
+  api_surfaces:
+  - backend
+  - worker
+  not_null_columns:
+  - uuid
+  - tenant_id
+  - organization_id
+  - status
+  - provider_code
+  - account_code
+  - account_name
+  columns:
+    provider_id: int64
+    provider_code:
+      type: string(64)
+      constraints: NOT NULL DEFAULT ''
+    account_code:
+      type: string(64)
+      constraints: NOT NULL DEFAULT ''
+    account_name:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    account_type:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'official'
+    channel_type:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'official'
+    auth_type:
+      type: enum_int32
+      constraints: NOT NULL DEFAULT 1
+    credential_profile:
+      type: enum_int32
+      constraints: NOT NULL DEFAULT 1
+    auth_config:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    secret_ref: string(512)
+    secret_hash: string(128)
+    masked_label: string(128)
+    credential_version:
+      type: int64
+      constraints: NOT NULL DEFAULT 1
+    base_url: string(512)
+    region_code: string(64)
+    environment:
+      type: enum_int32
+      constraints: NOT NULL DEFAULT 1
+    health_status:
+      type: enum_int32
+      constraints: NOT NULL DEFAULT 1
+    last_latency_ms: int32
+    consecutive_error_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    risk_level:
+      type: enum_int32
+      constraints: NOT NULL DEFAULT 1
+    quota_snapshot: json
+    last_verified_at: instant
+    last_used_at: instant
+    last_rotated_at: instant
+    next_rotate_at: instant
+  unique_constraints:
+  - columns:
+    - uuid
+    source: column_unique
+  - name: uk_integration_provider_account_code
+    columns:
+    - tenant_id
+    - organization_id
+    - account_code
+  indexes:
+  - name: idx_integration_provider_account_provider
+    columns:
+    - tenant_id
+    - organization_id
+    - provider_code
+    - account_type
+    - status
+    - id
+  - name: idx_integration_provider_account_secret
+    columns:
+    - tenant_id
+    - organization_id
+    - secret_hash
+    - status
+    - id
+  - name: idx_integration_provider_account_health
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - health_status
+    - risk_level
+    - id
+  security:
+    sensitivity: SECRET_REF
+    stores_secret_plaintext: false
+    audit_required: true
+- table: ai_provider
+  domain: ai
+  profile: dictionary_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: tenant_entity
+  frontend_routes:
+  - /playground
+  - /console/routing
+  - /console/providers
+  - /admin/group
+  - /admin/channel
+  api_surfaces:
+  - app
+  - backend
+  not_null_columns:
+  - uuid
+  - tenant_id
+  - organization_id
+  - status
+  - provider_code
+  - display_name
+  unique_constraints:
+  - columns:
+    - uuid
+    source: column_unique
+  - name: uk_ai_provider_tenant_code
+    columns:
+    - tenant_id
+    - organization_id
+    - provider_code
+  columns:
+    provider_code: string(64)
+    display_name: string(128)
+    description: string(512)
+    icon_drive_uri: string(512)
+    icon_resource_snapshot: json
+    color_token: string(64)
+    docs_url: string(512)
+    website_url: string(512)
+    default_vendor_code: string(64)
+    provider_type: string(32)
+    protocol_code: string(64)
+    base_url: string(512)
+    auth_type: enum_int32
+    resource_schema: json
+    metadata_schema_version: string(32)
+    sort_order: int32
+  indexes:
+  - name: idx_ai_provider_status_sort
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - sort_order
+    - id
+- table: ai_site
+  domain: ai
+  profile: provider_account_secret_ref
+  compliance_level: L3
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: tenant_entity
+  frontend_routes:
+  - /admin/model/sites
+  api_surfaces:
+  - backend
+  - worker
+  not_null_columns:
+  - uuid
+  - tenant_id
+  - organization_id
+  - status
+  - site_code
+  - site_name
+  - display_name
+  unique_constraints:
+  - columns:
+    - uuid
+    source: column_unique
+  - name: uk_ai_site_tenant_code
+    columns:
+    - tenant_id
+    - organization_id
+    - site_code
+  columns:
+    site_code: string(64)
+    site_name: string(128)
+    display_name: string(128)
+    description: string(1024)
+    base_url: string(512)
+    website_url: string(512)
+    docs_url: string(512)
+    logo_drive_uri: string(512)
+    logo_resource_snapshot: json
+    color_token: string(64)
+    site_type:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'relay'
+    owner_kind: string(32)
+    region_code: string(64)
+    environment:
+      type: enum_int32
+      constraints: NOT NULL DEFAULT 1
+    health_status:
+      type: enum_int32
+      constraints: NOT NULL DEFAULT 1
+    last_latency_ms: int32
+    consecutive_error_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    last_checked_at: instant
+    last_sync_at: instant
+    sort_order:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+  indexes:
+  - name: idx_ai_site_status_sort
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - sort_order
+    - id
+  - name: idx_ai_site_health_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - health_status
+    - id
+  security:
+    sensitivity: SECRET_REF
+    stores_secret_plaintext: false
+    audit_required: true
+- table: ai_site_service
+  domain: ai
+  profile: credential_ref
+  compliance_level: L3
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: tenant_entity
+  source_tables:
+  - ai_site
+  frontend_routes:
+  - /admin/model/sites
+  api_surfaces:
+  - backend
+  - worker
+  not_null_columns:
+  - uuid
+  - tenant_id
+  - organization_id
+  - status
+  - site_id
+  - site_code
+  - service_code
+  - service_name
+  - service_type
+  unique_constraints:
+  - columns:
+    - uuid
+    source: column_unique
+  - name: uk_ai_site_service_site_code
+    columns:
+    - tenant_id
+    - organization_id
+    - site_id
+    - service_code
+  columns:
+    site_id: int64
+    site_code: string(64)
+    service_code: string(64)
+    service_name: string(128)
+    service_type:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'ai_model_relay'
+    protocol_code: string(64)
+    base_url: string(512)
+    auth_type:
+      type: enum_int32
+      constraints: NOT NULL DEFAULT 1
+    credential_profile:
+      type: enum_int32
+      constraints: NOT NULL DEFAULT 1
+    auth_config:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    credential_ref: string(512)
+    credential_hash: string(128)
+    masked_label: string(128)
+    credential_version:
+      type: int64
+      constraints: NOT NULL DEFAULT 1
+    region_code: string(64)
+    environment:
+      type: enum_int32
+      constraints: NOT NULL DEFAULT 1
+    health_status:
+      type: enum_int32
+      constraints: NOT NULL DEFAULT 1
+    last_latency_ms: int32
+    consecutive_error_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    last_verified_at: instant
+    last_sync_at: instant
+    sort_order:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+  indexes:
+  - name: idx_ai_site_service_site_status
+    columns:
+    - tenant_id
+    - organization_id
+    - site_id
+    - status
+    - id
+  - name: idx_ai_site_service_type_status
+    columns:
+    - tenant_id
+    - organization_id
+    - service_type
+    - status
+    - id
+  - name: idx_ai_site_service_health_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - health_status
+    - id
+  foreign_keys:
+  - name: fk_ai_site_service_site
+    columns:
+    - site_id
+    references_table: ai_site
+    references_columns:
+    - id
+  security:
+    sensitivity: SECRET_REF
+    stores_secret_plaintext: false
+    audit_required: true
+- table: ai_channel
+  domain: ai
+  profile: credential_ref
+  compliance_level: L3
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: tenant_entity
+  source_tables:
+  - ai_provider
+  - ai_site
+  - ai_site_service
+  frontend_routes:
+  - /console/routing
+  - /console/providers
+  - /admin/group
+  - /admin/channel
+  - /admin/model/sites
+  api_surfaces:
+  - app
+  - backend
+  not_null_columns:
+  - uuid
+  - tenant_id
+  - organization_id
+  - status
+  - channel_code
+  - channel_name
+  - channel_type
+  unique_constraints:
+  - columns:
+    - uuid
+    source: column_unique
+  - name: uk_ai_channel_tenant_code
+    columns:
+    - tenant_id
+    - organization_id
+    - channel_code
+  columns:
+    provider_id: int64
+    provider_code: string(64)
+    site_id: int64
+    site_service_id: int64
+    site_code: string(64)
+    site_service_code: string(64)
+    site_channel_role: string(32)
+    channel_code: string(64)
+    channel_name: string(128)
+    channel_type: string(32)
+    protocol_code: string(64)
+    auth_type: enum_int32
+    credential_profile: enum_int32
+    external_channel_id: string(128)
+    base_url: string(512)
+    auth_config: json
+    credential_ref: string(256)
+    credential_hash: string(128)
+    credential_version: int64
+    credential_rotation_policy: json
+    credential_rotation_strategy:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'default'
+    masked_label: string(128)
+    environment: enum_int32
+    region_code: string(64)
+    quota_unit: enum_int32
+    quota_limit: decimal
+    quota_used: decimal
+    upstream_balance_amount: decimal
+    upstream_balance_currency: string(10)
+    last_balance_checked_at: instant
+    last_rotated_at: instant
+    next_rotate_at: instant
+    last_verified_at: instant
+    last_used_at: instant
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    weight:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    rpm_limit: int64
+    timeout_ms: int32
+    retry_policy: json
+    circuit_breaker_policy: json
+    health_status:
+      type: enum_int32
+      constraints: NOT NULL DEFAULT 1
+    last_latency_ms: int32
+    consecutive_error_count: int64
+    proxy_id: int64
+    risk_level: enum_int32
+  indexes:
+  - name: idx_ai_channel_provider_type_status
+    columns:
+    - tenant_id
+    - organization_id
+    - provider_code
+    - channel_type
+    - status
+    - id
+  - name: idx_ai_channel_health_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - health_status
+    - priority
+    - weight
+    - id
+  - name: idx_ai_channel_site_status
+    columns:
+    - tenant_id
+    - organization_id
+    - site_id
+    - status
+    - health_status
+    - id
+  - name: idx_ai_channel_site_service_status
+    columns:
+    - tenant_id
+    - organization_id
+    - site_service_id
+    - status
+    - health_status
+    - id
+  - name: idx_ai_channel_site_code
+    columns:
+    - tenant_id
+    - organization_id
+    - site_code
+    - site_service_code
+    - status
+    - id
+  foreign_keys:
+  - name: fk_ai_channel_site
+    columns:
+    - site_id
+    references_table: ai_site
+    references_columns:
+    - id
+  - name: fk_ai_channel_site_service
+    columns:
+    - site_service_id
+    references_table: ai_site_service
+    references_columns:
+    - id
+  security:
+    sensitivity: SECRET_REF
+    stores_secret_plaintext: false
+    audit_required: true
+- table: ai_channel_credential
+  domain: ai
+  profile: credential_ref
+  compliance_level: L3
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: tenant_entity
+  source_tables:
+  - ai_channel
+  frontend_routes:
+  - /admin/channel
+  api_surfaces:
+  - backend
+  - worker
+  - openai_v1
+  not_null_columns:
+  - uuid
+  - tenant_id
+  - organization_id
+  - status
+  - channel_id
+  - credential_name
+  - base_url
+  - auth_config
+  - credential_ref
+  - credential_hash
+  unique_constraints:
+  - columns:
+    - uuid
+    source: column_unique
+  columns:
+    channel_id: int64
+    provider_code: string(64)
+    channel_code: string(64)
+    credential_name: string(128)
+    base_url: string(512)
+    auth_config:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    credential_ref: string(256)
+    credential_hash: string(128)
+    masked_label: string(128)
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    weight:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    health_status:
+      type: enum_int32
+      constraints: NOT NULL DEFAULT 1
+    last_latency_ms: int32
+    consecutive_error_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    last_verified_at: instant
+    last_used_at: instant
+  indexes:
+  - name: idx_ai_channel_credential_channel
+    columns:
+    - tenant_id
+    - organization_id
+    - channel_id
+    - status
+    - priority
+    - weight
+    - id
+  - name: idx_ai_channel_credential_ref
+    columns:
+    - tenant_id
+    - organization_id
+    - credential_ref
+  foreign_keys:
+  - name: fk_ai_channel_credential_channel
+    columns:
+    - channel_id
+    references_table: ai_channel
+    references_columns:
+    - id
+  security:
+    sensitivity: PROVIDER_CREDENTIAL
+    stores_secret_plaintext: false
+    audit_required: true

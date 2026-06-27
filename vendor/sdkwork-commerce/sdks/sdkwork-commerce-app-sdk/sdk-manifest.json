@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "sdkName": "sdkwork-commerce-app-sdk",
+  "sdkOwner": "sdkwork-commerce",
+  "apiAuthority": "sdkwork-commerce-app-api",
+  "sdkFamily": "sdkwork-commerce-app-sdk",
+  "sdkType": "app",
+  "apiPrefix": "/app/v3/api",
+  "generationInputSpec": "../../apis/app-api/commerce/commerce-app-api.openapi.json",
+  "generatedPackages": {
+    "typescript": {
+      "language": "typescript",
+      "packageName": "sdkwork-commerce-app-sdk-generated-typescript",
+      "generatedOutput": "sdkwork-commerce-app-sdk-typescript/generated/server-openapi"
+    },
+    "rust": {
+      "language": "rust",
+      "packageName": "sdkwork-commerce-app-sdk-generated-rust",
+      "generatedOutput": "sdkwork-commerce-app-sdk-rust/generated/server-openapi"
+    },
+    "java": {
+      "language": "java",
+      "packageName": "sdkwork-commerce-app-sdk-generated-java",
+      "generatedOutput": "sdkwork-commerce-app-sdk-java/generated/server-openapi"
+    },
+    "python": {
+      "language": "python",
+      "packageName": "sdkwork-commerce-app-sdk-generated-python",
+      "generatedOutput": "sdkwork-commerce-app-sdk-python/generated/server-openapi"
+    },
+    "go": {
+      "language": "go",
+      "packageName": "sdkwork-commerce-app-sdk-generated-go",
+      "generatedOutput": "sdkwork-commerce-app-sdk-go/generated/server-openapi"
+    }
+  },
+  "sdkDependencies": [
+    {
+      "workspace": "sdkwork-iam-app-sdk",
+      "role": "appbase-app-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/app/v3/api",
+      "apiAuthority": "sdkwork-iam-app-api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/iam-app-sdk",
+        "rust": "sdkwork-iam-app-sdk",
+        "java": "com.sdkwork:sdkwork-iam-app-sdk",
+        "python": "sdkwork-iam-app-sdk",
+        "go": "github.com/sdkwork/sdkwork-iam-app-sdk"
+      }
+    }
+  ],
+  "dependencyApiExports": [],
+  "generatorName": "sdkwork-sdk-generator",
+  "baseUrl": "http://127.0.0.1:18080",
+  "standardProfile": "sdkwork-v3",
+  "fixedSdkVersion": "0.1.0",
+  "ownerOnlyOperationCount": 182,
+  "managedBy": "tools/commerce_sdk_generator_runner.mjs"
+}

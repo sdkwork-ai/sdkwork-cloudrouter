@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sdkwork-clawrouter-edge
+  labels:
+    app: sdkwork-clawrouter
+    component: edge
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sdkwork-clawrouter
+      component: edge
+  template:
+    metadata:
+      labels:
+        app: sdkwork-clawrouter
+        component: edge
+    spec:
+      terminationGracePeriodSeconds: 60
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: sdkwork-clawrouter
+              component: edge
+      containers:
+        - name: edge
+          image: registry.sdkwork.com/apps/sdkwork-clawrouter:0.3.0
+          command: ["sdkwork-clawrouter-standalone-gateway"]
+          ports:
+            - containerPort: 3900
+              name: http
+          env:
+            - name: SDKWORK_CLAW_DEPLOYMENT_PROFILE
+              value: cloud
+            - name: SDKWORK_CLAW_RUNTIME_TARGET
+              value: container
+            - name: SDKWORK_CLAW_CONFIG_FILE
+              value: /etc/sdkwork/clawrouter.toml
+            - name: SDKWORK_CLAW_EDGE_SERVER
+              value: "true"
+            - name: SDKWORK_CLAW_SERVER_BIND
+              value: 0.0.0.0:3900
+            - name: SDKWORK_CLAW_EDGE_GATEWAY_BASE_URL
+              value: http://sdkwork-clawrouter-cloud-gateway:18080
+            - name: SDKWORK_CLAW_EDGE_BACKEND_API_BASE_URL
+              value: http://sdkwork-clawrouter-admin-api:18081
+            - name: SDKWORK_CLAW_EDGE_APP_API_BASE_URL
+              value: http://sdkwork-clawrouter-app-api:18082
+            - name: SDKWORK_CLAW_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sdkwork-clawrouter-config
+                  key: redis-url
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: config
+              mountPath: /etc/sdkwork
+              readOnly: true
+      volumes:
+        - name: config
+          secret:
+            secretName: sdkwork-clawrouter-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sdkwork-clawrouter-edge
+spec:
+  selector:
+    app: sdkwork-clawrouter
+    component: edge
+  ports:
+    - name: http
+      port: 3900
+      targetPort: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: sdkwork-clawrouter-edge
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: sdkwork-clawrouter
+      component: edge
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: sdkwork-clawrouter-edge
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: sdkwork-clawrouter-edge
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

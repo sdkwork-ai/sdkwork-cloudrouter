@@ -1,0 +1,12 @@
+[package]
+name = "sdkwork-routes-mcp-shared"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+axum.workspace = true
+sdkwork-intelligence-mcp-service = { path = "../sdkwork-intelligence-mcp-service" }
+sdkwork-mcp-contract.workspace = true
+serde.workspace = true
+serde_json.workspace = true

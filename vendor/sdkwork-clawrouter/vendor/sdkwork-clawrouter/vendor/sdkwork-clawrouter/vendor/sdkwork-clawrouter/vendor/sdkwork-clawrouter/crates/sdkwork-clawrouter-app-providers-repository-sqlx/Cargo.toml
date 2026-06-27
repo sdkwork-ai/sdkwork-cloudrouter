@@ -1,0 +1,15 @@
+[package]
+name = "sdkwork-clawrouter-app-providers-repository-sqlx"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+description = "SDKWork Claw Router app providers read-model SQLx repository"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+sqlx = { workspace = true }
+sdkwork-database-sqlx.workspace = true
+sdkwork_models_catalog_service.workspace = true

@@ -1,0 +1,28 @@
+fragment: models/console-checkout
+frontend_models:
+- route: /console/checkout
+  source: apps/sdkwork-clawrouter-pc/src/commerce/commerceViewModels.ts
+  interface: CheckoutStatus
+  fields:
+  - orderNo
+  - outTradeNo
+  - amount
+  - points
+  - providerCode
+  - paymentMethod
+  - paymentProduct
+  - orderStatus
+  - paymentStatus
+  - rechargeStatus
+  - status
+  - createdAt
+  - expiresAt
+  - paidAt
+  - nextAction
+  - cashierUrl
+  - qrCodePayload
+  - requestPaymentPayload
+  data_sources:
+  - commerce_order
+  - commerce_payment_intent
+  - commerce_payment_attempt

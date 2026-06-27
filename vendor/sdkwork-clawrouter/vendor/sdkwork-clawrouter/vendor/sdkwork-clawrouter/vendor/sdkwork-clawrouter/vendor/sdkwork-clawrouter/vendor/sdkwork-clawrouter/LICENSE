@@ -1,0 +1,78 @@
+SDKWork Claw Router License
+
+Copyright (c) SDKWork. All rights reserved.
+
+SPDX-License-Expression: AGPL-3.0-or-later AND LicenseRef-SDKWork-Commercial-Restriction
+
+This software is made available under the GNU Affero General Public License
+version 3 or later (AGPL-3.0-or-later), subject to the commercial-use
+restriction in this license notice.
+
+This is not an unmodified AGPL-only commercial grant. Commercial use is
+prohibited unless SDKWork has granted prior written commercial authorization.
+
+1. AGPL Terms
+
+Subject to the commercial-use restriction below, you may use, copy, modify,
+convey, and make network use of this software under the terms of the GNU
+Affero General Public License version 3, or, at your option, any later version
+published by the Free Software Foundation.
+
+The AGPL-3.0 license text is included in [COPYING.AGPL-3.0](./COPYING.AGPL-3.0)
+and is also available at:
+
+https://www.gnu.org/licenses/agpl-3.0.html
+
+2. Commercial-Use Restriction
+
+Commercial use of this software is prohibited without prior written
+authorization from SDKWork.
+
+For purposes of this restriction, commercial use includes, without limitation:
+
+- deploying or operating the software for a company, paid service, SaaS,
+  managed service, internal commercial platform, or revenue-generating activity;
+- integrating the software into commercial products, commercial services, or
+  commercial internal systems;
+- reselling, sublicensing, hosting, white-labeling, or providing the software
+  to third parties as part of a commercial offering;
+- using the software to provide paid consulting, support, outsourcing,
+  implementation, integration, or professional services;
+- using the software in production for an organization whose activity is
+  commercial, revenue-generating, or commercially funded.
+
+Unauthorized commercial use is not licensed. To obtain commercial rights,
+contact SDKWork and obtain separate written authorization.
+
+未经 SDKWork 书面授权，禁止商业使用、商业部署、商业集成、转售、托管服务、
+SaaS 服务、白标交付、付费咨询实施服务，以及任何营利性或商业组织生产环境使用。
+
+3. Separate Commercial Authorization
+
+SDKWork may grant commercial rights under a separate written commercial
+license, contract, order form, or authorization letter. If separate written
+commercial authorization conflicts with this file, the separate written
+authorization controls only for the authorized party, scope, territory,
+duration, and usage described in that authorization.
+
+4. Third-Party and Generated Artifacts
+
+Third-party dependencies, generated SDK packages, standalone data packages, and
+vendored artifacts may include their own license files or notices. Those files
+continue to govern the corresponding third-party, generated, standalone, or
+vendored artifact unless SDKWork explicitly replaces that artifact's license
+notice in its package directory.
+
+5. No Trademark License
+
+This license does not grant permission to use SDKWork names, logos, product
+names, trademarks, or service marks except as required for accurate attribution
+and license notice preservation.
+
+6. No Warranty
+
+This software is provided without warranty of any kind, to the maximum extent
+permitted by applicable law.
+
+If you do not agree to these terms, do not use, copy, modify, distribute,
+deploy, or operate this software.

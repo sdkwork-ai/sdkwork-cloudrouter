@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package sdkwork.commerce.app.v3;
+
+import "sdkwork/common/v1/money.proto";
+import "sdkwork/common/v1/runtime.proto";
+
+option java_package = "com.sdkwork.commerce.app.v3";
+option java_multiple_files = true;
+option go_package = "github.com/sdkwork/commerce-rpc-go/sdkwork/commerce/app/v3;commerceappv3";
+
+service CheckoutService {
+  rpc CreateCheckoutSession(CreateCheckoutSessionRequest) returns (CreateCheckoutSessionResponse);
+  rpc RetrieveCheckoutSession(RetrieveCheckoutSessionRequest) returns (RetrieveCheckoutSessionResponse);
+  rpc CreateCheckoutQuote(CreateCheckoutQuoteRequest) returns (CreateCheckoutQuoteResponse);
+  rpc CreateCheckoutOrder(CreateCheckoutOrderRequest) returns (CreateCheckoutOrderResponse);
+}
+
+message CheckoutItem {
+  string sku_id = 1;
+  int64 quantity = 2;
+}
+
+message CheckoutSession {
+  string checkout_session_id = 1;
+  string status = 2;
+  sdkwork.common.v1.Money total = 3;
+}
+
+message CreateCheckoutSessionRequest {
+  repeated CheckoutItem items = 1;
+}
+
+message CreateCheckoutSessionResponse {
+  CheckoutSession session = 1;
+  sdkwork.common.v1.ResponseMetadata metadata = 15;
+}
+
+message RetrieveCheckoutSessionRequest {
+  string checkout_session_id = 1;
+}
+
+message RetrieveCheckoutSessionResponse {
+  CheckoutSession session = 1;
+  sdkwork.common.v1.ResponseMetadata metadata = 15;
+}
+
+message CreateCheckoutQuoteRequest {
+  string checkout_session_id = 1;
+}
+
+message CreateCheckoutQuoteResponse {
+  string quote_id = 1;
+  sdkwork.common.v1.Money total = 2;
+  sdkwork.common.v1.ResponseMetadata metadata = 15;
+}
+
+message CreateCheckoutOrderRequest {
+  string checkout_session_id = 1;
+  string quote_id = 2;
+}
+
+message CreateCheckoutOrderResponse {
+  string order_id = 1;
+  sdkwork.common.v1.ResponseMetadata metadata = 15;
+}

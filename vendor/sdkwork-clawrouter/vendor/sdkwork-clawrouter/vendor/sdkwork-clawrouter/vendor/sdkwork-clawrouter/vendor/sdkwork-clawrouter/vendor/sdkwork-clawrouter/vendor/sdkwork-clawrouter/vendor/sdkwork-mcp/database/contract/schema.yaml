@@ -1,0 +1,50 @@
+schema_version: 1
+kind: sdkwork.database.schema
+module_id: mcp
+contract_version: 1.1.0
+owner_team: mcp-platform
+compliance_level: L2
+engines:
+  - postgres
+table_prefix: ai_mcp_
+tables:
+  - name: ai_mcp_server_category
+    lifecycle_status: active
+    owner: mcp-platform
+    module: registry
+  - name: ai_mcp_server
+    lifecycle_status: active
+    owner: mcp-platform
+    module: registry
+  - name: ai_mcp_connector
+    lifecycle_status: active
+    owner: mcp-platform
+    module: connector
+  - name: ai_mcp_tool
+    lifecycle_status: active
+    owner: mcp-platform
+    module: capability
+  - name: ai_mcp_resource
+    lifecycle_status: active
+    owner: mcp-platform
+    module: capability
+  - name: ai_mcp_prompt
+    lifecycle_status: active
+    owner: mcp-platform
+    module: capability
+  - name: ai_mcp_invocation_log
+    lifecycle_status: active
+    owner: mcp-platform
+    module: observability
+  - name: ai_mcp_server_binding
+    lifecycle_status: planned
+    owner: mcp-platform
+    module: registry
+  - name: ai_mcp_tool_approval
+    lifecycle_status: planned
+    owner: mcp-platform
+    module: capability
+  - name: ai_mcp_capability_sync_job
+    lifecycle_status: planned
+    owner: mcp-platform
+    module: capability

@@ -1,0 +1,44 @@
+{
+  "skill": {
+    "slug": "codebase-index",
+    "displayName": "Codebase Index — 代码库索引系统",
+    "summary": "代码库索引与理解系统。扫描项目目录，提取所有符号定义（类、函数、变量、导入），构建可搜索的 JSON 索引，支持按名称/类型/文件查询。受 Claude Code 的 codebase indexing 启发，100% 原创实现，使用 Python ast + ripgrep。",
+    "description": "---\nname: codebase-index\ndescription: \"代码库索引与理解系统。扫描项目目录，提取所有符号定义（类、函数、变量、导入），构建可搜索的 JSON 索引，支持按名称/类型/文件查询。受 Claude Code 的 codebase indexing 启发，100% 原创实现，使用 Python ast + ripgrep。\"\nmetadata:\n  openclaw:\n    emoji: \"📚\"\n    requires:\n      bins: [python3]\n---\n\n# Codebase Index 📚\n\n> Claude Code 最值钱的能力之一是它能理解整个代码库。\n> codebytelens 单文件分析 → codebase-index 全库索引。\n\n## 工作流\n\n```\n项目目录\n   │\n   ▼ scan\n┌─────────────────────┐\n│ 符号提取器           │\n│ • Python: ast        │\n│ • 通用: ripgrep      │\n└─────────┬───────────┘\n          │\n          ▼ index.json\n┌─────────────────────┐\n│ 符号索引             │\n│ • 类、函数、变量     │\n│ • 文件路径、行号     │\n│ • 文档字符串         │\n│ • 导入关系           │\n└─────────┬───────────┘\n          │\n          ▼ query\n┌─────────────────────┐\n│ 查询接口             │\n│ • 按名称搜索         │\n│ • 按类型过滤         │\n│ • 按文件搜索         │\n│ • 模糊匹配           │\n└─────────────────────┘\n```\n\n## 使用方式\n\n```bash\n# 扫描项目，构建索引\npython3 indexer.py scan /path/to/project --output project-index.json\n\n# 搜索符号\npython3 indexer.py query \"UserService\" --index project-index.json\n\n# 按类型过滤\npython3 indexer.py query \"def\" --type function --index project-index.json\n\n# 列出所有文件\npython3 indexer.py files --index project-index.json\n\n# 统计信息\npython3 indexer.py stats --index project-index.json\n```\n\n## 示例输出\n\n```json\n{\n  \"symbols\": [\n    {\n      \"name\": \"UserService\",\n      \"type\": \"class\",\n      \"file\": \"services/user_service.py\",\n      \"line\": 15,\n      \"docstring\": \"用户认证和授权服务\",\n      \"methods\": [\"login\", \"logout\", \"register\"]\n    },\n    {\n      \"name\": \"authenticate\",\n      \"type\": \"function\",\n      \"file\": \"auth/jwt.py\",\n      \"line\": 42,\n      \"docstring\": \"JWT token 验证\"\n    }\n  ]\n}\n```\n",
+    "tags": {
+      "code-analysis": "1.0.0",
+      "code-indexing": "1.0.0",
+      "developer-tools": "1.0.0",
+      "latest": "1.0.0",
+      "python": "1.0.0",
+      "search": "1.0.0"
+    },
+    "stats": {
+      "comments": 0,
+      "downloads": 0,
+      "installsAllTime": 0,
+      "installsCurrent": 0,
+      "stars": 0,
+      "versions": 1
+    },
+    "createdAt": 1782087946969,
+    "updatedAt": 1782087946969
+  },
+  "latestVersion": {
+    "version": "1.0.0",
+    "createdAt": 1782087946969,
+    "changelog": "Initial release of codebase-index:\n\n- Scans project directories to extract all symbol definitions (classes, functions, variables, imports).\n- Builds a searchable JSON index with symbol details: name, type, file path, line number, docstring, and import relationships.\n- Provides command-line interface to query symbols by name, type, and file, with fuzzy match support.\n- Includes commands for listing files and viewing symbol statistics.\n- 100% original implementation inspired by Claude Code’s codebase indexing, using Python ast and ripgrep.",
+    "license": "MIT-0"
+  },
+  "metadata": {
+    "setup": [],
+    "os": null,
+    "systems": null
+  },
+  "owner": {
+    "handle": "lxr-666",
+    "userId": "s176n6k4kdjk3zgm2knbvvy03n88p8tk",
+    "displayName": "LXR-666",
+    "image": "https://avatars.githubusercontent.com/u/173941598?v=4"
+  },
+  "moderation": null
+}

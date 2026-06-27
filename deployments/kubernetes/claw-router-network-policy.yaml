@@ -1,0 +1,214 @@
+# Network policies for sdkwork-clawrouter.
+# Implements zero-trust segmentation: deny-all default + explicit allow rules
+# for each component's required ingress traffic.
+
+---
+# Default deny-all ingress for the clawrouter namespace.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sdkwork-clawrouter-default-deny
+  labels:
+    app: sdkwork-clawrouter
+spec:
+  podSelector:
+    matchLabels:
+      app: sdkwork-clawrouter
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# Edge: accept external traffic on port 3900.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sdkwork-clawrouter-edge-ingress
+  labels:
+    app: sdkwork-clawrouter
+    component: edge
+spec:
+  podSelector:
+    matchLabels:
+      app: sdkwork-clawrouter
+      component: edge
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 3900
+---
+# Gateway: accept traffic from edge on port 18080.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sdkwork-clawrouter-gateway-ingress
+  labels:
+    app: sdkwork-clawrouter
+    component: gateway
+spec:
+  podSelector:
+    matchLabels:
+      app: sdkwork-clawrouter
+      component: gateway
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sdkwork-clawrouter
+              component: edge
+      ports:
+        - protocol: TCP
+          port: 18080
+---
+# Admin API: accept traffic from edge on port 18081.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sdkwork-clawrouter-admin-api-ingress
+  labels:
+    app: sdkwork-clawrouter
+    component: admin-api
+spec:
+  podSelector:
+    matchLabels:
+      app: sdkwork-clawrouter
+      component: admin-api
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sdkwork-clawrouter
+              component: edge
+      ports:
+        - protocol: TCP
+          port: 18081
+---
+# App API: accept traffic from edge on port 18082.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sdkwork-clawrouter-app-api-ingress
+  labels:
+    app: sdkwork-clawrouter
+    component: app-api
+spec:
+  podSelector:
+    matchLabels:
+      app: sdkwork-clawrouter
+      component: app-api
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sdkwork-clawrouter
+              component: edge
+      ports:
+        - protocol: TCP
+          port: 18082
+---
+# Redis: accept traffic from gateway/admin-api/app-api/edge on port 6379
+# and from other Redis pods on port 26379 (sentinel gossip).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sdkwork-clawrouter-redis-ingress
+  labels:
+    app: sdkwork-clawrouter
+    component: redis
+spec:
+  podSelector:
+    matchLabels:
+      app: sdkwork-clawrouter
+      component: redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sdkwork-clawrouter
+              component: gateway
+        - podSelector:
+            matchLabels:
+              app: sdkwork-clawrouter
+              component: admin-api
+        - podSelector:
+            matchLabels:
+              app: sdkwork-clawrouter
+              component: app-api
+        - podSelector:
+            matchLabels:
+              app: sdkwork-clawrouter
+              component: edge
+      ports:
+        - protocol: TCP
+          port: 6379
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sdkwork-clawrouter
+              component: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 26379
+---
+# Egress: allow all clawrouter pods to reach DNS, Postgres, and Redis.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sdkwork-clawrouter-egress
+  labels:
+    app: sdkwork-clawrouter
+spec:
+  podSelector:
+    matchLabels:
+      app: sdkwork-clawrouter
+  policyTypes:
+    - Egress
+  egress:
+    # DNS
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Postgres
+    - ports:
+        - protocol: TCP
+          port: 5432
+    # Redis (internal)
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sdkwork-clawrouter
+              component: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 26379
+    # Internal service-to-service (edge → gateway/admin-api/app-api)
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sdkwork-clawrouter
+      ports:
+        - protocol: TCP
+          port: 18080
+        - protocol: TCP
+          port: 18081
+        - protocol: TCP
+          port: 18082
+    # HTTPS egress for upstream provider APIs (OpenAI, Anthropic, etc.)
+    - ports:
+        - protocol: TCP
+          port: 443

@@ -1,0 +1,15 @@
+using System;
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
+
+namespace Sdkwork.ClawRouter.Open.Models
+{
+    public class OpenAiFineTuningCheckpointPermissionList
+    {
+        public List<OpenAiFineTuningCheckpointPermission>? Data { get; set; }
+        public string? FirstId { get; set; }
+        public bool? HasMore { get; set; }
+        public string? LastId { get; set; }
+        public string? Object { get; set; }
+    }
+}

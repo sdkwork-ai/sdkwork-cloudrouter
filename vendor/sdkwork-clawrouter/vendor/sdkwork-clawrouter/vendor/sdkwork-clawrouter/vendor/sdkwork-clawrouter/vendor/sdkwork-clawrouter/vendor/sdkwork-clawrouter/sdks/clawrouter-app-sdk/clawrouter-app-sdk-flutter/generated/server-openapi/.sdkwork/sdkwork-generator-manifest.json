@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "sdk": {
+    "name": "clawrouter-app-sdk",
+    "version": "0.1.0",
+    "language": "flutter",
+    "sdkType": "app",
+    "protocol": "http",
+    "packageName": "clawrouter_app_sdk"
+  },
+  "generatedFiles": [
+    {
+      "path": "bin/publish-core.mjs",
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+    },
+    {
+      "path": "bin/publish.ps1",
+      "sha256": "d33098ab9fb4a03ff09c5ae72fdde57d21f0e1ffa17a6c02155ce0600f3c7c9a"
+    },
+    {
+      "path": "bin/publish.sh",
+      "sha256": "fffdc9107c6db283c0b4ffc651ce55c3b266242edb0ac980d7fff6eee9ec31ca"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "fb941a0806986a54fc192f98a98f6d9c282b8d350b2b19a3e71dda404e92d545"
+    },
+    {
+      "path": "lib/app_client.dart",
+      "sha256": "9bf48d7ad6598ae23f6d4b7ed5cfa0b44a52918c29ddf4bd005b0577b3c2adc7"
+    },
+    {
+      "path": "lib/clawrouter_app_sdk.dart",
+      "sha256": "96b99f6712df9c7603abf748d9a9e438acc510adfa574ba1c32b5ef3d0685c56"
+    },
+    {
+      "path": "lib/src/api/ai.dart",
+      "sha256": "d620774e5555a8fb24f0048d95f3f31d53893acbdcdd40d3d9aa2efc346accc9"
+    },
+    {
+      "path": "lib/src/api/api.dart",
+      "sha256": "746db7138f87b20a1e4ecf615b24dfc22edae4c7d75b32583e68de70f3d46c17"
+    },
+    {
+      "path": "lib/src/api/chat.dart",
+      "sha256": "e4cf380dae90facda16d8319ed37a13448fd85a577400e8260abc48d844d2a09"
+    },
+    {
+      "path": "lib/src/api/iam.dart",
+      "sha256": "70b5ddbf29eb82f98853b74833aff3d75e45bbb906d0d7b62de8a831f57c911b"
+    },
+    {
+      "path": "lib/src/api/notification.dart",
+      "sha256": "64caaf394a15e80977b332f3a273dff253f868f4cbf372662fc1946dcb5b4f05"
+    },
+    {
+      "path": "lib/src/api/paths.dart",
+      "sha256": "fc74022b8530edc3908245114ac0c9bf5268bba34f1852dcb4ffbde5cef81be1"
+    },
+    {
+      "path": "lib/src/api/response_helpers.dart",
+      "sha256": "8295b6cc4e67bb9d54a1b0a98c4282dcf8ea0cb126835a32797dd4d2c91a4214"
+    },
+    {
+      "path": "lib/src/api/runtime.dart",
+      "sha256": "a00825548d8f8e3cf5a6fa8901b83e31d05b94d9d9bec4a7a383cfac4a93cd24"
+    },
+    {
+      "path": "lib/src/api/system.dart",
+      "sha256": "88374a9579386258fbc224339244653d09ad8bc304c1fdf518caabdd5eaf835a"
+    },
+    {
+      "path": "lib/src/http/client.dart",
+      "sha256": "c28278decf2c7456a2332dd12d708c8fc4f2bcf2b5843631d983d0dca581fcf9"
+    },
+    {
+      "path": "lib/src/models.dart",
+      "sha256": "de52d95fdce67fdbb4a6bb38d513a99db1e8e40148d9b673338d168a7fdd0b96"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "7840cc7d2b36ff364ac16c2fc5ec15b861bfe96854eecf81fb59b00edb8b1447"
+    },
+    {
+      "path": "pubspec_overrides.yaml",
+      "sha256": "5ccf90e0ffa0922f263b9e4e0c0ea7c3cc75574f10fc7ee037306bddd769e342"
+    },
+    {
+      "path": "pubspec.yaml",
+      "sha256": "f5840cd3ecd203941f0dbb2af03c7331d0639dff378f8c160797243603853ecc"
+    },
+    {
+      "path": "README.md",
+      "sha256": "09cf36381a776ca382b4605bd24fb5c2cfabf0ae51e1399314efad18dd417de5"
+    },
+    {
+      "path": "sdkwork-sdk.json",
+      "sha256": "3f03365a0dacf82ce0d0db0bb68e48ccb3659597e62d66dd614a53e8de978aeb"
+    }
+  ],
+  "scaffoldFiles": [
+    "custom/README.md"
+  ],
+  "customRoots": [
+    "custom/"
+  ]
+}

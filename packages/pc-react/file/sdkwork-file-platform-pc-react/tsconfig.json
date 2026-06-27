@@ -1,0 +1,41 @@
+{
+  "extends": "../../../../../sdkwork-appbase/tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@sdkwork/drive-pc-react": [
+        "../sdkwork-drive-pc-react/src/index.tsx"
+      ],
+      "@sdkwork/file-attachments-pc-react": [
+        "../sdkwork-file-attachments-pc-react/src/index.tsx"
+      ],
+      "@sdkwork/file-picker-pc-react": [
+        "../sdkwork-file-picker-pc-react/src/index.tsx"
+      ],
+      "@sdkwork/file-preview-pc-react": [
+        "../sdkwork-file-preview-pc-react/src/index.tsx"
+      ],
+      "@sdkwork/file-upload-pc-react": [
+        "../sdkwork-file-upload-pc-react/src/index.tsx"
+      ],
+      "@sdkwork/storage-admin-pc-react": [
+        "../sdkwork-storage-admin-pc-react/src/index.tsx"
+      ],
+      "@sdkwork/storage-usage-pc-react": [
+        "../sdkwork-storage-usage-pc-react/src/index.tsx"
+      ],
+      "react": [
+        "../../../../apps/sdkwork-clawrouter-pc/node_modules/@types/react"
+      ],
+      "react/jsx-runtime": [
+        "../../../../apps/sdkwork-clawrouter-pc/node_modules/@types/react/jsx-runtime.d.ts"
+      ]
+    },
+    "types": [],
+    "ignoreDeprecations": "5.0"
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ]
+}

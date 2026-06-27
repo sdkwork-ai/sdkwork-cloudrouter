@@ -1,0 +1,25 @@
+{
+  "name": "@sdkwork/mcp-pc-hub",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.tsx",
+  "types": "src/index.tsx",
+  "exports": {
+    ".": "./src/index.tsx"
+  },
+  "dependencies": {
+    "@sdkwork/mcp-pc-commons": "workspace:*",
+    "@sdkwork/mcp-pc-core": "workspace:*",
+    "@sdkwork/utils": "workspace:*",
+    "react": "^19.1.0",
+    "react-router-dom": "^7.6.0"
+  },
+  "sdkwork": {
+    "workspace": "sdkwork-mcp",
+    "architecture": "pc-react",
+    "domain": "intelligence",
+    "capability": "hub",
+    "status": "ready"
+  }
+}

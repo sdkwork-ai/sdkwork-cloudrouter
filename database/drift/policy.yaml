@@ -1,0 +1,54 @@
+schemaVersion: 1
+kind: sdkwork.database.drift-policy
+# Drift detection policy for sdkwork-clawrouter.
+# Aligns with sdkwork-specs/MIGRATION_SPEC.md §drift-check and
+# sdkwork-specs/SCHEMA_REGISTRY_SPEC.md §drift-policy.
+#
+# The drift checker compares the live database schema against the baseline
+# DDL (database/ddl/baseline/postgres/) and the schema registry contract
+# (database/contract/schema.yaml). Deviations are classified by severity:
+#   - critical: table missing, column dropped, index dropped
+#   - warning:  column type mismatch, index definition drift
+#   - info:     extra index added, nullable change
+rules:
+  # Tables excluded from drift comparison. These are runtime-managed tables
+  # whose schema may vary by deployment (e.g., partition maintenance tables).
+  ignoreTables:
+    - "_prisma_migrations"
+    - "schema_migrations"
+    - "flyway_schema_history"
+
+  # Columns excluded from drift comparison (table.column notation).
+  ignoreColumns:
+    # Partitioned tables: default partitions are managed by retention jobs.
+    - "ai_request_trace_default.*"
+    - "ai_routing_decision_log_default.*"
+    - "ai_usage_fact_default.*"
+    - "ai_usage_service_provider_edge_default.*"
+    - "ops_audit_log_default.*"
+    - "ops_gateway_heartbeat_default.*"
+    - "iam_user_login_event_default.*"
+    - "integration_provider_health_snapshot_default.*"
+
+  # Indexes excluded from drift comparison (auto-created by query planner).
+  ignoreIndexes: []
+
+  # Severity overrides for specific drift patterns.
+  severityOverrides:
+    # Missing partition tables on partitioned parents are critical (data loss risk).
+    "missing_partition_table": critical
+    # Extra indexes are acceptable (performance optimization).
+    "extra_index": info
+    # Column default changes require review but are not blocking.
+    "column_default_mismatch": warning
+    # Nullable constraint changes are warnings.
+    "nullable_mismatch": warning
+
+  # Enforcement mode: strict (fail drift-check on any non-ignored deviation).
+  enforcement: strict
+
+  # Auto-remediation: never auto-apply schema changes; always require human review.
+  autoRemediate: false
+
+  # Drift check cadence (seconds). Aligns with database.manifest.json lifecycle.driftCheckIntervalSec.
+  checkIntervalSec: 60

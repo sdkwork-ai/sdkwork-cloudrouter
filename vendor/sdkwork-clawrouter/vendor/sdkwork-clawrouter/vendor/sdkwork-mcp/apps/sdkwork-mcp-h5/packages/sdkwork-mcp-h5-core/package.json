@@ -1,0 +1,32 @@
+{
+  "name": "@sdkwork/mcp-h5-core",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./sdk": "./src/sdk/index.ts",
+    "./sdk/mcpAppSdkClient": "./src/sdk/mcpAppSdkClient.ts",
+    "./modules": "./src/modules/index.ts",
+    "./host": "./src/host/index.ts",
+    "./session": "./src/session/index.ts",
+    "./composition": "./src/composition/index.ts",
+    "./services": "./src/services/index.ts"
+  },
+  "dependencies": {
+    "@sdkwork/utils": "workspace:*",
+    "sdkwork-mcp-app-sdk-generated-typescript": "workspace:*",
+    "@sdkwork/iam-contracts": "workspace:*",
+    "@sdkwork/sdk-common": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.2.0 <20.0.0"
+  },
+  "sdkwork": {
+    "workspace": "sdkwork-mcp",
+    "architecture": "h5-core",
+    "domain": "intelligence",
+    "capability": "core",
+    "status": "ready"
+  }
+}

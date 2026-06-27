@@ -1,0 +1,89 @@
+fragment: operations/backend-commerce-wallet
+frontend_operations:
+- route: /admin/wallet
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-wallet/src/walletService.ts
+  operation: backendRechargesOrdersList
+  operation_id: recharges.orders.management.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/recharges/orders
+  sdk_domain: commerce
+  read_sources:
+  - ops_audit_log
+  query_parameters: []
+  response_schema:
+    name: backendRechargesOrdersListResponse
+    type: object
+    additionalProperties: true
+    properties: {}
+- route: /admin/wallet/wallet-accounts
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-wallet/src/walletService.ts
+  operation: backendWalletAccountsList
+  operation_id: wallet.accounts.management.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/wallet/accounts
+  sdk_domain: commerce
+  read_sources:
+  - ops_audit_log
+  query_parameters: []
+  response_schema:
+    name: backendWalletAccountsListResponse
+    type: object
+    additionalProperties: true
+    properties: {}
+- route: /admin/wallet
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-wallet/src/walletService.ts
+  operation: backendWalletAdjustmentsCreate
+  operation_id: wallet.adjustments.management.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/wallet/adjustments
+  sdk_domain: commerce
+  read_sources:
+  - ops_audit_log
+  query_parameters: []
+  response_schema:
+    name: backendWalletAdjustmentsCreateResponse
+    type: object
+    additionalProperties: true
+    properties: {}
+  write_tables:
+  - ops_audit_log
+- route: /admin/wallet/exchange-rules
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-wallet/src/walletService.ts
+  operation: backendWalletExchangeRulesList
+  operation_id: wallet.exchangeRules.management.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/wallet/exchange_rules
+  sdk_domain: commerce
+  read_sources:
+  - ops_audit_log
+  query_parameters: []
+  response_schema:
+    name: backendWalletExchangeRulesListResponse
+    type: object
+    additionalProperties: true
+    properties: {}
+- route: /admin/wallet/wallet-ledger
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-wallet/src/walletService.ts
+  operation: backendWalletLedgerEntriesList
+  operation_id: wallet.ledgerEntries.management.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/wallet/ledger_entries
+  sdk_domain: commerce
+  read_sources:
+  - ops_audit_log
+  query_parameters: []
+  response_schema:
+    name: backendWalletLedgerEntriesListResponse
+    type: object
+    additionalProperties: true
+    properties: {}

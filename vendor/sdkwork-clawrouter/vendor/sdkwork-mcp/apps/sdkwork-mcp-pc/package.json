@@ -1,0 +1,57 @@
+{
+  "name": "sdkwork-mcp-pc",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "node ../../../sdkwork-iam/scripts/dev/run-pc-renderer-dev-with-bootstrap.mjs -- vite",
+    "build": "vite build",
+    "test": "node --test tests/*.test.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sdkwork/iam-app-sdk": "workspace:*",
+    "@sdkwork/auth-pc-react": "workspace:*",
+    "@sdkwork/auth-runtime-pc-react": "workspace:*",
+    "@sdkwork/drive-app-sdk": "workspace:*",
+    "@sdkwork/iam-contracts": "workspace:*",
+    "@sdkwork/iam-runtime": "workspace:*",
+    "@sdkwork/runtime-bootstrap": "workspace:*",
+    "@sdkwork/mcp-pc-admin": "workspace:*",
+    "@sdkwork/mcp-pc-admin-core": "workspace:*",
+    "@sdkwork/mcp-pc-commons": "workspace:*",
+    "@sdkwork/mcp-pc-console": "workspace:*",
+    "@sdkwork/mcp-pc-core": "workspace:*",
+    "@sdkwork/mcp-pc-hub": "workspace:*",
+    "@sdkwork/mcp-pc-shell": "workspace:*",
+    "@sdkwork/sdk-common": "workspace:*",
+    "@sdkwork/utils": "workspace:*",
+    "@tailwindcss/vite": "^4.1.14",
+    "i18next": "catalog:",
+    "lucide-react": "catalog:",
+    "qrcode": "catalog:",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-i18next": "catalog:",
+    "react-router-dom": "^7.6.0",
+    "sdkwork-mcp-app-sdk-generated-typescript": "workspace:*",
+    "sdkwork-mcp-backend-sdk-generated-typescript": "workspace:*",
+    "tailwind-merge": "^3.5.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.4.1",
+    "tailwindcss": "^4.1.14",
+    "typescript": "^5.9.0",
+    "vite": "^6.3.0"
+  },
+  "sdkwork": {
+    "workspace": "sdkwork-mcp",
+    "architecture": "pc-react",
+    "domain": "intelligence",
+    "capability": "mcp",
+    "status": "ready"
+  }
+}

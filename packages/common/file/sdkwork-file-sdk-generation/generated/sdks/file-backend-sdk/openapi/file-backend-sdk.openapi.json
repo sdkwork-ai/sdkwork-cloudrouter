@@ -1,0 +1,4764 @@
+{
+  "components": {
+    "schemas": {
+      "AdminDeleteFileRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "deleteMode": {
+            "description": "Delete mode, such as trash, purge pending, or purge when policy allows it.",
+            "type": "string"
+          },
+          "dryRun": {
+            "description": "Whether to validate the delete without applying it.",
+            "type": "boolean"
+          },
+          "reason": {
+            "description": "Operator-provided governance reason.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "AdminFileDetailResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "file": {
+            "$ref": "#/components/schemas/AdminFileRecord"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "AdminFileListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminFileRecord"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "description": "Cursor for the next result page.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "AdminFileMutationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "file": {
+            "$ref": "#/components/schemas/AdminFileRecord"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "AdminFileRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "appId": {
+            "description": "Owning app id when applicable.",
+            "type": "string"
+          },
+          "businessDomain": {
+            "description": "Business domain when the file is slot-bound.",
+            "type": "string"
+          },
+          "fileId": {
+            "description": "Stable file id.",
+            "type": "string"
+          },
+          "mimeType": {
+            "description": "File MIME type.",
+            "type": "string"
+          },
+          "name": {
+            "description": "File display name.",
+            "type": "string"
+          },
+          "organizationId": {
+            "description": "Owning organization id.",
+            "type": "string"
+          },
+          "ownerUserId": {
+            "description": "Owning user id.",
+            "type": "string"
+          },
+          "sizeBytes": {
+            "description": "Logical file size in bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "status": {
+            "description": "File lifecycle status.",
+            "type": "string"
+          },
+          "visibility": {
+            "description": "File visibility.",
+            "enum": [
+              "private",
+              "restricted",
+              "shared"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "fileId",
+          "name",
+          "status",
+          "visibility"
+        ],
+        "type": "object"
+      },
+      "CreateFileSlotDefinitionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "appId": {
+            "description": "Owning app id.",
+            "type": "string"
+          },
+          "businessDomain": {
+            "description": "Business domain served by the slot.",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Operator-facing slot display name.",
+            "type": "string"
+          },
+          "idempotencyKey": {
+            "description": "Idempotency key for slot creation.",
+            "type": "string"
+          },
+          "maxFileBytes": {
+            "description": "Maximum single-file size.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "slotCode": {
+            "description": "Canonical slot code.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "appId",
+          "businessDomain",
+          "displayName",
+          "idempotencyKey",
+          "requestId",
+          "slotCode"
+        ],
+        "type": "object"
+      },
+      "CreateStorageBucketRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "bucketName": {
+            "description": "Physical provider bucket name controlled by the storage administrator.",
+            "type": "string"
+          },
+          "bucketRegion": {
+            "description": "Physical provider bucket region when it differs from the provider region.",
+            "type": "string"
+          },
+          "dataResidencyRegion": {
+            "description": "Required data residency region for this logical bucket mapping.",
+            "type": "string"
+          },
+          "defaultEncryptionMode": {
+            "description": "Default server-side encryption mode for new objects in this logical bucket.",
+            "enum": [
+              "none",
+              "sse_s3",
+              "sse_kms"
+            ],
+            "type": "string"
+          },
+          "defaultStorageClass": {
+            "description": "Default S3 storage class for new objects in this logical bucket.",
+            "enum": [
+              "STANDARD",
+              "INTELLIGENT_TIERING",
+              "STANDARD_IA",
+              "ONEZONE_IA",
+              "GLACIER_IR",
+              "GLACIER",
+              "DEEP_ARCHIVE"
+            ],
+            "type": "string"
+          },
+          "idempotencyKey": {
+            "description": "Idempotency key for storage bucket configuration creation.",
+            "type": "string"
+          },
+          "kmsKeyRef": {
+            "description": "Reference to the key-management key used when SSE-KMS is selected.",
+            "type": "string"
+          },
+          "lifecycleEnabled": {
+            "description": "Whether lifecycle policies are enabled for this logical bucket.",
+            "type": "boolean"
+          },
+          "logicalScope": {
+            "description": "Logical storage scope served by this bucket mapping.",
+            "enum": [
+              "migration_import",
+              "system_archive",
+              "system_quarantine",
+              "system_temp",
+              "system_variant",
+              "tenant_private",
+              "tenant_public_asset"
+            ],
+            "type": "string"
+          },
+          "objectKeyPrefix": {
+            "description": "Provider object-key prefix reserved for this logical bucket.",
+            "type": "string"
+          },
+          "objectLockEnabled": {
+            "description": "Whether object-lock governance is enabled for this logical bucket.",
+            "type": "boolean"
+          },
+          "providerId": {
+            "description": "Stable storage provider id.",
+            "type": "string"
+          },
+          "publicAccessBlocked": {
+            "description": "Whether public object access must be blocked for this bucket.",
+            "type": "boolean"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "versioningEnabled": {
+            "description": "Whether object versioning is enabled for this logical bucket.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "bucketName",
+          "idempotencyKey",
+          "logicalScope",
+          "providerId",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "CreateStorageGarbageCollectionJobRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "criteria": {
+            "$ref": "#/components/schemas/StorageGarbageCollectionCriteria"
+          },
+          "dryRun": {
+            "description": "Whether the job should report candidates without deleting objects.",
+            "type": "boolean"
+          },
+          "idempotencyKey": {
+            "description": "Idempotency key for garbage-collection job creation.",
+            "type": "string"
+          },
+          "jobType": {
+            "description": "Garbage-collection job type.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dryRun",
+          "idempotencyKey",
+          "jobType",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "CreateStorageProviderRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "credentialRef": {
+            "description": "Reference to the secret-managed provider credential, never the credential value itself.",
+            "type": "string"
+          },
+          "endpointUrl": {
+            "description": "S3-compatible endpoint URL when the provider requires an explicit endpoint.",
+            "type": "string"
+          },
+          "idempotencyKey": {
+            "description": "Idempotency key for storage provider configuration creation.",
+            "type": "string"
+          },
+          "pathStyleEnabled": {
+            "description": "Whether S3 path-style addressing is required for this provider.",
+            "type": "boolean"
+          },
+          "providerCode": {
+            "description": "Stable operator-defined storage provider code.",
+            "type": "string"
+          },
+          "providerType": {
+            "description": "S3-compatible storage provider type.",
+            "enum": [
+              "aws_s3",
+              "cloudflare_r2",
+              "cos_s3",
+              "local_dev_s3",
+              "minio",
+              "oss_s3",
+              "s3_compatible"
+            ],
+            "type": "string"
+          },
+          "region": {
+            "description": "Provider region or deployment locality.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "supportsLifecycle": {
+            "description": "Whether the provider supports bucket lifecycle management.",
+            "type": "boolean"
+          },
+          "supportsMultipart": {
+            "description": "Whether the provider supports multipart upload.",
+            "type": "boolean"
+          },
+          "supportsObjectLock": {
+            "description": "Whether the provider supports object-lock governance.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "credentialRef",
+          "idempotencyKey",
+          "providerCode",
+          "providerType",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "CreateStorageQuotaPolicyRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "idempotencyKey": {
+            "description": "Idempotency key for storage quota policy creation.",
+            "type": "string"
+          },
+          "quotaLimitBytes": {
+            "description": "Total quota limit in bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "scopeId": {
+            "description": "Quota scope id.",
+            "type": "string"
+          },
+          "scopeType": {
+            "description": "Quota scope type.",
+            "enum": [
+              "tenant",
+              "organization",
+              "user",
+              "space",
+              "app"
+            ],
+            "type": "string"
+          },
+          "singleFileLimitBytes": {
+            "description": "Optional single-file upload limit in bytes.",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "idempotencyKey",
+          "quotaLimitBytes",
+          "requestId",
+          "scopeId",
+          "scopeType"
+        ],
+        "type": "object"
+      },
+      "CreateStorageReconciliationRunRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "bucketId": {
+            "description": "Optional bucket id to scope reconciliation.",
+            "type": "string"
+          },
+          "dryRun": {
+            "description": "Whether the reconciliation should report findings without mutating records.",
+            "type": "boolean"
+          },
+          "idempotencyKey": {
+            "description": "Idempotency key for storage reconciliation run creation.",
+            "type": "string"
+          },
+          "providerId": {
+            "description": "Optional provider id to scope reconciliation.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "runType": {
+            "description": "Storage reconciliation run type.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dryRun",
+          "idempotencyKey",
+          "requestId",
+          "runType"
+        ],
+        "type": "object"
+      },
+      "DlpResult": {
+        "additionalProperties": false,
+        "properties": {
+          "fileId": {
+            "description": "Stable file id.",
+            "type": "string"
+          },
+          "resultId": {
+            "description": "Stable DLP result id.",
+            "type": "string"
+          },
+          "severity": {
+            "description": "DLP finding severity.",
+            "type": "string"
+          },
+          "status": {
+            "description": "DLP result status.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fileId",
+          "resultId",
+          "severity",
+          "status"
+        ],
+        "type": "object"
+      },
+      "DlpResultListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DlpResult"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "description": "Cursor for the next result page.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "DriveNode": {
+        "additionalProperties": false,
+        "properties": {
+          "depth": {
+            "description": "Node depth.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "fileId": {
+            "description": "Stable file id for file nodes.",
+            "type": "string"
+          },
+          "mimeType": {
+            "description": "Display MIME type.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Node display name.",
+            "type": "string"
+          },
+          "nodeId": {
+            "description": "Stable drive node id.",
+            "type": "string"
+          },
+          "nodeType": {
+            "description": "Drive node type.",
+            "enum": [
+              "root",
+              "folder",
+              "file",
+              "shortcut",
+              "mount",
+              "external_link"
+            ],
+            "type": "string"
+          },
+          "parentNodeId": {
+            "description": "Parent node id.",
+            "type": "string"
+          },
+          "pathSegment": {
+            "description": "Normalized path segment.",
+            "type": "string"
+          },
+          "sizeBytes": {
+            "description": "Display file size in bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "spaceId": {
+            "description": "Drive space id.",
+            "type": "string"
+          },
+          "trashed": {
+            "description": "Whether the node is in trash.",
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "description": "Last update time.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "depth",
+          "name",
+          "nodeId",
+          "nodeType",
+          "pathSegment",
+          "spaceId",
+          "trashed"
+        ],
+        "type": "object"
+      },
+      "DriveNodeListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DriveNode"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "description": "Cursor for the next result page.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "DrivePermissionEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "effect": {
+            "description": "Permission effect.",
+            "type": "string"
+          },
+          "expiresAt": {
+            "description": "Permission expiration time.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "principalId": {
+            "description": "Principal id.",
+            "type": "string"
+          },
+          "principalType": {
+            "description": "Principal type.",
+            "type": "string"
+          },
+          "role": {
+            "description": "Drive role.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "principalId",
+          "principalType",
+          "role"
+        ],
+        "type": "object"
+      },
+      "DrivePermissionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/DrivePermissionEntry"
+            },
+            "type": "array"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entries",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "DriveShareLink": {
+        "additionalProperties": false,
+        "properties": {
+          "allowDownload": {
+            "description": "Whether download is allowed.",
+            "type": "boolean"
+          },
+          "expiresAt": {
+            "description": "Share link expiration time.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "resourceId": {
+            "description": "Shared resource id.",
+            "type": "string"
+          },
+          "resourceType": {
+            "description": "Shared resource type.",
+            "type": "string"
+          },
+          "role": {
+            "description": "Share link role.",
+            "type": "string"
+          },
+          "shareLinkId": {
+            "description": "Stable share link id.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Share link status.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resourceId",
+          "resourceType",
+          "role",
+          "shareLinkId",
+          "status"
+        ],
+        "type": "object"
+      },
+      "DriveShareLinkListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DriveShareLink"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "description": "Cursor for the next result page.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "DriveShareLinkMutationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "shareLink": {
+            "$ref": "#/components/schemas/DriveShareLink"
+          }
+        },
+        "required": [
+          "requestId",
+          "shareLink"
+        ],
+        "type": "object"
+      },
+      "DriveSpace": {
+        "additionalProperties": false,
+        "properties": {
+          "appId": {
+            "description": "Owning app id for app drive spaces.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Drive space display name.",
+            "type": "string"
+          },
+          "organizationId": {
+            "description": "Owning organization id.",
+            "type": "string"
+          },
+          "ownerUserId": {
+            "description": "Owning user id.",
+            "type": "string"
+          },
+          "rootNodeId": {
+            "description": "Root node id.",
+            "type": "string"
+          },
+          "spaceId": {
+            "description": "Stable drive space id.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Drive space status.",
+            "enum": [
+              "active",
+              "archived",
+              "disabled"
+            ],
+            "type": "string"
+          },
+          "type": {
+            "description": "Drive space type.",
+            "enum": [
+              "user_drive",
+              "organization_drive",
+              "team_drive",
+              "project_drive",
+              "app_drive",
+              "system_library",
+              "shared_drive",
+              "trash_space"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "spaceId",
+          "status",
+          "type"
+        ],
+        "type": "object"
+      },
+      "DriveSpaceListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DriveSpace"
+            },
+            "type": "array"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "FileAccessLog": {
+        "additionalProperties": false,
+        "properties": {
+          "accessLogId": {
+            "description": "Stable access log id.",
+            "type": "string"
+          },
+          "actorId": {
+            "description": "Actor id.",
+            "type": "string"
+          },
+          "eventType": {
+            "description": "Access event type.",
+            "type": "string"
+          },
+          "fileId": {
+            "description": "Stable file id.",
+            "type": "string"
+          },
+          "occurredAt": {
+            "description": "Access event time.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "accessLogId",
+          "eventType",
+          "fileId",
+          "occurredAt"
+        ],
+        "type": "object"
+      },
+      "FileAccessLogListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FileAccessLog"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "description": "Cursor for the next result page.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "FileAuditLog": {
+        "additionalProperties": false,
+        "properties": {
+          "actorId": {
+            "description": "Actor id.",
+            "type": "string"
+          },
+          "auditLogId": {
+            "description": "Stable audit log id.",
+            "type": "string"
+          },
+          "eventType": {
+            "description": "Audit event type.",
+            "type": "string"
+          },
+          "occurredAt": {
+            "description": "Audit event time.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "resourceId": {
+            "description": "Audited resource id.",
+            "type": "string"
+          },
+          "resourceType": {
+            "description": "Audited resource type.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "auditLogId",
+          "eventType",
+          "occurredAt",
+          "resourceId",
+          "resourceType"
+        ],
+        "type": "object"
+      },
+      "FileAuditLogListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FileAuditLog"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "description": "Cursor for the next result page.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "FileBindingListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FileRef"
+            },
+            "type": "array"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "FileRef": {
+        "additionalProperties": false,
+        "properties": {
+          "bindingId": {
+            "description": "Stable business binding id.",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Display name.",
+            "type": "string"
+          },
+          "fileId": {
+            "description": "Stable file id.",
+            "type": "string"
+          },
+          "purpose": {
+            "description": "File slot code.",
+            "type": "string"
+          },
+          "versionId": {
+            "description": "Stable file version id.",
+            "type": "string"
+          },
+          "visibility": {
+            "description": "File visibility.",
+            "enum": [
+              "private",
+              "restricted",
+              "shared"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "fileId",
+          "purpose",
+          "visibility"
+        ],
+        "type": "object"
+      },
+      "FileSlotDefinition": {
+        "additionalProperties": false,
+        "properties": {
+          "appId": {
+            "description": "Owning app id.",
+            "type": "string"
+          },
+          "businessDomain": {
+            "description": "Business domain served by the slot.",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Operator-facing slot display name.",
+            "type": "string"
+          },
+          "maxFileBytes": {
+            "description": "Maximum single-file size.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "slotCode": {
+            "description": "Canonical slot code.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Slot status.",
+            "enum": [
+              "active",
+              "disabled",
+              "draft"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "appId",
+          "businessDomain",
+          "displayName",
+          "slotCode",
+          "status"
+        ],
+        "type": "object"
+      },
+      "FileSlotDefinitionListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FileSlotDefinition"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "description": "Cursor for the next result page.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "FileSlotDefinitionMutationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "slot": {
+            "$ref": "#/components/schemas/FileSlotDefinition"
+          }
+        },
+        "required": [
+          "requestId",
+          "slot"
+        ],
+        "type": "object"
+      },
+      "FileVersionListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FileVersionRef"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "description": "Cursor for the next result page.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "FileVersionRef": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "description": "Version creation time.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "fileId": {
+            "description": "Stable file id.",
+            "type": "string"
+          },
+          "sizeBytes": {
+            "description": "Version logical size in bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "status": {
+            "description": "File version status.",
+            "type": "string"
+          },
+          "versionId": {
+            "description": "Stable file version id.",
+            "type": "string"
+          },
+          "versionNo": {
+            "description": "Monotonic version number.",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "fileId",
+          "sizeBytes",
+          "status",
+          "versionId",
+          "versionNo"
+        ],
+        "type": "object"
+      },
+      "LockFileRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "description": "Operator-provided lock reason.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "RestoreFileRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "description": "Operator-provided restore reason.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "RetrySecurityScanRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "description": "Operator-provided retry reason.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "RevokeDriveShareLinkRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "description": "Operator-provided revocation reason.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "SecurityScan": {
+        "additionalProperties": false,
+        "properties": {
+          "completedAt": {
+            "description": "Scan completion time.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "fileId": {
+            "description": "Stable file id.",
+            "type": "string"
+          },
+          "scanId": {
+            "description": "Stable scan id.",
+            "type": "string"
+          },
+          "scanType": {
+            "description": "Security scan type.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Security scan status.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fileId",
+          "scanId",
+          "scanType",
+          "status"
+        ],
+        "type": "object"
+      },
+      "SecurityScanListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SecurityScan"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "description": "Cursor for the next result page.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "SecurityScanMutationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "scan": {
+            "$ref": "#/components/schemas/SecurityScan"
+          }
+        },
+        "required": [
+          "requestId",
+          "scan"
+        ],
+        "type": "object"
+      },
+      "SetStorageDefaultBucketRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "bucketId": {
+            "description": "Stable active logical bucket mapping id to use as the default for the route logical scope.",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Operator-provided reason for changing the default storage bucket policy.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bucketId",
+          "reason",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "StorageBucketConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "bucketId": {
+            "description": "Stable logical bucket mapping id.",
+            "type": "string"
+          },
+          "bucketName": {
+            "description": "Physical provider bucket name visible only to storage administrators.",
+            "type": "string"
+          },
+          "bucketRegion": {
+            "description": "Physical provider bucket region when it differs from the provider region.",
+            "type": "string"
+          },
+          "dataResidencyRegion": {
+            "description": "Data residency region for this logical bucket mapping.",
+            "type": "string"
+          },
+          "defaultEncryptionMode": {
+            "description": "Default server-side encryption mode for new objects in this logical bucket.",
+            "enum": [
+              "none",
+              "sse_s3",
+              "sse_kms"
+            ],
+            "type": "string"
+          },
+          "defaultStorageClass": {
+            "description": "Default S3 storage class for new objects in this logical bucket.",
+            "enum": [
+              "STANDARD",
+              "INTELLIGENT_TIERING",
+              "STANDARD_IA",
+              "ONEZONE_IA",
+              "GLACIER_IR",
+              "GLACIER",
+              "DEEP_ARCHIVE"
+            ],
+            "type": "string"
+          },
+          "kmsKeyRef": {
+            "description": "Reference to the key-management key used when SSE-KMS is selected.",
+            "type": "string"
+          },
+          "lifecycleEnabled": {
+            "description": "Whether lifecycle policies are enabled for this logical bucket.",
+            "type": "boolean"
+          },
+          "logicalScope": {
+            "description": "Logical storage scope served by this bucket mapping.",
+            "enum": [
+              "migration_import",
+              "system_archive",
+              "system_quarantine",
+              "system_temp",
+              "system_variant",
+              "tenant_private",
+              "tenant_public_asset"
+            ],
+            "type": "string"
+          },
+          "objectKeyPrefix": {
+            "description": "Provider object-key prefix reserved for this logical bucket.",
+            "type": "string"
+          },
+          "objectLockEnabled": {
+            "description": "Whether object-lock governance is enabled for this logical bucket.",
+            "type": "boolean"
+          },
+          "providerId": {
+            "description": "Stable storage provider id.",
+            "type": "string"
+          },
+          "publicAccessBlocked": {
+            "description": "Whether public object access must be blocked for this bucket.",
+            "type": "boolean"
+          },
+          "status": {
+            "description": "Bucket mapping status.",
+            "enum": [
+              "active",
+              "archived",
+              "disabled"
+            ],
+            "type": "string"
+          },
+          "versioningEnabled": {
+            "description": "Whether object versioning is enabled for this logical bucket.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "bucketId",
+          "bucketName",
+          "logicalScope",
+          "providerId",
+          "status"
+        ],
+        "type": "object"
+      },
+      "StorageBucketListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StorageBucketConfig"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "description": "Cursor for the next result page.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "StorageBucketMutationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "bucket": {
+            "$ref": "#/components/schemas/StorageBucketConfig"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bucket",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "StorageDefaultBucketConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "bucketId": {
+            "description": "Stable logical bucket mapping id selected as default for the logical scope.",
+            "type": "string"
+          },
+          "bucketName": {
+            "description": "Physical provider bucket name visible only to storage administrators.",
+            "type": "string"
+          },
+          "dataResidencyRegion": {
+            "description": "Data residency region for this logical bucket mapping.",
+            "type": "string"
+          },
+          "logicalScope": {
+            "description": "Logical storage scope served by this default bucket policy.",
+            "enum": [
+              "migration_import",
+              "system_archive",
+              "system_quarantine",
+              "system_temp",
+              "system_variant",
+              "tenant_private",
+              "tenant_public_asset"
+            ],
+            "type": "string"
+          },
+          "providerCode": {
+            "description": "Stable operator-defined storage provider code.",
+            "type": "string"
+          },
+          "providerId": {
+            "description": "Stable storage provider id resolved from the selected bucket.",
+            "type": "string"
+          },
+          "providerType": {
+            "description": "S3-compatible storage provider type.",
+            "enum": [
+              "aws_s3",
+              "cloudflare_r2",
+              "cos_s3",
+              "local_dev_s3",
+              "minio",
+              "oss_s3",
+              "s3_compatible"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "description": "Default bucket policy status.",
+            "enum": [
+              "active",
+              "archived",
+              "disabled"
+            ],
+            "type": "string"
+          },
+          "updatedAt": {
+            "description": "Last default policy update time.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bucketId",
+          "bucketName",
+          "logicalScope",
+          "providerCode",
+          "providerId",
+          "providerType",
+          "status"
+        ],
+        "type": "object"
+      },
+      "StorageDefaultBucketListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StorageDefaultBucketConfig"
+            },
+            "type": "array"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "StorageDefaultBucketMutationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "defaultBucket": {
+            "$ref": "#/components/schemas/StorageDefaultBucketConfig"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "defaultBucket",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "StorageGarbageCollectionCriteria": {
+        "additionalProperties": false,
+        "properties": {
+          "bucketId": {
+            "description": "Optional bucket id that limits garbage-collection candidates.",
+            "type": "string"
+          },
+          "maxObjects": {
+            "description": "Maximum number of objects to inspect or delete in this job.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "objectStatus": {
+            "description": "Object lifecycle status filter for garbage-collection candidates.",
+            "type": "string"
+          },
+          "olderThan": {
+            "description": "Only select candidates older than this timestamp.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "providerId": {
+            "description": "Optional provider id that limits garbage-collection candidates.",
+            "type": "string"
+          },
+          "reasonCode": {
+            "description": "Standardized reason code for the garbage-collection selection policy.",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "StorageGarbageCollectionJob": {
+        "additionalProperties": false,
+        "properties": {
+          "completedAt": {
+            "description": "Completion time when the job is finished.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "Creation time.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "dryRun": {
+            "description": "Whether the job reports candidates without deleting objects.",
+            "type": "boolean"
+          },
+          "jobId": {
+            "description": "Stable garbage-collection job id.",
+            "type": "string"
+          },
+          "jobType": {
+            "description": "Garbage-collection job type.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Garbage-collection job status.",
+            "enum": [
+              "canceled",
+              "completed",
+              "created",
+              "failed",
+              "running"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "dryRun",
+          "jobId",
+          "jobType",
+          "status"
+        ],
+        "type": "object"
+      },
+      "StorageGarbageCollectionJobMutationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "job": {
+            "$ref": "#/components/schemas/StorageGarbageCollectionJob"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "StorageOverview": {
+        "additionalProperties": false,
+        "properties": {
+          "failedUploadCount": {
+            "description": "Number of failed uploads in the observed window.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "providerCount": {
+            "description": "Configured storage provider count.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "totalBillableBytes": {
+            "description": "Total billable bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "totalLogicalBytes": {
+            "description": "Total logical bytes.",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "providerCount",
+          "requestId",
+          "totalBillableBytes",
+          "totalLogicalBytes"
+        ],
+        "type": "object"
+      },
+      "StorageProviderConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "credentialRef": {
+            "description": "Reference to secret-managed provider credential, never the credential value itself.",
+            "type": "string"
+          },
+          "endpointUrl": {
+            "description": "S3-compatible endpoint URL when the provider requires an explicit endpoint.",
+            "type": "string"
+          },
+          "pathStyleEnabled": {
+            "description": "Whether S3 path-style addressing is required for this provider.",
+            "type": "boolean"
+          },
+          "providerCode": {
+            "description": "Stable operator-defined storage provider code.",
+            "type": "string"
+          },
+          "providerId": {
+            "description": "Stable storage provider id.",
+            "type": "string"
+          },
+          "providerType": {
+            "description": "S3-compatible storage provider type.",
+            "enum": [
+              "aws_s3",
+              "cloudflare_r2",
+              "cos_s3",
+              "local_dev_s3",
+              "minio",
+              "oss_s3",
+              "s3_compatible"
+            ],
+            "type": "string"
+          },
+          "region": {
+            "description": "Provider region or deployment locality.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Provider configuration status.",
+            "enum": [
+              "active",
+              "archived",
+              "disabled"
+            ],
+            "type": "string"
+          },
+          "supportsLifecycle": {
+            "description": "Whether the provider supports bucket lifecycle management.",
+            "type": "boolean"
+          },
+          "supportsMultipart": {
+            "description": "Whether the provider supports multipart upload.",
+            "type": "boolean"
+          },
+          "supportsObjectLock": {
+            "description": "Whether the provider supports object-lock governance.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "providerCode",
+          "providerId",
+          "providerType",
+          "status"
+        ],
+        "type": "object"
+      },
+      "StorageProviderHealthCheckRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "StorageProviderHealthCheckResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "checkedAt": {
+            "description": "Health check time.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "healthy": {
+            "description": "Whether the provider is currently healthy.",
+            "type": "boolean"
+          },
+          "providerId": {
+            "description": "Stable storage provider id.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Provider health status.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "healthy",
+          "providerId",
+          "requestId",
+          "status"
+        ],
+        "type": "object"
+      },
+      "StorageProviderListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StorageProviderConfig"
+            },
+            "type": "array"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "StorageProviderMutationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/StorageProviderConfig"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "StorageQuotaPolicy": {
+        "additionalProperties": false,
+        "properties": {
+          "quotaLimitBytes": {
+            "description": "Total quota limit in bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "quotaPolicyId": {
+            "description": "Stable quota policy id.",
+            "type": "string"
+          },
+          "scopeId": {
+            "description": "Quota scope id.",
+            "type": "string"
+          },
+          "scopeType": {
+            "description": "Quota scope type.",
+            "enum": [
+              "tenant",
+              "organization",
+              "user",
+              "space",
+              "app"
+            ],
+            "type": "string"
+          },
+          "singleFileLimitBytes": {
+            "description": "Optional single-file upload limit in bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "status": {
+            "description": "Quota policy status.",
+            "enum": [
+              "active",
+              "archived",
+              "disabled"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "quotaLimitBytes",
+          "quotaPolicyId",
+          "scopeId",
+          "scopeType",
+          "status"
+        ],
+        "type": "object"
+      },
+      "StorageQuotaPolicyListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StorageQuotaPolicy"
+            },
+            "type": "array"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "StorageQuotaPolicyMutationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "quotaPolicy": {
+            "$ref": "#/components/schemas/StorageQuotaPolicy"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "quotaPolicy",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "StorageReconciliationRun": {
+        "additionalProperties": false,
+        "properties": {
+          "bucketId": {
+            "description": "Optional bucket id scoped by the reconciliation run.",
+            "type": "string"
+          },
+          "completedAt": {
+            "description": "Completion time when the run is finished.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "dryRun": {
+            "description": "Whether the run reports findings without mutating records.",
+            "type": "boolean"
+          },
+          "providerId": {
+            "description": "Optional provider id scoped by the reconciliation run.",
+            "type": "string"
+          },
+          "runId": {
+            "description": "Stable reconciliation run id.",
+            "type": "string"
+          },
+          "runType": {
+            "description": "Storage reconciliation run type.",
+            "type": "string"
+          },
+          "startedAt": {
+            "description": "Run start time.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "description": "Storage reconciliation run status.",
+            "enum": [
+              "canceled",
+              "completed",
+              "created",
+              "failed",
+              "running"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "dryRun",
+          "runId",
+          "runType",
+          "status"
+        ],
+        "type": "object"
+      },
+      "StorageReconciliationRunListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StorageReconciliationRun"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "description": "Cursor for the next result page.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "StorageReconciliationRunMutationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "reconciliationRun": {
+            "$ref": "#/components/schemas/StorageReconciliationRun"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reconciliationRun",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "StorageUsageCounter": {
+        "additionalProperties": false,
+        "properties": {
+          "fileCount": {
+            "description": "Number of files.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "objectCount": {
+            "description": "Number of objects.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "retainedBytes": {
+            "description": "Retained bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "scopeId": {
+            "description": "Usage scope id.",
+            "type": "string"
+          },
+          "scopeType": {
+            "description": "Usage scope type.",
+            "enum": [
+              "tenant",
+              "organization",
+              "user",
+              "space",
+              "app",
+              "business_domain"
+            ],
+            "type": "string"
+          },
+          "trashBytes": {
+            "description": "Trash bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "usedBillableBytes": {
+            "description": "Billable bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "usedLogicalBytes": {
+            "description": "Logical bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "usedPhysicalBytes": {
+            "description": "Physical bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "variantBytes": {
+            "description": "Variant bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "versionCount": {
+            "description": "Number of versions.",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "scopeId",
+          "scopeType",
+          "usedBillableBytes",
+          "usedLogicalBytes",
+          "usedPhysicalBytes"
+        ],
+        "type": "object"
+      },
+      "StorageUsageCounterListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StorageUsageCounter"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "description": "Cursor for the next result page.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "StorageUsageLedgerEvent": {
+        "additionalProperties": false,
+        "properties": {
+          "deltaBillableBytes": {
+            "description": "Billable byte delta.",
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "deltaLogicalBytes": {
+            "description": "Logical byte delta.",
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "eventId": {
+            "description": "Stable usage ledger event id.",
+            "type": "string"
+          },
+          "fileId": {
+            "description": "Stable file id associated with this event when applicable.",
+            "type": "string"
+          },
+          "idempotencyKey": {
+            "description": "Idempotency key that protects usage accounting from double application.",
+            "type": "string"
+          },
+          "occurredAt": {
+            "description": "Ledger event occurrence time.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "scopeId": {
+            "description": "Usage scope id.",
+            "type": "string"
+          },
+          "scopeType": {
+            "description": "Usage scope type.",
+            "enum": [
+              "tenant",
+              "organization",
+              "user",
+              "space",
+              "app",
+              "business_domain"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "deltaBillableBytes",
+          "deltaLogicalBytes",
+          "eventId",
+          "idempotencyKey",
+          "occurredAt",
+          "scopeId",
+          "scopeType"
+        ],
+        "type": "object"
+      },
+      "StorageUsageLedgerListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StorageUsageLedgerEvent"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "description": "Cursor for the next result page.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "StorageUsageSnapshotListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StorageUsageSnapshotRecord"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "description": "Cursor for the next result page.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Request id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "StorageUsageSnapshotRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "fileCount": {
+            "description": "Number of files.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "objectCount": {
+            "description": "Number of objects.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "periodEndAt": {
+            "description": "Snapshot period end.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "periodStartAt": {
+            "description": "Snapshot period start.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "quotaLimitBytes": {
+            "description": "Quota limit in bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "retainedBytes": {
+            "description": "Retained bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "scopeId": {
+            "description": "Usage scope id.",
+            "type": "string"
+          },
+          "scopeType": {
+            "description": "Usage scope type.",
+            "enum": [
+              "tenant",
+              "organization",
+              "user",
+              "space",
+              "app",
+              "business_domain"
+            ],
+            "type": "string"
+          },
+          "snapshotType": {
+            "description": "Snapshot cadence or type.",
+            "type": "string"
+          },
+          "trashBytes": {
+            "description": "Trash bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "usedBillableBytes": {
+            "description": "Billable bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "usedLogicalBytes": {
+            "description": "Logical bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "usedPhysicalBytes": {
+            "description": "Physical bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "variantBytes": {
+            "description": "Variant bytes.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "versionCount": {
+            "description": "Number of versions.",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "fileCount",
+          "objectCount",
+          "periodStartAt",
+          "scopeId",
+          "scopeType",
+          "snapshotType",
+          "usedBillableBytes",
+          "usedLogicalBytes",
+          "usedPhysicalBytes"
+        ],
+        "type": "object"
+      },
+      "UnlockFileRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "description": "Operator-provided unlock reason.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "UpdateDrivePermissionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/DrivePermissionEntry"
+            },
+            "type": "array"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entries",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "UpdateDriveShareLinkRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "allowDownload": {
+            "description": "Whether download is allowed.",
+            "type": "boolean"
+          },
+          "expiresAt": {
+            "description": "Share link expiration time.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "role": {
+            "description": "Share link role.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Share link status.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "UpdateFileSlotDefinitionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "displayName": {
+            "description": "Operator-facing slot display name.",
+            "type": "string"
+          },
+          "maxFileBytes": {
+            "description": "Maximum single-file size.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Slot status.",
+            "enum": [
+              "active",
+              "disabled",
+              "draft"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "UpdateStorageBucketRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "description": "Operator-provided reason for changing bucket governance status.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Next bucket governance status.",
+            "enum": [
+              "active",
+              "archived",
+              "disabled"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason",
+          "requestId",
+          "status"
+        ],
+        "type": "object"
+      },
+      "UpdateStorageProviderRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "description": "Operator-provided reason for changing provider governance status.",
+            "type": "string"
+          },
+          "requestId": {
+            "description": "Client request id for tracing.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Next provider governance status.",
+            "enum": [
+              "active",
+              "archived",
+              "disabled"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason",
+          "requestId",
+          "status"
+        ],
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "SDKWork File Backend API",
+    "version": "2026.05.file-platform.api.v1"
+  },
+  "openapi": "3.1.2",
+  "paths": {
+    "/backend/v3/api/drive/nodes/{nodeId}/permissions": {
+      "get": {
+        "description": "Inspect effective and explicit drive permissions.",
+        "operationId": "drive.permissions.retrieve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "nodeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DrivePermissionResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Get drive permissions",
+        "tags": [
+          "drive"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "drive.permissions.retrieve",
+          "scope": "file-platform-admin"
+        }
+      },
+      "patch": {
+        "description": "Update drive node permissions.",
+        "operationId": "drive.permissions.update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "nodeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDrivePermissionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DrivePermissionResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Update drive permissions",
+        "tags": [
+          "drive"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "drive.permissions.update",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/drive/share_links": {
+      "get": {
+        "description": "List drive share links.",
+        "operationId": "drive.shareLinks.list",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveShareLinkListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List share links",
+        "tags": [
+          "drive"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "drive.shareLinks.list",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/drive/share_links/{shareLinkId}": {
+      "patch": {
+        "description": "Update a drive share link policy.",
+        "operationId": "drive.shareLinks.update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "shareLinkId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDriveShareLinkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveShareLinkMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Update share link",
+        "tags": [
+          "drive"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "drive.shareLinks.update",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/drive/share_links/{shareLinkId}/revoke": {
+      "post": {
+        "description": "Revoke a drive share link.",
+        "operationId": "drive.shareLinks.revoke",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "shareLinkId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeDriveShareLinkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveShareLinkMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Revoke share link",
+        "tags": [
+          "drive"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "drive.shareLinks.revoke",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/drive/spaces": {
+      "get": {
+        "description": "List drive spaces across administrative scope.",
+        "operationId": "admin.drive.spaces.list",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveSpaceListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List drive spaces",
+        "tags": [
+          "drive"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "admin.drive.spaces.list",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/drive/spaces/{spaceId}/nodes": {
+      "get": {
+        "description": "List drive nodes in a space.",
+        "operationId": "admin.drive.nodes.list",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "spaceId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveNodeListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List drive nodes",
+        "tags": [
+          "drive"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "admin.drive.nodes.list",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/file_slots": {
+      "get": {
+        "description": "List business file slot definitions.",
+        "operationId": "fileSlots.list",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileSlotDefinitionListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List file slots",
+        "tags": [
+          "fileSlots"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "fileSlots.list",
+          "scope": "file-platform-admin"
+        }
+      },
+      "post": {
+        "description": "Create a business file slot definition.",
+        "operationId": "fileSlots.create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFileSlotDefinitionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileSlotDefinitionMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Create file slot",
+        "tags": [
+          "fileSlots"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "fileSlots.create",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/file_slots/{slotCode}": {
+      "patch": {
+        "description": "Update a business file slot definition.",
+        "operationId": "fileSlots.update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slotCode",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFileSlotDefinitionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileSlotDefinitionMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Update file slot",
+        "tags": [
+          "fileSlots"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "fileSlots.update",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/files": {
+      "get": {
+        "description": "List files for administration and investigation.",
+        "operationId": "admin.files.list",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminFileListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List files",
+        "tags": [
+          "files"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "admin.files.list",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/files/{fileId}": {
+      "delete": {
+        "description": "Delete or purge a file according to governance policy.",
+        "operationId": "admin.files.delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fileId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminDeleteFileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminFileMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Delete file",
+        "tags": [
+          "files"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "admin.files.delete",
+          "scope": "file-platform-admin"
+        }
+      },
+      "get": {
+        "description": "Read file detail for administration.",
+        "operationId": "admin.files.retrieve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fileId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminFileDetailResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Get file",
+        "tags": [
+          "files"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "admin.files.retrieve",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/files/{fileId}/access_logs": {
+      "get": {
+        "description": "List file access logs for investigation.",
+        "operationId": "files.accessLogs.list",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fileId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileAccessLogListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List file access logs",
+        "tags": [
+          "audit"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "files.accessLogs.list",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/files/{fileId}/bindings": {
+      "get": {
+        "description": "List business bindings for a file.",
+        "operationId": "files.bindings.list",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fileId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileBindingListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List file bindings",
+        "tags": [
+          "files"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "files.bindings.list",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/files/{fileId}/lock": {
+      "post": {
+        "description": "Lock a file for governance.",
+        "operationId": "files.lock",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fileId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LockFileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminFileMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Lock file",
+        "tags": [
+          "files"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "files.lock",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/files/{fileId}/restore": {
+      "post": {
+        "description": "Restore a file from trash or purge pending state.",
+        "operationId": "files.restore",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fileId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreFileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminFileMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Restore file",
+        "tags": [
+          "files"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "files.restore",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/files/{fileId}/unlock": {
+      "post": {
+        "description": "Unlock a file for governance.",
+        "operationId": "files.unlock",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fileId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnlockFileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminFileMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Unlock file",
+        "tags": [
+          "files"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "files.unlock",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/files/{fileId}/versions": {
+      "get": {
+        "description": "List file versions for administration.",
+        "operationId": "admin.files.versions.list",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fileId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileVersionListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List file versions",
+        "tags": [
+          "files"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "admin.files.versions.list",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/security/files/audit_logs": {
+      "get": {
+        "description": "List file platform audit logs.",
+        "operationId": "audit.fileEvents.list",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileAuditLogListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List file audit logs",
+        "tags": [
+          "audit"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "audit.fileEvents.list",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/security/files/dlp_results": {
+      "get": {
+        "description": "List file DLP findings.",
+        "operationId": "security.dlpResults.list",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DlpResultListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List DLP results",
+        "tags": [
+          "security"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "security.dlpResults.list",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/security/files/scans": {
+      "get": {
+        "description": "List file security scan results.",
+        "operationId": "security.scans.list",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecurityScanListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List security scans",
+        "tags": [
+          "security"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "security.scans.list",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/security/files/scans/{scanId}/retry": {
+      "post": {
+        "description": "Retry a file security scan.",
+        "operationId": "security.scans.retry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "scanId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetrySecurityScanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecurityScanMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Retry security scan",
+        "tags": [
+          "security"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "security.scans.retry",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/storage/buckets": {
+      "get": {
+        "description": "List logical bucket mappings.",
+        "operationId": "oss.buckets.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "requestId",
+            "required": true,
+            "schema": {
+              "description": "Client request id for tracing.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "description": "Pagination cursor.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "Page size.",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "logicalScope",
+            "required": false,
+            "schema": {
+              "description": "Logical bucket scope filter.",
+              "enum": [
+                "migration_import",
+                "system_archive",
+                "system_quarantine",
+                "system_temp",
+                "system_variant",
+                "tenant_private",
+                "tenant_public_asset"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "providerId",
+            "required": false,
+            "schema": {
+              "description": "Storage provider id filter.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "description": "Bucket mapping status filter.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageBucketListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List storage buckets",
+        "tags": [
+          "oss"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "oss.buckets.list",
+          "scope": "file-platform-admin"
+        }
+      },
+      "post": {
+        "description": "Create a logical bucket mapping.",
+        "operationId": "oss.buckets.create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStorageBucketRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageBucketMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Create storage bucket",
+        "tags": [
+          "oss"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "oss.buckets.create",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/storage/buckets/{bucketId}": {
+      "patch": {
+        "description": "Update logical bucket governance state.",
+        "operationId": "oss.buckets.update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bucketId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStorageBucketRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageBucketMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Update storage bucket",
+        "tags": [
+          "oss"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "oss.buckets.update",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/storage/default_buckets": {
+      "get": {
+        "description": "List default logical bucket policies used by upload routing.",
+        "operationId": "oss.defaultBuckets.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "requestId",
+            "required": true,
+            "schema": {
+              "description": "Client request id for tracing.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "logicalScope",
+            "required": false,
+            "schema": {
+              "description": "Logical bucket scope filter.",
+              "enum": [
+                "migration_import",
+                "system_archive",
+                "system_quarantine",
+                "system_temp",
+                "system_variant",
+                "tenant_private",
+                "tenant_public_asset"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageDefaultBucketListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List default storage buckets",
+        "tags": [
+          "oss"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "oss.defaultBuckets.list",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/storage/default_buckets/{logicalScope}": {
+      "patch": {
+        "description": "Set the default bucket policy for one logical storage scope. The selected bucket must be an active logical bucket attached to an active storage provider.",
+        "operationId": "oss.defaultBuckets.update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "logicalScope",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetStorageDefaultBucketRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageDefaultBucketMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Set default storage bucket",
+        "tags": [
+          "oss"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "oss.defaultBuckets.update",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/storage/gc_jobs": {
+      "post": {
+        "description": "Create a storage garbage collection job.",
+        "operationId": "oss.gcJobs.create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStorageGarbageCollectionJobRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageGarbageCollectionJobMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Create garbage collection job",
+        "tags": [
+          "oss"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "oss.gcJobs.create",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/storage/overview": {
+      "get": {
+        "description": "Read storage platform usage, health, failure, and reconciliation overview.",
+        "operationId": "oss.overview.retrieve",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageOverview"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Get storage overview",
+        "tags": [
+          "oss"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "oss.overview.retrieve",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/storage/providers": {
+      "get": {
+        "description": "List configured S3-compatible storage providers.",
+        "operationId": "oss.providers.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "requestId",
+            "required": true,
+            "schema": {
+              "description": "Client request id for tracing.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageProviderListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List storage providers",
+        "tags": [
+          "oss"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "oss.providers.list",
+          "scope": "file-platform-admin"
+        }
+      },
+      "post": {
+        "description": "Create an S3-compatible storage provider configuration.",
+        "operationId": "oss.providers.create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStorageProviderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageProviderMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Create storage provider",
+        "tags": [
+          "oss"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "oss.providers.create",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/storage/providers/{providerId}": {
+      "patch": {
+        "description": "Update storage provider governance state.",
+        "operationId": "oss.providers.update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "providerId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStorageProviderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageProviderMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Update storage provider",
+        "tags": [
+          "oss"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "oss.providers.update",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/storage/providers/{providerId}/health_check": {
+      "post": {
+        "description": "Run and audit a storage provider health check.",
+        "operationId": "oss.providers.healthChecks.create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "providerId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StorageProviderHealthCheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageProviderHealthCheckResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Run provider health check",
+        "tags": [
+          "oss"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "oss.providers.healthChecks.create",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/storage/quotas": {
+      "get": {
+        "description": "List tenant, organization, user, app, and space quota policies.",
+        "operationId": "oss.quotas.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "requestId",
+            "required": true,
+            "schema": {
+              "description": "Client request id for tracing.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageQuotaPolicyListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List quota policies",
+        "tags": [
+          "oss"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "oss.quotas.list",
+          "scope": "file-platform-admin"
+        }
+      },
+      "post": {
+        "description": "Create a quota policy.",
+        "operationId": "oss.quotas.create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStorageQuotaPolicyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageQuotaPolicyMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Create quota policy",
+        "tags": [
+          "oss"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "oss.quotas.create",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/storage/reconciliation_runs": {
+      "get": {
+        "description": "List storage reconciliation runs.",
+        "operationId": "oss.reconciliationRuns.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "requestId",
+            "required": true,
+            "schema": {
+              "description": "Client request id for tracing.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "description": "Pagination cursor.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "Page size.",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "runType",
+            "required": false,
+            "schema": {
+              "description": "Reconciliation run type filter.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "description": "Reconciliation run status filter.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageReconciliationRunListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List reconciliation runs",
+        "tags": [
+          "oss"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "oss.reconciliationRuns.list",
+          "scope": "file-platform-admin"
+        }
+      },
+      "post": {
+        "description": "Create a storage reconciliation run.",
+        "operationId": "oss.reconciliationRuns.create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStorageReconciliationRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageReconciliationRunMutationResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "Create reconciliation run",
+        "tags": [
+          "oss"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "oss.reconciliationRuns.create",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/storage/usage": {
+      "get": {
+        "description": "List storage usage counters by scope.",
+        "operationId": "oss.usage.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "requestId",
+            "required": true,
+            "schema": {
+              "description": "Client request id for tracing.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "description": "Pagination cursor.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "Page size.",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scopeType",
+            "required": false,
+            "schema": {
+              "description": "Usage scope type filter.",
+              "enum": [
+                "tenant",
+                "organization",
+                "user",
+                "space",
+                "app",
+                "business_domain"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scopeId",
+            "required": false,
+            "schema": {
+              "description": "Usage scope id filter.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageUsageCounterListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List storage usage",
+        "tags": [
+          "oss"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "oss.usage.list",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/storage/usage/ledger": {
+      "get": {
+        "description": "List append-only storage usage ledger events.",
+        "operationId": "oss.usage.ledger.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "requestId",
+            "required": true,
+            "schema": {
+              "description": "Client request id for tracing.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "description": "Pagination cursor.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "Page size.",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scopeType",
+            "required": false,
+            "schema": {
+              "description": "Usage scope type filter.",
+              "enum": [
+                "tenant",
+                "organization",
+                "user",
+                "space",
+                "app",
+                "business_domain"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scopeId",
+            "required": false,
+            "schema": {
+              "description": "Usage scope id filter.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "occurredAfter",
+            "required": false,
+            "schema": {
+              "description": "Ledger event lower time bound.",
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "occurredBefore",
+            "required": false,
+            "schema": {
+              "description": "Ledger event upper time bound.",
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageUsageLedgerListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List usage ledger",
+        "tags": [
+          "oss"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "oss.usage.ledger.list",
+          "scope": "file-platform-admin"
+        }
+      }
+    },
+    "/backend/v3/api/storage/usage/snapshots": {
+      "get": {
+        "description": "List point-in-time storage usage snapshots.",
+        "operationId": "oss.usage.snapshots.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "requestId",
+            "required": true,
+            "schema": {
+              "description": "Client request id for tracing.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "description": "Pagination cursor.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "Page size.",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scopeType",
+            "required": false,
+            "schema": {
+              "description": "Usage scope type filter.",
+              "enum": [
+                "tenant",
+                "organization",
+                "user",
+                "space",
+                "app",
+                "business_domain"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scopeId",
+            "required": false,
+            "schema": {
+              "description": "Usage scope id filter.",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "periodStartAt",
+            "required": false,
+            "schema": {
+              "description": "Snapshot period lower time bound.",
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "periodEndAt",
+            "required": false,
+            "schema": {
+              "description": "Snapshot period upper time bound.",
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "snapshotType",
+            "required": false,
+            "schema": {
+              "description": "Snapshot cadence or type filter.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageUsageSnapshotListResponse"
+                }
+              }
+            },
+            "description": "Request completed."
+          },
+          "400": {
+            "description": "Request validation failed."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "Permission denied."
+          }
+        },
+        "summary": "List usage snapshots",
+        "tags": [
+          "oss"
+        ],
+        "x-sdkwork-admin-rbac": {
+          "audit": true,
+          "permission": "oss.usage.snapshots.list",
+          "scope": "file-platform-admin"
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/backend/v3/api"
+    }
+  ],
+  "tags": [
+    {
+      "name": "files"
+    },
+    {
+      "name": "drive"
+    },
+    {
+      "name": "fileBindings"
+    },
+    {
+      "name": "storage"
+    },
+    {
+      "name": "oss"
+    },
+    {
+      "name": "fileSlots"
+    },
+    {
+      "name": "security"
+    },
+    {
+      "name": "audit"
+    }
+  ]
+}

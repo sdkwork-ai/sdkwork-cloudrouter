@@ -1,0 +1,17 @@
+fragment: models/console-settings
+frontend_models:
+- route: /console/settings
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-settings/src/settingsService.ts
+  interface: SettingsData
+  fields:
+  - language
+  - timezone
+  - webhookUrl
+  - notifications
+  - notifications.billReminder
+  - notifications.quotaWarning
+  - notifications.apiMonitor
+  data_sources:
+  - iam_user_preference
+  - integration_webhook_endpoint
+  - ops_notification_delivery

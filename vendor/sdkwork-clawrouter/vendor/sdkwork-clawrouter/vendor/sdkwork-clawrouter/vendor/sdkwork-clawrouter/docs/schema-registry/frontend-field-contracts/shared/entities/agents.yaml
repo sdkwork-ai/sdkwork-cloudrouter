@@ -1,0 +1,771 @@
+fragment: shared/entities/agents
+x_response_entities:
+  agent_policy: &id001
+    name: AgentPolicy
+    type: object
+    additionalProperties: true
+    description: Open JSON policy document validated by the agent runtime for model, tool, memory, MCP, skill, or execution settings.
+  agent_capabilities: &id003
+    name: AgentCapabilities
+    type: object
+    additionalProperties: false
+    required:
+    - memoryEnabled
+    - mcpServerCount
+    - skillBindingCount
+    properties:
+      memoryEnabled:
+        type: boolean
+      mcpServerCount:
+        type: integer
+        format: int64
+        minimum: 0
+      skillBindingCount:
+        type: integer
+        format: int64
+        minimum: 0
+  agent_version_item: &id002
+    name: AgentVersionItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - versionNo
+    - releaseStatus
+    - systemPrompt
+    - toolPolicy
+    - memoryPolicy
+    - mcpPolicy
+    - skillPolicy
+    - runtimePolicy
+    - createdAt
+    - updatedAt
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      versionNo:
+        type: integer
+        format: int64
+        minimum: 1
+      releaseStatus:
+        type: string
+        enum:
+        - draft
+        - published
+        - archived
+      model:
+        type: string
+        nullable: true
+        maxLength: 128
+      systemPrompt:
+        type: string
+        maxLength: 32768
+      toolPolicy: *id001
+      memoryPolicy: *id001
+      mcpPolicy: *id001
+      skillPolicy: *id001
+      runtimePolicy: *id001
+      createdAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+      updatedAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+  agent_item: &id004
+    name: AgentItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - ownerUserId
+    - code
+    - name
+    - description
+    - visibility
+    - status
+    - createdAt
+    - updatedAt
+    - defaultVersion
+    - capabilities
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      ownerUserId:
+        type: integer
+        format: int64
+        minimum: 1
+      code:
+        type: string
+        minLength: 1
+        maxLength: 96
+        pattern: ^[a-z0-9][a-z0-9-]{0,95}$
+      name:
+        type: string
+        minLength: 1
+        maxLength: 128
+      description:
+        type: string
+        maxLength: 1024
+      visibility:
+        type: string
+        enum:
+        - private
+        - organization
+        - public
+      status:
+        type: string
+        enum:
+        - active
+        - disabled
+      avatar:
+        $ref: '#/components/schemas/MediaResource'
+        nullable: true
+      templateSource:
+        type: string
+        nullable: true
+        maxLength: 128
+      createdAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+      updatedAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+      defaultVersion: *id002
+      capabilities: *id003
+  agent_create_request:
+    name: AgentCreateRequest
+    type: object
+    additionalProperties: false
+    required:
+    - name
+    properties:
+      name:
+        type: string
+        minLength: 1
+        maxLength: 128
+      code:
+        type: string
+        minLength: 1
+        maxLength: 96
+        pattern: ^[A-Za-z0-9._:-]+$
+      description:
+        type: string
+        maxLength: 1024
+      model:
+        type: string
+        maxLength: 128
+      systemPrompt:
+        type: string
+        maxLength: 32768
+      toolPolicy: *id001
+      memoryPolicy: *id001
+      mcpPolicy: *id001
+      skillPolicy: *id001
+      runtimePolicy: *id001
+  agent_item_response:
+    name: AgentItemResponse
+    type: object
+    additionalProperties: false
+    required:
+    - item
+    properties:
+      item: *id004
+  agent_session_item: &id005
+    name: AgentSessionItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - agentId
+    - title
+    - sessionKind
+    - sourceSurface
+    - status
+    - runCount
+    - stepCount
+    - createdAt
+    - updatedAt
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      agentId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      agentVersionId:
+        type: string
+        nullable: true
+        maxLength: 128
+      title:
+        type: string
+        minLength: 1
+        maxLength: 256
+      sessionKind:
+        type: string
+        enum:
+        - chat
+        - coding
+        - interactive
+        - task
+        - background
+        - evaluation
+      sourceSurface:
+        type: string
+        minLength: 1
+        maxLength: 64
+      status:
+        type: string
+        enum:
+        - active
+        - idle
+        - running
+        - completed
+        - failed
+        - cancelled
+        - archived
+        - deleted
+      chatConversationId:
+        type: string
+        nullable: true
+        maxLength: 128
+      memorySpaceId:
+        type: string
+        nullable: true
+        maxLength: 128
+      runtime:
+        type: string
+        nullable: true
+        maxLength: 64
+      cwd:
+        type: string
+        nullable: true
+        maxLength: 1024
+      sandboxPolicy:
+        type: string
+        nullable: true
+        maxLength: 128
+      approvalPolicy:
+        type: string
+        nullable: true
+        maxLength: 128
+      permissionMode:
+        type: string
+        nullable: true
+        maxLength: 128
+      defaultModel:
+        type: string
+        nullable: true
+        maxLength: 128
+      lastRunId:
+        type: string
+        nullable: true
+        maxLength: 128
+      lastStepId:
+        type: integer
+        format: int64
+        nullable: true
+        minimum: 0
+      lastActiveAt:
+        type: string
+        nullable: true
+        maxLength: 64
+      runCount:
+        type: integer
+        format: int64
+        minimum: 0
+      stepCount:
+        type: integer
+        format: int64
+        minimum: 0
+      toolCallCount:
+        type: integer
+        format: int64
+        minimum: 0
+      createdAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+      updatedAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+  agent_session_list_response:
+    name: AgentSessionListResponse
+    type: object
+    additionalProperties: false
+    required:
+    - items
+    properties:
+      items:
+        type: array
+        maxItems: 100
+        items: *id005
+  agent_session_response:
+    name: AgentSessionResponse
+    type: object
+    additionalProperties: false
+    required:
+    - item
+    properties:
+      item: *id005
+  agent_session_create_request:
+    name: AgentSessionCreateRequest
+    type: object
+    additionalProperties: false
+    properties:
+      agentVersionId:
+        type: string
+        maxLength: 128
+      title:
+        type: string
+        maxLength: 256
+      sessionKind:
+        type: string
+        enum:
+        - chat
+        - coding
+        - interactive
+        - task
+        - background
+        - evaluation
+      sourceSurface:
+        type: string
+        maxLength: 64
+      chatConversationId:
+        type: string
+        maxLength: 128
+      memorySpaceId:
+        type: string
+        maxLength: 128
+      runtime:
+        type: string
+        enum:
+        - claude_code
+        - gemini
+        - codex
+        - openai
+        - anthropic
+        - custom
+      cwd:
+        type: string
+        maxLength: 1024
+      sandboxPolicy:
+        type: string
+        maxLength: 128
+      approvalPolicy:
+        type: string
+        maxLength: 128
+      permissionMode:
+        type: string
+        maxLength: 128
+      defaultModel:
+        type: string
+        maxLength: 128
+      metadata:
+        type: object
+        additionalProperties: true
+  agent_run_item: &id006
+    name: AgentRunItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - agentId
+    - agentVersionId
+    - requestId
+    - status
+    - sourceSurface
+    - executionMode
+    - totalSteps
+    - createdAt
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      sessionId:
+        type: string
+        nullable: true
+        maxLength: 128
+      agentId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      agentVersionId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      requestId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      traceId:
+        type: string
+        nullable: true
+        maxLength: 128
+      status:
+        type: string
+        enum:
+        - queued
+        - running
+        - completed
+        - failed
+        - cancelled
+      sourceSurface:
+        type: string
+        minLength: 1
+        maxLength: 64
+      inputMessage:
+        type: string
+        nullable: true
+        maxLength: 262144
+      outputMessage:
+        type: string
+        nullable: true
+        maxLength: 262144
+      memorySpaceId:
+        type: string
+        nullable: true
+        maxLength: 128
+      runtime:
+        type: string
+        nullable: true
+        maxLength: 128
+      model:
+        type: string
+        nullable: true
+        maxLength: 128
+      executionMode:
+        type: string
+        minLength: 1
+        maxLength: 128
+      startedAt:
+        type: string
+        nullable: true
+        maxLength: 64
+      completedAt:
+        type: string
+        nullable: true
+        maxLength: 64
+      errorMessageMasked:
+        type: string
+        nullable: true
+        maxLength: 1024
+      totalSteps:
+        type: integer
+        format: int64
+        minimum: 0
+      inputTokens:
+        type: integer
+        format: int64
+        nullable: true
+        minimum: 0
+      outputTokens:
+        type: integer
+        format: int64
+        nullable: true
+        minimum: 0
+      cachedTokens:
+        type: integer
+        format: int64
+        nullable: true
+        minimum: 0
+      totalTokens:
+        type: integer
+        format: int64
+        nullable: true
+        minimum: 0
+      createdAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+  agent_run_list_response:
+    name: AgentRunListResponse
+    type: object
+    additionalProperties: false
+    required:
+    - items
+    properties:
+      items:
+        type: array
+        maxItems: 100
+        items: *id006
+  agent_run_response:
+    name: AgentRunResponse
+    type: object
+    additionalProperties: false
+    required:
+    - item
+    properties:
+      item: *id006
+  agent_run_create_request:
+    name: AgentRunCreateRequest
+    type: object
+    additionalProperties: false
+    required:
+    - agentId
+    - agentVersionId
+    properties:
+      agentId:
+        type: string
+        pattern: ^[1-9][0-9]*$
+        maxLength: 128
+      agentVersionId:
+        type: string
+        pattern: ^[1-9][0-9]*$
+        maxLength: 128
+      traceId:
+        type: string
+        maxLength: 128
+      sourceSurface:
+        type: string
+        maxLength: 64
+      inputMessage:
+        type: string
+        maxLength: 262144
+      memorySpaceId:
+        type: string
+        maxLength: 128
+      runtime:
+        type: string
+        maxLength: 128
+      model:
+        type: string
+        maxLength: 128
+      executionMode:
+        type: string
+        maxLength: 128
+      metadata:
+        type: object
+        additionalProperties: true
+  agent_run_complete_request:
+    name: AgentRunCompleteRequest
+    type: object
+    additionalProperties: false
+    properties:
+      status:
+        type: string
+        enum:
+        - completed
+        - failed
+        - cancelled
+      outputMessage:
+        type: string
+        maxLength: 262144
+      errorMessageMasked:
+        type: string
+        maxLength: 1024
+      usageJson: &id008
+        name: UsageSnapshot
+        type: object
+        additionalProperties: true
+        properties:
+          inputTokens:
+            type: integer
+            format: int64
+            minimum: 0
+          outputTokens:
+            type: integer
+            format: int64
+            minimum: 0
+          cachedTokens:
+            type: integer
+            format: int64
+            minimum: 0
+          totalTokens:
+            type: integer
+            format: int64
+            minimum: 0
+      metadata:
+        type: object
+        additionalProperties: true
+  agent_run_step_item: &id007
+    name: AgentRunStepItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - runId
+    - stepIndex
+    - stepType
+    - status
+    - createdAt
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      runId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      stepIndex:
+        type: integer
+        format: int64
+        minimum: 1
+      stepType:
+        type: string
+        enum:
+        - input
+        - model
+        - tool
+        - memory
+        - runtime
+        - system
+        - custom
+      status:
+        type: string
+        enum:
+        - queued
+        - running
+        - completed
+        - failed
+        - cancelled
+      title:
+        type: string
+        nullable: true
+        maxLength: 256
+      model:
+        type: string
+        nullable: true
+        maxLength: 128
+      runtimeInvocationId:
+        type: string
+        nullable: true
+        maxLength: 128
+      toolName:
+        type: string
+        nullable: true
+        maxLength: 128
+      inputTokens:
+        type: integer
+        format: int64
+        nullable: true
+        minimum: 0
+      outputTokens:
+        type: integer
+        format: int64
+        nullable: true
+        minimum: 0
+      cachedTokens:
+        type: integer
+        format: int64
+        nullable: true
+        minimum: 0
+      totalTokens:
+        type: integer
+        format: int64
+        nullable: true
+        minimum: 0
+      startedAt:
+        type: string
+        nullable: true
+        maxLength: 64
+      completedAt:
+        type: string
+        nullable: true
+        maxLength: 64
+      latencyMs:
+        type: integer
+        format: int64
+        nullable: true
+        minimum: 0
+      createdAt:
+        type: string
+        minLength: 1
+        maxLength: 64
+  agent_run_step_list_response:
+    name: AgentRunStepListResponse
+    type: object
+    additionalProperties: false
+    required:
+    - items
+    properties:
+      items:
+        type: array
+        maxItems: 100
+        items: *id007
+  agent_run_step_response:
+    name: AgentRunStepResponse
+    type: object
+    additionalProperties: false
+    required:
+    - item
+    properties:
+      item: *id007
+  agent_run_step_create_request:
+    name: AgentRunStepCreateRequest
+    type: object
+    additionalProperties: false
+    properties:
+      stepType:
+        type: string
+        enum:
+        - input
+        - model
+        - tool
+        - memory
+        - runtime
+        - system
+        - custom
+      status:
+        type: string
+        enum:
+        - queued
+        - running
+        - completed
+        - failed
+        - cancelled
+      title:
+        type: string
+        maxLength: 256
+      model:
+        type: string
+        maxLength: 128
+      runtimeInvocationId:
+        type: string
+        maxLength: 128
+      toolName:
+        type: string
+        maxLength: 128
+      inputJson:
+        type: object
+        additionalProperties: true
+      outputJson:
+        type: object
+        additionalProperties: true
+      usageJson: *id008
+      metadata:
+        type: object
+        additionalProperties: true
+  agent_run_step_complete_request:
+    name: AgentRunStepCompleteRequest
+    type: object
+    additionalProperties: false
+    properties:
+      status:
+        type: string
+        enum:
+        - completed
+        - failed
+        - cancelled
+      outputJson:
+        type: object
+        additionalProperties: true
+      errorMessageMasked:
+        type: string
+        maxLength: 1024
+      usageJson: *id008
+      metadata:
+        type: object
+        additionalProperties: true

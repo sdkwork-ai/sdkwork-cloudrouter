@@ -1,0 +1,219 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "sdk": {
+    "name": "clawrouter-open-sdk",
+    "version": "0.1.0",
+    "language": "swift",
+    "sdkType": "ai",
+    "packageName": "ClawRouterOpenSdk"
+  },
+  "generatedFiles": [
+    {
+      "path": "bin/publish-core.mjs",
+      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+    },
+    {
+      "path": "bin/publish.ps1",
+      "sha256": "65eb75fb276e53c0cc7cca96fd8d630515c132fc6a4cba6ae3a6e1f77fa9c471"
+    },
+    {
+      "path": "bin/publish.sh",
+      "sha256": "1b078b9002190ca5d9f2c89b8de3e47cecf730f5a570992c383dad9f76362f40"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "fb941a0806986a54fc192f98a98f6d9c282b8d350b2b19a3e71dda404e92d545"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "7840cc7d2b36ff364ac16c2fc5ec15b861bfe96854eecf81fb59b00edb8b1447"
+    },
+    {
+      "path": "Package.swift",
+      "sha256": "4909c87b1c4df312d030b6a8b3be674a7e21c3ccdc7c713ed5a24a8ee1353bc2"
+    },
+    {
+      "path": "README.md",
+      "sha256": "6dd5c199e15b3760d898757389d47758563d3626369772585e41dac44d7c52ce"
+    },
+    {
+      "path": "sdkwork-sdk.json",
+      "sha256": "d4432bcef71778448cd6e11bee8c44b9682143e361de83051b6c9ac29eb2a5f2"
+    },
+    {
+      "path": "Sources/API/API.swift",
+      "sha256": "cf472c75403e90db6f586c573862d74c505a4465e0028a6f857b9e9c3f11ae72"
+    },
+    {
+      "path": "Sources/API/ApiPaths.swift",
+      "sha256": "f3c982c03762d39d4ac2f5ea68f1014c21f03d1a2aa5d67b380d385819b60399"
+    },
+    {
+      "path": "Sources/API/AssistantsApi.swift",
+      "sha256": "9548056acc85617d63002fb205e9f9146245af52c1c199f5025d4064f864a33d"
+    },
+    {
+      "path": "Sources/API/AudioApi.swift",
+      "sha256": "fe732a1cbddfd6437fab60ab8b37b4ef90d3371e616c7718e880c8a04754f56f"
+    },
+    {
+      "path": "Sources/API/AudioSunoApi.swift",
+      "sha256": "590ad3385f805f9b92949c260197649b01a82f386ee33c75729810070bbf8039"
+    },
+    {
+      "path": "Sources/API/BatchesAnthropicApi.swift",
+      "sha256": "baf06a46ba32c409b66baa13e9967989e1335f94263c83a5ad1d65086d76e155"
+    },
+    {
+      "path": "Sources/API/BatchesApi.swift",
+      "sha256": "73c42d65bd4d07a093c36efb196859a7f51560a68ce44dbfc1eff6658facd4d3"
+    },
+    {
+      "path": "Sources/API/ChatAnthropicApi.swift",
+      "sha256": "ee0aa83f512e0ad0982d740cd9df36ccf3397bd24d7559bc8fced03a6959894d"
+    },
+    {
+      "path": "Sources/API/ChatApi.swift",
+      "sha256": "0e20bb87df529e01019a2e4b282b4f353e5bdb3c20309bcd284ec653c11ca6b0"
+    },
+    {
+      "path": "Sources/API/ChatGoogleApi.swift",
+      "sha256": "92c7fc8c4bd3478f3f7615f7506d58e79d4b280c4acdbf8af8c6277d0f2b5593"
+    },
+    {
+      "path": "Sources/API/CompletionApi.swift",
+      "sha256": "c3cedcf367a417647f7e0e139994b7472e5c0953fb74d14e65d0e8dd9e86753c"
+    },
+    {
+      "path": "Sources/API/ContainerApi.swift",
+      "sha256": "1af4e1bd125a9365a694115a56ee63317c5aed834f6e7a2a5c60881eb6f97e06"
+    },
+    {
+      "path": "Sources/API/ConversationApi.swift",
+      "sha256": "b4fd4dca8742fd67d541c60eddbe147e43120c29425c3171d00cb5d23ffb664d"
+    },
+    {
+      "path": "Sources/API/EmbeddingsApi.swift",
+      "sha256": "4611d69278027a50bad47889b33498278ab9cf6a5329fb0019086dfb15682dd9"
+    },
+    {
+      "path": "Sources/API/EmbeddingsGoogleApi.swift",
+      "sha256": "9478e53eb458b3e75b56bf899c81314bf60bbd1df5177018984a17e3608101d0"
+    },
+    {
+      "path": "Sources/API/EvalApi.swift",
+      "sha256": "2895da1f5280aec9eb4ad2a85dd30c1d23421adb2c516d343496905f3144ce7d"
+    },
+    {
+      "path": "Sources/API/FilesAnthropicApi.swift",
+      "sha256": "720208927ee93913aee803c090086d30b0bd6380003079cf6bf47b010c62137a"
+    },
+    {
+      "path": "Sources/API/FilesApi.swift",
+      "sha256": "062a0f90569473f8363899687ffb3de00577698fbc07bae4875e288fed3dc0fd"
+    },
+    {
+      "path": "Sources/API/FilesGoogleApi.swift",
+      "sha256": "46f1c1e346c3fec500a356a9f2e7bdd22531aeaa100092ebb4184aa006118c00"
+    },
+    {
+      "path": "Sources/API/FineTuningApi.swift",
+      "sha256": "558901356eef1d9a65274d9a6485807627fe5f3b0856cb8eb209dcb0890d2863"
+    },
+    {
+      "path": "Sources/API/ImagesApi.swift",
+      "sha256": "f53fa648ea4613782f069649f0e9c4c2e1422c17c71a800fe2e2755294d7fcc0"
+    },
+    {
+      "path": "Sources/API/ImagesMidjourneyApi.swift",
+      "sha256": "10ff73a20bf4ee4b912f236d9de2135e734ef95938f72eecca5a624ab44c6918"
+    },
+    {
+      "path": "Sources/API/ImagesNanoBananaApi.swift",
+      "sha256": "330a14ffd045b0f74e676d1f7c222b10444d43b7d5673e58aa0b6193ff4d4ba6"
+    },
+    {
+      "path": "Sources/API/ImagesViduApi.swift",
+      "sha256": "b6f209d86fba14a8541fdbb49db968cfdd7d3d837476409de4cf24f7928e2fd3"
+    },
+    {
+      "path": "Sources/API/ModelsApi.swift",
+      "sha256": "174dceaf36c6a0fc38ed1915c2cb5fd8770a92b68ae02f60ef303946429dc035"
+    },
+    {
+      "path": "Sources/API/ModerationsApi.swift",
+      "sha256": "660e798bba3961acdd4d2e272495cfc44c66a4b6a360f2e82213ade271c90661"
+    },
+    {
+      "path": "Sources/API/OrganizationApi.swift",
+      "sha256": "3c495817de025c1edf08bba1fe1e43dbdfcc71cc805c2cfd0c8e70aa29119f9f"
+    },
+    {
+      "path": "Sources/API/ProjectApi.swift",
+      "sha256": "3a1b68540dab55a5f78b49ee406ad7b01662f3b64a6b7f85c4e77c10cc97419f"
+    },
+    {
+      "path": "Sources/API/RealtimeApi.swift",
+      "sha256": "02521eb574d51df6f479234b8395fb4a045c356390013d308d04075da6edfa01"
+    },
+    {
+      "path": "Sources/API/ResponsesApi.swift",
+      "sha256": "1c1b2bf6a00d63cdd0eb708fc045ab78195ab8b62dfdb92d9cf7f5e845031441"
+    },
+    {
+      "path": "Sources/API/ResponsesGoogleApi.swift",
+      "sha256": "9ecae1a593b4c406db05819c9c6beb44678efd34a30e8bce418c330cff71c0b2"
+    },
+    {
+      "path": "Sources/API/SkillApi.swift",
+      "sha256": "e9d7af88cf30ff4b798f719c536a4efb5428ac1d0ffb01a27ffe288cc689ca33"
+    },
+    {
+      "path": "Sources/API/ThreadsApi.swift",
+      "sha256": "25821c4ee3dd07f8abb1ce45be401d1e2013524a608b5c2baa18b2f498f823b0"
+    },
+    {
+      "path": "Sources/API/UploadsApi.swift",
+      "sha256": "5845d3bb0a16ce67bd92c9774582d738b5d416b44fea60a3f9644037c1aded66"
+    },
+    {
+      "path": "Sources/API/VectorStoresApi.swift",
+      "sha256": "bb07e80967c8cc15d418880716ccc6e988b80f1b4394137a83f6fd7eacfe3a56"
+    },
+    {
+      "path": "Sources/API/VideoApi.swift",
+      "sha256": "af01e26480585c4660c8501326067a13a8fd1ba44e5eb8d39d327cfcb9769c5d"
+    },
+    {
+      "path": "Sources/API/VideosKlingApi.swift",
+      "sha256": "54313b2888667123100f24de0c31be1570fcf9c6717bcb6efa8fa9386062f46b"
+    },
+    {
+      "path": "Sources/API/VideosViduApi.swift",
+      "sha256": "6ccc3b97c82250c9aae1b415e708217da62a6e3c9b0a27836c004ccb86268e1f"
+    },
+    {
+      "path": "Sources/API/VideosVolcengineApi.swift",
+      "sha256": "8121f71f0f202a4362c037fe2be1688b502810accc88deb627bf9a63a4f46e31"
+    },
+    {
+      "path": "Sources/HTTP/HttpClient.swift",
+      "sha256": "0732a68114363f63803e43bf1b6d1e93cdd691492d1bd739af3d3806062e5942"
+    },
+    {
+      "path": "Sources/Models.swift",
+      "sha256": "f3d4e0cb72e859b84195c9fee771086099d66d826063e5aa523464d8e75ad8c2"
+    },
+    {
+      "path": "Sources/SdkworkAiClient.swift",
+      "sha256": "d55ddead49e0e311e5d2bcbf84e9c122d6466cd88b3ac0c054b9bb92c91382bc"
+    }
+  ],
+  "scaffoldFiles": [
+    "custom/README.md"
+  ],
+  "customRoots": [
+    "custom/"
+  ]
+}

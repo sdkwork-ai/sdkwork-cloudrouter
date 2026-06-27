@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package sdkwork.commerce.backend.v3;
+
+import "sdkwork/common/v1/money.proto";
+import "sdkwork/common/v1/pagination.proto";
+import "sdkwork/common/v1/runtime.proto";
+
+option java_package = "com.sdkwork.commerce.backend.v3";
+option java_multiple_files = true;
+option go_package = "github.com/sdkwork/commerce-rpc-go/sdkwork/commerce/backend/v3;commercebackendv3";
+
+service CommerceReportService {
+  rpc ListUsageStatements(ListUsageStatementsRequest) returns (ListUsageStatementsResponse);
+  rpc RetrievePaymentReconciliation(RetrievePaymentReconciliationRequest) returns (RetrievePaymentReconciliationResponse);
+  rpc ListOrderRevenue(ListOrderRevenueRequest) returns (ListOrderRevenueResponse);
+  rpc ListRefundReports(ListRefundReportsRequest) returns (ListRefundReportsResponse);
+}
+
+message UsageStatement {
+  string statement_id = 1;
+  string account_id = 2;
+  sdkwork.common.v1.Money amount = 3;
+}
+
+message PaymentReconciliationSummary {
+  string report_id = 1;
+  sdkwork.common.v1.Money reconciled_amount = 2;
+}
+
+message OrderRevenueReport {
+  string report_id = 1;
+  sdkwork.common.v1.Money revenue = 2;
+}
+
+message RefundReport {
+  string report_id = 1;
+  sdkwork.common.v1.Money refund_amount = 2;
+}
+
+message ListUsageStatementsRequest {
+  sdkwork.common.v1.PageRequest page = 1;
+}
+
+message ListUsageStatementsResponse {
+  repeated UsageStatement statements = 1;
+  sdkwork.common.v1.PageResponse page = 2;
+  sdkwork.common.v1.ResponseMetadata metadata = 15;
+}
+
+message RetrievePaymentReconciliationRequest {
+  string report_id = 1;
+}
+
+message RetrievePaymentReconciliationResponse {
+  PaymentReconciliationSummary reconciliation = 1;
+  sdkwork.common.v1.ResponseMetadata metadata = 15;
+}
+
+message ListOrderRevenueRequest {
+  sdkwork.common.v1.PageRequest page = 1;
+}
+
+message ListOrderRevenueResponse {
+  repeated OrderRevenueReport reports = 1;
+  sdkwork.common.v1.PageResponse page = 2;
+  sdkwork.common.v1.ResponseMetadata metadata = 15;
+}
+
+message ListRefundReportsRequest {
+  sdkwork.common.v1.PageRequest page = 1;
+}
+
+message ListRefundReportsResponse {
+  repeated RefundReport reports = 1;
+  sdkwork.common.v1.PageResponse page = 2;
+  sdkwork.common.v1.ResponseMetadata metadata = 15;
+}

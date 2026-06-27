@@ -1,0 +1,723 @@
+{
+  "openapi": "3.1.2",
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "info": {
+    "title": "SDKWork PaaS API",
+    "version": "0.1.0",
+    "description": "Definition-only OpenAPI contract for SDKWork unified PaaS aggregation. The contract standardizes OCR recognition, face comparison, face liveness verification, provider capability discovery, and plugin metadata across Baidu, Alibaba Cloud, and Tencent Cloud. Runtime provider calls are implemented by provider plugins and are intentionally decoupled from this static contract."
+  },
+  "servers": [
+    {
+      "url": "https://api.sdkwork.com",
+      "description": "SDKWork production API gateway"
+    },
+    {
+      "url": "http://localhost:18080",
+      "description": "Local SDKWork API gateway"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "PaaS/Providers",
+      "description": "Provider discovery, plugin metadata, supported regions, credentials, and capability matrix."
+    },
+    {
+      "name": "PaaS/OCR",
+      "x-display-order": 20,
+      "description": "Unified text, document, certificate, invoice, and card OCR recognition."
+    },
+    {
+      "name": "PaaS/Face",
+      "x-display-order": 30,
+      "description": "Unified face comparison and liveness verification."
+    },
+    {
+      "name": "PaaS/Native",
+      "description": "Controlled provider-native operation envelope for capabilities not yet promoted into the unified model."
+    }
+  ],
+  "x-api-prefix": "/paas/v3",
+  "x-sdkwork-contract-state": "definition-only",
+  "x-sdkwork-sdk-family": "paas-api",
+  "x-supported-provider-codes": [
+    "baidu",
+    "alibaba",
+    "tencent"
+  ],
+  "paths": {
+    "/paas/v3/providers": {
+      "get": {
+        "operationId": "paasProviders.list",
+        "summary": "List PaaS providers",
+        "description": "Lists provider plugins and normalized capability coverage for the PaaS standard API.",
+        "tags": [
+          "PaaS/Providers"
+        ],
+        "responses": {
+          "200": {
+            "description": "Provider plugin list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaaSProviderListResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/paas/v3/providers/{providerCode}/capabilities": {
+      "get": {
+        "operationId": "paasProviders.capabilities.retrieve",
+        "summary": "Retrieve provider capabilities",
+        "description": "Retrieves normalized PaaS capability, operation, credential, and region metadata for a provider plugin.",
+        "tags": [
+          "PaaS/Providers"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PaaSProviderCodePath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provider capability metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaaSProviderCapabilitiesResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/paas/v3/ocr/recognitions": {
+      "post": {
+        "operationId": "paasOcr.recognitions.create",
+        "summary": "Create OCR recognition",
+        "description": "Runs normalized OCR recognition across a selected PaaS provider plugin. The provider account, credentials, and region are resolved by routing configuration.",
+        "tags": [
+          "PaaS/OCR"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaaSOcrRecognitionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Normalized OCR response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaaSOcrRecognitionResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/paas/v3/faces/compare": {
+      "post": {
+        "operationId": "paasFaces.compare.create",
+        "summary": "Compare faces",
+        "description": "Runs normalized one-to-one face comparison through a selected PaaS provider plugin.",
+        "tags": [
+          "PaaS/Face"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaaSFaceCompareRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Normalized face comparison response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaaSFaceCompareResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/paas/v3/faces/liveness": {
+      "post": {
+        "operationId": "paasFaces.liveness.create",
+        "summary": "Verify face liveness",
+        "description": "Runs normalized face liveness or real-name verification through a selected PaaS provider plugin.",
+        "tags": [
+          "PaaS/Face"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaaSFaceLivenessRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Normalized liveness verification response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaaSFaceLivenessResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/paas/v3/native_operations": {
+      "post": {
+        "operationId": "paasNative.operations.invoke",
+        "summary": "Invoke provider-native PaaS operation",
+        "description": "Invokes a controlled provider-native operation when a capability is available through a plugin but not yet represented by the unified PaaS model.",
+        "tags": [
+          "PaaS/Native"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaaSNativeOperationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Provider-native result envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaaSNativeOperationResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "SDKWork API key or session bearer token."
+      }
+    },
+    "parameters": {
+      "PaaSProviderCodePath": {
+        "name": "providerCode",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/PaaSProviderCode"
+        }
+      }
+    },
+    "schemas": {
+      "PaaSProviderCode": {
+        "type": "string",
+        "description": "Normalized PaaS provider code.",
+        "enum": [
+          "baidu",
+          "alibaba",
+          "tencent"
+        ],
+        "x-sdkwork-initial-provider-codes": [
+          "baidu",
+          "alibaba",
+          "tencent"
+        ]
+      },
+      "PaaSProviderListResult": {
+        "type": "object",
+        "required": [
+          "providers"
+        ],
+        "properties": {
+          "providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaaSProviderPlugin"
+            }
+          }
+        }
+      },
+      "PaaSProviderCapabilitiesResult": {
+        "type": "object",
+        "required": [
+          "provider"
+        ],
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/PaaSProviderPlugin"
+          }
+        }
+      },
+      "PaaSProviderPlugin": {
+        "type": "object",
+        "required": [
+          "pluginId",
+          "providerFamily",
+          "providerCodes",
+          "capabilities",
+          "operations",
+          "credentialKinds",
+          "defaultRegions"
+        ],
+        "properties": {
+          "pluginId": {
+            "type": "string",
+            "examples": [
+              "sdkwork.paas.baidu"
+            ]
+          },
+          "providerFamily": {
+            "type": "string",
+            "examples": [
+              "baidu"
+            ]
+          },
+          "providerCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaaSCapability"
+            }
+          },
+          "operations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaaSOperation"
+            }
+          },
+          "credentialKinds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "defaultRegions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PaaSCapability": {
+        "type": "string",
+        "enum": [
+          "ocr",
+          "face_compare",
+          "face_liveness_verification",
+          "document_intelligence",
+          "certificate_invoice",
+          "speech_recognition",
+          "content_moderation",
+          "address_logistics",
+          "notification_messaging",
+          "object_storage"
+        ]
+      },
+      "PaaSOperation": {
+        "type": "string",
+        "enum": [
+          "ocr.general_text",
+          "ocr.document_text",
+          "ocr.id_card",
+          "ocr.bank_card",
+          "ocr.business_license",
+          "ocr.invoice",
+          "face.compare.one_to_one",
+          "face.compare.one_to_many",
+          "face.compare.quality_check",
+          "face.liveness.detection",
+          "face.liveness.id_verification",
+          "face.liveness.video"
+        ]
+      },
+      "PaaSImageInput": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "inputType",
+              "url"
+            ],
+            "properties": {
+              "inputType": {
+                "const": "url"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "inputType",
+              "mediaType",
+              "data"
+            ],
+            "properties": {
+              "inputType": {
+                "const": "base64"
+              },
+              "mediaType": {
+                "type": "string",
+                "examples": [
+                  "image/jpeg",
+                  "image/png"
+                ]
+              },
+              "data": {
+                "type": "string",
+                "contentEncoding": "base64"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "inputType",
+              "bucket",
+              "objectKey"
+            ],
+            "properties": {
+              "inputType": {
+                "const": "objectRef"
+              },
+              "bucket": {
+                "type": "string"
+              },
+              "objectKey": {
+                "type": "string"
+              }
+            }
+          }
+        ]
+      },
+      "PaaSOcrRecognitionRequest": {
+        "type": "object",
+        "required": [
+          "operation",
+          "image"
+        ],
+        "properties": {
+          "providerCode": {
+            "$ref": "#/components/schemas/PaaSProviderCode"
+          },
+          "operation": {
+            "$ref": "#/components/schemas/PaaSOperation"
+          },
+          "image": {
+            "$ref": "#/components/schemas/PaaSImageInput"
+          },
+          "languageHint": {
+            "type": "string",
+            "examples": [
+              "zh-CN",
+              "en-US"
+            ]
+          },
+          "options": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "PaaSOcrRecognitionResult": {
+        "type": "object",
+        "required": [
+          "providerCode",
+          "pages"
+        ],
+        "properties": {
+          "providerCode": {
+            "type": "string"
+          },
+          "providerRequestId": {
+            "type": "string"
+          },
+          "pages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaaSDocumentPage"
+            }
+          },
+          "rawProviderResponse": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "PaaSDocumentPage": {
+        "type": "object",
+        "required": [
+          "pageIndex",
+          "text",
+          "blocks"
+        ],
+        "properties": {
+          "pageIndex": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "text": {
+            "type": "string"
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaaSDocumentBlock"
+            }
+          }
+        }
+      },
+      "PaaSDocumentBlock": {
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "boundingBox": {
+            "$ref": "#/components/schemas/PaaSBoundingBox"
+          }
+        }
+      },
+      "PaaSBoundingBox": {
+        "type": "object",
+        "required": [
+          "left",
+          "top",
+          "width",
+          "height"
+        ],
+        "properties": {
+          "left": {
+            "type": "number"
+          },
+          "top": {
+            "type": "number"
+          },
+          "width": {
+            "type": "number"
+          },
+          "height": {
+            "type": "number"
+          }
+        }
+      },
+      "PaaSFaceCompareRequest": {
+        "type": "object",
+        "required": [
+          "operation",
+          "source",
+          "target"
+        ],
+        "properties": {
+          "providerCode": {
+            "$ref": "#/components/schemas/PaaSProviderCode"
+          },
+          "operation": {
+            "type": "string",
+            "enum": [
+              "face.compare.one_to_one",
+              "face.compare.one_to_many",
+              "face.compare.quality_check"
+            ]
+          },
+          "source": {
+            "$ref": "#/components/schemas/PaaSImageInput"
+          },
+          "target": {
+            "$ref": "#/components/schemas/PaaSImageInput"
+          },
+          "options": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "PaaSFaceCompareResult": {
+        "type": "object",
+        "required": [
+          "providerCode",
+          "similarity",
+          "passed"
+        ],
+        "properties": {
+          "providerCode": {
+            "type": "string"
+          },
+          "providerRequestId": {
+            "type": "string"
+          },
+          "similarity": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "rawProviderResponse": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "PaaSFaceLivenessRequest": {
+        "type": "object",
+        "required": [
+          "operation",
+          "image"
+        ],
+        "properties": {
+          "providerCode": {
+            "$ref": "#/components/schemas/PaaSProviderCode"
+          },
+          "operation": {
+            "type": "string",
+            "enum": [
+              "face.liveness.detection",
+              "face.liveness.id_verification",
+              "face.liveness.video"
+            ]
+          },
+          "image": {
+            "$ref": "#/components/schemas/PaaSImageInput"
+          },
+          "idNumber": {
+            "type": "string"
+          },
+          "realName": {
+            "type": "string"
+          },
+          "options": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "PaaSFaceLivenessResult": {
+        "type": "object",
+        "required": [
+          "providerCode",
+          "live"
+        ],
+        "properties": {
+          "providerCode": {
+            "type": "string"
+          },
+          "providerRequestId": {
+            "type": "string"
+          },
+          "live": {
+            "type": "boolean"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "rawProviderResponse": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "PaaSNativeOperationRequest": {
+        "type": "object",
+        "required": [
+          "providerCode",
+          "operation",
+          "payload"
+        ],
+        "properties": {
+          "providerCode": {
+            "$ref": "#/components/schemas/PaaSProviderCode"
+          },
+          "operation": {
+            "$ref": "#/components/schemas/PaaSOperation"
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "PaaSNativeOperationResult": {
+        "type": "object",
+        "required": [
+          "providerCode",
+          "operation",
+          "payload"
+        ],
+        "properties": {
+          "providerCode": {
+            "type": "string"
+          },
+          "operation": {
+            "$ref": "#/components/schemas/PaaSOperation"
+          },
+          "providerRequestId": {
+            "type": "string"
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      }
+    }
+  }
+}

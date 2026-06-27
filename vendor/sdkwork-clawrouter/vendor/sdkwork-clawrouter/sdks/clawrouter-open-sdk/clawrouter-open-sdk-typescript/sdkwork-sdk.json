@@ -1,0 +1,7 @@
+{
+  "language": "typescript",
+  "sdkType": "ai",
+  "name": "clawrouter-open-sdk",
+  "packageName": "@sdkwork/clawrouter-open-sdk",
+  "version": "0.1.0"
+}

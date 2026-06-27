@@ -1,0 +1,19 @@
+{
+  "workspace": "sdkwork-mcp-app-sdk",
+  "sdkOwner": "sdkwork-mcp",
+  "apiAuthority": "sdkwork-mcp.app",
+  "authoritySpec": "../../apis/app-api/mcp/mcp-app-api.openapi.json",
+  "generationInputSpec": "../../apis/app-api/mcp/mcp-app-api.openapi.json",
+  "sdkDependencies": [],
+  "derivedSpecs": {
+    "default": "../../apis/app-api/mcp/mcp-app-api.openapi.json"
+  },
+  "discoverySurface": {
+    "sdkTarget": "app",
+    "apiPrefix": "/app/v3/api",
+    "generatedProtocols": [
+      "http-openapi"
+    ],
+    "manualTransports": []
+  }
+}

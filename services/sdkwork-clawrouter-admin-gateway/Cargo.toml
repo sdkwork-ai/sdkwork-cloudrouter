@@ -1,0 +1,25 @@
+[package]
+name = "sdkwork-clawrouter-admin-gateway"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[[bin]]
+name = "sdkwork-clawrouter-admin-gateway"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+sdkwork-claw-config.workspace = true
+sdkwork-routes-clawrouter-backend-api.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+axum.workspace = true
+sdkwork-clawrouter-standalone-gateway.workspace = true
+sdkwork-claw-http.workspace = true
+sdkwork-clawrouter-router-service.workspace = true
+sdkwork-claw-test-support.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+tower.workspace = true

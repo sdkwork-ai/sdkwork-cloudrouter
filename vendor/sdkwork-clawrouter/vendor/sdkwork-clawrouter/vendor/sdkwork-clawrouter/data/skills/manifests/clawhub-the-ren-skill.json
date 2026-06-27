@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "agent-skill-manifest.v1",
+  "id": 8204,
+  "uuid": "skill-clawhub-the-ren-skill",
+  "skillKey": "clawhub-the-ren-skill",
+  "name": "雄韬识人辨人 - 老板阅人笔记 The Ren Skill",
+  "summary": "阅人笔记 · The Ren Skill — 商业老板的全场景行为识人决策系统。把千年面相智慧用现代心理学重新解释，覆盖识员工、识客户、识伙伴、识对手四大场景。 触发场景（任一即触发）： - 面试识人、高管评估、招聘决策、人员盘点 → \"帮我看看这个人适不适合做销售总监\" - 客户判断、商务谈判、合作风险评估 →...",
+  "version": "1.0.0",
+  "runtime": "metadata",
+  "entrypoint": "clawhub.skills.the_ren_skill",
+  "provider": "ClawHub",
+  "licenseName": "MIT-0",
+  "capabilities": [
+    "clawhub.metadata"
+  ],
+  "configSchema": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "defaultConfig": {
+    "portal": {
+      "developer": "xtoyun",
+      "features": [
+        "阅人笔记 · The Ren Skill — 商业老板的全场景行为识人决策系统。把千年面相智慧用现代心理学重新解释，覆盖识员工、识客户、识伙伴、识对手四大场景。 触发场景（任一即触发）：",
+        "面试识人、高管评估、招聘决策、人员盘点 → \"帮我看看这个人适不适合做销售总监\"",
+        "客户判断、商务谈判、合作风险评估 →..."
+      ],
+      "frameworks": [
+        "ClawHub",
+        "Agent Skill"
+      ],
+      "sizeText": "Metadata",
+      "clawhubImage": "clawhub://skills/the-ren-skill@1.0.0",
+      "screenshots": [
+        "https://avatars.githubusercontent.com/u/32350299?v=4"
+      ]
+    },
+    "source": {
+      "vendor": "clawhub",
+      "slug": "the-ren-skill",
+      "url": "https://clawhub.ai/skills/the-ren-skill"
+    }
+  },
+  "source": {
+    "vendor": "clawhub",
+    "slug": "the-ren-skill",
+    "url": "https://clawhub.ai/skills/the-ren-skill",
+    "fetchedAt": "2026-06-22T01:26:13.984Z",
+    "rawDetailPath": "data/skills/clawhub/raw/details/the-ren-skill-792a401da04d5a5e.json"
+  },
+  "artifacts": [
+    {
+      "artifactRef": "clawhub://skills/the-ren-skill@1.0.0",
+      "artifact": {
+        "kind": "document",
+        "source": "provider_asset",
+        "uri": "data/skills/artifacts/clawhub-the-ren-skill-1.0.0.json"
+      },
+      "version": "1.0.0",
+      "runtime": "metadata",
+      "checksumHash": "sha256:3fd9126454c0e4e7777d62ac5f6eac117f64498ba6c409333dc46b3d9b6e94b9",
+      "artifactSizeBytes": 3014
+    }
+  ],
+  "permissions": {
+    "network": false,
+    "filesystem": "none",
+    "secrets": []
+  },
+  "publishedAt": "2026-06-22T01:03:11.190Z"
+}

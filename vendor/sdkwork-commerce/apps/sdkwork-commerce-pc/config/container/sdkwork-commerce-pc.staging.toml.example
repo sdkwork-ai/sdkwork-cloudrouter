@@ -1,0 +1,36 @@
+[runtime]
+environment = "staging"
+config_profile = "staging"
+build_mode = "staging"
+deployment_mode = "container"
+runtime_target = "container"
+app_key = "sdkwork-commerce-pc"
+
+[sdk_base_urls]
+sdk_base_url = "https://staging-api.sdkwork.com"
+app_api_base_url = "https://staging-api.sdkwork.com/app/v3/api"
+backend_api_base_url = "https://staging-api.sdkwork.com/backend/v3/api"
+
+[server]
+bind = "0.0.0.0:18082"
+external_scheme = "https"
+trust_forwarded_headers = true
+
+[database]
+engine = "postgresql"
+host = "postgres"
+port = 5432
+database = "sdkwork_ai_prod"
+schema = "sdkwork_ai_prod"
+username = "sdkwork_ai_prod"
+password_file = "/run/secrets/commerce-pc/database-password"
+ssl_mode = "require"
+max_connections = 20
+
+[redis]
+enabled = true
+host = "redis"
+port = 6379
+database = 0
+password_file = "/run/secrets/commerce-pc/redis-password"
+key_prefix = "sdkwork-commerce-pc:staging"

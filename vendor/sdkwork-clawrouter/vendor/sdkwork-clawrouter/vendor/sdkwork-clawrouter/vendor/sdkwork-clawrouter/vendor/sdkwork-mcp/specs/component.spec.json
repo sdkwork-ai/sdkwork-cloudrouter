@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "sdkwork-mcp",
+    "displayName": "SDKWork MCP",
+    "version": "0.1.0",
+    "type": "application-root",
+    "root": "sdkwork-mcp",
+    "domain": "intelligence",
+    "capability": "mcp",
+    "languages": [
+      "rust",
+      "typescript",
+      "dart"
+    ],
+    "manifests": [
+      "sdkwork.app.config.json",
+      "package.json",
+      "Cargo.toml"
+    ]
+  },
+  "contracts": {
+    "runtimeEntrypoints": [
+      "crates/sdkwork-mcp-api-server"
+    ],
+    "configKeys": [
+      "MCP_DATABASE_URL",
+      "SDKWORK_MCP_DRIVE_URL",
+      "SDKWORK_MCP_ATTACHMENT_DRIVE_SPACE"
+    ]
+  }
+}

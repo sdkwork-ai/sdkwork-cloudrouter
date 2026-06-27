@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "sdkwork-mcp-pc-core",
+    "displayName": "sdkwork-mcp-pc-core",
+    "version": "0.1.0",
+    "type": "typescript-package",
+    "root": "apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core",
+    "domain": "intelligence",
+    "capability": "core",
+    "surface": "app",
+    "languages": ["typescript"],
+    "generated": false,
+    "manifests": ["package.json"]
+  },
+  "contracts": {
+    "publicExports": ["."],
+    "sdkClients": ["sdkwork-mcp-app-sdk", "sdkwork-mcp-backend-sdk"],
+    "dependencyComposition": "../../../specs/dependency.composition.json"
+  }
+}

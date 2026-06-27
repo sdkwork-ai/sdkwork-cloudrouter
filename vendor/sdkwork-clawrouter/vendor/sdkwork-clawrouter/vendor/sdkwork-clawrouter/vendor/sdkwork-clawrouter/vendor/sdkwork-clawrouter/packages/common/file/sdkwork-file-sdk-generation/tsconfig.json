@@ -1,0 +1,19 @@
+{
+  "extends": "../../../../../sdkwork-appbase/tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@sdkwork/file-api-contracts": [
+        "../sdkwork-file-api-contracts/src/index.ts"
+      ],
+      "@sdkwork/file-contracts": [
+        "../sdkwork-file-contracts/src/index.ts"
+      ]
+    },
+    "types": [],
+    "ignoreDeprecations": "5.0"
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
+}

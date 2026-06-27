@@ -1,0 +1,15 @@
+//! Gateway assembly for sdkwork-mcp.
+//! Application bootstrap lives in `bootstrap.rs`; route inventory is in `assembly-manifest.json`.
+
+mod bootstrap;
+mod generated;
+
+pub use bootstrap::{assemble_application_router, ApplicationAssembly};
+
+pub fn assembly_route_count() -> usize {
+    generated::ROUTE_CRATE_COUNT
+}
+
+pub fn assembly_route_packages() -> &'static [&'static str] {
+    generated::ROUTE_CRATE_PACKAGES
+}

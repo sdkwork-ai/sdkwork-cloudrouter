@@ -1,0 +1,95 @@
+fragment: operations/backend-apikey
+frontend_operations:
+- route: /admin/user
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-user/src/userService.ts
+  operation: createApiKey
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/apikey
+  read_sources:
+  - iam_user
+  - iam_gateway_api_key
+  write_tables:
+  - iam_gateway_api_key
+  - ops_audit_log
+  idempotency_required: true
+  request_schema:
+    name: AdminApiKeyCreateRequest
+    required:
+    - userId
+    - name
+    properties:
+      userId:
+        type: integer
+        format: int64
+        minimum: 1
+        description: User identifier that owns the API key.
+      name:
+        type: string
+        minLength: 1
+        maxLength: 128
+        description: Human-readable API key name.
+  response_schema:
+    name: AdminApiKeyCreateResponse
+    required:
+    - key
+    - rawKey
+    properties:
+      key:
+        name: AdminApiKeyItem
+        type: object
+        additionalProperties: false
+        required:
+        - id
+        - name
+        - key
+        - used
+        - status
+        properties:
+          id:
+            type: string
+            minLength: 1
+            maxLength: 128
+          name:
+            type: string
+            minLength: 1
+            maxLength: 128
+          key:
+            type: string
+            minLength: 1
+            maxLength: 256
+          used:
+            type: string
+            maxLength: 64
+          status:
+            type: string
+            maxLength: 64
+        description: Persisted masked API key snapshot returned by the backend.
+      rawKey:
+        type: string
+        minLength: 1
+        maxLength: 256
+        description: Full plaintext API key material returned immediately after creation.
+- route: /admin/user
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-user/src/userService.ts
+  operation: deleteApiKey
+  kind: delete
+  api_surface: backend
+  api_method: DELETE
+  api_path: /backend/v3/api/apikey/{apiKeyId}
+  read_sources:
+  - iam_user
+  - iam_gateway_api_key
+  write_tables:
+  - iam_gateway_api_key
+  - ops_audit_log
+  response_schema:
+    name: AdminDeleteResponse
+    type: object
+    additionalProperties: false
+    required:
+    - deleted
+    properties:
+      deleted:
+        type: boolean

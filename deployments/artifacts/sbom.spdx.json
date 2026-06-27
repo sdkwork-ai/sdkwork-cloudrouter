@@ -1,0 +1,2276 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "sdkwork-clawrouter-sbom",
+  "documentNamespace": "https://sdkwork.com/apps/sdkwork-clawrouter/sbom/2026-06-27T01:21:39.737Z",
+  "creationInfo": {
+    "created": "2026-06-27T01:21:39.737Z",
+    "creators": [
+      "Tool: scripts/generate-release-sbom.mjs@1.1.0"
+    ]
+  },
+  "provenance": {
+    "generator": "scripts/generate-release-sbom.mjs",
+    "generatorVersion": "1.1.0",
+    "generatedAt": "2026-06-27T01:21:39.737Z",
+    "inputHashes": {
+      "cargoLock": "6036b7b2f3d2d624ec1f3552eda13bac66725cb7dc0a7147cea2f8d0631fa94a",
+      "rootPnpmLock": "1d8eb4f5fa9bd04a7ee4e8113aaf5bd976f10589d256893bbe1424382d67a738",
+      "pcPnpmLock": "4b7080425bda8f1d2ba78a05107e3dae24514b595509a04dedf59071cf201479"
+    }
+  },
+  "packages": [
+    {
+      "name": "@sdkwork/app-topology",
+      "version": "file:../sdkwork-app-topology",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-1"
+    },
+    {
+      "name": "@monaco-editor/loader",
+      "version": "^1.7.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-2"
+    },
+    {
+      "name": "@monaco-editor/react",
+      "version": "^4.7.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-3"
+    },
+    {
+      "name": "@radix-ui/react-compose-refs",
+      "version": "1.1.2",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-4"
+    },
+    {
+      "name": "@radix-ui/react-slot",
+      "version": "1.2.4",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-5"
+    },
+    {
+      "name": "@sdkwork/iam-app-sdk",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-6"
+    },
+    {
+      "name": "@sdkwork/iam-backend-sdk",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-7"
+    },
+    {
+      "name": "@sdkwork/appbase-pc-react",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-8"
+    },
+    {
+      "name": "@sdkwork/auth-pc-react",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-9"
+    },
+    {
+      "name": "@sdkwork/auth-runtime-pc-react",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-10"
+    },
+    {
+      "name": "@sdkwork/clawrouter-app-sdk",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-11"
+    },
+    {
+      "name": "@sdkwork/clawrouter-backend-sdk",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-12"
+    },
+    {
+      "name": "@sdkwork/clawrouter-open-sdk",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-13"
+    },
+    {
+      "name": "@sdkwork/commerce-contracts",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-14"
+    },
+    {
+      "name": "@sdkwork/commerce-sdk-ports",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-15"
+    },
+    {
+      "name": "@sdkwork/commerce-service",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-16"
+    },
+    {
+      "name": "@sdkwork/core-pc-react",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-17"
+    },
+    {
+      "name": "@sdkwork/drive-app-sdk",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-18"
+    },
+    {
+      "name": "@sdkwork/file-platform-pc-react",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-19"
+    },
+    {
+      "name": "@sdkwork/file-sdk-adapter",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-20"
+    },
+    {
+      "name": "@sdkwork/file-sdk-ports",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-21"
+    },
+    {
+      "name": "@sdkwork/file-service",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-22"
+    },
+    {
+      "name": "@sdkwork/generations-pc-workspace",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-23"
+    },
+    {
+      "name": "@sdkwork/image-pc-generation",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-24"
+    },
+    {
+      "name": "@sdkwork/host-pc-react",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-25"
+    },
+    {
+      "name": "@sdkwork/host-tauri-pc-react",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-26"
+    },
+    {
+      "name": "@sdkwork/i18n-pc-react",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-27"
+    },
+    {
+      "name": "@sdkwork/iam-contracts",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-28"
+    },
+    {
+      "name": "@sdkwork/iam-core-pc-react",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-29"
+    },
+    {
+      "name": "@sdkwork/iam-react",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-30"
+    },
+    {
+      "name": "@sdkwork/iam-runtime",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-31"
+    },
+    {
+      "name": "@sdkwork/iam-sdk-adapter",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-32"
+    },
+    {
+      "name": "@sdkwork/iam-sdk-ports",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-33"
+    },
+    {
+      "name": "@sdkwork/iam-service",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-34"
+    },
+    {
+      "name": "@sdkwork/notification-pc-react",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-35"
+    },
+    {
+      "name": "@sdkwork/runtime-bootstrap",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-36"
+    },
+    {
+      "name": "@sdkwork/sdk-common",
+      "version": "^1.0.2",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-37"
+    },
+    {
+      "name": "@tanstack/react-query",
+      "version": "^5.90.12",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-38"
+    },
+    {
+      "name": "@sdkwork/ui-pc-react",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-39"
+    },
+    {
+      "name": "@sdkwork/utils",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-40"
+    },
+    {
+      "name": "@tailwindcss/vite",
+      "version": "^4.1.14",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-41"
+    },
+    {
+      "name": "@uiw/react-md-editor",
+      "version": "^4.1.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-42"
+    },
+    {
+      "name": "@vitejs/plugin-react",
+      "version": "^5.0.4",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-43"
+    },
+    {
+      "name": "clsx",
+      "version": "^2.1.1",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-44"
+    },
+    {
+      "name": "cookie",
+      "version": "^1.1.1",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-45"
+    },
+    {
+      "name": "d3-array",
+      "version": "^3.2.4",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-46"
+    },
+    {
+      "name": "d3-color",
+      "version": "^3.1.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-47"
+    },
+    {
+      "name": "d3-ease",
+      "version": "^3.0.1",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-48"
+    },
+    {
+      "name": "d3-format",
+      "version": "^3.1.2",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-49"
+    },
+    {
+      "name": "d3-interpolate",
+      "version": "^3.0.1",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-50"
+    },
+    {
+      "name": "d3-path",
+      "version": "^3.1.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-51"
+    },
+    {
+      "name": "d3-scale",
+      "version": "^4.0.2",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-52"
+    },
+    {
+      "name": "d3-shape",
+      "version": "^3.2.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-53"
+    },
+    {
+      "name": "d3-time",
+      "version": "^3.1.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-54"
+    },
+    {
+      "name": "d3-time-format",
+      "version": "^4.1.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-55"
+    },
+    {
+      "name": "d3-timer",
+      "version": "^3.0.1",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-56"
+    },
+    {
+      "name": "d3-voronoi",
+      "version": "^1.1.4",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-57"
+    },
+    {
+      "name": "decimal.js-light",
+      "version": "^2.5.1",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-58"
+    },
+    {
+      "name": "dotenv",
+      "version": "^17.2.3",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-59"
+    },
+    {
+      "name": "es-toolkit",
+      "version": "^1.45.1",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-60"
+    },
+    {
+      "name": "framer-motion",
+      "version": "^12.38.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-61"
+    },
+    {
+      "name": "html-parse-stringify",
+      "version": "^3.0.1",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-62"
+    },
+    {
+      "name": "html-to-image",
+      "version": "^1.11.13",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-63"
+    },
+    {
+      "name": "html2canvas",
+      "version": "^1.4.1",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-64"
+    },
+    {
+      "name": "i18next",
+      "version": "^26.0.3",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-65"
+    },
+    {
+      "name": "i18next-browser-languagedetector",
+      "version": "^8.2.1",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-66"
+    },
+    {
+      "name": "internmap",
+      "version": "^2.0.3",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-67"
+    },
+    {
+      "name": "lucide-react",
+      "version": "^0.546.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-68"
+    },
+    {
+      "name": "monaco-editor",
+      "version": "^0.55.1",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-69"
+    },
+    {
+      "name": "motion",
+      "version": "^12.38.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-70"
+    },
+    {
+      "name": "motion-dom",
+      "version": "^12.38.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-71"
+    },
+    {
+      "name": "motion-utils",
+      "version": "^12.36.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-72"
+    },
+    {
+      "name": "qrcode",
+      "version": "^1.5.4",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-73"
+    },
+    {
+      "name": "react",
+      "version": "^19.0.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-74"
+    },
+    {
+      "name": "react-dom",
+      "version": "^19.0.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-75"
+    },
+    {
+      "name": "react-hook-form",
+      "version": "^7.72.1",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-76"
+    },
+    {
+      "name": "react-i18next",
+      "version": "^17.0.2",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-77"
+    },
+    {
+      "name": "react-is",
+      "version": "^19.2.6",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-78"
+    },
+    {
+      "name": "react-router",
+      "version": "^7.14.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-79"
+    },
+    {
+      "name": "react-router-dom",
+      "version": "^7.14.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-80"
+    },
+    {
+      "name": "recharts",
+      "version": "^3.8.1",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-81"
+    },
+    {
+      "name": "rehype-sanitize",
+      "version": "^6.0.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-82"
+    },
+    {
+      "name": "scheduler",
+      "version": "^0.27.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-83"
+    },
+    {
+      "name": "sdkwork-commerce-app-sdk-generated-typescript",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-84"
+    },
+    {
+      "name": "sdkwork-commerce-backend-sdk-generated-typescript",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-85"
+    },
+    {
+      "name": "@sdkwork/commerce-pc-admin-product",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-86"
+    },
+    {
+      "name": "@sdkwork/commerce-pc-billing",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-87"
+    },
+    {
+      "name": "@sdkwork/commerce-pc-checkout",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-88"
+    },
+    {
+      "name": "@sdkwork/commerce-pc-membership",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-89"
+    },
+    {
+      "name": "@sdkwork/commerce-pc-membership-purchase",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-90"
+    },
+    {
+      "name": "@sdkwork/commerce-pc-payment",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-91"
+    },
+    {
+      "name": "@sdkwork/commerce-pc-host",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-92"
+    },
+    {
+      "name": "@sdkwork/commerce-pc-wallet",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-93"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-analytics",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-94"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-announcement",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-95"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-cache",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-96"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-catalog",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-97"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-channel",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-98"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-core",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-99"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-dashboard",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-100"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-finance",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-101"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-file-platform",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-102"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-agents",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-103"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-skill",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-104"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-group",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-105"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-inventory",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-106"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-mcp",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-107"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-marketing",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-108"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-oauth",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-109"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-orders",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-110"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-payments",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-111"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-relay-site",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-112"
+    },
+    {
+      "name": "@sdkwork/models-pc-admin-catalog",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-113"
+    },
+    {
+      "name": "@sdkwork/models-pc-admin-resource",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-114"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-monitor",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-115"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-organization",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-116"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-prompts",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-117"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-messaging",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-118"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-ratelimit",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-119"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-record",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-120"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-runtime-region",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-121"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-service-nodes",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-122"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-service-provider",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-123"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-site",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-124"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-shell",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-125"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-user",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-126"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-admin-wallet",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-127"
+    },
+    {
+      "name": "@sdkwork/documents-pc-api-reference",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-128"
+    },
+    {
+      "name": "@sdkwork/clawroutes-pc-commons",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-129"
+    },
+    {
+      "name": "@sdkwork/documents-pc-commons",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-130"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-console-api-keys",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-131"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-console-core",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-132"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-console-shell",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-133"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-console-dashboard",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-134"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-console-gateway",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-135"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-console-settings",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-136"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-console-usage",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-137"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-console-user",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-138"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-core",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-139"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-downloads",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-140"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-home",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-141"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-i18n",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-142"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-models",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-143"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-playground",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-144"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-rankings",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-145"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-shell",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-146"
+    },
+    {
+      "name": "@sdkwork/documents-pc-sdk-reference",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-147"
+    },
+    {
+      "name": "@sdkwork/clawrouter-pc-types",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-148"
+    },
+    {
+      "name": "sdkwork-generations-app-sdk-generated-typescript",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-149"
+    },
+    {
+      "name": "@sdkwork/memory-app-sdk",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-150"
+    },
+    {
+      "name": "@sdkwork/agent-app-sdk",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-151"
+    },
+    {
+      "name": "@sdkwork/agent-backend-sdk",
+      "version": "workspace:*",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-152"
+    },
+    {
+      "name": "set-cookie-parser",
+      "version": "^2.7.2",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-153"
+    },
+    {
+      "name": "state-local",
+      "version": "^1.0.7",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-154"
+    },
+    {
+      "name": "use-sync-external-store",
+      "version": "^1.6.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-155"
+    },
+    {
+      "name": "victory-vendor",
+      "version": "^37.3.6",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-156"
+    },
+    {
+      "name": "vite",
+      "version": "^6.2.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-157"
+    },
+    {
+      "name": "void-elements",
+      "version": "^3.1.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-158"
+    },
+    {
+      "name": "@testing-library/dom",
+      "version": "10.4.1",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-159"
+    },
+    {
+      "name": "@testing-library/jest-dom",
+      "version": "6.9.1",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-160"
+    },
+    {
+      "name": "@testing-library/react",
+      "version": "16.3.2",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-161"
+    },
+    {
+      "name": "@types/node",
+      "version": "^22.14.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-162"
+    },
+    {
+      "name": "@types/react",
+      "version": "^19.0.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-163"
+    },
+    {
+      "name": "@types/react-dom",
+      "version": "^19.0.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-164"
+    },
+    {
+      "name": "autoprefixer",
+      "version": "^10.4.21",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-165"
+    },
+    {
+      "name": "esbuild",
+      "version": "^0.28.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-166"
+    },
+    {
+      "name": "jsdom",
+      "version": "29.1.1",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-167"
+    },
+    {
+      "name": "pnpm",
+      "version": "^10.33.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-168"
+    },
+    {
+      "name": "tailwindcss",
+      "version": "^4.1.14",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-169"
+    },
+    {
+      "name": "tsx",
+      "version": "^4.21.0",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-170"
+    },
+    {
+      "name": "turbo",
+      "version": "^2.9.4",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-171"
+    },
+    {
+      "name": "typescript",
+      "version": "~5.8.2",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-172"
+    },
+    {
+      "name": "vitest",
+      "version": "4.1.5",
+      "license": null,
+      "source": "pnpm",
+      "packageType": "npm",
+      "SPDXID": "SPDXRef-Npm-173"
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-1"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-2"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-3"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-4"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-5"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-6"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-7"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-8"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-9"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-10"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-11"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-12"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-13"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-14"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-15"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-16"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-17"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-18"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-19"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-20"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-21"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-22"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-23"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-24"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-25"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-26"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-27"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-28"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-29"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-30"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-31"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-32"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-33"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-34"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-35"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-36"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-37"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-38"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-39"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-40"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-41"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-42"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-43"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-44"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-45"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-46"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-47"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-48"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-49"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-50"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-51"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-52"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-53"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-54"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-55"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-56"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-57"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-58"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-59"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-60"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-61"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-62"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-63"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-64"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-65"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-66"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-67"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-68"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-69"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-70"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-71"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-72"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-73"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-74"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-75"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-76"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-77"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-78"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-79"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-80"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-81"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-82"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-83"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-84"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-85"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-86"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-87"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-88"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-89"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-90"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-91"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-92"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-93"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-94"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-95"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-96"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-97"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-98"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-99"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-100"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-101"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-102"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-103"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-104"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-105"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-106"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-107"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-108"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-109"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-110"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-111"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-112"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-113"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-114"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-115"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-116"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-117"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-118"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-119"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-120"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-121"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-122"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-123"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-124"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-125"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-126"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-127"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-128"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-129"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-130"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-131"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-132"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-133"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-134"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-135"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-136"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-137"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-138"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-139"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-140"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-141"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-142"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-143"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-144"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-145"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-146"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-147"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-148"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-149"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-150"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-151"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-152"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-153"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-154"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-155"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-156"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-157"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-158"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-159"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-160"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-161"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-162"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-163"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-164"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-165"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-166"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-167"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-168"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-169"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-170"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-171"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-172"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Npm-173"
+    }
+  ]
+}

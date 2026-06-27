@@ -1,0 +1,117 @@
+{
+  "$schema": "https://sdkwork.com/schemas/sdkwork-workflow.schema.json",
+  "schemaVersion": "2026-06-06.sdkwork.workflow.v1",
+  "app": {
+    "id": "sdkwork-commerce-pc",
+    "name": "SDKWork Commerce PC",
+    "repository": "Sdkwork-Cloud/sdkwork-commerce",
+    "sourcePath": "apps/sdkwork-commerce-pc",
+    "configPath": "sdkwork.app.config.json"
+  },
+  "release": {
+    "artifactPrefix": "sdkwork-commerce-pc",
+    "defaultVersion": "0.1.0",
+    "versionInput": "package_version",
+    "tagInput": "tag",
+    "changelog": {
+      "source": "app-manifest"
+    }
+  },
+  "dependencies": [
+    {
+      "id": "sdkwork-appbase",
+      "repository": "Sdkwork-Cloud/sdkwork-appbase",
+      "refInput": "SDKWORK_APPBASE_REF",
+      "path": "apps/sdkwork-appbase",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    },
+    {
+      "id": "sdkwork-ui",
+      "repository": "Sdkwork-Cloud/sdkwork-ui",
+      "refInput": "SDKWORK_UI_REF",
+      "path": "apps/sdkwork-ui",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    },
+    {
+      "id": "sdkwork-sdk-commons",
+      "repository": "Sdkwork-Cloud/sdkwork-sdk-commons",
+      "refInput": "SDKWORK_SDK_COMMONS_REF",
+      "path": "apps/sdkwork-sdk-commons",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    }
+  ],
+  "toolchains": {
+    "node": "22",
+    "pnpm": "10.33.0",
+    "rust": "stable"
+  },
+  "lifecycle": {
+    "install": [
+      {
+        "name": "Install Commerce workspace dependencies",
+        "shell": "pwsh",
+        "workingDirectory": ".",
+        "run": "pnpm install --frozen-lockfile"
+      }
+    ],
+    "build": [
+      {
+        "name": "Verify Commerce generated SDKs and TypeScript",
+        "shell": "pwsh",
+        "workingDirectory": ".",
+        "run": "pnpm run route-manifest:check\npnpm run sdk:check\npnpm run typecheck\ncargo test --workspace"
+      }
+    ],
+    "stage": [
+      {
+        "name": "Stage Commerce PC web bundle metadata",
+        "shell": "pwsh",
+        "workingDirectory": ".",
+        "run": "$ErrorActionPreference = \"Stop\"\n$stage = \"apps/sdkwork-commerce-pc/dist/web\"\nRemove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue\nNew-Item -ItemType Directory -Force -Path $stage | Out-Null\nCopy-Item -LiteralPath \"apps/sdkwork-commerce-pc/sdkwork.app.config.json\" -Destination \"$stage/sdkwork.app.config.json\"\nCopy-Item -LiteralPath \"apps/sdkwork-commerce-pc/README.md\" -Destination \"$stage/README.md\""
+      }
+    ],
+    "package": [
+      {
+        "name": "Package selected Commerce PC web target",
+        "shell": "pwsh",
+        "workingDirectory": ".",
+        "run": "$ErrorActionPreference = \"Stop\"\n$output = \"apps/sdkwork-commerce-pc/dist/sdkwork-commerce-pc-$env:SDKWORK_PACKAGE_ID-$env:SDKWORK_PACKAGE_VERSION.zip\"\nCompress-Archive -Path \"apps/sdkwork-commerce-pc/dist/web/*\" -DestinationPath $output -Force"
+      }
+    ],
+    "validate": [
+      {
+        "name": "Validate selected Commerce PC package",
+        "shell": "pwsh",
+        "workingDirectory": ".",
+        "run": "$ErrorActionPreference = \"Stop\"\n$artifact = Get-ChildItem -Path \"apps/sdkwork-commerce-pc/dist\" -File | Where-Object { $_.Name -like \"sdkwork-commerce-pc-$env:SDKWORK_PACKAGE_ID-$env:SDKWORK_PACKAGE_VERSION.zip\" } | Select-Object -First 1\nif (-not $artifact) { throw \"Missing Commerce PC artifact for $env:SDKWORK_PACKAGE_ID\" }\npnpm run test:node"
+      }
+    ]
+  },
+  "targets": [
+    {
+      "id": "web-universal-cloud-browser-zip",
+      "profile": "browser",
+      "platform": "web",
+      "architecture": "universal",
+      "formats": [
+        "zip"
+      ],
+      "runner": "ubuntu-24.04",
+      "outputGlobs": [
+        "apps/sdkwork-commerce-pc/dist/*.zip"
+      ],
+      "deploymentProfile": "cloud",
+      "runtimeTarget": "browser"
+    }
+  ],
+  "security": {
+    "signingRequired": false,
+    "sbomRequired": false,
+    "artifactAttestations": true
+  },
+  "publish": {
+    "workflowArtifact": true,
+    "githubRelease": true,
+    "retentionDays": 30
+  }
+}

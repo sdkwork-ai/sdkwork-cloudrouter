@@ -1,0 +1,891 @@
+fragment: operations/app-auth
+frontend_operations:
+- route: /auth/login
+  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthSettingsService.ts
+  operation: fetchClawRouterAuthRuntimeSettings
+  operation_id: iam.runtime.retrieve
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/system/iam/runtime
+  openapi_exposed: false
+  sdk_domain: iam
+  summary: Retrieve public IAM runtime settings
+  description: Returns public login, registration, recovery, OAuth, QR login, and verification policy settings for the shared SDKWork IAM runtime without requiring an app session.
+  read_sources:
+  - ops_config_snapshot
+  query_parameters:
+  - name: tenant_code
+    schema:
+      type: string
+      maxLength: 64
+  - name: organization_code
+    schema:
+      type: string
+      maxLength: 64
+  response_schema:
+    name: AuthRuntimeSettingsResponse
+    type: object
+    additionalProperties: false
+    required:
+    - leftRailMode
+    - loginMethods
+    - oauthLoginEnabled
+    - oauthProviders
+    - qrLoginEnabled
+    - qrLoginType
+    - recoveryMethods
+    - registerMethods
+    - verificationPolicy
+    properties:
+      leftRailMode:
+        type: string
+        enum:
+        - auto
+        - highlights-only
+        - qr-only
+      loginMethods:
+        type: array
+        minItems: 1
+        maxItems: 8
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+          - password
+          - emailCode
+          - phoneCode
+          - sessionBridge
+      oauthLoginEnabled:
+        type: boolean
+      oauthProviders:
+        type: array
+        maxItems: 16
+        uniqueItems: true
+        items:
+          type: string
+          maxLength: 64
+          pattern: ^[A-Za-z0-9_-]+$
+      oauthRegion:
+        type: string
+        enum:
+        - mainland
+        - overseas
+      qrLoginEnabled:
+        type: boolean
+      qrLoginType:
+        type: string
+        enum:
+        - web
+        - official
+        - mini
+      recoveryMethods:
+        type: array
+        minItems: 1
+        maxItems: 4
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+          - email
+          - phone
+      registerMethods:
+        type: array
+        minItems: 1
+        maxItems: 4
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+          - email
+          - phone
+      verificationPolicy: &id001
+        name: AuthVerificationPolicy
+        type: object
+        additionalProperties: false
+        required:
+        - emailCodeLoginEnabled
+        - emailRegistrationVerificationRequired
+        - phoneCodeLoginEnabled
+        - phoneRegistrationVerificationRequired
+        properties:
+          emailCodeLoginEnabled:
+            type: boolean
+          emailRegistrationVerificationRequired:
+            type: boolean
+          phoneCodeLoginEnabled:
+            type: boolean
+          phoneRegistrationVerificationRequired:
+            type: boolean
+- route: /auth/login
+  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  operation: signIn
+  operation_id: sessions.create
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/auth/sessions
+  openapi_exposed: false
+  sdk_domain: auth
+  summary: Create IAM session
+  description: Creates a standard SDKWork IAM session for password, email-code, phone-code, or signed session-bridge grants and returns dual auth/access tokens with AppContext.
+  read_sources:
+  - iam_user
+  - iam_credential
+  - iam_session
+  write_tables:
+  - iam_session
+  - iam_security_event
+  - iam_audit_event
+  request_schema:
+    name: IamSessionCreateRequest
+    properties:
+      grantType:
+        type: string
+        enum:
+        - password
+        - email_code
+        - phone_code
+        - session_bridge
+        description: Authentication grant. Defaults to password when username and password are supplied.
+      username:
+        type: string
+        minLength: 1
+        maxLength: 128
+      password:
+        type: string
+        minLength: 1
+        maxLength: 128
+      email:
+        type: string
+        maxLength: 256
+      phone:
+        type: string
+        maxLength: 32
+      code:
+        type: string
+        maxLength: 32
+      subject:
+        type: string
+        maxLength: 256
+      name:
+        type: string
+        maxLength: 128
+      tenantCode:
+        type: string
+        maxLength: 64
+      organizationCode:
+        type: string
+        maxLength: 64
+      deviceId:
+        type: string
+        maxLength: 128
+      deviceName:
+        type: string
+        maxLength: 128
+      deviceType:
+        type: string
+        maxLength: 32
+  response_schema:
+    name: IamSessionResponse
+    required:
+    - accessToken
+    - authToken
+    - context
+    - user
+    properties:
+      accessToken:
+        type: string
+        minLength: 1
+        description: Data isolation and tenant access token. Clients send it as Access-Token.
+      authToken:
+        type: string
+        minLength: 1
+        description: Bearer authentication token. Clients send it as Authorization Bearer.
+      refreshToken:
+        type: string
+        minLength: 1
+        description: Refresh token for session renewal.
+      sessionId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      expiresAt:
+        type: string
+        format: date-time
+      context:
+        name: IamAppContext
+        type: object
+        additionalProperties: false
+        required:
+        - appId
+        - authLevel
+        - dataScope
+        - deploymentMode
+        - environment
+        - permissionScope
+        - sessionId
+        - tenantId
+        - userId
+        properties:
+          appId:
+            type: string
+            minLength: 1
+            maxLength: 128
+          authLevel:
+            type: string
+            enum:
+            - anonymous
+            - password
+            - mfa
+            - system
+          dataScope:
+            type: array
+            maxItems: 100
+            items:
+              type: string
+              maxLength: 256
+          deploymentMode:
+            type: string
+            enum:
+            - saas
+            - local
+            - private
+          environment:
+            type: string
+            enum:
+            - dev
+            - test
+            - prod
+          organizationId:
+            type: string
+            maxLength: 128
+          permissionScope:
+            type: array
+            maxItems: 200
+            items:
+              type: string
+              maxLength: 256
+          sessionId:
+            type: string
+            minLength: 1
+            maxLength: 128
+          tenantId:
+            type: string
+            minLength: 1
+            maxLength: 128
+          userId:
+            type: string
+            minLength: 1
+            maxLength: 128
+      user:
+        name: IamUserResponse
+        type: object
+        additionalProperties: false
+        required:
+        - id
+        - username
+        - displayName
+        - email
+        - avatar
+        - phone
+        - language
+        - isVerified
+        - status
+        - registeredAt
+        - lastLogin
+        - lastLoginIp
+        - passwordLastChanged
+        - twoFactorEnabled
+        - thirdPartyBound
+        properties:
+          id:
+            type: string
+            minLength: 1
+            maxLength: 128
+          username:
+            type: string
+            minLength: 1
+            maxLength: 128
+          displayName:
+            type: string
+            minLength: 1
+            maxLength: 128
+          email:
+            type: string
+            maxLength: 256
+          avatar:
+            $ref: '#/components/schemas/MediaResource'
+          phone:
+            type: string
+            description: Safe display phone value, empty when unavailable.
+          language:
+            type: string
+            maxLength: 32
+          isVerified:
+            type: boolean
+          status:
+            type: string
+            maxLength: 32
+          registeredAt:
+            type: string
+            format: date-time
+          lastLogin:
+            type: string
+            maxLength: 64
+          lastLoginIp:
+            type: string
+            description: Masked client IP address from the latest login event.
+          passwordLastChanged:
+            type: string
+            maxLength: 64
+          twoFactorEnabled:
+            type: boolean
+          thirdPartyBound:
+            type: string
+            description: Safe OAuth provider binding summary without provider subject IDs or tokens.
+- route: /auth/login
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/sessionService.ts
+  operation: createAppSession
+  operation_id: sessions.create
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/auth/sessions
+  sdk_domain: auth
+  openapi_exposed: false
+  read_sources:
+  - iam_user
+  - iam_session
+  write_tables:
+  - iam_session
+  - iam_security_event
+  - iam_audit_event
+- route: /auth/login
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/sessionService.ts
+  operation: revokeAppSession
+  operation_id: sessions.current.delete
+  kind: delete
+  api_surface: app
+  api_method: DELETE
+  api_path: /app/v3/api/auth/sessions/current
+  sdk_domain: auth
+  openapi_exposed: false
+  read_sources:
+  - iam_session
+  write_tables:
+  - iam_session
+  - iam_security_event
+- route: /auth/login
+  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  operation: signInWithEmailCode
+  operation_id: sessions.create
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/auth/sessions
+  sdk_domain: auth
+  openapi_exposed: false
+  read_sources:
+  - iam_user
+  - iam_credential
+  - iam_session
+  write_tables:
+  - iam_session
+  - iam_security_event
+  - iam_audit_event
+- route: /auth/login
+  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  operation: signInWithPhoneCode
+  operation_id: sessions.create
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/auth/sessions
+  sdk_domain: auth
+  openapi_exposed: false
+  read_sources:
+  - iam_user
+  - iam_credential
+  - iam_session
+  write_tables:
+  - iam_session
+  - iam_security_event
+  - iam_audit_event
+- route: /auth/register
+  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  operation: register
+  operation_id: registrations.create
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/auth/registrations
+  openapi_exposed: false
+  sdk_domain: auth
+  summary: Create IAM registration
+  description: Registers a tenant-scoped user through email or phone verification and returns the same IAM session payload used by login.
+  read_sources:
+  - iam_user
+  - iam_user_identity
+  - iam_credential
+  write_tables:
+  - iam_user
+  - iam_user_identity
+  - iam_credential
+  - iam_session
+  - iam_security_event
+  - iam_audit_event
+  request_schema:
+    name: IamRegistrationCreateRequest
+    required:
+    - username
+    - password
+    properties:
+      username:
+        type: string
+        minLength: 1
+        maxLength: 128
+      password:
+        type: string
+        minLength: 1
+        maxLength: 128
+      confirmPassword:
+        type: string
+        minLength: 1
+        maxLength: 128
+      email:
+        type: string
+        maxLength: 256
+      phone:
+        type: string
+        maxLength: 32
+      channel:
+        type: string
+        enum:
+        - EMAIL
+        - PHONE
+      verificationCode:
+        type: string
+        maxLength: 32
+      tenantCode:
+        type: string
+        maxLength: 64
+      organizationCode:
+        type: string
+        maxLength: 64
+  response_schema:
+    name: IamSessionResponse
+    schema:
+      $ref: '#/components/schemas/IamSessionResponse'
+- route: /auth/login
+  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthSettingsService.ts
+  operation: fetchClawRouterAuthVerificationPolicy
+  operation_id: iam.verificationPolicy.retrieve
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/system/iam/verification_policy
+  openapi_exposed: false
+  sdk_domain: iam
+  summary: Retrieve public IAM verification policy
+  description: Returns the public email and phone verification policy flags consumed by appbase IAM.
+  read_sources:
+  - ops_config_snapshot
+  query_parameters: []
+  response_schema: *id001
+- route: /auth/login
+  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  operation: bootstrap
+  operation_id: sessions.current.retrieve
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/auth/sessions/current
+  openapi_exposed: false
+  sdk_domain: auth
+  summary: Retrieve current IAM session
+  description: Reads the active IAM session and AppContext from the dual-token authentication boundary.
+  query_parameters: []
+  read_sources:
+  - iam_session
+  - iam_user
+  response_schema:
+    name: IamSessionResponse
+    schema:
+      $ref: '#/components/schemas/IamSessionResponse'
+- route: /auth/login
+  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  operation: updateCurrentSession
+  operation_id: sessions.current.update
+  kind: update
+  api_surface: app
+  api_method: PATCH
+  api_path: /app/v3/api/auth/sessions/current
+  openapi_exposed: false
+  sdk_domain: auth
+  summary: Update current IAM session
+  description: Updates current session metadata such as active organization without changing the public API shape.
+  read_sources:
+  - iam_session
+  write_tables:
+  - iam_session
+  - iam_security_event
+  request_schema:
+    name: IamCurrentSessionUpdateRequest
+    properties:
+      organizationId:
+        type: string
+        maxLength: 128
+      organizationCode:
+        type: string
+        maxLength: 64
+      deviceName:
+        type: string
+        maxLength: 128
+  response_schema:
+    name: IamSessionResponse
+    schema:
+      $ref: '#/components/schemas/IamSessionResponse'
+- route: /auth/login
+  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  operation: signOut
+  operation_id: sessions.current.delete
+  kind: delete
+  api_surface: app
+  api_method: DELETE
+  api_path: /app/v3/api/auth/sessions/current
+  openapi_exposed: false
+  sdk_domain: auth
+  summary: Delete current IAM session
+  description: Revokes the active IAM session and clears server-side session state.
+  read_sources:
+  - iam_session
+  write_tables:
+  - iam_session
+  - iam_security_event
+  response_schema:
+    name: NoData
+    properties: {}
+- route: /auth/login
+  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  operation: refreshSession
+  operation_id: sessions.refresh
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/auth/sessions/refresh
+  openapi_exposed: false
+  sdk_domain: auth
+  summary: Refresh IAM session
+  description: Refreshes the active IAM session using a refresh token and returns a new dual-token payload.
+  read_sources:
+  - iam_session
+  write_tables:
+  - iam_session
+  - iam_security_event
+  request_schema:
+    name: IamSessionRefreshRequest
+    properties:
+      refreshToken:
+        type: string
+        minLength: 1
+        maxLength: 4096
+  response_schema:
+    name: IamSessionResponse
+    schema:
+      $ref: '#/components/schemas/IamSessionResponse'
+- route: /auth/forgot-password
+  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  operation: requestPasswordReset
+  operation_id: passwordResetRequests.create
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/auth/password_reset_requests
+  openapi_exposed: false
+  sdk_domain: auth
+  summary: Create password reset request
+  description: Starts password recovery by issuing an IAM verification challenge through the messaging delivery port.
+  read_sources:
+  - iam_user
+  - iam_user_identity
+  write_tables:
+  - iam_security_event
+  request_schema:
+    name: IamPasswordResetRequestCreateRequest
+    required:
+    - account
+    - channel
+    properties:
+      account:
+        type: string
+        minLength: 1
+        maxLength: 256
+      channel:
+        type: string
+        enum:
+        - EMAIL
+        - SMS
+  response_schema:
+    name: IamPasswordResetRequestResponse
+    properties:
+      requestId:
+        type: string
+        maxLength: 128
+      expiresAt:
+        type: string
+        format: date-time
+      debugCode:
+        type: string
+        maxLength: 32
+        description: Local/private deployment development code returned only when no notification adapter is configured.
+- route: /auth/forgot-password
+  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  operation: resetPassword
+  operation_id: passwordResets.create
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/auth/password_resets
+  openapi_exposed: false
+  sdk_domain: auth
+  summary: Create password reset
+  description: Completes password recovery using a verified reset code and writes the new credential hash.
+  read_sources:
+  - iam_user
+  - iam_credential
+  write_tables:
+  - iam_credential
+  - iam_security_event
+  - iam_audit_event
+  request_schema:
+    name: IamPasswordResetCreateRequest
+    required:
+    - account
+    - code
+    - newPassword
+    properties:
+      account:
+        type: string
+        minLength: 1
+        maxLength: 256
+      code:
+        type: string
+        minLength: 1
+        maxLength: 32
+      newPassword:
+        type: string
+        minLength: 1
+        maxLength: 128
+      confirmPassword:
+        type: string
+        minLength: 1
+        maxLength: 128
+  response_schema:
+    name: NoData
+    properties: {}
+- route: /auth/login
+  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  operation: sendVerifyCode
+  operation_id: verificationCodes.create
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/auth/verification_codes
+  openapi_exposed: false
+  sdk_domain: auth
+  summary: Create verification code
+  description: Creates an IAM verification challenge and sends the code through the messaging SMS or email delivery port.
+  read_sources:
+  - iam_user_identity
+  - iam_verification_scene_policy
+  - messaging_template
+  - messaging_route_rule
+  write_tables:
+  - iam_verification_challenge
+  - messaging_send_request
+  - messaging_rate_limit_bucket
+  - iam_security_event
+  request_schema:
+    name: IamVerificationCodeCreateRequest
+    required:
+    - target
+    - scene
+    - verifyType
+    properties:
+      target:
+        type: string
+        minLength: 1
+        maxLength: 256
+      scene:
+        type: string
+        enum:
+        - LOGIN
+        - REGISTER
+        - RESET_PASSWORD
+      verifyType:
+        type: string
+        enum:
+        - EMAIL
+        - PHONE
+  response_schema:
+    name: IamVerificationCodeResponse
+    properties:
+      codeId:
+        type: string
+        maxLength: 128
+      expiresAt:
+        type: string
+        format: date-time
+      deliveryRequestId:
+        type: string
+        maxLength: 128
+        description: Messaging send request id that carries the external SMS or email delivery audit trail.
+- route: /auth/login
+  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  operation: verifyCode
+  operation_id: verificationCodes.verify
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/auth/verification_codes/verify
+  openapi_exposed: false
+  sdk_domain: auth
+  summary: Verify verification code
+  description: Verifies a one-time email or phone code against the IAM verification challenge store.
+  read_sources:
+  - iam_verification_challenge
+  write_tables:
+  - iam_verification_challenge
+  - iam_verification_attempt
+  - messaging_rate_limit_bucket
+  - iam_security_event
+  request_schema:
+    name: IamVerificationCodeVerifyRequest
+    required:
+    - target
+    - scene
+    - verifyType
+    - code
+    properties:
+      target:
+        type: string
+        minLength: 1
+        maxLength: 256
+      scene:
+        type: string
+        enum:
+        - LOGIN
+        - REGISTER
+        - RESET_PASSWORD
+      verifyType:
+        type: string
+        enum:
+        - EMAIL
+        - PHONE
+      code:
+        type: string
+        minLength: 1
+        maxLength: 32
+      codeId:
+        type: string
+        maxLength: 128
+  response_schema:
+    name: IamVerificationCodeVerifyResponse
+    required:
+    - verified
+    properties:
+      verified:
+        type: boolean
+      valid:
+        type: boolean
+- route: /auth/oauth/callback/:provider
+  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  operation: getOAuthAuthorizationUrl
+  operation_id: oauth.authorizationUrls.create
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/oauth/authorization_urls
+  openapi_exposed: false
+  sdk_domain: iam
+  summary: Retrieve OAuth authorization URL
+  description: Returns an OAuth provider authorization URL using standardized app auth configuration.
+  read_sources:
+  - iam_user_identity
+  request_schema:
+    name: IamOauthAuthorizationUrlCreateRequest
+    required:
+    - provider
+    - redirectUri
+    properties:
+      provider:
+        type: string
+        minLength: 1
+        maxLength: 64
+      redirectUri:
+        type: string
+        minLength: 1
+        maxLength: 2048
+      state:
+        type: string
+        maxLength: 1024
+      scope:
+        type: string
+        maxLength: 2048
+  response_schema:
+    name: IamOauthAuthorizationUrlResponse
+    required:
+    - authUrl
+    properties:
+      authUrl:
+        type: string
+        minLength: 1
+        maxLength: 2048
+- route: /auth/oauth/callback/:provider
+  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  operation: signInWithOAuth
+  operation_id: oauth.sessions.create
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/oauth/sessions
+  openapi_exposed: false
+  sdk_domain: iam
+  summary: Create OAuth IAM session
+  description: Exchanges an OAuth authorization code for the same dual-token IAM session payload used by password login.
+  read_sources:
+  - iam_user_identity
+  - iam_user
+  write_tables:
+  - iam_user_identity
+  - iam_session
+  - iam_security_event
+  - iam_audit_event
+  request_schema:
+    name: IamOauthSessionCreateRequest
+    required:
+    - provider
+    - code
+    properties:
+      provider:
+        type: string
+        minLength: 1
+        maxLength: 64
+      code:
+        type: string
+        minLength: 1
+        maxLength: 4096
+      state:
+        type: string
+        maxLength: 1024
+      deviceId:
+        type: string
+        maxLength: 128
+      deviceType:
+        type: string
+        maxLength: 32
+  response_schema:
+    name: IamSessionResponse
+    schema:
+      $ref: '#/components/schemas/IamSessionResponse'

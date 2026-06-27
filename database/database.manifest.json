@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.database.module",
+  "moduleId": "clawrouter",
+  "serviceCode": "CLAW_ROUTER",
+  "displayName": "CLAW_ROUTER Database",
+  "owner": "claw-router-platform",
+  "engines": [
+    "postgres",
+    "sqlite"
+  ],
+  "defaultEngine": "postgres",
+  "tablePrefix": "ai_",
+  "contractVersion": "1.0.0",
+  "baselineStrategy": "baseline-plus-migrations",
+  "modules": [
+    {
+      "moduleId": "sdkwork-models",
+      "ownership": "compose_at_install",
+      "enabled": true
+    },
+    {
+      "moduleId": "iam",
+      "ownership": "bootstrap_standalone",
+      "enabled": true
+    },
+    {
+      "moduleId": "sdkwork-commerce",
+      "ownership": "compose_standalone",
+      "enabled": true
+    }
+  ],
+  "composeDependencies": [
+    {
+      "moduleId": "sdkwork-models",
+      "ownership": "compose_at_install",
+      "enabled": true
+    },
+    {
+      "moduleId": "iam",
+      "ownership": "bootstrap_standalone",
+      "enabled": true
+    },
+    {
+      "moduleId": "sdkwork-commerce",
+      "ownership": "compose_standalone",
+      "enabled": true
+    }
+  ],
+  "lifecycle": {
+    "autoMigrate": true,
+    "seedOnBoot": false,
+    "defaultSeedLocale": "zh-CN",
+    "defaultSeedProfile": "standard",
+    "supportedSeedLocales": [
+      "zh-CN",
+      "en-US",
+      "ja-JP",
+      "de-DE",
+      "fr-FR",
+      "ru-RU",
+      "ko-KR"
+    ],
+    "activeSeedLocales": [
+      "zh-CN"
+    ],
+    "driftCheckIntervalSec": 60
+  },
+  "paths": {
+    "contract": "contract/schema.yaml",
+    "migrations": "migrations",
+    "seeds": "seeds",
+    "driftPolicy": "drift/policy.yaml"
+  },
+  "spi": {
+    "provider": "default",
+    "hooks": []
+  }
+}

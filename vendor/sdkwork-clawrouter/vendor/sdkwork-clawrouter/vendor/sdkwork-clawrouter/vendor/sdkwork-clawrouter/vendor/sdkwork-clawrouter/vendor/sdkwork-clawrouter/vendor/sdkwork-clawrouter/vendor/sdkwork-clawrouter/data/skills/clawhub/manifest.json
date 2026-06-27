@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "sdkwork-clawhub-skills-projection.v1",
+  "mirrorMode": "full-cursor-mirror",
+  "source": {
+    "listApi": "https://clawhub.ai/api/v1/skills",
+    "detailApiTemplate": "https://clawhub.ai/api/v1/skills/{slug}",
+    "sort": "createdAt",
+    "pageSize": 200
+  },
+  "generatedAt": "2026-05-10T00:00:00Z",
+  "mirroredSkillCount": 5,
+  "seededSkillCount": 5,
+  "sourceHash": "sha256:61c088d03f4fb66f5a852fd5a83e05d585140bfaacbce4756290375685fe4c5d",
+  "seededSkills": [
+    {
+      "id": 8201,
+      "skillKey": "clawhub-agent-harness-builder",
+      "slug": "agent-harness-builder",
+      "name": "Agent Harness Builder",
+      "version": "1.0.0",
+      "url": "https://clawhub.ai/skills/agent-harness-builder"
+    },
+    {
+      "id": 8202,
+      "skillKey": "clawhub-remote-dispatch",
+      "slug": "remote-dispatch",
+      "name": "Remote Dispatch — 多端远程协同",
+      "version": "1.0.0",
+      "url": "https://clawhub.ai/skills/remote-dispatch"
+    },
+    {
+      "id": 8203,
+      "skillKey": "clawhub-codebase-index",
+      "slug": "codebase-index",
+      "name": "Codebase Index — 代码库索引系统",
+      "version": "1.0.0",
+      "url": "https://clawhub.ai/skills/codebase-index"
+    },
+    {
+      "id": 8204,
+      "skillKey": "clawhub-the-ren-skill",
+      "slug": "the-ren-skill",
+      "name": "雄韬识人辨人 - 老板阅人笔记 The Ren Skill",
+      "version": "1.0.0",
+      "url": "https://clawhub.ai/skills/the-ren-skill"
+    },
+    {
+      "id": 8205,
+      "skillKey": "clawhub-ziwei-people-analysis",
+      "slug": "ziwei-people-analysis",
+      "name": "紫微识人管人报告生成",
+      "version": "1.0.0",
+      "url": "https://clawhub.ai/skills/ziwei-people-analysis"
+    }
+  ]
+}

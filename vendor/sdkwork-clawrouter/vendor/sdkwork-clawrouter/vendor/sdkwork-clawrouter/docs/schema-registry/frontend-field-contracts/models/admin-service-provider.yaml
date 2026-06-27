@@ -1,0 +1,93 @@
+fragment: models/admin-service-provider
+frontend_models:
+- route: /admin/service-providers/dashboard
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts
+  interface: ServiceProviderDashboardItem
+  fields:
+  - id
+  - status
+  - incomeAmount
+  - expenseAmount
+  - marginAmount
+  - requestCount
+  - activeDownstreamCount
+  - riskProviderCount
+  data_sources:
+  - analytics_service_provider_daily
+  - commerce_service_provider_exposure_snapshot
+- route: /admin/service-providers/providers
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts
+  interface: ServiceProviderResourceItem
+  fields:
+  - id
+  - providerNo
+  - displayName
+  - providerType
+  - status
+  - riskLevel
+  - incomeAmount
+  - expenseAmount
+  - marginAmount
+  data_sources:
+  - integration_service_provider
+  - analytics_service_provider_daily
+- route: /admin/service-providers/relations
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts
+  interface: ServiceProviderRelationItem
+  fields:
+  - id
+  - edgeNo
+  - sellerProviderId
+  - buyerProviderId
+  - edgeType
+  - settlementMode
+  - status
+  data_sources:
+  - integration_service_provider_edge
+  - integration_service_provider_closure
+- route: /admin/service-providers/pricing
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts
+  interface: ServiceProviderPricingRuleItem
+  fields:
+  - id
+  - planCode
+  - catalogKey
+  - model
+  - billingMeterCode
+  - tokenKind
+  - unitPrice
+  - currency
+  - priority
+  data_sources:
+  - integration_service_provider_price_plan
+  - integration_service_provider_price_rule
+- route: /admin/service-providers/usage
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts
+  interface: ServiceProviderUsageEdgeItem
+  fields:
+  - id
+  - usageFactId
+  - sellerProviderId
+  - buyerProviderId
+  - billingMeterCode
+  - tokenKind
+  - billableQuantity
+  - chargeAmount
+  - currency
+  data_sources:
+  - ai_usage_service_provider_edge
+- route: /admin/service-providers/statements
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts
+  interface: ServiceProviderStatementItem
+  fields:
+  - id
+  - statementNo
+  - sellerProviderId
+  - buyerProviderId
+  - period
+  - receivableAmount
+  - payableAmount
+  - currency
+  - statementStatus
+  data_sources:
+  - commerce_usage_service_provider_statement

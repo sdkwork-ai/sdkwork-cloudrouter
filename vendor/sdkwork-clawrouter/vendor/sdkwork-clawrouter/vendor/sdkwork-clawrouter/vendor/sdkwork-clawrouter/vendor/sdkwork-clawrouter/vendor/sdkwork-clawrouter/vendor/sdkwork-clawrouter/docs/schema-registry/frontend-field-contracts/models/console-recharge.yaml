@@ -1,0 +1,69 @@
+fragment: models/console-recharge
+frontend_models:
+- route: /console/recharge
+  source: apps/sdkwork-clawrouter-pc/src/commerce/commerceViewModels.ts
+  interface: RechargePackage
+  fields:
+  - id
+  - priceAmount
+  - currencyCode
+  - bonusPoints
+  - grantAmount
+  - points
+  data_sources:
+  - commerce_recharge_package
+  - commerce_product_spu
+  - commerce_product_sku
+- route: /console/recharge
+  source: apps/sdkwork-clawrouter-pc/src/commerce/commerceViewModels.ts
+  interface: RechargeOrderCreateResult
+  fields:
+  - success
+  - orderNo
+  - providerCode
+  - paymentMethod
+  - paymentProduct
+  - nextAction
+  - cashierUrl
+  - qrCodePayload
+  - requestPaymentPayload
+  data_sources:
+  - commerce_recharge_package
+  - commerce_order
+  - commerce_payment_intent
+  - commerce_payment_attempt
+- route: /console/recharge
+  source: apps/sdkwork-clawrouter-pc/src/commerce/commerceViewModels.ts
+  interface: RechargeSettingsSnapshot
+  fields:
+  - baseCurrencyCode
+  - basePointsPerCny
+  - currencyToCnyRates
+  - previewExamples
+  data_sources:
+  - commerce_exchange_rule
+  - commerce_recharge_package
+- route: /console/recharge
+  source: apps/sdkwork-clawrouter-pc/src/commerce/commerceViewModels.ts
+  interface: BillingHistoryItem
+  fields:
+  - id
+  - historyNo
+  - type
+  - direction
+  - assetType
+  - amount
+  - currencyCode
+  - pointsDelta
+  - status
+  - title
+  - referenceNo
+  - sourceType
+  - sourceId
+  - relatedOrderNo
+  - paymentMethod
+  - occurredAt
+  derived_fields:
+  - method
+  data_sources:
+  - commerce_billing_history

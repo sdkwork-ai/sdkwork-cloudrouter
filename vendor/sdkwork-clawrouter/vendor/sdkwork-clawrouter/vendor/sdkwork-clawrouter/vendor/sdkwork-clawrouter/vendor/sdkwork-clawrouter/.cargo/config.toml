@@ -1,0 +1,5 @@
+[build]
+incremental = true
+
+[env]
+SDKWORK_CLAW_HTTP_OPENAPI_BUILD_MODE = { value = "copy", force = false }

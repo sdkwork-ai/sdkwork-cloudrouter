@@ -1,0 +1,15 @@
+[package]
+name = "sdkwork-intelligence-mcp-repository-sqlx"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+chrono = { version = "0.4", features = ["serde"] }
+sdkwork-id-core.workspace = true
+sdkwork-intelligence-mcp-service = { path = "../sdkwork-intelligence-mcp-service" }
+sdkwork-mcp-contract.workspace = true
+sdkwork-utils-rust.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true

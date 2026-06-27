@@ -1,0 +1,260 @@
+{
+  "schemaVersion": "2026-05-18.sdkwork-download-catalog.v1",
+  "generatedAt": "0.3.0.release",
+  "product": {
+    "id": "sdkwork-clawrouter",
+    "name": "SdkWork ClawRouter",
+    "version": "0.3.0",
+    "releaseTag": "v0.3.0",
+    "releaseUrl": "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/tag/v0.3.0",
+    "channel": "stable"
+  },
+  "cards": [
+    {
+      "actions": [
+        {
+          "architecture": "x64",
+          "fileName": "clawrouter-macos-x64-desktop-0.3.0.pkg",
+          "href": "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/download/v0.3.0/clawrouter-macos-x64-desktop-0.3.0.pkg",
+          "id": "desktop-macos-x64",
+          "label": "macOS x64",
+          "platform": "macos",
+          "releaseTag": "v0.3.0",
+          "version": "0.3.0"
+        },
+        {
+          "architecture": "arm64",
+          "fileName": "clawrouter-macos-arm64-desktop-0.3.0.pkg",
+          "href": "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/download/v0.3.0/clawrouter-macos-arm64-desktop-0.3.0.pkg",
+          "id": "desktop-macos-arm64",
+          "label": "macOS arm64",
+          "platform": "macos",
+          "releaseTag": "v0.3.0",
+          "version": "0.3.0"
+        },
+        {
+          "architecture": "x64",
+          "fileName": "clawrouter-windows-x64-desktop-0.3.0.msi",
+          "href": "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/download/v0.3.0/clawrouter-windows-x64-desktop-0.3.0.msi",
+          "id": "desktop-windows-x64",
+          "label": "Windows x64",
+          "platform": "windows",
+          "releaseTag": "v0.3.0",
+          "version": "0.3.0"
+        },
+        {
+          "architecture": "arm64",
+          "fileName": "clawrouter-windows-arm64-desktop-0.3.0.msi",
+          "href": "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/download/v0.3.0/clawrouter-windows-arm64-desktop-0.3.0.msi",
+          "id": "desktop-windows-arm64",
+          "label": "Windows arm64",
+          "platform": "windows",
+          "releaseTag": "v0.3.0",
+          "version": "0.3.0"
+        },
+        {
+          "architecture": "x64",
+          "fileName": "clawrouter-linux-x64-desktop-0.3.0.deb",
+          "href": "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/download/v0.3.0/clawrouter-linux-x64-desktop-0.3.0.deb",
+          "id": "desktop-linux-x64",
+          "label": "Linux x64",
+          "platform": "linux",
+          "releaseTag": "v0.3.0",
+          "version": "0.3.0"
+        },
+        {
+          "architecture": "arm64",
+          "fileName": "clawrouter-linux-arm64-desktop-0.3.0.deb",
+          "href": "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/download/v0.3.0/clawrouter-linux-arm64-desktop-0.3.0.deb",
+          "id": "desktop-linux-arm64",
+          "label": "Linux arm64",
+          "platform": "linux",
+          "releaseTag": "v0.3.0",
+          "version": "0.3.0"
+        }
+      ],
+      "description": "For developers and local environments. Includes a full graphical interface, visual API building, integrated Playground, and one-click app testing.",
+      "icon": "desktop",
+      "id": "claw-router-desktop",
+      "kind": "desktop",
+      "primaryActionStrategy": "detected-platform",
+      "title": "Claw Router Desktop",
+      "tone": "brand"
+    },
+    {
+      "actions": [
+        {
+          "architecture": "x64",
+          "fileName": "clawrouter-macos-x64-archive-0.3.0.tar.gz",
+          "href": "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/download/v0.3.0/clawrouter-macos-x64-archive-0.3.0.tar.gz",
+          "id": "server-macos-archive-x64",
+          "label": "macOS x64 Tarball",
+          "platform": "macos",
+          "releaseTag": "v0.3.0",
+          "version": "0.3.0"
+        },
+        {
+          "architecture": "x64",
+          "fileName": "clawrouter-macos-x64-server-0.3.0.pkg",
+          "href": "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/download/v0.3.0/clawrouter-macos-x64-server-0.3.0.pkg",
+          "id": "server-macos-x64",
+          "label": "macOS x64 Service",
+          "platform": "macos",
+          "releaseTag": "v0.3.0",
+          "version": "0.3.0"
+        },
+        {
+          "architecture": "arm64",
+          "fileName": "clawrouter-macos-arm64-archive-0.3.0.tar.gz",
+          "href": "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/download/v0.3.0/clawrouter-macos-arm64-archive-0.3.0.tar.gz",
+          "id": "server-macos-archive-arm64",
+          "label": "macOS arm64 Tarball",
+          "platform": "macos",
+          "releaseTag": "v0.3.0",
+          "version": "0.3.0"
+        },
+        {
+          "architecture": "arm64",
+          "fileName": "clawrouter-macos-arm64-server-0.3.0.pkg",
+          "href": "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/download/v0.3.0/clawrouter-macos-arm64-server-0.3.0.pkg",
+          "id": "server-macos-arm64",
+          "label": "macOS arm64 Service",
+          "platform": "macos",
+          "releaseTag": "v0.3.0",
+          "version": "0.3.0"
+        },
+        {
+          "architecture": "x64",
+          "fileName": "clawrouter-windows-x64-archive-0.3.0.zip",
+          "href": "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/download/v0.3.0/clawrouter-windows-x64-archive-0.3.0.zip",
+          "id": "server-windows-archive-x64",
+          "label": "Windows x64 Zip",
+          "platform": "windows",
+          "releaseTag": "v0.3.0",
+          "version": "0.3.0"
+        },
+        {
+          "architecture": "x64",
+          "fileName": "clawrouter-windows-x64-server-0.3.0.msi",
+          "href": "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/download/v0.3.0/clawrouter-windows-x64-server-0.3.0.msi",
+          "id": "server-windows-x64",
+          "label": "Windows x64 Service",
+          "platform": "windows",
+          "releaseTag": "v0.3.0",
+          "version": "0.3.0"
+        },
+        {
+          "architecture": "arm64",
+          "fileName": "clawrouter-windows-arm64-archive-0.3.0.zip",
+          "href": "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/download/v0.3.0/clawrouter-windows-arm64-archive-0.3.0.zip",
+          "id": "server-windows-archive-arm64",
+          "label": "Windows arm64 Zip",
+          "platform": "windows",
+          "releaseTag": "v0.3.0",
+          "version": "0.3.0"
+        },
+        {
+          "architecture": "arm64",
+          "fileName": "clawrouter-windows-arm64-server-0.3.0.msi",
+          "href": "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/download/v0.3.0/clawrouter-windows-arm64-server-0.3.0.msi",
+          "id": "server-windows-arm64",
+          "label": "Windows arm64 Service",
+          "platform": "windows",
+          "releaseTag": "v0.3.0",
+          "version": "0.3.0"
+        },
+        {
+          "architecture": "x64",
+          "fileName": "clawrouter-linux-x64-archive-0.3.0.tar.gz",
+          "href": "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/download/v0.3.0/clawrouter-linux-x64-archive-0.3.0.tar.gz",
+          "id": "server-linux-archive-x64",
+          "label": "Linux x64 Tarball",
+          "platform": "linux",
+          "releaseTag": "v0.3.0",
+          "version": "0.3.0"
+        },
+        {
+          "architecture": "x64",
+          "ctaLabel": "Get Server Edition",
+          "fileName": "clawrouter-linux-x64-server-0.3.0.deb",
+          "href": "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/download/v0.3.0/clawrouter-linux-x64-server-0.3.0.deb",
+          "id": "server-linux-x64",
+          "label": "Linux x64 Service",
+          "platform": "linux",
+          "releaseTag": "v0.3.0",
+          "version": "0.3.0"
+        },
+        {
+          "architecture": "arm64",
+          "fileName": "clawrouter-linux-arm64-archive-0.3.0.tar.gz",
+          "href": "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/download/v0.3.0/clawrouter-linux-arm64-archive-0.3.0.tar.gz",
+          "id": "server-linux-archive-arm64",
+          "label": "Linux arm64 Tarball",
+          "platform": "linux",
+          "releaseTag": "v0.3.0",
+          "version": "0.3.0"
+        },
+        {
+          "architecture": "arm64",
+          "fileName": "clawrouter-linux-arm64-server-0.3.0.deb",
+          "href": "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/download/v0.3.0/clawrouter-linux-arm64-server-0.3.0.deb",
+          "id": "server-linux-arm64",
+          "label": "Linux arm64 Service",
+          "platform": "linux",
+          "releaseTag": "v0.3.0",
+          "version": "0.3.0"
+        },
+        {
+          "disabled": true,
+          "href": "",
+          "id": "server-docker",
+          "label": "Docker Image",
+          "platform": "docker",
+          "unavailableLabel": "Docker Image coming soon"
+        },
+        {
+          "disabled": true,
+          "href": "",
+          "id": "server-helm",
+          "label": "Helm Chart",
+          "platform": "helm",
+          "unavailableLabel": "Helm Chart coming soon"
+        }
+      ],
+      "description": "For production deployments. Optimized for headless execution, extreme throughput, containerization (Docker), and large-scale enterprise routing.",
+      "icon": "server",
+      "id": "claw-router-server",
+      "kind": "server",
+      "primaryActionId": "server-linux-x64",
+      "title": "Claw Router Server",
+      "tone": "server"
+    },
+    {
+      "actions": [
+        {
+          "disabled": true,
+          "href": "",
+          "id": "mobile-ios",
+          "label": "iOS",
+          "platform": "ios",
+          "unavailableLabel": "iOS coming soon"
+        },
+        {
+          "disabled": true,
+          "href": "",
+          "id": "mobile-android",
+          "label": "Android",
+          "platform": "android",
+          "unavailableLabel": "Android coming soon"
+        }
+      ],
+      "description": "Track routing health, account activity, and model usage from a mobile companion built for operators and builders.",
+      "icon": "mobile",
+      "id": "claw-router-mobile",
+      "kind": "mobile",
+      "primaryActionStrategy": "detected-platform",
+      "title": "Claw Router Mobile",
+      "tone": "mobile"
+    }
+  ]
+}

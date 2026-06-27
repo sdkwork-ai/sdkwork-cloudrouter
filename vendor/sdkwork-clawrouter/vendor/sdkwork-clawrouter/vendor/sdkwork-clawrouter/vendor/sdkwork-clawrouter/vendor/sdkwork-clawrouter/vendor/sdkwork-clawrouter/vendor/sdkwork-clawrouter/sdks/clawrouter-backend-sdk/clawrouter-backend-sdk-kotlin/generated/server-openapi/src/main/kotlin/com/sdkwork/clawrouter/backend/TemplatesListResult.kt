@@ -1,0 +1,7 @@
+package com.sdkwork.clawrouter.backend
+
+data class TemplatesListResult(
+    val code: String? = null,
+    val data_: MessagingCollectionResponse? = null,
+    val msg: String? = null
+)

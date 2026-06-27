@@ -1,0 +1,468 @@
+fragment: models/admin-organization
+frontend_models:
+- route: /admin/organization
+  source: &adminOrganizationService apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts
+  interface: OrganizationTreeNode
+  fields:
+  - id
+  - code
+  - name
+  - parentId
+  - status
+  - kind
+  - children
+  data_sources:
+  - iam_organization
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: OrganizationRecord
+  fields:
+  - id
+  - code
+  - name
+  - organizationKind
+  - parentOrganizationId
+  - status
+  - ownerUserId
+  - memberCount
+  - departmentCount
+  - sortWeight
+  - createdAt
+  - updatedAt
+  data_sources:
+  - iam_organization
+  - iam_organization_membership
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: DepartmentTreeNode
+  fields:
+  - id
+  - code
+  - name
+  - organizationId
+  - parentId
+  - status
+  - children
+  data_sources:
+  - iam_organization
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: DepartmentRecord
+  fields:
+  - id
+  - code
+  - name
+  - organizationId
+  - parentDepartmentId
+  - status
+  - managerUserId
+  - memberCount
+  - sortWeight
+  - createdAt
+  - updatedAt
+  data_sources:
+  - iam_organization
+  - iam_organization_membership
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: OrganizationMemberRecord
+  fields:
+  - id
+  - organizationId
+  - userId
+  - displayName
+  - username
+  - email
+  - mobile
+  - memberKind
+  - status
+  - joinedAt
+  - createdAt
+  data_sources:
+  - iam_user
+  - iam_organization
+  - iam_organization_membership
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: UserRecord
+  fields:
+  - id
+  - username
+  - displayName
+  - email
+  - mobile
+  - gender
+  - country
+  - province
+  - city
+  - district
+  - address
+  - status
+  - createdAt
+  - updatedAt
+  data_sources:
+  - iam_user
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: DepartmentAssignmentRecord
+  fields:
+  - id
+  - departmentId
+  - membershipId
+  - userId
+  - role
+  - status
+  - isPrimary
+  - createdAt
+  data_sources:
+  - iam_user
+  - iam_organization_membership
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: PositionRecord
+  fields:
+  - id
+  - code
+  - name
+  - organizationId
+  - departmentId
+  - status
+  - rankLevel
+  - description
+  - createdAt
+  - updatedAt
+  data_sources:
+  - iam_organization
+  - iam_organization_membership
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: PositionAssignmentRecord
+  fields:
+  - id
+  - positionId
+  - membershipId
+  - userId
+  - status
+  - startedAt
+  - endedAt
+  - createdAt
+  data_sources:
+  - iam_user
+  - iam_organization_membership
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: RoleRecord
+  fields:
+  - id
+  - code
+  - name
+  - status
+  - description
+  - createdAt
+  - updatedAt
+  data_sources:
+  - iam_role
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: RoleBindingRecord
+  fields:
+  - id
+  - roleId
+  - principalKind
+  - principalId
+  - organizationId
+  - departmentId
+  - scopeKind
+  - scopeId
+  - status
+  - createdAt
+  data_sources:
+  - iam_role
+  - iam_user_role
+  - iam_organization
+  - iam_organization_membership
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: PermissionRecord
+  fields:
+  - id
+  - code
+  - name
+  - resource
+  - action
+  - status
+  - description
+  - createdAt
+  - updatedAt
+  data_sources:
+  - iam_permission
+  - iam_role_permission
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: OrganizationDirectoryData
+  fields:
+  - organizationTree
+  - organizationTree.id
+  - organizationTree.code
+  - organizationTree.name
+  - organizationTree.parentId
+  - organizationTree.status
+  - organizationTree.kind
+  - organizationTree.children
+  - users
+  - users.id
+  - users.username
+  - users.displayName
+  - users.email
+  - users.mobile
+  - users.gender
+  - users.country
+  - users.province
+  - users.city
+  - users.district
+  - users.address
+  - users.status
+  - users.createdAt
+  - users.updatedAt
+  - organizations
+  - organizations.id
+  - organizations.code
+  - organizations.name
+  - organizations.organizationKind
+  - organizations.parentOrganizationId
+  - organizations.status
+  - organizations.ownerUserId
+  - organizations.memberCount
+  - organizations.departmentCount
+  - organizations.sortWeight
+  - organizations.createdAt
+  - organizations.updatedAt
+  - departmentTree
+  - departmentTree.id
+  - departmentTree.code
+  - departmentTree.name
+  - departmentTree.organizationId
+  - departmentTree.parentId
+  - departmentTree.status
+  - departmentTree.children
+  - departments
+  - departments.id
+  - departments.code
+  - departments.name
+  - departments.organizationId
+  - departments.parentDepartmentId
+  - departments.status
+  - departments.managerUserId
+  - departments.memberCount
+  - departments.sortWeight
+  - departments.createdAt
+  - departments.updatedAt
+  - memberships
+  - memberships.id
+  - memberships.organizationId
+  - memberships.userId
+  - memberships.displayName
+  - memberships.username
+  - memberships.email
+  - memberships.mobile
+  - memberships.memberKind
+  - memberships.status
+  - memberships.joinedAt
+  - memberships.createdAt
+  - departmentAssignments
+  - departmentAssignments.id
+  - departmentAssignments.departmentId
+  - departmentAssignments.membershipId
+  - departmentAssignments.userId
+  - departmentAssignments.role
+  - departmentAssignments.status
+  - departmentAssignments.isPrimary
+  - departmentAssignments.createdAt
+  - positions
+  - positions.id
+  - positions.code
+  - positions.name
+  - positions.organizationId
+  - positions.departmentId
+  - positions.status
+  - positions.rankLevel
+  - positions.description
+  - positions.createdAt
+  - positions.updatedAt
+  - positionAssignments
+  - positionAssignments.id
+  - positionAssignments.positionId
+  - positionAssignments.membershipId
+  - positionAssignments.userId
+  - positionAssignments.status
+  - positionAssignments.startedAt
+  - positionAssignments.endedAt
+  - positionAssignments.createdAt
+  - roles
+  - roles.id
+  - roles.code
+  - roles.name
+  - roles.status
+  - roles.description
+  - roles.createdAt
+  - roles.updatedAt
+  - roleBindings
+  - roleBindings.id
+  - roleBindings.roleId
+  - roleBindings.principalKind
+  - roleBindings.principalId
+  - roleBindings.organizationId
+  - roleBindings.departmentId
+  - roleBindings.scopeKind
+  - roleBindings.scopeId
+  - roleBindings.status
+  - roleBindings.createdAt
+  - permissions
+  - permissions.id
+  - permissions.code
+  - permissions.name
+  - permissions.resource
+  - permissions.action
+  - permissions.status
+  - permissions.description
+  - permissions.createdAt
+  - permissions.updatedAt
+  data_sources:
+  - iam_user
+  - iam_organization
+  - iam_organization_membership
+  - iam_role
+  - iam_permission
+  - iam_role_permission
+  - iam_user_role
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: DirectoryLoadParams
+  fields:
+  - pageSize
+  - q
+  data_sources:
+  - iam_user
+  - iam_organization
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: OrganizationCommand
+  fields:
+  - code
+  - name
+  - organizationKind
+  - parentOrganizationId
+  - ownerUserId
+  - status
+  - sortWeight
+  data_sources:
+  - iam_organization
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: DepartmentCommand
+  fields:
+  - organizationId
+  - parentDepartmentId
+  - code
+  - name
+  - managerUserId
+  - status
+  - sortWeight
+  data_sources:
+  - iam_organization
+  - iam_organization_membership
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: MembershipCommand
+  fields:
+  - organizationId
+  - userId
+  - displayName
+  - username
+  - email
+  - mobile
+  - memberKind
+  - status
+  data_sources:
+  - iam_user
+  - iam_organization
+  - iam_organization_membership
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: DepartmentAssignmentCommand
+  fields:
+  - departmentId
+  - membershipId
+  - userId
+  - role
+  - status
+  - isPrimary
+  data_sources:
+  - iam_user
+  - iam_organization_membership
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: PositionCommand
+  fields:
+  - organizationId
+  - departmentId
+  - code
+  - name
+  - rankLevel
+  - description
+  - status
+  data_sources:
+  - iam_organization
+  - iam_organization_membership
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: PositionAssignmentCommand
+  fields:
+  - positionId
+  - membershipId
+  - userId
+  - status
+  - startedAt
+  - endedAt
+  data_sources:
+  - iam_user
+  - iam_organization_membership
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: RoleCommand
+  fields:
+  - code
+  - name
+  - description
+  - status
+  data_sources:
+  - iam_role
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: RoleBindingCommand
+  fields:
+  - roleId
+  - principalKind
+  - principalId
+  - organizationId
+  - departmentId
+  - scopeKind
+  - scopeId
+  - status
+  data_sources:
+  - iam_role
+  - iam_user_role
+  - iam_organization
+  - iam_organization_membership
+- route: /admin/organization
+  source: *adminOrganizationService
+  interface: PermissionCommand
+  fields:
+  - code
+  - name
+  - resource
+  - action
+  - description
+  - status
+  data_sources:
+  - iam_permission

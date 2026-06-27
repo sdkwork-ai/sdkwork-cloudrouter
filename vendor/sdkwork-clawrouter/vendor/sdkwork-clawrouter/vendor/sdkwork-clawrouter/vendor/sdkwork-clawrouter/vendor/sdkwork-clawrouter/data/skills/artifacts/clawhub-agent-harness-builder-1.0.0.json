@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "agent-skill-artifact.v1",
+  "artifactRef": "clawhub://skills/agent-harness-builder@1.0.0",
+  "version": "1.0.0",
+  "runtime": "metadata",
+  "entrypoint": "clawhub.skills.agent_harness_builder",
+  "skill": {
+    "id": 8201,
+    "skillKey": "clawhub-agent-harness-builder",
+    "name": "Agent Harness Builder"
+  },
+  "source": {
+    "vendor": "clawhub",
+    "slug": "agent-harness-builder",
+    "url": "https://clawhub.ai/skills/agent-harness-builder",
+    "fetchedAt": "2026-06-22T01:26:13.984Z",
+    "rawDetailPath": "data/skills/clawhub/raw/details/agent-harness-builder-6f5339fbd8bff11a.json"
+  },
+  "instructions": [
+    "Display this bundled ClawHub metadata entry from the local SDKWork Skills seed.",
+    "Do not execute remote code from this artifact until the community package has passed SDKWork review.",
+    "Build a complete multi-agent orchestration harness for an OpenClaw (or similar) agentic system — defining a CTO/orchestrator agent, tiered specialist agents,..."
+  ],
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "sourceUrl": {
+        "type": "string"
+      },
+      "slug": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": true
+  },
+  "metadata": {
+    "owner": {
+      "handle": "plbirrell",
+      "userId": "s171cwx15yx5vyd23hm1k6vr39895kb4",
+      "displayName": "plbirrell",
+      "image": "https://avatars.githubusercontent.com/u/288628919?v=4"
+    },
+    "stats": {
+      "comments": 0,
+      "downloads": 0,
+      "installsAllTime": 0,
+      "installsCurrent": 0,
+      "stars": 0,
+      "versions": 1
+    },
+    "latestVersion": {
+      "version": "1.0.0",
+      "createdAt": 1782091265889,
+      "changelog": "Initial release — build a complete multi-agent orchestration harness for OpenClaw",
+      "license": "MIT-0"
+    }
+  },
+  "checksumHash": "sha256:777186b53ef5fb5f5a57e980d359d772acabb1dab9b480ba7d8608e3271a7798"
+}

@@ -1,0 +1,927 @@
+tables:
+- table: ai_pricing_plan
+  domain: ai
+  profile: tenant_entity
+  compliance_level: L3
+  system_of_record: true
+  write_owner: pricing-service
+  common_columns: tenant_entity
+  frontend_routes:
+  - /console/api-keys
+  - /admin/group
+  - /admin/model
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  not_null_columns:
+  - uuid
+  - tenant_id
+  - organization_id
+  - status
+  - plan_code
+  - plan_name
+  - base_price_side
+  - currency
+  - effective_from
+  unique_constraints:
+  - columns:
+    - uuid
+    source: column_unique
+  - name: uk_ai_pricing_plan_tenant_code
+    columns:
+    - tenant_id
+    - organization_id
+    - plan_code
+  columns:
+    plan_code: string(64)
+    plan_name: string(128)
+    description: string(512)
+    plan_scope: enum_int32
+    base_price_side: enum_int32
+    base_pricing_scope: enum_int32
+    default_reference_price_id: int64
+    default_multiplier: decimal
+    default_markup_amount: decimal
+    currency: string(10)
+    billing_mode: enum_int32
+    rounding_mode: enum_int32
+    min_charge_amount: decimal
+    fallback_mode: enum_int32
+    priority: int32
+    price_version: string(64)
+    effective_from: instant
+    effective_to: instant
+  indexes:
+  - name: idx_ai_pricing_plan_scope_status
+    columns:
+    - tenant_id
+    - organization_id
+    - plan_scope
+    - status
+    - priority
+    - id
+  - name: idx_ai_pricing_plan_effective
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - effective_from
+    - effective_to
+    - id
+  security:
+    financial: true
+    decimal_only: true
+- table: ai_pricing_plan_binding
+  domain: ai
+  profile: relation_entity
+  compliance_level: L3
+  system_of_record: true
+  write_owner: pricing-service
+  common_columns: tenant_entity
+  frontend_routes:
+  - /admin/group
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  not_null_columns:
+  - uuid
+  - tenant_id
+  - organization_id
+  - status
+  - pricing_plan_id
+  - subject_type
+  - priority
+  - effective_from
+  unique_constraints:
+  - columns:
+    - uuid
+    source: column_unique
+  - name: uk_ai_pricing_plan_binding_subject
+    columns:
+    - tenant_id
+    - organization_id
+    - subject_type
+    - subject_id
+    - pricing_plan_id
+  columns:
+    pricing_plan_id: int64
+    pricing_plan_code: string(64)
+    subject_type: enum_int32
+    subject_id: int64
+    subject_code: string(128)
+    binding_source: enum_int32
+    multiplier_override: decimal
+    rpm_override: int64
+    tpm_override: int64
+    quota_policy_id: int64
+    priority: int32
+    effective_from: instant
+    effective_to: instant
+  indexes:
+  - name: idx_ai_pricing_plan_binding_tenant_status_effective
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - effective_from
+    - priority
+    - id
+  - name: idx_ai_pricing_plan_binding_subject_effective
+    columns:
+    - tenant_id
+    - organization_id
+    - subject_type
+    - subject_id
+    - status
+    - effective_from
+    - id
+  - name: idx_ai_pricing_plan_binding_plan
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_plan_id
+    - status
+    - priority
+    - id
+  security:
+    financial: true
+    decimal_only: true
+    audit_required: true
+- table: ai_pricing_rule
+  domain: ai
+  profile: tenant_entity
+  compliance_level: L3
+  system_of_record: true
+  write_owner: pricing-service
+  common_columns: tenant_entity
+  frontend_routes:
+  - /admin/group
+  - /admin/model
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  not_null_columns:
+  - uuid
+  - tenant_id
+  - organization_id
+  - status
+  - pricing_plan_id
+  - rule_code
+  - billing_meter_code
+  - formula_mode
+  - priority
+  - effective_from
+  unique_constraints:
+  - columns:
+    - uuid
+    source: column_unique
+  - name: uk_ai_pricing_rule_plan_code
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_plan_id
+    - rule_code
+  columns:
+    pricing_plan_id: int64
+    pricing_plan_code: string(64)
+    rule_code: string(64)
+    rule_name: string(128)
+    match_type: enum_int32
+    vendor_code: string(64)
+    family_code: string(64)
+    model_id: int64
+    model: string(256)
+    provider_code: string(64)
+    channel_id: int64
+    provider_model: string(256)
+    capability_code: string(64)
+    platform_code: string(64)
+    service_tier: string(64)
+    region: string(64)
+    price_side: enum_int32
+    reference_price_side: enum_int32
+    reference_pricing_id: int64
+    reference_pricing_scope: enum_int32
+    price_item_type: enum_int32
+    billing_type: enum_int32
+    billing_mode: enum_int32
+    billing_meter_id: int64
+    billing_meter_code: string(64)
+    unit: enum_int32
+    unit_size: decimal
+    metering_mode: enum_int32
+    quantity_source: enum_int32
+    quantity_formula: text
+    result_selector: string(256)
+    minimum_quantity: decimal
+    quantity_step: decimal
+    included_quantity: decimal
+    formula_mode: enum_int32
+    multiplier: decimal
+    markup_amount: decimal
+    unit_price_override: decimal
+    expression: text
+    expression_hash: string(128)
+    fallback_mode: enum_int32
+    priority: int32
+    effective_from: instant
+    effective_to: instant
+  indexes:
+  - name: idx_ai_pricing_rule_tenant_status_priority
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - priority
+    - effective_from
+    - id
+  - name: idx_ai_pricing_rule_model_lookup
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_plan_id
+    - model
+    - provider_code
+    - channel_id
+    - billing_meter_code
+    - status
+    - priority
+    - id
+  - name: idx_ai_pricing_rule_meter_lookup
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_plan_id
+    - billing_meter_code
+    - match_type
+    - status
+    - priority
+    - id
+  - name: idx_ai_pricing_rule_reference
+    columns:
+    - tenant_id
+    - organization_id
+    - reference_price_side
+    - reference_pricing_id
+    - status
+    - id
+  security:
+    financial: true
+    decimal_only: true
+- table: ai_pricing_tier
+  domain: ai
+  profile: tenant_entity
+  compliance_level: L3
+  system_of_record: true
+  write_owner: pricing-service
+  common_columns: tenant_entity
+  frontend_routes:
+  - /admin/group
+  - /admin/model
+  api_surfaces:
+  - backend
+  - worker
+  not_null_columns:
+  - uuid
+  - tenant_id
+  - organization_id
+  - status
+  - tier_code
+  - billing_meter_code
+  - sort_order
+  - effective_from
+  unique_constraints:
+  - columns:
+    - uuid
+    source: column_unique
+  - name: uk_ai_pricing_tier_rule_code
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_rule_id
+    - tier_code
+  columns:
+    pricing_rule_id: int64
+    model_pricing_id: int64
+    tier_code: string(64)
+    tier_label: string(64)
+    price_item_type: enum_int32
+    billing_mode: enum_int32
+    billing_meter_id: int64
+    billing_meter_code: string(64)
+    min_quantity: decimal
+    max_quantity: decimal
+    quantity_unit: enum_int32
+    quantity_step: decimal
+    included_quantity: decimal
+    result_selector: string(256)
+    input_unit_price: decimal
+    output_unit_price: decimal
+    cache_write_unit_price: decimal
+    cache_read_unit_price: decimal
+    image_unit_price: decimal
+    audio_unit_price: decimal
+    video_unit_price: decimal
+    per_request_price: decimal
+    multiplier: decimal
+    currency: string(10)
+    sort_order: int32
+    effective_from: instant
+    effective_to: instant
+  indexes:
+  - name: idx_ai_pricing_tier_tenant_status_effective
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - effective_from
+    - sort_order
+    - id
+  - name: idx_ai_pricing_tier_rule_range
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_rule_id
+    - billing_meter_code
+    - min_quantity
+    - max_quantity
+    - sort_order
+    - id
+  - name: idx_ai_pricing_tier_model_pricing
+    columns:
+    - tenant_id
+    - organization_id
+    - model_pricing_id
+    - price_item_type
+    - sort_order
+    - id
+  security:
+    financial: true
+    decimal_only: true
+- table: ai_pricing_import_snapshot
+  domain: ai
+  profile: event_log
+  compliance_level: L3
+  system_of_record: true
+  write_owner: pricing-sync-worker
+  common_columns: event_log
+  frontend_routes:
+  - /admin/model
+  api_surfaces:
+  - backend
+  - worker
+  not_null_columns:
+  - uuid
+  - tenant_id
+  - organization_id
+  - status
+  - request_id
+  - import_source
+  - source_name
+  - source_hash
+  - observed_at
+  unique_constraints:
+  - columns:
+    - uuid
+    source: column_unique
+  - name: uk_ai_pricing_import_snapshot_hash
+    columns:
+    - tenant_id
+    - organization_id
+    - import_source
+    - source_hash
+  columns:
+    import_source: enum_int32
+    source_name: string(128)
+    source_url: string(1024)
+    source_version: string(128)
+    source_hash: string(128)
+    upstream_commit: string(128)
+    data_format: string(64)
+    row_count: int64
+    accepted_count: int64
+    rejected_count: int64
+    currency: string(10)
+    published_at: instant
+    observed_at: instant
+    raw_payload_ref: string(512)
+    normalized_payload_hash: string(128)
+    schema_version: string(32)
+    error_message_masked: string(1024)
+  indexes:
+  - name: idx_ai_pricing_import_snapshot_tenant_latest
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - import_source
+    - observed_at
+    - id
+  security:
+    financial: true
+    audit_required: true
+- table: ai_routing_policy
+  domain: ai
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: routing-policy-service
+  common_columns: tenant_entity
+  frontend_routes:
+  - /console/routing
+  - /admin/channel
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    policy_code: string(64)
+    name: string(128)
+    policy_scope: enum_int32
+    subject_id: int64
+    capability: enum_int32
+    default_profile_id: int64
+    fallback_mode: enum_int32
+    slo_latency_ms: int32
+    slo_success_rate: decimal
+    cost_ceiling: decimal
+    currency: string(10)
+  indexes:
+  - name: uk_ai_routing_policy_tenant_code
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - policy_code
+- table: ai_routing_profile
+  domain: ai
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: routing-policy-service
+  common_columns: tenant_entity
+  frontend_routes:
+  - /console/routing
+  - /admin/channel
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    policy_id: int64
+    profile_version: int64
+    profile_name: string(128)
+    release_status: enum_int32
+    traffic_percent: decimal
+    config_hash: string(128)
+    published_at: instant
+    published_by: int64
+    rollback_from_profile_id: int64
+  indexes:
+  - name: uk_ai_routing_profile_policy_version
+    unique: true
+    columns:
+    - policy_id
+    - profile_version
+- table: ai_routing_rule
+  domain: ai
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: routing-policy-service
+  common_columns: tenant_entity
+  frontend_routes:
+  - /console/routing
+  - /admin/channel
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    profile_id: int64
+    rule_code: string(64)
+    priority: int32
+    match_expression: json
+    target_model: string(256)
+    candidate_channels: json
+    fallback_chain: json
+    constraints: json
+    rate_limit_policy_id: int64
+    effective_from: instant
+    effective_to: instant
+  indexes:
+  - name: uk_ai_routing_rule_profile_code
+    unique: true
+    columns:
+    - profile_id
+    - rule_code
+  - name: idx_ai_routing_rule_tenant_profile_priority
+    columns:
+    - tenant_id
+    - organization_id
+    - profile_id
+    - priority
+    - status
+- table: ai_routing_decision_log
+  domain: ai
+  profile: event_log
+  compliance_level: L3
+  system_of_record: true
+  write_owner: gateway-runtime
+  common_columns: event_log
+  frontend_routes:
+  - /console/usage
+  - /console/routing
+  - /admin/record
+  api_surfaces:
+  - app
+  - backend
+  - openai_v1
+  - worker
+  columns:
+    api_key_id: int64
+    legacy_api_key_id: int64
+    policy_id: int64
+    profile_id: int64
+    rule_id: int64
+    requested_model: string(256)
+    resolved_model: string(256)
+    capability: enum_int32
+    selected_provider_id: int64
+    selected_channel_id: int64
+    selected_account_id: int64
+    decision_mode: enum_int32
+    decision_reason: json
+    candidate_snapshot: json
+    fallback_chain: json
+    decision_latency_ms: int32
+  indexes:
+  - name: uk_ai_routing_decision_log_request
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - request_id
+  - name: idx_ai_routing_decision_tenant_model_created
+    columns:
+    - tenant_id
+    - organization_id
+    - requested_model
+    - created_at
+    - id
+  lifecycle:
+    partition_by: created_at_month
+    online_retention: 180d
+  security:
+    sensitivity: ROUTING_DECISION
+    stores_secret_plaintext: false
+    payload_redaction_required: true
+    audit_required: true
+- table: ai_request_trace
+  domain: ai
+  profile: event_log
+  compliance_level: L3
+  system_of_record: true
+  write_owner: gateway-runtime
+  common_columns: event_log
+  frontend_routes:
+  - /playground
+  - /console/dashboard
+  - /console/usage
+  - /console/gateway
+  - /console/routing
+  - /admin/dashboard
+  - /admin/analytics
+  - /admin/record
+  api_surfaces:
+  - app
+  - backend
+  - openai_v1
+  - worker
+  columns:
+    attempt_no: int32
+    decision_log_id: int64
+    api_key_id: int64
+    legacy_api_key_id: int64
+    api_key_name_snapshot: string(128)
+    channel_group_id: int64
+    channel_group_snapshot: string(128)
+    owner_type: enum_int32
+    owner_id: int64
+    owner_name_snapshot: string(128)
+    provider_id: int64
+    channel_id: int64
+    channel_name_snapshot: string(128)
+    requested_model: string(256)
+    requested_model_catalog_key: string(256)
+    provider_model: string(256)
+    provider_native_model: string(256)
+    region_code: string(64)
+    endpoint: string(256)
+    request_path: string(256)
+    http_method: string(16)
+    http_status: int32
+    provider_error_code: string(128)
+    error_type: enum_int32
+    started_at: instant
+    ended_at: instant
+    latency_ms: int32
+    ttft_ms: int32
+    streaming: bool
+    request_bytes: int64
+    response_bytes: int64
+    prompt_tokens: int64
+    completion_tokens: int64
+    cached_tokens: int64
+    total_tokens: int64
+    request_payload_hash: string(128)
+    response_payload_hash: string(128)
+    error_message_masked: string(1024)
+    reasoning_effort: string(64)
+    client_ip_hash: string(128)
+    client_ip_masked: string(64)
+    client_ip_region: string(128)
+    user_agent_hash: string(128)
+  indexes:
+  - name: uk_ai_request_trace_request_attempt
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - request_id
+    - attempt_no
+  - name: idx_ai_request_trace_tenant_trace
+    columns:
+    - tenant_id
+    - organization_id
+    - trace_id
+  - name: idx_ai_request_trace_api_key_started
+    columns:
+    - tenant_id
+    - organization_id
+    - api_key_id
+    - started_at
+    - id
+  - name: idx_ai_request_trace_model_started
+    columns:
+    - tenant_id
+    - organization_id
+    - requested_model
+    - started_at
+    - id
+  - name: idx_ai_request_trace_tenant_status_started
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - started_at
+    - id
+  lifecycle:
+    partition_by: started_at_month
+    online_retention: 90d
+  security:
+    sensitivity: REQUEST_METADATA
+    pii: true
+    payload_stored: hash_only
+    stores_secret_plaintext: false
+    audit_required: true
+- table: ai_usage_fact
+  domain: ai
+  profile: ledger_source_fact
+  compliance_level: L3
+  system_of_record: true
+  write_owner: gateway-runtime
+  common_columns: event_log
+  frontend_routes:
+  - /playground
+  - /console/dashboard
+  - /console/usage
+  - /console/routing
+  - /admin/dashboard
+  - /admin/analytics
+  - /admin/model
+  - /admin/record
+  - /console/account
+  - /console/settlements
+  - /admin/service-providers/usage
+  api_surfaces:
+  - app
+  - backend
+  - openai_v1
+  - worker
+  required_columns:
+  - catalog_key
+  not_null_columns:
+  - uuid
+  - catalog_key
+  columns:
+    decision_log_id: int64
+    api_key_id: int64
+    legacy_api_key_id: int64
+    api_key_name_snapshot: string(128)
+    channel_group_id: int64
+    channel_group_snapshot: string(128)
+    owner_type: enum_int32
+    owner_id: int64
+    owner_name_snapshot: string(128)
+    catalog_key: string(256)
+    requested_model_catalog_key: string(256)
+    model: string(256)
+    provider_native_model: string(256)
+    region_code: string(64)
+    provider_id: int64
+    channel_id: int64
+    modality: enum_int32
+    usage_type: enum_int32
+    billing_type: enum_int32
+    billing_mode: enum_int32
+    billing_meter_id: int64
+    billing_meter_code: string(64)
+    billing_tier: string(64)
+    billable_quantity: decimal
+    billable_unit: enum_int32
+    prompt_tokens: int64
+    completion_tokens: int64
+    cached_tokens: int64
+    total_tokens: int64
+    request_count: int64
+    result_count: int64
+    item_count: int64
+    character_count: int64
+    image_count: int64
+    audio_seconds: decimal
+    video_seconds: decimal
+    storage_byte_hours: decimal
+    bandwidth_bytes: int64
+    unit_price_snapshot: decimal
+    base_input_unit_price: decimal
+    base_output_unit_price: decimal
+    cache_read_unit_price: decimal
+    rate_multiplier: decimal
+    reference_multiplier: decimal
+    official_reference_amount: decimal
+    upstream_cost_amount: decimal
+    customer_charge_amount: decimal
+    cost_amount: decimal
+    currency: string(10)
+    pricing_id: int64
+    pricing_plan_id: int64
+    pricing_plan_code: string(64)
+    pricing_rule_id: int64
+    pricing_tier_id: int64
+    pricing_snapshot: json
+    reasoning_effort: string(64)
+    occurred_at: instant
+    settlement_status: enum_int32
+    settlement_id: int64
+  column_descriptions:
+    official_reference_amount: Vendor official reference amount captured for audit
+      and comparison.
+    upstream_cost_amount: Sensitive upstream access cost captured for admin cost accounting
+      only.
+    customer_charge_amount: Customer-facing sales/charge amount used by app usage
+      display, settlement, and ranking refresh.
+    cost_amount: Legacy compatibility field for customer-facing charge amount; new
+      gateway writes mirror customer_charge_amount, never upstream_cost_amount.
+  semantic_contracts:
+    ranking_refresh_source_fact:
+      time_field: occurred_at
+      window_predicate: half_open_utc
+      aggregation_grain:
+      - tenant_id
+      - organization_id
+      - catalog_key
+      metric_fields:
+      - request_count
+      - total_tokens
+      - customer_charge_amount
+      - currency
+      pricing_snapshot_field: pricing_snapshot
+  indexes:
+  - name: uk_ai_usage_fact_request
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - request_id
+    - usage_type
+  - name: idx_ai_usage_fact_tenant_owner_occurred
+    columns:
+    - tenant_id
+    - organization_id
+    - owner_type
+    - owner_id
+    - occurred_at
+    - id
+  - name: idx_ai_usage_fact_api_key_occurred
+    columns:
+    - tenant_id
+    - organization_id
+    - api_key_id
+    - occurred_at
+    - id
+  - name: idx_ai_usage_fact_model_occurred
+    columns:
+    - tenant_id
+    - organization_id
+    - catalog_key
+    - occurred_at
+    - id
+  - name: idx_ai_usage_fact_pricing_plan_occurred
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_plan_id
+    - occurred_at
+    - id
+  - name: idx_ai_usage_fact_meter_occurred
+    columns:
+    - tenant_id
+    - organization_id
+    - billing_meter_code
+    - occurred_at
+    - id
+  - name: idx_ai_usage_fact_settlement_status
+    columns:
+    - tenant_id
+    - organization_id
+    - settlement_status
+    - occurred_at
+    - id
+  lifecycle:
+    partition_by: occurred_at_month
+    online_retention: 24mo
+    archive_retention: 5y
+  security:
+    financial: true
+    decimal_only: true
+- table: ai_quota_policy
+  domain: ai
+  profile: tenant_entity
+  compliance_level: L3
+  system_of_record: true
+  write_owner: quota-service
+  common_columns: tenant_entity
+  frontend_routes:
+  - /console/api-keys
+  - /admin/ratelimit
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    policy_code: string(64)
+    name: string(128)
+    subject_type: enum_int32
+    subject_id: int64
+    subject_ref_hash: string(128)
+    subject_ref_masked: string(128)
+    scope_type: enum_int32
+    scope_id: int64
+    channel_group_id: int64
+    model: string(256)
+    quota_period: enum_int32
+    quota_unit: enum_int32
+    quota_limit: decimal
+    requests_per_second: int64
+    requests_per_minute: int64
+    requests_per_day: int64
+    tokens_per_minute: int64
+    burst_limit: decimal
+    block_duration_seconds: int64
+    reset_mode: enum_int32
+    exhausted_at: instant
+    effective_from: instant
+    effective_to: instant
+  indexes:
+  - name: uk_ai_quota_policy_tenant_subject
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - subject_type
+    - subject_id
+    - quota_period
+    - quota_unit
+  - name: idx_ai_quota_policy_subject_ref
+    columns:
+    - tenant_id
+    - organization_id
+    - subject_type
+    - subject_ref_hash
+    - status
+  - name: idx_ai_quota_policy_model_channel_group
+    columns:
+    - tenant_id
+    - organization_id
+    - model
+    - channel_group_id
+    - status
+  security:
+    sensitivity: RATE_LIMIT_POLICY
+    pii: true
+    stores_secret_plaintext: false
+    audit_required: true

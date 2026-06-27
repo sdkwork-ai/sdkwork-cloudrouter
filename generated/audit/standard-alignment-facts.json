@@ -1,0 +1,366 @@
+{
+  "generatedAt": "2026-06-27T02:15:38.785Z",
+  "facts": {
+    "generatedAt": "2026-06-27T02:15:38.785Z",
+    "identity": {
+      "appKey": "sdkwork-clawrouter",
+      "version": "0.3.0",
+      "releaseChannels": [
+        "STABLE"
+      ],
+      "publishStatus": "ACTIVE",
+      "supportedDeploymentProfiles": [
+        "cloud",
+        "standalone"
+      ],
+      "deliveryModes": [
+        "WEB_URL",
+        "DIRECT_DOWNLOAD"
+      ],
+      "signatureRequired": true,
+      "sbomRequired": true,
+      "checksumRequired": true,
+      "workflowSigningRequired": true,
+      "workflowSbomRequired": true,
+      "workflowOidcRequired": true,
+      "workflowArtifactAttestations": true,
+      "installPackageTargetCount": 19
+    },
+    "ciSecurity": {
+      "exists": true,
+      "runsPostgresService": true,
+      "runsCargoAudit": true,
+      "runsCargoDeny": true,
+      "runsTrivy": true,
+      "runsGitleaks": true,
+      "runsPnpmAudit": true,
+      "runsRustTests": true,
+      "runsBrowserSmoke": true,
+      "runsEdgeDevSmoke": true,
+      "runsPostgresRequired": true
+    },
+    "migrations": {
+      "postgresMigrationFiles": [
+        "0001_initial_schema.down.sql",
+        "0001_initial_schema.up.sql"
+      ],
+      "postgresHasInitialSchema": true,
+      "sqliteMigrationFiles": [
+        "0001_initial_schema.down.sql",
+        "0001_initial_schema.up.sql"
+      ],
+      "sqliteHasInitialSchema": true
+    },
+    "kubernetes": {
+      "manifests": [
+        "claw-router-admin-api.yaml",
+        "claw-router-app-api.yaml",
+        "claw-router-edge.yaml",
+        "claw-router-gateway.yaml",
+        "claw-router-ingress.yaml",
+        "claw-router-migration-job.yaml",
+        "claw-router-network-policy.yaml",
+        "claw-router-redis.yaml"
+      ],
+      "expectedPresent": [
+        "claw-router-gateway.yaml",
+        "claw-router-app-api.yaml",
+        "claw-router-admin-api.yaml",
+        "claw-router-edge.yaml",
+        "claw-router-redis.yaml",
+        "claw-router-ingress.yaml",
+        "claw-router-network-policy.yaml",
+        "claw-router-migration-job.yaml"
+      ],
+      "expectedMissing": [],
+      "hasAllExpected": true
+    },
+    "redisHa": {
+      "exists": true,
+      "replicas": 3,
+      "hasSentinelContainer": true,
+      "hasSentinelConfig": true,
+      "hasPdb": true,
+      "hasAuthSecret": true,
+      "hasPodAntiAffinity": true,
+      "isHa": true
+    },
+    "i18n": {
+      "exists": true,
+      "supportedLngs": [
+        "en",
+        "zh",
+        "de",
+        "fr",
+        "ja",
+        "ko",
+        "ru"
+      ],
+      "meetsPrdRequirement": true,
+      "fallbackLng": "en"
+    },
+    "circuitBreaker": {
+      "exists": true,
+      "implemented": true,
+      "lineCount": 546,
+      "hasStateMachine": true,
+      "hasRedisDistributedStore": true,
+      "hasChannelIdScope": true
+    },
+    "idempotency": {
+      "exists": true,
+      "implemented": true,
+      "lineCount": 369,
+      "hasRedisStore": true,
+      "hasStreamingExclusion": true,
+      "hasSyntheticLocalResponse": true
+    },
+    "streaming": {
+      "invocationDispatcherSsePassthrough": false,
+      "providerPassthroughIncomingPassthrough": true
+    },
+    "appSessionSigning": {
+      "exists": true,
+      "usesSingleSharedSecret": true,
+      "usesHmac": true,
+      "hasPerTenantResolver": true,
+      "currentMode": "per-tenant"
+    },
+    "providerAdapters": {
+      "alicloud": {
+        "isStub": false,
+        "endpointsEmpty": false,
+        "resolveEndpointNone": false,
+        "signerStub": false,
+        "hasHttpClientDep": true
+      },
+      "paasPlugin": {
+        "hasBuiltinInvokeOverride": true
+      }
+    },
+    "sbom": {
+      "exists": true,
+      "coversCargo": true,
+      "coversNpm": true,
+      "coversArtifactChecksum": true,
+      "hasDependencyEdges": false
+    },
+    "signStep": {
+      "hasSignStep": true,
+      "isPlaceholder": false,
+      "hasRealSigner": true,
+      "steps": [
+        {
+          "name": "Sign artifacts (cosign for OCI + signtool for MSI + codesign for pkg)",
+          "run": "$ErrorActionPreference = \"Stop\"\n$packageId = $env:SDKWORK_PACKAGE_ID\n$variant = $env:SDKWORK_PACKAGE_VARIANT\n$artifactsDir = \"./deployments/artifacts\"\nif (-not (Test-Path $artifactsDir)) { New-Item -I"
+        }
+      ]
+    },
+    "techArch": {
+      "exists": true,
+      "lineCount": 535,
+      "emptySections": [],
+      "isOnlyIndex": false
+    },
+    "metrics": {
+      "exists": true,
+      "lineCount": 125,
+      "hasOnlyAtomicU64Counters": false,
+      "hasLabelVec": true
+    },
+    "tableConsistency": {
+      "counts": {
+        "ddl": 69,
+        "registry": 69,
+        "schemaYaml": 69
+      },
+      "consistent": true,
+      "note": "claw-router-owned tables consistent across DDL, table-registry.json, and schema.yaml"
+    },
+    "tablePartition": {
+      "exists": true,
+      "tables": [
+        {
+          "name": "ai_request_trace",
+          "hasPartitionBy": true,
+          "hasDefaultPartition": true,
+          "partitioned": true
+        },
+        {
+          "name": "ai_routing_decision_log",
+          "hasPartitionBy": true,
+          "hasDefaultPartition": true,
+          "partitioned": true
+        },
+        {
+          "name": "ai_usage_fact",
+          "hasPartitionBy": true,
+          "hasDefaultPartition": true,
+          "partitioned": true
+        },
+        {
+          "name": "ai_usage_service_provider_edge",
+          "hasPartitionBy": true,
+          "hasDefaultPartition": true,
+          "partitioned": true
+        }
+      ],
+      "allPartitioned": true
+    }
+  },
+  "p0Status": [
+    {
+      "id": "p0-sign-step-implementation",
+      "title": "Artifact signing implementation",
+      "status": "done",
+      "evidence": {
+        "hasSignStep": true,
+        "isPlaceholder": false,
+        "hasRealSigner": true,
+        "steps": [
+          {
+            "name": "Sign artifacts (cosign for OCI + signtool for MSI + codesign for pkg)",
+            "run": "$ErrorActionPreference = \"Stop\"\n$packageId = $env:SDKWORK_PACKAGE_ID\n$variant = $env:SDKWORK_PACKAGE_VARIANT\n$artifactsDir = \"./deployments/artifacts\"\nif (-not (Test-Path $artifactsDir)) { New-Item -I"
+          }
+        ]
+      }
+    },
+    {
+      "id": "p0-sbom-npm-coverage",
+      "title": "SBOM npm dependency coverage",
+      "status": "done",
+      "evidence": {
+        "coversCargo": true,
+        "coversNpm": true,
+        "coversArtifactChecksum": true,
+        "hasFullDependencyEdges": false
+      }
+    },
+    {
+      "id": "p0-sqlite-migration-chain",
+      "title": "SQLite initial migration chain",
+      "status": "done",
+      "evidence": {
+        "sqliteFiles": [
+          "0001_initial_schema.down.sql",
+          "0001_initial_schema.up.sql"
+        ]
+      }
+    },
+    {
+      "id": "p0-per-tenant-signing-keys",
+      "title": "Per-tenant app session signing keys",
+      "status": "done",
+      "evidence": {
+        "currentMode": "per-tenant"
+      }
+    },
+    {
+      "id": "p0-prometheus-metrics",
+      "title": "Prometheus histogram + OTLP metrics",
+      "status": "done",
+      "evidence": {
+        "lineCount": 125,
+        "hasOnlyAtomicU64Counters": false
+      }
+    },
+    {
+      "id": "p0-redis-ha-manifest",
+      "title": "Redis HA K8s manifest",
+      "status": "done",
+      "evidence": {
+        "exists": true,
+        "replicas": 3,
+        "hasSentinelContainer": true,
+        "hasSentinelConfig": true,
+        "hasPdb": true,
+        "hasAuthSecret": true,
+        "hasPodAntiAffinity": true,
+        "isHa": true
+      }
+    },
+    {
+      "id": "p0-alicloud-provider",
+      "title": "AliCloud provider real integration",
+      "status": "done",
+      "evidence": {
+        "isStub": false,
+        "endpointsEmpty": false,
+        "resolveEndpointNone": false,
+        "signerStub": false,
+        "hasHttpClientDep": true
+      }
+    },
+    {
+      "id": "p0-paas-provider-invoke",
+      "title": "PaaS provider invoke real implementation",
+      "status": "done",
+      "evidence": {
+        "hasBuiltinInvokeOverride": true
+      }
+    },
+    {
+      "id": "p0-tech-architecture-doc",
+      "title": "TECH_ARCHITECTURE.md complete",
+      "status": "done",
+      "evidence": {
+        "emptySections": [],
+        "lineCount": 535
+      }
+    },
+    {
+      "id": "p0-table-count-consistency",
+      "title": "Table count three-way consistency (DDL / registry / schema.yaml)",
+      "status": "done",
+      "evidence": {
+        "counts": {
+          "ddl": 69,
+          "registry": 69,
+          "schemaYaml": 69
+        },
+        "consistent": true,
+        "note": "claw-router-owned tables consistent across DDL, table-registry.json, and schema.yaml"
+      }
+    },
+    {
+      "id": "p0-high-traffic-table-partition",
+      "title": "High-traffic table partitioning (ai_request_trace / ai_routing_decision_log / ai_usage_fact / ai_usage_service_provider_edge)",
+      "status": "done",
+      "evidence": {
+        "exists": true,
+        "tables": [
+          {
+            "name": "ai_request_trace",
+            "hasPartitionBy": true,
+            "hasDefaultPartition": true,
+            "partitioned": true
+          },
+          {
+            "name": "ai_routing_decision_log",
+            "hasPartitionBy": true,
+            "hasDefaultPartition": true,
+            "partitioned": true
+          },
+          {
+            "name": "ai_usage_fact",
+            "hasPartitionBy": true,
+            "hasDefaultPartition": true,
+            "partitioned": true
+          },
+          {
+            "name": "ai_usage_service_provider_edge",
+            "hasPartitionBy": true,
+            "hasDefaultPartition": true,
+            "partitioned": true
+          }
+        ],
+        "allPartitioned": true
+      }
+    }
+  ],
+  "summary": {
+    "total": 11,
+    "done": 11,
+    "pending": 0
+  }
+}

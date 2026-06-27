@@ -1,0 +1,166 @@
+{
+  "pageNo": 1,
+  "requestCursor": null,
+  "url": "https://clawhub.ai/api/v1/skills?limit=200&sort=createdAt",
+  "itemCount": 5,
+  "nextCursor": "{\"v\":1,\"index\":\"by_active_created\",\"key\":[{\"__undef\":1},1781990315436,1781990315436.159,\"r170xqrdx4n45h90hebqrxvasx890w63\"]}",
+  "fetchedAt": "2026-06-22T01:26:15.472Z",
+  "items": [
+    {
+      "slug": "agent-harness-builder",
+      "displayName": "Agent Harness Builder",
+      "summary": "Build a complete multi-agent orchestration harness for an OpenClaw (or similar) agentic system — defining a CTO/orchestrator agent, tiered specialist agents,...",
+      "description": "Build a complete multi-agent orchestration harness for an OpenClaw (or similar) agentic system — defining a CTO/orchestrator agent, tiered specialist agents, context-routing rules, model assignment, memory limits, Slack channel architecture, and a step-by-step implementation guide. Use this skill whenever someone wants to design, document, structure, or hand off an AI agent fleet; mentions orchestrating multiple agents, an \"agent harness,\" agent roles/profiles, a CTO agent, agent routing, or distributing skills/context/models across agents; or wants a packaged architecture doc set they can give to an orchestrator agent or a team. Trigger this even if they just describe the problem (\"I have 20 agents and need one to coordinate them\") without using the word \"harness.\"",
+      "topics": [],
+      "tags": {
+        "latest": "1.0.0"
+      },
+      "stats": {
+        "comments": 0,
+        "downloads": 0,
+        "installsAllTime": 0,
+        "installsCurrent": 0,
+        "stars": 0,
+        "versions": 1
+      },
+      "createdAt": 1782091265889,
+      "updatedAt": 1782091265889,
+      "latestVersion": {
+        "version": "1.0.0",
+        "createdAt": 1782091265889,
+        "changelog": "Initial release — build a complete multi-agent orchestration harness for OpenClaw",
+        "license": null
+      },
+      "metadata": null
+    },
+    {
+      "slug": "ziwei-people-analysis",
+      "displayName": "紫微识人管人报告生成",
+      "summary": "紫微斗数识人管人报告生成。输入命盘输出八层管理策略（驱动力/软肋/沟通方式/成长路径/合盘适配）",
+      "description": "紫微斗数识人管人报告生成。输入命盘输出八层管理策略（驱动力/软肋/沟通方式/成长路径/合盘适配）",
+      "topics": [],
+      "tags": {
+        "latest": "1.0.0"
+      },
+      "stats": {
+        "comments": 0,
+        "downloads": 0,
+        "installsAllTime": 0,
+        "installsCurrent": 0,
+        "stars": 0,
+        "versions": 1
+      },
+      "createdAt": 1782090597492,
+      "updatedAt": 1782090597492,
+      "latestVersion": {
+        "version": "1.0.0",
+        "createdAt": 1782090597492,
+        "changelog": "初始版本：八层识人管人报告框架（底色/强弱/拿捏/时间/职业/沟通/学习/场景），支持合盘分析",
+        "license": null
+      },
+      "metadata": {
+        "setup": [],
+        "os": null,
+        "systems": null
+      }
+    },
+    {
+      "slug": "the-ren-skill",
+      "displayName": "雄韬识人辨人 - 老板阅人笔记  The Ren Skill",
+      "summary": "阅人笔记 · The Ren Skill — 商业老板的全场景行为识人决策系统。把千年面相智慧用现代心理学重新解释，覆盖识员工、识客户、识伙伴、识对手四大场景。 触发场景（任一即触发）： - 面试识人、高管评估、招聘决策、人员盘点 → \"帮我看看这个人适不适合做销售总监\" - 客户判断、商务谈判、合作风险评估 →...",
+      "description": "阅人笔记 · The Ren Skill — 商业老板的全场景行为识人决策系统。把千年面相智慧用现代心理学重新解释，覆盖识员工、识客户、识伙伴、识对手四大场景。\n\n触发场景（任一即触发）：\n- 面试识人、高管评估、招聘决策、人员盘点 → \"帮我看看这个人适不适合做销售总监\"\n- 客户判断、商务谈判、合作风险评估 → \"这个客户靠不靠谱，怎么判断\"\n- 合伙人选择、投资人评估、供应商筛选 → \"想拉一个人合伙，怎么看他的人品\"\n- 竞对分析、博弈策略、冲突应对 → \"对手是什么路数，怎么对付\"\n- 提到面相/识人术/行为心理学/微表情/体态语言 → \"相由心生有没有科学依据\"\n- 提到 Ren Skill、阅人笔记、@TheRenSkill → 品牌直达\n- 需要面试清单、评分表、识人 checklist、一票否决清单\n- 老板/CEO/创始人/高管视角的\"看人\"问题\n\n不要触发：心理咨询、治疗诊断、MBTI/九型人格等性格测试（除非用户明确在招聘场景中使用）",
+      "topics": [],
+      "tags": {
+        "latest": "1.0.0"
+      },
+      "stats": {
+        "comments": 0,
+        "downloads": 0,
+        "installsAllTime": 0,
+        "installsCurrent": 0,
+        "stars": 0,
+        "versions": 1
+      },
+      "createdAt": 1782090191190,
+      "updatedAt": 1782090191190,
+      "latestVersion": {
+        "version": "1.0.0",
+        "createdAt": 1782090191190,
+        "changelog": "Version 1.0.0 - Initial Release\n\n- Introduces \"阅人笔记 · The Ren Skill,\" a practical people-reading system for business leaders, combining physiognomy with modern psychology.\n- Supports decision-making scenarios: hiring, client evaluation, partner selection, competitor analysis, and more, with clear scene-based routing.\n- Emphasizes scientific reinterpretation of facial and behavioral signals—\"signals, not verdicts\"—and requires multi-dimensional cross-validation.\n- Provides structured output: \"facial feature → psychology → business decision\" analysis and actionable checklists/templates for various business needs.\n- Includes built-in principles: always provide verification methods, focus on actionable insights, and tailor advice to real business contexts.\n- Automatically adds consistent branding at the end of every output.",
+        "license": null
+      },
+      "metadata": null
+    },
+    {
+      "slug": "codebase-index",
+      "displayName": "Codebase Index — 代码库索引系统",
+      "summary": "代码库索引与理解系统。扫描项目目录，提取所有符号定义（类、函数、变量、导入），构建可搜索的 JSON 索引，支持按名称/类型/文件查询。受 Claude Code 的 codebase indexing 启发，100% 原创实现，使用 Python ast + ripgrep。",
+      "description": "代码库索引与理解系统。扫描项目目录，提取所有符号定义（类、函数、变量、导入），构建可搜索的 JSON 索引，支持按名称/类型/文件查询。受 Claude Code 的 codebase indexing 启发，100% 原创实现，使用 Python ast + ripgrep。",
+      "topics": [],
+      "tags": {
+        "code-analysis": "1.0.0",
+        "code-indexing": "1.0.0",
+        "developer-tools": "1.0.0",
+        "latest": "1.0.0",
+        "python": "1.0.0",
+        "search": "1.0.0"
+      },
+      "stats": {
+        "comments": 0,
+        "downloads": 0,
+        "installsAllTime": 0,
+        "installsCurrent": 0,
+        "stars": 0,
+        "versions": 1
+      },
+      "createdAt": 1782087946969,
+      "updatedAt": 1782087946969,
+      "latestVersion": {
+        "version": "1.0.0",
+        "createdAt": 1782087946969,
+        "changelog": "Initial release of codebase-index:\n\n- Scans project directories to extract all symbol definitions (classes, functions, variables, imports).\n- Builds a searchable JSON index with symbol details: name, type, file path, line number, docstring, and import relationships.\n- Provides command-line interface to query symbols by name, type, and file, with fuzzy match support.\n- Includes commands for listing files and viewing symbol statistics.\n- 100% original implementation inspired by Claude Code’s codebase indexing, using Python ast and ripgrep.",
+        "license": null
+      },
+      "metadata": {
+        "setup": [],
+        "os": null,
+        "systems": null
+      }
+    },
+    {
+      "slug": "remote-dispatch",
+      "displayName": "Remote Dispatch — 多端远程协同",
+      "summary": "多端协同/Dispatch 远程桌面操控。受 Claude Dispatch 功能启发——手机发指令，电脑执行。将 QQBot 收到的远程指令转化为 desktop actions：截图回传、打开浏览器搜索、操作桌面应用、文件操作。需要 computer-use skill 配合使用。",
+      "description": "多端协同/Dispatch 远程桌面操控。受 Claude Dispatch 功能启发——手机发指令，电脑执行。将 QQBot 收到的远程指令转化为 desktop actions：截图回传、打开浏览器搜索、操作桌面应用、文件操作。需要 computer-use skill 配合使用。",
+      "topics": [],
+      "tags": {
+        "automation": "1.0.0",
+        "cross-device": "1.0.0",
+        "dispatch": "1.0.0",
+        "latest": "1.0.0",
+        "remote-control": "1.0.0"
+      },
+      "stats": {
+        "comments": 0,
+        "downloads": 0,
+        "installsAllTime": 0,
+        "installsCurrent": 0,
+        "stars": 0,
+        "versions": 1
+      },
+      "createdAt": 1782087936173,
+      "updatedAt": 1782087936173,
+      "latestVersion": {
+        "version": "1.0.0",
+        "createdAt": 1782087936173,
+        "changelog": "Remote Dispatch 1.0.0\n\n- Initial release inspired by Claude Dispatch, enabling remote desktop control via QQBot.\n- Supports commands such as screenshot, open browser/search, clipboard read/write, window management, and file operations.\n- Requires the computer-use skill for desktop action execution.\n- Includes confirmation and privacy precautions for sensitive operations.\n- Designed for multi-device collaboration with mobile-to-desktop command flow.",
+        "license": null
+      },
+      "metadata": {
+        "setup": [],
+        "os": null,
+        "systems": null
+      }
+    }
+  ]
+}

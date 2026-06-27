@@ -1,0 +1,225 @@
+tables:
+- table: ai_provider_object_route
+  domain: ai
+  profile: runtime_binding
+  compliance_level: L3
+  system_of_record: true
+  write_owner: gateway-runtime
+  common_columns: tenant_entity
+  source_tables:
+  - ai_channel
+  - ai_channel_credential
+  - ai_channel_resource
+  - ai_channel_group
+  - iam_gateway_api_key
+  frontend_routes:
+  - /admin/channel/routing
+  - /admin/system/cache
+  api_surfaces:
+  - backend
+  - worker
+  - openai_v1
+  required_columns:
+  - object_type
+  - object_id
+  - object_key_hash
+  - channel_id
+  not_null_columns:
+  - uuid
+  - tenant_id
+  - organization_id
+  - status
+  - object_type
+  - object_id
+  - object_key_hash
+  - channel_id
+  unique_constraints:
+  - columns:
+    - uuid
+    source: column_unique
+  - name: uk_ai_provider_object_route_object
+    columns:
+    - tenant_id
+    - organization_id
+    - object_type
+    - object_id
+  columns:
+    api_key_id: int64
+    channel_group_id: int64
+    object_type: string(64)
+    object_id: string(256)
+    object_key_hash: string(128)
+    parent_object_type: string(64)
+    parent_object_id: string(256)
+    provider_code: string(64)
+    channel_id: int64
+    vendor_code: string(64)
+    api_code: string(128)
+    catalog_key: string(256)
+    provider_model: string(256)
+    region_code: string(64)
+    sticky_scope: string(64)
+    expires_at: instant
+    last_seen_at: instant
+  indexes:
+  - name: idx_ai_provider_object_route_fast
+    columns:
+    - tenant_id
+    - organization_id
+    - object_key_hash
+    - status
+    - id
+  - name: idx_ai_provider_object_route_parent
+    columns:
+    - tenant_id
+    - organization_id
+    - parent_object_type
+    - parent_object_id
+    - status
+    - id
+  - name: idx_ai_provider_object_route_channel
+    columns:
+    - tenant_id
+    - organization_id
+    - channel_group_id
+    - channel_id
+    - status
+    - id
+  - name: idx_ai_provider_object_route_expiry
+    columns:
+    - tenant_id
+    - organization_id
+    - expires_at
+    - status
+    - id
+  security:
+    sensitivity: PROVIDER_OBJECT_ROUTE
+    stores_secret_plaintext: false
+    audit_required: true
+- table: ai_config_version
+  domain: ai
+  profile: runtime_coordination
+  compliance_level: L3
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: tenant_entity
+  source_tables:
+  - ai_resource
+  - ai_channel
+  - ai_channel_group
+  - ai_routing_policy
+  frontend_routes:
+  - /admin/system/cache
+  - /admin/channel/routing
+  api_surfaces:
+  - backend
+  - worker
+  required_columns:
+  - config_scope
+  - config_version
+  not_null_columns:
+  - uuid
+  - tenant_id
+  - organization_id
+  - status
+  - config_scope
+  - config_version
+  unique_constraints:
+  - columns:
+    - uuid
+    source: column_unique
+  - name: uk_ai_config_version_scope
+    columns:
+    - tenant_id
+    - organization_id
+    - config_scope
+  columns:
+    config_scope: string(64)
+    config_version:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    changed_object_type: string(64)
+    changed_object_id: int64
+    published_at: instant
+  indexes:
+  - name: idx_ai_config_version_scope_updated
+    columns:
+    - tenant_id
+    - organization_id
+    - config_scope
+    - updated_at
+    - id
+  - name: idx_ai_config_version_scope_status
+    columns:
+    - config_scope
+    - status
+    - deleted_at
+    - id
+  security:
+    sensitivity: RUNTIME_COORDINATION
+    stores_secret_plaintext: false
+    audit_required: true
+- table: ai_config_change_event
+  domain: ai
+  profile: runtime_coordination_event
+  compliance_level: L3
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: event_log
+  source_tables:
+  - ai_config_version
+  frontend_routes:
+  - /admin/system/cache
+  - /admin/channel/routing
+  api_surfaces:
+  - backend
+  - worker
+  required_columns:
+  - config_scope
+  - config_version
+  - event_status
+  not_null_columns:
+  - uuid
+  - tenant_id
+  - organization_id
+  - status
+  - config_scope
+  - config_version
+  - event_status
+  unique_constraints:
+  - columns:
+    - uuid
+    source: column_unique
+  columns:
+    config_scope: string(64)
+    changed_object_type: string(64)
+    changed_object_id: int64
+    config_version: int64
+    event_status:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'pending'
+    event_payload: json
+    published_at: instant
+    publish_attempts:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    last_error_message: string(512)
+  indexes:
+  - name: idx_ai_config_change_event_pending
+    columns:
+    - tenant_id
+    - organization_id
+    - event_status
+    - created_at
+    - id
+  - name: idx_ai_config_change_event_scope_version
+    columns:
+    - tenant_id
+    - organization_id
+    - config_scope
+    - config_version
+    - id
+  security:
+    sensitivity: RUNTIME_COORDINATION
+    stores_secret_plaintext: false
+    audit_required: true

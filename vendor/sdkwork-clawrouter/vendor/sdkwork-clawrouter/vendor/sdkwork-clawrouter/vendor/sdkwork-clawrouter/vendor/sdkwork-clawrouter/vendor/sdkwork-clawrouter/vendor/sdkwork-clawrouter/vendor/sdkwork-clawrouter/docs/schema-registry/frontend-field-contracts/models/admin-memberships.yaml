@@ -1,0 +1,272 @@
+fragment: models/admin-memberships
+frontend_models:
+- route: /admin/memberships/packages
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPackageGroup
+  fields:
+  - id
+  - code
+  - name
+  - description
+  - planId
+  - billingCycle
+  - durationDays
+  - sortWeight
+  - status
+  - packageCount
+  data_sources:
+  - ops_audit_log
+- route: /admin/memberships/packages
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPackageItem
+  fields:
+  - id
+  - packageNo
+  - groupId
+  - planId
+  - skuId
+  - name
+  - priceAmount
+  - currencyCode
+  - durationDays
+  - recurrenceCycle
+  - status
+  data_sources:
+  - ops_audit_log
+- route: /admin/memberships/plans
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPlanItem
+  fields:
+  - id
+  - planNo
+  - levelCode
+  - name
+  - rank
+  - status
+  - benefitCount
+  - benefits
+  - updatedAt
+  derived_fields:
+  - benefits.id
+  - benefits.name
+  - benefits.benefitKey
+  - benefits.type
+  - benefits.description
+  - benefits.icon
+  - benefits.usageLimit
+  - benefits.usedCount
+  - benefits.claimed
+  data_sources:
+  - ops_audit_log
+- route: /admin/memberships/recharge-packages
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminRechargePackageItem
+  fields:
+  - id
+  - packageNo
+  - name
+  - skuId
+  - priceAmount
+  - currencyCode
+  - bonusPoints
+  - grantAmount
+  - points
+  - status
+  - updatedAt
+  data_sources:
+  - ops_audit_log
+- route: /admin/memberships/recharge-packages
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminRechargePackageMutationInput
+  fields:
+  - priceAmount
+  - currencyCode
+  - bonusPoints
+  - status
+  data_sources:
+  - ops_audit_log
+- route: /admin/memberships/recharge-packages
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminRechargeSettingsItem
+  fields:
+  - baseCurrencyCode
+  - basePointsPerCny
+  - currencyToCnyRates
+  data_sources:
+  - ops_audit_log
+- route: /admin/memberships/recharge-packages
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminRechargeSettingsUpdateInput
+  fields:
+  - baseCurrencyCode
+  - basePointsPerCny
+  - currencyToCnyRates
+  data_sources:
+  - ops_audit_log
+- route: /admin/memberships/plans
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPlanBenefitInput
+  fields:
+  - id
+  - name
+  - benefitKey
+  - type
+  - description
+  - icon
+  - usageLimit
+  - usedCount
+  - claimed
+  data_sources:
+  - ops_audit_log
+- route: /admin/memberships/plans
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPlanMutationInput
+  fields:
+  - code
+  - name
+  - rank
+  - status
+  - benefits
+  derived_fields:
+  - benefits.id
+  - benefits.name
+  - benefits.benefitKey
+  - benefits.type
+  - benefits.description
+  - benefits.icon
+  - benefits.usageLimit
+  - benefits.usedCount
+  - benefits.claimed
+  data_sources:
+  - ops_audit_log
+- route: /admin/memberships/plans
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPlanCreateInput
+  fields:
+  - code
+  - name
+  - rank
+  - status
+  - benefits
+  derived_fields:
+  - benefits.id
+  - benefits.name
+  - benefits.benefitKey
+  - benefits.type
+  - benefits.description
+  - benefits.icon
+  - benefits.usageLimit
+  - benefits.usedCount
+  - benefits.claimed
+  data_sources:
+  - ops_audit_log
+- route: /admin/memberships/packages
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPackageGroupMutationInput
+  fields:
+  - code
+  - name
+  - description
+  - billingCycle
+  - durationDays
+  - sortWeight
+  - status
+  data_sources:
+  - ops_audit_log
+- route: /admin/memberships/packages
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPackageMutationInput
+  fields:
+  - code
+  - packageGroupId
+  - planId
+  - name
+  - priceAmount
+  - currencyCode
+  - durationDays
+  - status
+  data_sources:
+  - ops_audit_log
+- route: /admin/memberships/members
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminMembersListParams
+  fields:
+  - userId
+  - planId
+  - status
+  data_sources:
+  - ops_audit_log
+- route: /admin/memberships/entitlements
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminEntitlementsListParams
+  fields:
+  - membershipId
+  - planId
+  - status
+  data_sources:
+  - ops_audit_log
+- route: /admin/memberships/packages
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPackagesListParams
+  fields:
+  - packageGroupId
+  - planId
+  - status
+  data_sources:
+  - ops_audit_log
+- route: /admin/memberships/members
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminMemberStatusInput
+  fields:
+  - status
+  data_sources:
+  - ops_audit_log
+- route: /admin/memberships/packages
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPackageCatalog
+  fields:
+  - groups
+  - packages
+  - plans
+  derived_fields:
+  - groups.id
+  - groups.code
+  - groups.name
+  - groups.description
+  - groups.planId
+  - groups.billingCycle
+  - groups.durationDays
+  - groups.sortWeight
+  - groups.status
+  - groups.packageCount
+  - packages.id
+  - packages.packageNo
+  - packages.groupId
+  - packages.planId
+  - packages.skuId
+  - packages.name
+  - packages.priceAmount
+  - packages.currencyCode
+  - packages.durationDays
+  - packages.recurrenceCycle
+  - packages.status
+  - plans.id
+  - plans.planNo
+  - plans.levelCode
+  - plans.name
+  - plans.rank
+  - plans.status
+  - plans.benefitCount
+  - plans.benefits
+  - plans.benefits.id
+  - plans.benefits.name
+  - plans.benefits.benefitKey
+  - plans.benefits.type
+  - plans.benefits.description
+  - plans.benefits.icon
+  - plans.benefits.usageLimit
+  - plans.benefits.usedCount
+  - plans.benefits.claimed
+  - plans.updatedAt
+  data_sources:
+  - ops_audit_log

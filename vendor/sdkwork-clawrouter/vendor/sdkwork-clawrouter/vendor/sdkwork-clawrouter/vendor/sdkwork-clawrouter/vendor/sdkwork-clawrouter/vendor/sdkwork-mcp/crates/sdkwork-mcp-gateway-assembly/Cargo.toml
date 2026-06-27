@@ -1,0 +1,19 @@
+[package]
+name = "sdkwork-mcp-gateway-assembly"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+description = "Generated gateway assembly for sdkwork-mcp application HTTP plane."
+
+[lib]
+name = "sdkwork_mcp_gateway_assembly"
+path = "src/lib.rs"
+
+[dependencies]
+axum.workspace = true
+tokio = { version = "1.48", features = ["macros", "rt-multi-thread"] }
+sdkwork-intelligence-mcp-repository-sqlx = { path = "../sdkwork-intelligence-mcp-repository-sqlx" }
+sdkwork-intelligence-mcp-service = { path = "../sdkwork-intelligence-mcp-service" }
+sdkwork-mcp-database-host = { path = "../sdkwork-mcp-database-host" }
+sdkwork_routes_mcp_app_api = { package = "sdkwork-routes-mcp-app-api", path = "../sdkwork-routes-mcp-app-api" }
+sdkwork_routes_mcp_backend_api = { package = "sdkwork-routes-mcp-backend-api", path = "../sdkwork-routes-mcp-backend-api" }

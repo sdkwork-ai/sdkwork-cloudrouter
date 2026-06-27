@@ -1,0 +1,35 @@
+[package]
+name = "sdkwork-commerce-storage-repository-sqlx"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "SDKWork canonical commerce SQL table catalog and migration contracts for local/private deployments."
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+sdkwork_commerce_database_host.workspace = true
+sdkwork-database-config.workspace = true
+sdkwork-database-sqlx.workspace = true
+sdkwork_commerce_account_service.workspace = true
+sdkwork_commerce_catalog_service.workspace = true
+sdkwork_commerce_contract_service.workspace = true
+sdkwork_commerce_invoice_service.workspace = true
+sdkwork_commerce_order_service.workspace = true
+sdkwork_commerce_payment_service.workspace = true
+sdkwork_commerce_promotion_service.workspace = true
+sdkwork_commerce_shop_service.workspace = true
+sdkwork_commerce_shop_repository_sqlx.workspace = true
+sdkwork_commerce_merchandise_repository_sqlx.workspace = true
+sdkwork_commerce_order_repository_sqlx.workspace = true
+sdkwork_commerce_payment_repository_sqlx.workspace = true
+sdkwork_commerce_account_repository_sqlx.workspace = true
+sdkwork_commerce_promotion_repository_sqlx.workspace = true
+sdkwork_commerce_invoice_repository_sqlx.workspace = true
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio", "sqlite", "postgres"] }
+
+[dev-dependencies]
+tokio = { version = "1.51", features = ["macros", "rt-multi-thread"] }

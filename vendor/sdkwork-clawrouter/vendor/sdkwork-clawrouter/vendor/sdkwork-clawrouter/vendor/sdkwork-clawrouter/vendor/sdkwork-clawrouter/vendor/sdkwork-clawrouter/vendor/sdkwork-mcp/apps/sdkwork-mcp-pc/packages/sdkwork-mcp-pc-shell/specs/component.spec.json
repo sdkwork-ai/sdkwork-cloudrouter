@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "sdkwork-mcp-pc-shell",
+    "displayName": "sdkwork-mcp-pc-shell",
+    "version": "0.1.0",
+    "type": "typescript-package",
+    "root": "apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-shell",
+    "domain": "intelligence",
+    "capability": "shell",
+    "surface": "app",
+    "languages": ["typescript"],
+    "generated": false,
+    "manifests": ["package.json"]
+  },
+  "contracts": {
+    "publicExports": ["."],
+    "sdkClients": []
+  }
+}

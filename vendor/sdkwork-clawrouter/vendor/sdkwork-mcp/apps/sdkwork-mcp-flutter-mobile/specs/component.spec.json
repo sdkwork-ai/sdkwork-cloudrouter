@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "sdkwork-mcp-flutter-mobile",
+    "displayName": "SDKWork MCP Flutter Mobile",
+    "version": "0.1.0",
+    "type": "flutter-mobile-app-root",
+    "root": "apps/sdkwork-mcp-flutter-mobile",
+    "domain": "intelligence",
+    "capability": "mcp",
+    "surface": "app",
+    "languages": [
+      "dart"
+    ],
+    "generated": false,
+    "manifests": [
+      "pubspec.yaml",
+      "sdkwork.app.config.json"
+    ]
+  },
+  "contracts": {
+    "sdkDependencies": [
+      "sdkwork-mcp-app-sdk"
+    ],
+    "dependencyComposition": "specs/dependency.composition.json"
+  },
+  "verification": {
+    "commands": [
+      "flutter analyze"
+    ]
+  }
+}

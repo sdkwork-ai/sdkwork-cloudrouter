@@ -1,0 +1,80 @@
+fragment: shared/entities/ai
+x_response_entities:
+  generation_history_item:
+    name: GenerationHistoryItem
+    type: object
+    additionalProperties: false
+    required:
+    - id
+    - date
+    - prompt
+    - type
+    - images
+    - videos
+    properties:
+      id:
+        type: string
+        minLength: 1
+        maxLength: 128
+      date:
+        type: string
+        minLength: 1
+        maxLength: 32
+      prompt:
+        type: string
+        maxLength: 4096
+      type:
+        type: string
+        enum:
+        - text
+        - image
+        - images
+        - video
+        - music
+        - audio
+        - sfx
+      modelInfo:
+        type: string
+        maxLength: 256
+      modelCatalogKey:
+        type: string
+        maxLength: 256
+      asset:
+        $ref: '#/components/schemas/MediaResource'
+      images:
+        type: array
+        maxItems: 20
+        items:
+          $ref: '#/components/schemas/MediaResource'
+      videos:
+        type: array
+        maxItems: 20
+        items:
+          $ref: '#/components/schemas/MediaResource'
+      aspectRatio:
+        type: string
+        enum:
+        - '1:1'
+        - '16:9'
+        - '9:16'
+      durationSeconds:
+        type: integer
+        minimum: 0
+        maximum: 86400
+      status:
+        type: string
+        enum:
+        - pending
+        - processing
+        - completed
+        - failed
+        - cancelled
+      outputText:
+        type: string
+        maxLength: 262144
+      createdAt:
+        type: string
+        maxLength: 64
+      updatedAt:
+        type: string
+        maxLength: 64

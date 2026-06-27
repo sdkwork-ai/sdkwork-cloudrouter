@@ -1,0 +1,486 @@
+use std::sync::Arc;
+
+use crate::api::paths::backend_path;
+use crate::api::paths::append_query_string;
+use crate::http::{SdkworkError, SdkworkHttpClient};
+use crate::models::{AdminAiModelCreateRequest, AdminAiModelUpdateRequest, AdminAiResourceCreateRequest, AdminAiResourceGroupCreateRequest, AdminAiResourceGroupUpdateRequest, AdminAiResourceUpdateRequest, AdminChannelGroupChannelBindingsReplaceRequest, AdminChannelGroupCreateRequest, AdminChannelGroupUpdateRequest, AdminModelCatalogSyncRequest, AdminModelMappingCreateRequest, AdminModelMappingResolveRequest, AdminModelMappingUpdateRequest, AdminModelVendorCreateRequest, AdminRuntimeRouteExplainRequest, AiResourceGroupsCreateResult, AiResourceGroupsDeleteResult, AiResourceGroupsListResult, AiResourceGroupsResourcesListResult, AiResourceGroupsUpdateResult, AiResourcesCreateResult, AiResourcesListResult, AiResourcesUpdateResult, ChannelGroupsChannelBindingsListResult, ChannelGroupsChannelBindingsUpdateResult, ChannelGroupsCreateResult, ChannelGroupsDeleteResult, ChannelGroupsListResult, ChannelGroupsRouteExplainRetrieveResult, ChannelGroupsUpdateResult, ModelMappingsCreateResult, ModelMappingsDeleteResult, ModelMappingsListResult, ModelMappingsResolveCreateResult, ModelMappingsUpdateResult, ModelRankingRefreshTriggerRequest, ModelRankingsJobsListResult, ModelRankingsListResult, ModelRankingsRefreshResult, ModelRankingsStatusRetrieveResult, ModelVendorsCreateResult, ModelVendorsListResult, ModelsCreateResult, ModelsDeleteResult, ModelsListResult, ModelsRefreshResult, ModelsUpdateResult, RouteExplainCreateResult};
+
+#[derive(Clone)]
+pub struct AiApi {
+    client: Arc<SdkworkHttpClient>,
+}
+
+impl AiApi {
+    pub fn new(client: Arc<SdkworkHttpClient>) -> Self {
+        Self { client }
+    }
+
+    /// List groups
+    pub async fn channel_groups_list(&self) -> Result<ChannelGroupsListResult, SdkworkError> {
+        let path = backend_path(&"/ai/channel_groups".to_string());
+        self.client.get(&path, None, None).await
+    }
+
+    /// Create group
+    pub async fn channel_groups_create(&self, body: &AdminChannelGroupCreateRequest) -> Result<ChannelGroupsCreateResult, SdkworkError> {
+        let path = backend_path(&"/ai/channel_groups".to_string());
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    /// Delete group
+    pub async fn channel_groups_delete(&self, channel_group_id: &str) -> Result<ChannelGroupsDeleteResult, SdkworkError> {
+        let path = backend_path(&format!("/ai/channel_groups/{}", serialize_path_parameter(channel_group_id, PathParameterSpec::new("channelGroupId", "simple", false))));
+        self.client.delete(&path, None, None).await
+    }
+
+    /// Update group
+    pub async fn channel_groups_update(&self, channel_group_id: &str, body: &AdminChannelGroupUpdateRequest) -> Result<ChannelGroupsUpdateResult, SdkworkError> {
+        let path = backend_path(&format!("/ai/channel_groups/{}", serialize_path_parameter(channel_group_id, PathParameterSpec::new("channelGroupId", "simple", false))));
+        self.client.patch(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    /// List group channel bindings
+    pub async fn channel_groups_bindings_list(&self, channel_group_id: &str) -> Result<ChannelGroupsChannelBindingsListResult, SdkworkError> {
+        let path = backend_path(&format!("/ai/channel_groups/{}/channel_bindings", serialize_path_parameter(channel_group_id, PathParameterSpec::new("channelGroupId", "simple", false))));
+        self.client.get(&path, None, None).await
+    }
+
+    /// Replace group channel bindings
+    pub async fn channel_groups_bindings_update(&self, channel_group_id: &str, body: &AdminChannelGroupChannelBindingsReplaceRequest) -> Result<ChannelGroupsChannelBindingsUpdateResult, SdkworkError> {
+        let path = backend_path(&format!("/ai/channel_groups/{}/channel_bindings", serialize_path_parameter(channel_group_id, PathParameterSpec::new("channelGroupId", "simple", false))));
+        self.client.put(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    /// List group route explain
+    pub async fn channel_groups_route_explain_retrieve(&self, channel_group_id: &str) -> Result<ChannelGroupsRouteExplainRetrieveResult, SdkworkError> {
+        let path = backend_path(&format!("/ai/channel_groups/{}/route_explain", serialize_path_parameter(channel_group_id, PathParameterSpec::new("channelGroupId", "simple", false))));
+        self.client.get(&path, None, None).await
+    }
+
+    /// List model mappings
+    pub async fn model_mappings_list(&self, binding_type: Option<&str>, vendor_code: Option<&str>, channel_id: Option<&str>, channel_code: Option<&str>, q: Option<&str>) -> Result<ModelMappingsListResult, SdkworkError> {
+        let query = build_query_string(&[
+            QueryParameterSpec::new("binding_type", binding_type, "form", true, false, None),
+            QueryParameterSpec::new("vendor_code", vendor_code, "form", true, false, None),
+            QueryParameterSpec::new("channel_id", channel_id, "form", true, false, None),
+            QueryParameterSpec::new("channel_code", channel_code, "form", true, false, None),
+            QueryParameterSpec::new("q", q, "form", true, false, None),
+        ]);
+        let path = append_query_string(backend_path(&"/ai/model_mappings".to_string()), &query);
+        self.client.get(&path, None, None).await
+    }
+
+    /// Create model mapping
+    pub async fn model_mappings_create(&self, body: &AdminModelMappingCreateRequest) -> Result<ModelMappingsCreateResult, SdkworkError> {
+        let path = backend_path(&"/ai/model_mappings".to_string());
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    /// Resolve model mapping
+    pub async fn model_mappings_resolve_create(&self, body: &AdminModelMappingResolveRequest) -> Result<ModelMappingsResolveCreateResult, SdkworkError> {
+        let path = backend_path(&"/ai/model_mappings/resolve".to_string());
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    /// Delete model mapping
+    pub async fn model_mappings_delete(&self, mapping_id: &str) -> Result<ModelMappingsDeleteResult, SdkworkError> {
+        let path = backend_path(&format!("/ai/model_mappings/{}", serialize_path_parameter(mapping_id, PathParameterSpec::new("mappingId", "simple", false))));
+        self.client.delete(&path, None, None).await
+    }
+
+    /// Update model mapping
+    pub async fn model_mappings_update(&self, mapping_id: &str, body: &AdminModelMappingUpdateRequest) -> Result<ModelMappingsUpdateResult, SdkworkError> {
+        let path = backend_path(&format!("/ai/model_mappings/{}", serialize_path_parameter(mapping_id, PathParameterSpec::new("mappingId", "simple", false))));
+        self.client.patch(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    /// List model rankings
+    pub async fn model_rankings_list(&self, rank_scope: Option<&str>, vendor_code: Option<&str>, modality: Option<&str>, q: Option<&str>, limit: Option<&str>) -> Result<ModelRankingsListResult, SdkworkError> {
+        let query = build_query_string(&[
+            QueryParameterSpec::new("rank_scope", rank_scope, "form", true, false, None),
+            QueryParameterSpec::new("vendor_code", vendor_code, "form", true, false, None),
+            QueryParameterSpec::new("modality", modality, "form", true, false, None),
+            QueryParameterSpec::new("q", q, "form", true, false, None),
+            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+        ]);
+        let path = append_query_string(backend_path(&"/ai/model_rankings".to_string()), &query);
+        self.client.get(&path, None, None).await
+    }
+
+    /// List model ranking refresh jobs
+    pub async fn model_rankings_jobs_list(&self, rank_scope: Option<&str>, limit: Option<&str>) -> Result<ModelRankingsJobsListResult, SdkworkError> {
+        let query = build_query_string(&[
+            QueryParameterSpec::new("rank_scope", rank_scope, "form", true, false, None),
+            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+        ]);
+        let path = append_query_string(backend_path(&"/ai/model_rankings/jobs".to_string()), &query);
+        self.client.get(&path, None, None).await
+    }
+
+    /// Trigger model ranking refresh
+    pub async fn model_rankings_refresh(&self, body: &ModelRankingRefreshTriggerRequest) -> Result<ModelRankingsRefreshResult, SdkworkError> {
+        let path = backend_path(&"/ai/model_rankings/refresh".to_string());
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    /// List model ranking refresh status
+    pub async fn model_rankings_status_retrieve(&self, rank_scope: Option<&str>) -> Result<ModelRankingsStatusRetrieveResult, SdkworkError> {
+        let query = build_query_string(&[
+            QueryParameterSpec::new("rank_scope", rank_scope, "form", true, false, None),
+        ]);
+        let path = append_query_string(backend_path(&"/ai/model_rankings/status".to_string()), &query);
+        self.client.get(&path, None, None).await
+    }
+
+    /// List vendors
+    pub async fn model_vendors_list(&self) -> Result<ModelVendorsListResult, SdkworkError> {
+        let path = backend_path(&"/ai/model_vendors".to_string());
+        self.client.get(&path, None, None).await
+    }
+
+    /// Create vendor
+    pub async fn model_vendors_create(&self, body: &AdminModelVendorCreateRequest) -> Result<ModelVendorsCreateResult, SdkworkError> {
+        let path = backend_path(&"/ai/model_vendors".to_string());
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    /// List models
+    pub async fn models_list(&self) -> Result<ModelsListResult, SdkworkError> {
+        let path = backend_path(&"/ai/models".to_string());
+        self.client.get(&path, None, None).await
+    }
+
+    /// Create model
+    pub async fn models_create(&self, body: &AdminAiModelCreateRequest) -> Result<ModelsCreateResult, SdkworkError> {
+        let path = backend_path(&"/ai/models".to_string());
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    /// Sync vendors and models
+    pub async fn models_refresh(&self, body: &AdminModelCatalogSyncRequest) -> Result<ModelsRefreshResult, SdkworkError> {
+        let path = backend_path(&"/ai/models/refresh".to_string());
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    /// Delete model
+    pub async fn models_delete(&self, model_id: &str) -> Result<ModelsDeleteResult, SdkworkError> {
+        let path = backend_path(&format!("/ai/models/{}", serialize_path_parameter(model_id, PathParameterSpec::new("modelId", "simple", false))));
+        self.client.delete(&path, None, None).await
+    }
+
+    /// Update model
+    pub async fn models_update(&self, model_id: &str, body: &AdminAiModelUpdateRequest) -> Result<ModelsUpdateResult, SdkworkError> {
+        let path = backend_path(&format!("/ai/models/{}", serialize_path_parameter(model_id, PathParameterSpec::new("modelId", "simple", false))));
+        self.client.patch(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    /// List resource groups
+    pub async fn get_resource_groups_list(&self) -> Result<AiResourceGroupsListResult, SdkworkError> {
+        let path = backend_path(&"/ai/resource_groups".to_string());
+        self.client.get(&path, None, None).await
+    }
+
+    /// Create resource group
+    pub async fn resource_groups_create(&self, body: &AdminAiResourceGroupCreateRequest) -> Result<AiResourceGroupsCreateResult, SdkworkError> {
+        let path = backend_path(&"/ai/resource_groups".to_string());
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    /// List resource group resources
+    pub async fn get_resource_groups_list_resource_groups(&self, group_id_or_code: &str) -> Result<AiResourceGroupsResourcesListResult, SdkworkError> {
+        let path = backend_path(&format!("/ai/resource_groups/{}/resources", serialize_path_parameter(group_id_or_code, PathParameterSpec::new("groupIdOrCode", "simple", false))));
+        self.client.get(&path, None, None).await
+    }
+
+    /// Delete resource group
+    pub async fn resource_groups_delete(&self, group_id: &str) -> Result<AiResourceGroupsDeleteResult, SdkworkError> {
+        let path = backend_path(&format!("/ai/resource_groups/{}", serialize_path_parameter(group_id, PathParameterSpec::new("groupId", "simple", false))));
+        self.client.delete(&path, None, None).await
+    }
+
+    /// Update resource group
+    pub async fn resource_groups_update(&self, group_id: &str, body: &AdminAiResourceGroupUpdateRequest) -> Result<AiResourceGroupsUpdateResult, SdkworkError> {
+        let path = backend_path(&format!("/ai/resource_groups/{}", serialize_path_parameter(group_id, PathParameterSpec::new("groupId", "simple", false))));
+        self.client.patch(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    /// List ai resources
+    pub async fn resources_list(&self) -> Result<AiResourcesListResult, SdkworkError> {
+        let path = backend_path(&"/ai/resources".to_string());
+        self.client.get(&path, None, None).await
+    }
+
+    /// Create ai resource
+    pub async fn resources_create(&self, body: &AdminAiResourceCreateRequest) -> Result<AiResourcesCreateResult, SdkworkError> {
+        let path = backend_path(&"/ai/resources".to_string());
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    /// Update ai resource
+    pub async fn resources_update(&self, resource_id: &str, body: &AdminAiResourceUpdateRequest) -> Result<AiResourcesUpdateResult, SdkworkError> {
+        let path = backend_path(&format!("/ai/resources/{}", serialize_path_parameter(resource_id, PathParameterSpec::new("resourceId", "simple", false))));
+        self.client.put(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    /// List runtime route explain
+    pub async fn route_explain_create(&self, body: &AdminRuntimeRouteExplainRequest) -> Result<RouteExplainCreateResult, SdkworkError> {
+        let path = backend_path(&"/ai/route_explain".to_string());
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+}
+
+struct PathParameterSpec<'a> {
+    name: &'a str,
+    style: &'a str,
+    explode: bool,
+}
+
+impl<'a> PathParameterSpec<'a> {
+    fn new(name: &'a str, style: &'a str, explode: bool) -> Self {
+        Self { name, style, explode }
+    }
+}
+
+fn serialize_path_parameter<T: serde::Serialize>(value: T, spec: PathParameterSpec<'_>) -> String {
+    let value = serde_json::to_value(value).unwrap_or(serde_json::Value::Null);
+    if value.is_null() {
+        return String::new();
+    }
+    let style = if spec.style.is_empty() { "simple" } else { spec.style };
+    match value {
+        serde_json::Value::Array(values) => serialize_path_array(spec.name, &values, style, spec.explode),
+        serde_json::Value::Object(values) => serialize_path_object(spec.name, &values, style, spec.explode),
+        value => format!("{}{}", path_primitive_prefix(spec.name, style), percent_encode(&primitive_to_string(&value))),
+    }
+}
+
+fn serialize_path_array(name: &str, values: &[serde_json::Value], style: &str, explode: bool) -> String {
+    let serialized = values
+        .iter()
+        .filter(|value| !value.is_null())
+        .map(|value| percent_encode(&primitive_to_string(value)))
+        .collect::<Vec<_>>();
+    if serialized.is_empty() {
+        return path_prefix(name, style);
+    }
+    if style == "matrix" {
+        if explode {
+            return serialized.iter().map(|item| format!(";{}={}", name, item)).collect::<Vec<_>>().join("");
+        }
+        return format!(";{}={}", name, serialized.join(","));
+    }
+    let separator = if explode { "." } else { "," };
+    format!("{}{}", path_prefix(name, style), serialized.join(separator))
+}
+
+fn serialize_path_object(
+    name: &str,
+    values: &serde_json::Map<String, serde_json::Value>,
+    style: &str,
+    explode: bool,
+) -> String {
+    let mut entries = Vec::new();
+    let mut exploded = Vec::new();
+    for (key, value) in values {
+        if value.is_null() {
+            continue;
+        }
+        let escaped_key = percent_encode(key);
+        let escaped_value = percent_encode(&primitive_to_string(value));
+        if explode {
+            if style == "matrix" {
+                exploded.push(format!(";{}={}", escaped_key, escaped_value));
+            } else {
+                exploded.push(format!("{}={}", escaped_key, escaped_value));
+            }
+        } else {
+            entries.push(escaped_key);
+            entries.push(escaped_value);
+        }
+    }
+    if style == "matrix" {
+        if explode {
+            return exploded.join("");
+        }
+        return format!(";{}={}", name, entries.join(","));
+    }
+    if explode {
+        let separator = if style == "label" { "." } else { "," };
+        return format!("{}{}", path_prefix(name, style), exploded.join(separator));
+    }
+    format!("{}{}", path_prefix(name, style), entries.join(","))
+}
+
+fn path_prefix(name: &str, style: &str) -> String {
+    match style {
+        "label" => ".".to_string(),
+        "matrix" => format!(";{}", name),
+        _ => String::new(),
+    }
+}
+
+fn path_primitive_prefix(name: &str, style: &str) -> String {
+    if style == "matrix" {
+        format!(";{}=", name)
+    } else {
+        path_prefix(name, style)
+    }
+}
+
+
+struct QueryParameterSpec<'a> {
+    name: &'a str,
+    value: serde_json::Value,
+    style: &'a str,
+    explode: bool,
+    allow_reserved: bool,
+    content_type: Option<&'a str>,
+}
+
+impl<'a> QueryParameterSpec<'a> {
+    fn new<T: serde::Serialize>(
+        name: &'a str,
+        value: T,
+        style: &'a str,
+        explode: bool,
+        allow_reserved: bool,
+        content_type: Option<&'a str>,
+    ) -> Self {
+        Self {
+            name,
+            value: serde_json::to_value(value).unwrap_or(serde_json::Value::Null),
+            style,
+            explode,
+            allow_reserved,
+            content_type,
+        }
+    }
+}
+
+fn build_query_string(parameters: &[QueryParameterSpec<'_>]) -> String {
+    let mut pairs = Vec::new();
+    for parameter in parameters {
+        append_serialized_parameter(&mut pairs, parameter);
+    }
+    pairs.join("&")
+}
+
+fn append_serialized_parameter(pairs: &mut Vec<String>, parameter: &QueryParameterSpec<'_>) {
+    if parameter.value.is_null() {
+        return;
+    }
+    if parameter.content_type.is_some() {
+        pairs.push(format!(
+            "{}={}",
+            percent_encode(parameter.name),
+            encode_query_value(&parameter.value.to_string(), parameter.allow_reserved)
+        ));
+        return;
+    }
+
+    let style = if parameter.style.is_empty() { "form" } else { parameter.style };
+    match &parameter.value {
+        serde_json::Value::Array(values) => append_array_parameter(pairs, parameter.name, values, style, parameter.explode, parameter.allow_reserved),
+        serde_json::Value::Object(values) if style == "deepObject" => append_deep_object_parameter(pairs, parameter.name, values, parameter.allow_reserved),
+        serde_json::Value::Object(values) => append_object_parameter(pairs, parameter.name, values, style, parameter.explode, parameter.allow_reserved),
+        value => pairs.push(format!("{}={}", percent_encode(parameter.name), encode_query_value(&primitive_to_string(value), parameter.allow_reserved))),
+    }
+}
+
+fn append_array_parameter(
+    pairs: &mut Vec<String>,
+    name: &str,
+    values: &[serde_json::Value],
+    style: &str,
+    explode: bool,
+    allow_reserved: bool,
+) {
+    let serialized = values.iter().filter(|value| !value.is_null()).map(primitive_to_string).collect::<Vec<_>>();
+    if serialized.is_empty() {
+        return;
+    }
+    if style == "form" && explode {
+        for item in serialized {
+            pairs.push(format!("{}={}", percent_encode(name), encode_query_value(&item, allow_reserved)));
+        }
+        return;
+    }
+    pairs.push(format!("{}={}", percent_encode(name), encode_query_value(&serialized.join(","), allow_reserved)));
+}
+
+fn append_object_parameter(
+    pairs: &mut Vec<String>,
+    name: &str,
+    values: &serde_json::Map<String, serde_json::Value>,
+    style: &str,
+    explode: bool,
+    allow_reserved: bool,
+) {
+    let mut serialized = Vec::new();
+    for (key, value) in values {
+        if value.is_null() {
+            continue;
+        }
+        if style == "form" && explode {
+            pairs.push(format!("{}={}", percent_encode(key), encode_query_value(&primitive_to_string(value), allow_reserved)));
+        } else {
+            serialized.push(key.clone());
+            serialized.push(primitive_to_string(value));
+        }
+    }
+    if !serialized.is_empty() {
+        pairs.push(format!("{}={}", percent_encode(name), encode_query_value(&serialized.join(","), allow_reserved)));
+    }
+}
+
+fn append_deep_object_parameter(
+    pairs: &mut Vec<String>,
+    name: &str,
+    values: &serde_json::Map<String, serde_json::Value>,
+    allow_reserved: bool,
+) {
+    for (key, value) in values {
+        if !value.is_null() {
+            pairs.push(format!("{}={}", percent_encode(&format!("{}[{}]", name, key)), encode_query_value(&primitive_to_string(value), allow_reserved)));
+        }
+    }
+}
+
+fn encode_query_value(value: &str, allow_reserved: bool) -> String {
+    let mut encoded = percent_encode(value);
+    if !allow_reserved {
+        return encoded;
+    }
+    for (escaped, reserved) in [
+        ("%3A", ":"), ("%2F", "/"), ("%3F", "?"), ("%23", "#"),
+        ("%5B", "["), ("%5D", "]"), ("%40", "@"), ("%21", "!"),
+        ("%24", "$"), ("%26", "&"), ("%27", "'"), ("%28", "("),
+        ("%29", ")"), ("%2A", "*"), ("%2B", "+"), ("%2C", ","),
+        ("%3B", ";"), ("%3D", "="),
+    ] {
+        encoded = encoded.replace(escaped, reserved);
+    }
+    encoded
+}
+
+fn primitive_to_string(value: &serde_json::Value) -> String {
+    match value {
+        serde_json::Value::String(value) => value.clone(),
+        serde_json::Value::Number(value) => value.to_string(),
+        serde_json::Value::Bool(value) => value.to_string(),
+        other => other.to_string(),
+    }
+}
+
+fn percent_encode(value: &str) -> String {
+    value
+        .bytes()
+        .flat_map(|byte| match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                vec![byte as char]
+            }
+            _ => format!("%{:02X}", byte).chars().collect(),
+        })
+        .collect()
+}

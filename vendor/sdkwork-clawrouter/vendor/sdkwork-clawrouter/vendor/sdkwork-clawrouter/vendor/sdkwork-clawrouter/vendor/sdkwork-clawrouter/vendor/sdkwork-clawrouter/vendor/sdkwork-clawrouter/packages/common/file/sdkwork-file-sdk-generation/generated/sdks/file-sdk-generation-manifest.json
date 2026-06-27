@@ -1,0 +1,47 @@
+{
+  "domain": "file",
+  "files": [
+    {
+      "path": "packages/common/file/sdkwork-file-sdk-generation/generated/sdks/file-app-sdk/.sdkwork-assembly.json",
+      "sha256": "8775e0aff49304304f04eeb2d2f25785f0fbc92c38687625e4f18c3eb1f12bda",
+      "surface": "app"
+    },
+    {
+      "path": "packages/common/file/sdkwork-file-sdk-generation/generated/sdks/file-app-sdk/README.md",
+      "sha256": "2ce779300320532a7e872c557bf0bbb11b4f19b2fe076b20f46fbe32ec6f0069",
+      "surface": "app"
+    },
+    {
+      "path": "packages/common/file/sdkwork-file-sdk-generation/generated/sdks/file-app-sdk/openapi/file-app-sdk.openapi.json",
+      "sha256": "6df8ec3acb5de830728e793d96960752788fd1c2f2d3d656d447a7d9bdd11a21",
+      "surface": "app"
+    },
+    {
+      "path": "packages/common/file/sdkwork-file-sdk-generation/generated/sdks/file-app-sdk/openapi/file-app-sdk.sdkgen.json",
+      "sha256": "6df8ec3acb5de830728e793d96960752788fd1c2f2d3d656d447a7d9bdd11a21",
+      "surface": "app"
+    },
+    {
+      "path": "packages/common/file/sdkwork-file-sdk-generation/generated/sdks/file-backend-sdk/.sdkwork-assembly.json",
+      "sha256": "673e7d85f3e3a1bf4ae0a46f81f311ea0463411bacb69e4d808ae3958ce92dfc",
+      "surface": "backend"
+    },
+    {
+      "path": "packages/common/file/sdkwork-file-sdk-generation/generated/sdks/file-backend-sdk/README.md",
+      "sha256": "7bb18566e731972a5598f7cfc97ea94cdf27d9ccc2c8185927b6155d2f94fed7",
+      "surface": "backend"
+    },
+    {
+      "path": "packages/common/file/sdkwork-file-sdk-generation/generated/sdks/file-backend-sdk/openapi/file-backend-sdk.openapi.json",
+      "sha256": "090e8a89549c5c8848b7e81cce291c8bea708e0f025991ca5e99b94730cedb27",
+      "surface": "backend"
+    },
+    {
+      "path": "packages/common/file/sdkwork-file-sdk-generation/generated/sdks/file-backend-sdk/openapi/file-backend-sdk.sdkgen.json",
+      "sha256": "090e8a89549c5c8848b7e81cce291c8bea708e0f025991ca5e99b94730cedb27",
+      "surface": "backend"
+    }
+  ],
+  "generatedAtPolicy": "deterministic",
+  "version": "2026.05.file-platform.sdk-generation.v1"
+}

@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1901,
+    "uuid": "skill-category-sdkwork-official",
+    "name": "SDKWork Official",
+    "description": "Official SDKWork skills with verified runtime contracts, commercial support, and first-class product placement.",
+    "shopId": 0,
+    "type": 19,
+    "groupName": "official",
+    "code": "sdkwork-official",
+    "tags": [
+      "sdkwork",
+      "official",
+      "featured"
+    ],
+    "icon": {
+      "kind": "image",
+      "source": "provider_asset",
+      "uri": "badge-check"
+    },
+    "sortWeight": 1,
+    "parentId": null,
+    "path": "/skills/sdkwork-official",
+    "visible": true,
+    "status": 1
+  },
+  {
+    "id": 1902,
+    "uuid": "skill-category-clawhub-community",
+    "name": "ClawHub Community",
+    "description": "Community skills mirrored from ClawHub into local SDKWork seed data for offline startup and review.",
+    "shopId": 0,
+    "type": 19,
+    "groupName": "community",
+    "code": "clawhub-community",
+    "tags": [
+      "clawhub",
+      "community",
+      "mirror"
+    ],
+    "icon": {
+      "kind": "image",
+      "source": "provider_asset",
+      "uri": "store"
+    },
+    "sortWeight": 20,
+    "parentId": null,
+    "path": "/skills/clawhub-community",
+    "visible": true,
+    "status": 1
+  }
+]

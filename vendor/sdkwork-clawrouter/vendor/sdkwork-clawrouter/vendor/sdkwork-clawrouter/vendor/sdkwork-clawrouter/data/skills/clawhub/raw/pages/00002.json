@@ -1,0 +1,9 @@
+{
+  "pageNo": 2,
+  "requestCursor": "{\"v\":1,\"index\":\"by_active_created\",\"key\":[{\"__undef\":1},1781990315436,1781990315436.159,\"r170xqrdx4n45h90hebqrxvasx890w63\"]}",
+  "url": "https://clawhub.ai/api/v1/skills?limit=200&sort=createdAt&cursor=%7B%22v%22%3A1%2C%22index%22%3A%22by_active_created%22%2C%22key%22%3A%5B%7B%22__undef%22%3A1%7D%2C1781990315436%2C1781990315436.159%2C%22r170xqrdx4n45h90hebqrxvasx890w63%22%5D%7D",
+  "itemCount": 0,
+  "nextCursor": "{\"v\":1,\"index\":\"by_active_created\",\"key\":[{\"__undef\":1},1781921866943,1781921866943.8171,\"r17egyk3699bmnh5bftq9m4r25891aex\"]}",
+  "fetchedAt": "2026-06-22T01:26:39.192Z",
+  "items": []
+}

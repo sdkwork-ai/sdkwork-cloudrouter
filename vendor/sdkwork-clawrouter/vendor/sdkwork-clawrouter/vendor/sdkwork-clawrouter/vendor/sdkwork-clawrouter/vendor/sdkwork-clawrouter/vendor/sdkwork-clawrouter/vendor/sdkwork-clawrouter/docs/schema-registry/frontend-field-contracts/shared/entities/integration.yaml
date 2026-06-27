@@ -1,0 +1,44 @@
+fragment: shared/entities/integration
+x_response_entities:
+  provider_retry_policy:
+    name: ProviderRetryPolicy
+    type: object
+    additionalProperties: false
+    required:
+    - maxAttempts
+    - retryableStatusCodes
+    properties:
+      maxAttempts:
+        type: integer
+        minimum: 1
+        maximum: 5
+      retryableStatusCodes:
+        type: array
+        maxItems: 8
+        uniqueItems: true
+        items:
+          type: integer
+          enum:
+          - 408
+          - 409
+          - 425
+          - 429
+          - 500
+          - 502
+          - 503
+          - 504
+      backoffMs:
+        type: integer
+        minimum: 0
+        maximum: 2000
+  provider_circuit_breaker_policy:
+    name: ProviderCircuitBreakerPolicy
+    type: object
+    additionalProperties: false
+    required:
+    - failureThreshold
+    properties:
+      failureThreshold:
+        type: integer
+        minimum: 1
+        maximum: 100

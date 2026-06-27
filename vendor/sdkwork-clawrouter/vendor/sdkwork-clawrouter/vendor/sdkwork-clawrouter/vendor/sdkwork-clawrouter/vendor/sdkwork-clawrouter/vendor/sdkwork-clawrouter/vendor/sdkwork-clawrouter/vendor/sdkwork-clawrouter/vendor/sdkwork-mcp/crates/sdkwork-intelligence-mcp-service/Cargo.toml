@@ -1,0 +1,17 @@
+[package]
+name = "sdkwork-intelligence-mcp-service"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+regex-lite = "0.1"
+serde_json.workspace = true
+sdkwork-mcp-contract.workspace = true
+sdkwork-utils-rust.workspace = true
+sdkwork-drive-contract.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+serde_json = "1"

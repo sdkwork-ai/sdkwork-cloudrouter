@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.dependency.composition",
+  "applicationCode": "clawrouter",
+  "clientArchitecture": "pc",
+  "surfaces": [
+    {
+      "surface": "app",
+      "corePackage": "@sdkwork/clawrouter-pc-core",
+      "sdkClients": [],
+      "reusableModules": [],
+      "hostAdapters": [],
+      "dependencyApiExports": [],
+      "dependencyApiSurfaces": []
+    },
+    {
+      "surface": "backend-admin",
+      "corePackage": "@sdkwork/clawrouter-pc-admin-core",
+      "sdkClients": [
+        {
+          "id": "clawrouterBackend",
+          "workspace": "clawrouter-backend-sdk",
+          "surface": "backend-api",
+          "credentialMode": "authenticated-backend-admin",
+          "role": "application-owned"
+        },
+        {
+          "id": "agentBackend",
+          "workspace": "sdkwork-agent-backend-sdk",
+          "surface": "backend-api",
+          "credentialMode": "authenticated-backend-admin",
+          "role": "application-owned"
+        },
+        {
+          "id": "commerceBackend",
+          "workspace": "sdkwork-commerce-backend-sdk",
+          "surface": "backend-api",
+          "credentialMode": "authenticated-backend-admin",
+          "role": "application-owned"
+        },
+        {
+          "id": "iamBackend",
+          "workspace": "sdkwork-iam-backend-sdk",
+          "surface": "backend-api",
+          "credentialMode": "authenticated-backend-admin",
+          "role": "dependency",
+          "sdkDependencyRef": "sdkwork-iam-backend-sdk"
+        },
+        {
+          "id": "modelsBackend",
+          "workspace": "sdkwork-models-backend-sdk",
+          "surface": "backend-api",
+          "credentialMode": "authenticated-backend-admin",
+          "role": "application-owned"
+        },
+        {
+          "id": "promptsBackend",
+          "workspace": "sdkwork-prompts-backend-sdk",
+          "surface": "backend-api",
+          "credentialMode": "authenticated-backend-admin",
+          "role": "application-owned"
+        }
+      ],
+      "reusableModules": [],
+      "hostAdapters": [],
+      "dependencyApiExports": [],
+      "dependencyApiSurfaces": []
+    },
+    {
+      "surface": "console",
+      "corePackage": "@sdkwork/clawrouter-pc-console-core",
+      "sdkClients": [],
+      "reusableModules": [],
+      "hostAdapters": [],
+      "dependencyApiExports": [],
+      "dependencyApiSurfaces": []
+    }
+  ],
+  "buildToolEntries": {
+    "pnpm": {
+      "workspacePackages": [
+        "@sdkwork/clawrouter-pc-core",
+        "@sdkwork/clawrouter-pc-admin-core",
+        "@sdkwork/clawrouter-pc-console-core",
+        "@sdkwork/clawrouter-pc-admin-agents",
+        "@sdkwork/clawrouter-pc-admin-analytics",
+        "@sdkwork/clawrouter-pc-admin-announcement",
+        "@sdkwork/clawrouter-pc-admin-cache",
+        "@sdkwork/clawrouter-pc-admin-catalog",
+        "@sdkwork/clawrouter-pc-admin-channel",
+        "@sdkwork/clawrouter-pc-admin-dashboard",
+        "@sdkwork/clawrouter-pc-admin-file-platform",
+        "@sdkwork/clawrouter-pc-admin-finance",
+        "@sdkwork/clawrouter-pc-admin-group",
+        "@sdkwork/clawrouter-pc-admin-inventory",
+        "@sdkwork/clawrouter-pc-admin-marketing",
+        "@sdkwork/clawrouter-pc-admin-mcp",
+        "@sdkwork/clawrouter-pc-admin-messaging",
+        "@sdkwork/clawrouter-pc-admin-monitor",
+        "@sdkwork/clawrouter-pc-admin-oauth",
+        "@sdkwork/clawrouter-pc-admin-orders",
+        "@sdkwork/clawrouter-pc-admin-organization",
+        "@sdkwork/clawrouter-pc-admin-payments",
+        "@sdkwork/clawrouter-pc-admin-prompts",
+        "@sdkwork/clawrouter-pc-admin-ratelimit",
+        "@sdkwork/clawrouter-pc-admin-record",
+        "@sdkwork/clawrouter-pc-admin-relay-site",
+        "@sdkwork/clawrouter-pc-admin-runtime-region",
+        "@sdkwork/clawrouter-pc-admin-service-nodes",
+        "@sdkwork/clawrouter-pc-admin-service-provider",
+        "@sdkwork/clawrouter-pc-admin-shell",
+        "@sdkwork/clawrouter-pc-admin-site",
+        "@sdkwork/clawrouter-pc-admin-skill",
+        "@sdkwork/clawrouter-pc-admin-user",
+        "@sdkwork/clawrouter-pc-admin-wallet",
+        "@sdkwork/clawroutes-pc-commons",
+        "@sdkwork/clawrouter-pc-console-api-keys",
+        "@sdkwork/clawrouter-pc-console-dashboard",
+        "@sdkwork/clawrouter-pc-console-gateway",
+        "@sdkwork/clawrouter-pc-console-settings",
+        "@sdkwork/clawrouter-pc-console-shell",
+        "@sdkwork/clawrouter-pc-console-usage",
+        "@sdkwork/clawrouter-pc-console-user",
+        "@sdkwork/clawrouter-pc-downloads",
+        "@sdkwork/clawrouter-pc-home",
+        "@sdkwork/clawrouter-pc-i18n",
+        "@sdkwork/clawrouter-pc-models",
+        "@sdkwork/clawrouter-pc-playground",
+        "@sdkwork/clawrouter-pc-rankings",
+        "@sdkwork/clawrouter-pc-shell",
+        "@sdkwork/clawrouter-pc-types"
+      ]
+    }
+  }
+}

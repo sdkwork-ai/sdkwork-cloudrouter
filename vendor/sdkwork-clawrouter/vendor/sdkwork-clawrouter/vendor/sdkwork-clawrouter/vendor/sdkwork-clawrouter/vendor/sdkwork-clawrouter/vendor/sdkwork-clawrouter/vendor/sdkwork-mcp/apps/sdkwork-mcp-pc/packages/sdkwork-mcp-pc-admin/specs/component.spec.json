@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "sdkwork-mcp-pc-admin",
+    "displayName": "sdkwork-mcp-pc-admin",
+    "version": "0.1.0",
+    "type": "typescript-package",
+    "root": "apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-admin",
+    "domain": "intelligence",
+    "capability": "admin",
+    "surface": "backend-admin",
+    "languages": ["typescript"],
+    "generated": false,
+    "manifests": ["package.json"]
+  },
+  "contracts": {
+    "publicExports": ["."],
+    "sdkClients": ["sdkwork-mcp-backend-sdk"],
+    "dependencyComposition": "../../../specs/dependency.composition.json"
+  }
+}

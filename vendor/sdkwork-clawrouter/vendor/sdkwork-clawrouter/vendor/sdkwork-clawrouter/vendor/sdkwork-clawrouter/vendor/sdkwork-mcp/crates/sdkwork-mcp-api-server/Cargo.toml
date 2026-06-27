@@ -1,0 +1,28 @@
+[package]
+name = "sdkwork-mcp-api-server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+axum.workspace = true
+sdkwork-intelligence-mcp-repository-sqlx = { path = "../sdkwork-intelligence-mcp-repository-sqlx" }
+sdkwork-intelligence-mcp-service = { path = "../sdkwork-intelligence-mcp-service" }
+sdkwork-routes-mcp-app-api = { path = "../sdkwork-routes-mcp-app-api" }
+sdkwork-routes-mcp-backend-api = { path = "../sdkwork-routes-mcp-backend-api" }
+sdkwork-mcp-database-host = { path = "../sdkwork-mcp-database-host" }
+sqlx.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[[bin]]
+name = "sdkwork-mcp-app-api"
+path = "src/bin/app_main.rs"
+
+[[bin]]
+name = "sdkwork-mcp-backend-api"
+path = "src/bin/backend_main.rs"

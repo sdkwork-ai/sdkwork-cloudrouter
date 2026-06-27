@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "agent-skill-manifest.v1",
+  "id": 8202,
+  "uuid": "skill-clawhub-remote-dispatch",
+  "skillKey": "clawhub-remote-dispatch",
+  "name": "Remote Dispatch — 多端远程协同",
+  "summary": "多端协同/Dispatch 远程桌面操控。受 Claude Dispatch 功能启发——手机发指令，电脑执行。将 QQBot 收到的远程指令转化为 desktop actions：截图回传、打开浏览器搜索、操作桌面应用、文件操作。需要 computer-use skill 配合使用。",
+  "version": "1.0.0",
+  "runtime": "metadata",
+  "entrypoint": "clawhub.skills.remote_dispatch",
+  "provider": "ClawHub",
+  "licenseName": "MIT-0",
+  "capabilities": [
+    "clawhub.metadata"
+  ],
+  "configSchema": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "defaultConfig": {
+    "portal": {
+      "developer": "LXR-666",
+      "features": [
+        "多端协同/Dispatch 远程桌面操控。受 Claude Dispatch 功能启发——手机发指令，电脑执行。将 QQBot 收到的远程指令转化为 desktop actions：截图回传."
+      ],
+      "frameworks": [
+        "ClawHub",
+        "Agent Skill"
+      ],
+      "sizeText": "Metadata",
+      "clawhubImage": "clawhub://skills/remote-dispatch@1.0.0",
+      "screenshots": [
+        "https://avatars.githubusercontent.com/u/173941598?v=4"
+      ]
+    },
+    "source": {
+      "vendor": "clawhub",
+      "slug": "remote-dispatch",
+      "url": "https://clawhub.ai/skills/remote-dispatch"
+    }
+  },
+  "source": {
+    "vendor": "clawhub",
+    "slug": "remote-dispatch",
+    "url": "https://clawhub.ai/skills/remote-dispatch",
+    "fetchedAt": "2026-06-22T01:26:13.984Z",
+    "rawDetailPath": "data/skills/clawhub/raw/details/remote-dispatch-3599025a44381eea.json"
+  },
+  "artifacts": [
+    {
+      "artifactRef": "clawhub://skills/remote-dispatch@1.0.0",
+      "artifact": {
+        "kind": "document",
+        "source": "provider_asset",
+        "uri": "data/skills/artifacts/clawhub-remote-dispatch-1.0.0.json"
+      },
+      "version": "1.0.0",
+      "runtime": "metadata",
+      "checksumHash": "sha256:36253fb1a56780064e1ab9ead209c685b0632f11117845c7882102f823678fdc",
+      "artifactSizeBytes": 2483
+    }
+  ],
+  "permissions": {
+    "network": false,
+    "filesystem": "none",
+    "secrets": []
+  },
+  "publishedAt": "2026-06-22T00:25:36.173Z"
+}

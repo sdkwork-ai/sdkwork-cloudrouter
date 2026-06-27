@@ -1,0 +1,242 @@
+# clawrouter-backend-sdk
+
+SDKWork Claw Router backend API SDK
+
+## Installation
+
+```bash
+npm install @sdkwork/clawrouter-backend-sdk
+# or
+yarn add @sdkwork/clawrouter-backend-sdk
+# or
+pnpm add @sdkwork/clawrouter-backend-sdk
+```
+
+## Quick Start
+
+```typescript
+import { SdkworkBackendClient } from '@sdkwork/clawrouter-backend-sdk';
+
+const client = new SdkworkBackendClient({
+  baseUrl: 'http://localhost:18081',
+  timeout: 30000,
+});
+
+// Authentication
+client.setAuthToken('your-auth-token');
+client.setAccessToken('your-access-token');
+
+// Use the SDK
+const result = await client.ai.channelGroups.list();
+```
+
+## Authentication
+
+```text
+Authorization: Bearer <authToken>
+Access-Token: <accessToken>
+```
+
+
+## Configuration (Non-Auth)
+
+```typescript
+import { SdkworkBackendClient } from '@sdkwork/clawrouter-backend-sdk';
+
+const client = new SdkworkBackendClient({
+  baseUrl: 'http://localhost:18081',
+  timeout: 30000, // Request timeout in ms
+  headers: {      // Custom headers
+    'X-Custom-Header': 'value',
+  },
+});
+```
+
+## API Modules
+
+- `client.ai` - ai API
+- `client.content` - content API
+- `client.iam` - iam API
+- `client.integration` - integration API
+- `client.mcp` - mcp API
+- `client.messaging` - messaging API
+- `client.prompts` - prompts API
+- `client.serviceProviders` - service_providers API
+- `client.sites` - sites API
+- `client.oss` - oss API
+- `client.system` - system API
+
+## Usage Examples
+
+### ai
+
+```typescript
+// List groups
+const result = await client.ai.channelGroups.list();
+```
+
+### content
+
+```typescript
+// List admin announcements
+const result = await client.content.announcements.list();
+```
+
+### iam
+
+```typescript
+// Delete API key
+const apiKeyId = '1';
+const result = await client.iam.apiKeys.delete(apiKeyId);
+```
+
+### integration
+
+```typescript
+// List channels
+const result = await client.integration.channels.list();
+```
+
+### mcp
+
+```typescript
+// List MCP servers
+const params = {
+  page: 'page',
+  page_size: 'page_size',
+  q: 'q',
+  transport: 'transport',
+  visibility: 'visibility',
+  status: 'status',
+  category_id: 'category_id',
+};
+const result = await client.mcp.servers.list(params);
+```
+
+### messaging
+
+```typescript
+// List messaging rate limit buckets
+const params = {
+  page: 'page',
+  page_size: 'page_size',
+};
+const result = await client.messaging.rateLimitBuckets.list(params);
+```
+
+### prompts
+
+```typescript
+// List admin prompts
+const params = {
+  page: 'page',
+  page_size: 'page_size',
+  q: 'q',
+  prompt_type: 'prompt_type',
+  visibility: 'visibility',
+  status: 'status',
+  category_id: 'category_id',
+};
+const result = await client.prompts.definitions.list(params);
+```
+
+### service_providers
+
+```typescript
+// Service Provider Adjustments List
+const params = {
+  page: 'page',
+  page_size: 'page_size',
+  status: 'status',
+  provider_id: 'provider_id',
+  seller_provider_id: 'seller_provider_id',
+  buyer_provider_id: 'buyer_provider_id',
+  edge_id: 'edge_id',
+};
+const result = await client.serviceProviders.adjustments.list(params);
+```
+
+### sites
+
+```typescript
+// List sites
+const params = {
+  q: 'q',
+};
+const result = await client.sites.siteCatalog.list(params);
+```
+
+### oss
+
+```typescript
+// List storage providers
+const result = await client.oss.providers.list();
+```
+
+### system
+
+```typescript
+// Retrieve IAM auth runtime settings
+const result = await client.system.auth.settings.retrieve();
+```
+
+## Error Handling
+
+```typescript
+import { SdkworkBackendClient, NetworkError, TimeoutError, AuthenticationError } from '@sdkwork/clawrouter-backend-sdk';
+
+try {
+  const result = await client.ai.channelGroups.list();
+} catch (error) {
+  if (error instanceof AuthenticationError) {
+    console.error('Authentication failed:', error.message);
+  } else if (error instanceof TimeoutError) {
+    console.error('Request timed out:', error.message);
+  } else if (error instanceof NetworkError) {
+    console.error('Network error:', error.message);
+  } else {
+    throw error;
+  }
+}
+```
+
+## Publishing
+
+This SDK includes cross-platform publish scripts in `bin/`:
+- `bin/publish-core.mjs`
+- `bin/publish.sh`
+- `bin/publish.ps1`
+
+### Check
+
+```bash
+./bin/publish.sh --action check
+```
+
+### Publish
+
+```bash
+./bin/publish.sh --action publish --channel release
+```
+
+```powershell
+.\bin\publish.ps1 --action publish --channel test --dry-run
+```
+
+> Configure npm registry credentials before release publish.
+
+## License
+
+MIT
+
+## Regeneration Contract
+
+- HTTP/OpenAPI generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
+- HTTP/OpenAPI generation also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
+- HTTP/OpenAPI apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
+- CLI JSON output also includes an execution handoff with concrete next commands, including reviewed apply commands for dry-run flows.
+- Put HTTP/OpenAPI hand-written wrappers, adapters, and orchestration in `custom/`.
+- Files scaffolded under `custom/` are created once and preserved across HTTP/OpenAPI regenerations.
+- If an HTTP/OpenAPI generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- RPC SDK source workspaces use convention-first evidence by default: RPC SDK family naming, language workspace naming, `rpc/*.manifest.json`, proto source references, generated client source, and native package manifests.
+- Use `sdkgen inspect --protocol rpc` to verify RPC convention evidence. Request persisted generator evidence only with `--emit-control-plane` for release, CI, audit, or migration workflows; evidence paths are derived by generator convention.

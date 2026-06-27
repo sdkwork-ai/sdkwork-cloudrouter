@@ -1,0 +1,16 @@
+{
+  "name": "@sdkwork/clawrouter-pc-admin-prompts",
+  "version": "0.0.1",
+  "private": true,
+  "license": "SEE LICENSE IN ../../../../LICENSE",
+  "type": "module",
+  "main": "src/index.tsx",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sdkwork/clawrouter-pc-admin-core": "workspace:*",
+    "@sdkwork/clawroutes-pc-commons": "workspace:*",
+    "@sdkwork/prompts-backend-sdk": "workspace:*"
+  }
+}

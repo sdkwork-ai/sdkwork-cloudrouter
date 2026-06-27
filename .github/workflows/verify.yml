@@ -1,0 +1,137 @@
+name: Verify Application
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: sdkwork
+          POSTGRES_PASSWORD: sdkwork-ci
+          POSTGRES_DB: sdkwork_clawrouter_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sdkwork"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL: postgres://sdkwork:sdkwork-ci@localhost:5432/sdkwork_clawrouter_ci
+      CLAWROUTER_BROWSER_SMOKE_REQUIRED: "1"
+      CLAWROUTER_EDGE_DEV_SMOKE_REQUIRED: "1"
+      RUSTFLAGS: "-D warnings"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install cargo audit/deny
+        run: |
+          cargo install --locked cargo-audit
+          cargo install --locked cargo-deny
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Rust formatting check
+        run: pnpm format:rust:check
+
+      - name: Rust clippy (deny warnings)
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Alignment check
+        run: pnpm check:alignment
+
+      - name: API standard extensions
+        run: pnpm api:standard-extensions:check
+
+      - name: Install PC workspace dependencies
+        working-directory: apps/sdkwork-clawrouter-pc
+        run: pnpm install --frozen-lockfile
+
+      - name: PC workspace typecheck
+        working-directory: apps/sdkwork-clawrouter-pc
+        run: pnpm typecheck
+
+      - name: PC workspace lint
+        working-directory: apps/sdkwork-clawrouter-pc
+        run: pnpm lint
+
+      - name: PC workspace tests
+        working-directory: apps/sdkwork-clawrouter-pc
+        run: pnpm test
+
+      - name: Product verification (CI)
+        run: pnpm verify:ci --parallel --concurrency 4
+
+      - name: PostgreSQL integration tests (required)
+        run: pnpm test:postgres:required
+
+      - name: Browser smoke
+        run: pnpm verify
+
+      - name: Edge dev smoke
+        run: pnpm verify -- --with-edge-dev-smoke
+
+  security-scan:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo audit/deny
+        run: |
+          cargo install --locked cargo-audit
+          cargo install --locked cargo-deny
+
+      - name: Cargo audit (Rust vulnerabilities)
+        run: cargo audit --deny warnings
+
+      - name: Cargo deny (licenses, advisories, bans)
+        run: cargo deny check advisories bans licenses sources
+
+      - name: Gitleaks (secrets scan)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trivy filesystem scan (high/critical fail)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: pnpm audit (npm vulnerabilities)
+        run: pnpm audit --audit-level=high

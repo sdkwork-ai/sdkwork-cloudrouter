@@ -1,0 +1,15 @@
+[package]
+name = "sdkwork-clawrouter-gateway-assembly"
+edition.workspace = true
+version.workspace = true
+description = "Generated gateway assembly for sdkwork-clawrouter application HTTP plane."
+
+[lib]
+name = "sdkwork_clawrouter_gateway_assembly"
+path = "src/lib.rs"
+
+[dependencies]
+axum.workspace = true
+tokio = { version = "1.48", features = ["macros", "rt-multi-thread"] }
+sdkwork_routes_clawrouter_app_api = { package = "sdkwork-routes-clawrouter-app-api", path = "../sdkwork-routes-clawrouter-app-api" }
+sdkwork_routes_clawrouter_backend_api = { package = "sdkwork-routes-clawrouter-backend-api", path = "../sdkwork-routes-clawrouter-backend-api" }

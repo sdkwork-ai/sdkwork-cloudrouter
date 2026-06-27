@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "agent-skill-artifact.v1",
+  "artifactRef": "clawhub://skills/the-ren-skill@1.0.0",
+  "version": "1.0.0",
+  "runtime": "metadata",
+  "entrypoint": "clawhub.skills.the_ren_skill",
+  "skill": {
+    "id": 8204,
+    "skillKey": "clawhub-the-ren-skill",
+    "name": "雄韬识人辨人 - 老板阅人笔记 The Ren Skill"
+  },
+  "source": {
+    "vendor": "clawhub",
+    "slug": "the-ren-skill",
+    "url": "https://clawhub.ai/skills/the-ren-skill",
+    "fetchedAt": "2026-06-22T01:26:13.984Z",
+    "rawDetailPath": "data/skills/clawhub/raw/details/the-ren-skill-792a401da04d5a5e.json"
+  },
+  "instructions": [
+    "Display this bundled ClawHub metadata entry from the local SDKWork Skills seed.",
+    "Do not execute remote code from this artifact until the community package has passed SDKWork review.",
+    "阅人笔记 · The Ren Skill — 商业老板的全场景行为识人决策系统。把千年面相智慧用现代心理学重新解释，覆盖识员工、识客户、识伙伴、识对手四大场景。 触发场景（任一即触发）： - 面试识人、高管评估、招聘决策、人员盘点 → \"帮我看看这个人适不适合做销售总监\" - 客户判断、商务谈判、合作风险评估 →..."
+  ],
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "sourceUrl": {
+        "type": "string"
+      },
+      "slug": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": true
+  },
+  "metadata": {
+    "owner": {
+      "handle": "xtoyun",
+      "userId": "s173vnzr7tnr0bbz601zv70h5s88p7d2",
+      "displayName": "xtoyun",
+      "image": "https://avatars.githubusercontent.com/u/32350299?v=4"
+    },
+    "stats": {
+      "comments": 0,
+      "downloads": 0,
+      "installsAllTime": 0,
+      "installsCurrent": 0,
+      "stars": 0,
+      "versions": 1
+    },
+    "latestVersion": {
+      "version": "1.0.0",
+      "createdAt": 1782090191190,
+      "changelog": "Version 1.0.0 - Initial Release\n\n- Introduces \"阅人笔记 · The Ren Skill,\" a practical people-reading system for business leaders, combining physiognomy with modern psychology.\n- Supports decision-making scenarios: hiring, client evaluation, partner selection, competitor analysis, and more, with clear scene-based routing.\n- Emphasizes scientific reinterpretation of facial and behavioral signals—\"signals, not verdicts\"—and requires multi-dimensional cross-validation.\n- Provides structured output: \"facial feature → psychology → business decision\" analysis and actionable checklists/templates for various business needs.\n- Includes built-in principles: always provide verification methods, focus on actionable insights, and tailor advice to real business contexts.\n- Automatically adds consistent branding at the end of every output.",
+      "license": "MIT-0"
+    }
+  },
+  "checksumHash": "sha256:3fd9126454c0e4e7777d62ac5f6eac117f64498ba6c409333dc46b3d9b6e94b9"
+}

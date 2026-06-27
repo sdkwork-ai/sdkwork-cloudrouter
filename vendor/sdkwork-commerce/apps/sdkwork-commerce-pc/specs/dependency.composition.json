@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.dependency.composition",
+  "applicationCode": "commerce",
+  "clientArchitecture": "pc",
+  "surfaces": [
+    {
+      "surface": "app",
+      "corePackage": "@sdkwork/commerce-pc-core",
+      "sdkClients": [
+        {
+          "id": "commerceApp",
+          "workspace": "sdkwork-commerce-app-sdk",
+          "surface": "app-api",
+          "credentialMode": "authenticated-app-api",
+          "role": "application-owned"
+        },
+        {
+          "id": "commerceOpen",
+          "workspace": "sdkwork-commerce-sdk",
+          "surface": "open-api",
+          "credentialMode": "protected-open-api-flexible",
+          "role": "application-owned"
+        },
+        {
+          "id": "iamApp",
+          "workspace": "sdkwork-iam-app-sdk",
+          "surface": "app-api",
+          "credentialMode": "authenticated-app-api",
+          "role": "dependency",
+          "sdkDependencyRef": "sdkwork-iam-app-sdk"
+        }
+      ],
+      "reusableModules": [],
+      "hostAdapters": [],
+      "dependencyApiExports": [],
+      "dependencyApiSurfaces": []
+    },
+    {
+      "surface": "backend-admin",
+      "corePackage": "@sdkwork/commerce-pc-admin-core",
+      "sdkClients": [
+        {
+          "id": "commerceBackend",
+          "workspace": "sdkwork-commerce-backend-sdk",
+          "surface": "backend-api",
+          "credentialMode": "authenticated-backend-admin",
+          "role": "application-owned"
+        },
+        {
+          "id": "iamBackend",
+          "workspace": "sdkwork-iam-backend-sdk",
+          "surface": "backend-api",
+          "credentialMode": "authenticated-backend-admin",
+          "role": "dependency",
+          "sdkDependencyRef": "sdkwork-iam-backend-sdk"
+        }
+      ],
+      "reusableModules": [],
+      "hostAdapters": [],
+      "dependencyApiExports": [],
+      "dependencyApiSurfaces": []
+    }
+  ],
+  "buildToolEntries": {
+    "pnpm": {
+      "workspacePackages": [
+        "@sdkwork/commerce-pc-core",
+        "@sdkwork/commerce-pc-admin-core",
+        "@sdkwork/commerce-pc-admin-membership",
+        "@sdkwork/commerce-pc-admin-product",
+        "@sdkwork/commerce-pc-admin-shell",
+        "@sdkwork/commerce-pc-billing",
+        "@sdkwork/commerce-pc-checkout",
+        "@sdkwork/commerce-pc-commerce",
+        "@sdkwork/commerce-pc-commons",
+        "@sdkwork/commerce-pc-coupon",
+        "@sdkwork/commerce-pc-entitlement",
+        "@sdkwork/commerce-pc-host",
+        "@sdkwork/commerce-pc-invoice",
+        "@sdkwork/commerce-pc-membership",
+        "@sdkwork/commerce-pc-membership-purchase",
+        "@sdkwork/commerce-pc-offer",
+        "@sdkwork/commerce-pc-order",
+        "@sdkwork/commerce-pc-payment",
+        "@sdkwork/commerce-pc-points",
+        "@sdkwork/commerce-pc-pricing",
+        "@sdkwork/commerce-pc-shell",
+        "@sdkwork/commerce-pc-subscription",
+        "@sdkwork/commerce-pc-wallet"
+      ]
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "name": "@sdkwork/commerce-pc-admin-membership",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Admin membership management service, controller, and reusable management workspace.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@sdkwork/appbase-pc-react": "*",
+    "@sdkwork/commerce-service": "*",
+    "react": ">=18.2.0 <20.0.0",
+    "react-dom": ">=18.2.0 <20.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@sdkwork/appbase-pc-react": {
+      "optional": true
+    },
+    "@sdkwork/commerce-service": {
+      "optional": true
+    }
+  },
+  "sdkwork": {
+    "workspace": "sdkwork-commerce",
+    "architecture": "pc-react",
+    "domain": "commerce",
+    "capability": "membership-admin",
+    "status": "ready"
+  }
+}

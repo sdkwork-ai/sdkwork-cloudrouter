@@ -1,0 +1,143 @@
+fragment: operations/backend-user
+frontend_operations:
+- route: /admin/user
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-user/src/userService.ts
+  operation: addUser
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/iam/users
+  openapi_exposed: false
+  read_sources:
+  - iam_user
+  - iam_role
+  - iam_user_role
+  write_tables:
+  - iam_user
+  - commerce_account
+  - iam_user_role
+  - ops_audit_log
+  request_schema:
+    name: AdminUserCreateRequest
+    required:
+    - email
+    properties:
+      email:
+        type: string
+        format: email
+        minLength: 3
+        maxLength: 254
+        description: User email address.
+      username:
+        type: string
+        minLength: 1
+        maxLength: 128
+        description: Optional display name. Backend defaults to the email local-part when omitted.
+      balance:
+        type: string
+        minLength: 1
+        maxLength: 64
+        description: Initial account balance decimal string accepted by the admin user API.
+  response_schema:
+    name: AdminUserMutationResponse
+    required:
+    - item
+    properties:
+      item:
+        name: AdminUserItem
+        type: object
+        additionalProperties: false
+        required: &id001
+        - id
+        - email
+        - username
+        - role
+        - group
+        - balance
+        - status
+        - lastActive
+        - lastUsed
+        - createdAt
+        properties: &id002
+          id:
+            type: integer
+            format: int64
+            minimum: 1
+          email:
+            type: string
+            format: email
+            minLength: 3
+            maxLength: 254
+          username:
+            type: string
+            maxLength: 128
+          role:
+            type: string
+            maxLength: 128
+          group:
+            type: string
+            maxLength: 128
+          balance:
+            type: string
+            maxLength: 64
+          status:
+            type: string
+            enum:
+            - active
+            - banned
+          lastActive:
+            type: string
+            maxLength: 64
+          lastUsed:
+            type: string
+            maxLength: 64
+          createdAt:
+            type: string
+            maxLength: 64
+        description: Persisted admin user snapshot returned by the backend.
+- route: /admin/user
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-user/src/userService.ts
+  operation: updateUser
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/iam/users/{userId}
+  openapi_exposed: false
+  read_sources:
+  - iam_user
+  - iam_role
+  - iam_user_role
+  write_tables:
+  - iam_user
+  - iam_user_role
+  - ops_audit_log
+  request_schema:
+    name: AdminUserUpdateRequest
+    properties:
+      username:
+        type: string
+        minLength: 1
+        maxLength: 128
+        description: Optional display name update.
+      group:
+        type: string
+        minLength: 1
+        maxLength: 128
+        description: Optional user group label update.
+      status:
+        type: string
+        enum:
+        - active
+        - banned
+  response_schema:
+    name: AdminUserMutationResponse
+    required:
+    - item
+    properties:
+      item:
+        name: AdminUserItem
+        type: object
+        additionalProperties: false
+        required: *id001
+        properties: *id002
+        description: Persisted admin user snapshot returned by the backend.

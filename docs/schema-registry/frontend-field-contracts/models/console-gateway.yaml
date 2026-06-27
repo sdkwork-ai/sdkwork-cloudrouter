@@ -1,0 +1,17 @@
+fragment: models/console-gateway
+frontend_models:
+- route: /console/gateway
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-gateway/src/gatewayService.ts
+  interface: GatewayTrace
+  fields:
+  - id
+  - time
+  - ip
+  - endpoint
+  - method
+  - status
+  - duration
+  - channel
+  data_sources:
+  - ai_request_trace
+  - ops_gateway_instance

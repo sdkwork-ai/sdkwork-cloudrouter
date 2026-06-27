@@ -1,0 +1,39 @@
+{
+  "name": "@sdkwork/commerce-pc-host",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Host embedding helpers and composed commerce PC pages for external desktop apps.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@sdkwork/commerce-pc-checkout": "*",
+    "@sdkwork/commerce-pc-membership": "*",
+    "@sdkwork/commerce-pc-membership-purchase": "*",
+    "@sdkwork/commerce-pc-payment": "*",
+    "@sdkwork/commerce-pc-wallet": "*",
+    "react": ">=18.2.0 <20.0.0",
+    "react-dom": ">=18.2.0 <20.0.0",
+    "react-router-dom": ">=6.0.0 <8.0.0"
+  },
+  "sdkwork": {
+    "workspace": "sdkwork-commerce",
+    "architecture": "pc-react",
+    "domain": "commerce",
+    "capability": "host",
+    "surface": "shared-pc-runtime",
+    "status": "ready"
+  }
+}

@@ -1,0 +1,217 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "sdk": {
+    "name": "sdkwork-mcp-app-sdk",
+    "version": "0.1.0",
+    "language": "typescript",
+    "sdkType": "app",
+    "protocol": "http",
+    "packageName": "sdkwork-mcp-app-sdk-generated-typescript"
+  },
+  "generatedFiles": [
+    {
+      "path": "bin/publish-core.mjs",
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+    },
+    {
+      "path": "bin/publish.ps1",
+      "sha256": "78c6419400b988409d9393c2ecd85aa02dd6760f73edb3cc84cb28fefc51b41e"
+    },
+    {
+      "path": "bin/publish.sh",
+      "sha256": "899087c23e670b6951a12a13490fd557f761c96d78fabfb7e58a37e367db889f"
+    },
+    {
+      "path": "bin/sdk-gen.bat",
+      "sha256": "2d56891dc8276339ebbffc78ada3cc1bf73e2831453da89d95fcd2277bb4a05b"
+    },
+    {
+      "path": "bin/sdk-gen.sh",
+      "sha256": "c9bab3f87d5327833ca9a392f6b8e6b6d3386a46836cc3c48ef48313b603bd90"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "fb941a0806986a54fc192f98a98f6d9c282b8d350b2b19a3e71dda404e92d545"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "7840cc7d2b36ff364ac16c2fc5ec15b861bfe96854eecf81fb59b00edb8b1447"
+    },
+    {
+      "path": "package.json",
+      "sha256": "7080e8f53f0d240e6ef9a972d0ec58478b030673a09f39c5208cce32d8b231c0"
+    },
+    {
+      "path": "README.md",
+      "sha256": "bb82c88b2410e7906534d92afd4f8881a2d998a8c442d5da226a3dbd4426f4bd"
+    },
+    {
+      "path": "sdkwork-sdk.json",
+      "sha256": "9f4e2f1418a7a1ccb4f9af398dfc70158868ae6263c622c54fb6fbdda53564b3"
+    },
+    {
+      "path": "src/api/base.ts",
+      "sha256": "02ad25e6bf331ff241ba387c2947ddf1900dd849038e08c2757416a3aa788a04"
+    },
+    {
+      "path": "src/api/index.ts",
+      "sha256": "3475bef67cbd2705cae893266f05a252710c86a8c4a108ebf2ccbc2103abcea1"
+    },
+    {
+      "path": "src/api/mcp.ts",
+      "sha256": "049bb48b59a532133f21535586fedfa3f349027d4ba48f720fccec29a1b82aa5"
+    },
+    {
+      "path": "src/api/paths.ts",
+      "sha256": "4ffed7b7d576dc11081bf6b43511465d3a5db410bd25c425ef47b69b154981ad"
+    },
+    {
+      "path": "src/auth/index.ts",
+      "sha256": "657fc63738bdcd61d83133120732a477dd127448cf2c51229b05d21f5e1f5c04"
+    },
+    {
+      "path": "src/http/client.ts",
+      "sha256": "7c5521163579261418c56e8126b0389dd78be9e0931e5e6064749c7cc9df0edc"
+    },
+    {
+      "path": "src/http/index.ts",
+      "sha256": "fc204fbe89750b9d25ecaffe41003e6ac243a1a895b65e65856202ab825d2dbe"
+    },
+    {
+      "path": "src/index.ts",
+      "sha256": "1b72e156546dff1aa4a094a8fb926ab543ccd7e320d3aacef790509f4df5f48b"
+    },
+    {
+      "path": "src/sdk.ts",
+      "sha256": "971a0c40aae981410eebdef54a42699cce92a2c3503c5421f919d920566b7f7c"
+    },
+    {
+      "path": "src/types/append-mcp-invocation-command.ts",
+      "sha256": "6536f457bd5f725d7b7c86bfa853e9c78442ef599aa908357474652004eeb794"
+    },
+    {
+      "path": "src/types/common.ts",
+      "sha256": "d2506be8c4bdbe8e7059393467e6e71d75ef1d8c018dbf997bb0ab2a77b6c7b6"
+    },
+    {
+      "path": "src/types/create-mcp-server-command.ts",
+      "sha256": "5114146dea9a9216e126983cd3c1ddb98c2a1b7d4ab12fb91a6750dfc4b1340f"
+    },
+    {
+      "path": "src/types/index.ts",
+      "sha256": "31daab8cf5f94c038094fe02cac38e24d8e51ed492a8849d37010209bf6af756"
+    },
+    {
+      "path": "src/types/mcp-connector-list-response.ts",
+      "sha256": "3bfe6725032304563cb3e3a9d41d097a3ed786c453b045aa0dea5772d6dad563"
+    },
+    {
+      "path": "src/types/mcp-connector-record.ts",
+      "sha256": "9be571eb645d16835e07ade33801e92cafbb11a9b0aef4806cf046b188dc3168"
+    },
+    {
+      "path": "src/types/mcp-invocation-list-response.ts",
+      "sha256": "47f115d7df9d8e3e25618bd50d9736f9334a5b025e3fd89b9d300075e5e23ed6"
+    },
+    {
+      "path": "src/types/mcp-invocation-record-response.ts",
+      "sha256": "f082368cac9241fb0d9d99e5664628a8dd4f5062fb3f4f49bd63218d8a40bc65"
+    },
+    {
+      "path": "src/types/mcp-invocation-record.ts",
+      "sha256": "170743dfa84315e3dae4d71e864c8d0afa9def30f40261885a66d8e220c7a688"
+    },
+    {
+      "path": "src/types/mcp-prompt-list-response.ts",
+      "sha256": "aabc9b4bc0f0b406977d1594952f7ac3e5c3d389227655859519e0767cc858c4"
+    },
+    {
+      "path": "src/types/mcp-prompt-record.ts",
+      "sha256": "3ded0223ec97cd9328e150f5b28c39c0186bcf219233da7b4bd868cbd9285b63"
+    },
+    {
+      "path": "src/types/mcp-resource-list-response.ts",
+      "sha256": "30c412f3b64476b1d5711442de324087caaffa0e3b61d9aefe3b464676cae8f5"
+    },
+    {
+      "path": "src/types/mcp-resource-record.ts",
+      "sha256": "b06aa8e1598cfc0cc4b0e079191040992f0b2b69991bf24c4a01d1e3166aa5a6"
+    },
+    {
+      "path": "src/types/mcp-server-category-list-response.ts",
+      "sha256": "163251adc443b9fa6e0cc1c63cde8554f24062ff6590198022f26feb0bf1f67a"
+    },
+    {
+      "path": "src/types/mcp-server-category-record-response.ts",
+      "sha256": "a2673f6bc603ea912a2be2bf77091a7f972b4b576cb3fa94bfe7ba6df0a8de1d"
+    },
+    {
+      "path": "src/types/mcp-server-category-record.ts",
+      "sha256": "261a67c6415a503a1157931b1d0f70662c5227c18f885efde244ee7cdf94f8d4"
+    },
+    {
+      "path": "src/types/mcp-server-list-response.ts",
+      "sha256": "c13ae568e70e362e95a638ffbc4b7b0aa3670f417c6ff8a6c6b198ef4cc22668"
+    },
+    {
+      "path": "src/types/mcp-server-record-response.ts",
+      "sha256": "d3ff79bc373501080e29a9330df80e2d4acce70b39356085ec82ca2bcff42a75"
+    },
+    {
+      "path": "src/types/mcp-server-record.ts",
+      "sha256": "be41d1e003218f16a95b6addcf074ae91414db80d58792409f6975c5a6b5cd66"
+    },
+    {
+      "path": "src/types/mcp-tool-list-response.ts",
+      "sha256": "0a6130334843b34dae2524fb6f2517e0c71088ef09f7a67254df5b9ab9907a7c"
+    },
+    {
+      "path": "src/types/mcp-tool-record-response.ts",
+      "sha256": "3dcd80e82e663b10b01b43f386cfcf275a81ece64e7576ea0354ea1cd790b5dc"
+    },
+    {
+      "path": "src/types/mcp-tool-record.ts",
+      "sha256": "cadcab0741558dda9b8353a2a80ddc7e79bdd67921b4fdbbe1f400aa3a2187c1"
+    },
+    {
+      "path": "src/types/problem-detail.ts",
+      "sha256": "ea50f7466f2e1f6a350f2f7974613579a50cfe968d6ff503496c7662e12fb612"
+    },
+    {
+      "path": "src/types/update-mcp-server-command.ts",
+      "sha256": "59f17ec97f7c2d12b4003439095deb039e8cae86480bd563494a8533efb2d17c"
+    },
+    {
+      "path": "src/types/upsert-mcp-connector-command.ts",
+      "sha256": "36be3065901da9d5cab61d38245bc9832756d23e1a2a13c24f09ec9576585ae7"
+    },
+    {
+      "path": "src/types/upsert-mcp-prompt-command.ts",
+      "sha256": "5e39a9dcb2676a814f8164fda44ec4a7ceec3c371cb8a43cef821cc189ebcccc"
+    },
+    {
+      "path": "src/types/upsert-mcp-resource-command.ts",
+      "sha256": "6ac5a3dea15587d24cca7731e3fbb938aa55c361f675189f3227168e403df04b"
+    },
+    {
+      "path": "src/types/upsert-mcp-server-category-command.ts",
+      "sha256": "af70add7c9d79341eb834ec5464ffb54fa71274ca28a4ce1efeaa96da76d14ac"
+    },
+    {
+      "path": "src/types/upsert-mcp-tool-command.ts",
+      "sha256": "0f0f1ae2e8aa9e403d29227863058f28d3bc2b46ee657737abbc1ff4e1fd7002"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "7c8a6c2b00fb208ec28e1e6045194487d1b3e563d6c44cef4783fd4fe0e8ffad"
+    }
+  ],
+  "scaffoldFiles": [
+    "custom/build-runtime.mjs",
+    "custom/README.md"
+  ],
+  "customRoots": [
+    "custom/"
+  ]
+}

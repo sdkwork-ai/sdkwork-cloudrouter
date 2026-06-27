@@ -1,0 +1,25 @@
+{
+  "name": "@sdkwork/sdk-downloader",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Reusable OpenAPI SDK generation orchestration, caching, and artifact download service for SDKWork applications.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sdkwork/sdk-generator": "file:../../../sdkwork-sdk-generator",
+    "js-yaml": "^4.1.0"
+  }
+}

@@ -1,0 +1,360 @@
+fragment: models/admin-channel
+frontend_models:
+- route: /admin/channel
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
+  interface: ChannelItem
+  fields:
+  - id
+  - channelId
+  - name
+  - vendor
+  - channelType
+  - protocol
+  - accessType
+  - credentialRotation
+  - credentials
+  - credentials.id
+  - credentials.credentialId
+  - credentials.name
+  - credentials.baseUrl
+  - credentials.secretRef
+  - credentials.apiKey
+  - credentials.maskedLabel
+  - credentials.priority
+  - credentials.weight
+  - credentials.status
+  - credentials.errors
+  - createdAt
+  - expiresAt
+  - capabilities
+  - resourceCodes
+  - isMultimodal
+  - timeoutMs
+  - retryPolicy
+  - circuitBreakerPolicy
+  - weight
+  - status
+  - balance
+  - errors
+  data_sources:
+  - ai_channel
+  - ai_channel_credential
+  - ai_provider
+  - ai_channel_resource
+  - integration_provider_health_snapshot
+- route: /admin/channel
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
+  interface: ChannelCredentialInput
+  fields:
+  - name
+  - baseUrl
+  - apiKey
+  - secretRef
+  - priority
+  - weight
+  - status
+  data_sources:
+  - ai_channel_credential
+- route: /admin/channel
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
+  interface: ChannelCredentialItem
+  fields:
+  - id
+  - credentialId
+  - name
+  - baseUrl
+  - secretRef
+  - apiKey
+  - maskedLabel
+  - priority
+  - weight
+  - status
+  - errors
+  data_sources:
+  - ai_channel_credential
+- route: /admin/channel
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
+  interface: ChannelModelCatalogItem
+  fields:
+  - catalogKey
+  - model
+  - displayName
+  - vendorCode
+  - regionCode
+  data_sources:
+  - ai_model_vendor
+  - ai_model
+- route: /admin/channel
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
+  interface: ChannelCreateInput
+  fields:
+  - name
+  - vendor
+  - channelType
+  - protocol
+  - accessType
+  - credentialRotation
+  - credentials
+  - credentials.name
+  - credentials.baseUrl
+  - credentials.apiKey
+  - credentials.secretRef
+  - credentials.priority
+  - credentials.weight
+  - credentials.status
+  - expiresAt
+  - capabilities
+  - resourceCodes
+  - timeoutMs
+  - retryPolicy
+  - circuitBreakerPolicy
+  - weight
+  - status
+  data_sources:
+  - ai_channel
+  - ai_channel_credential
+  - ai_provider
+  - ai_channel_resource
+- route: /admin/channel
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
+  interface: ChannelUpdateInput
+  fields:
+  - name
+  - vendor
+  - channelType
+  - protocol
+  - accessType
+  - credentialRotation
+  - credentials
+  - credentials.name
+  - credentials.baseUrl
+  - credentials.apiKey
+  - credentials.secretRef
+  - credentials.priority
+  - credentials.weight
+  - credentials.status
+  - expiresAt
+  - capabilities
+  - resourceCodes
+  - timeoutMs
+  - retryPolicy
+  - circuitBreakerPolicy
+  - weight
+  - status
+  data_sources:
+  - ai_channel
+  - ai_channel_credential
+  - ai_provider
+  - ai_channel_resource
+- route: /admin/channel
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
+  interface: ChannelTestResult
+  fields:
+  - channelId
+  - success
+  - status
+  - latency
+  - item
+  - item.id
+  - item.channelId
+  - item.name
+  - item.vendor
+  - item.channelType
+  - item.protocol
+  - item.accessType
+  - item.credentialRotation
+  - item.credentials
+  - item.credentials.id
+  - item.credentials.credentialId
+  - item.credentials.name
+  - item.credentials.baseUrl
+  - item.credentials.secretRef
+  - item.credentials.apiKey
+  - item.credentials.maskedLabel
+  - item.credentials.priority
+  - item.credentials.weight
+  - item.credentials.status
+  - item.credentials.errors
+  - item.createdAt
+  - item.expiresAt
+  - item.capabilities
+  - item.resourceCodes
+  - item.isMultimodal
+  - item.timeoutMs
+  - item.retryPolicy
+  - item.circuitBreakerPolicy
+  - item.weight
+  - item.status
+  - item.balance
+  - item.errors
+  data_sources:
+  - ai_channel
+  - ai_channel_credential
+  - ai_channel_resource
+  - ai_channel
+  - integration_provider_health_snapshot
+  - ops_config_snapshot
+  - ops_audit_log
+- route: /admin/channel
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
+  interface: ProviderSecretItem
+  fields:
+  - id
+  - providerCode
+  - accountCode
+  - name
+  - authType
+  - secretRef
+  - maskedLabel
+  - status
+  - createdAt
+  - updatedAt
+  data_sources:
+  - ai_channel
+- route: /admin/channel
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
+  interface: ProviderSecretInput
+  fields:
+  - providerCode
+  - name
+  - authType
+  - secretRef
+  - status
+  data_sources:
+  - ai_channel
+- route: /admin/channel
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
+  interface: ProviderSecretUpdateInput
+  fields:
+  - providerCode
+  - name
+  - authType
+  - secretRef
+  - status
+  data_sources:
+  - ai_channel
+- route: /admin/channel
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
+  interface: AccountModelMappingInput
+  fields:
+  - sourceModel
+  - targetModel
+  - targetVendorCode
+  data_sources:
+  - ai_model_mapping_rule
+  - ai_model_mapping_rule_item
+- route: /admin/channel
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
+  interface: ReplaceAccountModelMappingsInput
+  fields:
+  - channelId
+  - channelName
+  - accountVendorCode
+  - mappings
+  - mappings.sourceModel
+  - mappings.targetModel
+  - mappings.targetVendorCode
+  data_sources:
+  - ai_channel
+  - ai_model_mapping_rule
+  - ai_model_mapping_rule_binding
+  - ai_model_mapping_rule_item
+- route: /admin/channel
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
+  interface: AiResource
+  fields:
+  - id
+  - resourceCode
+  - resourceType
+  - displayName
+  - vendorCode
+  - modalityCode
+  - apiEndpointCode
+  - catalogKey
+  - model
+  - providerNativeModel
+  - capability
+  - capabilities
+  - compositionMode
+  - status
+  - sortOrder
+  - members
+  - members.parentResourceCode
+  - members.memberResourceCode
+  - members.memberRole
+  - members.required
+  - members.sortOrder
+  data_sources:
+  - ai_resource
+  - ai_resource_group_item
+- route: /admin/channel
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
+  interface: AiResourceMember
+  fields:
+  - parentResourceCode
+  - memberResourceCode
+  - memberRole
+  - required
+  - sortOrder
+  data_sources:
+  - ai_resource_group_item
+- route: /admin/channel
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
+  interface: AiResourceMemberInput
+  fields:
+  - memberResourceCode
+  - memberRole
+  - required
+  - sortOrder
+  data_sources:
+  - ai_resource_group_item
+- route: /admin/model/resources
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
+  interface: AiResourceCreateInput
+  fields:
+  - resourceCode
+  - resourceType
+  - displayName
+  - vendorCode
+  - modalityCode
+  - apiEndpointCode
+  - catalogKey
+  - model
+  - providerNativeModel
+  - compositionMode
+  - status
+  - sortOrder
+  - members
+  - members.memberResourceCode
+  - members.memberRole
+  - members.required
+  - members.sortOrder
+  data_sources:
+  - ai_resource
+  - ai_resource_group_item
+  - ops_audit_log
+- route: /admin/model/resources
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
+  interface: AiResourceUpdateInput
+  fields:
+  - resourceCode
+  - resourceType
+  - displayName
+  - vendorCode
+  - modalityCode
+  - apiEndpointCode
+  - catalogKey
+  - model
+  - providerNativeModel
+  - compositionMode
+  - status
+  - sortOrder
+  - members
+  - members.memberResourceCode
+  - members.memberRole
+  - members.required
+  - members.sortOrder
+  data_sources:
+  - ai_resource
+  - ai_resource_group_item
+  - ops_audit_log

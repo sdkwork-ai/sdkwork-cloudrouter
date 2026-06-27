@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.dependency.composition",
+  "applicationCode": "mcp",
+  "clientArchitecture": "pc",
+  "surfaces": [
+    {
+      "surface": "app",
+      "corePackage": "@sdkwork/mcp-pc-core",
+      "sdkClients": [],
+      "reusableModules": [],
+      "hostAdapters": [],
+      "dependencyApiExports": [],
+      "dependencyApiSurfaces": []
+    },
+    {
+      "surface": "backend-admin",
+      "corePackage": "@sdkwork/mcp-pc-admin-core",
+      "sdkClients": [],
+      "reusableModules": [],
+      "hostAdapters": [],
+      "dependencyApiExports": [],
+      "dependencyApiSurfaces": []
+    }
+  ],
+  "buildToolEntries": {
+    "pnpm": {
+      "workspacePackages": [
+        "@sdkwork/mcp-pc-core",
+        "@sdkwork/mcp-pc-admin-core",
+        "@sdkwork/mcp-pc-admin",
+        "@sdkwork/mcp-pc-commons",
+        "@sdkwork/mcp-pc-console",
+        "@sdkwork/mcp-pc-hub",
+        "@sdkwork/mcp-pc-shell"
+      ]
+    }
+  }
+}
