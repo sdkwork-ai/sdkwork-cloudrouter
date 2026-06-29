@@ -22,12 +22,14 @@ use edge_env::{
     SDKWORK_CLAW_TOOL_API_SDK_GENERATOR_API_KEY_FILE, SDKWORK_CLAW_TOOL_API_SDK_GENERATOR_BASE_URL,
 };
 
+use sdkwork_clawrouter_standalone_gateway_lib::SERVICE_NAME;
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let runtime_toml = sdkwork_claw_config::RuntimeTomlConfig::from_env_config_file()
         .map_err(anyhow::Error::msg)?;
     let config = runtime_config_from_env_or_toml(
-        sdkwork_clawrouter_standalone_gateway::SERVICE_NAME,
+        SERVICE_NAME,
         "SDKWORK_CLAW_SERVER_BIND",
         "0.0.0.0:3900",
         runtime_toml
@@ -204,34 +206,45 @@ pub fn build_edge_server_config(
             ),
         )
         .map_err(anyhow::Error::msg)?;
+    let hsts_enabled = config_bool_or_default_with_legacy(
+        SDKWORK_CLAW_EDGE_HSTS_ENABLED,
+        LEGACY_PORTAL_SECURITY_HSTS_ENABLED,
+        runtime_toml.and_then(|config| config.portal.security.hsts_enabled),
+        true,
+    );
+    let hsts_max_age_seconds = config_u64_or_default_with_legacy(
+        SDKWORK_CLAW_EDGE_HSTS_MAX_AGE_SECONDS,
+        LEGACY_PORTAL_SECURITY_HSTS_MAX_AGE_SECONDS,
+        runtime_toml.and_then(|config| config.portal.security.hsts_max_age_seconds),
+        31_536_000,
+    )?;
+    let hsts_include_subdomains = config_bool_or_default_with_legacy(
+        SDKWORK_CLAW_EDGE_HSTS_INCLUDE_SUBDOMAINS,
+        LEGACY_PORTAL_SECURITY_HSTS_INCLUDE_SUBDOMAINS,
+        runtime_toml.and_then(|config| config.portal.security.hsts_include_subdomains),
+        true,
+    );
+    let hsts_preload = config_bool_or_default_with_legacy(
+        SDKWORK_CLAW_EDGE_HSTS_PRELOAD,
+        LEGACY_PORTAL_SECURITY_HSTS_PRELOAD,
+        runtime_toml.and_then(|config| config.portal.security.hsts_preload),
+        true,
+    );
     edge_config = edge_config
         .with_portal_strict_transport_security(
-            config_bool_or_default_with_legacy(
-                SDKWORK_CLAW_EDGE_HSTS_ENABLED,
-                LEGACY_PORTAL_SECURITY_HSTS_ENABLED,
-                runtime_toml.and_then(|config| config.portal.security.hsts_enabled),
-                true,
-            ),
-            config_u64_or_default_with_legacy(
-                SDKWORK_CLAW_EDGE_HSTS_MAX_AGE_SECONDS,
-                LEGACY_PORTAL_SECURITY_HSTS_MAX_AGE_SECONDS,
-                runtime_toml.and_then(|config| config.portal.security.hsts_max_age_seconds),
-                31_536_000,
-            )?,
-            config_bool_or_default_with_legacy(
-                SDKWORK_CLAW_EDGE_HSTS_INCLUDE_SUBDOMAINS,
-                LEGACY_PORTAL_SECURITY_HSTS_INCLUDE_SUBDOMAINS,
-                runtime_toml.and_then(|config| config.portal.security.hsts_include_subdomains),
-                true,
-            ),
-            config_bool_or_default_with_legacy(
-                SDKWORK_CLAW_EDGE_HSTS_PRELOAD,
-                LEGACY_PORTAL_SECURITY_HSTS_PRELOAD,
-                runtime_toml.and_then(|config| config.portal.security.hsts_preload),
-                false,
-            ),
+            hsts_enabled,
+            hsts_max_age_seconds,
+            hsts_include_subdomains,
+            hsts_preload,
         )
         .map_err(anyhow::Error::msg)?;
+    tracing::info!(
+        hsts_enabled,
+        hsts_max_age_seconds,
+        hsts_include_subdomains,
+        hsts_preload,
+        "HSTS security header configuration resolved (production default: enabled with preload)"
+    );
     edge_config = edge_config
         .with_portal_csp_frame_src(portal_csp_frame_src_from_env_or_toml(runtime_toml)?)
         .map_err(anyhow::Error::msg)?;

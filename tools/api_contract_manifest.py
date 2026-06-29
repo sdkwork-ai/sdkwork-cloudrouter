@@ -1015,6 +1015,10 @@ class ApiContractManifestGenerator:
     def _path_segment_from_tag(self, tag: str) -> str:
         if tag == "ai":
             return "ai"
+        if tag == "afterSales":
+            return "after_sales"
+        if tag == "commerceReports":
+            return "commerce_reports"
         if tag == "sdkReference":
             return "sdk_reference"
         if tag == "serviceProviders":

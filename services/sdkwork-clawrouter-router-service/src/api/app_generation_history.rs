@@ -72,12 +72,8 @@ async fn fetch_history(
 }
 
 fn app_generation_history_read_model_error(error: impl std::fmt::Display) -> Response {
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(PlusApiResult::error(
+    PlusApiResult::error(
             "5000",
             format!("app generation history read model is unavailable: {error}"),
-        )),
-    )
-        .into_response()
+        )).into_response()
 }

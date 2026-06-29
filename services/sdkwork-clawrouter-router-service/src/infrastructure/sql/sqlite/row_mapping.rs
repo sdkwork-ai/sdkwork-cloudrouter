@@ -1,5 +1,5 @@
 use sqlx::sqlite::SqliteRow;
-use sqlx::{Row, SqlitePool};
+use sqlx::{Executor, Row};
 
 use crate::infrastructure::sql::rows::{
     AiModelRow, ChannelGroupMetricSnapshotRow, ChannelGroupRow, GatewayAccessPolicyRow,
@@ -9,7 +9,7 @@ use crate::infrastructure::sql::rows::{
 };
 
 pub async fn load_vendors(
-    pool: &SqlitePool,
+    executor: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     sql: &'static str,
 ) -> Result<Vec<ModelVendorRow>, sqlx::Error> {
     map_query(sql, |row| {
@@ -18,12 +18,12 @@ pub async fn load_vendors(
             display_name: row.try_get("display_name")?,
         })
     })
-    .fetch(pool)
+    .fetch(executor)
     .await
 }
 
 pub async fn load_models(
-    pool: &SqlitePool,
+    executor: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     sql: &'static str,
 ) -> Result<Vec<AiModelRow>, sqlx::Error> {
     map_query(sql, |row| {
@@ -54,12 +54,12 @@ pub async fn load_models(
             replacement_model: row.try_get("replacement_model")?,
         })
     })
-    .fetch(pool)
+    .fetch(executor)
     .await
 }
 
 pub async fn load_provider_routes(
-    pool: &SqlitePool,
+    executor: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     sql: &'static str,
     circuit_breaker_recovery_window_seconds: i64,
 ) -> Result<Vec<ModelProviderRouteRow>, sqlx::Error> {
@@ -87,7 +87,7 @@ pub async fn load_provider_routes(
     sqlx::query(mapper.sql)
         .bind(circuit_breaker_recovery_window_seconds)
         .bind(circuit_breaker_recovery_window_seconds)
-        .fetch_all(pool)
+        .fetch_all(executor)
         .await?
         .into_iter()
         .map(mapper.mapper)
@@ -95,7 +95,7 @@ pub async fn load_provider_routes(
 }
 
 pub async fn load_provider_channel_routes(
-    pool: &SqlitePool,
+    executor: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     sql: &'static str,
     circuit_breaker_recovery_window_seconds: i64,
 ) -> Result<Vec<ProviderChannelRouteRow>, sqlx::Error> {
@@ -127,7 +127,7 @@ pub async fn load_provider_channel_routes(
     sqlx::query(mapper.sql)
         .bind(circuit_breaker_recovery_window_seconds)
         .bind(circuit_breaker_recovery_window_seconds)
-        .fetch_all(pool)
+        .fetch_all(executor)
         .await?
         .into_iter()
         .map(mapper.mapper)
@@ -135,7 +135,7 @@ pub async fn load_provider_channel_routes(
 }
 
 pub async fn load_routing_policies(
-    pool: &SqlitePool,
+    executor: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     sql: &'static str,
 ) -> Result<Vec<RoutingPolicyRow>, sqlx::Error> {
     map_query(sql, |row| {
@@ -151,12 +151,12 @@ pub async fn load_routing_policies(
             fallback_mode: row.try_get("fallback_mode")?,
         })
     })
-    .fetch(pool)
+    .fetch(executor)
     .await
 }
 
 pub async fn load_routing_rules(
-    pool: &SqlitePool,
+    executor: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     sql: &'static str,
 ) -> Result<Vec<RoutingRuleRow>, sqlx::Error> {
     map_query(sql, |row| {
@@ -174,12 +174,12 @@ pub async fn load_routing_rules(
             constraints_json: row.try_get("constraints_json")?,
         })
     })
-    .fetch(pool)
+    .fetch(executor)
     .await
 }
 
 pub async fn load_model_mappings(
-    pool: &SqlitePool,
+    executor: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     sql: &'static str,
 ) -> Result<Vec<ModelMappingRuleRow>, sqlx::Error> {
     map_query(sql, |row| {
@@ -199,12 +199,12 @@ pub async fn load_model_mappings(
             item_sort_order: row.try_get("item_sort_order")?,
         })
     })
-    .fetch(pool)
+    .fetch(executor)
     .await
 }
 
 pub async fn load_pricing_plans(
-    pool: &SqlitePool,
+    executor: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     sql: &'static str,
 ) -> Result<Vec<PricingPlanRow>, sqlx::Error> {
     map_query(sql, |row| {
@@ -216,12 +216,12 @@ pub async fn load_pricing_plans(
             currency: row.try_get("currency")?,
         })
     })
-    .fetch(pool)
+    .fetch(executor)
     .await
 }
 
 pub async fn load_channel_groups(
-    pool: &SqlitePool,
+    executor: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     sql: &'static str,
 ) -> Result<Vec<ChannelGroupRow>, sqlx::Error> {
     map_query(sql, |row| {
@@ -236,12 +236,12 @@ pub async fn load_channel_groups(
             official_price_multiplier: row.try_get("official_price_multiplier")?,
         })
     })
-    .fetch(pool)
+    .fetch(executor)
     .await
 }
 
 pub async fn load_api_keys(
-    pool: &SqlitePool,
+    executor: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     sql: &'static str,
 ) -> Result<Vec<GatewayApiKeyRow>, sqlx::Error> {
     map_query(sql, |row| {
@@ -265,12 +265,12 @@ pub async fn load_api_keys(
             default_for_runtime: row.try_get("default_for_runtime")?,
         })
     })
-    .fetch(pool)
+    .fetch(executor)
     .await
 }
 
 pub async fn load_access_policies(
-    pool: &SqlitePool,
+    executor: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     sql: &'static str,
 ) -> Result<Vec<GatewayAccessPolicyRow>, sqlx::Error> {
     map_query(sql, |row| {
@@ -280,12 +280,12 @@ pub async fn load_access_policies(
             ip_allowlist_json: row.try_get("ip_allowlist_json")?,
         })
     })
-    .fetch(pool)
+    .fetch(executor)
     .await
 }
 
 pub async fn load_quota_policies(
-    pool: &SqlitePool,
+    executor: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     sql: &'static str,
 ) -> Result<Vec<QuotaPolicyRow>, sqlx::Error> {
     map_query(sql, |row| {
@@ -297,12 +297,12 @@ pub async fn load_quota_policies(
             burst_limit: row.try_get("burst_limit")?,
         })
     })
-    .fetch(pool)
+    .fetch(executor)
     .await
 }
 
 pub async fn load_gateway_risk_rules(
-    pool: &SqlitePool,
+    executor: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     sql: &'static str,
 ) -> Result<Vec<GatewayRiskRuleRow>, sqlx::Error> {
     map_query(sql, |row| {
@@ -326,12 +326,12 @@ pub async fn load_gateway_risk_rules(
             block_duration_seconds: row.try_get("block_duration_seconds")?,
         })
     })
-    .fetch(pool)
+    .fetch(executor)
     .await
 }
 
 pub async fn load_channel_group_metric_snapshots(
-    pool: &SqlitePool,
+    executor: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     sql: &'static str,
 ) -> Result<Vec<ChannelGroupMetricSnapshotRow>, sqlx::Error> {
     map_query(sql, |row| {
@@ -343,12 +343,12 @@ pub async fn load_channel_group_metric_snapshots(
             snapshot_at: row.try_get("snapshot_at")?,
         })
     })
-    .fetch(pool)
+    .fetch(executor)
     .await
 }
 
 pub async fn load_prices(
-    pool: &SqlitePool,
+    executor: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     sql: &'static str,
 ) -> Result<Vec<ModelPriceRow>, sqlx::Error> {
     map_query(sql, |row| {
@@ -365,7 +365,7 @@ pub async fn load_prices(
             pricing_plan_code: row.try_get("pricing_plan_code")?,
         })
     })
-    .fetch(pool)
+    .fetch(executor)
     .await
 }
 
@@ -381,9 +381,17 @@ impl<T, F> QueryMapper<T, F>
 where
     F: Fn(SqliteRow) -> Result<T, sqlx::Error>,
 {
-    async fn fetch(self, pool: &SqlitePool) -> Result<Vec<T>, sqlx::Error> {
+    /// Execute the mapped query against either a pool or a transaction.
+    ///
+    /// M-4: accepting any `Executor` lets `load_snapshot` wrap all catalog
+    /// SELECTs in a single transaction so the pointer-swapped snapshot reflects
+    /// one consistent database state instead of interleaved writes.
+    async fn fetch<'e, E>(self, executor: E) -> Result<Vec<T>, sqlx::Error>
+    where
+        E: Executor<'e, Database = sqlx::Sqlite>,
+    {
         sqlx::query(self.sql)
-            .fetch_all(pool)
+            .fetch_all(executor)
             .await?
             .into_iter()
             .map(self.mapper)

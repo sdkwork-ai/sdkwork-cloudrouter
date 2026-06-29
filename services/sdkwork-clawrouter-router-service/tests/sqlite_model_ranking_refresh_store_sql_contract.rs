@@ -12,7 +12,7 @@ fn sqlite_model_ranking_refresh_uses_indexable_usage_occurred_at_window_predicat
 
     assert!(
         sql.contains("AND u.occurred_at >= ?6"),
-        "SQLite model ranking refresh must compare ai_usage_fact.occurred_at directly to keep the tenant/catalog/time index usable"
+        "SQLite model ranking refresh must compare ai_usage.occurred_at directly to keep the tenant/catalog/time index usable"
     );
     assert!(
         sql.contains("AND u.occurred_at < ?7"),

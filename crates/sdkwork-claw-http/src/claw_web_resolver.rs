@@ -23,6 +23,44 @@ pub fn ensure_iam_database_env_for_claw_database(database_config: &DatabaseConfi
     sdkwork_iam_database_host::unified_postgres_env::apply_unified_claw_postgres_env(&app_root);
 }
 
+/// Materialize federated T1 capability database env from the active claw database profile.
+///
+/// Standalone gateway tests and embedded runtimes pass `DatabaseConfig` directly without
+/// exporting `SDKWORK_CLAW_DATABASE_URL`; invoice and other federated hosts must still
+/// resolve the same database URL/engine as the product installer.
+pub fn materialize_federated_database_env_from_claw_config(database_config: &DatabaseConfig) {
+    materialize_capability_database_env("INVOICE", database_config);
+    ensure_iam_database_env_for_claw_database(database_config);
+}
+
+fn materialize_capability_database_env(service_code: &str, database_config: &DatabaseConfig) {
+    let prefix = format!("SDKWORK_{}", service_code.to_uppercase());
+    let database_url_key = format!("{prefix}_DATABASE_URL");
+    if std::env::var(&database_url_key)
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .is_some()
+    {
+        return;
+    }
+
+    // SAFETY: router bootstrap runs sequentially on the main thread before async handlers start.
+    unsafe {
+        std::env::set_var(&database_url_key, database_config.url.as_str());
+        std::env::set_var(
+            format!("{prefix}_DATABASE_ENGINE"),
+            match database_config.engine {
+                DatabaseEngine::Postgres => "postgres",
+                DatabaseEngine::Sqlite => "sqlite",
+            },
+        );
+        std::env::set_var(
+            format!("{prefix}_DATABASE_MAX_CONNECTIONS"),
+            database_config.max_connections.to_string(),
+        );
+    }
+}
+
 /// Builds the canonical IAM `WebRequestContextResolver` for clawrouter HTTP surfaces.
 pub async fn iam_web_resolver_for_claw_database(
     database_config: Option<&DatabaseConfig>,

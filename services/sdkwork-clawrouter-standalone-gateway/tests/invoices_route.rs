@@ -72,11 +72,11 @@ async fn seed_invoice(pool: &SqlitePool) {
              title_id, status, invoice_no, invoice_code, document_url, created_at,
              issued_at, updated_at)
         VALUES
-            ('invoice-3900', '100001', '0', '30', 'order-3900', 'payment-3900',
+            ('invoice-3900', '10', '20', '30', 'order-3900', 'payment-3900',
              'title-3900', 'issued', 'INV-3900', 'IC-3900',
              'https://cdn.example.test/invoice-3900.pdf', '2026-05-25T10:00:00Z',
              '2026-05-25T10:05:00Z', '2026-05-25T10:05:00Z'),
-            ('invoice-other-user', '100001', '0', '31', 'order-other', 'payment-other',
+            ('invoice-other-user', '10', '20', '31', 'order-other', 'payment-other',
              'title-other', 'issued', 'INV-OTHER', NULL,
              NULL, '2026-05-25T11:00:00Z', NULL, '2026-05-25T11:00:00Z')
         "#,

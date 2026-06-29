@@ -47,13 +47,6 @@
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
-      "id": "sdkwork-commerce",
-      "repository": "Sdkwork-Cloud/sdkwork-commerce",
-      "ref": "4232f5dec1db363622132c2afc98ab49057d1f2e",
-      "refInput": "SDKWORK_COMMERCE_REF",
-      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
-    },
-    {
       "id": "sdkwork-generations",
       "repository": "Sdkwork-Cloud/sdkwork-generations",
       "ref": "70795260d3caa66a894271a145ec596c06487593",

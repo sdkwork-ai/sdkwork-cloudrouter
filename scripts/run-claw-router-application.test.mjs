@@ -2328,7 +2328,7 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
       '-p',
       'sdkwork-claw-installer',
       '-p',
-      'sdkwork-clawrouter-standalone-gateway',
+      'sdkwork-clawrouter-standalone-gateway-lib',
     ]);
     assert.equal(prebuildStep.blocking, true);
     assert.equal(
@@ -2401,7 +2401,7 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
     assert.deepEqual(serverStep.args, [
       'run',
       '-p',
-      'sdkwork-clawrouter-standalone-gateway',
+      'sdkwork-clawrouter-standalone-gateway-lib',
     ]);
     assert.equal(
       serverStep.env.CARGO_TARGET_DIR,

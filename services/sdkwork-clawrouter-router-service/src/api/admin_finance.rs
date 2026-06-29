@@ -183,17 +183,9 @@ where
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    (
-        StatusCode::BAD_REQUEST,
-        Json(PlusApiResult::error("4001", message.into())),
-    )
-        .into_response()
+    PlusApiResult::error("4001", message.into())).into_response()
 }
 
 fn finance_system_response(context: &str, error: DomainError) -> Response {
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(PlusApiResult::error("5000", format!("{context}: {error}"))),
-    )
-        .into_response()
+    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
 }

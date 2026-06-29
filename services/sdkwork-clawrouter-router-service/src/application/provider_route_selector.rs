@@ -168,7 +168,11 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
         &self,
         query: SelectProviderRouteQuery,
     ) -> Result<SelectedProviderRoute, ProviderRouteSelectionError> {
-        Ok(self.select_plan(query)?.first_route())
+        self.select_plan(query)?
+            .first_route()
+            .ok_or_else(|| ProviderRouteSelectionError::provider_route_unavailable(
+                "selected provider route plan contains no routes",
+            ))
     }
 
     pub fn select_plan(
@@ -923,11 +927,8 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
 }
 
 impl SelectedProviderRoutePlan {
-    pub fn first_route(&self) -> SelectedProviderRoute {
-        self.routes
-            .first()
-            .cloned()
-            .expect("selected provider route plan must contain at least one route")
+    pub fn first_route(&self) -> Option<SelectedProviderRoute> {
+        self.routes.first().cloned()
     }
 }
 
@@ -1465,7 +1466,6 @@ fn weighted_rotate_model_routes(routes: Vec<ModelProviderRoute>) -> Vec<ModelPro
         .iter()
         .map(|route| route.credential_weight.max(0) as usize)
         .collect();
-    let total_weight = weights.iter().copied().map(|w| w.max(1)).sum::<usize>().max(1);
     let channel_key = routes
         .first()
         .map(|route| (route.provider_code.as_str(), route.channel_id));
@@ -1479,7 +1479,6 @@ fn weighted_rotate_channel_routes(routes: Vec<ProviderChannelRoute>) -> Vec<Prov
         .iter()
         .map(|route| route.credential_weight.max(0) as usize)
         .collect();
-    let total_weight = weights.iter().copied().map(|w| w.max(1)).sum::<usize>().max(1);
     let channel_key = routes
         .first()
         .map(|route| (route.provider_code.as_str(), route.channel_id));

@@ -7,7 +7,7 @@
 
 **Goal:** Build the first reusable appbase commerce foundation block for account, wallet, ledger, and idempotency so other applications can integrate these capabilities without copying `sdkwork-clawrouter` code.
 
-**Architecture:** Add typed appbase account/wallet contracts in `sdkwork-commerce-account-rust`, concrete SQLite/Postgres SQLx stores in `sdkwork-commerce-storage-sqlx-rust`, runtime operation contracts in `sdkwork-commerce-runtime-rust`, and mountable Axum app/admin routers in `sdkwork-commerce-http-rust` or a new focused Axum crate if the existing HTTP crate should stay contract-only. The first slice must use existing `commerce_account`, `commerce_account_ledger_entry`, and `commerce_idempotency_key` tables only; any table, column, index, migration, or embedded schema change requires explicit user confirmation before implementation.
+**Architecture:** Add typed appbase account/wallet contracts in `sdkwork-商���-account-rust`, concrete SQLite/Postgres SQLx stores in `sdkwork-商���-storage-sqlx-rust`, runtime operation contracts in `sdkwork-商���-runtime-rust`, and mountable Axum app/admin routers in `sdkwork-商���-http-rust` or a new focused Axum crate if the existing HTTP crate should stay contract-only. The first slice must use existing `commerce_account`, `commerce_account_ledger_entry`, and `commerce_idempotency_key` tables only; any table, column, index, migration, or embedded schema change requires explicit user confirmation before implementation.
 
 **Tech Stack:** Rust 2021, SQLx 0.8, Axum 0.8, SQLite/Postgres, existing appbase commerce crates under `../sdkwork-appbase/packages/native-rust/commerce`, generated SDK boundary rules from `clawrouter-app-sdk-integration` and `clawrouter-backend-sdk-integration`.
 
@@ -26,37 +26,37 @@ This plan implements Phase B foundation slice only:
 
 Create or modify these appbase files:
 
-- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-account-rust/src/domain/mod.rs`
+- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-account-rust/src/domain/mod.rs`
   - Add typed wallet/account read models and ledger append outcome.
-- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-account-rust/src/queries/mod.rs`
+- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-account-rust/src/queries/mod.rs`
   - Add wallet/account query structs.
-- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-account-rust/src/commands/mod.rs`
+- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-account-rust/src/commands/mod.rs`
   - Add generic wallet ledger command structs that do not mention claw-router.
-- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-account-rust/src/ports/mod.rs`
+- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-account-rust/src/ports/mod.rs`
   - Split read and write traits for account summary, wallet reads, ledger append, and idempotency.
-- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-account-rust/src/service/mod.rs`
+- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-account-rust/src/service/mod.rs`
   - Extend service contract with wallet and idempotent ledger operations.
-- Create `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-storage-sqlx-rust/src/account.rs`
+- Create `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-storage-sqlx-rust/src/account.rs`
   - Shared account SQLx row mapping, validation, and decimal helpers.
-- Create `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-storage-sqlx-rust/src/sqlite_account.rs`
+- Create `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-storage-sqlx-rust/src/sqlite_account.rs`
   - SQLite implementation for account/wallet/ledger/idempotency.
-- Create `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-storage-sqlx-rust/src/postgres_account.rs`
+- Create `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-storage-sqlx-rust/src/postgres_account.rs`
   - Postgres implementation with row locking for mutations.
-- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-storage-sqlx-rust/src/lib.rs`
+- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-storage-sqlx-rust/src/lib.rs`
   - Export store types and keep the existing SQL catalog functions intact.
-- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-storage-sqlx-rust/Cargo.toml`
+- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-storage-sqlx-rust/Cargo.toml`
   - Add dependencies only if required: `sqlx`, `serde`, `serde_json`, `sdkwork_commerce_core`, `sdkwork_commerce_account`.
-- Create `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-runtime-rust/src/account_runtime.rs`
+- Create `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-runtime-rust/src/account_runtime.rs`
   - Runtime handler for appbase account/wallet read operations and ledger mutation dispatch.
-- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-runtime-rust/src/lib.rs`
+- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-runtime-rust/src/lib.rs`
   - Register wallet/account operation contracts and export the account runtime handler.
-- Create `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-http-rust/src/account_router.rs`
+- Create `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-http-rust/src/account_router.rs`
   - Axum routers for account summary and wallet read operations.
-- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-http-rust/src/lib.rs`
+- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-http-rust/src/lib.rs`
   - Export account router and update route metadata for wallet operations.
-- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-http-rust/Cargo.toml`
+- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-http-rust/Cargo.toml`
   - Add `axum`, `serde`, `serde_json`, `sqlx`, and storage/account dependencies only if the router lives in this crate.
-- Modify `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-contracts/src/index.ts`
+- Modify `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-contracts/src/index.ts`
   - Align TypeScript operation catalog only if Rust operation ids differ from existing appbase contract names.
 - Modify `<workspace-root>/sdkwork-clawrouter/docs/superpowers/specs/2026-05-20-appbase-commerce-platform-design.md`
   - Add a short implementation-status note after the slice lands.
@@ -64,10 +64,10 @@ Create or modify these appbase files:
 ## Task 1: Account/Wallet Domain Contracts
 
 **Files:**
-- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-account-rust/src/domain/mod.rs`
-- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-account-rust/src/queries/mod.rs`
-- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-account-rust/src/commands/mod.rs`
-- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-account-rust/src/ports/mod.rs`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-account-rust/src/domain/mod.rs`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-account-rust/src/queries/mod.rs`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-account-rust/src/commands/mod.rs`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-account-rust/src/ports/mod.rs`
 - Test: inline unit tests in `domain/mod.rs`, `queries/mod.rs`, and `commands/mod.rs`
 
 - [ ] **Step 1: Add failing domain tests**
@@ -121,7 +121,7 @@ fn wallet_transaction_item_requires_request_no_and_idempotency_key() {
 Run:
 
 ```powershell
-cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-commerce-account-rust\Cargo.toml wallet_account_item_rejects_empty_account_id wallet_transaction_item_requires_request_no_and_idempotency_key
+cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-商���-account-rust\Cargo.toml wallet_account_item_rejects_empty_account_id wallet_transaction_item_requires_request_no_and_idempotency_key
 ```
 
 Expected: compile failure or failing tests because `WalletAccountItem` and `WalletTransactionItem` do not exist yet.
@@ -157,17 +157,17 @@ Expected: tests pass.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-commerce-account-rust\src
+git add ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-商���-account-rust\src
 git commit -m "feat(appbase-commerce): add account wallet domain contracts"
 ```
 
 ## Task 2: SQLx Account Storage Traits And SQLite Store
 
 **Files:**
-- Create: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-storage-sqlx-rust/src/account.rs`
-- Create: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-storage-sqlx-rust/src/sqlite_account.rs`
-- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-storage-sqlx-rust/src/lib.rs`
-- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-storage-sqlx-rust/Cargo.toml`
+- Create: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-storage-sqlx-rust/src/account.rs`
+- Create: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-storage-sqlx-rust/src/sqlite_account.rs`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-storage-sqlx-rust/src/lib.rs`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-storage-sqlx-rust/Cargo.toml`
 - Test: inline `#[cfg(test)]` module in `sqlite_account.rs`
 
 - [ ] **Step 1: Add failing SQLite tests**
@@ -202,7 +202,7 @@ async fn sqlite_debit_rejects_insufficient_balance() { /* debit more than availa
 Run:
 
 ```powershell
-cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-commerce-storage-sqlx-rust\Cargo.toml sqlite_wallet_
+cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-商���-storage-sqlx-rust\Cargo.toml sqlite_wallet_
 ```
 
 Expected: compile failure because store types are missing.
@@ -243,7 +243,7 @@ Implementation rules:
 Run:
 
 ```powershell
-cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-commerce-storage-sqlx-rust\Cargo.toml sqlite_wallet_
+cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-商���-storage-sqlx-rust\Cargo.toml sqlite_wallet_
 ```
 
 Expected: SQLite tests pass.
@@ -251,15 +251,15 @@ Expected: SQLite tests pass.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-commerce-storage-sqlx-rust
+git add ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-商���-storage-sqlx-rust
 git commit -m "feat(appbase-commerce): add sqlite account wallet ledger store"
 ```
 
 ## Task 3: Postgres Store With Row Locking
 
 **Files:**
-- Create: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-storage-sqlx-rust/src/postgres_account.rs`
-- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-storage-sqlx-rust/src/lib.rs`
+- Create: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-storage-sqlx-rust/src/postgres_account.rs`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-storage-sqlx-rust/src/lib.rs`
 - Test: inline `#[cfg(test)]` tests that compile without requiring a live Postgres server, plus optional ignored integration tests gated by `SDKWORK_TEST_POSTGRES_URL`
 
 - [ ] **Step 1: Add failing compile-level Postgres tests**
@@ -277,7 +277,7 @@ async fn postgres_wallet_lists_accounts_after_ledger_credit() { /* same behavior
 Run:
 
 ```powershell
-cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-commerce-storage-sqlx-rust\Cargo.toml postgres_account -- --include-ignored
+cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-商���-storage-sqlx-rust\Cargo.toml postgres_account -- --include-ignored
 ```
 
 Expected: missing Postgres store type or ignored live test reports environment skip.
@@ -298,7 +298,7 @@ Use the same public methods as SQLite. For mutations:
 Run:
 
 ```powershell
-cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-commerce-storage-sqlx-rust\Cargo.toml
+cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-商���-storage-sqlx-rust\Cargo.toml
 ```
 
 Expected: non-ignored tests pass. If `SDKWORK_TEST_POSTGRES_URL` is not configured, report that live Postgres tests were skipped/ignored.
@@ -306,15 +306,15 @@ Expected: non-ignored tests pass. If `SDKWORK_TEST_POSTGRES_URL` is not configur
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-commerce-storage-sqlx-rust
+git add ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-商���-storage-sqlx-rust
 git commit -m "feat(appbase-commerce): add postgres account wallet ledger store"
 ```
 
 ## Task 4: Runtime Operation Contracts
 
 **Files:**
-- Create: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-runtime-rust/src/account_runtime.rs`
-- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-runtime-rust/src/lib.rs`
+- Create: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-runtime-rust/src/account_runtime.rs`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-runtime-rust/src/lib.rs`
 - Test: inline unit tests in runtime crate
 
 - [ ] **Step 1: Add failing runtime contract tests**
@@ -338,7 +338,7 @@ Also test that `ledger.entries.append` requires idempotency and transaction.
 Run:
 
 ```powershell
-cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-commerce-runtime-rust\Cargo.toml wallet_operation_contracts
+cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-商���-runtime-rust\Cargo.toml wallet_operation_contracts
 ```
 
 Expected: missing operation contracts.
@@ -363,7 +363,7 @@ Add an account runtime handler that delegates to a generic account service/store
 Run:
 
 ```powershell
-cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-commerce-runtime-rust\Cargo.toml wallet_operation_contracts
+cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-商���-runtime-rust\Cargo.toml wallet_operation_contracts
 ```
 
 Expected: tests pass.
@@ -371,16 +371,16 @@ Expected: tests pass.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-commerce-runtime-rust
+git add ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-商���-runtime-rust
 git commit -m "feat(appbase-commerce): register wallet ledger runtime operations"
 ```
 
 ## Task 5: Mountable Appbase Axum Router
 
 **Files:**
-- Create: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-http-rust/src/account_router.rs`
-- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-http-rust/src/lib.rs`
-- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-http-rust/Cargo.toml`
+- Create: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-http-rust/src/account_router.rs`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-http-rust/src/lib.rs`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-http-rust/Cargo.toml`
 - Test: router tests in `account_router.rs`
 
 - [ ] **Step 1: Add failing router tests**
@@ -398,7 +398,7 @@ Use `tower::ServiceExt` and an in-memory SQLite store. Test:
 Run:
 
 ```powershell
-cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-commerce-http-rust\Cargo.toml wallet_router_
+cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-商���-http-rust\Cargo.toml wallet_router_
 ```
 
 Expected: compile failure because router does not exist.
@@ -437,7 +437,7 @@ For disabled mutation placeholders, return a stable non-success error:
 Run:
 
 ```powershell
-cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-commerce-http-rust\Cargo.toml wallet_router_
+cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-商���-http-rust\Cargo.toml wallet_router_
 ```
 
 Expected: tests pass.
@@ -445,16 +445,16 @@ Expected: tests pass.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-commerce-http-rust
+git add ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-商���-http-rust
 git commit -m "feat(appbase-commerce): add account wallet app router"
 ```
 
 ## Task 6: Contract Alignment And Guardrails
 
 **Files:**
-- Modify: `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-contracts/src/index.ts`
-- Modify: `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-sdk-ports/src/index.ts`
-- Modify: `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-service/src/index.ts`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-contracts/src/index.ts`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-sdk-ports/src/index.ts`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-service/src/index.ts`
 - Test: existing package tests under appbase common commerce
 
 - [ ] **Step 1: Add failing TypeScript contract tests if operation drift exists**
@@ -462,7 +462,7 @@ git commit -m "feat(appbase-commerce): add account wallet app router"
 Check whether Rust operation ids and TS operation ids match. If drift exists, add tests in:
 
 ```text
-<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-contracts/tests/commerce-contracts.standard.test.ts
+<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-contracts/tests/commerce-contracts.standard.test.ts
 ```
 
 Expected operation ids must include:
@@ -598,10 +598,10 @@ Still pending:
 Run:
 
 ```powershell
-cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-commerce-account-rust\Cargo.toml
-cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-commerce-storage-sqlx-rust\Cargo.toml
-cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-commerce-runtime-rust\Cargo.toml
-cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-commerce-http-rust\Cargo.toml
+cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-商���-account-rust\Cargo.toml
+cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-商���-storage-sqlx-rust\Cargo.toml
+cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-商���-runtime-rust\Cargo.toml
+cargo test --manifest-path ..\sdkwork-appbase\packages\native-rust\commerce\sdkwork-商���-http-rust\Cargo.toml
 cargo check -p sdkwork-clawrouter-standalone-gateway
 python -B -m tools.frontend_operation_audit --check
 python -B -m tools.appbase_capability_guardian --root .
@@ -634,8 +634,8 @@ git commit -m "docs(appbase-commerce): plan wallet account foundation slice"
 ## Implementation Notes
 
 - Use `rg` before editing to confirm there is not already an equivalent helper.
-- Follow the style of `sdkwork-commerce-membership-sqlx-rust`: concrete store files per database, reusable types, thin routers, and no product dependency.
-- Keep `sdkwork-commerce-storage-sqlx-rust/src/lib.rs` exports small if the file is split; do not rewrite the catalog wholesale.
+- Follow the style of `sdkwork-商���-membership-sqlx-rust`: concrete store files per database, reusable types, thin routers, and no product dependency.
+- Keep `sdkwork-商���-storage-sqlx-rust/src/lib.rs` exports small if the file is split; do not rewrite the catalog wholesale.
 - All balance math should use canonical string decimal/integer helpers. Do not use floating point for balances.
 - For this slice, ledger append may support `cash`, `points`, and `token`, but command handlers for top-up/withdrawal/transfer/exchange remain disabled until their own plan.
 - If SQLx compile-time macros require a live database, use runtime `sqlx::query`/`query_as` patterns consistent with the existing codebase.

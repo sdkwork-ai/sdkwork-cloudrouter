@@ -1,7 +1,7 @@
-use sdkwork_commerce_bootstrap::{
+use crate::infrastructure::sql::commerce_bootstrap::{
     commerce_recharge_package_seeds, commerce_recharge_settings_seeds,
 };
-use sdkwork_commerce_core::{CommercePaymentStatus, CommerceRechargeStatus, PromotionCouponStatus};
+use sdkwork_contract_service::{CommercePaymentStatus, CommerceRechargeStatus, PromotionCouponStatus};
 use sqlx::{PgPool, Postgres, Row, Transaction};
 use std::time::{SystemTime, UNIX_EPOCH};
 

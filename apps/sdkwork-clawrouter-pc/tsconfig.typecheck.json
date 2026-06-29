@@ -90,19 +90,19 @@
         "./src/typecheck-shims.d.ts"
       ],
       "@sdkwork/commerce-service": [
-        "../../vendor/sdkwork-commerce/packages/common/commerce/sdkwork-commerce-service/src/index.ts"
+        "../../packages/common/commerce/sdkwork-commerce-service/src/index.ts"
       ],
       "@sdkwork/commerce-sdk-ports": [
-        "../../vendor/sdkwork-commerce/packages/common/commerce/sdkwork-commerce-sdk-ports/src/index.ts"
+        "../../packages/common/commerce/sdkwork-commerce-sdk-ports/src/index.ts"
       ],
       "@sdkwork/commerce-contracts": [
-        "../../vendor/sdkwork-commerce/packages/common/commerce/sdkwork-commerce-contracts/src/index.ts"
+        "../../packages/common/commerce/sdkwork-commerce-contracts/src/index.ts"
       ],
       "sdkwork-commerce-app-sdk-generated-typescript": [
-        "../../vendor/sdkwork-commerce/sdks/sdkwork-commerce-app-sdk/sdkwork-commerce-app-sdk-typescript/generated/server-openapi/src/index.ts"
+        "../../sdks/sdkwork-commerce-app-sdk/sdkwork-commerce-app-sdk-typescript/generated/server-openapi/src/index.ts"
       ],
       "sdkwork-commerce-backend-sdk-generated-typescript": [
-        "../../vendor/sdkwork-commerce/sdks/sdkwork-commerce-backend-sdk/sdkwork-commerce-backend-sdk-typescript/generated/server-openapi/src/index.ts"
+        "../../sdks/sdkwork-commerce-backend-sdk/sdkwork-commerce-backend-sdk-typescript/generated/server-openapi/src/index.ts"
       ],
       "@sdkwork/clawrouter-pc-admin-finance": [
         "./packages/sdkwork-clawrouter-pc-admin-finance/src/index.tsx"

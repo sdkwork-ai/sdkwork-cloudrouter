@@ -49,7 +49,7 @@ usage_by_request AS (
         CAST(COALESCE(MAX(COALESCE(base_input_unit_price, 0)), 0) AS TEXT) AS base_input_unit_price,
         CAST(COALESCE(MAX(COALESCE(base_output_unit_price, 0)), 0) AS TEXT) AS base_output_unit_price,
         CAST(COALESCE(MAX(COALESCE(cache_read_unit_price, 0)), 0) AS TEXT) AS cache_read_unit_price
-    FROM ai_usage_fact
+    FROM ai_usage
     WHERE status = 1
       AND tenant_id = ?1
       AND organization_id = ?2
@@ -185,7 +185,7 @@ usage_by_request AS (
            MAX(requested_model_catalog_key) AS requested_model_catalog_key,
            MAX(model) AS model, MAX(provider_native_model) AS provider_native_model,
            MAX(region_code) AS region_code
-    FROM ai_usage_fact
+    FROM ai_usage
     WHERE status = 1
       AND tenant_id = ?1
       AND organization_id = ?2

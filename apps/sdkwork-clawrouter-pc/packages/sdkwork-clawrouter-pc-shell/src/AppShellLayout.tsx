@@ -1,6 +1,7 @@
 import type { ComponentType, ReactNode } from 'react';
 import { useEffect } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Footer, Navbar } from '@sdkwork/clawroutes-pc-commons';
 
 export type AppShellRouteProps = {
@@ -61,17 +62,25 @@ export function AppShellLayout({
   navbarAuthenticatedActionsStart,
 }: AppShellLayoutProps) {
   const location = useLocation();
+  const { t } = useTranslation();
   const isPlayground = location.pathname.startsWith('/playground') || location.pathname.startsWith('/c/');
   const usesDocumentsHostOffset = DOCUMENTS_HOST_OFFSET_ROUTE_PATTERN.test(location.pathname);
 
   return (
     <>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-background focus:text-foreground focus:rounded-md focus:shadow-md"
+      >
+        {t('common.skipToContent', 'Skip to content')}
+      </a>
       <Navbar
         authenticatedActionsStart={navbarAuthenticatedActionsStart}
         isDark={isDark}
         toggleTheme={toggleTheme}
       />
       <div
+        id="main-content"
         className={
           usesDocumentsHostOffset
             ? 'sdkwork-clawrouter-documents-host-offset flex-1'

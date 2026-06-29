@@ -45,12 +45,28 @@ SDKWORK_CLAW_RUNTIME_TARGET=container
 ## Probes
 
 - **Startup**: `GET /healthz` — allows slow database/bootstrap warm-up
-- **Liveness**: `GET /healthz` — process is running
-- **Readiness**: `GET /readyz` — returns `503` until database, Redis (when required), and settlement prerequisites are healthy
+- **Liveness**: `GET /healthz` — process is running; `timeoutSeconds=3` so a wedged process is restarted quickly
+- **Readiness**: `GET /readyz` — returns `503` until database, Redis (when required), and settlement prerequisites are healthy; `timeoutSeconds=5` on edge to tolerate brief DB/Redis network partitions without flipping the pod to not-ready. Readiness must only depend on internal dependencies (PostgreSQL, Redis), never on upstream AI provider reachability.
 
 ## HA
 
 Manifests include PodDisruptionBudget and HorizontalPodAutoscaler resources for gateway, edge, app-api, and admin-api. Replace the in-cluster Redis example with a managed Redis service for production.
+
+The edge `PodDisruptionBudget` uses `maxUnavailable: 1` so at most one voluntary disruption is allowed at a time; with `replicas: 2` this keeps at least one pod serving during drains. For zero-capacity-loss rollouts, prefer a surge-style Deployment strategy (`maxSurge: 1, maxUnavailable: 0`).
+
+The edge `HorizontalPodAutoscaler` scales on both CPU (`averageUtilization: 60`) and memory (`averageUtilization: 70`) Resource metrics and requires metrics-server. Custom/external metrics (per-pod QPS, p95 upstream-provider latency, in-flight streaming requests) should be added once a `prometheus-adapter` or KEDA scaler is installed; see the in-manifest TODO and `PERFORMANCE_SPEC.md` / `OBSERVABILITY_SPEC.md`.
+
+## Resource and Shutdown Sizing
+
+Edge `resources` follow Google SRE Book capacity-planning guidance: CPU `requests: 500m` / `limits: 1` (2:1, compressible) and memory `requests: 1Gi` / `limits: 1.5Gi` (1.5:1, kept close to 1:1 because memory is not compressible). The HPA CPU target was lowered from 70% to 60% to match the doubled `requests.cpu`.
+
+`terminationGracePeriodSeconds: 130` on edge covers the maximum upstream AI provider request timeout of 120s plus a 10s buffer, so rolling deploys do not SIGTERM in-flight long-running provider requests. Keep this value `>=` the configured provider timeout whenever that timeout is raised; it stays below the AWS ALB deregistration default of 300s used as a cross-industry reference.
+
+## Network Policy
+
+`claw-router-network-policy.yaml` implements zero-trust segmentation: a default deny-all NetworkPolicy plus explicit per-component ingress rules. Egress is allowed only for DNS, Postgres, in-cluster Redis (including sentinel gossip on port 26379), internal service-to-service traffic, and HTTPS egress to upstream AI providers.
+
+HTTPS egress for upstream providers (OpenAI, Anthropic, Google, Alibaba DashScope, Tencent Cloud) is pinned to a dedicated `egress-gateway` namespace via a `namespaceSelector` + `podSelector` `to` rule. Native Kubernetes `NetworkPolicy` cannot perform FQDN-based filtering, so operators must deploy an L7-aware policy engine (Istio, Cilium, or equivalent) in the `egress-gateway` namespace that enforces the documented FQDN allowlist. If an L7 egress gateway is not available, replace the `to` selector with `to.ipBlock` entries listing resolved provider CIDRs (weaker, requires continuous DNS-to-CIDR refresh). Leaving the rule without a `to` selector is forbidden because it would permit egress to any HTTPS endpoint.
 
 ## Migration
 

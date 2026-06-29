@@ -248,37 +248,37 @@ importers:
         version: link:packages/sdkwork-clawroutes-pc-commons
       '@sdkwork/commerce-contracts':
         specifier: workspace:*
-        version: link:../../../sdkwork-commerce/packages/common/commerce/sdkwork-commerce-contracts
+        version: link:../../packages/common/commerce/sdkwork-commerce-contracts
       '@sdkwork/commerce-pc-admin-product':
         specifier: workspace:*
-        version: link:../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product
+        version: link:../../packages/pc-react/commerce/sdkwork-commerce-pc-admin-product
       '@sdkwork/commerce-pc-billing':
         specifier: workspace:*
-        version: link:../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-billing
+        version: link:../../packages/pc-react/commerce/sdkwork-commerce-pc-billing
       '@sdkwork/commerce-pc-checkout':
         specifier: workspace:*
-        version: link:../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-checkout
+        version: link:../../packages/pc-react/commerce/sdkwork-commerce-pc-checkout
       '@sdkwork/commerce-pc-host':
         specifier: workspace:*
-        version: link:../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-host
+        version: link:../../packages/pc-react/commerce/sdkwork-commerce-pc-host
       '@sdkwork/commerce-pc-membership':
         specifier: workspace:*
-        version: link:../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-membership
+        version: link:../../packages/pc-react/commerce/sdkwork-commerce-pc-membership
       '@sdkwork/commerce-pc-membership-purchase':
         specifier: workspace:*
-        version: link:../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-membership-purchase
+        version: link:../../packages/pc-react/commerce/sdkwork-commerce-pc-membership-purchase
       '@sdkwork/commerce-pc-payment':
         specifier: workspace:*
-        version: link:../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-payment
+        version: link:../../packages/pc-react/commerce/sdkwork-commerce-pc-payment
       '@sdkwork/commerce-pc-wallet':
         specifier: workspace:*
-        version: link:../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-wallet
+        version: link:../../packages/pc-react/commerce/sdkwork-commerce-pc-wallet
       '@sdkwork/commerce-sdk-ports':
         specifier: workspace:*
-        version: link:../../../sdkwork-commerce/packages/common/commerce/sdkwork-commerce-sdk-ports
+        version: link:../../packages/common/commerce/sdkwork-commerce-sdk-ports
       '@sdkwork/commerce-service':
         specifier: workspace:*
-        version: link:../../../sdkwork-commerce/packages/common/commerce/sdkwork-commerce-service
+        version: link:../../packages/common/commerce/sdkwork-commerce-service
       '@sdkwork/core-pc-react':
         specifier: workspace:*
         version: link:../../../sdkwork-core/sdkwork-core-pc-react
@@ -506,10 +506,10 @@ importers:
         version: 0.27.0
       sdkwork-commerce-app-sdk-generated-typescript:
         specifier: workspace:*
-        version: link:../../../sdkwork-commerce/sdks/sdkwork-commerce-app-sdk/sdkwork-commerce-app-sdk-typescript/generated/server-openapi
+        version: link:../../sdks/sdkwork-commerce-app-sdk/sdkwork-commerce-app-sdk-typescript/generated/server-openapi
       sdkwork-commerce-backend-sdk-generated-typescript:
         specifier: workspace:*
-        version: link:../../../sdkwork-commerce/sdks/sdkwork-commerce-backend-sdk/sdkwork-commerce-backend-sdk-typescript/generated/server-openapi
+        version: link:../../sdks/sdkwork-commerce-backend-sdk/sdkwork-commerce-backend-sdk-typescript/generated/server-openapi
       sdkwork-generations-app-sdk-generated-typescript:
         specifier: workspace:*
         version: link:../../../sdkwork-generations/sdks/sdkwork-generations-app-sdk/sdkwork-generations-app-sdk-typescript/generated/server-openapi
@@ -627,7 +627,7 @@ importers:
         specifier: 'catalog:'
         version: 0.546.0(react@19.2.4)
 
-  ../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product:
+  ../../packages/pc-react/commerce/sdkwork-commerce-pc-admin-product:
     devDependencies:
       '@sdkwork/commerce-pc-core':
         specifier: workspace:*
@@ -660,49 +660,49 @@ importers:
         specifier: 'catalog:'
         version: 7.14.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
 
-  ../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-billing: {}
+  ../../packages/pc-react/commerce/sdkwork-commerce-pc-billing: {}
 
-  ../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-checkout: {}
+  ../../packages/pc-react/commerce/sdkwork-commerce-pc-checkout: {}
 
-  ../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-core: {}
+  ../../packages/pc-react/commerce/sdkwork-commerce-pc-core: {}
 
-  ../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-coupon: {}
+  ../../packages/pc-react/commerce/sdkwork-commerce-pc-coupon: {}
 
-  ../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-host: {}
+  ../../packages/pc-react/commerce/sdkwork-commerce-pc-host: {}
 
-  ../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-invoice: {}
+  ../../packages/pc-react/commerce/sdkwork-commerce-pc-invoice: {}
 
-  ../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-membership: {}
+  ../../packages/pc-react/commerce/sdkwork-commerce-pc-membership: {}
 
-  ../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-membership-purchase: {}
+  ../../packages/pc-react/commerce/sdkwork-commerce-pc-membership-purchase: {}
 
-  ../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-offer: {}
+  ../../packages/pc-react/commerce/sdkwork-commerce-pc-offer: {}
 
-  ../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-order:
+  ../../packages/pc-react/commerce/sdkwork-commerce-pc-order:
     dependencies:
       '@sdkwork/appbase-pc-react':
         specifier: workspace:*
         version: link:../../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-appbase-pc-react
 
-  ../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-payment:
+  ../../packages/pc-react/commerce/sdkwork-commerce-pc-payment:
     dependencies:
       '@sdkwork/appbase-pc-react':
         specifier: workspace:*
         version: link:../../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-appbase-pc-react
 
-  ../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-points: {}
+  ../../packages/pc-react/commerce/sdkwork-commerce-pc-points: {}
 
-  ../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-pricing: {}
+  ../../packages/pc-react/commerce/sdkwork-commerce-pc-pricing: {}
 
-  ../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-subscription: {}
+  ../../packages/pc-react/commerce/sdkwork-commerce-pc-subscription: {}
 
-  ../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-wallet: {}
+  ../../packages/pc-react/commerce/sdkwork-commerce-pc-wallet: {}
 
-  ../../../sdkwork-commerce/packages/common/commerce/sdkwork-commerce-contracts: {}
+  ../../packages/common/commerce/sdkwork-commerce-contracts: {}
 
-  ../../../sdkwork-commerce/packages/common/commerce/sdkwork-commerce-rpc-contracts: {}
+  ../../packages/common/commerce/sdkwork-commerce-rpc-contracts: {}
 
-  ../../../sdkwork-commerce/packages/common/commerce/sdkwork-commerce-runtime:
+  ../../packages/common/commerce/sdkwork-commerce-runtime:
     dependencies:
       '@sdkwork/commerce-contracts':
         specifier: workspace:*
@@ -717,13 +717,13 @@ importers:
         specifier: workspace:*
         version: link:../../../../../sdkwork-appbase/packages/common/foundation/sdkwork-runtime-bootstrap
 
-  ../../../sdkwork-commerce/packages/common/commerce/sdkwork-commerce-sdk-ports:
+  ../../packages/common/commerce/sdkwork-commerce-sdk-ports:
     dependencies:
       '@sdkwork/commerce-contracts':
         specifier: workspace:*
         version: link:../sdkwork-commerce-contracts
 
-  ../../../sdkwork-commerce/packages/common/commerce/sdkwork-commerce-service:
+  ../../packages/common/commerce/sdkwork-commerce-service:
     dependencies:
       '@sdkwork/commerce-sdk-ports':
         specifier: workspace:*
@@ -732,7 +732,7 @@ importers:
         specifier: workspace:*
         version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
 
-  ../../../sdkwork-commerce/sdks/sdkwork-commerce-app-sdk/sdkwork-commerce-app-sdk-typescript/generated/server-openapi:
+  ../../sdks/sdkwork-commerce-app-sdk/sdkwork-commerce-app-sdk-typescript/generated/server-openapi:
     dependencies:
       '@sdkwork/sdk-common':
         specifier: ^1.0.2
@@ -748,7 +748,7 @@ importers:
         specifier: ^5.3.0
         version: 5.8.3
 
-  ../../../sdkwork-commerce/sdks/sdkwork-commerce-backend-sdk/sdkwork-commerce-backend-sdk-typescript/generated/server-openapi:
+  ../../sdks/sdkwork-commerce-backend-sdk/sdkwork-commerce-backend-sdk-typescript/generated/server-openapi:
     dependencies:
       '@sdkwork/sdk-common':
         specifier: ^1.0.2
@@ -1749,7 +1749,7 @@ importers:
     dependencies:
       '@sdkwork/commerce-pc-admin-product':
         specifier: workspace:*
-        version: link:../../../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product
+        version: link:../../../../packages/pc-react/commerce/sdkwork-commerce-pc-admin-product
 
   packages/sdkwork-clawrouter-pc-admin-channel:
     dependencies:
@@ -1827,7 +1827,7 @@ importers:
         version: link:../sdkwork-clawroutes-pc-commons
       '@sdkwork/commerce-service':
         specifier: workspace:*
-        version: link:../../../../../sdkwork-commerce/packages/common/commerce/sdkwork-commerce-service
+        version: link:../../../../packages/common/commerce/sdkwork-commerce-service
 
   packages/sdkwork-clawrouter-pc-admin-messaging:
     dependencies:
@@ -2017,10 +2017,10 @@ importers:
     dependencies:
       sdkwork-commerce-app-sdk-generated-typescript:
         specifier: workspace:*
-        version: link:../../../../../sdkwork-commerce/sdks/sdkwork-commerce-app-sdk/sdkwork-commerce-app-sdk-typescript/generated/server-openapi
+        version: link:../../../../sdks/sdkwork-commerce-app-sdk/sdkwork-commerce-app-sdk-typescript/generated/server-openapi
       sdkwork-commerce-backend-sdk-generated-typescript:
         specifier: workspace:*
-        version: link:../../../../../sdkwork-commerce/sdks/sdkwork-commerce-backend-sdk/sdkwork-commerce-backend-sdk-typescript/generated/server-openapi
+        version: link:../../../../sdks/sdkwork-commerce-backend-sdk/sdkwork-commerce-backend-sdk-typescript/generated/server-openapi
       sdkwork-drive-backend-sdk-generated-typescript:
         specifier: workspace:*
         version: link:../../../../../sdkwork-drive/sdks/sdkwork-drive-backend-sdk/sdkwork-drive-backend-sdk-typescript/generated/server-openapi
@@ -2160,7 +2160,7 @@ importers:
         version: link:../sdkwork-clawrouter-pc-core
       '@sdkwork/commerce-service':
         specifier: workspace:*
-        version: link:../../../../../sdkwork-commerce/packages/common/commerce/sdkwork-commerce-service
+        version: link:../../../../packages/common/commerce/sdkwork-commerce-service
       '@sdkwork/documents-app-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-documents/sdks/sdkwork-documents-app-sdk/sdkwork-documents-app-sdk-typescript/generated/server-openapi

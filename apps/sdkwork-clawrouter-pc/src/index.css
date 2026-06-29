@@ -12,7 +12,7 @@
 @source "../../../../sdkwork-appbase/packages/pc-react/host/sdkwork-host-pc-react/src";
 @source "../../../../sdkwork-ui/sdkwork-ui-pc-react/src";
 @source "../../../../sdkwork-core/sdkwork-core-pc-react/src";
-@source "../../../../sdkwork-commerce/apps/sdkwork-commerce-pc/packages/*/src";
+@source "../../../packages/pc-react/commerce/*/src";
 @source "../../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/*/src";
 @source "../../../../sdkwork-image/apps/sdkwork-image-pc/packages/*/src";
 @source "../../../../sdkwork-models/apps/sdkwork-models-pc/packages/*/src";
@@ -32,6 +32,8 @@
   --color-lobster-600: #c83f2a;
   --color-lobster-700: #9f3020;
   --color-lobster-900: #641e13;
+  --color-background: #f8fafc;
+  --color-foreground: #0f172a;
   --animate-scan: scan 3s linear infinite;
   @keyframes scan {
     0% { transform: translateY(-100%); }
@@ -113,6 +115,8 @@ html {
 html.dark {
   --scrollbar-thumb: color-mix(in srgb, var(--color-lobster-400) 62%, transparent);
   --scrollbar-thumb-hover: var(--color-lobster-400);
+  --color-background: #050505;
+  --color-foreground: #f8fafc;
 }
 
 body {

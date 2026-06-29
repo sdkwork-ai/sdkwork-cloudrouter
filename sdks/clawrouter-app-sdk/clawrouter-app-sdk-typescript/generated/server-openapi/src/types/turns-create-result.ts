@@ -1,11 +1,9 @@
-import type { ChatTurnCreateResponse } from './chat-turn-create-response';
-
 /** Turns create result schema exposed by Claw Router. */
 export interface TurnsCreateResult {
   /** Business response code. */
   code: string;
-  /** Data field on turns create result. */
-  data?: ChatTurnCreateResponse;
+  /** No business data returned by this operation. */
+  data?: never;
   /** Human-readable response message. */
   msg?: string;
 }

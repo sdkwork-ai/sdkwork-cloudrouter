@@ -547,33 +547,17 @@ fn required_header(headers: &HeaderMap, name: &'static str) -> Result<String, St
 }
 
 fn bad_request(message: String) -> Response {
-    (
-        StatusCode::BAD_REQUEST,
-        Json(PlusApiResult::error("4001", message)),
-    )
-        .into_response()
+    PlusApiResult::error("4001", message)).into_response()
 }
 
 fn not_found(message: String) -> Response {
-    (
-        StatusCode::NOT_FOUND,
-        Json(PlusApiResult::error("4040", message)),
-    )
-        .into_response()
+    PlusApiResult::error("4040", message)).into_response()
 }
 
 fn conflict(message: String) -> Response {
-    (
-        StatusCode::CONFLICT,
-        Json(PlusApiResult::error("4090", message)),
-    )
-        .into_response()
+    PlusApiResult::error("4090", message)).into_response()
 }
 
 fn unprocessable(message: String) -> Response {
-    (
-        StatusCode::UNPROCESSABLE_ENTITY,
-        Json(PlusApiResult::error("4220", message)),
-    )
-        .into_response()
+    PlusApiResult::error("4220", message)).into_response()
 }

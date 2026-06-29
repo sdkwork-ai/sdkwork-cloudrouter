@@ -1,6 +1,6 @@
-use sdkwork_commerce_core::{CommercePaymentStatus, CommerceRechargeStatus};
-use sdkwork_commerce_invoice::InvoiceStatus;
-use sdkwork_commerce_payment::RefundStatus;
+use sdkwork_contract_service::{CommercePaymentStatus, CommerceRechargeStatus};
+use sdkwork_invoice_service::InvoiceStatus;
+use sdkwork_payment_service::RefundStatus;
 use sqlx::{PgPool, Row};
 
 use crate::domain::{DecimalValue, DomainError};
@@ -127,12 +127,12 @@ WITH billing_entries AS (
         CAST(COALESCE(s.due_at, pi.issued_at, s.period_end, s.updated_at, s.created_at) AS TEXT) AS due_date,
         CAST(COALESCE(s.period_end, s.updated_at, s.created_at) AS TEXT) AS sort_time,
         COUNT(DISTINCT us.id) AS settlement_count
-    FROM commerce_usage_statement s
+    FROM commerce_statement s
     LEFT JOIN commerce_invoice pi
       ON pi.id = s.invoice_id
      AND pi.tenant_id = CAST(s.tenant_id AS TEXT)
      AND pi.organization_id = CAST(s.organization_id AS TEXT)
-    LEFT JOIN commerce_usage_settlement us
+    LEFT JOIN commerce_settlement us
       ON us.status = 1
      AND us.tenant_id = s.tenant_id
      AND us.organization_id = s.organization_id

@@ -156,7 +156,7 @@ fn postgres_model_ranking_refresh_records_typed_audit_job_with_json_payload() {
         "\"consecutiveFailureCount\": command.consecutive_failure_count.max(0)",
         "\"alertRecommended\": command.alert_recommended",
         "\"alertSeverity\": command.alert_severity",
-        "\"sourceTables\": [\"ai_usage_fact\", \"ai_model\", \"ai_model_rank_snapshot\"]",
+        "\"sourceTables\": [\"ai_usage\", \"ai_model\", \"ai_model_rank_snapshot\"]",
     ] {
         assert_sql_contains(POSTGRES_MODEL_RANKING_REFRESH_STORE, expected);
     }

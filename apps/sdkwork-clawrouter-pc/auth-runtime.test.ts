@@ -2422,7 +2422,7 @@ test("admin OAuth owns official account and mini program resource-account sectio
 test("admin commerce pages no longer render nested second-level sidebars", () => {
   const adminResourceCenterSource = readPortalFile("./packages/sdkwork-clawroutes-pc-commons/src/components/AdminResourceCenter.tsx");
   const catalogWrapperSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-catalog/src/index.tsx");
-  const catalogSource = readPortalFile("../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/index.tsx");
+  const catalogSource = readPortalFile("../../packages/pc-react/commerce/sdkwork-commerce-pc-admin-product/src/index.tsx");
   const inventorySource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-inventory/src/index.tsx");
   const ordersSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-orders/src/index.tsx");
   const paymentsSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-payments/src/index.tsx");
@@ -2700,12 +2700,12 @@ test("portal resolves Commerce workspace modules and their peer dependencies fro
   assert.match(viteConfigSource, /sdkworkCommerceRoot/);
   assert.match(viteConfigSource, /return isPortalWorkspaceDependencyImporter\(importer, workspaceDependencyRoots\)\s*&& !isSdkworkWorkspaceDependency\(source\)/);
   assert.match(viteConfigSource, /rootDefaultExport/);
-  assert.match(workspaceSource, /sdkwork-commerce\/apps\/sdkwork-commerce-pc\/packages\/sdkwork-commerce-pc-admin-product/);
-  assert.match(workspaceSource, /sdkwork-commerce\/apps\/sdkwork-commerce-pc\/packages\/sdkwork-commerce-pc-wallet/);
-  assert.match(workspaceSource, /sdkwork-commerce\/apps\/sdkwork-commerce-pc\/packages\/sdkwork-commerce-pc-membership/);
-  assert.match(workspaceSource, /sdkwork-commerce\/apps\/sdkwork-commerce-pc\/packages\/sdkwork-commerce-pc-membership-purchase/);
-  assert.match(workspaceSource, /sdkwork-commerce\/apps\/sdkwork-commerce-pc\/packages\/sdkwork-commerce-pc-billing/);
-  assert.match(workspaceSource, /sdkwork-commerce\/packages\/common\/commerce\/\*/);
+  assert.match(workspaceSource, /packages\/pc-react\/commerce\/sdkwork-commerce-pc-admin-product/);
+  assert.match(workspaceSource, /packages\/pc-react\/commerce\/sdkwork-commerce-pc-wallet/);
+  assert.match(workspaceSource, /packages\/pc-react\/commerce\/sdkwork-commerce-pc-membership/);
+  assert.match(workspaceSource, /packages\/pc-react\/commerce\/sdkwork-commerce-pc-membership-purchase/);
+  assert.match(workspaceSource, /packages\/pc-react\/commerce\/sdkwork-commerce-pc-billing/);
+  assert.match(workspaceSource, /packages\/common\/commerce\/\*/);
   assert.doesNotMatch(viteConfigSource, /find: 'react-i18next'/);
   assert.doesNotMatch(viteConfigSource, /find: 'react-router-dom'/);
   assert.doesNotMatch(viteConfigSource, /find: 'lucide-react'/);

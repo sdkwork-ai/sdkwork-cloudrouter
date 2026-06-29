@@ -1,8 +1,0 @@
-[package]
-name = "sdkwork-routes-memory-open-api"
-version.workspace = true
-edition.workspace = true
-license-file.workspace = true
-
-[lib]
-path = "src/lib.rs"

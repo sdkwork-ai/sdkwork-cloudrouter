@@ -903,10 +903,10 @@ html_cache_control = "no-store"
 asset_cache_control = "public, max-age=31536000, immutable"
 
 [portal.security]
-hsts_enabled = false
+hsts_enabled = true
 hsts_max_age_seconds = 31536000
 hsts_include_subdomains = true
-hsts_preload = false
+hsts_preload = true
 csp_frame_src = ["https://player.bilibili.com"]
 
 [portal.tools]
@@ -920,16 +920,42 @@ sdk_archive_root = "/usr/lib/sdkwork/router/portal/dist/sdk-archives"
 # bearer_token_file = "/etc/sdkwork/router/openai-relay.secret"
 
 [provider_relay.runtime]
-response_timeout_millis = 120000
+# Non-streaming provider response timeout. Defaults to 60000 ms (H-4).
+response_timeout_millis = 60000
+# Streaming (SSE) provider response timeout. Defaults to 120000 ms (H-4).
+stream_response_timeout_millis = 120000
+# Maximum bytes accepted from a non-streaming provider response body.
+# Defaults to 64 MiB (67108864). Exceeding the limit aborts the response (H-3).
+provider_response_max_bytes = 67108864
 health_probe_timeout_millis = 10000
 catalog_refresh_interval_millis = 5000
 circuit_breaker_recovery_window_millis = 60000
 failure_strategy = "failover"
 
+[provider_relay.http_pool]
+# HTTP connection-pool tuning for OpenAI-compatible upstream clients (C-5).
+# All fields are optional; missing values fall back to safe production defaults.
+pool_idle_timeout_seconds = 90
+pool_max_idle_per_host = 64
+http2_keep_alive_interval_seconds = 30
+http2_keep_alive_timeout_seconds = 10
+connect_timeout_seconds = 10
+
 [provider_relay.retry]
+# Default max_attempts is 2 (H-5). Streaming requests always use 1 attempt
+# because SSE bytes already sent to the client cannot be safely replayed.
 max_attempts = 2
 retryable_status_codes = [429, 500, 502, 503, 504]
 backoff_millis = 0
+
+[provider_relay.rate_limit]
+# Estimated number of gateway instances sharing the limiter (H-8).
+# When Redis is unavailable, local fallback quotas are divided by this value
+# so a fleet of N nodes does not each allow the full configured quota.
+estimated_instance_count = 1
+# Maximum in-flight provider requests per tenant (H-9). Defaults to 100.
+# Exceeding the limit returns HTTP 429 and records an InvocationErrorKind::RateLimit.
+tenant_max_inflight_requests = 100
 
 [paths]
 data_directory = "/var/lib/sdkwork/router"
@@ -975,10 +1001,11 @@ application work.
 `[edge]` owns the packaged Rust edge entrypoint, upstream targets, readiness
 timeouts, and the portal static asset root. `[portal.static]` separates
 no-store HTML/runtime environment responses from long-lived hashed assets.
-`[portal.security]` controls browser-facing portal security policy. Keep HSTS
-disabled until the public hostname is served through HTTPS, then enable it with
-`hsts_enabled = true`; `hsts_preload = true` requires `hsts_max_age_seconds >=
-31536000` and `hsts_include_subdomains = true`. Use `csp_frame_src` only for
+`[portal.security]` controls browser-facing portal security policy. Production
+profiles default to HSTS enabled with preload; dev profiles may set
+`hsts_enabled = false` until the public hostname is served through HTTPS.
+`hsts_preload = true` requires `hsts_max_age_seconds >= 31536000` and
+`hsts_include_subdomains = true`. Use `csp_frame_src` only for
 explicit trusted HTTP/HTTPS origins that are allowed to be embedded by portal
 pages.
 `[portal.tools]` keeps the optional local tool API rate and body limits in the
@@ -1433,6 +1460,38 @@ configured but the normalized archive is missing, it returns
 7. Confirm no touched frontend business path bypasses generated SDK clients.
 8. Confirm production artifacts pass bundle budget and server smoke checks.
 9. Record command evidence in `CHECK_RESULT.md`.
+
+## Commercial Licensing
+
+SDKWork Claw Router application source is licensed under
+`AGPL-3.0-or-later AND LicenseRef-SDKWork-Commercial-Restriction`. Commercial
+use is prohibited unless SDKWork grants prior written commercial authorization.
+Commercial editions are available for teams and organizations that need
+multi-tenant isolation, an admin console, SLA commitments, and dedicated
+support.
+
+| Edition | License | Best for | SLA |
+| --- | --- | --- | --- |
+| Community | AGPL-3.0-or-later, free | Evaluation and non-commercial self-deployment | None |
+| Pro | Commercial subscription | Commercial multi-tenant deployments | 99.5% monthly uptime |
+| Enterprise | Commercial enterprise subscription | SSO, enhanced audit, dedicated support, private deployment | 99.9% monthly uptime |
+| OEM / White-label | One-time license + royalty | Embedded, rebranded, and redistributed deployments | Custom |
+
+Detailed commercial documents:
+
+- [Commercial Pricing Model](./docs/commercial/PRICING.md) — license tiers,
+  pricing matrix, token metering, additional services, payment, and refund
+  policy.
+- [Service Level Agreement](./docs/legal/SLA.md) — uptime commitments,
+  incident response times, service credits, rate-limit tiers, and support
+  channels.
+- [Edition Tier Matrix](./docs/legal/TIER_MATRIX.md) — full capability
+  comparison across Community, Pro, Enterprise, and OEM editions.
+- [COMMERCIAL-LICENSE.md](./COMMERCIAL-LICENSE.md) — commercial authorization
+  terms.
+
+Contact `sales@sdkwork.com` to request commercial authorization, request a
+custom quote, or negotiate OEM terms.
 
 ## License
 

@@ -274,11 +274,7 @@ fn to_response(settings: RuntimeRegionSettings) -> RuntimeRegionSettingsResponse
 }
 
 fn bad_request(message: String) -> Response {
-    (
-        StatusCode::BAD_REQUEST,
-        Json(PlusApiResult::error("4001", message)),
-    )
-        .into_response()
+    PlusApiResult::error("4001", message)).into_response()
 }
 
 fn command_build_error_response(error: RuntimeRegionSettingsCommandBuildError) -> Response {
@@ -291,11 +287,7 @@ fn command_build_error_response(error: RuntimeRegionSettingsCommandBuildError) -
 }
 
 fn runtime_region_system_response(context: &str, error: DomainError) -> Response {
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(PlusApiResult::error("5000", format!("{context}: {error}"))),
-    )
-        .into_response()
+    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
 }
 
 fn current_timestamp_string() -> String {

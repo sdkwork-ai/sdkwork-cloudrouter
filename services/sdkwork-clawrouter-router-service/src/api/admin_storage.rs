@@ -995,35 +995,19 @@ fn response_request_id(value: Option<&str>) -> String {
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    (
-        StatusCode::BAD_REQUEST,
-        Json(PlusApiResult::error("4001", message.into())),
-    )
-        .into_response()
+    PlusApiResult::error("4001", message.into())).into_response()
 }
 
 fn storage_error_response(context: &str, error: DomainError) -> Response {
     if error.is_not_found() {
-        return (
-            StatusCode::NOT_FOUND,
-            Json(PlusApiResult::error("4004", error.to_string())),
-        )
-            .into_response();
+        return PlusApiResult::error("4004", error.to_string())).into_response();
     }
     if error.is_conflict() {
-        return (
-            StatusCode::CONFLICT,
-            Json(PlusApiResult::error("4090", error.to_string())),
-        )
-            .into_response();
+        return PlusApiResult::error("4090", error.to_string())).into_response();
     }
     storage_system_response(context, error)
 }
 
 fn storage_system_response(context: &str, error: DomainError) -> Response {
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(PlusApiResult::error("5000", format!("{context}: {error}"))),
-    )
-        .into_response()
+    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
 }

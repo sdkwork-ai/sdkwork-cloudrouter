@@ -128,6 +128,7 @@ pub enum TrustedSubjectBoundaryError {
     InvalidTimestamp,
     TimestampOutsideClockSkew,
     InvalidSignature,
+    SigningKeyInvalid,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -145,6 +146,8 @@ pub enum AppSessionTokenError {
     Expired,
     InvalidSignature,
     SubjectMismatch,
+    SigningKeyInvalid,
+    Serialization(String),
 }
 
 #[derive(Clone)]
@@ -366,7 +369,18 @@ pub fn project_trusted_subject_for_legacy_handlers(
     request: &mut Request<Body>,
     subject: TrustedRequestSubject,
 ) {
-    insert_internal_trusted_subject_headers(request.headers_mut(), subject);
+    if let Err(error) = insert_internal_trusted_subject_headers(request.headers_mut(), subject) {
+        // `insert_internal_trusted_subject_headers` only fails when an i64-encoded
+        // header value cannot be turned into a `HeaderValue`. That conversion is
+        // provably safe for any `i64` (ASCII digits and optional `-`), so this
+        // branch is unreachable in practice. We log and continue so that the
+        // request still carries the subject extension even if header projection
+        // fails for an unexpected reason.
+        tracing::error!(
+            error = %error,
+            "failed to project trusted subject headers; continuing with extension only"
+        );
+    }
     request.extensions_mut().insert(subject);
 }
 
@@ -399,6 +413,25 @@ pub async fn app_request_subject_boundary(
         return next.run(request).await;
     }
 
+    enforce_verified_app_request_subject(config, request, next).await
+}
+
+/// App-session boundary for federated T1 capability routers mounted into Claw Router.
+/// These routes must accept Claw app-session dual tokens even when the outer app surface
+/// runs in web-framework mode without a global resolver wrap.
+pub async fn federated_app_request_subject_boundary(
+    State(config): State<AppSubjectBoundaryConfig>,
+    request: Request<Body>,
+    next: Next,
+) -> Response {
+    enforce_verified_app_request_subject(config, request, next).await
+}
+
+async fn enforce_verified_app_request_subject(
+    config: AppSubjectBoundaryConfig,
+    mut request: Request<Body>,
+    next: Next,
+) -> Response {
     let method = request.method().as_str().to_owned();
     let path_and_query = request
         .uri()
@@ -631,7 +664,17 @@ pub fn sign_trusted_request_subject(
     method: &str,
     path_and_query: &str,
 ) -> String {
-    let mut mac = hmac_for_config(config);
+    let mut mac = hmac_for_config(config).unwrap_or_else(|error| {
+        tracing::error!(
+            error = %error,
+            "signing trusted request subject failed (unreachable for HMAC-SHA256); using zero-key fallback signature"
+        );
+        // SAFETY: `Mac::new` is the infallible constructor (takes a fixed-size key).
+        // HMAC-SHA256 accepts any key length, so the error branch above is unreachable.
+        // The zero-key fallback only runs in the unreachable case; the produced
+        // signature will be invalid but the process will not panic.
+        HmacSha256::new(&Default::default())
+    });
     mac.update(trusted_subject_payload(subject, timestamp, method, path_and_query).as_bytes());
     hex::encode(mac.finalize().into_bytes())
 }
@@ -643,7 +686,13 @@ pub fn sign_app_session_token(
     expires_at: i64,
 ) -> String {
     let payload = app_session_payload(subject, issued_at, expires_at);
-    let mut mac = app_session_hmac_for_config(config);
+    let mut mac = app_session_hmac_for_config(config).unwrap_or_else(|error| {
+        tracing::error!(
+            error = %error,
+            "signing app session token failed (unreachable for HMAC-SHA256); using zero-key fallback signature"
+        );
+        HmacSha256::new(&Default::default())
+    });
     mac.update(payload.as_bytes());
     format!(
         "{}.{}.{}",
@@ -664,9 +713,24 @@ pub fn sign_app_session_token_with_claims_and_secret(
     signing_secret: &[u8],
     claims: &AppSessionTokenClaims,
 ) -> String {
-    let payload = app_session_claim_payload(claims);
+    let payload = match app_session_claim_payload(claims) {
+        Ok(payload) => payload,
+        Err(error) => {
+            tracing::error!(
+                error = %error,
+                "signing app session token with claims failed (claims serialization); returning empty token"
+            );
+            return String::new();
+        }
+    };
     let encoded_payload = URL_SAFE_NO_PAD.encode(payload.as_bytes());
-    let mut mac = app_session_hmac_for_secret(signing_secret);
+    let mut mac = app_session_hmac_for_secret(signing_secret).unwrap_or_else(|error| {
+        tracing::error!(
+            error = %error,
+            "signing app session token with claims failed (unreachable for HMAC-SHA256); using zero-key fallback signature"
+        );
+        HmacSha256::new(&Default::default())
+    });
     mac.update(encoded_payload.as_bytes());
     format!(
         "{}.{}.{}",
@@ -952,6 +1016,10 @@ impl fmt::Display for TrustedSubjectBoundaryError {
                 )
             }
             Self::InvalidSignature => write!(formatter, "trusted subject signature is invalid"),
+            Self::SigningKeyInvalid => write!(
+                formatter,
+                "trusted subject signing key is invalid for HMAC-SHA256"
+            ),
         }
     }
 }
@@ -1003,6 +1071,14 @@ impl fmt::Display for AppSessionTokenError {
                 formatter,
                 "app session auth token and access token subjects do not match"
             ),
+            Self::SigningKeyInvalid => write!(
+                formatter,
+                "app session signing key is invalid for HMAC-SHA256"
+            ),
+            Self::Serialization(message) => write!(
+                formatter,
+                "app session token claims serialization failed: {message}"
+            ),
         }
     }
 }
@@ -1040,22 +1116,25 @@ fn remove_internal_trusted_subject_headers(headers: &mut HeaderMap) {
 fn insert_internal_trusted_subject_headers(
     headers: &mut HeaderMap,
     subject: TrustedRequestSubject,
-) {
+) -> Result<(), TrustedSubjectBoundaryError> {
     headers.insert(
         X_SDKWORK_TENANT_ID,
         HeaderValue::from_str(&subject.tenant_id.to_string())
-            .expect("trusted subject tenant id header value must be valid"),
+            .map_err(|_| TrustedSubjectBoundaryError::InvalidHeaderValue(X_SDKWORK_TENANT_ID))?,
     );
     headers.insert(
         X_SDKWORK_ORGANIZATION_ID,
         HeaderValue::from_str(&subject.organization_id.to_string())
-            .expect("trusted subject organization id header value must be valid"),
+            .map_err(|_| {
+                TrustedSubjectBoundaryError::InvalidHeaderValue(X_SDKWORK_ORGANIZATION_ID)
+            })?,
     );
     headers.insert(
         X_SDKWORK_USER_ID,
         HeaderValue::from_str(&subject.user_id.to_string())
-            .expect("trusted subject user id header value must be valid"),
+            .map_err(|_| TrustedSubjectBoundaryError::InvalidHeaderValue(X_SDKWORK_USER_ID))?,
     );
+    Ok(())
 }
 
 fn has_any_app_session_token_header(headers: &HeaderMap) -> bool {
@@ -1171,23 +1250,40 @@ fn verify_trusted_request_subject_signature(
 ) -> Result<(), TrustedSubjectBoundaryError> {
     let decoded_signature =
         hex::decode(signature).map_err(|_| TrustedSubjectBoundaryError::InvalidSignature)?;
-    let mut mac = hmac_for_config(config);
+    let mut mac = hmac_for_config(config)?;
     mac.update(trusted_subject_payload(subject, timestamp, method, path_and_query).as_bytes());
     mac.verify_slice(&decoded_signature)
         .map_err(|_| TrustedSubjectBoundaryError::InvalidSignature)
 }
 
-fn hmac_for_config(config: &TrustedSubjectConfig) -> HmacSha256 {
+fn hmac_for_config(config: &TrustedSubjectConfig) -> Result<HmacSha256, TrustedSubjectBoundaryError> {
     HmacSha256::new_from_slice(config.signing_secret().as_bytes())
-        .expect("HMAC accepts signing secrets of any length")
+        .map_err(|error| {
+            tracing::error!(
+                error = %error,
+                "HMAC-SHA256 key construction failed for trusted subject boundary (unreachable for HMAC, which accepts any key length)"
+            );
+            TrustedSubjectBoundaryError::SigningKeyInvalid
+        })
 }
 
-fn app_session_hmac_for_config(config: &AppSessionConfig) -> HmacSha256 {
+fn app_session_hmac_for_config(
+    config: &AppSessionConfig,
+) -> Result<HmacSha256, AppSessionTokenError> {
     app_session_hmac_for_secret(config.signing_secret().as_bytes())
 }
 
-fn app_session_hmac_for_secret(signing_secret: &[u8]) -> HmacSha256 {
-    HmacSha256::new_from_slice(signing_secret).expect("HMAC accepts signing secrets of any length")
+fn app_session_hmac_for_secret(
+    signing_secret: &[u8],
+) -> Result<HmacSha256, AppSessionTokenError> {
+    HmacSha256::new_from_slice(signing_secret)
+        .map_err(|error| {
+            tracing::error!(
+                error = %error,
+                "HMAC-SHA256 key construction failed for app session token (unreachable for HMAC, which accepts any key length)"
+            );
+            AppSessionTokenError::SigningKeyInvalid
+        })
 }
 
 fn app_session_payload(subject: TrustedRequestSubject, issued_at: i64, expires_at: i64) -> String {
@@ -1197,8 +1293,16 @@ fn app_session_payload(subject: TrustedRequestSubject, issued_at: i64, expires_a
     )
 }
 
-fn app_session_claim_payload(claims: &AppSessionTokenClaims) -> String {
-    serde_json::to_string(claims).expect("app session claims should serialize")
+fn app_session_claim_payload(
+    claims: &AppSessionTokenClaims,
+) -> Result<String, AppSessionTokenError> {
+    serde_json::to_string(claims).map_err(|error| {
+        tracing::error!(
+            error = %error,
+            "app session token claims serialization failed"
+        );
+        AppSessionTokenError::Serialization(error.to_string())
+    })
 }
 
 fn parse_session_positive_i64(
@@ -1323,7 +1427,7 @@ fn verify_app_session_claim_signature_with_secret(
 ) -> Result<(), AppSessionTokenError> {
     let decoded_signature =
         hex::decode(signature).map_err(|_| AppSessionTokenError::InvalidSignature)?;
-    let mut mac = app_session_hmac_for_secret(signing_secret);
+    let mut mac = app_session_hmac_for_secret(signing_secret)?;
     mac.update(encoded_payload.as_bytes());
     mac.verify_slice(&decoded_signature)
         .map_err(|_| AppSessionTokenError::InvalidSignature)
@@ -1338,7 +1442,7 @@ fn verify_app_session_signature(
 ) -> Result<(), AppSessionTokenError> {
     let decoded_signature =
         hex::decode(signature).map_err(|_| AppSessionTokenError::InvalidSignature)?;
-    let mut mac = app_session_hmac_for_config(config);
+    let mut mac = app_session_hmac_for_config(config)?;
     mac.update(app_session_payload(subject, issued_at, expires_at).as_bytes());
     mac.verify_slice(&decoded_signature)
         .map_err(|_| AppSessionTokenError::InvalidSignature)

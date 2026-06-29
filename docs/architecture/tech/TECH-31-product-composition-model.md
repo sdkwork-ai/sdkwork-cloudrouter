@@ -12,7 +12,7 @@
 | Capability | System of record | Claw-router DB lifecycle |
 | --- | --- | --- |
 | IAM foundation / OAuth / verification | `sdkwork-appbase` | **External** — appbase SDK / standalone auth bridge |
-| Commerce base (wallet, orders, payments) | `sdkwork-commerce` | **External** — commerce SDK facade |
+| Commerce base (wallet, orders, payments) | `sdkwork-商���` | **External** — commerce SDK facade |
 | Commerce usage settlement projections | `sdkwork-clawrouter` | Generated in `schema.sql` (`commerce_usage_*`, `analytics_*`) |
 | AI model catalog dictionary | `sdkwork-models` | **External** — bundled catalog or models SDK at runtime |
 | Admin messaging delivery | `sdkwork-appbase-messaging` | **External** — messaging SDK |

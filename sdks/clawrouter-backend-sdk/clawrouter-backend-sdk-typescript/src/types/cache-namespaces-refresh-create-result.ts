@@ -1,11 +1,9 @@
-import type { AdminCacheOperationResponse } from './admin-cache-operation-response';
-
 /** Cache namespaces refresh create result schema exposed by Claw Router. */
 export interface CacheNamespacesRefreshCreateResult {
   /** Business response code. */
   code: string;
-  /** Data field on cache namespaces refresh create result. */
-  data?: AdminCacheOperationResponse;
+  /** No business data returned by this operation. */
+  data?: never;
   /** Human-readable response message. */
   msg?: string;
 }

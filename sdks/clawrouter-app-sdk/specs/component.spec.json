@@ -166,25 +166,6 @@
           "go": "github.com/sdkwork/sdkwork-iam-app-sdk",
           "python": "sdkwork-iam-app-sdk"
         }
-      },
-      {
-        "workspace": "sdkwork-commerce-app-sdk",
-        "role": "commerce-app-capability",
-        "required": true,
-        "dependencyMode": "consumer-sdk",
-        "apiPrefix": "/app/v3/api",
-        "generatedTransportImportPolicy": "forbidden",
-        "packageByLanguage": {
-          "typescript": "sdkwork-commerce-app-sdk-generated-typescript",
-          "flutter": "sdkwork_commerce_app_sdk",
-          "rust": "sdkwork-commerce-app-sdk",
-          "java": "com.sdkwork:sdkwork-commerce-app-sdk",
-          "csharp": "SDKWork.Commerce.AppSdk",
-          "swift": "sdkwork-commerce-app-sdk",
-          "kotlin": "com.sdkwork:sdkwork-commerce-app-sdk",
-          "go": "github.com/sdkwork/sdkwork-commerce-app-sdk",
-          "python": "sdkwork-commerce-app-sdk"
-        }
       }
     ],
     "routeManifest": null

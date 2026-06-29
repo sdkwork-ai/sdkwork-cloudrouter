@@ -8,14 +8,13 @@ use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use sdkwork_claw_config::deployment::{resolve_deployment_runtime, DeploymentProfile};
-use sdkwork_commerce_bootstrap::{
-    commerce_experience_seed_manifest, commerce_recharge_package_seeds,
-    commerce_recharge_settings_seeds,
+use sdkwork_utils_rust as sdkwork_utils;
+use crate::infrastructure::sql::commerce_bootstrap::{
+    commerce_database_indexes, commerce_database_tables, commerce_experience_seed_manifest,
+    commerce_initial_migration_sql, commerce_initial_migration_sqlite,
+    commerce_recharge_package_seeds, commerce_recharge_settings_seeds,
 };
-use sdkwork_commerce_core::CommerceServiceError;
-use sdkwork_commerce_storage_sqlx::{
-    commerce_database_indexes, commerce_database_tables, commerce_initial_migration_sql,
-};
+use sdkwork_contract_service::CommerceServiceError;
 use sdkwork_iam_bootstrap::{
     iam_baseline_postgres_sql, iam_rbac_federation_postgres_sql, import_postgres_default_iam_seed,
     import_sqlite_default_iam_seed, postgres_default_iam_seed_complete,
@@ -110,7 +109,6 @@ const MAX_REFRESH_VENDOR_CODES: usize = 32;
 const MAX_REFRESH_VENDOR_CODE_LEN: usize = 64;
 const MAX_REFRESH_CATALOG_ROOT_LEN: usize = 512;
 const MAX_REFRESH_CATALOG_VERSION_LEN: usize = 128;
-static CATALOG_REFRESH_SEQUENCE: AtomicU64 = AtomicU64::new(1);
 static ADMIN_PASSWORD_RESET_SEQUENCE: AtomicU64 = AtomicU64::new(1);
 static GENERATED_SCHEMA_TABLE_NAMES: OnceLock<BTreeSet<String>> = OnceLock::new();
 static GENERATED_SCHEMA_INDEX_NAMES: OnceLock<BTreeSet<String>> = OnceLock::new();
@@ -678,7 +676,7 @@ impl DatabaseInstaller {
         let counts = catalog_scope_counts(&catalog);
         let mode = options.mode;
         let source = options.source;
-        let refresh_id = catalog_refresh_id(&source, &mode, &vendor_codes);
+        let refresh_id = catalog_refresh_id();
         let command = SyncAdminModelCatalogCommand {
             subject: AdminModelSubject {
                 tenant_id: SYSTEM_REFRESH_TENANT_ID,
@@ -686,7 +684,7 @@ impl DatabaseInstaller {
                 operator_id: SYSTEM_REFRESH_OPERATOR_ID,
                 operator_type: SYSTEM_REFRESH_OPERATOR_TYPE,
             },
-            snapshot_uuid: format!("catalog-refresh-{refresh_id}"),
+            snapshot_uuid: refresh_id.clone(),
             audit_log_uuid: format!("audit-catalog-refresh-{refresh_id}"),
             source,
             mode,
@@ -725,11 +723,35 @@ impl DatabaseInstaller {
             }
         };
         let bootstrap_admin = if item.synced && full_catalog_refresh {
-            self.record_catalog_migration_completed(&catalog).await?;
+            // H-10: Catalog refresh post-sync operations must not leave partial state.
+            //
+            // The previous order recorded `catalog` migration completion first, then ran
+            // seed import, admin bootstrap, and the installed marker as independent commits.
+            // If `bootstrap_admin_user_if_needed` failed after the catalog migration was
+            // already marked complete, operators would observe a misleading
+            // "catalog migration completed but admin not bootstrapped" state.
+            //
+            // The fix reorders the operations so all actual work (seeds + admin bootstrap)
+            // runs before any completion marker is written. The two state markers
+            // (`record_catalog_migration_completed` and `mark_installed_with_options`) are
+            // then written atomically in a single transaction via
+            // `finalize_catalog_refresh_install`. If either write fails, both are rolled
+            // back and a restart can detect the incomplete state.
+            //
+            // `import_installation_support_seeds` and `bootstrap_admin_user_if_needed`
+            // cannot join the final transaction because they call into sibling SDKWork
+            // crates (`sdkwork_iam_bootstrap`, `sdkwork_membership_repository_sqlx`) whose
+            // public seed APIs accept `&SqlitePool`/`&PgPool` rather than a
+            // `Transaction`. Those operations are idempotent (UPSERT / ON CONFLICT) so a
+            // retry after a failure is safe; the critical completion markers remain atomic.
             self.import_installation_support_seeds().await?;
             let bootstrap_admin = self.bootstrap_admin_user_if_needed().await?;
-            self.mark_installed_with_options(&install_options, catalog_version.as_str())
-                .await?;
+            self.finalize_catalog_refresh_install(
+                &catalog,
+                &install_options,
+                catalog_version.as_str(),
+            )
+            .await?;
             bootstrap_admin
         } else {
             None
@@ -860,6 +882,74 @@ impl DatabaseInstaller {
             }
             InstallerBackend::Postgres(pool) => {
                 mark_postgres_installed_with_catalog_version(pool, options, catalog_version).await?
+            }
+        }
+        Ok(())
+    }
+
+    /// Atomically records catalog migration completion and marks the system installed.
+    ///
+    /// Both writes share a single database transaction so that a failure in either
+    /// rolls back the other. This prevents the partial state where the catalog
+    /// migration is marked complete but `system_installation_state.status` is not
+    /// `installed` (or vice versa).
+    async fn finalize_catalog_refresh_install(
+        &self,
+        catalog: &ModelCatalog,
+        options: &DatabaseInstallOptions,
+        catalog_version: &str,
+    ) -> Result<(), DatabaseInstallError> {
+        let catalog_payload =
+            crate::infrastructure::sql::model_catalog_import::catalog_payload(catalog);
+        let migration_version = catalog.manifest.catalog_version.as_str();
+        match &self.backend {
+            InstallerBackend::Sqlite(pool) => {
+                let mut tx = pool.begin().await?;
+                record_sqlite_migration_started_in_transaction(
+                    &mut tx,
+                    "catalog",
+                    migration_version,
+                    catalog_payload.as_str(),
+                )
+                .await?;
+                record_sqlite_migration_completed_in_transaction(
+                    &mut tx,
+                    "catalog",
+                    migration_version,
+                    catalog_payload.as_str(),
+                )
+                .await?;
+                mark_sqlite_installed_with_catalog_version_in_transaction(
+                    &mut tx,
+                    options,
+                    catalog_version,
+                )
+                .await?;
+                tx.commit().await?;
+            }
+            InstallerBackend::Postgres(pool) => {
+                let mut tx = pool.begin().await?;
+                record_postgres_migration_started_in_transaction(
+                    &mut tx,
+                    "catalog",
+                    migration_version,
+                    catalog_payload.as_str(),
+                )
+                .await?;
+                record_postgres_migration_completed_in_transaction(
+                    &mut tx,
+                    "catalog",
+                    migration_version,
+                    catalog_payload.as_str(),
+                )
+                .await?;
+                mark_postgres_installed_with_catalog_version_in_transaction(
+                    &mut tx,
+                    options,
+                    catalog_version,
+                )
+                .await?;
+                tx.commit().await?;
             }
         }
         Ok(())
@@ -2538,7 +2628,7 @@ async fn repair_sqlite_installation(
     if compose_sibling_commerce_module() {
         let commerce_payload = commerce_experience_seed_manifest().payload_json;
         let commerce_integrity =
-            sdkwork_commerce_membership_sqlx::sqlite_commerce_experience_seed_integrity_report(
+            crate::infrastructure::sql::membership_seed_compat::sqlite_commerce_experience_seed_integrity_report(
                 pool,
             )
             .await?;
@@ -2559,7 +2649,7 @@ async fn repair_sqlite_installation(
                 commerce_payload.as_str(),
             )
             .await?;
-            sdkwork_commerce_membership_sqlx::repair_sqlite_commerce_experience_seed_from_report(
+            crate::infrastructure::sql::membership_seed_compat::repair_sqlite_commerce_experience_seed_from_report(
                 pool,
                 &commerce_integrity,
             )
@@ -2769,7 +2859,7 @@ async fn import_sqlite_commerce_experience_seed(
         payload.as_str(),
     )
     .await?;
-    sdkwork_commerce_membership_sqlx::upsert_sqlite_commerce_experience_seed(pool).await?;
+    crate::infrastructure::sql::membership_seed_compat::upsert_sqlite_commerce_experience_seed(pool).await?;
     record_sqlite_migration_completed(
         pool,
         "commerce-experience",
@@ -2791,7 +2881,7 @@ async fn import_postgres_commerce_experience_seed(
         payload.as_str(),
     )
     .await?;
-    sdkwork_commerce_membership_sqlx::upsert_postgres_commerce_experience_seed(pool).await?;
+    crate::infrastructure::sql::membership_seed_compat::upsert_postgres_commerce_experience_seed(pool).await?;
     record_postgres_migration_completed(
         pool,
         "commerce-experience",
@@ -2805,7 +2895,7 @@ async fn import_postgres_commerce_experience_seed(
 async fn ensure_sqlite_bootstrap_admin_recharge_catalog(
     pool: &SqlitePool,
 ) -> Result<bool, DatabaseInstallError> {
-    if !compose_sibling_commerce_module() {
+    if !compose_sibling_commerce_module() || commerce_recharge_package_seeds().is_empty() {
         return Ok(false);
     }
     let payload = bootstrap_admin_recharge_catalog_payload();
@@ -2875,7 +2965,7 @@ async fn ensure_sqlite_bootstrap_admin_recharge_catalog(
 async fn ensure_postgres_bootstrap_admin_recharge_catalog(
     pool: &PgPool,
 ) -> Result<bool, DatabaseInstallError> {
-    if !compose_sibling_commerce_module() {
+    if !compose_sibling_commerce_module() || commerce_recharge_package_seeds().is_empty() {
         return Ok(false);
     }
     let payload = bootstrap_admin_recharge_catalog_payload();
@@ -3848,7 +3938,7 @@ async fn postgres_default_iam_subject_seed_complete(pool: &PgPool) -> Result<boo
 async fn sqlite_commerce_experience_seed_complete(
     pool: &SqlitePool,
 ) -> Result<bool, DatabaseInstallError> {
-    if !sdkwork_commerce_membership_sqlx::sqlite_commerce_experience_seed_complete(pool).await? {
+    if !crate::infrastructure::sql::membership_seed_compat::sqlite_commerce_experience_seed_complete(pool).await? {
         return Ok(false);
     }
     Ok(sqlite_seed_migration_payload_current(
@@ -3863,7 +3953,7 @@ async fn sqlite_commerce_experience_seed_complete(
 async fn postgres_commerce_experience_seed_complete(
     pool: &PgPool,
 ) -> Result<bool, DatabaseInstallError> {
-    if !sdkwork_commerce_membership_sqlx::postgres_commerce_experience_seed_complete(pool).await? {
+    if !crate::infrastructure::sql::membership_seed_compat::postgres_commerce_experience_seed_complete(pool).await? {
         return Ok(false);
     }
     Ok(postgres_seed_migration_payload_current(
@@ -5047,7 +5137,7 @@ async fn sqlite_record_failed_catalog_refresh_migration(
     let failed = failed_catalog_refresh_row(options, catalog_root, catalog_version, error, &now);
     let audit_key = format!(
         "catalog-refresh-failed:{}",
-        catalog_refresh_id(&options.source, &options.mode, &options.vendor_codes)
+        catalog_refresh_id()
     );
     let id = next_install_runtime_id("system schema migration")?;
     sqlx::query(
@@ -5086,7 +5176,7 @@ async fn postgres_record_failed_catalog_refresh_migration(
     let failed = failed_catalog_refresh_row(options, catalog_root, catalog_version, error, &now);
     let audit_key = format!(
         "catalog-refresh-failed:{}",
-        catalog_refresh_id(&options.source, &options.mode, &options.vendor_codes)
+        catalog_refresh_id()
     );
     let id = next_install_runtime_id("system schema migration")?;
     sqlx::query(
@@ -5144,7 +5234,7 @@ fn failed_catalog_refresh_row(
     );
     let uuid = format!(
         "catalog-sync-failed-{}",
-        catalog_refresh_id(&source_code, &options.mode, &options.vendor_codes)
+        catalog_refresh_id()
     );
     let metadata = serde_json::json!({
         "source": options.source,
@@ -5995,7 +6085,7 @@ async fn create_sqlite_system_tables(pool: &SqlitePool) -> Result<(), sqlx::Erro
         r#"
         CREATE TABLE IF NOT EXISTS system_schema_migration (
             id BIGINT NOT NULL PRIMARY KEY,
-            migration_key TEXT NOT NULL,
+            migration_key TEXT NOT NULL UNIQUE,
             migration_version TEXT NOT NULL,
             checksum TEXT NOT NULL,
             status TEXT NOT NULL,
@@ -6138,6 +6228,22 @@ async fn mark_sqlite_installed_with_catalog_version(
     options: &DatabaseInstallOptions,
     catalog_version: &str,
 ) -> Result<(), sqlx::Error> {
+    let mut tx = pool.begin().await?;
+    mark_sqlite_installed_with_catalog_version_in_transaction(
+        &mut tx,
+        options,
+        catalog_version,
+    )
+    .await?;
+    tx.commit().await?;
+    Ok(())
+}
+
+async fn mark_sqlite_installed_with_catalog_version_in_transaction(
+    tx: &mut Transaction<'_, Sqlite>,
+    options: &DatabaseInstallOptions,
+    catalog_version: &str,
+) -> Result<(), sqlx::Error> {
     let metadata = installation_metadata(options);
     sqlx::query(
         r#"
@@ -6158,7 +6264,7 @@ async fn mark_sqlite_installed_with_catalog_version(
     .bind(catalog_version)
     .bind(&options.seed_profile)
     .bind(&metadata)
-    .execute(pool)
+    .execute(&mut **tx)
     .await?;
     Ok(())
 }
@@ -6183,6 +6289,22 @@ async fn mark_postgres_installed_with_catalog_version(
     options: &DatabaseInstallOptions,
     catalog_version: &str,
 ) -> Result<(), sqlx::Error> {
+    let mut tx = pool.begin().await?;
+    mark_postgres_installed_with_catalog_version_in_transaction(
+        &mut tx,
+        options,
+        catalog_version,
+    )
+    .await?;
+    tx.commit().await?;
+    Ok(())
+}
+
+async fn mark_postgres_installed_with_catalog_version_in_transaction(
+    tx: &mut Transaction<'_, Postgres>,
+    options: &DatabaseInstallOptions,
+    catalog_version: &str,
+) -> Result<(), sqlx::Error> {
     let metadata = installation_metadata(options);
     sqlx::query(
         r#"
@@ -6203,13 +6325,25 @@ async fn mark_postgres_installed_with_catalog_version(
     .bind(catalog_version)
     .bind(&options.seed_profile)
     .bind(&metadata)
-    .execute(pool)
+    .execute(&mut **tx)
     .await?;
     Ok(())
 }
 
 async fn record_sqlite_migration_started(
     pool: &SqlitePool,
+    key_prefix: &str,
+    version: &str,
+    payload: &str,
+) -> Result<(), sqlx::Error> {
+    let mut tx = pool.begin().await?;
+    record_sqlite_migration_started_in_transaction(&mut tx, key_prefix, version, payload).await?;
+    tx.commit().await?;
+    Ok(())
+}
+
+async fn record_sqlite_migration_started_in_transaction(
+    tx: &mut Transaction<'_, Sqlite>,
     key_prefix: &str,
     version: &str,
     payload: &str,
@@ -6236,13 +6370,25 @@ async fn record_sqlite_migration_started(
     .bind(migration_key)
     .bind(version)
     .bind(checksum)
-    .execute(pool)
+    .execute(&mut **tx)
     .await?;
     Ok(())
 }
 
 async fn record_postgres_migration_started(
     pool: &PgPool,
+    key_prefix: &str,
+    version: &str,
+    payload: &str,
+) -> Result<(), sqlx::Error> {
+    let mut tx = pool.begin().await?;
+    record_postgres_migration_started_in_transaction(&mut tx, key_prefix, version, payload).await?;
+    tx.commit().await?;
+    Ok(())
+}
+
+async fn record_postgres_migration_started_in_transaction(
+    tx: &mut Transaction<'_, Postgres>,
     key_prefix: &str,
     version: &str,
     payload: &str,
@@ -6269,13 +6415,25 @@ async fn record_postgres_migration_started(
     .bind(migration_key)
     .bind(version)
     .bind(checksum)
-    .execute(pool)
+    .execute(&mut **tx)
     .await?;
     Ok(())
 }
 
 async fn record_sqlite_migration_completed(
     pool: &SqlitePool,
+    key_prefix: &str,
+    version: &str,
+    payload: &str,
+) -> Result<(), sqlx::Error> {
+    let mut tx = pool.begin().await?;
+    record_sqlite_migration_completed_in_transaction(&mut tx, key_prefix, version, payload).await?;
+    tx.commit().await?;
+    Ok(())
+}
+
+async fn record_sqlite_migration_completed_in_transaction(
+    tx: &mut Transaction<'_, Sqlite>,
     key_prefix: &str,
     version: &str,
     payload: &str,
@@ -6294,13 +6452,26 @@ async fn record_sqlite_migration_completed(
     )
     .bind(checksum)
     .bind(migration_key)
-    .execute(pool)
+    .execute(&mut **tx)
     .await?;
     Ok(())
 }
 
 async fn record_postgres_migration_completed(
     pool: &PgPool,
+    key_prefix: &str,
+    version: &str,
+    payload: &str,
+) -> Result<(), sqlx::Error> {
+    let mut tx = pool.begin().await?;
+    record_postgres_migration_completed_in_transaction(&mut tx, key_prefix, version, payload)
+        .await?;
+    tx.commit().await?;
+    Ok(())
+}
+
+async fn record_postgres_migration_completed_in_transaction(
+    tx: &mut Transaction<'_, Postgres>,
     key_prefix: &str,
     version: &str,
     payload: &str,
@@ -6319,7 +6490,7 @@ async fn record_postgres_migration_completed(
     )
     .bind(checksum)
     .bind(migration_key)
-    .execute(pool)
+    .execute(&mut **tx)
     .await?;
     Ok(())
 }
@@ -6404,11 +6575,11 @@ fn appbase_commerce_postgres_schema_statements() -> Vec<String> {
 }
 
 fn appbase_commerce_sqlite_schema_statements() -> Vec<String> {
-    strip_line_comments(commerce_initial_migration_sql())
+    strip_line_comments(commerce_initial_migration_sqlite())
         .split(';')
         .map(str::trim)
         .filter(|statement| !statement.is_empty())
-        .map(postgres_statement_to_sqlite)
+        .map(str::to_owned)
         .collect()
 }
 
@@ -6419,7 +6590,7 @@ async fn apply_sqlite_appbase_commerce_schema(
         pool,
         "appbase-commerce-schema",
         CURRENT_SCHEMA_VERSION,
-        commerce_initial_migration_sql(),
+        commerce_initial_migration_sqlite(),
     )
     .await?;
     for statement in appbase_commerce_sqlite_schema_statements() {
@@ -6429,7 +6600,7 @@ async fn apply_sqlite_appbase_commerce_schema(
         pool,
         "appbase-commerce-schema",
         CURRENT_SCHEMA_VERSION,
-        commerce_initial_migration_sql(),
+        commerce_initial_migration_sqlite(),
     )
     .await?;
     Ok(())
@@ -7733,28 +7904,15 @@ fn sha256_hex(payload: &str) -> String {
     format!("{digest:x}")
 }
 
-fn catalog_refresh_id(source: &str, mode: &str, vendor_codes: &[String]) -> String {
-    let millis = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_millis())
-        .unwrap_or(0);
-    let sequence = CATALOG_REFRESH_SEQUENCE.fetch_add(1, Ordering::Relaxed);
-    catalog_refresh_id_with_entropy(source, mode, vendor_codes, millis, sequence)
-}
-
-fn catalog_refresh_id_with_entropy(
-    source: &str,
-    mode: &str,
-    vendor_codes: &[String],
-    millis: u128,
-    sequence: u64,
-) -> String {
-    let mut payload = format!("{source}:{mode}:{millis}:{sequence}");
-    for vendor_code in vendor_codes {
-        payload.push(':');
-        payload.push_str(vendor_code);
-    }
-    sha256_hex(payload.as_str()).chars().take(24).collect()
+/// Generates a unique catalog refresh id.
+///
+/// Uses UUID v4 via `sdkwork_utils_rust::uuid()` so the id is unique across
+/// processes and concurrent refresh attempts without relying on a
+/// process-local `AtomicU64` sequence. The previous implementation combined a
+/// millisecond timestamp with a process-local counter, which could collide
+/// when multiple processes triggered a refresh in the same millisecond.
+fn catalog_refresh_id() -> String {
+    sdkwork_utils::uuid()
 }
 
 fn current_utc_timestamp_string() -> String {
@@ -7839,17 +7997,39 @@ mod tests {
     use super::*;
 
     #[test]
-    fn catalog_refresh_id_uses_sequence_entropy_for_same_timestamp() {
-        let vendors = vec!["openai".to_owned()];
-
-        let first =
-            catalog_refresh_id_with_entropy("sdkwork_models", "vendor_refresh", &vendors, 42, 1);
-        let second =
-            catalog_refresh_id_with_entropy("sdkwork_models", "vendor_refresh", &vendors, 42, 2);
+    fn catalog_refresh_id_is_unique_uuid_v4_across_calls() {
+        let first = catalog_refresh_id();
+        let second = catalog_refresh_id();
 
         assert_ne!(
             first, second,
-            "catalog refresh ids must remain unique for same-millisecond requests"
+            "catalog refresh ids must be unique across calls"
+        );
+        assert_eq!(
+            first.len(),
+            36,
+            "catalog refresh id must be a 36-char UUID v4 string"
+        );
+        assert_eq!(
+            second.len(),
+            36,
+            "catalog refresh id must be a 36-char UUID v4 string"
+        );
+        assert_eq!(
+            Some(b'4'),
+            first.as_bytes().get(14).copied(),
+            "catalog refresh id must use UUID v4"
+        );
+    }
+
+    #[test]
+    fn catalog_refresh_snapshot_uuid_fits_model_catalog_sync_run_column() {
+        let refresh_id = catalog_refresh_id();
+        let sync_run_uuid = format!("catalog-sync-{refresh_id}");
+        assert!(
+            sync_run_uuid.len() <= 64,
+            "sync run uuid must fit VARCHAR(64): len={} value={sync_run_uuid}",
+            sync_run_uuid.len()
         );
     }
 

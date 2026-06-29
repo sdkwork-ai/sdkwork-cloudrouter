@@ -1,5 +1,5 @@
 export interface FieldError {
-  code?: string;
+  code?: number;
   field: string;
   message: string;
 }

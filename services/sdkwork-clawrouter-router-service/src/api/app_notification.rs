@@ -264,26 +264,14 @@ fn mutation_success(state: &'static str) -> Response {
 }
 
 fn bad_request(message: &str) -> Response {
-    (
-        StatusCode::BAD_REQUEST,
-        Json(PlusApiResult::error("4001", message)),
-    )
-        .into_response()
+    PlusApiResult::error("4001", message)).into_response()
 }
 
 fn not_found(message: String) -> Response {
-    (
-        StatusCode::NOT_FOUND,
-        Json(PlusApiResult::error("4040", message)),
-    )
-        .into_response()
+    PlusApiResult::error("4040", message)).into_response()
 }
 
 fn app_notification_error(context: &str, error: DomainError) -> Response {
     tracing::error!(error = %error, context, "app notification API failed");
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(PlusApiResult::error("5000", context.to_owned())),
-    )
-        .into_response()
+    PlusApiResult::error("5000", context.to_owned())).into_response()
 }

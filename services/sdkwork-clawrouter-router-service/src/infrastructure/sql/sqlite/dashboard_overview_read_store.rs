@@ -19,7 +19,7 @@ SELECT
     CAST(COALESCE(SUM(CASE WHEN modality = 5 THEN COALESCE(request_count, 0) ELSE 0 END), 0) AS TEXT) AS video_requests,
     CAST(COALESCE(SUM(CASE WHEN modality = 3 THEN COALESCE(request_count, 0) ELSE 0 END), 0) AS TEXT) AS audio_requests,
     CAST(COALESCE(SUM(CASE WHEN modality = 4 THEN COALESCE(request_count, 0) ELSE 0 END), 0) AS TEXT) AS music_requests
-FROM ai_usage_fact
+FROM ai_usage
 WHERE status = 1
   AND tenant_id = ?1
   AND organization_id = ?2
@@ -49,7 +49,7 @@ const LOAD_USAGE_TOTALS: &str = r#"
 SELECT
     CAST(COALESCE(SUM(COALESCE(request_count, 0)), 0) AS TEXT) AS total_request_count,
     CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS total_used_credits
-FROM ai_usage_fact
+FROM ai_usage
 WHERE status = 1
   AND tenant_id = ?1
   AND organization_id = ?2
@@ -64,7 +64,7 @@ SELECT
     CAST(COALESCE(SUM(CASE WHEN modality = 5 THEN COALESCE(request_count, 0) ELSE 0 END), 0) AS TEXT) AS video_requests,
     CAST(COALESCE(SUM(CASE WHEN modality = 3 THEN COALESCE(request_count, 0) ELSE 0 END), 0) AS TEXT) AS audio_requests,
     CAST(COALESCE(SUM(CASE WHEN modality = 4 THEN COALESCE(request_count, 0) ELSE 0 END), 0) AS TEXT) AS music_requests
-FROM ai_usage_fact
+FROM ai_usage
 WHERE status = 1
   AND tenant_id = ?1
   AND organization_id = ?2

@@ -11,7 +11,7 @@ The runtime is split into small Rust packages with explicit boundaries:
 
 - `sdkwork-claw-contract`: API prefixes, SDK client names, generated contract metadata, and route constants.
 - `sdkwork-claw-config`: deployment mode, `DatabaseConfig`, and environment-driven runtime configuration.
-- `sdkwork-claw-core`: shared value objects, health model, application errors, and neutral domain primitives.
+- `sdkwork-claw-health`: shared value objects, health model, application errors, and neutral domain primitives.
 - `sdkwork-claw-security`: redaction, sensitive headers, auth-safe logging helpers, and future permission primitives.
 - `sdkwork-claw-http`: common Axum router bootstrap, API Key auth input parsing, standard health/readiness routes, request id, timeout, CORS, security headers, and HTTP boundary helpers.
 - `sdkwork-claw-observability`: tracing initialization and telemetry bootstrap.

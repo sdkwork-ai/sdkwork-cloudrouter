@@ -375,17 +375,9 @@ fn required_visible_text(
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    (
-        StatusCode::BAD_REQUEST,
-        Json(PlusApiResult::error("4000", message.into())),
-    )
-        .into_response()
+    PlusApiResult::error("4000", message.into())).into_response()
 }
 
 fn system_error(context: &str, error: crate::domain::DomainError) -> Response {
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(PlusApiResult::error("5000", format!("{context}: {error}"))),
-    )
-        .into_response()
+    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
 }

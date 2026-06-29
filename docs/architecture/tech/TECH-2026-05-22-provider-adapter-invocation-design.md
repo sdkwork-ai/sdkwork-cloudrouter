@@ -48,7 +48,7 @@ crates/
       task.rs
       streaming.rs
 
-  sdkwork-claw-provider-adapter-core/
+  sdkwork-claw-provider-adapter/
     src/
       lib.rs
       adapter.rs
@@ -155,7 +155,7 @@ services/
 
 `sdkwork-claw-provider-adapter-contract` defines the stable contract shared by the gateway and adapter service. It must not depend on concrete provider packages.
 
-`sdkwork-claw-provider-adapter-core` defines provider adapter traits, endpoint adapter traits, native auth abstractions, signing helpers, task lifecycle helpers, streaming helpers, callback verification helpers, native HTTP helpers, and normalization helpers.
+`sdkwork-claw-provider-adapter` defines provider adapter traits, endpoint adapter traits, native auth abstractions, signing helpers, task lifecycle helpers, streaming helpers, callback verification helpers, native HTTP helpers, and normalization helpers.
 
 `sdkwork-claw-provider-adapter-http` hosts the internal HTTP adapter protocol. It validates gateway service credentials, decodes invocation envelopes, routes to provider adapters, and returns standard adapter responses.
 

@@ -34,25 +34,6 @@
         "go": "github.com/sdkwork/sdkwork-iam-backend-sdk",
         "python": "sdkwork-iam-backend-sdk"
       }
-    },
-    {
-      "workspace": "sdkwork-commerce-backend-sdk",
-      "role": "commerce-backend-management-capability",
-      "required": true,
-      "dependencyMode": "consumer-sdk",
-      "apiPrefix": "/backend/v3/api",
-      "generatedTransportImportPolicy": "forbidden",
-      "packageByLanguage": {
-        "typescript": "sdkwork-commerce-backend-sdk-generated-typescript",
-        "flutter": "sdkwork_commerce_backend_sdk",
-        "rust": "sdkwork-commerce-backend-sdk",
-        "java": "com.sdkwork:sdkwork-commerce-backend-sdk",
-        "csharp": "SDKWork.Commerce.BackendSdk",
-        "swift": "sdkwork-commerce-backend-sdk",
-        "kotlin": "com.sdkwork:sdkwork-commerce-backend-sdk",
-        "go": "github.com/sdkwork/sdkwork-commerce-backend-sdk",
-        "python": "sdkwork-commerce-backend-sdk"
-      }
     }
   ],
   "languages": [

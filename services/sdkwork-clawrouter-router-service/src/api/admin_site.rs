@@ -823,33 +823,17 @@ fn command_build_error_response(error: SiteCommandBuildError) -> Response {
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    (
-        StatusCode::BAD_REQUEST,
-        Json(PlusApiResult::error("4000", message.into())),
-    )
-        .into_response()
+    PlusApiResult::error("4000", message.into())).into_response()
 }
 
 fn not_found_response(message: impl Into<String>) -> Response {
-    (
-        StatusCode::NOT_FOUND,
-        Json(PlusApiResult::error("4040", message.into())),
-    )
-        .into_response()
+    PlusApiResult::error("4040", message.into())).into_response()
 }
 
 fn conflict_response(error: DomainError) -> Response {
-    (
-        StatusCode::CONFLICT,
-        Json(PlusApiResult::error("4090", error.to_string())),
-    )
-        .into_response()
+    PlusApiResult::error("4090", error.to_string())).into_response()
 }
 
 fn system_response(message: &str, error: DomainError) -> Response {
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(PlusApiResult::error("5000", format!("{message}: {error}"))),
-    )
-        .into_response()
+    PlusApiResult::error("5000", format!("{message}: {error}"))).into_response()
 }

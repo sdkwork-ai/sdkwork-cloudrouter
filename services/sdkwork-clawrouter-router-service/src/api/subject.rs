@@ -34,14 +34,10 @@ pub fn map_optional_app_user_subject<T>(
 }
 
 pub(crate) fn unauthorized_subject_response() -> Response {
-    (
-        StatusCode::UNAUTHORIZED,
-        Json(PlusApiResult::<()>::error(
+    PlusApiResult::error(
             "4010",
             TrustedRequestSubjectError::MissingExtension.to_string(),
-        )),
-    )
-        .into_response()
+        )).into_response()
 }
 
 pub fn required_subject(

@@ -7,4 +7,4 @@ pub use asymmetric_signing::{
     sign_message, verify_signature, SigningAlgorithm, SigningError, SigningKeyMaterial,
 };
 pub use headers::{is_sensitive_header, redact_header_value};
-pub use redaction::{redact_secret, REDACTED};
+pub use redaction::{redact_error_message, redact_secret, redact_url, REDACTED};

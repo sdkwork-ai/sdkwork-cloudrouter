@@ -29,7 +29,7 @@ The goal is a standard system that supports local desktop, server, Docker, and K
 5. Rust services that call app/backend business APIs must use generated Rust SDKs. If a generated Rust package is missing, fix the OpenAPI source and generator first; do not introduce handwritten Rust clients for app/backend business endpoints.
 6. Generated SDK output must not be hand-edited. Fix OpenAPI source or generator templates, regenerate, and commit the generated artifact if required.
 7. Provider relay, routing, quota calculation, local secret loading, local cache, streaming proxying, and `/v1/**` upstream calls are native Rust runtime concerns. They may use native Rust HTTP clients for upstream provider/runtime infrastructure.
-8. User, VIP, account, coupon, order, payment, points recharge, PlusApp, AgentSkills, and PlusCategory domains are owned by composed SDKWork modules (`sdkwork-commerce`, `sdkwork-iam`, `sdkwork-models`, `sdkwork-agent`, and related packages). Claw Router consumes their contracts through generated SDKs and install-time schema composition; new Claw tables are only allowed where no composed module already owns the model.
+8. User, VIP, account, coupon, order, payment, points recharge, PlusApp, AgentSkills, and PlusCategory domains are owned by composed SDKWork modules (`sdkwork-商���`, `sdkwork-iam`, `sdkwork-models`, `sdkwork-agent`, and related packages). Claw Router consumes their contracts through generated SDKs and install-time schema composition; new Claw tables are only allowed where no composed module already owns the model.
 9. Any table, column, index, migration, or embedded DB schema change requires explicit confirmation before implementation.
 
 ## 3. SDK Source Of Truth
@@ -175,7 +175,7 @@ The Rust workspace is organized around small, high-cohesion crates:
 
 - `sdkwork-claw-contract`: route/API constants and generated manifest types
 - `sdkwork-claw-config`: deployment mode and runtime configuration
-- `sdkwork-claw-core`: shared app state, error and health model
+- `sdkwork-claw-health`: shared app state, error and health model
 - `sdkwork-claw-observability`: tracing/logging setup
 - `sdkwork-clawrouter-cloud-gateway`: `/v1/**` gateway runtime and health
 - `sdkwork-clawrouter-admin-gateway`: `/backend/v3/api/**` admin surface

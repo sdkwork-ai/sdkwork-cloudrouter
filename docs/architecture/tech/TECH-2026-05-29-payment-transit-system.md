@@ -61,7 +61,7 @@ Contract and API reference:
 Schema and registry:
 
 - Modify: `docs/schema-registry/tables/006-commerce.yaml`
-- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-storage-sqlx-rust/migrations/0001_commerce_foundation.sql`
+- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-storage-sqlx-rust/migrations/0001_commerce_foundation.sql`
 - Modify: `generated/schema/postgres/schema.sql` only through the project schema generation workflow.
 - Modify: `generated/openapi/schema-components.yaml` only through generation.
 
@@ -83,8 +83,8 @@ Payment callback and adapter runtime:
 
 Bootstrap catalog:
 
-- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-bootstrap-rust/src/lib.rs`
-- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-bootstrap-rust/tests/commerce_bootstrap_standard.rs`
+- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-bootstrap-rust/src/lib.rs`
+- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-bootstrap-rust/tests/commerce_bootstrap_standard.rs`
 
 Tests:
 
@@ -136,7 +136,7 @@ Reason: admin UI may document future providers, but runtime should not accept un
 
 - [x] Update bootstrap provider seeds to mainstream active/inactive placeholders only.
 
-Target file: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-bootstrap-rust/src/lib.rs`
+Target file: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-bootstrap-rust/src/lib.rs`
 
 Expected: mainstream providers have deterministic seed ids and inactive placeholders. Extension providers are not inserted as active runtime providers until their adapters exist.
 
@@ -173,7 +173,7 @@ Required tables:
 
 - [x] Add Appbase migration definitions.
 
-Target file: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-storage-sqlx-rust/migrations/0001_commerce_foundation.sql`
+Target file: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-storage-sqlx-rust/migrations/0001_commerce_foundation.sql`
 
 Rule: table names keep `commerce_payment_*`; index and constraint names use short names such as `uk_pay_op_attempt_no`, `idx_pay_op_attempt_resource`, and `uk_pay_webhook_delivery_event`.
 

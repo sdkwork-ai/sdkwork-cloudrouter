@@ -1,7 +1,7 @@
 use axum::http::StatusCode;
 use axum::{extract::State, Json};
 use sdkwork_claw_config::DeploymentMode;
-use sdkwork_claw_core::HealthResponse;
+use sdkwork_claw_health::HealthResponse;
 
 use crate::metrics::record_readiness_check;
 use crate::router::ServiceState;

@@ -823,27 +823,15 @@ fn normalize_optional_text(
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    (
-        StatusCode::BAD_REQUEST,
-        Json(PlusApiResult::error("4001", message.into())),
-    )
-        .into_response()
+    PlusApiResult::error("4001", message.into())).into_response()
 }
 
 fn not_found_response(message: impl Into<String>) -> Response {
-    (
-        StatusCode::NOT_FOUND,
-        Json(PlusApiResult::error("4004", message.into())),
-    )
-        .into_response()
+    PlusApiResult::error("4004", message.into())).into_response()
 }
 
 fn conflict_response(error: DomainError) -> Response {
-    (
-        StatusCode::CONFLICT,
-        Json(PlusApiResult::error("4090", error.to_string())),
-    )
-        .into_response()
+    PlusApiResult::error("4090", error.to_string())).into_response()
 }
 
 fn service_provider_error_response(context: &str, error: DomainError) -> Response {
@@ -857,9 +845,5 @@ fn service_provider_error_response(context: &str, error: DomainError) -> Respons
 }
 
 fn service_provider_system_response(context: &str, error: DomainError) -> Response {
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(PlusApiResult::error("5000", format!("{context}: {error}"))),
-    )
-        .into_response()
+    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
 }

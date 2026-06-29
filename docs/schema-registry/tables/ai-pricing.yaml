@@ -1,0 +1,303 @@
+tables:
+  
+  # ============================================================
+  # ai_pricing - 定价方案表（价格策略）
+  # ============================================================
+  
+  - table: ai_pricing
+    domain: ai
+    profile: pricing
+    compliance_level: L2
+    system_of_record: true
+    write_owner: pricing-service
+    
+    description: |
+      定价方案表 - 价格策略
+      
+      行业对标:
+      - Stripe Pricing Tables (定价表)
+      - AWS Pricing Plans (定价方案)
+      - OpenAI Model Pricing (模型定价)
+      
+      职责:
+      - 定义价格计划主表
+      - 定义默认倍率、加价和价格基准
+      - 支持多种定价模式（倍率、固定价格、阶梯价）
+      
+      关键特性:
+      - 多定价模式: 支持倍率、固定价格、阶梯价、表达式计费
+      - 灵活绑定: 支持绑定账号、分组、租户或SKU
+      - 价格基准: 支持官方参考价、接入成本价、销售价
+      
+      数据流向:
+      1. pricing-service定义定价方案
+      2. ai_usage通过pricing_code关联定价方案
+      3. ai_pricing_rule提供具体计费规则
+      4. 计算最终收费金额
+    
+    common_columns: pricing
+    
+    frontend_routes:
+      - /admin/pricing
+      - /console/pricing
+    
+    api_surfaces:
+      - app
+      - backend
+      - worker
+    
+    columns:
+      # 标识字段
+      id: int64
+      uuid: string(64)
+      
+      # 租户隔离
+      tenant_id: int64
+      organization_id: int64
+      
+      # 幂等键
+      pricing_code: string(64)
+      idempotency_key: string(128)
+      
+      # 定价信息
+      pricing_name: string(128)
+      pricing_type: enum_int32
+      
+      # 价格基准
+      base_price_source: enum_int32
+      base_price_type: enum_int32
+      
+      # 定价模式
+      pricing_mode: enum_int32
+      
+      # 默认倍率
+      default_multiplier: decimal
+      
+      # 默认加价
+      default_markup_amount: decimal
+      default_markup_type: enum_int32
+      
+      # 货币
+      currency: string(10)
+      
+      # 最低收费
+      minimum_charge: decimal
+      
+      # 舍入模式
+      rounding_mode: enum_int32
+      
+      # 生效时间
+      effective_from: instant
+      effective_to: instant
+      
+      # 绑定对象（支持多维度绑定）
+      binding_scope_type: enum_int32
+      binding_scope_id: int64
+      
+      # 审计字段
+      created_at: instant
+      updated_at: instant
+      version: int64
+      
+      # 生命周期
+      status: enum_int32
+      
+      # 元数据
+      metadata: json
+    
+    unique_constraints:
+      - name: uk_ai_pricing_code
+        columns:
+          - tenant_id
+          - organization_id
+          - pricing_code
+    
+    indexes:
+      - name: idx_ai_pricing_tenant_status
+        columns:
+          - tenant_id
+          - organization_id
+          - pricing_type
+          - status
+          - effective_from
+          - id
+      
+      - name: idx_ai_pricing_binding
+        columns:
+          - tenant_id
+          - organization_id
+          - binding_scope_type
+          - binding_scope_id
+          - status
+          - id
+    
+    security:
+      sensitivity: INTERNAL
+      stores_secret_plaintext: false
+      audit_required: true
+  
+  # ============================================================
+  # ai_pricing_rule - 定价规则表（具体计费规则）
+  # ============================================================
+  
+  - table: ai_pricing_rule
+    domain: ai
+    profile: pricing
+    compliance_level: L2
+    system_of_record: true
+    write_owner: pricing-service
+    
+    description: |
+      定价规则表 - 具体计费规则
+      
+      行业对标:
+      - Stripe Pricing Rules (定价规则)
+      - AWS Pricing Dimensions (定价维度)
+      - OpenAI Token Pricing (Token定价)
+      
+      职责:
+      - 定义价格规则表
+      - 支持倍率、固定价格、阶梯价和表达式计费
+      - 支持按模型、能力、region等维度定价
+      
+      关键特性:
+      - 多维度定价: 支持模型、能力、meter、region等维度
+      - 规则优先级: 支持基于优先级的规则匹配
+      - 阶梯定价: 支持分段计费阈值和单价
+      
+      数据流向:
+      1. pricing-service定义定价规则
+      2. ai_usage匹配定价规则
+      3. 根据规则计算最终价格
+      4. 写入customer_charge到ai_usage
+    
+    common_columns: pricing
+    
+    frontend_routes:
+      - /admin/pricing/rules
+    
+    api_surfaces:
+      - backend
+      - worker
+    
+    columns:
+      # 标识字段
+      id: int64
+      uuid: string(64)
+      
+      # 租户隔离
+      tenant_id: int64
+      organization_id: int64
+      
+      # 幂等键
+      rule_code: string(64)
+      idempotency_key: string(128)
+      
+      # 定价方案关联
+      pricing_id: int64
+      pricing_code: string(64)
+      
+      # 规则信息
+      rule_name: string(128)
+      rule_type: enum_int32
+      rule_priority: int32
+      
+      # 匹配条件（多维度匹配）
+      match_model_vendor: string(64)
+      match_model_code: string(128)
+      match_model_family: string(64)
+      match_capability_type: enum_int32
+      match_billing_meter: string(64)
+      match_token_kind: string(64)
+      match_upstream_region: string(64)
+      match_client_region: string(64)
+      
+      # 定价模式
+      pricing_mode: enum_int32
+      
+      # 倍率定价
+      multiplier: decimal
+      
+      # 固定价格
+      fixed_price: decimal
+      fixed_price_unit: string(64)
+      
+      # 阶梯定价配置
+      tier_enabled: bool
+      tier_config: json
+      
+      # 表达式定价
+      expression_enabled: bool
+      expression_formula: string(512)
+      
+      # 货币
+      currency: string(10)
+      
+      # 单价（用于计算）
+      unit_price: decimal
+      unit_size: decimal
+      
+      # 最低收费
+      minimum_charge: decimal
+      
+      # 舍入模式
+      rounding_mode: enum_int32
+      
+      # 生效时间
+      effective_from: instant
+      effective_to: instant
+      
+      # 审计字段
+      created_at: instant
+      updated_at: instant
+      version: int64
+      
+      # 生命周期
+      status: enum_int32
+      
+      # 元数据
+      metadata: json
+    
+    unique_constraints:
+      - name: uk_ai_pricing_rule_code
+        columns:
+          - tenant_id
+          - organization_id
+          - rule_code
+    
+    indexes:
+      - name: idx_ai_pricing_rule_pricing_priority
+        columns:
+          - tenant_id
+          - organization_id
+          - pricing_id
+          - rule_priority
+          - status
+          - id
+      
+      - name: idx_ai_pricing_rule_model_meter
+        columns:
+          - tenant_id
+          - organization_id
+          - match_model_code
+          - match_billing_meter
+          - match_token_kind
+          - status
+          - rule_priority
+          - id
+      
+      - name: idx_ai_pricing_rule_capability_meter
+        columns:
+          - tenant_id
+          - organization_id
+          - match_capability_type
+          - match_billing_meter
+          - match_token_kind
+          - status
+          - rule_priority
+          - id
+    
+    security:
+      sensitivity: INTERNAL
+      stores_secret_plaintext: false
+      audit_required: true

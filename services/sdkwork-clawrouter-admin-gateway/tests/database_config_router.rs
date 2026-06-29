@@ -4166,7 +4166,7 @@ async fn create_schema(pool: &SqlitePool) {
             reasoning_effort TEXT,
             client_ip_masked TEXT
         )"#,
-        r#"CREATE TABLE ai_usage_fact (
+        r#"CREATE TABLE ai_usage (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             uuid TEXT NOT NULL,
             tenant_id INTEGER,
@@ -4619,7 +4619,7 @@ async fn create_schema(pool: &SqlitePool) {
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
         )"#,
-        r#"CREATE TABLE commerce_usage_settlement (
+        r#"CREATE TABLE commerce_settlement (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             uuid TEXT NOT NULL,
             tenant_id INTEGER NOT NULL,
@@ -4646,7 +4646,7 @@ async fn create_schema(pool: &SqlitePool) {
             failure_code TEXT,
             failure_message TEXT
         )"#,
-        r#"CREATE TABLE commerce_usage_statement (
+        r#"CREATE TABLE commerce_statement (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             uuid TEXT NOT NULL,
             tenant_id INTEGER NOT NULL,
@@ -5834,10 +5834,10 @@ async fn seed_admin_finance(pool: &SqlitePool) {
         r#"INSERT INTO commerce_invoice
             (id, tenant_id, organization_id, owner_user_id, invoice_no, title, invoice_type, status, amount_excluding_tax, tax_amount, total_amount, currency_code, issued_at, cancelled_at, failure_reason, request_no, idempotency_key, created_at, updated_at)
             VALUES ('invoice-1200', '100001', '0', '30', 'INV-202604', 'April usage', 'standard', 'draft', '80.00', '8.25', '88.25', 'USD', '2026-04-29 10:00:00', NULL, NULL, 'invoice-1200', 'invoice-1200', '2026-04-29 10:00:00', '2026-04-29 10:00:00')"#,
-        r#"INSERT INTO commerce_usage_statement
+        r#"INSERT INTO commerce_statement
             (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, statement_no, period, period_start, period_end, owner_type, owner_id, total_tokens, total_requests, total_cost, currency, statement_status, generated_at, due_at, payment_status, invoice_id)
             VALUES (1300, 'statement-1300', 100001, 0, 1, 1, '2026-04-29 10:00:00', '2026-04-29 10:00:00', 0, 'stmt-202604', '2026-04', '2026-04-01 00:00:00', '2026-04-30 23:59:59', 1, 30, 12000, 80, '88.25', 'USD', 1, '2026-04-29 10:00:00', '2026-05-10 00:00:00', 1, 'invoice-1200')"#,
-        r#"INSERT INTO commerce_usage_settlement
+        r#"INSERT INTO commerce_settlement
             (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, settlement_no, account_id, account_ledger_entry_id, order_id, payment_id, asset_type, direction, amount, points, tokens, currency, settlement_status, settled_at)
             VALUES (1400, 'settlement-1400', 100001, 0, 1, 1, '2026-04-29 10:00:00', '2026-04-29 10:00:00', 0, 'settlement-1400', 'account-400', 'ledger-1000', 900, 910, 'points', 'debit', '88.25', 0, 12000, 'USD', 1, '2026-04-29 10:00:00')"#,
     ] {
@@ -5853,7 +5853,7 @@ async fn seed_admin_record(pool: &SqlitePool) {
         r#"INSERT INTO ai_request_trace
             (id, uuid, tenant_id, organization_id, user_id, request_id, trace_id, status, created_at, api_key_name_snapshot, channel_group_snapshot, owner_name_snapshot, requested_model_catalog_key, requested_model, provider_model, provider_native_model, region_code, endpoint, request_path, http_status, provider_error_code, error_type, started_at, latency_ms, ttft_ms, streaming, prompt_tokens, completion_tokens, cached_tokens, reasoning_effort, client_ip_masked)
             VALUES (100, 'trace-100', 100001, 0, 30, 'req-admin-record-1', 'trace-admin-record-1', 1, '2026-04-29 09:29:59', 'Production', 'standard-group', 'owner@example.com', 'openai/gpt-4o-mini', 'gpt-4o-mini', 'gpt-4o-mini', 'gpt-4o-mini-2026-05-13', 'global', '/v1/chat/completions', '/v1/chat/completions', 200, NULL, NULL, '2026-04-29 09:30:00', 842, 120, 1, 1000, 240, 100, 'medium', '203.0.113.***')"#,
-        r#"INSERT INTO ai_usage_fact
+        r#"INSERT INTO ai_usage
             (id, uuid, tenant_id, organization_id, user_id, request_id, status, created_at, owner_name_snapshot, api_key_name_snapshot, channel_group_snapshot, catalog_key, requested_model_catalog_key, model, provider_native_model, region_code, modality, request_count, prompt_tokens, completion_tokens, cached_tokens, total_tokens, customer_charge_amount, cost_amount, rate_multiplier, base_input_unit_price, base_output_unit_price, cache_read_unit_price, occurred_at)
             VALUES (200, 'usage-200', 100001, 0, 30, 'req-admin-record-1', 1, '2026-04-29 09:30:01', 'owner@example.com', 'Production', 'standard-group', 'openai/gpt-4o-mini', 'openai/gpt-4o-mini', 'gpt-4o-mini', 'gpt-4o-mini-2026-05-13', 'global', 1, 1, 1200, 300, 128, 1628, '0.012300', '0.010000', '1.200000', '0.150000', '0.600000', '0.030000', '2026-04-29 09:30:01')"#,
     ] {

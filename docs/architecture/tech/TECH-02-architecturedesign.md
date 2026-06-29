@@ -30,7 +30,7 @@ OpenAI-compatible SDK / curl / third-party clients
   -> /v1/**              sdkwork-clawrouter-cloud-gateway
 
 Rust runtime services
-  -> sdkwork-claw-core
+  -> sdkwork-claw-health
   -> sdkwork-claw-config
   -> sdkwork-claw-contract
   -> sdkwork-claw-observability
@@ -57,7 +57,7 @@ State
 | Worker Plane | 后续 worker crates | usage 聚合、账务结转、健康探测、归档、告警、outbox/inbox | internal |
 | Contract Plane | `sdkwork-claw-contract` | API surface、SDK client、路径前缀、生成 manifest 类型 | internal |
 | Config Plane | `sdkwork-claw-config` | `desktop/server/docker/kubernetes` profile、env/file 配置解析 | internal |
-| Core Plane | `sdkwork-claw-core` | health、error、app state、request context 通用模型 | internal |
+| Core Plane | `sdkwork-claw-health` | health、error、app state、request context 通用模型 | internal |
 | Observability Plane | `sdkwork-claw-observability` | tracing、request_id、structured logs、metrics exporter glue | internal |
 
 ## 4. 分层规则
@@ -166,7 +166,7 @@ python -B -m tools.schema_quality_gate
 
 复用原则：
 
-- 用户、VIP、account、优惠券、积分充值、订单、支付、退款、发票由 `sdkwork-commerce`、`sdkwork-iam` 等组合模块提供；Claw Router 通过生成 SDK 消费，不在本地重复定义资金事实表。
+- 用户、VIP、account、优惠券、积分充值、订单、支付、退款、发票由 T1 能力仓库（`sdkwork-shop`、`sdkwork-order`、`sdkwork-payment` 等）和 `sdkwork-iam` 等组合模块提供；Claw Router 通过生成 SDK 消费，不在本地重复定义资金事实表。
 - AppCenter、SkillsHub、模型目录等通过 `sdkwork-agent`、`sdkwork-models` 等组合模块接入。
 - 新建 AI gateway、routing、pricing、provider、usage、ops 表使用 `ai_`、`integration_`、`iam_`、`commerce_`、`studio_`、`content_`、`ops_` 等业务前缀。
 

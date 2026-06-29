@@ -2,7 +2,7 @@ use sdkwork_claw_provider_adapter_contract::{
     AdapterError, AdapterInvocationRequest, AdapterInvocationResponse, AdapterInvocationShape,
     AdapterUsageLine,
 };
-use sdkwork_claw_provider_adapter_core::{
+use sdkwork_claw_provider_adapter::{
     AdapterInvocationContext, AdapterInvocationFuture, EndpointAdapter, ProviderAdapterEndpoint,
 };
 use serde_json::json;

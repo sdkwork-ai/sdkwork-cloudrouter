@@ -4,7 +4,7 @@ pub mod video;
 
 use std::sync::Arc;
 
-use sdkwork_claw_provider_adapter_core::{
+use sdkwork_claw_provider_adapter::{
     EndpointAdapter, ProviderAdapter, ProviderAdapterEndpoint,
 };
 

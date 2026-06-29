@@ -11,13 +11,13 @@
 /crates/sdkwork-claw-config/                @sdkwork/clawrouter-platform
 /crates/sdkwork-claw-observability/         @sdkwork/clawrouter-observability
 /crates/sdkwork-claw-contract/              @sdkwork/clawrouter-platform
-/crates/sdkwork-claw-core/                  @sdkwork/clawrouter-platform
+/crates/sdkwork-claw-health/                @sdkwork/clawrouter-platform
 /crates/sdkwork-claw-paas-plugin/           @sdkwork/clawrouter-platform
 /crates/sdkwork-claw-test-support/          @sdkwork/clawrouter-platform
 
 # Provider adapters
 /crates/sdkwork-claw-provider-adapter-contract/  @sdkwork/clawrouter-provider
-/crates/sdkwork-claw-provider-adapter-core/      @sdkwork/clawrouter-provider
+/crates/sdkwork-claw-provider-adapter/      @sdkwork/clawrouter-provider
 /crates/sdkwork-claw-provider-adapter-http/      @sdkwork/clawrouter-provider
 /crates/sdkwork-claw-provider-adapter-registry/  @sdkwork/clawrouter-provider
 /crates/provider-adapters/                       @sdkwork/clawrouter-provider

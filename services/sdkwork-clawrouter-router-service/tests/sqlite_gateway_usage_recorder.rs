@@ -73,7 +73,7 @@ async fn sqlite_gateway_usage_recorder_upserts_trace_and_usage_fact_without_dupl
     assert!(user_agent_hash.chars().all(|ch| ch.is_ascii_hexdigit()));
 
     let usage = sqlx::query(
-        "SELECT request_id, api_key_id, catalog_key, requested_model_catalog_key, model, provider_native_model, region_code, channel_id, usage_type, billing_meter_code, billable_quantity, prompt_tokens, completion_tokens, cached_tokens, total_tokens, base_input_unit_price, base_output_unit_price, cache_read_unit_price, rate_multiplier, reference_multiplier, official_reference_amount, upstream_cost_amount, customer_charge_amount, cost_amount, currency, pricing_plan_code, pricing_snapshot, occurred_at, settlement_status FROM ai_usage_fact",
+        "SELECT request_id, api_key_id, catalog_key, requested_model_catalog_key, model, provider_native_model, region_code, channel_id, usage_type, billing_meter_code, billable_quantity, prompt_tokens, completion_tokens, cached_tokens, total_tokens, base_input_unit_price, base_output_unit_price, cache_read_unit_price, rate_multiplier, reference_multiplier, official_reference_amount, upstream_cost_amount, customer_charge_amount, cost_amount, currency, pricing_plan_code, pricing_snapshot, occurred_at, settlement_status FROM ai_usage",
     )
     .fetch_one(&pool)
     .await
@@ -158,7 +158,7 @@ async fn sqlite_gateway_usage_recorder_upserts_trace_and_usage_fact_without_dupl
         .await
         .unwrap()
         .get::<i64, _>("count");
-    let usage_count = sqlx::query("SELECT COUNT(*) AS count FROM ai_usage_fact")
+    let usage_count = sqlx::query("SELECT COUNT(*) AS count FROM ai_usage")
         .fetch_one(&pool)
         .await
         .unwrap()
@@ -236,7 +236,7 @@ async fn sqlite_gateway_usage_recorder_records_failed_trace_without_usage_fact()
     assert_eq!(0_i64, trace.get::<i64, _>("completion_tokens"));
     assert_eq!(0_i64, trace.get::<i64, _>("total_tokens"));
 
-    let usage_count = sqlx::query("SELECT COUNT(*) AS count FROM ai_usage_fact")
+    let usage_count = sqlx::query("SELECT COUNT(*) AS count FROM ai_usage")
         .fetch_one(&pool)
         .await
         .unwrap()
@@ -281,7 +281,7 @@ async fn sqlite_gateway_usage_recorder_uses_command_modality_and_meter() {
         r#"
         SELECT request_id, modality, usage_type, billing_meter_code, billable_quantity,
                prompt_tokens, completion_tokens, total_tokens, customer_charge_amount, cost_amount
-        FROM ai_usage_fact
+        FROM ai_usage
         WHERE request_id = 'req-embedding-usage-sqlite'
         "#,
     )
@@ -320,7 +320,7 @@ async fn sqlite_gateway_usage_recorder_preserves_successfully_settled_usage_fact
         .unwrap();
     sqlx::query(
         r#"
-        UPDATE ai_usage_fact
+        UPDATE ai_usage
         SET settlement_status = 2,
             customer_charge_amount = '7.722000',
             cost_amount = '4.290000',
@@ -343,7 +343,7 @@ async fn sqlite_gateway_usage_recorder_preserves_successfully_settled_usage_fact
     let usage = sqlx::query(
         r#"
         SELECT total_tokens, customer_charge_amount, cost_amount, settlement_status
-        FROM ai_usage_fact
+        FROM ai_usage
         WHERE request_id = 'req-chat-usage-settled'
         "#,
     )
@@ -395,7 +395,7 @@ async fn sqlite_gateway_usage_recorder_preserves_unknown_settlement_usage_fact_o
         .unwrap();
     sqlx::query(
         r#"
-        UPDATE ai_usage_fact
+        UPDATE ai_usage
         SET settlement_status = NULL,
             customer_charge_amount = '7.722000',
             cost_amount = '4.290000',
@@ -418,7 +418,7 @@ async fn sqlite_gateway_usage_recorder_preserves_unknown_settlement_usage_fact_o
     let usage = sqlx::query(
         r#"
         SELECT total_tokens, customer_charge_amount, cost_amount, settlement_status
-        FROM ai_usage_fact
+        FROM ai_usage
         WHERE request_id = 'req-chat-usage-unknown-settlement'
         "#,
     )
@@ -471,7 +471,7 @@ async fn sqlite_gateway_usage_recorder_preserves_failed_settlement_usage_fact_on
         .unwrap();
     sqlx::query(
         r#"
-        UPDATE ai_usage_fact
+        UPDATE ai_usage
         SET settlement_status = 3,
             customer_charge_amount = '7.722000',
             cost_amount = '4.290000',
@@ -494,7 +494,7 @@ async fn sqlite_gateway_usage_recorder_preserves_failed_settlement_usage_fact_on
     let usage = sqlx::query(
         r#"
         SELECT total_tokens, customer_charge_amount, cost_amount, settlement_status
-        FROM ai_usage_fact
+        FROM ai_usage
         WHERE request_id = 'req-chat-usage-settlement-failed'
         "#,
     )
@@ -582,7 +582,7 @@ async fn sqlite_gateway_usage_recorder_records_request_and_video_duration_as_ind
         SELECT uuid, usage_type, billing_meter_code, billable_quantity, request_count,
                COALESCE(video_seconds, '') AS video_seconds, total_tokens,
                customer_charge_amount, cost_amount
-        FROM ai_usage_fact
+        FROM ai_usage
         WHERE request_id = 'req-video-generation-billing'
         ORDER BY usage_type ASC
         "#,
@@ -814,7 +814,7 @@ async fn create_usage_tables(pool: &sqlx::SqlitePool) {
         )
         "#,
         r#"
-        CREATE TABLE ai_usage_fact (
+        CREATE TABLE ai_usage (
             id INTEGER PRIMARY KEY,
             uuid TEXT NOT NULL,
             tenant_id INTEGER NOT NULL,

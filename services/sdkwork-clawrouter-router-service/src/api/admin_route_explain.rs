@@ -423,9 +423,5 @@ fn parse_billing_meter(value: &str) -> Result<BillingMeter, String> {
 }
 
 fn bad_request(message: String) -> Response {
-    (
-        StatusCode::BAD_REQUEST,
-        Json(PlusApiResult::error("4001", message)),
-    )
-        .into_response()
+    PlusApiResult::error("4001", message)).into_response()
 }

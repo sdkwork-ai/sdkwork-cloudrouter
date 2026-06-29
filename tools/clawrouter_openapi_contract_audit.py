@@ -25,7 +25,17 @@ class ClawRouterOpenApiContractAudit:
     FORBIDDEN_SHARED_COMPONENTS = {"OperationRequest", "OperationResponse", "PageResult", "ErrorResponse"}
     FORBIDDEN_SUCCESS_REFS = {
         "#/components/schemas/OperationResponse",
+        "#/components/schemas/PlusApiResult",
+        "#/components/schemas/CommerceApiResult",
     }
+    SDKWORK_API_RESPONSE_REF = "#/components/schemas/SdkWorkApiResponse"
+    SDKWORK_SUCCESS_RESPONSE_REFS = {
+        "#/components/schemas/SdkWorkApiResponse",
+        "#/components/schemas/SdkWorkListResponse",
+        "#/components/schemas/SdkWorkResourceResponse",
+        "#/components/schemas/SdkWorkCommandResponse",
+    }
+    LEGACY_ENVELOPE_COMPONENTS = {"PlusApiResult", "CommerceApiResult", "SdkWorkResponse"}
     STANDARD_QUERY_PARAMETER_ALIASES = {
         "search_query": ("q", "search text"),
         "searchQuery": ("q", "search text"),
@@ -51,7 +61,11 @@ class ClawRouterOpenApiContractAudit:
         "enable",
         "healthCheck",
         "list",
+        "pay",
         "publish",
+        "reconcile",
+        "retrieveByOutTradeNo",
+        "rollback",
         "refresh",
         "reject",
         "renew",
@@ -64,11 +78,17 @@ class ClawRouterOpenApiContractAudit:
         "revoke",
         "settle",
         "submit",
+        "submitReview",
         "unpublish",
         "update",
         "upgrade",
         "verify",
         "moderate",
+        "upsert",
+        "close",
+        "resume",
+        "resolve",
+        "suspend",
     }
     TOP_LEVEL_VERTICAL_SDK_DOMAINS = {"mcp", "prompts"}
     FORBIDDEN_RPC_PATH_SEGMENTS = {"check_collected", "detail", "list", "mine", "search"}
@@ -162,32 +182,40 @@ class ClawRouterOpenApiContractAudit:
         for component_name in sorted(self.FORBIDDEN_SHARED_COMPONENTS):
             if component_name in schemas:
                 messages.append(self._forbidden_component_message(surface, component_name))
+        for legacy_name in sorted(self.LEGACY_ENVELOPE_COMPONENTS):
+            if legacy_name in schemas:
+                messages.append(
+                    f"{surface} schema component {legacy_name} is forbidden; use SdkWorkApiResponse per API_SPEC.md section 15"
+                )
         return messages
 
     def _audit_standard_schemas(self, surface: str, schemas: dict[str, Any]) -> list[str]:
         messages: list[str] = []
-        plus_api_result = schemas.get("PlusApiResult")
-        if not isinstance(plus_api_result, dict):
-            messages.append(f"{surface} schema component PlusApiResult must exist")
+        sdkwork_api_response = schemas.get("SdkWorkApiResponse")
+        if not isinstance(sdkwork_api_response, dict):
+            messages.append(f"{surface} schema component SdkWorkApiResponse must exist")
             return messages
-        if plus_api_result.get("type") != "object":
-            messages.append(f"{surface} schema component PlusApiResult must be an object")
-        if plus_api_result.get("additionalProperties") is not False:
-            messages.append(f"{surface} schema component PlusApiResult must set additionalProperties to false")
-        if plus_api_result.get("required") != ["code"]:
-            messages.append(f"{surface} schema component PlusApiResult required fields must be ['code']")
-        properties = plus_api_result.get("properties")
+        if sdkwork_api_response.get("type") != "object":
+            messages.append(f"{surface} schema component SdkWorkApiResponse must be an object")
+        if sdkwork_api_response.get("additionalProperties") is not False:
+            messages.append(f"{surface} schema component SdkWorkApiResponse must set additionalProperties to false")
+        required = sdkwork_api_response.get("required")
+        if required != ["code", "data", "traceId"]:
+            messages.append(
+                f"{surface} schema component SdkWorkApiResponse required fields must be ['code', 'data', 'traceId']"
+            )
+        properties = sdkwork_api_response.get("properties")
         if not isinstance(properties, dict):
-            messages.append(f"{surface} schema component PlusApiResult properties must be an object")
+            messages.append(f"{surface} schema component SdkWorkApiResponse properties must be an object")
             return messages
         code_schema = properties.get("code")
-        if not isinstance(code_schema, dict) or code_schema.get("type") != "string":
-            messages.append(f"{surface} schema component PlusApiResult.code must be a string")
-        data_schema = properties.get("data")
-        if not self._schema_refers_to(data_schema, "#/components/schemas/NoData"):
-            messages.append(
-                f"{surface} schema component PlusApiResult.data must reference NoData as its default empty payload"
-            )
+        if not isinstance(code_schema, dict) or code_schema.get("type") != "integer":
+            messages.append(f"{surface} schema component SdkWorkApiResponse.code must be integer int32 with success value 0")
+        trace_id_schema = properties.get("traceId")
+        if not isinstance(trace_id_schema, dict) or trace_id_schema.get("type") != "string":
+            messages.append(f"{surface} schema component SdkWorkApiResponse.traceId must be a string")
+        if "data" not in properties:
+            messages.append(f"{surface} schema component SdkWorkApiResponse.data must be declared")
         no_data = schemas.get("NoData")
         if not isinstance(no_data, dict):
             messages.append(f"{surface} schema component NoData must exist")
@@ -204,15 +232,19 @@ class ClawRouterOpenApiContractAudit:
             return messages
         if problem_detail.get("type") != "object":
             messages.append(f"{surface} schema component ProblemDetail must be an object")
-        if problem_detail.get("required") != ["type", "title", "status"]:
-            messages.append(f"{surface} schema component ProblemDetail required fields must be ['type', 'title', 'status']")
+        if problem_detail.get("required") != ["type", "title", "status", "code", "traceId"]:
+            messages.append(
+                f"{surface} schema component ProblemDetail required fields must be ['type', 'title', 'status', 'code', 'traceId']"
+            )
         problem_properties = problem_detail.get("properties")
         if not isinstance(problem_properties, dict):
             messages.append(f"{surface} schema component ProblemDetail properties must be an object")
             return messages
-        for field in ("type", "title", "status", "detail", "instance", "requestId", "code", "traceId", "errors"):
+        for field in ("type", "title", "status", "detail", "instance", "code", "traceId", "errors"):
             if field not in problem_properties:
                 messages.append(f"{surface} schema component ProblemDetail.{field} must be declared")
+        if "requestId" in problem_properties:
+            messages.append(f"{surface} schema component ProblemDetail must not declare forbidden wire field requestId")
         return messages
 
     def _audit_operations(self, surface: str, paths: dict[str, Any], schemas: dict[str, Any]) -> list[str]:
@@ -371,13 +403,32 @@ class ClawRouterOpenApiContractAudit:
         response_schema = self._json_schema(
             operation.get("responses", {}).get("200", {}) if isinstance(operation.get("responses"), dict) else {}
         )
-        response_ref = response_schema.get("$ref") if isinstance(response_schema, dict) else None
-        if response_ref == "#/components/schemas/PlusApiResult":
-            messages.append(f"{label} 200 response must reference an operation-specific *Result schema, not PlusApiResult")
+        if not isinstance(response_schema, dict):
+            messages.append(f"{label} 200 response must declare an application/json schema")
             return messages
-        if response_ref in self.FORBIDDEN_SUCCESS_REFS or not isinstance(response_ref, str) or not response_ref.endswith("Result"):
+
+        envelope_data_schema = self._sdkwork_envelope_data_schema(response_schema)
+        if envelope_data_schema is not None:
+            if "data" not in envelope_data_schema.get("properties", {}):
+                messages.append(f"{label} 200 SdkWorkApiResponse envelope must declare typed data")
+            return messages
+
+        response_ref = response_schema.get("$ref") if isinstance(response_schema, dict) else None
+        if response_ref in self.FORBIDDEN_SUCCESS_REFS:
             messages.append(
-                f"{label} 200 response must reference an operation-specific *Result schema"
+                f"{label} 200 response must use SdkWorkApiResponse envelope, not legacy {self._component_name(response_ref)}"
+            )
+            return messages
+        if response_ref in self.SDKWORK_SUCCESS_RESPONSE_REFS:
+            component_name = self._component_name(response_ref)
+            if component_name not in schemas:
+                messages.append(f"{label} 200 response references missing envelope schema {component_name}")
+            return messages
+        if response_ref == self.SDKWORK_API_RESPONSE_REF:
+            return messages
+        if not isinstance(response_ref, str) or not response_ref.endswith("Result"):
+            messages.append(
+                f"{label} 200 response must use SdkWorkApiResponse allOf envelope or an operation-specific *Result schema"
             )
             return messages
 
@@ -394,9 +445,6 @@ class ClawRouterOpenApiContractAudit:
         if not isinstance(properties, dict):
             messages.append(f"{label} result schema {component_name} properties must be an object")
             return messages
-        code_schema = properties.get("code")
-        if not isinstance(code_schema, dict) or code_schema.get("type") != "string":
-            messages.append(f"{label} result schema {component_name}.code must be a string")
         if "data" not in properties:
             messages.append(f"{label} result schema {component_name}.data must be explicitly declared")
         elif self._schema_refers_to(properties.get("data"), "#/components/schemas/PlusApiResult"):
@@ -414,6 +462,23 @@ class ClawRouterOpenApiContractAudit:
                 )
             )
         return messages
+
+    def _sdkwork_envelope_data_schema(self, schema: dict[str, Any]) -> dict[str, Any] | None:
+        all_of = schema.get("allOf")
+        if not isinstance(all_of, list) or len(all_of) < 2:
+            return None
+        if not any(
+            isinstance(item, dict) and item.get("$ref") == self.SDKWORK_API_RESPONSE_REF
+            for item in all_of
+        ):
+            return None
+        for item in all_of:
+            if not isinstance(item, dict) or item.get("$ref") == self.SDKWORK_API_RESPONSE_REF:
+                continue
+            properties = item.get("properties")
+            if isinstance(properties, dict) and "data" in properties:
+                return item
+        return None
 
     def _audit_request_body(
         self,

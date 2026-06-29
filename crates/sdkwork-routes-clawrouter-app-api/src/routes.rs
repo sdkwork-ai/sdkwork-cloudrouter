@@ -236,8 +236,12 @@ where
 
 async fn finalize_product_router_with_federated_iam(
     router: Router,
+    subject_boundary_config: AppSubjectBoundaryConfig,
 ) -> Result<Router, ProductCatalogRouterError> {
-    crate::iam_runtime::merge_federated_iam_routers(router)
+    let router = crate::iam_runtime::merge_federated_iam_routers(router)
+        .await
+        .map_err(ProductCatalogRouterError::Config)?;
+    crate::invoice_runtime::merge_federated_invoice_app_router(router, subject_boundary_config)
         .await
         .map_err(ProductCatalogRouterError::Config)
 }
@@ -521,7 +525,10 @@ pub async fn router_with_sqlite_product_catalog(
         Arc::new(SqliteAppRoutingChannelCommandStore::new(pool.clone()));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
     let app_site_settings_store = Arc::new(SqliteSiteSettingsStore::new(pool.clone()));
-    finalize_product_router_with_federated_iam(router_with_runtime_stores_and_database_status(
+    let subject_boundary_config =
+        AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
+    finalize_product_router_with_federated_iam(
+        router_with_runtime_stores_and_database_status(
         Some(app_site_settings_store),
         entity_uuid_generator,
         trusted_subject_config,
@@ -549,7 +556,9 @@ pub async fn router_with_sqlite_product_catalog(
         None,
         RequestLimitsConfig::default(),
         None,
-    ))
+        ),
+        subject_boundary_config,
+    )
     .await
 }
 
@@ -598,7 +607,10 @@ pub async fn router_with_postgres_product_catalog(
         Arc::new(PostgresAppRoutingChannelCommandStore::new(pool.clone()));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
     let app_site_settings_store = Arc::new(PostgresSiteSettingsStore::new(pool.clone()));
-    finalize_product_router_with_federated_iam(router_with_runtime_stores_and_database_status(
+    let subject_boundary_config =
+        AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
+    finalize_product_router_with_federated_iam(
+        router_with_runtime_stores_and_database_status(
         Some(app_site_settings_store),
         entity_uuid_generator,
         trusted_subject_config,
@@ -626,7 +638,9 @@ pub async fn router_with_postgres_product_catalog(
         None,
         RequestLimitsConfig::default(),
         None,
-    ))
+        ),
+        subject_boundary_config,
+    )
     .await
 }
 
@@ -688,7 +702,10 @@ pub async fn router_with_sqlite_shared_runtime(
         ),
     );
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
-    finalize_product_router_with_federated_iam(router_with_runtime_stores_and_database_status(
+    let subject_boundary_config =
+        AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
+    finalize_product_router_with_federated_iam(
+        router_with_runtime_stores_and_database_status(
         Some(Arc::new(SqliteSiteSettingsStore::new(pool.clone()))),
         entity_uuid_generator,
         trusted_subject_config,
@@ -716,7 +733,9 @@ pub async fn router_with_sqlite_shared_runtime(
         Some(&config),
         request_limits_config,
         None,
-    ))
+        ),
+        subject_boundary_config,
+    )
     .await
 }
 
@@ -779,7 +798,10 @@ pub async fn router_with_postgres_shared_runtime(
         ),
     );
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
-    finalize_product_router_with_federated_iam(router_with_runtime_stores_and_database_status(
+    let subject_boundary_config =
+        AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
+    finalize_product_router_with_federated_iam(
+        router_with_runtime_stores_and_database_status(
         Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
         entity_uuid_generator,
         trusted_subject_config,
@@ -807,7 +829,9 @@ pub async fn router_with_postgres_shared_runtime(
         Some(&config),
         request_limits_config,
         None,
-    ))
+        ),
+        subject_boundary_config,
+    )
     .await
 }
 
@@ -954,6 +978,9 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
     startup_install_mode: StartupInstallMode,
     runtime_toml: Option<&RuntimeTomlConfig>,
 ) -> Result<Router, ProductCatalogRouterError> {
+    sdkwork_claw_http::materialize_federated_database_env_from_claw_config(&config);
+    let subject_boundary_config =
+        AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
     let request_limits_config = RequestLimitsConfig::from_env_or_runtime_toml(runtime_toml)
         .map_err(ProductCatalogRouterError::Config)?;
     let app_runtime_gateway_client = build_app_runtime_gateway_client(runtime_toml)
@@ -1065,7 +1092,8 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
                     runtime_toml,
                     usage_settlement_worker_config,
                 );
-            finalize_product_router_with_federated_iam(router_with_runtime_stores_and_database_status(
+            finalize_product_router_with_federated_iam(
+                router_with_runtime_stores_and_database_status(
                 Some(Arc::new(SqliteSiteSettingsStore::new(pool.clone()))),
                 entity_uuid_generator,
                 trusted_subject_config,
@@ -1093,7 +1121,9 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
                 Some(&config),
                 request_limits_config,
                 readiness_check,
-            ))
+                ),
+                subject_boundary_config.clone(),
+            )
             .await
         }
         DatabaseEngine::Postgres => {
@@ -1188,7 +1218,8 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
                     runtime_toml,
                     usage_settlement_worker_config,
                 );
-            finalize_product_router_with_federated_iam(router_with_runtime_stores_and_database_status(
+            finalize_product_router_with_federated_iam(
+                router_with_runtime_stores_and_database_status(
                 Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
                 entity_uuid_generator,
                 trusted_subject_config,
@@ -1216,7 +1247,9 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
                 Some(&config),
                 request_limits_config,
                 readiness_check,
-            ))
+                ),
+                subject_boundary_config,
+            )
             .await
         }
     }

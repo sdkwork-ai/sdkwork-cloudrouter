@@ -3,9 +3,9 @@ members = [
     "crates/sdkwork-clawrouter-gateway-assembly",
     "crates/sdkwork-claw-contract",
     "crates/sdkwork-claw-config",
-    "crates/sdkwork-claw-core",
+    "crates/sdkwork-claw-health",
     "crates/sdkwork-claw-provider-adapter-contract",
-    "crates/sdkwork-claw-provider-adapter-core",
+    "crates/sdkwork-claw-provider-adapter",
     "crates/sdkwork-claw-provider-adapter-http",
     "crates/sdkwork-claw-provider-adapter-registry",
     "crates/sdkwork-claw-paas-plugin",
@@ -53,9 +53,9 @@ members = [
 default-members = [
     "crates/sdkwork-claw-contract",
     "crates/sdkwork-claw-config",
-    "crates/sdkwork-claw-core",
+    "crates/sdkwork-claw-health",
     "crates/sdkwork-claw-provider-adapter-contract",
-    "crates/sdkwork-claw-provider-adapter-core",
+    "crates/sdkwork-claw-provider-adapter",
     "crates/sdkwork-claw-provider-adapter-http",
     "crates/sdkwork-claw-provider-adapter-registry",
     "crates/sdkwork-claw-paas-plugin",
@@ -136,11 +136,17 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
 async-trait = "0.1"
 prometheus = "0.13"
+dashmap = "6"
+# OpenTelemetry / OTLP observability stack (M-5: wire OTLP exporter into tracing_setup)
+opentelemetry = "0.27"
+opentelemetry_sdk = { version = "0.27", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.27", default-features = false, features = ["http-proto", "reqwest-client", "trace"] }
+tracing-opentelemetry = "0.28"
 
 # SDKWork workspace members - declared once at workspace root
 sdkwork-claw-contract = { path = "crates/sdkwork-claw-contract" }
 sdkwork-claw-config = { path = "crates/sdkwork-claw-config" }
-sdkwork-claw-core = { path = "crates/sdkwork-claw-core" }
+sdkwork-claw-health = { path = "crates/sdkwork-claw-health" }
 sdkwork-claw-paas-plugin = { path = "crates/sdkwork-claw-paas-plugin" }
 sdkwork-claw-security = { path = "crates/sdkwork-claw-security" }
 sdkwork-claw-http = { path = "crates/sdkwork-claw-http" }
@@ -158,15 +164,17 @@ sdkwork-clawrouter-standalone-gateway = { path = "services/sdkwork-clawrouter-st
 sdkwork-clawrouter-admin-gateway = { path = "services/sdkwork-clawrouter-admin-gateway" }
 sdkwork-routes-clawrouter-app-api = { path = "crates/sdkwork-routes-clawrouter-app-api" }
 sdkwork-routes-clawrouter-backend-api = { path = "crates/sdkwork-routes-clawrouter-backend-api" }
+sdkwork_routes_clawrouter_app_api = { package = "sdkwork-routes-clawrouter-app-api", path = "crates/sdkwork-routes-clawrouter-app-api" }
+sdkwork_routes_clawrouter_backend_api = { package = "sdkwork-routes-clawrouter-backend-api", path = "crates/sdkwork-routes-clawrouter-backend-api" }
 sdkwork-claw-installer = { path = "services/sdkwork-claw-installer" }
 sdkwork-clawrouter-cloud-gateway = { path = "crates/sdkwork-clawrouter-cloud-gateway" }
 sdkwork-api-cloud-gateway = { path = "../sdkwork-api-cloud-gateway/crates/sdkwork-api-cloud-gateway" }
 sdkwork-api-cloud-gateway-config = { path = "../sdkwork-api-cloud-gateway/crates/sdkwork-api-cloud-gateway-config" }
 sdkwork-claw-provider-adapter-contract = { path = "crates/sdkwork-claw-provider-adapter-contract" }
-sdkwork-claw-provider-adapter-core = { path = "crates/sdkwork-claw-provider-adapter-core" }
+sdkwork-claw-provider-adapter = { path = "crates/sdkwork-claw-provider-adapter" }
 sdkwork-claw-provider-adapter-http = { path = "crates/sdkwork-claw-provider-adapter-http" }
 sdkwork-claw-provider-adapter-registry = { path = "crates/sdkwork-claw-provider-adapter-registry" }
-sdkwork-claw-provider-adapter = { path = "services/sdkwork-claw-provider-adapter" }
+sdkwork-claw-provider-adapter-host = { path = "services/sdkwork-claw-provider-adapter" }
 sdkwork-provider-adapter-alicloud = { path = "crates/provider-adapters/alicloud" }
 sdkwork-provider-adapter-tencent-cloud = { path = "crates/provider-adapters/tencent-cloud" }
 sdkwork-models = { path = "data/sdkwork-models/sdks/sdkwork-models-sdk/sdkwork-models-sdk-rust" }
@@ -179,56 +187,15 @@ sdkwork_routes_models_catalog_backend_api = { package = "sdkwork-routes-models-c
 sdkwork-id-core = { path = "../sdkwork-id/crates/sdkwork-id-core" }
 sdkwork_iam_context_service = { package = "sdkwork-iam-context-service", path = "../sdkwork-iam/crates/sdkwork-iam-context-service" }
 sdkwork_iam_directory_repository_sqlx = { package = "sdkwork-iam-directory-repository-sqlx", path = "../sdkwork-iam/crates/sdkwork-iam-directory-repository-sqlx" }
-sdkwork_commerce_core = { package = "sdkwork-commerce-contract-service", path = "../sdkwork-account/crates/sdkwork-commerce-contract-service" }
-sdkwork_commerce_storage_sqlx = { package = "sdkwork-commerce-storage-repository-sqlx", path = "vendor/sdkwork-commerce/crates/sdkwork-commerce-storage-repository-sqlx" }
-sdkwork_commerce_bootstrap = { package = "sdkwork-commerce-bootstrap-manifest", path = "vendor/sdkwork-commerce/crates/sdkwork-commerce-bootstrap-manifest" }
-# Vendor commerce workspace aliases required by vendored crates using `workspace = true`.
-sdkwork_commerce_contract_service = { package = "sdkwork-commerce-contract-service", path = "../sdkwork-account/crates/sdkwork-commerce-contract-service" }
-sdkwork_commerce_service_host = { package = "sdkwork-commerce-service-host", path = "vendor/sdkwork-commerce/crates/sdkwork-commerce-service-host" }
-sdkwork_commerce_storage_repository_sqlx = { package = "sdkwork-commerce-storage-repository-sqlx", path = "vendor/sdkwork-commerce/crates/sdkwork-commerce-storage-repository-sqlx" }
-sdkwork_commerce_api_server = { package = "sdkwork-commerce-api-server", path = "vendor/sdkwork-commerce/crates/sdkwork-commerce-api-server" }
-sdkwork_commerce_tauri_host = { package = "sdkwork-commerce-tauri-host", path = "vendor/sdkwork-commerce/crates/sdkwork-commerce-tauri-host" }
-sdkwork_commerce_rpc = { package = "sdkwork-commerce-rpc", path = "vendor/sdkwork-commerce/crates/sdkwork-commerce-rpc" }
-sdkwork_commerce_rpc_proto = { package = "sdkwork-commerce-rpc-proto", path = "vendor/sdkwork-commerce/crates/sdkwork-commerce-rpc-proto" }
-sdkwork_commerce_database_host = { package = "sdkwork-commerce-database-host", path = "vendor/sdkwork-commerce/crates/sdkwork-commerce-database-host" }
-sdkwork_commerce_router_composition = { package = "sdkwork-commerce-router-composition", path = "vendor/sdkwork-commerce/crates/sdkwork-commerce-router-composition" }
-sdkwork_commerce_account_service = { path = "../sdkwork-account/crates/sdkwork-commerce-account-service", package = "sdkwork-commerce-account-service" }
-sdkwork_commerce_account_repository_sqlx = { path = "../sdkwork-account/crates/sdkwork-commerce-account-repository-sqlx", package = "sdkwork-commerce-account-repository-sqlx" }
-sdkwork_commerce_catalog_service = { path = "../sdkwork-merchandise/crates/sdkwork-commerce-merchandise-service", package = "sdkwork-commerce-merchandise-service" }
-sdkwork_commerce_catalog_repository_sqlx = { path = "../sdkwork-catalog/crates/sdkwork-commerce-catalog-repository-sqlx", package = "sdkwork-commerce-catalog-repository-sqlx" }
-sdkwork_commerce_inventory_service = { path = "../sdkwork-inventory/crates/sdkwork-commerce-inventory-service", package = "sdkwork-commerce-inventory-service" }
-sdkwork_commerce_inventory_repository_sqlx = { path = "../sdkwork-inventory/crates/sdkwork-commerce-inventory-repository-sqlx", package = "sdkwork-commerce-inventory-repository-sqlx" }
-sdkwork_commerce_order_service = { path = "../sdkwork-order/crates/sdkwork-commerce-order-service", package = "sdkwork-commerce-order-service" }
-sdkwork_commerce_order_repository_sqlx = { path = "../sdkwork-order/crates/sdkwork-commerce-order-repository-sqlx", package = "sdkwork-commerce-order-repository-sqlx" }
-sdkwork_commerce_promotion_service = { path = "../sdkwork-promotion/crates/sdkwork-commerce-promotion-service", package = "sdkwork-commerce-promotion-service" }
-sdkwork_commerce_promotion_repository_sqlx = { path = "../sdkwork-promotion/crates/sdkwork-commerce-promotion-repository-sqlx", package = "sdkwork-commerce-promotion-repository-sqlx" }
-sdkwork_commerce_shop_service = { path = "../sdkwork-shop/crates/sdkwork-commerce-shop-service", package = "sdkwork-commerce-shop-service" }
-sdkwork_commerce_shop_repository_sqlx = { path = "../sdkwork-shop/crates/sdkwork-commerce-shop-repository-sqlx", package = "sdkwork-commerce-shop-repository-sqlx" }
-sdkwork_commerce_merchandise_repository_sqlx = { path = "../sdkwork-merchandise/crates/sdkwork-commerce-merchandise-repository-sqlx", package = "sdkwork-commerce-merchandise-repository-sqlx" }
-sdkwork_commerce_payment_repository_sqlx = { path = "../sdkwork-payment/crates/sdkwork-commerce-payment-repository-sqlx", package = "sdkwork-commerce-payment-repository-sqlx" }
-sdkwork_commerce_invoice_repository_sqlx = { path = "../sdkwork-invoice/crates/sdkwork-commerce-invoice-repository-sqlx", package = "sdkwork-commerce-invoice-repository-sqlx" }
-sdkwork_commerce_invoice_service = { path = "../sdkwork-invoice/crates/sdkwork-commerce-invoice-service", package = "sdkwork-commerce-invoice-service" }
-sdkwork_commerce_payment_service = { path = "../sdkwork-payment/crates/sdkwork-commerce-payment-service", package = "sdkwork-commerce-payment-service" }
-sdkwork_commerce_membership_service = { path = "../sdkwork-membership/crates/sdkwork-commerce-membership-service", package = "sdkwork-commerce-membership-service" }
-sdkwork_commerce_membership_repository_sqlx = { path = "../sdkwork-membership/crates/sdkwork-commerce-membership-repository-sqlx", package = "sdkwork-commerce-membership-repository-sqlx" }
-sdkwork_routes_inventory_backend_api = { path = "../sdkwork-inventory/crates/sdkwork-routes-inventory-backend-api", package = "sdkwork-routes-inventory-backend-api" }
-sdkwork_routes_inventory_app_api = { path = "../sdkwork-inventory/crates/sdkwork-routes-inventory-app-api", package = "sdkwork-routes-inventory-app-api" }
-sdkwork_routes_shop_backend_api = { path = "../sdkwork-shop/crates/sdkwork-routes-shop-backend-api", package = "sdkwork-routes-shop-backend-api" }
-sdkwork_routes_shop_app_api = { path = "../sdkwork-shop/crates/sdkwork-routes-shop-app-api", package = "sdkwork-routes-shop-app-api" }
-sdkwork_routes_merchandise_app_api = { path = "../sdkwork-merchandise/crates/sdkwork-routes-merchandise-app-api", package = "sdkwork-routes-merchandise-app-api" }
-sdkwork_routes_catalog_app_api = { path = "../sdkwork-catalog/crates/sdkwork-routes-catalog-app-api", package = "sdkwork-routes-catalog-app-api" }
-sdkwork_routes_order_app_api = { path = "../sdkwork-order/crates/sdkwork-routes-order-app-api", package = "sdkwork-routes-order-app-api" }
-sdkwork_routes_order_backend_api = { path = "../sdkwork-order/crates/sdkwork-routes-order-backend-api", package = "sdkwork-routes-order-backend-api" }
-sdkwork_routes_payment_app_api = { path = "../sdkwork-payment/crates/sdkwork-routes-payment-app-api", package = "sdkwork-routes-payment-app-api" }
-sdkwork_routes_payment_backend_api = { path = "../sdkwork-payment/crates/sdkwork-routes-payment-backend-api", package = "sdkwork-routes-payment-backend-api" }
-sdkwork_routes_account_app_api = { path = "../sdkwork-account/crates/sdkwork-routes-account-app-api", package = "sdkwork-routes-account-app-api" }
-sdkwork_routes_promotion_app_api = { path = "../sdkwork-promotion/crates/sdkwork-routes-promotion-app-api", package = "sdkwork-routes-promotion-app-api" }
-sdkwork_routes_invoice_app_api = { path = "../sdkwork-invoice/crates/sdkwork-routes-invoice-app-api", package = "sdkwork-routes-invoice-app-api" }
 sdkwork_rpc_core = { package = "sdkwork-rpc-core-rust", path = "../sdkwork-appbase/crates/sdkwork-rpc-core-rust" }
 sdkwork-rpc-core = { path = "../sdkwork-rpc-framework/crates/sdkwork-rpc-core" }
 sdkwork-rpc-discovery = { path = "../sdkwork-rpc-framework/crates/sdkwork-rpc-discovery" }
 sdkwork-rpc-server = { path = "../sdkwork-rpc-framework/crates/sdkwork-rpc-server" }
 sdkwork-rpc-client = { path = "../sdkwork-rpc-framework/crates/sdkwork-rpc-client" }
+
+# Commerce capability dependencies (migrated from sdkwork-commerce, redeclared here
+# because the commerce workspace does not expose these exact package keys).
+# NOTE: sdkwork-commerce has been deleted; T1 capability deps live in the section below.
 prost = "0.14"
 prost-types = "0.14"
 tonic = { version = "0.14", default-features = false, features = ["codegen", "transport"] }
@@ -239,11 +206,36 @@ tonic-health = "0.14"
 tonic-reflection = "0.14"
 tokio-stream = "0.1"
 sdkwork-iam-bootstrap = { package = "sdkwork-iam-bootstrap", path = "../sdkwork-iam/crates/sdkwork-iam-bootstrap" }
-sdkwork_commerce_membership_sqlx = { package = "sdkwork-commerce-membership-repository-sqlx", path = "../sdkwork-membership/crates/sdkwork-commerce-membership-repository-sqlx" }
-sdkwork_commerce_payment = { package = "sdkwork-commerce-payment-service", path = "../sdkwork-payment/crates/sdkwork-commerce-payment-service" }
-sdkwork_commerce_invoice = { package = "sdkwork-commerce-invoice-service", path = "../sdkwork-invoice/crates/sdkwork-commerce-invoice-service" }
 sdkwork-sdk-generator-client = { path = "../sdkwork-sdk-generator/rust" }
 sdkwork_content_documents_sdk_reference = { package = "sdkwork-content-documents-sdk-reference", path = "../sdkwork-documents/crates/sdkwork-content-documents-sdk-reference" }
+
+# T1 capability repository dependencies (migrated from sdkwork-commerce)
+sdkwork_contract_service = { package = "sdkwork-contract-service", path = "../sdkwork-account/crates/sdkwork-contract-service" }
+sdkwork_account_service = { package = "sdkwork-account-service", path = "../sdkwork-account/crates/sdkwork-account-service" }
+sdkwork_account_repository_sqlx = { package = "sdkwork-account-repository-sqlx", path = "../sdkwork-account/crates/sdkwork-account-repository-sqlx" }
+sdkwork_merchandise_service = { package = "sdkwork-merchandise-service", path = "../sdkwork-merchandise/crates/sdkwork-merchandise-service" }
+sdkwork_merchandise_repository_sqlx = { package = "sdkwork-merchandise-repository-sqlx", path = "../sdkwork-merchandise/crates/sdkwork-merchandise-repository-sqlx" }
+sdkwork_catalog_repository_sqlx = { package = "sdkwork-catalog-repository-sqlx", path = "../sdkwork-catalog/crates/sdkwork-catalog-repository-sqlx" }
+sdkwork_inventory_service = { package = "sdkwork-inventory-service", path = "../sdkwork-inventory/crates/sdkwork-inventory-service" }
+sdkwork_inventory_repository_sqlx = { package = "sdkwork-inventory-repository-sqlx", path = "../sdkwork-inventory/crates/sdkwork-inventory-repository-sqlx" }
+sdkwork_order_service = { package = "sdkwork-order-service", path = "../sdkwork-order/crates/sdkwork-order-service" }
+sdkwork_order_repository_sqlx = { package = "sdkwork-order-repository-sqlx", path = "../sdkwork-order/crates/sdkwork-order-repository-sqlx" }
+sdkwork_promotion_service = { package = "sdkwork-promotion-service", path = "../sdkwork-promotion/crates/sdkwork-promotion-service" }
+sdkwork_promotion_repository_sqlx = { package = "sdkwork-promotion-repository-sqlx", path = "../sdkwork-promotion/crates/sdkwork-promotion-repository-sqlx" }
+sdkwork_shop_service = { package = "sdkwork-shop-service", path = "../sdkwork-shop/crates/sdkwork-shop-service" }
+sdkwork_shop_repository_sqlx = { package = "sdkwork-shop-repository-sqlx", path = "../sdkwork-shop/crates/sdkwork-shop-repository-sqlx" }
+sdkwork_payment_repository_sqlx = { package = "sdkwork-payment-repository-sqlx", path = "../sdkwork-payment/crates/sdkwork-payment-repository-sqlx" }
+sdkwork_invoice_repository_sqlx = { package = "sdkwork-invoice-repository-sqlx", path = "../sdkwork-invoice/crates/sdkwork-invoice-repository-sqlx" }
+sdkwork_invoice_service = { package = "sdkwork-invoice-service", path = "../sdkwork-invoice/crates/sdkwork-invoice-service" }
+sdkwork_payment_service = { package = "sdkwork-payment-service", path = "../sdkwork-payment/crates/sdkwork-payment-service" }
+sdkwork_membership_service = { package = "sdkwork-membership-service", path = "../sdkwork-membership/crates/sdkwork-membership-service" }
+sdkwork_membership_repository_sqlx = { package = "sdkwork-membership-repository-sqlx", path = "../sdkwork-membership/crates/sdkwork-membership-repository-sqlx" }
+sdkwork_routes_invoice_app_api = { package = "sdkwork-routes-invoice-app-api", path = "../sdkwork-invoice/crates/sdkwork-routes-invoice-app-api" }
+sdkwork_routes_invoice_backend_api = { package = "sdkwork-routes-invoice-backend-api", path = "../sdkwork-invoice/crates/sdkwork-routes-invoice-backend-api" }
+sdkwork_invoice_service_host = { package = "sdkwork-invoice-service-host", path = "../sdkwork-invoice/crates/sdkwork-invoice-service-host" }
+sdkwork_invoice_database_host = { package = "sdkwork-invoice-database-host", path = "../sdkwork-invoice/crates/sdkwork-invoice-database-host" }
+sdkwork_invoice_database_bootstrap = { package = "sdkwork-invoice-database-bootstrap", path = "../sdkwork-invoice/crates/sdkwork-invoice-database-bootstrap" }
+sdkwork-web-bootstrap = { path = "../sdkwork-web-framework/crates/sdkwork-web-bootstrap" }
 
 # SDKWork web framework dependencies
 sdkwork-web-core = { path = "../sdkwork-web-framework/crates/sdkwork-web-core" }

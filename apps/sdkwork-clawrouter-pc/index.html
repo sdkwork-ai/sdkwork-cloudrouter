@@ -3,6 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="SDKWork Claw Router - Commercial AI Gateway Console" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#0ea5e9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+
+    <!--
+      Content-Security-Policy is intentionally NOT set via a <meta> tag here.
+      In production the packaged Rust edge server injects the CSP response
+      header, driven by SDKWORK_CLAW_EDGE_CSP_CONNECT_SRC and the runtime API
+      origins. Keeping CSP out of the static HTML lets the edge server adapt
+      connect-src to the deployment without rebuilding the portal bundle.
+    -->
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="SDKWork Claw Router" />
+    <meta property="og:description" content="SDKWork Claw Router - Commercial AI Gateway Console" />
+
     <title>SDKWork Claw Router</title>
   </head>
   <body>

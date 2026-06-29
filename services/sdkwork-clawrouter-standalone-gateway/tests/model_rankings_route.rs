@@ -127,7 +127,7 @@ async fn database_config_app_startup_worker_auto_refreshes_rankings_and_records_
     let model: String = sqlx::Row::get(&row, "model");
     sqlx::query(
         r#"
-        INSERT INTO ai_usage_fact
+        INSERT INTO ai_usage
             (id, uuid, tenant_id, organization_id, user_id, request_id, status, metadata,
              catalog_key, model, modality, usage_type, billing_meter_code, request_count,
              prompt_tokens, completion_tokens, total_tokens, billable_quantity, cost_amount,

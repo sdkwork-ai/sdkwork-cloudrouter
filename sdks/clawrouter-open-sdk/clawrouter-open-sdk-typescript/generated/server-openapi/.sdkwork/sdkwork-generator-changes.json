@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "@sdkwork/clawrouter-open-sdk"
   },
-  "changeFingerprint": "a409b319315f8cbca0d0de35d0ee4376106f329dd07e1b2760f2f3fc27d04710",
+  "changeFingerprint": "9040510771920d1d13db69cf15f9d1f7212d3f9c729665f9a77a333ae0e50c6d",
   "changes": {
     "createdGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -1038,7 +1038,7 @@
         "title": "Unified package check",
         "required": true,
         "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-claw-router\\sdks\\clawrouter-open-sdk\\clawrouter-open-sdk-typescript\\generated\\server-openapi",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-clawrouter\\sdks\\clawrouter-open-sdk\\clawrouter-open-sdk-typescript\\generated\\server-openapi",
         "command": "node",
         "args": [
           "./bin/publish-core.mjs",
@@ -1056,7 +1056,7 @@
         "title": "Unified package build",
         "required": true,
         "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-claw-router\\sdks\\clawrouter-open-sdk\\clawrouter-open-sdk-typescript\\generated\\server-openapi",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-clawrouter\\sdks\\clawrouter-open-sdk\\clawrouter-open-sdk-typescript\\generated\\server-openapi",
         "command": "node",
         "args": [
           "./bin/publish-core.mjs",

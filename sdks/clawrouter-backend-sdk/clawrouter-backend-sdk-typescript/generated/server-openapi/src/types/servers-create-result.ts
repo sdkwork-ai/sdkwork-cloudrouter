@@ -1,11 +1,9 @@
-import type { AdminMcpServerMutationResponse } from './admin-mcp-server-mutation-response';
-
 /** Servers create result schema exposed by Claw Router. */
 export interface ServersCreateResult {
   /** Business response code. */
   code: string;
-  /** Data field on servers create result. */
-  data?: AdminMcpServerMutationResponse;
+  /** No business data returned by this operation. */
+  data?: never;
   /** Human-readable response message. */
   msg?: string;
 }

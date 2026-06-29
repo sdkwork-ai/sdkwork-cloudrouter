@@ -2,6 +2,7 @@
 
 mod http_route_manifest;
 mod iam_runtime;
+mod invoice_runtime;
 pub mod manifest;
 pub mod paths;
 pub mod routes;

@@ -1,4 +1,0 @@
-interface:
-  display_name: "ClawRouter Backend SDK"
-  short_description: "Use the generated ClawRouter backend SDK"
-  default_prompt: "Use the ClawRouter backend SDK integration standard."

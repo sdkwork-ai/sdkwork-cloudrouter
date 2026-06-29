@@ -6,7 +6,7 @@
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "dependencies": {
-    "@sdkwork/app-topology": "file:../sdkwork-app-topology"
+    "@sdkwork/app-topology": "workspace:*"
   },
   "scripts": {
     "install:deps:ensure": "node scripts/lib/ensure-claw-router-node-deps.mjs",
@@ -28,7 +28,7 @@
     "test": "pnpm topology:validate && pnpm test:topology && node scripts/run-claw-router-application.test.mjs",
     "build": "node scripts/build-claw-router-production.mjs",
     "start": "node scripts/start-claw-router-production.mjs",
-    "check": "pnpm check:application-env && pnpm check:gateway-request-identity && pnpm check:dependency-composition && node scripts/run-claw-router-application.mjs check",
+    "check": "pnpm check:application-env && pnpm check:gateway-request-identity && pnpm check:dependency-composition && pnpm check:vendor-workspace && pnpm check:commerce-debt && node scripts/run-claw-router-application.mjs check",
     "clean": "node scripts/clean-claw-router-workspace.mjs",
     "clean:fast": "node scripts/clean-claw-router-workspace.mjs",
     "typecheck": "pnpm --dir apps/sdkwork-clawrouter-pc typecheck",
@@ -130,6 +130,9 @@
     "check:application-env": "node --test scripts/lib/claw-router-browser-env-contract.test.mjs scripts/lib/claw-router-edge-env-contract.test.mjs scripts/dev/claw-router-application-env.test.mjs scripts/dev/ensure-claw-router-env.test.mjs scripts/write-release-env.test.mjs scripts/release-environment-validation.test.mjs && node scripts/check-claw-router-application-env.mjs",
     "check:gateway-request-identity": "node scripts/check-claw-router-gateway-request-identity.mjs",
     "check:dependency-composition": "node ../sdkwork-specs/tools/check-dependency-composition.mjs --workspace .",
+    "check:vendor-workspace": "node scripts/check-vendor-workspace.mjs",
+    "check:commerce-debt": "node scripts/check-commerce-debt.mjs --report",
+    "check:commerce-debt:strict": "node scripts/check-commerce-debt.mjs",
     "db:plan": "cargo run --manifest-path ../sdkwork-database/Cargo.toml -p sdkwork-database-cli -- --app-root . plan",
     "db:migrate": "cargo run --manifest-path ../sdkwork-database/Cargo.toml -p sdkwork-database-cli -- --app-root . migrate",
     "db:seed": "cargo run --manifest-path ../sdkwork-database/Cargo.toml -p sdkwork-database-cli -- --app-root . seed",

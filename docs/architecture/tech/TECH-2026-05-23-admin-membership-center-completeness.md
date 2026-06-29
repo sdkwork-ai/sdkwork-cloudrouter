@@ -38,11 +38,11 @@
 - Create: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipMembersPage.tsx`
 - Create: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipEntitlementsPage.tsx`
 - Create: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipRechargePackagesPage.tsx`
-- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-membership-sqlx-rust/src/seed.rs`
+- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-membership-sqlx-rust/src/seed.rs`
   - Add seed integrity report structs and SQLite/Postgres diagnostic checks.
-- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-membership-sqlx-rust/src/lib.rs`
+- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-membership-sqlx-rust/src/lib.rs`
   - Re-export new seed integrity report functions/types if needed.
-- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-membership-sqlx-rust/tests/membership_sqlx_standard.rs`
+- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-membership-sqlx-rust/tests/membership_sqlx_standard.rs`
   - Add tests for complete diagnostics and broken seed diagnostics.
 
 ## Task 1: Portal Runtime Tests
@@ -103,7 +103,7 @@ Expected: FAIL because the new page/form files do not exist or functions are mis
 ## Task 2: Rust Seed Integrity Tests
 
 **Files:**
-- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-membership-sqlx-rust/tests/membership_sqlx_standard.rs`
+- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-membership-sqlx-rust/tests/membership_sqlx_standard.rs`
 
 - [ ] **Step 1: Write failing tests for seed integrity diagnostics**
 
@@ -225,8 +225,8 @@ Expected: PASS after implementation.
 ## Task 5: Seed Integrity Diagnostics
 
 **Files:**
-- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-membership-sqlx-rust/src/seed.rs`
-- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-membership-sqlx-rust/src/lib.rs`
+- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-membership-sqlx-rust/src/seed.rs`
+- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-membership-sqlx-rust/src/lib.rs`
 
 - [ ] **Step 1: Add report types**
 

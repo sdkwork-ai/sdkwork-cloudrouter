@@ -9,5 +9,9 @@
   },
   "dependencies": {
     "@sdkwork/clawroutes-pc-commons": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

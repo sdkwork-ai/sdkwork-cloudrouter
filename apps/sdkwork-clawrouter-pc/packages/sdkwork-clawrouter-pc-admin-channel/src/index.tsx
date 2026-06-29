@@ -1981,6 +1981,7 @@ function AddAccountDrawer({
                 emptySearch: t('admin.channel.aiResources.emptySearchDescription'),
                 selectedCount: count => t('admin.channel.aiResources.selectedCount', { count }),
                 done: t('common.actions.done'),
+                close: t('common.actions.close'),
                 columns: {
                   resource: t('admin.channel.aiResources.table.resource'),
                   kind: t('admin.channel.aiResources.table.kind'),

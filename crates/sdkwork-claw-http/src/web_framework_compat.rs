@@ -7,8 +7,9 @@ use axum::Router;
 use serde::Serialize;
 
 use crate::auth::{
-    app_request_subject_boundary, optional_app_request_subject_boundary,
-    project_trusted_subject_for_legacy_handlers, AppSubjectBoundaryConfig, TrustedRequestSubject,
+    app_request_subject_boundary, federated_app_request_subject_boundary,
+    optional_app_request_subject_boundary, project_trusted_subject_for_legacy_handlers,
+    AppSubjectBoundaryConfig, TrustedRequestSubject,
 };
 use crate::web_bridge::authenticated_principal_failed_trusted_subject_projection;
 
@@ -128,6 +129,20 @@ pub fn merge_web_framework_scoped_app_read_router(
             legacy_config,
         ))
     }
+}
+
+/// Merges federated T1 app-api capability routers with Claw app-session auth.
+pub fn merge_federated_app_capability_router(
+    router: Router,
+    capability_router: Router,
+    legacy_config: AppSubjectBoundaryConfig,
+) -> Router {
+    router.merge(
+        capability_router.layer(from_fn_with_state(
+            legacy_config,
+            federated_app_request_subject_boundary,
+        )),
+    )
 }
 
 #[cfg(test)]

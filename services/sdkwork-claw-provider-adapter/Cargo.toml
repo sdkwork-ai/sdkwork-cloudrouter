@@ -1,5 +1,5 @@
 [package]
-name = "sdkwork-claw-provider-adapter"
+name = "sdkwork-claw-provider-adapter-host"
 version.workspace = true
 edition.workspace = true
 license-file.workspace = true
@@ -13,7 +13,7 @@ anyhow.workspace = true
 axum.workspace = true
 serde_json.workspace = true
 sdkwork-claw-config.workspace = true
-sdkwork-claw-provider-adapter-core.workspace = true
+sdkwork-claw-provider-adapter.workspace = true
 sdkwork-claw-provider-adapter-http.workspace = true
 sdkwork-provider-adapter-alicloud.workspace = true
 sdkwork-provider-adapter-tencent-cloud.workspace = true

@@ -16,3 +16,4 @@ anyhow.workspace = true
 sdkwork-claw-config.workspace = true
 sdkwork-clawrouter-cloud-gateway.workspace = true
 tokio.workspace = true
+tracing.workspace = true

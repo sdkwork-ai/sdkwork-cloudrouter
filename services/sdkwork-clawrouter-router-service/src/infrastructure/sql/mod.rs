@@ -6,6 +6,8 @@ pub(crate) mod ai_routing_seed;
 pub mod app_gateway_traces_repository_adapter;
 pub mod app_providers_repository_adapter;
 pub mod catalog;
+pub(crate) mod commerce_bootstrap;
+pub(crate) mod membership_seed_compat;
 pub(crate) mod dashboard_overview_metrics;
 pub(crate) mod iam_application_bootstrap;
 pub mod iam_scope_resolver;

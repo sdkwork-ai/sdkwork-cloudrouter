@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
-import { mapCommerceRouteToHost } from "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-host/src/commerce-host-navigation.ts";
+import { mapCommerceRouteToHost } from "../../packages/pc-react/commerce/sdkwork-commerce-pc-host/src/commerce-host-navigation.ts";
 
 function readPortalFile(relativePath: string): string {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8");
@@ -47,8 +47,8 @@ test("console checkout and payment routes stay hidden from sidebar navigation", 
 });
 
 test("sdkwork-commerce wallet and billing pages own recharge and settlement UI", () => {
-  const walletPagePath = "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-wallet/src/pages/WalletPage.tsx";
-  const billingPagePath = "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-billing/src/pages/BillingPage.tsx";
+  const walletPagePath = "../../packages/pc-react/commerce/sdkwork-commerce-pc-wallet/src/pages/WalletPage.tsx";
+  const billingPagePath = "../../packages/pc-react/commerce/sdkwork-commerce-pc-billing/src/pages/BillingPage.tsx";
 
   if (portalFileExists(walletPagePath)) {
     assert.match(readPortalFile(walletPagePath), /navigateWalletRechargeCheckout/);

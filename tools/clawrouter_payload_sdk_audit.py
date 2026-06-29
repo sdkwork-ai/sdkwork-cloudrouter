@@ -37,6 +37,13 @@ class ClawRouterPayloadSdkAudit:
     ENTITY_RESPONSE_PROPERTIES = frozenset({"item", "key", "codes", "vendors", "models"})
     STABLE_ID_FIELDS = ("id", "vendorId")
     SEARCH_TEXT_ALIASES = frozenset({"keyword", "search", "search_query", "searchQuery"})
+    SDKWORK_API_RESPONSE_REF = "#/components/schemas/SdkWorkApiResponse"
+    SDKWORK_SUCCESS_RESPONSE_REFS = {
+        "#/components/schemas/SdkWorkApiResponse",
+        "#/components/schemas/SdkWorkListResponse",
+        "#/components/schemas/SdkWorkResourceResponse",
+        "#/components/schemas/SdkWorkCommandResponse",
+    }
 
     def __init__(
         self,
@@ -203,18 +210,22 @@ class ClawRouterPayloadSdkAudit:
                     )
                 )
             result_component = schemas.get(result_schema)
+            operation_success_schema = self._json_success_schema(operation_spec) if operation_spec is not None else None
+            uses_sdkwork_envelope = self._uses_sdkwork_success_envelope(operation_success_schema or {})
+            uses_generic_envelope = self._uses_sdkwork_generic_success_envelope(operation_success_schema or {})
             if not isinstance(result_component, dict):
-                messages.append(f"{surface} {operation_id} result schema component is missing: {result_schema}")
-            else:
+                if not uses_generic_envelope and not uses_sdkwork_envelope:
+                    messages.append(f"{surface} {operation_id} result schema component is missing: {result_schema}")
+            elif operation_spec is not None and not uses_sdkwork_envelope:
                 data_schema = result_component.get("properties", {}).get("data") if isinstance(result_component.get("properties"), dict) else None
                 expected_data_schema = {"$ref": f"#/components/schemas/{response_schema}"}
                 if not self._schema_matches_ref(data_schema, expected_data_schema["$ref"]):
                     messages.append(f"{surface} {operation_id} result data schema must be {expected_data_schema}")
             if operation_spec is None:
                 messages.append(f"{surface} {operation_id} is missing from OpenAPI path {self._string(operation.get('api_path'))} {method}")
-            elif self._success_response_schema_ref(operation_spec) != result_ref:
+            elif not self._success_response_uses_expected_envelope(operation_spec, result_ref):
                 messages.append(f"{surface} {operation_id} 200 response must reference {result_ref}")
-            if owner_sdk_operation and response_schema != "NoData":
+            if owner_sdk_operation and response_schema != "NoData" and not uses_generic_envelope:
                 messages.extend(
                     self._check_sdk_type(
                         surface,
@@ -225,7 +236,7 @@ class ClawRouterPayloadSdkAudit:
                         response_component,
                     )
                 )
-            if owner_sdk_operation:
+            if owner_sdk_operation and not uses_generic_envelope and not uses_sdkwork_envelope:
                 messages.extend(
                     self._check_sdk_type(
                         surface,
@@ -253,6 +264,8 @@ class ClawRouterPayloadSdkAudit:
                         messages.append(f"{surface} {operation_id} SDK method must return Promise<{result_schema}>")
                     if not any(f"<{result_schema}>" in body for _, body in sdk_method_records):
                         messages.append(f"{surface} {operation_id} SDK client call must use {result_schema}")
+            elif owner_sdk_operation and not sdk_method_records:
+                messages.append(f"{surface} {operation_id} SDK method is missing")
 
         return messages
 
@@ -503,6 +516,22 @@ class ClawRouterPayloadSdkAudit:
             return value
         return True
 
+    def _json_success_schema(self, operation_spec: dict[str, Any]) -> dict[str, Any] | None:
+        responses = operation_spec.get("responses", {})
+        if not isinstance(responses, dict):
+            return None
+        success = responses.get("200", {})
+        if not isinstance(success, dict):
+            return None
+        content = success.get("content", {})
+        if not isinstance(content, dict):
+            return None
+        json_content = content.get("application/json", {})
+        if not isinstance(json_content, dict):
+            return None
+        schema = json_content.get("schema", {})
+        return schema if isinstance(schema, dict) else None
+
     def _success_response_schema_ref(self, operation_spec: dict[str, Any]) -> str:
         responses = operation_spec.get("responses", {})
         if not isinstance(responses, dict):
@@ -517,7 +546,42 @@ class ClawRouterPayloadSdkAudit:
         if not isinstance(json_content, dict):
             return ""
         schema = json_content.get("schema", {})
-        return self._string(schema.get("$ref")) if isinstance(schema, dict) else ""
+        if not isinstance(schema, dict):
+            return ""
+        ref = self._string(schema.get("$ref"))
+        if ref:
+            return ref
+        if self._uses_sdkwork_success_envelope(schema):
+            return self.SDKWORK_API_RESPONSE_REF
+        return ""
+
+    def _uses_sdkwork_success_envelope(self, schema: dict[str, Any]) -> bool:
+        ref = self._string(schema.get("$ref"))
+        if ref in self.SDKWORK_SUCCESS_RESPONSE_REFS:
+            return True
+        all_of = schema.get("allOf")
+        if not isinstance(all_of, list):
+            return False
+        return any(
+            isinstance(item, dict) and item.get("$ref") == self.SDKWORK_API_RESPONSE_REF
+            for item in all_of
+        )
+
+    def _uses_sdkwork_generic_success_envelope(self, schema: dict[str, Any]) -> bool:
+        ref = self._string(schema.get("$ref"))
+        return ref in {
+            "#/components/schemas/SdkWorkListResponse",
+            "#/components/schemas/SdkWorkResourceResponse",
+            "#/components/schemas/SdkWorkCommandResponse",
+        }
+
+    def _success_response_uses_expected_envelope(self, operation_spec: dict[str, Any], result_ref: str) -> bool:
+        actual_ref = self._success_response_schema_ref(operation_spec)
+        if actual_ref == result_ref:
+            return True
+        if actual_ref == self.SDKWORK_API_RESPONSE_REF:
+            return True
+        return actual_ref in self.SDKWORK_SUCCESS_RESPONSE_REFS
 
     def _check_sdk_type(
         self,

@@ -1,7 +1,7 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
-use sdkwork_commerce_core::{CommerceAccountAssetType, CommerceLedgerDirection};
+use sdkwork_contract_service::{CommerceAccountAssetType, CommerceLedgerDirection};
 use sqlx::{Row, Sqlite, SqlitePool, Transaction};
 
 use crate::domain::DomainError;
@@ -137,7 +137,7 @@ async fn load_settleable_usage_facts(
             COALESCE(total_tokens, 0) AS tokens,
             COALESCE(NULLIF(currency, ''), 'USD') AS currency,
             COALESCE(NULLIF(pricing_snapshot, ''), '{}') AS pricing_snapshot
-        FROM ai_usage_fact
+        FROM ai_usage
         WHERE (? <= 0 OR tenant_id = ?)
           AND (? <= 0 OR organization_id = ?)
           AND settlement_status IN (?, ?)
@@ -299,7 +299,7 @@ async fn already_settled(
     let row = sqlx::query(
         r#"
         SELECT account_ledger_entry_id
-        FROM commerce_usage_settlement
+        FROM commerce_settlement
         WHERE tenant_id = ?
           AND organization_id = ?
           AND usage_fact_id = ?
@@ -418,7 +418,7 @@ async fn upsert_processing_settlement(
 ) -> Result<i64, DomainError> {
     sqlx::query(
         r#"
-        INSERT INTO commerce_usage_settlement
+        INSERT INTO commerce_settlement
             (uuid, tenant_id, organization_id, user_id, request_id, trace_id, status, created_at,
              metadata, settlement_no, usage_fact_id, account_id, asset_type, direction, amount,
              points, tokens, currency, price_snapshot, settlement_status)
@@ -439,7 +439,7 @@ async fn upsert_processing_settlement(
             settlement_status = excluded.settlement_status,
             failure_code = NULL,
             failure_message = NULL
-        WHERE commerce_usage_settlement.settlement_status <> ?
+        WHERE commerce_settlement.settlement_status <> ?
         "#,
     )
     .bind(stable_uuid("usage-settlement", usage_fact.id))
@@ -468,7 +468,7 @@ async fn upsert_processing_settlement(
     sqlx::query_scalar(
         r#"
         SELECT id
-        FROM commerce_usage_settlement
+        FROM commerce_settlement
         WHERE tenant_id = ?
           AND organization_id = ?
           AND usage_fact_id = ?
@@ -549,7 +549,7 @@ async fn insert_account_ledger_entry(
         INSERT INTO commerce_account_ledger_entry
             (id, tenant_id, organization_id, account_id, owner_user_id, asset_type, direction, amount, balance_after, business_type, transaction_no, request_no, idempotency_key, source_type, source_id, remark, created_at)
         VALUES
-            (?, CAST(? AS TEXT), CAST(? AS TEXT), ?, CAST(? AS TEXT), ?, ?, ?, ?, 'usage', ?, ?, ?, 'ai_usage_fact', ?, ?, CURRENT_TIMESTAMP)
+            (?, CAST(? AS TEXT), CAST(? AS TEXT), ?, CAST(? AS TEXT), ?, ?, ?, ?, 'usage', ?, ?, ?, 'ai_usage', ?, ?, CURRENT_TIMESTAMP)
         "#,
     )
     .bind(ledger_entry_id)
@@ -582,7 +582,7 @@ async fn mark_settlement_success(
 ) -> Result<(), DomainError> {
     sqlx::query(
         r#"
-        UPDATE commerce_usage_settlement
+        UPDATE commerce_settlement
         SET account_ledger_entry_id = COALESCE(?, account_ledger_entry_id),
             settlement_status = ?,
             settled_at = ?,
@@ -600,7 +600,7 @@ async fn mark_settlement_success(
     .map_err(|error| store_error("failed to mark usage settlement success", error))?;
     sqlx::query(
         r#"
-        UPDATE ai_usage_fact
+        UPDATE ai_usage
         SET settlement_status = ?,
             settlement_id = ?
         WHERE id = ?
@@ -624,7 +624,7 @@ async fn mark_settlement_failed(
 ) -> Result<(), DomainError> {
     sqlx::query(
         r#"
-        UPDATE commerce_usage_settlement
+        UPDATE commerce_settlement
         SET account_ledger_entry_id = NULL,
             settlement_status = ?,
             settled_at = NULL,
@@ -642,7 +642,7 @@ async fn mark_settlement_failed(
     .map_err(|error| store_error("failed to mark usage settlement failed", error))?;
     sqlx::query(
         r#"
-        UPDATE ai_usage_fact
+        UPDATE ai_usage
         SET settlement_status = ?,
             settlement_id = ?
         WHERE id = ?
@@ -722,7 +722,7 @@ async fn defer_usage_group(
     for candidate in &group.candidates {
         sqlx::query(
             r#"
-            UPDATE ai_usage_fact
+            UPDATE ai_usage
             SET settlement_status = ?
             WHERE id = ?
             "#,
@@ -734,7 +734,7 @@ async fn defer_usage_group(
         .map_err(|error| store_error("failed to defer micro usage settlement fact", error))?;
         sqlx::query(
             r#"
-            UPDATE commerce_usage_settlement
+            UPDATE commerce_settlement
             SET settlement_status = ?,
                 settled_at = NULL,
                 failure_code = NULL,

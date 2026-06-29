@@ -1,0 +1,392 @@
+tables:
+  
+  # ============================================================
+  # ai_usage - AI用量事实表（核心计费数据）
+  # ============================================================
+  
+  - table: ai_usage
+    domain: ai
+    profile: ledger_source_fact
+    compliance_level: L3
+    system_of_record: true
+    write_owner: router-service
+    
+    description: |
+      AI用量事实表 - Claw Router的核心价值表
+      
+      行业对标:
+      - Stripe Usage Records (用量记录)
+      - AWS CloudWatch Metrics (监控指标)
+      - OpenAI API Usage (API用量)
+      
+      职责:
+      - 记录所有AI调用的用量事实
+      - 作为结算、计费、对账的事实来源
+      - 支持金融级别的合规要求（L3）
+      
+      数据流向:
+      1. router-service写入ai_usage（Claw Router本地）
+      2. 发布UsageRecorded事件
+      3. sdkwork-account订阅事件 → commerce_account_ledger_entry
+      
+      关键特性:
+      - 不可变性: append-only，只能追加不能修改
+      - 幂等性: 通过request_id保证幂等
+      - 完整性: 包含完整的请求、响应、计费信息
+      - 可追溯性: 包含trace_id支持链路追踪
+    
+    common_columns: ledger_source_fact
+    
+    frontend_routes:
+      - /console/usage
+      - /admin/usage
+      - /admin/analytics
+    
+    api_surfaces:
+      - app
+      - backend
+      - worker
+    
+    columns:
+      # 标识字段
+      id: int64
+      uuid: string(64)
+      
+      # 租户隔离
+      tenant_id: int64
+      organization_id: int64
+      user_id: int64
+      
+      # 幂等追踪
+      request_id: string(128)
+      trace_id: string(128)
+      idempotency_key: string(128)
+      
+      # 渠道信息
+      group_id: int64
+      group_code: string(64)
+      channel_id: int64
+      channel_code: string(64)
+      
+      # 供应商信息
+      provider_id: int64
+      provider_code: string(64)
+      
+      # 模型信息
+      model_vendor: string(64)
+      model_code: string(128)
+      model_family: string(64)
+      
+      # 能力类型
+      capability_type: enum_int32
+      operation_type: enum_int32
+      
+      # 计费计量（对标Stripe Metering）
+      billing_mode: enum_int32
+      billing_meter: string(64)
+      input_tokens: int64
+      output_tokens: int64
+      total_tokens: int64
+      reasoning_tokens: int64
+      cache_read_tokens: int64
+      cache_write_tokens: int64
+      
+      # 性能指标（对标CloudWatch Metrics）
+      duration_ms: int64
+      ttft_ms: int32
+      upstream_latency_ms: int32
+      gateway_latency_ms: int32
+      
+      # 金额字段（对标Stripe Billing）
+      upstream_cost: decimal
+      upstream_currency: string(10)
+      customer_charge: decimal
+      customer_currency: string(10)
+      settlement_amount: decimal
+      settlement_currency: string(10)
+      
+      # 结算状态
+      settlement_status: enum_int32
+      
+      # 定价信息
+      pricing_id: int64
+      pricing_code: string(64)
+      
+      # 流式/幂等/降级
+      is_streaming: bool
+      is_idempotent: bool
+      is_fallback: bool
+      
+      # 错误信息
+      error_code: string(64)
+      error_type: string(64)
+      error_message: string(512)
+      
+      # 快照（对标AWS Config Snapshots）
+      request_snapshot: json
+      response_snapshot: json
+      
+      # 路由决策
+      routing_log_id: int64
+      
+      # 粘性会话
+      sticky_key: string(128)
+      
+      # 熔断器
+      circuit_state: enum_int32
+      
+      # Region
+      upstream_region: string(64)
+      client_region: string(64)
+      
+      # 客户端信息（脱敏）
+      client_ip_hash: string(128)
+      user_agent_hash: string(128)
+      
+      # API Key
+      api_key_id: int64
+      api_key_prefix: string(32)
+      
+      # 审计字段
+      created_at: instant
+      processed_at: instant
+      settled_at: instant
+      reconciled_at: instant
+      
+      # 生命周期
+      status: enum_int32
+      retention_until: instant
+      legal_hold: bool
+      
+      # 元数据
+      metadata: json
+    
+    unique_constraints:
+      - name: uk_ai_usage_request
+        columns:
+          - tenant_id
+          - organization_id
+          - request_id
+    
+    indexes:
+      - name: idx_ai_usage_tenant_time
+        columns:
+          - tenant_id
+          - organization_id
+          - created_at
+          - id
+      
+      - name: idx_ai_usage_group_time
+        columns:
+          - tenant_id
+          - organization_id
+          - group_id
+          - created_at
+          - id
+      
+      - name: idx_ai_usage_provider_time
+        columns:
+          - tenant_id
+          - organization_id
+          - provider_code
+          - created_at
+          - id
+      
+      - name: idx_ai_usage_model_time
+        columns:
+          - tenant_id
+          - organization_id
+          - model_code
+          - created_at
+          - id
+      
+      - name: idx_ai_usage_api_key_time
+        columns:
+          - tenant_id
+          - organization_id
+          - api_key_id
+          - created_at
+          - id
+      
+      - name: idx_ai_usage_user_time
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - created_at
+          - id
+      
+      - name: idx_ai_usage_settlement_status
+        columns:
+          - tenant_id
+          - organization_id
+          - settlement_status
+          - created_at
+          - id
+    
+    lifecycle:
+      partition_by: created_at_month
+      online_retention: 12mo
+      archive_retention: 5y
+    
+    security:
+      sensitivity: INTERNAL
+      stores_secret_plaintext: false
+      audit_required: true
+    
+    serialization:
+      int64: string
+      decimal: string
+      instant: iso8601_utc
+  
+  # ============================================================
+  # ai_usage_trace - 用量追踪表（请求链路日志）
+  # ============================================================
+  
+  - table: ai_usage_trace
+    domain: ai
+    profile: event_log
+    compliance_level: L2
+    system_of_record: true
+    write_owner: router-service
+    
+    description: |
+      用量追踪表 - 请求链路日志
+      
+      行业对标:
+      - AWS X-Ray (分布式追踪)
+      - Datadog APM (应用性能监控)
+      - Jaeger Tracing (链路追踪)
+      
+      职责:
+      - 记录请求的完整链路信息
+      - 支持问题排查和性能分析
+      - 提供可观测性数据
+      
+      数据流向:
+      1. router-service写入ai_usage_trace
+      2. 关联ai_usage.request_id
+      3. 支持trace_id链路追踪
+      
+      关键特性:
+      - 可观测性: 支持链路追踪和性能分析
+      - 关联性: 通过trace_id关联完整链路
+      - 时效性: 短期存储（在线保留3个月）
+    
+    common_columns: event_log
+    
+    frontend_routes:
+      - /console/usage
+      - /admin/usage/traces
+    
+    api_surfaces:
+      - backend
+      - worker
+    
+    columns:
+      # 标识字段
+      id: int64
+      uuid: string(64)
+      
+      # 租户隔离
+      tenant_id: int64
+      organization_id: int64
+      user_id: int64
+      
+      # 关联信息
+      usage_id: int64
+      request_id: string(128)
+      trace_id: string(128)
+      
+      # 渠道信息
+      group_id: int64
+      channel_id: int64
+      provider_id: int64
+      
+      # 模型信息
+      model_code: string(128)
+      
+      # 追踪信息
+      span_id: string(64)
+      parent_span_id: string(64)
+      span_name: string(128)
+      span_kind: enum_int32
+      
+      # 时间信息
+      start_time: instant
+      end_time: instant
+      duration_ms: int64
+      
+      # HTTP信息
+      http_method: string(16)
+      http_url: string(512)
+      http_status_code: int32
+      
+      # 错误信息
+      error: bool
+      error_code: string(64)
+      error_message: string(512)
+      
+      # 性能指标
+      ttft_ms: int32
+      tokens_per_second: decimal
+      first_token_latency_ms: int32
+      
+      # 标签
+      tags: json
+      
+      # 事件
+      events: json
+      
+      # 审计字段
+      created_at: instant
+      
+      # 生命周期
+      status: enum_int32
+    
+    unique_constraints:
+      - name: uk_ai_usage_trace_request
+        columns:
+          - tenant_id
+          - organization_id
+          - request_id
+          - span_id
+    
+    indexes:
+      - name: idx_ai_usage_trace_trace
+        columns:
+          - tenant_id
+          - organization_id
+          - trace_id
+          - created_at
+          - id
+      
+      - name: idx_ai_usage_trace_usage
+        columns:
+          - tenant_id
+          - organization_id
+          - usage_id
+          - created_at
+          - id
+      
+      - name: idx_ai_usage_trace_time
+        columns:
+          - tenant_id
+          - organization_id
+          - created_at
+          - id
+    
+    lifecycle:
+      partition_by: created_at_month
+      online_retention: 3mo
+      archive_retention: 1y
+    
+    security:
+      sensitivity: INTERNAL
+      stores_secret_plaintext: false
+      audit_required: true
+    
+    serialization:
+      int64: string
+      decimal: string
+      instant: iso8601_utc

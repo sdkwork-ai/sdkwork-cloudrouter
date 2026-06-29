@@ -19,7 +19,7 @@
 - Modify: `docs/schema-registry/frontend-field-contracts/shared/entities/commerce.yaml`
 - Modify: `docs/schema-registry/frontend-field-contracts/operations/app-commerce-recharges.yaml`
 - Modify: `docs/schema-registry/frontend-field-contracts/operations/backend-commerce-recharges.yaml`
-- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-http-rust/tests/app_recharge_checkout_router.rs`
+- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-http-rust/tests/app_recharge_checkout_router.rs`
 - Modify: `services/sdkwork-clawrouter-admin-gateway/tests/database_config_router.rs`
 - Modify: `apps/sdkwork-clawrouter-pc/billing-runtime.test.ts`
 - Modify: `apps/sdkwork-clawrouter-pc/admin-membership-recharge-runtime.test.ts`
@@ -31,10 +31,10 @@
 ### Task 2: Redesign Rust recharge domain and app recharge handlers
 
 **Files:**
-- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-payment-rust/src/domain/mod.rs`
-- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-payment-rust/src/commands/mod.rs`
-- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-http-rust/src/recharge_router.rs`
-- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-http-rust/src/lib.rs`
+- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-payment-rust/src/domain/mod.rs`
+- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-payment-rust/src/commands/mod.rs`
+- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-http-rust/src/recharge_router.rs`
+- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-http-rust/src/lib.rs`
 
 - [ ] **Step 1: Replace legacy recharge DTOs with multi-currency package/settings/order shapes**
 - [ ] **Step 2: Update app recharge routes to expose package list, recharge settings, and standard order create payloads**
@@ -43,10 +43,10 @@
 ### Task 3: Implement multi-currency recharge storage and seed data
 
 **Files:**
-- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-storage-sqlx-rust/src/sqlite_recharge.rs`
-- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-storage-sqlx-rust/src/postgres_recharge.rs`
-- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-bootstrap-rust/src/lib.rs`
-- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-membership-sqlx-rust/src/seed.rs`
+- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-storage-sqlx-rust/src/sqlite_recharge.rs`
+- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-storage-sqlx-rust/src/postgres_recharge.rs`
+- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-bootstrap-rust/src/lib.rs`
+- Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-membership-sqlx-rust/src/seed.rs`
 
 - [ ] **Step 1: Implement recharge points calculation from base CNY ratio plus currency-to-CNY conversion**
 - [ ] **Step 2: Make package matching use `packageId` when present and preserve package currency through order/payment writes**

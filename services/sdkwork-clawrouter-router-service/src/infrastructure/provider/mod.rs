@@ -12,12 +12,13 @@ pub use adapter_aware_embeddings_relay::AdapterAwareEmbeddingsRelay;
 pub use adapter_aware_responses_relay::AdapterAwareResponsesRelay;
 pub use openai_compatible_relay::{
     OpenAiCompatibleChatCompletionRelay, OpenAiCompatibleChatCompletionStreamRelay,
-    OpenAiCompatibleEmbeddingsRelay, OpenAiCompatibleResponsesRelay,
+    OpenAiCompatibleEmbeddingsRelay, OpenAiCompatibleResponsesRelay, ProviderRelayHttpPoolConfig,
     SecretRefOpenAiCompatibleChatCompletionRelay,
     SecretRefOpenAiCompatibleChatCompletionStreamRelay, SecretRefOpenAiCompatibleEmbeddingsRelay,
     SecretRefOpenAiCompatibleProviderHealthProbe, SecretRefOpenAiCompatibleResponsesRelay,
     UpstreamProviderEndpoint, DEFAULT_HEALTH_PROBE_TIMEOUT_MILLIS,
-    DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS,
+    DEFAULT_PROVIDER_RESPONSE_MAX_BYTES, DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS,
+    DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS,
 };
 pub use provider_secret_map_resolver::{
     ProviderSecretMapResolver, RefreshableProviderSecretMapResolver,

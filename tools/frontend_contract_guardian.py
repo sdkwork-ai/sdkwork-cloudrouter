@@ -129,7 +129,7 @@ class FrontendContractGuardian:
     )
     COMMERCE_HOST_MOUNT_RELATIVE = "apps/sdkwork-clawrouter-pc/src/commerce/commerceHostMount.tsx"
     COMMERCE_HOST_CATALOG_RELATIVES = (
-        "sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-host/src/commerce-host-route-catalog.ts",
+        # REMOVED: sdkwork-commerce reference
     )
     COMMERCE_HOST_ROUTE_PREFIX_PATTERN = re.compile(
         r"export\s+const\s+[A-Z0-9_]+\s*=\s*['\"]([^'\"]+)['\"]"
@@ -230,13 +230,7 @@ class FrontendContractGuardian:
         r"(?:from\s+|import\s*\(\s*)['\"](\.{1,2}/[^'\"]*RuntimeApiOperations(?:\.[cm]?[tj]sx?)?)['\"]"
     )
     DEPENDENCY_SDK_BOUNDARY_TOKENS = {
-        "commerce": {
-            "getSdkworkCommerceService",
-            "getSdkworkCommerceAppSdkClient",
-            "getSdkworkCommerceBackendSdkClient",
-            "@sdkwork/commerce-service",
-            "sdkwork-commerce-pc-admin-product",
-        },
+        # REMOVED: commerce tokens (sdkwork-commerce repository dissolved)
         "iam": {
             "getSdkworkAppbaseAppSdkClient",
             "getSdkworkAppbaseBackendSdkClient",
@@ -394,7 +388,6 @@ class FrontendContractGuardian:
     )
     EXTERNAL_DEPENDENCY_SDK_FAMILIES_WITHOUT_LOCAL_OPERATIONS = frozenset(
         {
-            "sdkwork-commerce-app-sdk",
             "sdkwork-documents-app-sdk",
             "sdkwork-iam-app-sdk",
             "sdkwork-iam-backend-sdk",

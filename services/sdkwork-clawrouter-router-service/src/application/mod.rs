@@ -80,8 +80,9 @@ pub use invocation::{
     ProviderNativeResourceClassifier, RequestTransformInterceptor, ResolvedProviderSecret,
     ResourceType, ResponseNormalizationInterceptor, RoutePlanningInterceptor,
     SecretResolutionInterceptor, StickyCommitInterceptor, StickyMode, StickyResolutionInterceptor,
-    StickyRouteConstraint, StickyRouting, StickyScope, TraceTelemetryInterceptor,
-    UsageExtractionInterceptor, UsageRecordingInterceptor,
+    StickyRouteConstraint, StickyRouting, StickyScope, TenantInflightConfig,
+    TenantInflightInterceptor, TraceTelemetryInterceptor, UsageExtractionInterceptor,
+    UsageRecordingInterceptor,
 };
 pub use password_hash::{PasswordHasher, Pbkdf2Sha256PasswordHasher};
 pub use password_login_rate_limit::{shared_password_login_rate_limiter, PasswordLoginRateLimiter};

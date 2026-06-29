@@ -1,11 +1,9 @@
-import type { MessagingTemplateCreateResponse } from './messaging-template-create-response';
-
 /** Templates create result schema exposed by Claw Router. */
 export interface TemplatesCreateResult {
   /** Business response code. */
   code: string;
-  /** Data field on templates create result. */
-  data?: MessagingTemplateCreateResponse;
+  /** No business data returned by this operation. */
+  data?: never;
   /** Human-readable response message. */
   msg?: string;
 }

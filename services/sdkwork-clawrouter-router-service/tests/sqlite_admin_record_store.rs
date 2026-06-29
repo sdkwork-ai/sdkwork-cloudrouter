@@ -89,7 +89,7 @@ async fn create_tables(pool: &SqlitePool) {
         )
         "#,
         r#"
-        CREATE TABLE ai_usage_fact (
+        CREATE TABLE ai_usage (
             id INTEGER PRIMARY KEY,
             tenant_id INTEGER,
             organization_id INTEGER,

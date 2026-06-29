@@ -54,69 +54,55 @@ const client = new SdkworkAppClient({
 
 ## API Modules
 
+- `client.commerce` - commerce API
+- `client.system` - system API
 - `client.ai` - ai API
 - `client.chat` - chat API
 - `client.notification` - notification API
 - `client.runtime` - runtime API
-- `client.sites` - sites API
 
 ## Usage Examples
+
+### commerce
+
+```typescript
+// Retrieve
+const result = await client.commerce.accounts.current.summary.retrieve();
+```
+
+### system
+
+```typescript
+// List
+const result = await client.system.afterSales.requests.list();
+```
 
 ### ai
 
 ```typescript
-// List groups
+// List
 const result = await client.ai.channelGroups.list();
 ```
 
 ### chat
 
 ```typescript
-// List product chat conversations
-const params = {
-  page: 'page',
-  page_size: 'page_size',
-};
-const result = await client.chat.conversations.list(params);
+// List
+const result = await client.chat.conversations.list();
 ```
 
 ### notification
 
 ```typescript
-// List portal notifications
-const params = {
-  include_archived: true,
-  page: 'page',
-  page_size: 'page_size',
-};
-const result = await client.notification.list(params);
+// List
+const result = await client.notification.list();
 ```
 
 ### runtime
 
 ```typescript
-// List runtime invocations
-const params = {
-  page: 'page',
-  page_size: 'page_size',
-  conversation_id: 'conversation_id',
-  chat_turn_id: 'chat_turn_id',
-  agent_session_id: 'agent_session_id',
-  runtime: 'runtime',
-  status: 'status',
-};
-const result = await client.runtime.invocations.list(params);
-```
-
-### sites
-
-```typescript
-// Retrieve public site runtime branding settings
-const params = {
-  tenant_code: 'tenant_code',
-  organization_code: 'organization_code',
-};
-const result = await client.sites.runtime.retrieve(params);
+// List
+const result = await client.runtime.invocations.list();
 ```
 
 ## Error Handling

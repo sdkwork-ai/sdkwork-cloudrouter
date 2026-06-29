@@ -827,6 +827,7 @@ export function GroupAdmin() {
             emptySearch: t('admin.group.resourceAccess.emptyResourcesSearch'),
             selectedCount: count => t('admin.group.resourceAccess.selectedCount', { count }),
             done: t('common.actions.done'),
+            close: t('common.actions.close'),
             columns: {
               resource: t('admin.group.resourceAccess.columns.resource'),
               kind: t('admin.group.resourceAccess.columns.kind'),

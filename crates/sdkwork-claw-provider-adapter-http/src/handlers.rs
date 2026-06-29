@@ -5,7 +5,7 @@ use axum::http::{HeaderMap, Method, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 use sdkwork_claw_provider_adapter_contract::AdapterInvocationRequest;
-use sdkwork_claw_provider_adapter_core::{
+use sdkwork_claw_provider_adapter::{
     provider_adapter_manifest, AdapterInvocationContext, ProviderAdapter,
 };
 use serde_json::{json, Value};

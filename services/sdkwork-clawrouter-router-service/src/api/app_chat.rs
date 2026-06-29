@@ -263,9 +263,7 @@ async fn create_conversation(
         Ok(item) => {
             Json(PlusApiResult::success(AppChatConversationEnvelope { item })).into_response()
         }
-        Err(error) if error.is_conflict() => (
-            StatusCode::CONFLICT,
-            Json(PlusApiResult::error("4090", error.to_string())),
+        Err(error) if error.is_conflict() => PlusApiResult::error("4090", error.to_string())),
         )
             .into_response(),
         Err(error) => app_chat_system_response("app chat conversation is unavailable", error),
@@ -285,9 +283,7 @@ async fn list_messages(
     };
     match state.store.list_messages(subject, conversation_id).await {
         Ok(items) => Json(PlusApiResult::success(
-            serde_json::json!({ "items": items }),
-        ))
-        .into_response(),
+            serde_json::json!({ "items": items }).into_response(),
         Err(error) => app_chat_system_response("app chat messages are unavailable", error),
     }
 }
@@ -338,11 +334,7 @@ async fn complete_turn_response(
     match state.store.complete_turn_response(command).await {
         Ok(outcome) => Json(PlusApiResult::success(outcome)).into_response(),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
-        Err(error) if error.is_conflict() => (
-            StatusCode::CONFLICT,
-            Json(PlusApiResult::error("4090", error.to_string())),
-        )
-            .into_response(),
+        Err(error) if error.is_conflict() => PlusApiResult::error("4090", error.to_string())).into_response(),
         Err(error) => app_chat_system_response("app chat turn response is unavailable", error),
     }
 }
@@ -600,27 +592,15 @@ fn generate_entity_uuid(state: &AppChatState) -> Result<String, AppChatBuildErro
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    (
-        StatusCode::BAD_REQUEST,
-        Json(PlusApiResult::error("4001", message.into())),
-    )
-        .into_response()
+    PlusApiResult::error("4001", message.into())).into_response()
 }
 
 fn not_found(message: impl Into<String>) -> Response {
-    (
-        StatusCode::NOT_FOUND,
-        Json(PlusApiResult::error("4040", message.into())),
-    )
-        .into_response()
+    PlusApiResult::error("4040", message.into())).into_response()
 }
 
 fn app_chat_system_response(context: &str, error: DomainError) -> Response {
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(PlusApiResult::error("5000", format!("{context}: {error}"))),
-    )
-        .into_response()
+    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
 }
 
 #[derive(Debug)]

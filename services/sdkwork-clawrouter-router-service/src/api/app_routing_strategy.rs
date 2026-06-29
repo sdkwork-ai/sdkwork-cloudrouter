@@ -247,20 +247,12 @@ fn build_update_routing_strategy_command(
 }
 
 fn bad_request(message: String) -> Response {
-    (
-        StatusCode::BAD_REQUEST,
-        Json(PlusApiResult::error("4001", message)),
-    )
-        .into_response()
+    PlusApiResult::error("4001", message)).into_response()
 }
 
 fn routing_strategy_system_response(context: &str, error: DomainError) -> Response {
     tracing::error!(error = %error, context, "routing strategy API failed");
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(PlusApiResult::error("5000", context.to_owned())),
-    )
-        .into_response()
+    PlusApiResult::error("5000", context.to_owned())).into_response()
 }
 
 fn current_timestamp_string() -> String {

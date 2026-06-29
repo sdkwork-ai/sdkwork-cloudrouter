@@ -75,6 +75,38 @@ function parseArgs(argv) {
   };
 }
 
+function inferExternalProtocolId(routePath) {
+  const normalized = String(routePath ?? "").replace(/\\/g, "/");
+  if (normalized.startsWith("/v1/")) {
+    return "openai-v1";
+  }
+  if (normalized.startsWith("/anthropic/")) {
+    return "anthropic-messages";
+  }
+  if (normalized.startsWith("/google/")) {
+    return "google-gemini-v1beta";
+  }
+  if (normalized.startsWith("/kling/")) {
+    return "kling-v1";
+  }
+  if (normalized.startsWith("/midjourney/")) {
+    return "midjourney-v1";
+  }
+  if (normalized.startsWith("/nano-banana/")) {
+    return "nano-banana-v1";
+  }
+  if (normalized.startsWith("/suno/")) {
+    return "suno-v1";
+  }
+  if (normalized.startsWith("/vidu/")) {
+    return "vidu-v1";
+  }
+  if (normalized.startsWith("/volcengine/")) {
+    return "volcengine-v1";
+  }
+  return "clawrouter-vendor-relay";
+}
+
 function inferAuth(operation) {
   const routeScope = String(operation["x-route-scope"] ?? "").trim().toLowerCase();
   if (routeScope === "public") {
@@ -131,6 +163,17 @@ function inferSdkworkPermission(operation, routePath) {
 
 function stampOpenApiExtensions(document, target) {
   let changed = 0;
+  if (target.apiSurface === "open-api") {
+    document.info = document.info ?? {};
+    if (document.info["x-sdkwork-wire-protocol"] !== "external") {
+      document.info["x-sdkwork-wire-protocol"] = "external";
+      changed += 1;
+    }
+    if (document.info["x-sdkwork-external-protocol-id"] !== "clawrouter-vendor-gateway") {
+      document.info["x-sdkwork-external-protocol-id"] = "clawrouter-vendor-gateway";
+      changed += 1;
+    }
+  }
   const paths = document.paths ?? {};
   for (const [routePath, pathItem] of Object.entries(paths)) {
     if (!pathItem || typeof pathItem !== "object") {
@@ -161,6 +204,17 @@ function stampOpenApiExtensions(document, target) {
       if (inferAuth(operation).required && operation['x-sdkwork-required-surface'] !== 'organizationMember') {
         operation['x-sdkwork-required-surface'] = 'organizationMember';
         changed += 1;
+      }
+      if (target.apiSurface === "open-api") {
+        const externalProtocolId = inferExternalProtocolId(routePath);
+        if (operation["x-sdkwork-wire-protocol"] !== "external") {
+          operation["x-sdkwork-wire-protocol"] = "external";
+          changed += 1;
+        }
+        if (operation["x-sdkwork-external-protocol-id"] !== externalProtocolId) {
+          operation["x-sdkwork-external-protocol-id"] = externalProtocolId;
+          changed += 1;
+        }
       }
       if (!operation.operationId && routePath) {
         operation.operationId = `${method}.${routePath.replace(/[{}]/g, "")}`;

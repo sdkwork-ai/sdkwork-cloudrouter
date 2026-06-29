@@ -269,10 +269,10 @@ async fn sqlite_model_rankings_read_store_exposes_task_metadata_and_history_from
         INSERT INTO ai_model_rank_snapshot
             (id, tenant_id, organization_id, status, metadata, snapshot_date, snapshot_period, rank_scope, catalog_key, model, vendor_code, vendor_name_snapshot, modality, rank_no, previous_rank_no, request_count, base_volume, cost_indicator, latency_p50_ms, strengths)
         VALUES
-            (10, 0, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-06T00:00:00Z","windowEnd":"2026-05-07T00:00:00Z","generatedAt":"2026-05-07T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-07T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage_fact","ai_request_trace","ai_model_rank_snapshot"]}', '2026-05-07', 1, 'commercial-default', 'openai/gpt-5.2', 'gpt-5.2', 'openai', 'OpenAI', 1, 2, 3, 120, 120, 3, 1100, '["reasoning"]'),
-            (11, 0, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-06T00:00:00Z","windowEnd":"2026-05-07T00:00:00Z","generatedAt":"2026-05-07T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-07T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage_fact","ai_request_trace","ai_model_rank_snapshot"]}', '2026-05-07', 1, 'commercial-default', 'anthropic/claude-sonnet-4-6', 'claude-sonnet-4-6', 'anthropic', 'Anthropic', 1, 1, 1, 220, 220, 4, 900, '["agentic"]'),
-            (12, 0, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-07T00:00:00Z","windowEnd":"2026-05-08T00:00:00Z","generatedAt":"2026-05-08T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-08T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage_fact","ai_request_trace","ai_model_rank_snapshot"]}', '2026-05-08', 1, 'commercial-default', 'openai/gpt-5.2', 'gpt-5.2', 'openai', 'OpenAI', 1, 1, 2, 320, 320, 3, 1000, '["reasoning"]'),
-            (13, 0, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-07T00:00:00Z","windowEnd":"2026-05-08T00:00:00Z","generatedAt":"2026-05-08T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-08T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage_fact","ai_request_trace","ai_model_rank_snapshot"]}', '2026-05-08', 1, 'commercial-default', 'anthropic/claude-sonnet-4-6', 'claude-sonnet-4-6', 'anthropic', 'Anthropic', 1, 2, 1, 260, 260, 4, 950, '["agentic"]')
+            (10, 0, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-06T00:00:00Z","windowEnd":"2026-05-07T00:00:00Z","generatedAt":"2026-05-07T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-07T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage","ai_request_trace","ai_model_rank_snapshot"]}', '2026-05-07', 1, 'commercial-default', 'openai/gpt-5.2', 'gpt-5.2', 'openai', 'OpenAI', 1, 2, 3, 120, 120, 3, 1100, '["reasoning"]'),
+            (11, 0, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-06T00:00:00Z","windowEnd":"2026-05-07T00:00:00Z","generatedAt":"2026-05-07T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-07T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage","ai_request_trace","ai_model_rank_snapshot"]}', '2026-05-07', 1, 'commercial-default', 'anthropic/claude-sonnet-4-6', 'claude-sonnet-4-6', 'anthropic', 'Anthropic', 1, 1, 1, 220, 220, 4, 900, '["agentic"]'),
+            (12, 0, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-07T00:00:00Z","windowEnd":"2026-05-08T00:00:00Z","generatedAt":"2026-05-08T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-08T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage","ai_request_trace","ai_model_rank_snapshot"]}', '2026-05-08', 1, 'commercial-default', 'openai/gpt-5.2', 'gpt-5.2', 'openai', 'OpenAI', 1, 1, 2, 320, 320, 3, 1000, '["reasoning"]'),
+            (13, 0, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-07T00:00:00Z","windowEnd":"2026-05-08T00:00:00Z","generatedAt":"2026-05-08T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-08T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage","ai_request_trace","ai_model_rank_snapshot"]}', '2026-05-08', 1, 'commercial-default', 'anthropic/claude-sonnet-4-6', 'claude-sonnet-4-6', 'anthropic', 'Anthropic', 1, 2, 1, 260, 260, 4, 950, '["agentic"]')
         "#,
     )
     .execute(&pool)
@@ -300,7 +300,7 @@ async fn sqlite_model_rankings_read_store_exposes_task_metadata_and_history_from
     assert_eq!(60, snapshot.source.cache_max_age_seconds);
     assert_eq!(
         vec![
-            "ai_usage_fact".to_owned(),
+            "ai_usage".to_owned(),
             "ai_request_trace".to_owned(),
             "ai_model_rank_snapshot".to_owned()
         ],
@@ -342,8 +342,8 @@ async fn sqlite_model_rankings_read_store_preserves_source_metadata_when_filters
         INSERT INTO ai_model_rank_snapshot
             (id, tenant_id, organization_id, status, metadata, snapshot_date, snapshot_period, rank_scope, catalog_key, model, vendor_code, vendor_name_snapshot, modality, rank_no, request_count, base_volume)
         VALUES
-            (80, 0, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-07T00:00:00Z","windowEnd":"2026-05-08T00:00:00Z","generatedAt":"2026-05-08T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-08T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage_fact","ai_model","ai_model_rank_snapshot"]}', '2026-05-08', 1, 'commercial-default', 'openai/gpt-5.2', 'gpt-5.2', 'openai', 'OpenAI', 1, 1, 120, 120),
-            (81, 0, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-07T00:00:00Z","windowEnd":"2026-05-08T00:00:00Z","generatedAt":"2026-05-08T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-08T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage_fact","ai_model","ai_model_rank_snapshot"]}', '2026-05-08', 1, 'commercial-default', 'anthropic/claude-sonnet-4-6', 'claude-sonnet-4-6', 'anthropic', 'Anthropic', 1, 2, 90, 90)
+            (80, 0, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-07T00:00:00Z","windowEnd":"2026-05-08T00:00:00Z","generatedAt":"2026-05-08T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-08T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage","ai_model","ai_model_rank_snapshot"]}', '2026-05-08', 1, 'commercial-default', 'openai/gpt-5.2', 'gpt-5.2', 'openai', 'OpenAI', 1, 1, 120, 120),
+            (81, 0, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-07T00:00:00Z","windowEnd":"2026-05-08T00:00:00Z","generatedAt":"2026-05-08T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-08T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage","ai_model","ai_model_rank_snapshot"]}', '2026-05-08', 1, 'commercial-default', 'anthropic/claude-sonnet-4-6', 'claude-sonnet-4-6', 'anthropic', 'Anthropic', 1, 2, 90, 90)
         "#,
     )
     .execute(&pool)
@@ -535,9 +535,9 @@ async fn sqlite_model_rankings_read_store_reports_latest_refresh_status_from_sna
         INSERT INTO ai_model_rank_snapshot
             (id, tenant_id, organization_id, status, metadata, snapshot_date, snapshot_period, rank_scope, catalog_key, model, vendor_code, vendor_name_snapshot, modality, rank_no, request_count, base_volume, rank_payload)
         VALUES
-            (20, 0, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-06T00:00:00Z","windowEnd":"2026-05-07T00:00:00Z","generatedAt":"2026-05-07T00:05:00Z","refreshIntervalSeconds":1800,"nextRefreshAt":"2026-05-07T00:35:00Z","cacheMaxAgeSeconds":30,"sourceTables":["ai_usage_fact","ai_model","ai_model_rank_snapshot"]}', '2026-05-07', 1, 'commercial-default', 'openai/gpt-5.2', 'gpt-5.2', 'openai', 'OpenAI', 1, 1, 100, 100, '{"sourceRows":4}'),
-            (21, 0, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-07T00:00:00Z","windowEnd":"2026-05-08T00:00:00Z","generatedAt":"2026-05-08T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-08T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage_fact","ai_model","ai_model_rank_snapshot"]}', '2026-05-08', 1, 'commercial-default', 'openai/gpt-5.2', 'gpt-5.2', 'openai', 'OpenAI', 1, 1, 120, 120, '{"sourceRows":3}'),
-            (22, 0, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-07T00:00:00Z","windowEnd":"2026-05-08T00:00:00Z","generatedAt":"2026-05-08T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-08T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage_fact","ai_model","ai_model_rank_snapshot"]}', '2026-05-08', 1, 'commercial-default', 'anthropic/claude-sonnet-4-6', 'claude-sonnet-4-6', 'anthropic', 'Anthropic', 1, 2, 90, 90, '{"sourceRows":7}'),
+            (20, 0, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-06T00:00:00Z","windowEnd":"2026-05-07T00:00:00Z","generatedAt":"2026-05-07T00:05:00Z","refreshIntervalSeconds":1800,"nextRefreshAt":"2026-05-07T00:35:00Z","cacheMaxAgeSeconds":30,"sourceTables":["ai_usage","ai_model","ai_model_rank_snapshot"]}', '2026-05-07', 1, 'commercial-default', 'openai/gpt-5.2', 'gpt-5.2', 'openai', 'OpenAI', 1, 1, 100, 100, '{"sourceRows":4}'),
+            (21, 0, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-07T00:00:00Z","windowEnd":"2026-05-08T00:00:00Z","generatedAt":"2026-05-08T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-08T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage","ai_model","ai_model_rank_snapshot"]}', '2026-05-08', 1, 'commercial-default', 'openai/gpt-5.2', 'gpt-5.2', 'openai', 'OpenAI', 1, 1, 120, 120, '{"sourceRows":3}'),
+            (22, 0, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-07T00:00:00Z","windowEnd":"2026-05-08T00:00:00Z","generatedAt":"2026-05-08T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-08T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage","ai_model","ai_model_rank_snapshot"]}', '2026-05-08', 1, 'commercial-default', 'anthropic/claude-sonnet-4-6', 'claude-sonnet-4-6', 'anthropic', 'Anthropic', 1, 2, 90, 90, '{"sourceRows":7}'),
             (23, 0, 0, 0, '{"snapshotPeriod":"daily","windowStart":"2026-05-07T00:00:00Z","windowEnd":"2026-05-08T00:00:00Z","generatedAt":"2026-05-08T00:10:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-08T01:10:00Z","cacheMaxAgeSeconds":60}', '2026-05-08', 1, 'commercial-default', 'xai/grok-4.3', 'grok-4.3', 'xai', 'xAI', 1, 3, 80, 80, '{"sourceRows":99}')
         "#,
     )
@@ -571,7 +571,7 @@ async fn sqlite_model_rankings_read_store_reports_latest_refresh_status_from_sna
     assert_eq!(10, status.source_count);
     assert_eq!(
         vec![
-            "ai_usage_fact".to_owned(),
+            "ai_usage".to_owned(),
             "ai_model".to_owned(),
             "ai_model_rank_snapshot".to_owned()
         ],
@@ -594,7 +594,7 @@ async fn sqlite_model_rankings_read_store_embeds_latest_refresh_job_in_refresh_s
         INSERT INTO ai_model_rank_snapshot
             (id, tenant_id, organization_id, status, metadata, snapshot_date, snapshot_period, rank_scope, catalog_key, model, vendor_code, vendor_name_snapshot, modality, rank_no, request_count, base_volume, rank_payload)
         VALUES
-            (30, 100001, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-07T00:00:00Z","windowEnd":"2026-05-08T00:00:00Z","generatedAt":"2026-05-08T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-08T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage_fact","ai_model","ai_model_rank_snapshot"]}', '2026-05-08', 1, 'commercial-default', 'openai/gpt-5.2', 'gpt-5.2', 'openai', 'OpenAI', 1, 1, 120, 120, '{"sourceRows":3}')
+            (30, 100001, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-07T00:00:00Z","windowEnd":"2026-05-08T00:00:00Z","generatedAt":"2026-05-08T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-08T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage","ai_model","ai_model_rank_snapshot"]}', '2026-05-08', 1, 'commercial-default', 'openai/gpt-5.2', 'gpt-5.2', 'openai', 'OpenAI', 1, 1, 120, 120, '{"sourceRows":3}')
         "#,
     )
     .execute(&pool)
@@ -666,7 +666,7 @@ async fn sqlite_model_rankings_read_store_does_not_mix_latest_job_from_different
         INSERT INTO ai_model_rank_snapshot
             (id, tenant_id, organization_id, status, metadata, snapshot_date, snapshot_period, rank_scope, catalog_key, model, vendor_code, vendor_name_snapshot, modality, rank_no, request_count, base_volume, rank_payload)
         VALUES
-            (45, 100001, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-07T00:00:00Z","windowEnd":"2026-05-08T00:00:00Z","generatedAt":"2026-05-08T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-08T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage_fact","ai_model","ai_model_rank_snapshot"]}', '2026-05-08', 1, 'commercial-default', 'openai/gpt-5.2', 'gpt-5.2', 'openai', 'OpenAI', 1, 1, 120, 120, '{"sourceRows":3}')
+            (45, 100001, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-07T00:00:00Z","windowEnd":"2026-05-08T00:00:00Z","generatedAt":"2026-05-08T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-08T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage","ai_model","ai_model_rank_snapshot"]}', '2026-05-08', 1, 'commercial-default', 'openai/gpt-5.2', 'gpt-5.2', 'openai', 'OpenAI', 1, 1, 120, 120, '{"sourceRows":3}')
         "#,
     )
     .execute(&pool)
@@ -785,7 +785,7 @@ async fn sqlite_model_rankings_read_store_does_not_mix_job_history_from_differen
         INSERT INTO ai_model_rank_snapshot
             (id, tenant_id, organization_id, status, metadata, snapshot_date, snapshot_period, rank_scope, catalog_key, model, vendor_code, vendor_name_snapshot, modality, rank_no, request_count, base_volume, rank_payload)
         VALUES
-            (70, 100001, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-07T00:00:00Z","windowEnd":"2026-05-08T00:00:00Z","generatedAt":"2026-05-08T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-08T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage_fact","ai_model","ai_model_rank_snapshot"]}', '2026-05-08', 1, 'commercial-default', 'openai/gpt-5.2', 'gpt-5.2', 'openai', 'OpenAI', 1, 1, 120, 120, '{"sourceRows":3}')
+            (70, 100001, 0, 1, '{"snapshotPeriod":"daily","windowStart":"2026-05-07T00:00:00Z","windowEnd":"2026-05-08T00:00:00Z","generatedAt":"2026-05-08T00:05:00Z","refreshIntervalSeconds":3600,"nextRefreshAt":"2026-05-08T01:05:00Z","cacheMaxAgeSeconds":60,"sourceTables":["ai_usage","ai_model","ai_model_rank_snapshot"]}', '2026-05-08', 1, 'commercial-default', 'openai/gpt-5.2', 'gpt-5.2', 'openai', 'OpenAI', 1, 1, 120, 120, '{"sourceRows":3}')
         "#,
     )
     .execute(&pool)

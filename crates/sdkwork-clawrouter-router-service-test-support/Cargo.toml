@@ -8,5 +8,5 @@ license-file.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
 sdkwork-clawrouter-router-service.workspace = true
-sdkwork_commerce_bootstrap.workspace = true
+# NOTE: sdkwork-commerce has been deleted, sdkwork_commerce_bootstrap is no longer available
 sdkwork-iam-bootstrap.workspace = true

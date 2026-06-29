@@ -46,14 +46,10 @@ async fn fetch_admin_analytics_overview(
 
     match state.read_store.load_admin_analytics(query).await {
         Ok(snapshot) => Json(PlusApiResult::success(snapshot)).into_response(),
-        Err(error) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(PlusApiResult::error(
+        Err(error) => PlusApiResult::error(
                 "5000",
                 format!("admin analytics read model is unavailable: {error}"),
-            )),
-        )
-            .into_response(),
+            )).into_response(),
     }
 }
 

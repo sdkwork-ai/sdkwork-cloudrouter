@@ -54,130 +54,87 @@ const client = new SdkworkBackendClient({
 
 ## API Modules
 
+- `client.system` - system API
 - `client.ai` - ai API
+- `client.commerce` - commerce API
 - `client.content` - content API
-- `client.iam` - iam API
 - `client.integration` - integration API
 - `client.mcp` - mcp API
 - `client.messaging` - messaging API
-- `client.prompts` - prompts API
 - `client.serviceProviders` - service_providers API
 - `client.sites` - sites API
-- `client.oss` - oss API
-- `client.system` - system API
+- `client.storage` - storage API
 
 ## Usage Examples
+
+### system
+
+```typescript
+// List
+const result = await client.system.afterSales.management.list();
+```
 
 ### ai
 
 ```typescript
-// List groups
+// List
 const result = await client.ai.channelGroups.list();
+```
+
+### commerce
+
+```typescript
+// List
+const result = await client.commerce.audit.commerceEvents.list();
 ```
 
 ### content
 
 ```typescript
-// List admin announcements
+// List
 const result = await client.content.announcements.list();
-```
-
-### iam
-
-```typescript
-// Delete API key
-const apiKeyId = '1';
-const result = await client.iam.apiKeys.delete(apiKeyId);
 ```
 
 ### integration
 
 ```typescript
-// List channels
+// List
 const result = await client.integration.channels.list();
 ```
 
 ### mcp
 
 ```typescript
-// List MCP servers
-const params = {
-  page: 'page',
-  page_size: 'page_size',
-  q: 'q',
-  transport: 'transport',
-  visibility: 'visibility',
-  status: 'status',
-  category_id: 'category_id',
-};
-const result = await client.mcp.servers.list(params);
+// List
+const result = await client.mcp.servers.list();
 ```
 
 ### messaging
 
 ```typescript
-// List messaging rate limit buckets
-const params = {
-  page: 'page',
-  page_size: 'page_size',
-};
-const result = await client.messaging.rateLimitBuckets.list(params);
-```
-
-### prompts
-
-```typescript
-// List admin prompts
-const params = {
-  page: 'page',
-  page_size: 'page_size',
-  q: 'q',
-  prompt_type: 'prompt_type',
-  visibility: 'visibility',
-  status: 'status',
-  category_id: 'category_id',
-};
-const result = await client.prompts.definitions.list(params);
+// List
+const result = await client.messaging.providerAccounts.list();
 ```
 
 ### service_providers
 
 ```typescript
-// Service Provider Adjustments List
-const params = {
-  page: 'page',
-  page_size: 'page_size',
-  status: 'status',
-  provider_id: 'provider_id',
-  seller_provider_id: 'seller_provider_id',
-  buyer_provider_id: 'buyer_provider_id',
-  edge_id: 'edge_id',
-};
-const result = await client.serviceProviders.adjustments.list(params);
+// List
+const result = await client.serviceProviders.adjustments.list();
 ```
 
 ### sites
 
 ```typescript
-// List sites
-const params = {
-  q: 'q',
-};
-const result = await client.sites.siteCatalog.list(params);
+// List
+const result = await client.sites.siteCatalog.list();
 ```
 
-### oss
+### storage
 
 ```typescript
-// List storage providers
-const result = await client.oss.providers.list();
-```
-
-### system
-
-```typescript
-// Retrieve IAM auth runtime settings
-const result = await client.system.auth.settings.retrieve();
+// List
+const result = await client.storage.oss.buckets.list();
 ```
 
 ## Error Handling

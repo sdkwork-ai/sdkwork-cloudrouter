@@ -1,11 +1,9 @@
-import type { StorageDefaultBucketUpdateResponse } from './storage-default-bucket-update-response';
-
 /** Default buckets update result schema exposed by Claw Router. */
 export interface DefaultBucketsUpdateResult {
   /** Business response code. */
   code: string;
-  /** Data field on default buckets update result. */
-  data?: StorageDefaultBucketUpdateResponse;
+  /** No business data returned by this operation. */
+  data?: never;
   /** Human-readable response message. */
   msg?: string;
 }

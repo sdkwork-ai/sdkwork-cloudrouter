@@ -171,7 +171,7 @@ class SchemaQualityGateTest(unittest.TestCase):
                 members = [
                     "crates/sdkwork-claw-contract",
                     "crates/sdkwork-claw-config",
-                    "crates/sdkwork-claw-core",
+                    "crates/sdkwork-claw-health",
                     "crates/sdkwork-claw-security",
                     "crates/sdkwork-claw-http",
                     "crates/sdkwork-claw-observability",
@@ -207,7 +207,7 @@ class SchemaQualityGateTest(unittest.TestCase):
         for member in (
             "crates/sdkwork-claw-contract",
             "crates/sdkwork-claw-config",
-            "crates/sdkwork-claw-core",
+            "crates/sdkwork-claw-health",
             "crates/sdkwork-claw-security",
             "crates/sdkwork-claw-http",
             "crates/sdkwork-claw-observability",
@@ -227,7 +227,7 @@ class SchemaQualityGateTest(unittest.TestCase):
                 "provider_secret_map",
                 "runtime",
             ),
-            "crates/sdkwork-claw-core": ("health",),
+            "crates/sdkwork-claw-health": ("health",),
             "crates/sdkwork-claw-security": ("headers", "redaction"),
             "crates/sdkwork-claw-http": ("auth", "contract_routes", "error", "health", "headers", "router"),
             "crates/sdkwork-claw-observability": ("tracing_setup",),

@@ -59,7 +59,8 @@ sdks/*/*.tgz
 sdks/*/.sdkwork/manual-backups/
 
 external/
-vendor/sdkwork-clawrouter/vendor/
+# Local sibling-repo checkouts must never be committed under vendor/.
+vendor/
 apps/*/keys.txt
 
 data/skills/clawhub/raw/details/*.json
@@ -70,3 +71,12 @@ data/skills/clawhub/raw/details/*.json
 *.production.env
 configs/topology/*.production.env
 config/*.local.toml
+
+# Local verification scratch output (never commit)
+check-output*.txt
+check_err*.txt
+check_errors.txt
+full_check.txt
+
+# Monorepo uses root pnpm-lock.yaml only
+apps/*/packages/*/pnpm-lock.yaml

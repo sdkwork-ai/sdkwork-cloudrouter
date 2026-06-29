@@ -1194,7 +1194,7 @@ async fn list_wallet_accounts(
             COALESCE(e.risk_status, '') AS "riskStatus",
             {status_label} AS status,
             CAST(COUNT(*) OVER() AS BIGINT) AS total
-        FROM commerce_service_provider_exposure_snapshot e
+        FROM integration_provider_exposure_snapshot e
         WHERE e.tenant_id = $1
           AND e.organization_id = $2
           AND (CAST($4 AS TEXT) IS NULL OR {status_label} = CAST($4 AS TEXT))
@@ -1257,7 +1257,7 @@ async fn list_statements(
             CAST(COALESCE(s.payment_status, 0) AS TEXT) AS "paymentStatus",
             {status_label} AS status,
             CAST(COUNT(*) OVER() AS BIGINT) AS total
-        FROM commerce_usage_service_provider_statement s
+        FROM integration_provider_statement s
         WHERE s.tenant_id = $1
           AND s.organization_id = $2
           AND (CAST($4 AS TEXT) IS NULL OR {status_label} = CAST($4 AS TEXT))
@@ -1320,7 +1320,7 @@ async fn list_reconciliation_runs(
             CAST(COALESCE(r.difference_amount, 0) AS TEXT) AS "differenceAmount",
             {status_label} AS status,
             CAST(COUNT(*) OVER() AS BIGINT) AS total
-        FROM commerce_usage_service_provider_reconciliation_run r
+        FROM integration_provider_reconciliation_run r
         WHERE r.tenant_id = $1
           AND r.organization_id = $2
           AND (CAST($4 AS TEXT) IS NULL OR {status_label} = CAST($4 AS TEXT))
@@ -1340,7 +1340,7 @@ async fn list_reconciliation_runs(
                    ))
                OR EXISTS (
                     SELECT 1
-                    FROM commerce_usage_service_provider_reconciliation_item item_scope
+                    FROM integration_provider_reconciliation_item item_scope
                     JOIN ai_usage_service_provider_edge usage_scope
                       ON usage_scope.tenant_id = item_scope.tenant_id
                      AND usage_scope.organization_id = item_scope.organization_id
@@ -1363,7 +1363,7 @@ async fn list_reconciliation_runs(
                ))
                OR EXISTS (
                     SELECT 1
-                    FROM commerce_usage_service_provider_reconciliation_item item_filter
+                    FROM integration_provider_reconciliation_item item_filter
                     JOIN ai_usage_service_provider_edge usage_filter
                       ON usage_filter.tenant_id = item_filter.tenant_id
                      AND usage_filter.organization_id = item_filter.organization_id
@@ -1385,7 +1385,7 @@ async fn list_reconciliation_runs(
                ))
                OR EXISTS (
                     SELECT 1
-                    FROM commerce_usage_service_provider_reconciliation_item item_filter
+                    FROM integration_provider_reconciliation_item item_filter
                     JOIN ai_usage_service_provider_edge usage_filter
                       ON usage_filter.tenant_id = item_filter.tenant_id
                      AND usage_filter.organization_id = item_filter.organization_id
@@ -1406,7 +1406,7 @@ async fn list_reconciliation_runs(
                ))
                OR EXISTS (
                     SELECT 1
-                    FROM commerce_usage_service_provider_reconciliation_item item_filter
+                    FROM integration_provider_reconciliation_item item_filter
                     JOIN ai_usage_service_provider_edge usage_filter
                       ON usage_filter.tenant_id = item_filter.tenant_id
                      AND usage_filter.organization_id = item_filter.organization_id
@@ -1419,7 +1419,7 @@ async fn list_reconciliation_runs(
           AND (CAST($10 AS TEXT) IS NULL OR (r.scope_type IN ('service_provider_edge', 'edge') AND r.scope_id = CAST($10 AS TEXT))
                OR EXISTS (
                     SELECT 1
-                    FROM commerce_usage_service_provider_reconciliation_item item_filter
+                    FROM integration_provider_reconciliation_item item_filter
                     JOIN ai_usage_service_provider_edge usage_filter
                       ON usage_filter.tenant_id = item_filter.tenant_id
                      AND usage_filter.organization_id = item_filter.organization_id
@@ -1471,7 +1471,7 @@ async fn list_adjustments(
             COALESCE(a.approval_status, '') AS "approvalStatus",
             {status_label} AS status,
             CAST(COUNT(*) OVER() AS BIGINT) AS total
-        FROM commerce_usage_service_provider_adjustment a
+        FROM integration_provider_adjustment a
         WHERE a.tenant_id = $1
           AND a.organization_id = $2
           AND (CAST($4 AS TEXT) IS NULL OR {status_label} = CAST($4 AS TEXT))
@@ -1539,7 +1539,7 @@ async fn list_risk_events(
             COALESCE(e.risk_status, '') AS "riskStatus",
             {status_label} AS status,
             CAST(COUNT(*) OVER() AS BIGINT) AS total
-        FROM commerce_service_provider_exposure_snapshot e
+        FROM integration_provider_exposure_snapshot e
         WHERE e.tenant_id = $1
           AND e.organization_id = $2
           AND (CAST($4 AS TEXT) IS NULL OR {status_label} = CAST($4 AS TEXT))
@@ -1629,21 +1629,21 @@ async fn list_audit_events(
                            OR r.buyer_provider_id IN (SELECT provider_id FROM visible_provider))
                ))
                OR (a.target_type = $8 AND a.target_id IN (
-                    SELECT s.id FROM commerce_usage_service_provider_statement s
+                    SELECT s.id FROM integration_provider_statement s
                     WHERE s.tenant_id = $1
                       AND s.organization_id = $2
                       AND (s.seller_provider_id IN (SELECT provider_id FROM visible_provider)
                            OR s.buyer_provider_id IN (SELECT provider_id FROM visible_provider))
                ))
                OR (a.target_type = $9 AND a.target_id IN (
-                    SELECT adj.id FROM commerce_usage_service_provider_adjustment adj
+                    SELECT adj.id FROM integration_provider_adjustment adj
                     WHERE adj.tenant_id = $1
                       AND adj.organization_id = $2
                       AND (adj.seller_provider_id IN (SELECT provider_id FROM visible_provider)
                            OR adj.buyer_provider_id IN (SELECT provider_id FROM visible_provider))
                ))
                OR (a.target_type = $10 AND a.target_id IN (
-                    SELECT rr.id FROM commerce_usage_service_provider_reconciliation_run rr
+                    SELECT rr.id FROM integration_provider_reconciliation_run rr
                     WHERE rr.tenant_id = $1
                       AND rr.organization_id = $2
                       AND ((rr.scope_type IN ('service_provider', 'provider')
@@ -1661,7 +1661,7 @@ async fn list_audit_events(
                                ))
                            OR EXISTS (
                                 SELECT 1
-                                FROM commerce_usage_service_provider_reconciliation_item item_scope
+                                FROM integration_provider_reconciliation_item item_scope
                                 JOIN ai_usage_service_provider_edge usage_scope
                                   ON usage_scope.tenant_id = item_scope.tenant_id
                                  AND usage_scope.organization_id = item_scope.organization_id
@@ -1700,21 +1700,21 @@ async fn list_audit_events(
                            OR CAST(r.buyer_provider_id AS TEXT) = CAST($13 AS TEXT))
                ))
                OR (a.target_type = $8 AND a.target_id IN (
-                    SELECT s.id FROM commerce_usage_service_provider_statement s
+                    SELECT s.id FROM integration_provider_statement s
                     WHERE s.tenant_id = $1
                       AND s.organization_id = $2
                       AND (CAST(s.seller_provider_id AS TEXT) = CAST($13 AS TEXT)
                            OR CAST(s.buyer_provider_id AS TEXT) = CAST($13 AS TEXT))
                ))
                OR (a.target_type = $9 AND a.target_id IN (
-                    SELECT adj.id FROM commerce_usage_service_provider_adjustment adj
+                    SELECT adj.id FROM integration_provider_adjustment adj
                     WHERE adj.tenant_id = $1
                       AND adj.organization_id = $2
                       AND (CAST(adj.seller_provider_id AS TEXT) = CAST($13 AS TEXT)
                            OR CAST(adj.buyer_provider_id AS TEXT) = CAST($13 AS TEXT))
                ))
                OR (a.target_type = $10 AND a.target_id IN (
-                    SELECT rr.id FROM commerce_usage_service_provider_reconciliation_run rr
+                    SELECT rr.id FROM integration_provider_reconciliation_run rr
                     WHERE rr.tenant_id = $1
                       AND rr.organization_id = $2
                       AND ((rr.scope_type IN ('service_provider', 'provider') AND rr.scope_id = CAST($13 AS TEXT))
@@ -1729,7 +1729,7 @@ async fn list_audit_events(
                            ))
                            OR EXISTS (
                                 SELECT 1
-                                FROM commerce_usage_service_provider_reconciliation_item item_filter
+                                FROM integration_provider_reconciliation_item item_filter
                                 JOIN ai_usage_service_provider_edge usage_filter
                                   ON usage_filter.tenant_id = item_filter.tenant_id
                                  AND usage_filter.organization_id = item_filter.organization_id
@@ -1765,19 +1765,19 @@ async fn list_audit_events(
                       AND CAST(r.seller_provider_id AS TEXT) = CAST($14 AS TEXT)
                ))
                OR (a.target_type = $8 AND a.target_id IN (
-                    SELECT s.id FROM commerce_usage_service_provider_statement s
+                    SELECT s.id FROM integration_provider_statement s
                     WHERE s.tenant_id = $1
                       AND s.organization_id = $2
                       AND CAST(s.seller_provider_id AS TEXT) = CAST($14 AS TEXT)
                ))
                OR (a.target_type = $9 AND a.target_id IN (
-                    SELECT adj.id FROM commerce_usage_service_provider_adjustment adj
+                    SELECT adj.id FROM integration_provider_adjustment adj
                     WHERE adj.tenant_id = $1
                       AND adj.organization_id = $2
                       AND CAST(adj.seller_provider_id AS TEXT) = CAST($14 AS TEXT)
                ))
                OR (a.target_type = $10 AND a.target_id IN (
-                    SELECT rr.id FROM commerce_usage_service_provider_reconciliation_run rr
+                    SELECT rr.id FROM integration_provider_reconciliation_run rr
                     WHERE rr.tenant_id = $1
                       AND rr.organization_id = $2
                       AND ((rr.scope_type IN ('service_provider', 'provider') AND rr.scope_id = CAST($14 AS TEXT))
@@ -1791,7 +1791,7 @@ async fn list_audit_events(
                            ))
                            OR EXISTS (
                                 SELECT 1
-                                FROM commerce_usage_service_provider_reconciliation_item item_filter
+                                FROM integration_provider_reconciliation_item item_filter
                                 JOIN ai_usage_service_provider_edge usage_filter
                                   ON usage_filter.tenant_id = item_filter.tenant_id
                                  AND usage_filter.organization_id = item_filter.organization_id
@@ -1826,19 +1826,19 @@ async fn list_audit_events(
                       AND CAST(r.buyer_provider_id AS TEXT) = CAST($15 AS TEXT)
                ))
                OR (a.target_type = $8 AND a.target_id IN (
-                    SELECT s.id FROM commerce_usage_service_provider_statement s
+                    SELECT s.id FROM integration_provider_statement s
                     WHERE s.tenant_id = $1
                       AND s.organization_id = $2
                       AND CAST(s.buyer_provider_id AS TEXT) = CAST($15 AS TEXT)
                ))
                OR (a.target_type = $9 AND a.target_id IN (
-                    SELECT adj.id FROM commerce_usage_service_provider_adjustment adj
+                    SELECT adj.id FROM integration_provider_adjustment adj
                     WHERE adj.tenant_id = $1
                       AND adj.organization_id = $2
                       AND CAST(adj.buyer_provider_id AS TEXT) = CAST($15 AS TEXT)
                ))
                OR (a.target_type = $10 AND a.target_id IN (
-                    SELECT rr.id FROM commerce_usage_service_provider_reconciliation_run rr
+                    SELECT rr.id FROM integration_provider_reconciliation_run rr
                     WHERE rr.tenant_id = $1
                       AND rr.organization_id = $2
                       AND ((rr.scope_type IN ('service_provider', 'provider') AND rr.scope_id = CAST($15 AS TEXT))
@@ -1852,7 +1852,7 @@ async fn list_audit_events(
                            ))
                            OR EXISTS (
                                 SELECT 1
-                                FROM commerce_usage_service_provider_reconciliation_item item_filter
+                                FROM integration_provider_reconciliation_item item_filter
                                 JOIN ai_usage_service_provider_edge usage_filter
                                   ON usage_filter.tenant_id = item_filter.tenant_id
                                  AND usage_filter.organization_id = item_filter.organization_id
@@ -1880,7 +1880,7 @@ async fn list_audit_events(
                       AND CAST(r.edge_id AS TEXT) = CAST($16 AS TEXT)
                ))
                OR (a.target_type = $8 AND a.target_id IN (
-                    SELECT s.id FROM commerce_usage_service_provider_statement s
+                    SELECT s.id FROM integration_provider_statement s
                     WHERE s.tenant_id = $1
                       AND s.organization_id = $2
                       AND EXISTS (
@@ -1894,7 +1894,7 @@ async fn list_audit_events(
                       )
                ))
                OR (a.target_type = $9 AND a.target_id IN (
-                    SELECT adj.id FROM commerce_usage_service_provider_adjustment adj
+                    SELECT adj.id FROM integration_provider_adjustment adj
                     WHERE adj.tenant_id = $1
                       AND adj.organization_id = $2
                       AND (EXISTS (
@@ -1914,13 +1914,13 @@ async fn list_audit_events(
                        ))
                ))
                OR (a.target_type = $10 AND a.target_id IN (
-                    SELECT rr.id FROM commerce_usage_service_provider_reconciliation_run rr
+                    SELECT rr.id FROM integration_provider_reconciliation_run rr
                     WHERE rr.tenant_id = $1
                       AND rr.organization_id = $2
                       AND ((rr.scope_type IN ('service_provider_edge', 'edge') AND rr.scope_id = CAST($16 AS TEXT))
                            OR EXISTS (
                                 SELECT 1
-                                FROM commerce_usage_service_provider_reconciliation_item item_filter
+                                FROM integration_provider_reconciliation_item item_filter
                                 JOIN ai_usage_service_provider_edge usage_filter
                                   ON usage_filter.tenant_id = item_filter.tenant_id
                                  AND usage_filter.organization_id = item_filter.organization_id

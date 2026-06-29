@@ -9,6 +9,9 @@ canon:
   productionRunbook: deployments/runbooks/production-operations.md
   securityPolicy: SECURITY.md
   contributingGuide: CONTRIBUTING.md
+  commercialPricing: docs/commercial/PRICING.md
+  serviceLevelAgreement: docs/legal/SLA.md
+  editionTierMatrix: docs/legal/TIER_MATRIX.md
 entries:
   # Canon product documents
   - id: PRD-0001
@@ -53,6 +56,54 @@ entries:
     status: active
     owner: clawrouter-release
     title: Production operations runbook
+  - id: OPS-0002
+    path: docs/runbooks/provider-outage.md
+    kind: runbook
+    status: active
+    owner: clawrouter-gateway
+    title: Provider upstream outage runbook
+  - id: OPS-0003
+    path: docs/runbooks/token-api-key-rotation.md
+    kind: runbook
+    status: active
+    owner: clawrouter-security
+    title: Token / API key rotation runbook
+  - id: OPS-0004
+    path: docs/runbooks/tenant-isolation-incident.md
+    kind: runbook
+    status: active
+    owner: clawrouter-security
+    title: Tenant isolation incident runbook
+  - id: OPS-0005
+    path: docs/runbooks/database-migration-rollback.md
+    kind: runbook
+    status: active
+    owner: clawrouter-data
+    title: Database migration rollback runbook
+  - id: OPS-0006
+    path: docs/runbooks/rate-limit-circuit-break.md
+    kind: runbook
+    status: active
+    owner: clawrouter-gateway
+    title: Rate limit / circuit break tuning runbook
+  - id: OPS-0007
+    path: docs/runbooks/audit-log-investigation.md
+    kind: runbook
+    status: active
+    owner: clawrouter-security
+    title: Audit log investigation runbook
+  - id: OPS-0008
+    path: docs/runbooks/redis-failover.md
+    kind: runbook
+    status: active
+    owner: clawrouter-release
+    title: Redis failover runbook
+  - id: OPS-0009
+    path: docs/runbooks/postgresql-ha-failover.md
+    kind: runbook
+    status: active
+    owner: clawrouter-release
+    title: PostgreSQL HA failover runbook
   - id: SEC-0001
     path: SECURITY.md
     kind: policy
@@ -89,6 +140,24 @@ entries:
     status: active
     owner: clawrouter-release
     title: Installation guides (English)
+  - id: COMMERCIAL-0001
+    path: docs/commercial/PRICING.md
+    kind: commercial
+    status: active
+    owner: clawrouter-commercial
+    title: Commercial pricing model
+  - id: LEGAL-0001
+    path: docs/legal/SLA.md
+    kind: legal
+    status: active
+    owner: clawrouter-commercial
+    title: Service Level Agreement
+  - id: LEGAL-0002
+    path: docs/legal/TIER_MATRIX.md
+    kind: legal
+    status: active
+    owner: clawrouter-commercial
+    title: Edition tier matrix
 domains:
   - id: gateway
     name: Gateway
@@ -97,6 +166,8 @@ domains:
     documents:
       - TECH-0001
       - OPS-0001
+      - OPS-0002
+      - OPS-0006
   - id: commerce
     name: Commerce
     owner: clawrouter-data
@@ -109,6 +180,8 @@ domains:
     description: Authentication, tenant isolation, signing keys, web request principal
     documents:
       - SEC-0001
+      - OPS-0003
+      - OPS-0004
   - id: security
     name: Security
     owner: clawrouter-security
@@ -116,6 +189,9 @@ domains:
     documents:
       - SEC-0001
       - AUDIT-0001
+      - OPS-0003
+      - OPS-0004
+      - OPS-0007
   - id: observability
     name: Observability
     owner: clawrouter-observability
@@ -123,6 +199,11 @@ domains:
     documents:
       - TECH-0001
       - OPS-0001
+      - OPS-0002
+      - OPS-0006
+      - OPS-0007
+      - OPS-0008
+      - OPS-0009
   - id: release
     name: Release
     owner: clawrouter-release
@@ -138,6 +219,9 @@ domains:
     description: Kubernetes manifests, nginx, installer CLI, topology configs
     documents:
       - OPS-0001
+      - OPS-0005
+      - OPS-0008
+      - OPS-0009
   - id: frontend
     name: Frontend
     owner: clawrouter-frontend
@@ -150,3 +234,16 @@ domains:
     description: Documentation index, contributing guide, code of conduct
     documents:
       - CONTRIB-0001
+  - id: commercial
+    name: Commercial
+    owner: clawrouter-commercial
+    description: Commercial pricing, license tiers, token metering, payment and refund policy
+    documents:
+      - COMMERCIAL-0001
+  - id: legal
+    name: Legal
+    owner: clawrouter-commercial
+    description: Service Level Agreement, edition tier matrix, and commercial legal terms
+    documents:
+      - LEGAL-0001
+      - LEGAL-0002

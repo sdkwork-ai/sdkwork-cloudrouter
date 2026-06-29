@@ -27,7 +27,7 @@ Shared adapter infrastructure lives in separate crates:
 
 - `sdkwork-claw-provider-adapter-contract` defines the gateway-to-adapter JSON envelope.
 - `sdkwork-claw-provider-adapter-registry` owns route config and endpoint matching.
-- `sdkwork-claw-provider-adapter-core` owns adapter traits and service-side helper abstractions.
+- `sdkwork-claw-provider-adapter` owns adapter traits and service-side helper abstractions.
 - `sdkwork-claw-provider-adapter-http` owns internal adapter HTTP transport, auth, and dispatch.
 
 The gateway must not depend on concrete provider adapter packages. The adapter service is the only runtime that composes concrete provider packages. Its default router is built from `services/sdkwork-claw-provider-adapter/src/providers.rs`, so `/internal/adapter-manifest` exposes the concrete packages registered in the service process without linking them into the gateway.

@@ -51,6 +51,8 @@ const DEFAULT_DEV_DATABASE_RELATIVE_PATH = path.join('target', 'dev', 'clawroute
 const DEFAULT_MODELS_CATALOG_RELATIVE_PATH = path.join('data', 'sdkwork-models');
 const DEFAULT_DEV_SECRET =
   'sdkwork-clawrouter-local-dev-secret-20260507';
+const EDGE_GATEWAY_PACKAGE = 'sdkwork-clawrouter-standalone-gateway-lib';
+const APP_API_GATEWAY_PACKAGE = 'sdkwork-clawrouter-standalone-gateway';
 const DEFAULT_DEV_REDIS_HOST = '127.0.0.1';
 const DEFAULT_DEV_REDIS_PORT = '6379';
 const DEFAULT_DEV_REDIS_DATABASE = '0';
@@ -253,16 +255,16 @@ export function clawRouterRustDevPackages(settings) {
 
   const packages = ['sdkwork-claw-installer'];
   if (settings.runtimeMode === 'all-in-one') {
-    packages.push('sdkwork-clawrouter-standalone-gateway');
+    packages.push(EDGE_GATEWAY_PACKAGE);
     return packages;
   }
 
   if (settings.runtimeMode === 'distributed') {
     packages.push(
       'sdkwork-clawrouter-cloud-gateway',
-      'sdkwork-clawrouter-standalone-gateway',
+      APP_API_GATEWAY_PACKAGE,
       'sdkwork-clawrouter-admin-gateway',
-      'sdkwork-clawrouter-standalone-gateway',
+      APP_API_GATEWAY_PACKAGE,
     );
   }
 
@@ -843,7 +845,7 @@ export function buildWorkspaceCommandPlan(settings, {
     {
       name: 'app-api',
       command: cargoCommand(platform),
-      args: cargoRunPackageArgs('sdkwork-clawrouter-standalone-gateway'),
+      args: cargoRunPackageArgs(APP_API_GATEWAY_PACKAGE),
       cwd: workspaceRoot,
       env: clawRouterDevCargoEnv(workspaceRoot, {
         ...serviceEnv(settings, 'SDKWORK_CLAW_APP_API_BIND', settings.appApiBind, {
@@ -872,7 +874,7 @@ export function buildWorkspaceCommandPlan(settings, {
     {
       name: 'server',
       command: cargoCommand(platform),
-      args: cargoRunPackageArgs('sdkwork-clawrouter-standalone-gateway'),
+      args: cargoRunPackageArgs(EDGE_GATEWAY_PACKAGE),
       cwd: workspaceRoot,
       env: clawRouterDevCargoEnv(workspaceRoot, edgeServerEnv(settings)),
       shell: false,

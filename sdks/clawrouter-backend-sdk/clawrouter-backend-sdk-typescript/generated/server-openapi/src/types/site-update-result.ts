@@ -1,11 +1,9 @@
-import type { AdminSiteMutationResponse } from './admin-site-mutation-response';
-
 /** Site update result schema exposed by Claw Router. */
 export interface SiteUpdateResult {
   /** Business response code. */
   code: string;
-  /** Data field on site update result. */
-  data?: AdminSiteMutationResponse;
+  /** No business data returned by this operation. */
+  data?: never;
   /** Human-readable response message. */
   msg?: string;
 }

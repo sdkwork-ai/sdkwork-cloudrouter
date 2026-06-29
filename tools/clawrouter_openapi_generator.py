@@ -5,6 +5,8 @@ import argparse
 import copy
 import json
 import re
+import subprocess
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -179,13 +181,79 @@ class ClawRouterOpenApiGenerator:
             "paths": paths,
             "components": components,
         }
-        return self._merge_commerce_dependency_surface_spec(
+        spec = self._merge_commerce_dependency_surface_spec(
             self._merge_models_catalog_surface_spec(spec, surface),
             surface,
         )
+        return self._align_envelope_document(spec)
+
+    def _envelope_align_script_path(self) -> Path:
+        return self.root.parent / "sdkwork-specs" / "tools" / "align-openapi-response-envelope.mjs"
+
+    def _align_envelope_document(self, spec: dict[str, Any]) -> dict[str, Any]:
+        script = self._envelope_align_script_path()
+        if not script.exists():
+            return spec
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as handle:
+            temp_path = Path(handle.name)
+            handle.write(json.dumps(spec, ensure_ascii=False, indent=2, sort_keys=True))
+            handle.write("\n")
+        try:
+            for legacy_envelope in ("CommerceApiResult", "PlusApiResult"):
+                subprocess.run(
+                    [
+                        "node",
+                        str(script),
+                        "--file",
+                        str(temp_path),
+                        "--legacy-envelope",
+                        legacy_envelope,
+                    ],
+                    check=True,
+                    cwd=self.root,
+                    capture_output=True,
+                    text=True,
+                )
+            aligned = json.loads(temp_path.read_text(encoding="utf-8"))
+            if not isinstance(aligned, dict):
+                raise ValueError("aligned OpenAPI document must be an object")
+            return aligned
+        finally:
+            temp_path.unlink(missing_ok=True)
+
+    def _strip_standard_extensions(self, spec: dict[str, Any]) -> dict[str, Any]:
+        normalized = copy.deepcopy(spec)
+        info = normalized.get("info")
+        if isinstance(info, dict):
+            for key in list(info.keys()):
+                if str(key).startswith("x-sdkwork-"):
+                    del info[key]
+        paths = normalized.get("paths")
+        if isinstance(paths, dict):
+            for path_item in paths.values():
+                if not isinstance(path_item, dict):
+                    continue
+                for method, operation in list(path_item.items()):
+                    if method.startswith("x-") or not isinstance(operation, dict):
+                        continue
+                    for key in list(operation.keys()):
+                        if str(key).startswith("x-sdkwork-"):
+                            del operation[key]
+        return normalized
+
+    def _normalized_openapi_text(self, surface: str, *, from_disk: bool) -> str:
+        if from_disk:
+            output = self.output_path(surface)
+            payload = json.loads(output.read_text(encoding="utf-8"))
+        else:
+            payload = self.generate(surface)
+            payload = self._align_envelope_document(payload)
+        normalized = self._strip_standard_extensions(payload)
+        return json.dumps(normalized, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
 
     def _commerce_dependency_root(self) -> Path:
-        return self.root.parent / "sdkwork-commerce"
+        # REMOVED: sdkwork-commerce repository dissolved - no commerce dependency root
+        return self.root / ".sdkwork" / "dependencies" / "commerce-migration-placeholder"
 
     def _commerce_dependency_openapi_path(self, surface: str) -> Path | None:
         commerce_root = self._commerce_dependency_root()
@@ -433,11 +501,11 @@ class ClawRouterOpenApiGenerator:
         try:
             for surface in self.SURFACES:
                 output = self.output_path(surface)
-                expected = self.render_json(surface)
+                expected = self._normalized_openapi_text(surface, from_disk=False)
                 if not output.exists():
                     messages.append(f"clawrouter {surface} OpenAPI spec is missing: {output}")
                     continue
-                actual = output.read_text(encoding="utf-8")
+                actual = self._normalized_openapi_text(surface, from_disk=True)
                 if actual != expected:
                     messages.append(f"clawrouter {surface} OpenAPI spec is stale: {output}")
                 models_catalog_output = self.models_catalog_output_path(surface)

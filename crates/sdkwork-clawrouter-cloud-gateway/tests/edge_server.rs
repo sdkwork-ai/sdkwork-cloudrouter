@@ -2916,3 +2916,145 @@ fn edge_server_rejects_unsafe_portal_security_policy_values() {
         .with_portal_csp_frame_src(["javascript:alert(1)"])
         .is_err());
 }
+
+#[tokio::test]
+async fn edge_server_hsts_absent_by_default_when_not_configured() {
+    let gateway = spawn_upstream("gateway").await;
+    let admin = spawn_upstream("admin").await;
+    let app = spawn_upstream("app").await;
+    let portal_dist = temp_portal_dist_dir("hsts-default-absent");
+    write_portal_dist_fixture(&portal_dist);
+
+    let config = sdkwork_clawrouter_cloud_gateway::EdgeServerConfig::try_new(
+        &gateway.base_url,
+        &admin.base_url,
+        &app.base_url,
+        "http://127.0.0.1:3901",
+    )
+    .unwrap()
+    .with_portal_static_dist(portal_dist.clone())
+    .unwrap();
+    let router = sdkwork_clawrouter_cloud_gateway::edge_server_router(config);
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::OK, response.status());
+    assert!(
+        response.headers().get("strict-transport-security").is_none(),
+        "HSTS header must be absent when not explicitly configured"
+    );
+
+    let _ = std::fs::remove_dir_all(&portal_dist);
+    let _ = gateway.stop.send(());
+    let _ = admin.stop.send(());
+    let _ = app.stop.send(());
+}
+
+#[tokio::test]
+async fn edge_server_portal_security_headers_are_complete_with_hsts_preload() {
+    let gateway = spawn_upstream("gateway").await;
+    let admin = spawn_upstream("admin").await;
+    let app = spawn_upstream("app").await;
+    let portal_dist = temp_portal_dist_dir("security-headers-complete");
+    write_portal_dist_fixture(&portal_dist);
+
+    let config = sdkwork_clawrouter_cloud_gateway::EdgeServerConfig::try_new(
+        &gateway.base_url,
+        &admin.base_url,
+        &app.base_url,
+        "http://127.0.0.1:3901",
+    )
+    .unwrap()
+    .with_portal_static_dist(portal_dist.clone())
+    .unwrap()
+    .with_portal_strict_transport_security(true, 31_536_000, true, true)
+    .unwrap();
+    let router = sdkwork_clawrouter_cloud_gateway::edge_server_router(config);
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::OK, response.status());
+    let headers = response.headers();
+
+    // HSTS with production defaults: max-age=31536000; includeSubDomains; preload
+    assert_eq!(
+        "max-age=31536000; includeSubDomains; preload",
+        headers
+            .get("strict-transport-security")
+            .expect("HSTS header must be present when configured")
+            .to_str()
+            .unwrap()
+    );
+
+    // X-Content-Type-Options: nosniff
+    assert_eq!(
+        "nosniff",
+        headers
+            .get("x-content-type-options")
+            .expect("x-content-type-options header must be present")
+            .to_str()
+            .unwrap()
+    );
+
+    // X-Frame-Options: DENY
+    assert_eq!(
+        "DENY",
+        headers
+            .get("x-frame-options")
+            .expect("x-frame-options header must be present")
+            .to_str()
+            .unwrap()
+    );
+
+    // Referrer-Policy: strict-origin-when-cross-origin
+    assert_eq!(
+        "strict-origin-when-cross-origin",
+        headers
+            .get("referrer-policy")
+            .expect("referrer-policy header must be present")
+            .to_str()
+            .unwrap()
+    );
+
+    // Permissions-Policy
+    assert_eq!(
+        "camera=(), microphone=(), geolocation=(), payment=()",
+        headers
+            .get("permissions-policy")
+            .expect("permissions-policy header must be present")
+            .to_str()
+            .unwrap()
+    );
+
+    // Content-Security-Policy must be present and contain key directives
+    let csp = headers
+        .get("content-security-policy")
+        .expect("content-security-policy header must be present")
+        .to_str()
+        .unwrap();
+    assert!(csp.contains("default-src"));
+    assert!(csp.contains("frame-ancestors 'none'"));
+
+    let _ = std::fs::remove_dir_all(&portal_dist);
+    let _ = gateway.stop.send(());
+    let _ = admin.stop.send(());
+    let _ = app.stop.send(());
+}

@@ -81,7 +81,13 @@ pub struct CircuitBreakerConfig {
     pub half_open_max_probes: u32,
     /// Consecutive successes in half-open required to close the circuit.
     pub success_threshold: u32,
-    /// Whether to fail-open or fail-closed when the state store is unavailable.
+    /// Whether to fail-open or fail-closed when the distributed state store is
+    /// unavailable.
+    ///
+    /// Defaults to `false` (fail-closed): when Redis is unreachable the circuit
+    /// breaker rejects calls rather than allowing them through. Production
+    /// deployments MUST keep this `false` to avoid silently disabling circuit
+    /// protection during a Redis outage.
     pub fail_open: bool,
 }
 
@@ -92,7 +98,9 @@ impl Default for CircuitBreakerConfig {
             open_duration: Duration::from_secs(30),
             half_open_max_probes: 3,
             success_threshold: 2,
-            fail_open: true,
+            // C-4: fail-closed by default. Fail-open masks provider failures
+            // during Redis outages and must only be enabled deliberately.
+            fail_open: false,
         }
     }
 }
@@ -171,22 +179,57 @@ impl CircuitBreakerInterceptor {
     ///
     /// When `redis_config` is `Some` and a Redis connection can be established,
     /// the interceptor shares circuit breaker state across nodes via Redis.
-    /// When `None` or the connection fails, it falls back to local state.
+    /// When `None` or the connection fails, it falls back to local state and
+    /// emits a `circuit_breaker_redis_degraded=1` warning so operators can
+    /// alert on the loss of distributed circuit protection.
     pub fn try_with_redis_config(
         config: CircuitBreakerConfig,
         redis_config: Option<&RedisConfig>,
     ) -> Self {
-        let distributed = redis_config.and_then(|rc| {
-            let url = rc.url();
-            let prefix = rc.key_prefix().unwrap_or("clawrouter").to_owned();
-            RedisCircuitBreakerStore::try_new(url, &prefix, &config).ok()
-        });
+        let (distributed, degraded) = match redis_config {
+            Some(rc) => {
+                let url = rc.url();
+                let prefix = rc.key_prefix().unwrap_or("clawrouter").to_owned();
+                match RedisCircuitBreakerStore::try_new(url, &prefix, &config) {
+                    Ok(store) => (
+                        Some(Arc::new(store) as Arc<dyn CircuitBreakerStateStore>),
+                        false,
+                    ),
+                    Err(error) => {
+                        tracing::warn!(
+                            error = %error,
+                            circuit_breaker_redis_degraded = 1,
+                            "circuit breaker Redis store unavailable; falling back to local \
+                             per-node state with fail_closed={}",
+                            !config.fail_open
+                        );
+                        (None, true)
+                    }
+                }
+            }
+            None => {
+                if config.fail_open {
+                    tracing::warn!(
+                        circuit_breaker_redis_degraded = 1,
+                        "circuit breaker has no Redis config; running local per-node state with \
+                         fail_open=true (calls allowed when local state is unavailable)"
+                    );
+                } else {
+                    tracing::warn!(
+                        circuit_breaker_redis_degraded = 1,
+                        "circuit breaker has no Redis config; running local per-node state with \
+                         fail_closed (calls rejected when local state is unavailable)"
+                    );
+                }
+                (None, true)
+            }
+        };
+        let _ = degraded;
         Self {
             circuits: Arc::new(Mutex::new(HashMap::new())),
             stats: Arc::new(Mutex::new(HashMap::new())),
             config,
-            distributed: distributed
-                .map(|store| Arc::new(store) as Arc<dyn CircuitBreakerStateStore>),
+            distributed,
         }
     }
 

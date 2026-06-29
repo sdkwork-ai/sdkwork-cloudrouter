@@ -153,6 +153,8 @@ fn status_code_for_error(error: &InvocationError) -> u16 {
         | super::InvocationErrorKind::Usage
         | super::InvocationErrorKind::Telemetry
         | super::InvocationErrorKind::Internal => 502,
+        // H-9: tenant in-flight / rate-limit rejection maps to HTTP 429.
+        super::InvocationErrorKind::RateLimit => 429,
     }
 }
 

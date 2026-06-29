@@ -78,7 +78,7 @@ pub struct OtlpConfig {
 impl Default for OtlpConfig {
     fn default() -> Self {
         Self {
-            tracing_enabled: true,
+            tracing_enabled: false,
             metrics_enabled: true,
             endpoint: "http://localhost:4317".to_string(),
             service_name: "sdkwork-clawrouter".to_string(),
@@ -86,6 +86,13 @@ impl Default for OtlpConfig {
             export_timeout_secs: 30,
             certificate_path: None,
         }
+    }
+}
+
+impl OtlpConfig {
+    /// Load OTLP configuration from environment variables.
+    pub fn from_env() -> Self {
+        ObservabilityConfig::from_env().otlp
     }
 }
 
@@ -227,7 +234,7 @@ impl ObservabilityConfig {
             otlp: OtlpConfig {
                 tracing_enabled: std::env::var("OTEL_TRACING_ENABLED")
                     .map(|v| v == "true")
-                    .unwrap_or(true),
+                    .unwrap_or(false),
                 metrics_enabled: std::env::var("OTEL_METRICS_ENABLED")
                     .map(|v| v == "true")
                     .unwrap_or(true),

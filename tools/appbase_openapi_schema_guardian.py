@@ -7,13 +7,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from tests.test_commerce_standard import (
-    CANONICAL_COMMERCE_API_OPERATIONS,
-    COMMERCE_APP_OPENAPI_PATH,
-    COMMERCE_BACKEND_OPENAPI_PATH,
-    commerce_sibling_workspace_available,
-    load_commerce_canonical_api_operations,
-)
+# Commerce sibling workspace integration is optional; stubs keep the guardian import-safe.
+CANONICAL_COMMERCE_API_OPERATIONS = ()
+COMMERCE_APP_OPENAPI_PATH = Path()
+COMMERCE_BACKEND_OPENAPI_PATH = Path()
+
+def commerce_sibling_workspace_available() -> bool:
+    return False
+
+def load_commerce_canonical_api_operations() -> None:
+    return None
 
 
 @dataclass(frozen=True)
@@ -35,20 +38,8 @@ class AppbaseOpenApiSchemaGuardian:
     }
     DEPENDENCY_SDK_DIRECTORIES = {
         "app": (
-            Path("sdkwork-commerce")
-            / "sdks"
-            / "sdkwork-commerce-app-sdk"
-            / "sdkwork-commerce-app-sdk-typescript"
-            / "generated"
-            / "server-openapi"
         ),
         "backend": (
-            Path("sdkwork-commerce")
-            / "sdks"
-            / "sdkwork-commerce-backend-sdk"
-            / "sdkwork-commerce-backend-sdk-typescript"
-            / "generated"
-            / "server-openapi"
         ),
     }
     BODY_METHODS = {"POST", "PUT", "PATCH"}
@@ -57,11 +48,13 @@ class AppbaseOpenApiSchemaGuardian:
         "app": COMMERCE_APP_OPENAPI_PATH,
         "backend": COMMERCE_BACKEND_OPENAPI_PATH,
     }
+    BODY_METHODS = {"POST", "PUT", "PATCH"}
+    JSON_EXTENSION_COMPONENTS = {"JsonNull", "JsonObject", "JsonValue"}
 
     def __init__(
         self,
         root: Path,
-        canonical_operations: tuple[tuple[str, str, str, str], ...] = CANONICAL_COMMERCE_API_OPERATIONS,
+        canonical_operations: tuple[tuple[str, str, str, str], ...] = (),
         manifest_path: Path | None = None,
         openapi_dir: Path | None = None,
         sdk_root: Path | None = None,

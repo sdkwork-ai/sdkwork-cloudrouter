@@ -98,6 +98,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@sdkwork/clawroutes-pc-commons": "workspace:*",
     "@sdkwork/clawrouter-pc-core": "workspace:*",
     "@sdkwork/iam-app-sdk": "workspace:*",
     "@sdkwork/iam-backend-sdk": "workspace:*",

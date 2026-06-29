@@ -13,5 +13,9 @@
     "sdkwork-drive-backend-sdk-generated-typescript": "workspace:*",
     "@sdkwork/file-platform-pc-react": "workspace:*",
     "@sdkwork/file-sdk-ports": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

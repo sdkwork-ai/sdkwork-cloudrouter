@@ -317,7 +317,7 @@ async fn fresh_sqlite_install_refreshes_model_rankings_from_usage_and_serves_adm
         .is_some_and(|value| value.ends_with("T00:00:00Z")));
     assert_eq!(
         vec![
-            "ai_usage_fact".to_owned(),
+            "ai_usage".to_owned(),
             "ai_model".to_owned(),
             "ai_model_rank_snapshot".to_owned()
         ],
@@ -403,7 +403,7 @@ async fn load_first_installed_model(pool: &sqlx::SqlitePool) -> InstalledModel {
 async fn insert_usage_fact_for_model(pool: &sqlx::SqlitePool, model: &InstalledModel) {
     sqlx::query(
         r#"
-        INSERT INTO ai_usage_fact
+        INSERT INTO ai_usage
             (id, uuid, tenant_id, organization_id, user_id, request_id, status, metadata,
              catalog_key, model, modality, usage_type, billing_meter_code, request_count,
              prompt_tokens, completion_tokens, total_tokens, billable_quantity, cost_amount,
@@ -449,7 +449,7 @@ fn assert_model_ranking_response_contains_catalog(
         .as_array()
         .unwrap()
         .iter()
-        .any(|item| item == "ai_usage_fact"));
+        .any(|item| item == "ai_usage"));
     let item = payload["data"]["items"]
         .as_array()
         .unwrap()

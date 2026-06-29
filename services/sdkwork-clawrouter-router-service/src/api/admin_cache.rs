@@ -203,7 +203,7 @@ fn cache_system_response(context: &str, error: crate::domain::DomainError) -> Re
     };
     (
         status,
-        Json(PlusApiResult::error(code, format!("{context}: {error}"))),
+        PlusApiResult::error(code, format!("{context}: {error}")),
     )
         .into_response()
 }

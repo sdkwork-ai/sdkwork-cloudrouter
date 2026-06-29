@@ -17,7 +17,7 @@ fn assert_sql_contains(sql: &str, expected: &str) {
 #[test]
 fn usage_settlement_locks_pending_usage_and_points_account_in_one_transaction() {
     for expected in [
-        "FROM ai_usage_fact",
+        "FROM ai_usage",
         "($1 <= 0 OR tenant_id = $1)",
         "($2 <= 0 OR organization_id = $2)",
         "settlement_status IN ($3, $4)",
@@ -43,15 +43,15 @@ fn usage_settlement_requires_explicit_pending_or_failed_status() {
 #[test]
 fn usage_settlement_upserts_bridge_and_returns_ids_without_double_debit() {
     for expected in [
-        "INSERT INTO commerce_usage_settlement",
+        "INSERT INTO commerce_settlement",
         "ON CONFLICT (tenant_id, organization_id, usage_fact_id) DO UPDATE SET",
-        "WHERE commerce_usage_settlement.settlement_status <> $19",
+        "WHERE commerce_settlement.settlement_status <> $19",
         ".bind(USAGE_SETTLEMENT_SUCCESS)",
         "RETURNING id",
         "INSERT INTO commerce_account_ledger_entry",
         "business_type, transaction_no, request_no, idempotency_key, source_type, source_id, remark, created_at",
         "'usage'",
-        "'ai_usage_fact'",
+        "'ai_usage'",
         "WHERE account_id = $1",
         "AND transaction_no = $2",
     ] {
@@ -116,7 +116,7 @@ fn usage_settlement_has_no_legacy_plus_account_dependency() {
 #[test]
 fn usage_settlement_marks_success_and_failure_on_source_fact() {
     for expected in [
-        "UPDATE ai_usage_fact",
+        "UPDATE ai_usage",
         "SET settlement_status = $1,",
         "settlement_id = $2",
         "INSUFFICIENT_POINTS",

@@ -64,9 +64,12 @@ node scripts\plan-claw-router-install-packages.mjs --json
 ```bash
 pnpm release:env:write -- --check
 pnpm release:env:write -- --force
+pnpm verify
 pnpm build
 pnpm install:package:build -- --package-id linux-x64-service
 ```
+
+`pnpm verify` 是完整的商业验证门禁，构建任何 release 包之前必须通过。release 预检会强制执行此规则：当 `docs/release` 下最近的 release 记录未记录 `pnpm verify` 证据，或记录中包含 "skipped"、"not run" 等跳过字样时，`node scripts/release-preflight.mjs --check` 会失败。`SDKWORK_RELEASE_SKIP_VERIFY=1` 是唯一的紧急跳过方式，仅限紧急热修复使用，并必须在 release 记录中说明。
 
 生成的 Ubuntu/Debian 安装包使用公开制品名 `clawrouter-linux-x64-server-0.3.0.deb`。
 

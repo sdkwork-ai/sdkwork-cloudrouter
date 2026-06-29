@@ -214,18 +214,8 @@
         "dependencyMode": "consumer-sdk"
       },
       {
-        "workspace": "sdkwork-commerce-app-sdk",
-        "role": "commerce-app-capability",
-        "dependencyMode": "consumer-sdk"
-      },
-      {
         "workspace": "sdkwork-iam-backend-sdk",
         "role": "appbase-backend-management-capability",
-        "dependencyMode": "consumer-sdk"
-      },
-      {
-        "workspace": "sdkwork-commerce-backend-sdk",
-        "role": "commerce-backend-management-capability",
         "dependencyMode": "consumer-sdk"
       }
     ],

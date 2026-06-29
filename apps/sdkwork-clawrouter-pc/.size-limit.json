@@ -1,0 +1,50 @@
+[
+  {
+    "name": "vendor-react",
+    "path": "dist/assets/vendor-react-*.js",
+    "limit": "150 KB",
+    "gzip": true
+  },
+  {
+    "name": "vendor-router",
+    "path": "dist/assets/vendor-router-*.js",
+    "limit": "30 KB",
+    "gzip": true
+  },
+  {
+    "name": "vendor-charts",
+    "path": "dist/assets/vendor-charts-*.js",
+    "limit": "200 KB",
+    "gzip": true
+  },
+  {
+    "name": "vendor-i18n",
+    "path": "dist/assets/vendor-i18n-*.js",
+    "limit": "50 KB",
+    "gzip": true
+  },
+  {
+    "name": "vendor-form",
+    "path": "dist/assets/vendor-form-*.js",
+    "limit": "50 KB",
+    "gzip": true
+  },
+  {
+    "name": "vendor-rich-tools",
+    "path": "dist/assets/vendor-rich-tools-*.js",
+    "limit": "500 KB",
+    "gzip": true
+  },
+  {
+    "name": "vendor-sdkwork-sdk",
+    "path": "dist/assets/vendor-sdkwork-sdk-*.js",
+    "limit": "100 KB",
+    "gzip": true
+  },
+  {
+    "name": "total-bundle",
+    "path": "dist/assets/**/*.js",
+    "limit": "2 MB",
+    "gzip": true
+  }
+]

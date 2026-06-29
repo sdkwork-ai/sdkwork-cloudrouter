@@ -171,7 +171,7 @@ SDK clients in TypeScript).
 sdkwork-clawrouter/
 ├── AGENTS.md                  # repository agent entrypoint
 ├── Cargo.toml                 # Rust workspace (52 members)
-├── package.json               # pnpm workspace scripts
+├── package.json               # pnpm lifecycle scripts
 ├── sdkwork.app.config.json    # app identity + release metadata
 ├── sdkwork.workflow.json      # GitHub packaging/release workflow manifest
 ├── apis/                      # authored API contracts (app/backend/open)
@@ -230,11 +230,9 @@ imports from `@sdkwork/clawrouter-*-sdk` only, never raw `fetch`/`axios`.
 | --- | --- | --- | --- |
 | `iam_*` | sdkwork-iam (sibling repo) | IAM service | claw-router (read-only via shared pool) |
 | `ai_*` | router-service | router-service invocation pipeline | admin-api, app-api |
-| `commerce_*` | sdkwork-commerce (sibling repo) | commerce service | claw-router (read-only) |
 | `ops_*` | router-service | ops workers (heartbeat, audit, metrics, jobs) | admin-api |
 | `integration_*` | router-service | provider integration | admin-api |
 | `analytics_*` | router-service | analytics rollup worker | admin-api |
-| `c_category` | sdkwork-commerce | commerce service | claw-router (read-only) |
 | `system_*` | router-service installer | clawrouterctl | all (schema migration state) |
 
 Schema registry: `database/contract/table-registry.json` +
@@ -264,6 +262,23 @@ Internet ──TLS──▶ Edge Server ──auth──▶ Invocation Pipeline 
 - App session token uses single shared HMAC secret (0.3.x baseline);
   per-tenant RS256/ES256 is a P0 GA prerequisite (see
   `docs/standard-alignment-audit.md`).
+
+### Provider Relay Security Controls (0.3.0)
+
+The OpenAI-compatible provider relay pipeline enforces the following
+Critical/High security and performance controls:
+
+| ID | Control | Implementation |
+| --- | --- | --- |
+| C-1 | SSRF protection | `UpstreamProviderEndpoint::new` resolves upstream host via `to_socket_addrs` and rejects loopback/private/link-local/unspecified/CGN `100.64.0.0/10`/IPv6 ULA `fc00::/7` IP ranges before dispatching. |
+| C-4 | Circuit breaker fail-closed | `CircuitBreakerConfig::fail_open` defaults to `false`; Redis degradation emits `tracing::warn!(circuit_breaker_redis_degraded = 1)`. |
+| C-5 | HTTP connection-pool tuning | `build_provider_client` configures `pool_idle_timeout`/`pool_max_idle_per_host`/`http2_keep_alive_interval`/`http2_keep_alive_timeout`/`connect_timeout` via `[provider_relay.http_pool]`. |
+| H-1 | HTTPS-only upstream | `hyper_rustls::HttpsConnectorBuilder::https_only()` replaces `.https_or_http()`; plaintext HTTP upstream URLs are rejected at construction. |
+| H-3 | Response body size limit | `http_body_util::Limited::new(response.into_body(), provider_response_max_bytes)` caps non-streaming responses at 64 MiB default; oversized bodies abort with `DomainError`. |
+| H-4 | Provider timeout reduction | `DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS = 60_000` (non-streaming); streaming responses use `stream_response_timeout_millis = 120_000`. |
+| H-5 | Dispatch retry tightening | `DispatchExecutor::max_attempts` returns 1 for `SseStream`/`ByteStream` invocations (no replay after SSE bytes sent); non-streaming defaults to 2. |
+| H-8 | Redis degraded alerting | `GatewayInvocationRateLimiter::redis_degraded_gauge()` emits Prometheus `redis_degraded=1`; local fallback divides quota by `estimated_instance_count` to prevent per-node over-allowance. |
+| H-9 | Tenant in-flight concurrency | `TenantInflightInterceptor` uses Redis atomic counter (Lua script + 5-minute TTL) or local `LocalTenantInflightCounter`; exceeding `tenant_max_inflight_requests` (default 100) returns HTTP 429 via `InvocationErrorKind::RateLimit`. |
 
 ### Cryptographic Material
 

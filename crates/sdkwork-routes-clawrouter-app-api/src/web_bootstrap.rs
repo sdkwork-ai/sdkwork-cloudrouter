@@ -149,6 +149,7 @@ mod tests {
                 access_token_present: true,
                 api_key_present: false,
                 oauth_bearer_present: false,
+                agent_token_present: false,
             },
             principal: Some(principal),
             locale: None,

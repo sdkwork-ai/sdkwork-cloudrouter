@@ -5,7 +5,7 @@
 
 **Goal:** Complete the admin Product Center to a commercial operating baseline covering categories, shops/stores, SPU create/edit/retrieve, multi-spec SKU matrix, category attributes, SKU attributes, product detail configuration, pricing, inventory readiness, and publish readiness.
 
-**Architecture:** Claw Router owns the admin shell, route mounting, and wrapper integration. `sdkwork-commerce` owns the real product-admin UI package at `apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product`, which must consume `@sdkwork/commerce-service` rather than Claw Router SDKs or raw HTTP. Complete the frontend workflow and typed service boundary first without changing schemas; close backend/API/SDK gaps contract-first only after explicit approval for any table, migration, or generated-SDK churn.
+**Architecture:** Claw Router owns the admin shell, route mounting, and wrapper integration. `sdkwork-商���` owns the real product-admin UI package at `apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product`, which must consume `@sdkwork/commerce-service` rather than Claw Router SDKs or raw HTTP. Complete the frontend workflow and typed service boundary first without changing schemas; close backend/API/SDK gaps contract-first only after explicit approval for any table, migration, or generated-SDK churn.
 
 **Tech Stack:** TypeScript, React, Vite/Vitest, `@sdkwork/commerce-service`, Commerce generated backend SDK, Claw Router admin wrapper, Rust/SQLx/OpenAPI for later backend contract tasks.
 
@@ -19,7 +19,7 @@
 ## Current Workspace Constraints
 
 - `sdkwork-clawrouter` has unrelated dirty generated app SDK/IAM/runtime work. Do not stage or revert it.
-- `sdkwork-commerce` has active parallel work, including product-admin files. Preserve and build on it.
+- `sdkwork-商���` has active parallel work, including product-admin files. Preserve and build on it.
 - Do not hand-edit generated SDK output.
 - Do not add raw `fetch`, `axios`, manual auth headers, or local SDK forks.
 - Do not change tables, columns, indexes, migrations, or embedded schemas without explicit human approval.
@@ -29,33 +29,33 @@
 
 Primary Commerce implementation files:
 
-- Modify: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/catalogService.ts`
+- Modify: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/catalogService.ts`
   - Owns product-admin service facade over `@sdkwork/commerce-service`.
-- Create: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/productAdminTypes.ts`
+- Create: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/productAdminTypes.ts`
   - Local view models for product detail config, store visibility, SKU matrix, attributes, pricing, inventory readiness, and publish readiness.
-- Create: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/productAdminReadiness.ts`
+- Create: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/productAdminReadiness.ts`
   - Pure readiness and validation functions. No React, SDK, or persistence code.
-- Create: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/productAdminMapping.ts`
+- Create: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/productAdminMapping.ts`
   - Pure mapping between draft/view-model state and service payloads.
-- Create: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductDetailConfigPanel.tsx`
+- Create: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductDetailConfigPanel.tsx`
   - Commercial detail configuration UI section.
-- Create: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductStoreInventoryPanel.tsx`
+- Create: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductStoreInventoryPanel.tsx`
   - Store visibility and inventory/source readiness UI section.
-- Create: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductPublishReadinessPanel.tsx`
+- Create: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductPublishReadinessPanel.tsx`
   - Publish readiness checklist and action affordance section.
-- Create: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductAttributeValuePanel.tsx`
+- Create: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductAttributeValuePanel.tsx`
   - Category and SKU attribute value UI section.
-- Create: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/SkuMatrixCommercialPanel.tsx`
+- Create: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/SkuMatrixCommercialPanel.tsx`
   - Focused SKU matrix controls extracted from the oversized create/edit page.
-- Modify: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductCreatePage.tsx`
+- Modify: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductCreatePage.tsx`
   - Keep route behavior, preserve existing retrieve-based edit loading, and compose the new focused panels.
-- Modify: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/SkuManagementPage.tsx`
+- Modify: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/SkuManagementPage.tsx`
   - Align standalone SKU management with the same SKU attribute and readiness concepts.
-- Modify: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductListPage.tsx`
+- Modify: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductListPage.tsx`
   - Surface readiness, detail completeness, store visibility, SKU status, and inventory risk in the list.
-- Modify: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/index.tsx`
+- Modify: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/index.tsx`
   - Export stable public components/types only.
-- Modify: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/tests/product-admin.service.test.ts`
+- Modify: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/tests/product-admin.service.test.ts`
   - Add guards for service boundaries, no raw HTTP, complete commercial view-model helpers, and no list-search edit fallback.
 
 Claw Router integration files:
@@ -66,20 +66,20 @@ Claw Router integration files:
 
 Backend/API/SDK gap files for later approved contract work:
 
-- `E:/sdkwork-space/sdkwork-commerce/packages/common/commerce/sdkwork-commerce-contracts/src/index.ts`
-- `E:/sdkwork-space/sdkwork-commerce/packages/common/commerce/sdkwork-commerce-sdk-ports/src/index.ts`
-- `E:/sdkwork-space/sdkwork-commerce/packages/common/commerce/sdkwork-commerce-service/tests/commerce-service.standard.test.ts`
-- `E:/sdkwork-space/sdkwork-commerce/generated/openapi/commerce-backend-api.openapi.json`
-- `E:/sdkwork-space/sdkwork-commerce/sdks/sdkwork-commerce-backend-sdk/**`
-- `E:/sdkwork-space/sdkwork-commerce/crates/**`
+- `E:/sdkwork-space/sdkwork-商���/packages/common/commerce/sdkwork-商���-contracts/src/index.ts`
+- `E:/sdkwork-space/sdkwork-商���/packages/common/commerce/sdkwork-商���-sdk-ports/src/index.ts`
+- `E:/sdkwork-space/sdkwork-商���/packages/common/commerce/sdkwork-商���-service/tests/commerce-service.standard.test.ts`
+- `E:/sdkwork-space/sdkwork-商���/generated/openapi/commerce-backend-api.openapi.json`
+- `E:/sdkwork-space/sdkwork-商���/sdks/sdkwork-商���-backend-sdk/**`
+- `E:/sdkwork-space/sdkwork-商���/crates/**`
 
 Do not touch the backend/API/SDK gap files in the first frontend completion pass unless the user explicitly approves schema/generated SDK churn.
 
 ## Task 1: Protect The Existing Commerce Service Boundary
 
 **Files:**
-- Modify: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/tests/product-admin.service.test.ts`
-- Modify: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/catalogService.ts`
+- Modify: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/tests/product-admin.service.test.ts`
+- Modify: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/catalogService.ts`
 
 - [ ] **Step 1: Add service-boundary guard expectations**
 
@@ -98,7 +98,7 @@ expect(source).toContain("catalog.products.management.retrieve");
 Run:
 
 ```powershell
-pnpm run test:vitest -- apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/tests/product-admin.service.test.ts
+pnpm run test:vitest -- apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/tests/product-admin.service.test.ts
 ```
 
 Expected: PASS or fail only on missing new guards.
@@ -114,17 +114,17 @@ Run the same command.
 - [ ] **Step 5: Commit this guard layer**
 
 ```powershell
-git -C E:\sdkwork-space\sdkwork-commerce add apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/tests/product-admin.service.test.ts apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/catalogService.ts
-git -C E:\sdkwork-space\sdkwork-commerce commit -m "test: guard product admin service boundary"
+git -C E:\sdkwork-space\sdkwork-商��� add apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/tests/product-admin.service.test.ts apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/catalogService.ts
+git -C E:\sdkwork-space\sdkwork-商��� commit -m "test: guard product admin service boundary"
 ```
 
 ## Task 2: Add Product Admin View Models And Readiness Logic
 
 **Files:**
-- Create: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/productAdminTypes.ts`
-- Create: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/productAdminReadiness.ts`
-- Create: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/productAdminMapping.ts`
-- Modify: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/tests/product-admin.service.test.ts`
+- Create: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/productAdminTypes.ts`
+- Create: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/productAdminReadiness.ts`
+- Create: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/productAdminMapping.ts`
+- Modify: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/tests/product-admin.service.test.ts`
 
 - [ ] **Step 1: Add failing tests for commercial readiness helpers**
 
@@ -146,7 +146,7 @@ Assert that readiness covers:
 Run:
 
 ```powershell
-pnpm run test:vitest -- apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/tests/product-admin.service.test.ts
+pnpm run test:vitest -- apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/tests/product-admin.service.test.ts
 ```
 
 Expected: FAIL until helper modules exist.
@@ -186,20 +186,20 @@ Run the same command.
 - [ ] **Step 6: Commit view-model helpers**
 
 ```powershell
-git -C E:\sdkwork-space\sdkwork-commerce add apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/productAdminTypes.ts apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/productAdminReadiness.ts apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/productAdminMapping.ts apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/tests/product-admin.service.test.ts
-git -C E:\sdkwork-space\sdkwork-commerce commit -m "feat: add product admin readiness view models"
+git -C E:\sdkwork-space\sdkwork-商��� add apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/productAdminTypes.ts apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/productAdminReadiness.ts apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/productAdminMapping.ts apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/tests/product-admin.service.test.ts
+git -C E:\sdkwork-space\sdkwork-商��� commit -m "feat: add product admin readiness view models"
 ```
 
 ## Task 3: Split Commercial Product Editor Panels
 
 **Files:**
-- Create: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductDetailConfigPanel.tsx`
-- Create: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductStoreInventoryPanel.tsx`
-- Create: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductPublishReadinessPanel.tsx`
-- Create: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductAttributeValuePanel.tsx`
-- Create: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/SkuMatrixCommercialPanel.tsx`
-- Modify: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductCreatePage.tsx`
-- Modify: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/tests/product-admin.service.test.ts`
+- Create: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductDetailConfigPanel.tsx`
+- Create: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductStoreInventoryPanel.tsx`
+- Create: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductPublishReadinessPanel.tsx`
+- Create: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductAttributeValuePanel.tsx`
+- Create: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/SkuMatrixCommercialPanel.tsx`
+- Modify: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductCreatePage.tsx`
+- Modify: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/tests/product-admin.service.test.ts`
 
 - [ ] **Step 1: Add static UI composition tests**
 
@@ -215,7 +215,7 @@ Assert that `ProductCreatePage.tsx` imports and renders the new panels and retai
 Run:
 
 ```powershell
-pnpm run test:vitest -- apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/tests/product-admin.service.test.ts
+pnpm run test:vitest -- apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/tests/product-admin.service.test.ts
 ```
 
 Expected: FAIL until panel files and imports exist.
@@ -242,16 +242,16 @@ Run the same focused Vitest command.
 - [ ] **Step 6: Commit panel split**
 
 ```powershell
-git -C E:\sdkwork-space\sdkwork-commerce add apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductCreatePage.tsx apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductDetailConfigPanel.tsx apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductStoreInventoryPanel.tsx apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductPublishReadinessPanel.tsx apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductAttributeValuePanel.tsx apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/SkuMatrixCommercialPanel.tsx apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/tests/product-admin.service.test.ts
-git -C E:\sdkwork-space\sdkwork-commerce commit -m "feat: compose commercial product editor panels"
+git -C E:\sdkwork-space\sdkwork-商��� add apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductCreatePage.tsx apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductDetailConfigPanel.tsx apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductStoreInventoryPanel.tsx apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductPublishReadinessPanel.tsx apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductAttributeValuePanel.tsx apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/SkuMatrixCommercialPanel.tsx apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/tests/product-admin.service.test.ts
+git -C E:\sdkwork-space\sdkwork-商��� commit -m "feat: compose commercial product editor panels"
 ```
 
 ## Task 4: Persist Commercial Detail Through Existing Metadata
 
 **Files:**
-- Modify: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductCreatePage.tsx`
-- Modify: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/productAdminMapping.ts`
-- Modify: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/tests/product-admin.service.test.ts`
+- Modify: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductCreatePage.tsx`
+- Modify: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/productAdminMapping.ts`
+- Modify: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/tests/product-admin.service.test.ts`
 
 - [ ] **Step 1: Add payload tests**
 
@@ -283,16 +283,16 @@ Run the focused Vitest command.
 - [ ] **Step 6: Commit metadata persistence bridge**
 
 ```powershell
-git -C E:\sdkwork-space\sdkwork-commerce add apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductCreatePage.tsx apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/productAdminMapping.ts apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/tests/product-admin.service.test.ts
-git -C E:\sdkwork-space\sdkwork-commerce commit -m "feat: persist product detail readiness metadata"
+git -C E:\sdkwork-space\sdkwork-商��� add apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductCreatePage.tsx apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/productAdminMapping.ts apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/tests/product-admin.service.test.ts
+git -C E:\sdkwork-space\sdkwork-商��� commit -m "feat: persist product detail readiness metadata"
 ```
 
 ## Task 5: Polish Product List And SKU Management Commercial Signals
 
 **Files:**
-- Modify: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductListPage.tsx`
-- Modify: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/SkuManagementPage.tsx`
-- Modify: `E:/sdkwork-space/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/tests/product-admin.service.test.ts`
+- Modify: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductListPage.tsx`
+- Modify: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/SkuManagementPage.tsx`
+- Modify: `E:/sdkwork-space/sdkwork-商���/apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/tests/product-admin.service.test.ts`
 
 - [ ] **Step 1: Add static signals tests**
 
@@ -320,8 +320,8 @@ Run the focused Vitest command.
 - [ ] **Step 5: Commit list and SKU polish**
 
 ```powershell
-git -C E:\sdkwork-space\sdkwork-commerce add apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/ProductListPage.tsx apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/SkuManagementPage.tsx apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/tests/product-admin.service.test.ts
-git -C E:\sdkwork-space\sdkwork-commerce commit -m "feat: show commercial product center signals"
+git -C E:\sdkwork-space\sdkwork-商��� add apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/ProductListPage.tsx apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/src/SkuManagementPage.tsx apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/tests/product-admin.service.test.ts
+git -C E:\sdkwork-space\sdkwork-商��� commit -m "feat: show commercial product center signals"
 ```
 
 ## Task 6: Verify Claw Router Wrapper Still Integrates Commerce Product Admin
@@ -333,14 +333,14 @@ git -C E:\sdkwork-space\sdkwork-commerce commit -m "feat: show commercial produc
 
 - [ ] **Step 1: Check wrapper contract**
 
-Confirm Claw Router still re-exports `sdkwork-commerce-pc-admin-product` and does not call Claw Router catalog SDK directly for Commerce product admin UI.
+Confirm Claw Router still re-exports `sdkwork-商���-pc-admin-product` and does not call Claw Router catalog SDK directly for Commerce product admin UI.
 
 - [ ] **Step 2: Add/update wrapper guard only if needed**
 
 Guard against:
 
 ```ts
-assert.match(indexSource, /sdkwork-commerce-pc-admin-product/);
+assert.match(indexSource, /sdkwork-商���-pc-admin-product/);
 assert.doesNotMatch(serviceSource, /fetch\s*\(/);
 assert.doesNotMatch(serviceSource, /axios/);
 ```
@@ -363,11 +363,11 @@ git commit -m "test: guard commerce product admin wrapper"
 ## Task 7: Contract And Backend Completion After Approval
 
 **Files:**
-- Modify only after approval: `E:/sdkwork-space/sdkwork-commerce/packages/common/commerce/sdkwork-commerce-contracts/src/index.ts`
-- Modify only after approval: `E:/sdkwork-space/sdkwork-commerce/packages/common/commerce/sdkwork-commerce-sdk-ports/src/index.ts`
-- Modify only after approval: `E:/sdkwork-space/sdkwork-commerce/generated/openapi/commerce-backend-api.openapi.json`
-- Regenerate only after approval: `E:/sdkwork-space/sdkwork-commerce/sdks/sdkwork-commerce-backend-sdk/**`
-- Modify only after approval: `E:/sdkwork-space/sdkwork-commerce/crates/**`
+- Modify only after approval: `E:/sdkwork-space/sdkwork-商���/packages/common/commerce/sdkwork-商���-contracts/src/index.ts`
+- Modify only after approval: `E:/sdkwork-space/sdkwork-商���/packages/common/commerce/sdkwork-商���-sdk-ports/src/index.ts`
+- Modify only after approval: `E:/sdkwork-space/sdkwork-商���/generated/openapi/commerce-backend-api.openapi.json`
+- Regenerate only after approval: `E:/sdkwork-space/sdkwork-商���/sdks/sdkwork-商���-backend-sdk/**`
+- Modify only after approval: `E:/sdkwork-space/sdkwork-商���/crates/**`
 
 - [ ] **Step 1: Ask for explicit backend/schema/generated-SDK approval**
 
@@ -408,7 +408,7 @@ Keep contracts, generated SDKs, Rust implementation, and frontend wiring reviewa
 Run:
 
 ```powershell
-pnpm run test:vitest -- apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/tests/product-admin.service.test.ts
+pnpm run test:vitest -- apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product/tests/product-admin.service.test.ts
 ```
 
 - [ ] **Step 2: Run Claw Router wrapper verification**
@@ -424,7 +424,7 @@ pnpm --dir apps\sdkwork-clawrouter-pc exec tsx --test admin-catalog-runtime.test
 Run:
 
 ```powershell
-git -C E:\sdkwork-space\sdkwork-commerce status --short
+git -C E:\sdkwork-space\sdkwork-商��� status --short
 git -C E:\sdkwork-space\sdkwork-clawrouter status --short
 ```
 

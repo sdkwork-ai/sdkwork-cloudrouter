@@ -1,11 +1,9 @@
-import type { VerificationPolicyUpdateResponse } from './verification-policy-update-response';
-
 /** Verification policies update result schema exposed by Claw Router. */
 export interface VerificationPoliciesUpdateResult {
   /** Business response code. */
   code: string;
-  /** Data field on verification policies update result. */
-  data?: VerificationPolicyUpdateResponse;
+  /** No business data returned by this operation. */
+  data?: never;
   /** Human-readable response message. */
   msg?: string;
 }

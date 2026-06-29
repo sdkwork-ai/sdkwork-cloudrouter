@@ -91,7 +91,7 @@ impl InvocationInterceptor for DispatchExecutor {
                 }
                 refresh_adapter_target(invocation, self.adapter_resolver.as_deref());
 
-                let max_attempts = max_attempts(candidate);
+                let max_attempts = max_attempts(invocation, candidate);
                 let mut exhausted_retryable = false;
                 for attempt_no in 1..=max_attempts {
                     if let Err(error) = refresh_provider_request(
@@ -146,7 +146,7 @@ impl InvocationInterceptor for DispatchExecutor {
                             )));
                             last_response = Some(response);
                             exhausted_retryable = retryable;
-                            if !should_retry_candidate(candidate, attempt_no, retryable) {
+                            if !should_retry_candidate(max_attempts, attempt_no, retryable) {
                                 break;
                             }
                         }
@@ -163,7 +163,7 @@ impl InvocationInterceptor for DispatchExecutor {
                             ));
                             last_error = Some(dispatch_error(error_message(&error)));
                             exhausted_retryable = retryable;
-                            if !should_retry_candidate(candidate, attempt_no, retryable) {
+                            if !should_retry_candidate(max_attempts, attempt_no, retryable) {
                                 break;
                             }
                         }
@@ -296,12 +296,28 @@ fn resolve_provider_secret(
     }))
 }
 
-fn max_attempts(candidate: &InvocationRouteCandidate) -> usize {
+/// Maximum dispatch attempts for a candidate.
+///
+/// Defaults to 2 (H-5) when a candidate has no explicit retry policy, so a
+/// single transient upstream failure does not fail the whole invocation. The
+/// default is overridden to 1 for streaming requests: once SSE bytes have been
+/// sent to the client a retry cannot safely replay the response, so only
+/// idempotent non-streaming endpoints (e.g. `chat/completions` with
+/// `stream=false`) are eligible for retry.
+fn max_attempts(invocation: &Invocation, candidate: &InvocationRouteCandidate) -> usize {
+    let is_streaming = matches!(
+        invocation.dispatch.invocation_shape,
+        InvocationShape::SseStream | InvocationShape::ByteStream
+    );
+    if is_streaming {
+        // Streaming responses cannot be safely replayed once dispatched.
+        return 1;
+    }
     candidate
         .retry_policy
         .as_ref()
         .map(|policy| policy.max_attempts.max(1))
-        .unwrap_or(1)
+        .unwrap_or(2)
 }
 
 fn account_from_candidate(
@@ -358,12 +374,8 @@ fn retryable_dispatch_error(
     }
 }
 
-fn should_retry_candidate(
-    candidate: &InvocationRouteCandidate,
-    attempt_no: usize,
-    retryable: bool,
-) -> bool {
-    retryable && attempt_no < max_attempts(candidate)
+fn should_retry_candidate(max_attempts: usize, attempt_no: usize, retryable: bool) -> bool {
+    retryable && attempt_no < max_attempts
 }
 
 async fn sleep_before_retry(candidate: &InvocationRouteCandidate) {

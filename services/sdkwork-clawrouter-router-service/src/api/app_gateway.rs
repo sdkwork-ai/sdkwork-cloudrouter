@@ -69,12 +69,8 @@ async fn fetch_gateway_traces(
 }
 
 fn app_gateway_traces_read_model_error(error: impl std::fmt::Display) -> Response {
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(PlusApiResult::error(
+    PlusApiResult::error(
             "5000",
             format!("app gateway traces read model is unavailable: {error}"),
-        )),
-    )
-        .into_response()
+        )).into_response()
 }

@@ -309,7 +309,7 @@ test("console usage logs i18n resources include English and Chinese entries", ()
   }
   assert.match(source, /"console\.usage\.loadedCost": "Loaded spend"/);
   assert.match(source, /"console\.usage\.table\.cost": "Spend"/);
-  assert.match(source, /"console\.usage\.loadedCost": "已加载花费"/);
+  assert.match(source, /"console\.usage\.loadedCost": "已加载花�?/);
   assert.match(source, /"console\.usage\.table\.cost": "花费"/);
 });
 
@@ -320,7 +320,7 @@ test("console dashboard stays product-focused without read-only caveats", () => 
 });
 
 test("console settlement reports stay product-focused without read-only caveats", () => {
-  const billingPagePath = "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-billing/src/pages/BillingPage.tsx";
+  const billingPagePath = "../../packages/pc-react/commerce/sdkwork-commerce-pc-billing/src/pages/BillingPage.tsx";
   if (!portalFileExists(billingPagePath)) {
     return;
   }
@@ -330,7 +330,7 @@ test("console settlement reports stay product-focused without read-only caveats"
 });
 
 test("console settlement reports keep billing breakdown visible when there is no data", () => {
-  const billingPagePath = "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-billing/src/pages/BillingPage.tsx";
+  const billingPagePath = "../../packages/pc-react/commerce/sdkwork-commerce-pc-billing/src/pages/BillingPage.tsx";
   if (!portalFileExists(billingPagePath)) {
     return;
   }
@@ -348,13 +348,13 @@ test("console settlement page keeps menu copy in navigation without page title c
 
   assert.match(menuSource, /labelKey: 'console\.menu\.settlements'/);
   assert.match(coreMessages, /"console\.menu\.settlements": "Bills and Reports"/);
-  assert.match(coreMessages, /"console\.menu\.settlements": "账单与报表"/);
+  assert.match(coreMessages, /"console\.menu\.settlements": "账单与报�?/);
   assert.match(appSource, /path="settlements" element=\{<SettlementsView/);
   assert.match(appSource, /import\('@sdkwork\/commerce-pc-billing'\), 'SdkworkBillingPage'/);
 });
 
 test("console billing dashboard is owned by sdkwork-commerce billing package", () => {
-  const billingPagePath = "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-billing/src/pages/BillingPage.tsx";
+  const billingPagePath = "../../packages/pc-react/commerce/sdkwork-commerce-pc-billing/src/pages/BillingPage.tsx";
   if (!portalFileExists(billingPagePath)) {
     return;
   }
@@ -495,7 +495,7 @@ test("portal applies persisted theme preferences before first React render", () 
 });
 
 test("console commerce recharge UI is owned by sdkwork-commerce wallet package", () => {
-  const walletPagePath = "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-wallet/src/pages/WalletPage.tsx";
+  const walletPagePath = "../../packages/pc-react/commerce/sdkwork-commerce-pc-wallet/src/pages/WalletPage.tsx";
   if (!portalFileExists(walletPagePath)) {
     return;
   }

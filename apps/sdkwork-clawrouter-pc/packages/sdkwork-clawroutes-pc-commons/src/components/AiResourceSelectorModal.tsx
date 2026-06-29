@@ -27,6 +27,7 @@ export interface AiResourceSelectorModalLabels {
   emptySearch: string;
   selectedCount: (count: number) => string;
   done: string;
+  close: string;
   columns: {
     resource: string;
     kind: string;
@@ -78,13 +79,18 @@ export function AiResourceSelectorModal({
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
-      <div className="flex h-[76vh] max-h-[76vh] w-[88vw] max-w-6xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#1a1a1a]">
+      <div
+        className="flex h-[76vh] max-h-[76vh] w-[88vw] max-w-6xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#1a1a1a]"
+        role="dialog"
+        aria-modal="true"
+        aria-label={labels.title}
+      >
         <div className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-200 p-5 dark:border-white/10">
           <div>
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">{labels.title}</h3>
           </div>
-          <button type="button" onClick={onClose} className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/10 dark:hover:text-slate-200">
-            <X className="h-5 w-5" />
+          <button type="button" onClick={onClose} aria-label={labels.close} className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background dark:hover:bg-white/10 dark:hover:text-slate-200">
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
         <div className="shrink-0 border-b border-slate-200 px-5 py-4 dark:border-white/10">

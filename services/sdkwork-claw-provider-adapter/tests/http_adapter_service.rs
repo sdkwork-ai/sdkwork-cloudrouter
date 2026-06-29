@@ -6,7 +6,7 @@ use sdkwork_claw_provider_adapter_contract::{
     AdapterInvocationMetadata, AdapterInvocationRequest, AdapterInvocationResponse,
     AdapterInvocationShape, AdapterProviderContext, AdapterSecret, AdapterSubject,
 };
-use sdkwork_claw_provider_adapter_core::{
+use sdkwork_claw_provider_adapter::{
     AdapterInvocationContext, AdapterInvocationFuture, EndpointAdapter, ProviderAdapter,
     ProviderAdapterEndpoint,
 };

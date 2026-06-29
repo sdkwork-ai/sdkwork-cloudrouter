@@ -16,7 +16,6 @@ Sibling product domains are declared in `database.manifest.json` `composeDepende
 | --- | --- | --- |
 | `sdkwork-models` | `compose_at_install` | Models catalog tables composed at install |
 | `iam` | `bootstrap_standalone` | IAM base tables bootstrapped for standalone |
-| `sdkwork-commerce` | `compose_standalone` | Commerce tables composed for standalone |
 
 Gateway / routing / ops tables remain owned by `clawrouter` in `generated/schema/postgres/schema.sql`.
 

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use axum::routing::{get, post};
 use axum::Router;
-use sdkwork_claw_provider_adapter_core::ProviderAdapter;
+use sdkwork_claw_provider_adapter::ProviderAdapter;
 
 use crate::handlers::{healthz, invoke_provider, manifest};
 

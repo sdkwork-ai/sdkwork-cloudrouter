@@ -201,7 +201,15 @@ where
         capability,
         billing_meter,
     )?
-    .first_route())
+    .first_route()
+    .ok_or_else(|| {
+        openai_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "route_plan_empty",
+            "internal_error",
+            "resolved route plan contains no routes",
+        )
+    })?)
 }
 
 pub(crate) fn resolve_openai_provider_route_plan<C>(
@@ -543,11 +551,8 @@ fn normalized_resolved_provider_model(
 }
 
 impl ResolvedOpenAiProviderRoutePlan {
-    pub fn first_route(&self) -> ResolvedOpenAiProviderRoute {
-        self.routes
-            .first()
-            .cloned()
-            .expect("resolved OpenAI route plan must contain at least one route")
+    pub fn first_route(&self) -> Option<ResolvedOpenAiProviderRoute> {
+        self.routes.first().cloned()
     }
 }
 

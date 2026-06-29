@@ -1311,25 +1311,25 @@ request hash is an idempotency conflict.
 
 Rust:
 
-- `sdkwork-commerce-catalog-rust`
-- `sdkwork-commerce-inventory-rust`
-- `sdkwork-commerce-cart-rust`
-- `sdkwork-commerce-address-rust`
-- `sdkwork-commerce-checkout-rust`
-- `sdkwork-commerce-order-rust`
-- `sdkwork-commerce-payment-rust`
-- `sdkwork-commerce-refund-rust`
-- `sdkwork-commerce-fulfillment-rust`
-- `sdkwork-commerce-wallet-rust`
-- `sdkwork-commerce-membership-rust`
-- `sdkwork-commerce-recharge-rust`
-- `sdkwork-commerce-coupon-rust`
-- `sdkwork-commerce-invoice-rust`
-- `sdkwork-commerce-audit-rust`
-- `sdkwork-commerce-storage-sqlx-rust`
-- `sdkwork-commerce-runtime-rust`
-- `sdkwork-commerce-http-rust`
-- `sdkwork-commerce-bootstrap-rust`
+- `sdkwork-商���-catalog-rust`
+- `sdkwork-商���-inventory-rust`
+- `sdkwork-商���-cart-rust`
+- `sdkwork-商���-address-rust`
+- `sdkwork-商���-checkout-rust`
+- `sdkwork-商���-order-rust`
+- `sdkwork-商���-payment-rust`
+- `sdkwork-商���-refund-rust`
+- `sdkwork-商���-fulfillment-rust`
+- `sdkwork-商���-wallet-rust`
+- `sdkwork-商���-membership-rust`
+- `sdkwork-商���-recharge-rust`
+- `sdkwork-商���-coupon-rust`
+- `sdkwork-商���-invoice-rust`
+- `sdkwork-商���-audit-rust`
+- `sdkwork-商���-storage-sqlx-rust`
+- `sdkwork-商���-runtime-rust`
+- `sdkwork-商���-http-rust`
+- `sdkwork-商���-bootstrap-rust`
 
 TypeScript:
 

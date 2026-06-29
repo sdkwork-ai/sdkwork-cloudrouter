@@ -13,12 +13,12 @@ use sdkwork_clawrouter_router_service::ports::{
     UpdateAdminUserCommand,
 };
 use sdkwork_clawrouter_router_service_test_support::repair_sqlite_pool;
-use sdkwork_commerce_bootstrap::{
+use sdkwork_clawrouter_router_service::infrastructure::sql::commerce_bootstrap::{
     commerce_payment_channel_seeds, commerce_payment_method_seeds,
     commerce_payment_provider_account_seeds, commerce_payment_provider_seeds,
     commerce_payment_route_rule_seeds, membership_package_group_seeds, membership_plan_seeds,
 };
-use sdkwork_commerce_storage_sqlx::commerce_database_tables;
+use sdkwork_clawrouter_router_service::infrastructure::sql::commerce_bootstrap::commerce_database_tables;
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::{Row, SqlitePool};
 use std::collections::{BTreeMap, BTreeSet};
@@ -66,7 +66,7 @@ async fn sqlite_installer_installs_clawrouter_schema_once() {
     assert_eq!("commercial", state.get::<String, _>("seed_profile"));
     assert_eq!("installed", state.get::<String, _>("status"));
 
-    assert_table_exists(&pool, "ai_usage_fact").await;
+    assert_table_exists(&pool, "ai_usage").await;
     assert_table_exists(&pool, "ai_channel_group").await;
     assert_table_exists(&pool, "ai_channel_group_member").await;
     assert_table_exists(&pool, "ai_channel_group_metric_snapshot").await;
@@ -1340,7 +1340,7 @@ async fn sqlite_installer_marks_generated_schema_table_loss_as_corrupt() {
     let pool = repair_sqlite_pool().await;
     let installer = installer(pool.clone());
 
-    sqlx::query("DROP TABLE ai_usage_fact")
+    sqlx::query("DROP TABLE ai_usage")
         .execute(&pool)
         .await
         .unwrap();

@@ -23,8 +23,8 @@ The current authority split is:
 - `sdkwork-clawrouter` owns the admin shell, route mounting, local Claw Router
   backend catalog and inventory APIs, generated Claw Router SDK families, and
   wrapper packages used by `apps/sdkwork-clawrouter-pc`.
-- `sdkwork-commerce` owns the reusable commerce Product Admin PC package at
-  `apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product`.
+- `sdkwork-商���` owns the reusable commerce Product Admin PC package at
+  `apps/sdkwork-商���-pc/packages/sdkwork-商���-pc-admin-product`.
 - `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-catalog`
   currently re-exports the commerce-owned product admin package.
 - The commerce product admin package is declared by its component spec as the
@@ -50,7 +50,7 @@ The current implementation already has useful product-center foundations:
   stock quantity draft fields, and SKU attribute definition synchronization.
 - Category management, attribute binding management, SKU management, and price
   list listing/creation entry points.
-- Current parallel work in `sdkwork-commerce` already moves product edit loading
+- Current parallel work in `sdkwork-商���` already moves product edit loading
   to `catalog.products.management.retrieve` instead of list-search fallback.
 
 The current implementation is still incomplete for the requested commercial

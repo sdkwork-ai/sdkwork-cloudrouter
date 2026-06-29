@@ -6,7 +6,7 @@ license-file.workspace = true
 
 [dependencies]
 sdkwork-claw-provider-adapter-contract.workspace = true
-sdkwork-claw-provider-adapter-core.workspace = true
+sdkwork-claw-provider-adapter.workspace = true
 serde_json.workspace = true
 
 [dev-dependencies]

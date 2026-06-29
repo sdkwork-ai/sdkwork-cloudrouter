@@ -525,12 +525,40 @@ fn server_runtime_validation_rejects_placeholder_postgres_host_and_password() {
         "postgresql://sdkwork_claw_router:secret@db.example.com:5432/sdkwork_claw_router?sslmode=require",
         "postgresql://sdkwork_claw_router:change-me@db.internal:5432/sdkwork_claw_router?sslmode=require",
         "postgresql://sdkwork_claw_router:change-me@localhost:5432/sdkwork_claw_router",
+        // <CHANGE_ME> placeholder from .env.postgres.example (percent-encoded in URL).
+        "postgresql://sdkwork_ai_prod:%3CCHANGE_ME%3E@db.internal:5432/sdkwork_ai_prod?sslmode=require",
+        "postgresql://sdkwork_ai_prod:%3Cchange_me%3E@db.internal:5432/sdkwork_ai_prod?sslmode=require",
+        "postgresql://sdkwork_ai_prod:%3CCHANGE-ME%3E@db.internal:5432/sdkwork_ai_prod?sslmode=require",
+        // Raw <CHANGE_ME> token that breaks URL parsing (caught by substring scan).
+        "postgresql://sdkwork_ai_prod:<CHANGE_ME>@db.internal:5432/sdkwork_ai_prod?sslmode=require",
+        // Known dev/example passwords leaked by previous .env templates.
+        "postgresql://sdkwork_ai_dev:sdkworkdev123@db.internal:5432/sdkwork_ai_dev?sslmode=require",
+        "postgresql://postgres:postgres_admin_pass@db.internal:5432/postgres?sslmode=require",
+        "postgresql://sdkwork_claw_test:sdkwork_claw_test_password@db.internal:5432/sdkwork_claw_test?sslmode=require",
     ] {
         let config = DatabaseConfig::from_url(url).unwrap();
-        let error = config
+        match config.validate_for_runtime_profile_at(RuntimeConfigProfile::Server, &location) {
+            Ok(()) => panic!("expected placeholder rejection for url: {url}"),
+            Err(error) => assert!(
+                error.contains("PostgreSQL configuration is incomplete"),
+                "unexpected error for url: {url}: {error}"
+            ),
+        }
+    }
+}
+
+#[test]
+fn server_runtime_validation_accepts_workspace_development_postgres_on_localhost() {
+    let location = RuntimeConfigLocation::for_platform("linux", RuntimeConfigProfile::Server);
+    for url in [
+        "postgresql://sdkwork_ai_dev:sdkworkdev123@127.0.0.1:5432/sdkwork_ai_dev?sslmode=disable",
+        "postgresql://sdkwork_ai_dev:sdkworkdev123@localhost:5432/sdkwork_ai_dev?sslmode=disable",
+        "postgresql://postgres:postgres_admin_pass@127.0.0.1:5432/postgres?sslmode=disable",
+    ] {
+        let config = DatabaseConfig::from_url(url).unwrap();
+        config
             .validate_for_runtime_profile_at(RuntimeConfigProfile::Server, &location)
-            .unwrap_err();
-        assert!(error.contains("PostgreSQL configuration is incomplete"));
+            .unwrap_or_else(|error| panic!("expected localhost dev acceptance for url: {url}: {error}"));
     }
 }
 

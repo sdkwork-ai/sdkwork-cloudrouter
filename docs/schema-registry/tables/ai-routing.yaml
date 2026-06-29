@@ -1,0 +1,1240 @@
+tables:
+  
+  # ============================================================
+  # ai_channel - 渠道表（供应商API通道）
+  # ============================================================
+  
+  - table: ai_channel
+    domain: ai
+    profile: credential_ref
+    compliance_level: L2
+    system_of_record: true
+    write_owner: ai-routing-service
+    
+    description: |
+      渠道表 - 供应商API通道
+      
+      行业对标:
+      - Stripe Payment Methods (支付方式)
+      - AWS API Gateway Integrations (API集成)
+      - OpenAI API Providers (API供应商)
+      
+      职责:
+      - 定义上游账号/渠道的运行时配置
+      - 连接provider、site、认证方式、区域和调度权重
+      - 支持健康检查和熔断器
+      
+      关键特性:
+      - 凭据引用: 不存储明文凭据，只引用secret
+      - 权重调度: 支持基于权重的负载均衡
+      - 健康检查: 支持健康状态监控和熔断器
+      - 区域配置: 支持多region部署
+    
+    common_columns: credential_ref
+    
+    frontend_routes:
+      - /admin/channels
+      - /admin/channels/dashboard
+    
+    api_surfaces:
+      - backend
+      - worker
+    
+    columns:
+      # 标识字段
+      id: int64
+      uuid: string(64)
+      
+      # 租户隔离
+      tenant_id: int64
+      organization_id: int64
+      
+      # 幂等键
+      channel_code: string(64)
+      idempotency_key: string(128)
+      
+      # 供应商信息
+      provider_id: int64
+      provider_code: string(64)
+      
+      # 站点信息
+      site_id: int64
+      site_code: string(64)
+      
+      # 渠道配置
+      channel_name: string(128)
+      channel_type: enum_int32
+      
+      # 认证配置（引用secret）
+      auth_type: enum_int32
+      auth_secret_ref: string(256)
+      
+      # 区域配置
+      upstream_region: string(64)
+      client_region: string(64)
+      
+      # 调度权重
+      weight: int32
+      priority: int32
+      
+      # 健康检查
+      health_check_enabled: bool
+      health_check_interval_seconds: int32
+      health_check_timeout_seconds: int32
+      health_status: enum_int32
+      last_health_check_at: instant
+      
+      # 熔断器配置
+      circuit_breaker_enabled: bool
+      circuit_breaker_threshold: int32
+      circuit_breaker_timeout_seconds: int32
+      circuit_state: enum_int32
+      
+      # 限流配置
+      rate_limit_enabled: bool
+      requests_per_second: int64
+      requests_per_minute: int64
+      
+      # 配额配置
+      quota_enabled: bool
+      daily_quota: int64
+      monthly_quota: int64
+      
+      # 成本配置
+      cost_multiplier: decimal
+      markup_amount: decimal
+      
+      # 审计字段
+      created_at: instant
+      updated_at: instant
+      version: int64
+      
+      # 生命周期
+      status: enum_int32
+      
+      # 元数据
+      metadata: json
+    
+    unique_constraints:
+      - name: uk_ai_channel_code
+        columns:
+          - tenant_id
+          - organization_id
+          - channel_code
+    
+    indexes:
+      - name: idx_ai_channel_provider_status
+        columns:
+          - tenant_id
+          - organization_id
+          - provider_id
+          - status
+          - weight
+          - id
+      
+      - name: idx_ai_channel_site_status
+        columns:
+          - tenant_id
+          - organization_id
+          - site_id
+          - status
+          - weight
+          - id
+      
+      - name: idx_ai_channel_health_status
+        columns:
+          - tenant_id
+          - organization_id
+          - health_status
+          - circuit_state
+          - id
+    
+    security:
+      sensitivity: SECRET_REF
+      stores_secret_plaintext: false
+      audit_required: true
+  
+  # ============================================================
+  # ai_channel_binding - 渠道绑定表（渠道与组关联）
+  # ============================================================
+  
+  - table: ai_channel_binding
+    domain: ai
+    profile: relation_entity
+    compliance_level: L2
+    system_of_record: true
+    write_owner: ai-routing-service
+    
+    description: |
+      渠道绑定表 - 渠道与组关联
+      
+      行业对标:
+      - Stripe API Key Restrictions (API Key限制)
+      - AWS IAM Role Policies (角色策略)
+      
+      职责:
+      - 维护渠道与渠道组的关联关系
+      - 支持优先级和权重配置
+      - 支持启用/禁用状态
+      
+      关键特性:
+      - 多对多关系: 渠道可以绑定多个组，组可以包含多个渠道
+      - 优先级排序: 支持基于优先级的路由选择
+      - 权重分配: 支持基于权重的负载均衡
+    
+    common_columns: relation_entity
+    
+    frontend_routes:
+      - /admin/groups
+      - /admin/groups/bindings
+    
+    api_surfaces:
+      - backend
+      - worker
+    
+    columns:
+      # 标识字段
+      id: int64
+      uuid: string(64)
+      
+      # 租户隔离
+      tenant_id: int64
+      organization_id: int64
+      
+      # 幂等键
+      idempotency_key: string(128)
+      
+      # 渠道信息
+      channel_id: int64
+      channel_code: string(64)
+      
+      # 组信息
+      group_id: int64
+      group_code: string(64)
+      
+      # 绑定配置
+      binding_priority: int32
+      binding_weight: int32
+      
+      # 启用状态
+      enabled: bool
+      
+      # 生效时间
+      effective_from: instant
+      effective_to: instant
+      
+      # 审计字段
+      created_at: instant
+      updated_at: instant
+      version: int64
+      
+      # 生命周期
+      status: enum_int32
+    
+    unique_constraints:
+      - name: uk_ai_channel_binding_group_channel
+        columns:
+          - tenant_id
+          - organization_id
+          - group_id
+          - channel_id
+    
+    indexes:
+      - name: idx_ai_channel_binding_group
+        columns:
+          - tenant_id
+          - organization_id
+          - group_id
+          - binding_priority
+          - status
+          - id
+      
+      - name: idx_ai_channel_binding_channel
+        columns:
+          - tenant_id
+          - organization_id
+          - channel_id
+          - status
+          - id
+  
+  # ============================================================
+  # ai_channel_metric - 渠道指标表（健康状态快照）
+  # ============================================================
+  
+  - table: ai_channel_metric
+    domain: ai
+    profile: projection
+    compliance_level: L2
+    system_of_record: false
+    write_owner: metrics-worker
+    
+    description: |
+      渠道指标表 - 健康状态快照
+      
+      行业对标:
+      - Datadog Metrics (监控指标)
+      - Prometheus Metrics (性能指标)
+      - AWS CloudWatch Metrics (云监控)
+      
+      职责:
+      - 记录渠道的健康状态快照
+      - 支持容量、额度和用量的指标监控
+      - 提供实时监控和告警数据
+      
+      关键特性:
+      - 快照模式: 定时生成快照，不实时更新
+      - 轻量级: 只存储关键指标，不存储详细数据
+      - 时效性: 短期存储（在线保留3个月）
+    
+    common_columns: projection
+    
+    frontend_routes:
+      - /admin/channels/metrics
+      - /admin/channels/dashboard
+    
+    api_surfaces:
+      - backend
+      - worker
+    
+    columns:
+      # 标识字段
+      id: int64
+      uuid: string(64)
+      
+      # 租户隔离
+      tenant_id: int64
+      organization_id: int64
+      
+      # 渠道信息
+      channel_id: int64
+      channel_code: string(64)
+      
+      # 快照时间
+      snapshot_at: instant
+      
+      # 健康指标
+      health_status: enum_int32
+      circuit_state: enum_int32
+      
+      # 性能指标
+      avg_latency_ms: int32
+      p50_latency_ms: int32
+      p95_latency_ms: int32
+      p99_latency_ms: int32
+      
+      # 用量指标
+      total_requests: int64
+      success_requests: int64
+      failed_requests: int64
+      success_rate: decimal
+      
+      # 容量指标
+      daily_quota_used: int64
+      daily_quota_remaining: int64
+      monthly_quota_used: int64
+      monthly_quota_remaining: int64
+      
+      # 成本指标
+      total_cost: decimal
+      avg_cost_per_request: decimal
+      
+      # 审计字段
+      created_at: instant
+      
+      # 生命周期
+      status: enum_int32
+    
+    unique_constraints:
+      - name: uk_ai_channel_metric_snapshot
+        columns:
+          - tenant_id
+          - organization_id
+          - channel_id
+          - snapshot_at
+    
+    indexes:
+      - name: idx_ai_channel_metric_channel_time
+        columns:
+          - tenant_id
+          - organization_id
+          - channel_id
+          - snapshot_at
+          - id
+      
+      - name: idx_ai_channel_metric_time
+        columns:
+          - tenant_id
+          - organization_id
+          - snapshot_at
+          - id
+    
+    lifecycle:
+      partition_by: created_at_month
+      online_retention: 3mo
+      archive_retention: 1y
+  
+  # ============================================================
+  # ai_channel_quota - 渠道配额表（使用量限制）
+  # ============================================================
+  
+  - table: ai_channel_quota
+    domain: ai
+    profile: quota_policy
+    compliance_level: L2
+    system_of_record: true
+    write_owner: quota-service
+    
+    description: |
+      渠道配额表 - 使用量限制
+      
+      行业对标:
+      - Stripe Rate Limits (速率限制)
+      - AWS Service Quotas (服务配额)
+      
+      职责:
+      - 定义渠道的使用量限制策略
+      - 支持按时间维度配额（日/月/年）
+      - 支持按资源类型配额（tokens/requests/cost）
+      
+      关键特性:
+      - 多维度配额: 支持时间、资源、金额等多维度限制
+      - 灵活策略: 支持硬限制、软限制、告警限制
+      - 自动重置: 支持配额周期自动重置
+    
+    common_columns: quota_policy
+    
+    frontend_routes:
+      - /admin/channels/quota
+    
+    api_surfaces:
+      - backend
+      - worker
+    
+    columns:
+      # 标识字段
+      id: int64
+      uuid: string(64)
+      
+      # 租户隔离
+      tenant_id: int64
+      organization_id: int64
+      
+      # 渠道信息
+      channel_id: int64
+      channel_code: string(64)
+      
+      # 幂等键
+      quota_code: string(64)
+      idempotency_key: string(128)
+      
+      # 配额类型
+      quota_type: enum_int32
+      
+      # 配额周期
+      quota_period: enum_int32
+      
+      # 配额限制
+      quota_limit: int64
+      quota_warning_threshold: int64
+      quota_hard_limit: int64
+      
+      # 配额状态
+      quota_used: int64
+      quota_remaining: int64
+      quota_status: enum_int32
+      
+      # 重置时间
+      reset_at: instant
+      
+      # 审计字段
+      created_at: instant
+      updated_at: instant
+      version: int64
+      
+      # 生命周期
+      status: enum_int32
+    
+    unique_constraints:
+      - name: uk_ai_channel_quota_code
+        columns:
+          - tenant_id
+          - organization_id
+          - quota_code
+    
+    indexes:
+      - name: idx_ai_channel_quota_channel
+        columns:
+          - tenant_id
+          - organization_id
+          - channel_id
+          - quota_type
+          - status
+          - id
+  
+  # ============================================================
+  # ai_group - 渠道组表（供应商组合策略）
+  # ============================================================
+  
+  - table: ai_group
+    domain: ai
+    profile: tenant_entity
+    compliance_level: L2
+    system_of_record: true
+    write_owner: ai-routing-service
+    
+    description: |
+      渠道组表 - 供应商组合策略
+      
+      行业对标:
+      - Stripe API Key Restrictions (API Key限制)
+      - AWS IAM Role Trust Policies (信任策略)
+      
+      职责:
+      - 定义中转站面向用户/API Key的路由与计费分组
+      - 绑定价格计划和倍率
+      - 支持多渠道组合和fallback策略
+      
+      关键特性:
+      - 分组策略: 支持基于用户/API Key/组织的分组
+      - 价格绑定: 支持绑定定价方案和倍率
+      - Fallback: 支持降级和fallback策略
+    
+    common_columns: tenant_entity
+    
+    frontend_routes:
+      - /admin/groups
+      - /console/groups
+    
+    api_surfaces:
+      - app
+      - backend
+      - worker
+    
+    columns:
+      # 标识字段
+      id: int64
+      uuid: string(64)
+      
+      # 租户隔离
+      tenant_id: int64
+      organization_id: int64
+      
+      # 幂等键
+      group_code: string(64)
+      idempotency_key: string(128)
+      
+      # 组信息
+      group_name: string(128)
+      group_type: enum_int32
+      
+      # 定价绑定
+      pricing_id: int64
+      pricing_code: string(64)
+      
+      # 配额绑定
+      quota_policy_id: int64
+      quota_policy_code: string(64)
+      
+      # 路由策略
+      routing_policy_id: int64
+      routing_policy_code: string(64)
+      
+      # Fallback配置
+      fallback_enabled: bool
+      fallback_group_id: int64
+      
+      # 粘性会话
+      sticky_session_enabled: bool
+      sticky_session_ttl_seconds: int32
+      
+      # 审计字段
+      created_at: instant
+      updated_at: instant
+      version: int64
+      
+      # 生命周期
+      status: enum_int32
+      
+      # 元数据
+      metadata: json
+    
+    unique_constraints:
+      - name: uk_ai_group_code
+        columns:
+          - tenant_id
+          - organization_id
+          - group_code
+    
+    indexes:
+      - name: idx_ai_group_tenant_status
+        columns:
+          - tenant_id
+          - organization_id
+          - group_type
+          - status
+          - updated_at
+          - id
+  
+  # ============================================================
+  # ai_group_resource - 组资源授权表（模型/能力访问控制）
+  # ============================================================
+  
+  - table: ai_group_resource
+    domain: ai
+    profile: relation_entity
+    compliance_level: L2
+    system_of_record: true
+    write_owner: ai-routing-service
+    
+    description: |
+      组资源授权表 - 模型/能力访问控制
+      
+      行业对标:
+      - Stripe API Key Permissions (API Key权限)
+      - AWS IAM Policy Statements (策略声明)
+      
+      职责:
+      - 维护分组可访问的资源或资源组
+      - 是API Key到资源授权的核心边
+      - 支持白名单/黑名单模式
+      
+      关键特性:
+      - 资源授权: 控制组可访问的模型/能力
+      - 灵活模式: 支持允许/拒绝模式
+      - 资源组: 支持资源组批量授权
+    
+    common_columns: relation_entity
+    
+    frontend_routes:
+      - /admin/groups/resources
+    
+    api_surfaces:
+      - backend
+      - worker
+    
+    columns:
+      # 标识字段
+      id: int64
+      uuid: string(64)
+      
+      # 租户隔离
+      tenant_id: int64
+      organization_id: int64
+      
+      # 幂等键
+      idempotency_key: string(128)
+      
+      # 组信息
+      group_id: int64
+      group_code: string(64)
+      
+      # 资源信息
+      resource_type: enum_int32
+      resource_id: int64
+      resource_code: string(128)
+      resource_group_id: int64
+      
+      # 授权模式
+      permission_mode: enum_int32
+      
+      # 生效时间
+      effective_from: instant
+      effective_to: instant
+      
+      # 审计字段
+      created_at: instant
+      updated_at: instant
+      version: int64
+      
+      # 生命周期
+      status: enum_int32
+    
+    unique_constraints:
+      - name: uk_ai_group_resource_group_resource
+        columns:
+          - tenant_id
+          - organization_id
+          - group_id
+          - resource_type
+          - resource_id
+    
+    indexes:
+      - name: idx_ai_group_resource_group
+        columns:
+          - tenant_id
+          - organization_id
+          - group_id
+          - permission_mode
+          - status
+          - id
+  
+  # ============================================================
+  # ai_provider_route - 供应商路由表（对象路径映射）
+  # ============================================================
+  
+  - table: ai_provider_route
+    domain: ai
+    profile: runtime_binding
+    compliance_level: L2
+    system_of_record: true
+    write_owner: gateway-runtime
+    
+    description: |
+      供应商路由表 - 对象路径映射
+      
+      行业对标:
+      - OpenAI Model Routing (模型路由)
+      - AWS API Gateway Mapping (API映射)
+      
+      职责:
+      - 对象类或非模型API的运行时路由绑定
+      - 支持无模型参数的API调用
+      - 支持对象路径映射
+      
+      关键特性:
+      - 对象路由: 支持非模型API的路由
+      - 路径映射: 支持对象路径到实际URL的映射
+      - 动态绑定: 支持运行时动态路由
+    
+    common_columns: runtime_binding
+    
+    frontend_routes:
+      - /admin/routes
+    
+    api_surfaces:
+      - backend
+      - worker
+    
+    columns:
+      # 标识字段
+      id: int64
+      uuid: string(64)
+      
+      # 租户隔离
+      tenant_id: int64
+      organization_id: int64
+      
+      # 幂等键
+      route_code: string(64)
+      idempotency_key: string(128)
+      
+      # 供应商信息
+      provider_id: int64
+      provider_code: string(64)
+      
+      # 路由配置
+      object_type: string(64)
+      object_path: string(256)
+      target_url: string(512)
+      target_method: string(16)
+      
+      # 路由规则
+      match_mode: enum_int32
+      priority: int32
+      
+      # 审计字段
+      created_at: instant
+      updated_at: instant
+      version: int64
+      
+      # 生命周期
+      status: enum_int32
+    
+    unique_constraints:
+      - name: uk_ai_provider_route_code
+        columns:
+          - tenant_id
+          - organization_id
+          - route_code
+    
+    indexes:
+      - name: idx_ai_provider_route_provider_object
+        columns:
+          - tenant_id
+          - organization_id
+          - provider_id
+          - object_type
+          - object_path
+          - status
+          - id
+  
+  # ============================================================
+  # ai_routing_policy - 路由策略表（粘性/降级/权重等）
+  # ============================================================
+  
+  - table: ai_routing_policy
+    domain: ai
+    profile: tenant_entity
+    compliance_level: L2
+    system_of_record: true
+    write_owner: routing-policy-service
+    
+    description: |
+      路由策略表 - 粘性/降级/权重等
+      
+      行业对标:
+      - Stripe Routing Rules (路由规则)
+      - AWS Route53 Routing Policies (路由策略)
+      
+      职责:
+      - 定义全局、租户、组织、API Key或分组作用域的路由策略
+      - 支持粘性会话、降级、权重等策略
+      - 支持基于条件的路由规则
+      
+      关键特性:
+      - 多作用域: 支持全局/租户/组织/API Key/分组作用域
+      - 灵活策略: 支持粘性/降级/权重/优先级等策略
+      - 条件路由: 支持基于条件表达式路由
+    
+    common_columns: tenant_entity
+    
+    frontend_routes:
+      - /admin/routing/policies
+    
+    api_surfaces:
+      - backend
+      - worker
+    
+    columns:
+      # 标识字段
+      id: int64
+      uuid: string(64)
+      
+      # 租户隔离
+      tenant_id: int64
+      organization_id: int64
+      
+      # 幂等键
+      policy_code: string(64)
+      idempotency_key: string(128)
+      
+      # 策略信息
+      policy_name: string(128)
+      policy_type: enum_int32
+      
+      # 作用域
+      scope_type: enum_int32
+      scope_id: int64
+      
+      # 策略配置
+      routing_mode: enum_int32
+      sticky_session_enabled: bool
+      sticky_session_ttl_seconds: int32
+      
+      # 降级配置
+      fallback_enabled: bool
+      fallback_policy_id: int64
+      
+      # 权重配置
+      weight_based_enabled: bool
+      
+      # 优先级配置
+      priority_based_enabled: bool
+      
+      # 审计字段
+      created_at: instant
+      updated_at: instant
+      version: int64
+      
+      # 生命周期
+      status: enum_int32
+      
+      # 元数据
+      metadata: json
+    
+    unique_constraints:
+      - name: uk_ai_routing_policy_code
+        columns:
+          - tenant_id
+          - organization_id
+          - policy_code
+    
+    indexes:
+      - name: idx_ai_routing_policy_scope
+        columns:
+          - tenant_id
+          - organization_id
+          - scope_type
+          - scope_id
+          - status
+          - id
+  
+  # ============================================================
+  # ai_routing_rule - 路由规则表（具体匹配规则）
+  # ============================================================
+  
+  - table: ai_routing_rule
+    domain: ai
+    profile: tenant_entity
+    compliance_level: L2
+    system_of_record: true
+    write_owner: routing-policy-service
+    
+    description: |
+      路由规则表 - 具体匹配规则
+      
+      行业对标:
+      - Stripe Routing Rule Conditions (路由条件)
+      - AWS Route53 Routing Rules (路由规则)
+      
+      职责:
+      - 定义路由策略的具体匹配规则
+      - 支持基于模型、能力、region等条件的路由
+      - 支持候选账号、fallback和约束
+      
+      关键特性:
+      - 条件匹配: 支持多维度条件匹配
+      - 候选账号: 定义路由候选账号列表
+      - Fallback: 支持降级和fallback规则
+    
+    common_columns: tenant_entity
+    
+    frontend_routes:
+      - /admin/routing/rules
+    
+    api_surfaces:
+      - backend
+      - worker
+    
+    columns:
+      # 标识字段
+      id: int64
+      uuid: string(64)
+      
+      # 租户隔离
+      tenant_id: int64
+      organization_id: int64
+      
+      # 幂等键
+      rule_code: string(64)
+      idempotency_key: string(128)
+      
+      # 策略关联
+      policy_id: int64
+      policy_code: string(64)
+      
+      # 规则信息
+      rule_name: string(128)
+      rule_priority: int32
+      
+      # 匹配条件
+      match_conditions: json
+      
+      # 候选账号
+      candidate_channels: json
+      
+      # Fallback配置
+      fallback_channels: json
+      
+      # 约束条件
+      constraints: json
+      
+      # 审计字段
+      created_at: instant
+      updated_at: instant
+      version: int64
+      
+      # 生命周期
+      status: enum_int32
+    
+    unique_constraints:
+      - name: uk_ai_routing_rule_code
+        columns:
+          - tenant_id
+          - organization_id
+          - rule_code
+    
+    indexes:
+      - name: idx_ai_routing_rule_policy
+        columns:
+          - tenant_id
+          - organization_id
+          - policy_id
+          - rule_priority
+          - status
+          - id
+  
+  # ============================================================
+  # ai_routing_log - 路由日志表（决策记录）
+  # ============================================================
+  
+  - table: ai_routing_log
+    domain: ai
+    profile: event_log
+    compliance_level: L2
+    system_of_record: true
+    write_owner: gateway-runtime
+    
+    description: |
+      路由日志表 - 决策记录
+      
+      行业对标:
+      - Stripe Routing Decision Logs (路由决策日志)
+      - AWS CloudTrail Events (云审计事件)
+      
+      职责:
+      - 记录运行时路由决策日志
+      - 记录请求选择了哪个上游账号及原因
+      - 支持路由决策分析和优化
+      
+      关键特性:
+      - 决策透明: 记录路由决策的完整信息
+      - 可追溯: 支持路由决策的追溯和分析
+      - 时效性: 短期存储（在线保留3个月）
+    
+    common_columns: event_log
+    
+    frontend_routes:
+      - /admin/routing/logs
+    
+    api_surfaces:
+      - backend
+      - worker
+    
+    columns:
+      # 标识字段
+      id: int64
+      uuid: string(64)
+      
+      # 租户隔离
+      tenant_id: int64
+      organization_id: int64
+      
+      # 关联信息
+      request_id: string(128)
+      usage_id: int64
+      
+      # 路由信息
+      policy_id: int64
+      rule_id: int64
+      group_id: int64
+      
+      # 决策信息
+      selected_channel_id: int64
+      selected_channel_code: string(64)
+      selection_reason: string(512)
+      
+      # 候选信息
+      candidate_channels: json
+      
+      # 匹配条件
+      matched_conditions: json
+      
+      # 决策时间
+      decision_at: instant
+      decision_duration_ms: int32
+      
+      # 审计字段
+      created_at: instant
+      
+      # 生命周期
+      status: enum_int32
+    
+    unique_constraints:
+      - name: uk_ai_routing_log_request
+        columns:
+          - tenant_id
+          - organization_id
+          - request_id
+    
+    indexes:
+      - name: idx_ai_routing_log_policy_time
+        columns:
+          - tenant_id
+          - organization_id
+          - policy_id
+          - created_at
+          - id
+      
+      - name: idx_ai_routing_log_channel_time
+        columns:
+          - tenant_id
+          - organization_id
+          - selected_channel_id
+          - created_at
+          - id
+    
+    lifecycle:
+      partition_by: created_at_month
+      online_retention: 3mo
+      archive_retention: 1y
+  
+  # ============================================================
+  # ai_config_version - 配置版本表（版本控制）
+  # ============================================================
+  
+  - table: ai_config_version
+    domain: ai
+    profile: runtime_coordination
+    compliance_level: L2
+    system_of_record: true
+    write_owner: ai-routing-service
+    
+    description: |
+      配置版本表 - 版本控制
+      
+      行业对标:
+      - AWS Config Versions (配置版本)
+      - Kubernetes ConfigMap Versions (配置版本)
+      
+      职责:
+      - AI路由配置版本管理
+      - 用于快照缓存刷新和分布式实例协调
+      - 支持配置回滚和审计
+      
+      关键特性:
+      - 版本管理: 支持配置版本化管理
+      - 分布式协调: 支持多实例配置同步
+      - 回滚支持: 支持配置回滚和审计
+    
+    common_columns: runtime_coordination
+    
+    frontend_routes:
+      - /admin/config/versions
+    
+    api_surfaces:
+      - backend
+      - worker
+    
+    columns:
+      # 标识字段
+      id: int64
+      uuid: string(64)
+      
+      # 租户隔离
+      tenant_id: int64
+      organization_id: int64
+      
+      # 版本信息
+      version_number: int64
+      version_hash: string(128)
+      
+      # 配置类型
+      config_type: enum_int32
+      
+      # 配置快照
+      config_snapshot: json
+      
+      # 变更信息
+      change_type: enum_int32
+      change_reason: string(512)
+      
+      # 审计字段
+      created_at: instant
+      
+      # 生命周期
+      status: enum_int32
+    
+    unique_constraints:
+      - name: uk_ai_config_version_number
+        columns:
+          - tenant_id
+          - organization_id
+          - config_type
+          - version_number
+    
+    indexes:
+      - name: idx_ai_config_version_type_time
+        columns:
+          - tenant_id
+          - organization_id
+          - config_type
+          - created_at
+          - version_number
+          - id
+  
+  # ============================================================
+  # ai_config_change - 配置变更表（变更事件）
+  # ============================================================
+  
+  - table: ai_config_change
+    domain: ai
+    profile: runtime_coordination_event
+    compliance_level: L2
+    system_of_record: true
+    write_owner: ai-routing-service
+    
+    description: |
+      配置变更表 - 变更事件
+      
+      行业对标:
+      - AWS Config Change Events (配置变更事件)
+      - Kubernetes ConfigMap Updates (配置更新)
+      
+      职责:
+      - AI配置变更事件记录
+      - 用于触发运行时缓存和路由快照刷新
+      - 支持配置变更审计
+      
+      关键特性:
+      - 变更通知: 支持配置变更事件通知
+      - 缓存刷新: 触发运行时缓存刷新
+      - 审计追踪: 支持配置变更审计
+    
+    common_columns: runtime_coordination_event
+    
+    frontend_routes:
+      - /admin/config/changes
+    
+    api_surfaces:
+      - backend
+      - worker
+    
+    columns:
+      # 标识字段
+      id: int64
+      uuid: string(64)
+      
+      # 租户隔离
+      tenant_id: int64
+      organization_id: int64
+      
+      # 版本关联
+      version_id: int64
+      version_number: int64
+      
+      # 变更信息
+      change_type: enum_int32
+      change_scope: enum_int32
+      change_target: string(256)
+      
+      # 变更内容
+      before_snapshot: json
+      after_snapshot: json
+      
+      # 变更原因
+      change_reason: string(512)
+      
+      # 变更人
+      changed_by: int64
+      
+      # 审计字段
+      created_at: instant
+      
+      # 生命周期
+      status: enum_int32
+    
+    unique_constraints: []
+    
+    indexes:
+      - name: idx_ai_config_change_version
+        columns:
+          - tenant_id
+          - organization_id
+          - version_id
+          - created_at
+          - id
+      
+      - name: idx_ai_config_change_type_time
+        columns:
+          - tenant_id
+          - organization_id
+          - change_type
+          - change_scope
+          - created_at
+          - id
+    
+    lifecycle:
+      partition_by: created_at_month
+      online_retention: 12mo
+      archive_retention: 3y

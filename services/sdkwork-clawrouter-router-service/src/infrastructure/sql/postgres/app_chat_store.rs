@@ -235,9 +235,9 @@ async fn create_turn(
         .await?
         .ok_or_else(|| DomainError::not_found("chat conversation was not found"))?;
     let conversation_pk = conversation.get::<i64, _>("id");
-    let next_turn_no = next_count(&mut tx, "ai_chat_turn", conversation_pk).await?;
-    let next_sequence_no = next_count(&mut tx, "ai_chat_item", conversation_pk).await?;
-    let next_message_no = next_count(&mut tx, "ai_chat_message", conversation_pk).await?;
+    let next_turn_no = next_count(&mut tx, ChatCountTable::AiChatTurn, conversation_pk).await?;
+    let next_sequence_no = next_count(&mut tx, ChatCountTable::AiChatItem, conversation_pk).await?;
+    let next_message_no = next_count(&mut tx, ChatCountTable::AiChatMessage, conversation_pk).await?;
 
     let turn_id = sqlx::query_scalar::<_, i64>(
         r#"
@@ -506,7 +506,7 @@ async fn complete_turn_response(
     let input_item = load_turn_input_item_row(&mut tx, command.subject, conversation_pk, turn_pk)
         .await?
         .ok_or_else(|| DomainError::conflict("chat turn input item was not found"))?;
-    let next_message_no = next_count(&mut tx, "ai_chat_message", conversation_pk).await?;
+    let next_message_no = next_count(&mut tx, ChatCountTable::AiChatMessage, conversation_pk).await?;
     let usage = command.usage.clone().unwrap_or_default();
     let usage_link_id = if command.usage.is_some()
         || command.runtime_invocation_id.is_some()
@@ -1683,12 +1683,36 @@ async fn reconcile_usage_link(
     Ok(Some(command.usage_link_uuid.clone()))
 }
 
+/// Validated chat table identifiers used for sequence counting.
+///
+/// Using a typed enum prevents SQL injection through `format!` interpolation by
+/// restricting table names to a fixed, code-owned set of values.
+enum ChatCountTable {
+    AiChatTurn,
+    AiChatItem,
+    AiChatMessage,
+}
+
+impl ChatCountTable {
+    /// Returns the validated SQL identifier for this table.
+    fn as_sql_identifier(&self) -> &'static str {
+        match self {
+            ChatCountTable::AiChatTurn => "ai_chat_turn",
+            ChatCountTable::AiChatItem => "ai_chat_item",
+            ChatCountTable::AiChatMessage => "ai_chat_message",
+        }
+    }
+}
+
 async fn next_count(
     tx: &mut Transaction<'_, Postgres>,
-    table: &str,
+    table: ChatCountTable,
     conversation_pk: i64,
 ) -> DomainResult<i64> {
-    let sql = format!("SELECT COUNT(*) + 1 AS next_value FROM {table} WHERE conversation_id = $1");
+    let table_name = table.as_sql_identifier();
+    let sql = format!(
+        "SELECT COUNT(*) + 1 AS next_value FROM {table_name} WHERE conversation_id = $1"
+    );
     let row = sqlx::query(&sql)
         .bind(conversation_pk)
         .fetch_one(&mut **tx)

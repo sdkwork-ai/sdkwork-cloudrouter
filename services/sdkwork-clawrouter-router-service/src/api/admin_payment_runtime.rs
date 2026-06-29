@@ -87,17 +87,9 @@ fn normalize_environment(environment: Option<String>) -> Result<String, Response
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    (
-        StatusCode::BAD_REQUEST,
-        Json(PlusApiResult::error("4001", message.into())),
-    )
-        .into_response()
+    PlusApiResult::error("4001", message.into())).into_response()
 }
 
 fn not_found_response(message: impl Into<String>) -> Response {
-    (
-        StatusCode::NOT_FOUND,
-        Json(PlusApiResult::error("4040", message.into())),
-    )
-        .into_response()
+    PlusApiResult::error("4040", message.into())).into_response()
 }

@@ -7,6 +7,10 @@ use sdkwork_clawrouter_router_service::ports::{
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::{Row, SqlitePool};
 
+const PROMOTION_REPOSITORY_TEST_SCHEMA: &str = include_str!(
+    "../../../../sdkwork-promotion/crates/sdkwork-promotion-repository-sqlx/test_migrations/0001_promotion_repository_test.sql"
+);
+
 #[tokio::test]
 async fn sqlite_admin_marketing_coupon_flow_uses_appbase_promotion_tables() {
     let pool = migrated_pool().await;
@@ -307,10 +311,13 @@ async fn migrated_pool() -> SqlitePool {
         .connect("sqlite::memory:")
         .await
         .unwrap();
-    sqlx::query(sdkwork_commerce_storage_sqlx::commerce_initial_migration_sql())
-        .execute(&pool)
-        .await
-        .unwrap();
+    for statement in PROMOTION_REPOSITORY_TEST_SCHEMA
+        .split(';')
+        .map(str::trim)
+        .filter(|statement| !statement.is_empty())
+    {
+        sqlx::query(statement).execute(&pool).await.unwrap();
+    }
     for statement in [
         r#"
         CREATE TABLE iam_user (

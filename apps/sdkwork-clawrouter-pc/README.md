@@ -195,6 +195,36 @@ $env:CLAWROUTER_EDGE_DEV_SMOKE_REQUIRED="1"
 pnpm.cmd verify -- --with-edge-dev-smoke
 ```
 
+## E2E Testing (Playwright)
+
+The portal ships a Playwright E2E suite under `e2e/` covering the auth login flow, console navigation, admin user CRUD guard, theme switch, i18n language switch, and keyboard navigation (skip-link, Tab, Escape). The suite is configured in `playwright.config.ts` and runs against the portal Vite dev server on `http://127.0.0.1:3901`.
+
+Prerequisites:
+
+- The portal dev server must be reachable at the configured base URL. `playwright.config.ts` will start `pnpm dev` automatically when no server is detected; set `PLAYWRIGHT_WEBSERVER_DISABLED=1` to skip the auto-start and target an externally managed server instead.
+- Chromium must be installed: `pnpm.cmd --dir apps/sdkwork-clawrouter-pc exec playwright install chromium`.
+
+Run the full suite from the portal directory:
+
+```powershell
+pnpm.cmd --dir apps/sdkwork-clawrouter-pc test:e2e
+```
+
+Run a single spec:
+
+```powershell
+pnpm.cmd --dir apps/sdkwork-clawrouter-pc exec playwright test e2e/theme-switch.spec.ts
+```
+
+Override the base URL (for example, to target the integrated edge on port 3900):
+
+```powershell
+$env:PLAYWRIGHT_BASE_URL="http://127.0.0.1:3900"
+pnpm.cmd --dir apps/sdkwork-clawrouter-pc test:e2e
+```
+
+CI integration lives in `.github/workflows/verify.yml` as a separate `e2e` job with `continue-on-error: true` so E2E failures never block the main verification pipeline. The Playwright HTML report is uploaded as a build artifact.
+
 ## SDKWork Documentation Contract
 
 Domain: platform

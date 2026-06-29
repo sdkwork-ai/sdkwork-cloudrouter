@@ -11,6 +11,9 @@ pub enum InvocationErrorKind {
     Usage,
     Telemetry,
     Idempotency,
+    /// Request rejected because a concurrency or rate limit was exceeded
+    /// (e.g. tenant in-flight request cap). Maps to HTTP 429.
+    RateLimit,
     Internal,
 }
 
@@ -28,6 +31,7 @@ impl InvocationErrorKind {
             Self::Usage => "usage_failed",
             Self::Telemetry => "telemetry_failed",
             Self::Idempotency => "idempotency_error",
+            Self::RateLimit => "rate_limit_exceeded",
             Self::Internal => "internal_error",
         }
     }

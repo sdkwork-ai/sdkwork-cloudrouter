@@ -283,11 +283,7 @@ pub fn subject_mapping_failed_response(
             }
         }
     };
-    (
-        StatusCode::UNPROCESSABLE_ENTITY,
-        Json(PlusApiResult::<()>::error("4220", message)),
-    )
-        .into_response()
+    PlusApiResult::error("4220", message)).into_response()
 }
 
 fn map_iam_sql_parse_error<T>(
@@ -382,6 +378,7 @@ mod tests {
                 access_token_present: true,
                 api_key_present: false,
                 oauth_bearer_present: false,
+                agent_token_present: false,
             },
             principal: Some(principal),
             locale: None,

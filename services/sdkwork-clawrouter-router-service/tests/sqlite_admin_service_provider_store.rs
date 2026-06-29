@@ -702,7 +702,7 @@ async fn create_service_provider_tables(pool: &sqlx::SqlitePool) {
         )
         "#,
         r#"
-        CREATE TABLE commerce_usage_service_provider_statement (
+        CREATE TABLE integration_provider_statement (
             id INTEGER PRIMARY KEY,
             uuid TEXT NOT NULL,
             tenant_id INTEGER NOT NULL,
@@ -722,7 +722,7 @@ async fn create_service_provider_tables(pool: &sqlx::SqlitePool) {
         )
         "#,
         r#"
-        CREATE TABLE commerce_usage_service_provider_adjustment (
+        CREATE TABLE integration_provider_adjustment (
             id INTEGER PRIMARY KEY,
             uuid TEXT NOT NULL,
             tenant_id INTEGER NOT NULL,
@@ -741,7 +741,7 @@ async fn create_service_provider_tables(pool: &sqlx::SqlitePool) {
         )
         "#,
         r#"
-        CREATE TABLE commerce_usage_service_provider_reconciliation_run (
+        CREATE TABLE integration_provider_reconciliation_run (
             id INTEGER PRIMARY KEY,
             uuid TEXT NOT NULL,
             tenant_id INTEGER NOT NULL,
@@ -752,7 +752,7 @@ async fn create_service_provider_tables(pool: &sqlx::SqlitePool) {
         )
         "#,
         r#"
-        CREATE TABLE commerce_usage_service_provider_reconciliation_item (
+        CREATE TABLE integration_provider_reconciliation_item (
             id INTEGER PRIMARY KEY,
             uuid TEXT NOT NULL,
             tenant_id INTEGER NOT NULL,
@@ -771,7 +771,7 @@ async fn create_service_provider_tables(pool: &sqlx::SqlitePool) {
         )
         "#,
         r#"
-        CREATE TABLE commerce_service_provider_exposure_snapshot (
+        CREATE TABLE integration_provider_exposure_snapshot (
             id INTEGER PRIMARY KEY,
             uuid TEXT NOT NULL,
             tenant_id INTEGER NOT NULL,
@@ -918,7 +918,7 @@ async fn seed_service_provider_chain(pool: &sqlx::SqlitePool) {
     .unwrap();
     sqlx::query(
         r#"
-        INSERT INTO commerce_usage_service_provider_statement
+        INSERT INTO integration_provider_statement
             (id, uuid, tenant_id, organization_id, status, statement_no, seller_provider_id, buyer_provider_id, period, total_requests, total_tokens, receivable_amount, payable_amount, currency, statement_status, payment_status)
         VALUES
             (9201, 'stmt-child-uuid', 100001, 0, 1, 'stmt-child', 1, 2, '2026-05', 640, 1200, '42.00', '18.00', 'USD', 'issued', 'unpaid'),
@@ -930,7 +930,7 @@ async fn seed_service_provider_chain(pool: &sqlx::SqlitePool) {
     .unwrap();
     sqlx::query(
         r#"
-        INSERT INTO commerce_usage_service_provider_adjustment
+        INSERT INTO integration_provider_adjustment
             (id, uuid, tenant_id, organization_id, status, adjustment_no, usage_edge_id, statement_id, seller_provider_id, buyer_provider_id, adjustment_type, amount, currency, reason_code, approval_status)
         VALUES
             (9301, 'adj-child-uuid', 100001, 0, 1, 'adj-child', 9101, 9201, 1, 2, 'credit', '1.00', 'USD', 'manual', 'approved'),
@@ -942,7 +942,7 @@ async fn seed_service_provider_chain(pool: &sqlx::SqlitePool) {
     .unwrap();
     sqlx::query(
         r#"
-        INSERT INTO commerce_service_provider_exposure_snapshot
+        INSERT INTO integration_provider_exposure_snapshot
             (id, uuid, tenant_id, organization_id, status, service_provider_id, balance_amount, frozen_amount, credit_limit_amount, used_credit_amount, exposure_amount, overdue_amount, currency, risk_status)
         VALUES
             (10001, 'exposure-root', 100001, 0, 1, 1, '200.00', '0.00', '1000.00', '100.00', '100.00', '0.00', 'USD', 'healthy'),

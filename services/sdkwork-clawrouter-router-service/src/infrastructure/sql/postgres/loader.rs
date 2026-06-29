@@ -54,69 +54,81 @@ impl PostgresPricingCatalogLoader {
         &self,
     ) -> Result<SqlPricingCatalogSnapshot, PostgresCatalogLoadError> {
         let dictionary = runtime_pricing_dictionary_rows()?;
+        // M-4: wrap all catalog SELECTs in a single transaction so the
+        // pointer-swapped snapshot reflects one consistent database state.
+        // Without this, interleaved writes between individual SELECTs could
+        // produce a snapshot that mixes old and new rows (e.g. a routing rule
+        // referencing a model mapping that was just deleted).
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .map_err(PostgresCatalogLoadError::from)?;
+        let api_keys = self.load_api_key_rows(&mut *tx).await?;
         let rows = PricingCatalogRows {
             vendors: dictionary.vendors,
             models: dictionary.models,
             provider_routes: row_mapping::load_provider_routes(
-                &self.pool,
+                &mut *tx,
                 PricingCatalogSql::load_provider_routes(),
                 self.circuit_breaker_recovery_window_seconds,
             )
             .await?,
             provider_channel_routes: row_mapping::load_provider_channel_routes(
-                &self.pool,
+                &mut *tx,
                 PricingCatalogSql::load_provider_channel_routes(),
                 self.circuit_breaker_recovery_window_seconds,
             )
             .await?,
             routing_policies: row_mapping::load_routing_policies(
-                &self.pool,
+                &mut *tx,
                 PricingCatalogSql::load_routing_policies(),
             )
             .await?,
             routing_rules: row_mapping::load_routing_rules(
-                &self.pool,
+                &mut *tx,
                 PricingCatalogSql::load_routing_rules(),
             )
             .await?,
             model_mappings: row_mapping::load_model_mappings(
-                &self.pool,
+                &mut *tx,
                 PricingCatalogSql::load_model_mappings(),
             )
             .await?,
             pricing_plans: row_mapping::load_pricing_plans(
-                &self.pool,
+                &mut *tx,
                 PricingCatalogSql::load_pricing_plans(),
             )
             .await?,
             channel_groups: row_mapping::load_channel_groups(
-                &self.pool,
+                &mut *tx,
                 PricingCatalogSql::load_channel_groups(),
             )
             .await?,
-            api_keys: self.load_api_key_rows().await?,
+            api_keys,
             access_policies: row_mapping::load_access_policies(
-                &self.pool,
+                &mut *tx,
                 PricingCatalogSql::load_access_policies(),
             )
             .await?,
             quota_policies: row_mapping::load_quota_policies(
-                &self.pool,
+                &mut *tx,
                 PricingCatalogSql::load_quota_policies(),
             )
             .await?,
             gateway_risk_rules: row_mapping::load_gateway_risk_rules(
-                &self.pool,
+                &mut *tx,
                 PricingCatalogSql::load_gateway_risk_rules(),
             )
             .await?,
             channel_group_metric_snapshots: row_mapping::load_channel_group_metric_snapshots(
-                &self.pool,
+                &mut *tx,
                 PricingCatalogSql::load_channel_group_metric_snapshots(),
             )
             .await?,
             prices: dictionary.prices,
         };
+        tx.commit().await.map_err(PostgresCatalogLoadError::from)?;
         let managed_provider_secrets = managed_provider_secrets_from_rows(
             &rows.provider_routes,
             &rows.provider_channel_routes,
@@ -163,9 +175,14 @@ impl PostgresPricingCatalogLoader {
         .map_err(PostgresCatalogLoadError::from)
     }
 
-    async fn load_api_key_rows(&self) -> Result<Vec<GatewayApiKeyRow>, PostgresCatalogLoadError> {
-        let rows =
-            row_mapping::load_api_keys(&self.pool, PricingCatalogSql::load_api_keys()).await?;
+    async fn load_api_key_rows<'e, E>(
+        &self,
+        executor: E,
+    ) -> Result<Vec<GatewayApiKeyRow>, PostgresCatalogLoadError>
+    where
+        E: sqlx::Executor<'e, Database = sqlx::Postgres>,
+    {
+        let rows = row_mapping::load_api_keys(executor, PricingCatalogSql::load_api_keys()).await?;
         rows.into_iter()
             .map(|row| decode_api_key_row_copyable_key(row, self.api_key_secret_codec.as_deref()))
             .collect::<DomainResult<Vec<_>>>()

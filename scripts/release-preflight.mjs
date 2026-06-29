@@ -10,6 +10,11 @@ import { RELEASE_ENVIRONMENT_CONTRACT } from './release-environment-contract.mjs
 
 const execFileAsync = promisify(execFile);
 
+const SDKWORK_RELEASE_SKIP_VERIFY = 'SDKWORK_RELEASE_SKIP_VERIFY';
+const RELEASE_RECORDS_DIR = 'docs/release';
+const VERIFY_SKIP_PHRASES = ['skipped', 'not run', 'not executed', 'verify skipped', 'verify was not'];
+const VERIFY_EVIDENCE_PHRASES = ['pnpm verify', 'pnpm.cmd verify', 'verify (passed)', 'verify: passed'];
+
 const REQUIRED_RELEASE_ENV = RELEASE_ENVIRONMENT_CONTRACT.requiredReleaseEnv;
 const REQUIRED_PORTAL_PUBLIC_ENV = RELEASE_ENVIRONMENT_CONTRACT.requiredPortalPublicEnv;
 const PORTAL_PUBLIC_SURFACE_BASE_URL_ENV = [
@@ -46,6 +51,7 @@ Run a lightweight release readiness preflight before the full commercial gate.
 
 Options:
   --strict             Fail when release/staging environment variables are missing.
+  --check              Alias for --strict; also enforces pnpm verify evidence.
   --strict-root-clean  Fail when the repository root has unrelated dirty files.
   --env-file <path>    Merge release environment values from a dotenv file.
   --json               Print machine-readable JSON.
@@ -71,6 +77,7 @@ function parseArgs(argv) {
     }
     switch (arg) {
       case '--strict':
+      case '--check':
         settings.strict = true;
         break;
       case '--json':
@@ -363,6 +370,45 @@ function probeResultDetails(value) {
   return String(value ?? '').trim();
 }
 
+/**
+ * Reads the latest release record from docs/release and checks whether
+ * `pnpm verify` was recorded as run (or explicitly skipped).
+ *
+ * Returns an object describing the verify evidence found in the latest record.
+ */
+async function collectLatestReleaseVerifyEvidence(workspaceRoot) {
+  const releasesDir = path.join(workspaceRoot, RELEASE_RECORDS_DIR);
+  let entries = [];
+  try {
+    entries = await readdir(releasesDir);
+  } catch {
+    return { found: false, path: '', verifyEvidence: false, skipped: false, raw: '' };
+  }
+
+  const datedRecords = entries
+    .filter((name) => /^\d{4}-\d{2}-\d{2}-v[\d.]+\.md$/u.test(name))
+    .sort();
+
+  if (datedRecords.length === 0) {
+    return { found: false, path: '', verifyEvidence: false, skipped: false, raw: '' };
+  }
+
+  const latestName = datedRecords[datedRecords.length - 1];
+  const latestPath = path.join(releasesDir, latestName);
+  let raw = '';
+  try {
+    raw = await readFile(latestPath, 'utf8');
+  } catch {
+    return { found: false, path: latestName, verifyEvidence: false, skipped: false, raw: '' };
+  }
+
+  const lower = raw.toLowerCase();
+  const verifyEvidence = VERIFY_EVIDENCE_PHRASES.some((phrase) => lower.includes(phrase));
+  const skipped = VERIFY_SKIP_PHRASES.some((phrase) => lower.includes(phrase));
+
+  return { found: true, path: latestName, verifyEvidence, skipped, raw };
+}
+
 async function runCommand(command, args, options = {}) {
   try {
     const result = await execFileAsync(command, args, {
@@ -453,6 +499,7 @@ async function collectReleasePreflightProbes({
       gitObjectHealth: { count: 0, size: 'unknown', inPack: 0, sizePack: 'unknown' },
       gitLfsVersion: '',
       runtimeSkillSeedFiles: [],
+      releaseVerifyEvidence: { found: false, path: '', verifyEvidence: false, skipped: false, raw: '' },
     };
   }
   const mainOriginRaw = await runCommand('git', ['rev-list', '--left-right', '--count', 'main...origin/main'], {
@@ -483,6 +530,7 @@ async function collectReleasePreflightProbes({
     gitObjectHealth: parseGitObjectHealth(gitObjectRaw),
     gitLfsVersion,
     runtimeSkillSeedFiles: await collectRuntimeSkillSeedStatus(workspaceRoot),
+    releaseVerifyEvidence: await collectLatestReleaseVerifyEvidence(workspaceRoot),
   };
 }
 
@@ -710,6 +758,39 @@ function buildReleasePreflightReport({
     'Regenerate the curated runtime skill seed JSON; do not commit LFS pointers for files compiled with Rust include_str!.',
   ));
 
+  const releaseVerifyEvidence = probes.releaseVerifyEvidence
+    ?? { found: false, path: '', verifyEvidence: false, skipped: false, raw: '' };
+  const skipVerifyFlag = String(env[SDKWORK_RELEASE_SKIP_VERIFY] ?? '').trim() === '1';
+  let verifyStatus = 'PASS';
+  let verifyDetails = '';
+  let verifyRecommendation = '';
+  if (skipVerifyFlag) {
+    verifyStatus = settings.strict ? 'FAIL' : 'WARN';
+    verifyDetails = `${SDKWORK_RELEASE_SKIP_VERIFY}=1 is set; full pnpm verify is being skipped. This is only allowed for emergency hotfixes and must be documented in the release record.`;
+    verifyRecommendation = `Unset ${SDKWORK_RELEASE_SKIP_VERIFY} and run \`pnpm verify\` before the next release.`;
+  } else if (releaseVerifyEvidence.skipped) {
+    verifyStatus = settings.strict ? 'FAIL' : 'WARN';
+    verifyDetails = `latest release record (${releaseVerifyEvidence.path || 'none'}) contains skip language; full pnpm verify was not run or was recorded as skipped.`;
+    verifyRecommendation = 'Run `pnpm verify` and record the result in the release record before publishing.';
+  } else if (!releaseVerifyEvidence.verifyEvidence) {
+    verifyStatus = settings.strict ? 'FAIL' : 'WARN';
+    verifyDetails = releaseVerifyEvidence.found
+      ? `latest release record (${releaseVerifyEvidence.path}) does not record \`pnpm verify\` as run.`
+      : 'no dated release record was found under docs/release; verify evidence is missing.';
+    verifyRecommendation = 'Run `pnpm verify` before tagging the release and record it under the Verification section.';
+  } else {
+    verifyDetails = releaseVerifyEvidence.found
+      ? `latest release record (${releaseVerifyEvidence.path}) records pnpm verify evidence.`
+      : 'pnpm verify evidence will be required in the release record.';
+  }
+  checks.push(createCheck(
+    'release.verify',
+    'Full pnpm verify before release',
+    verifyStatus,
+    verifyDetails,
+    verifyRecommendation,
+  ));
+
   const recommendedCommands = [
     commandLine(pnpm, ['models:check']),
     commandLine(pnpm, ['verify']),
@@ -785,6 +866,7 @@ function buildDryRunProbes(platform = process.platform) {
     gitObjectHealth: { count: 0, size: '0 bytes', inPack: 0, sizePack: '0 bytes' },
     gitLfsVersion: 'dry-run: would run git lfs version',
     runtimeSkillSeedFiles: [],
+    releaseVerifyEvidence: { found: false, path: '', verifyEvidence: false, skipped: false, raw: '' },
   };
 }
 
@@ -832,6 +914,7 @@ export {
   buildDryRunProbes,
   buildReleasePreflightReport,
   collectCodexSessionStats,
+  collectLatestReleaseVerifyEvidence,
   collectRuntimeSkillSeedStatus,
   collectReleasePreflightProbes,
   formatBytes,

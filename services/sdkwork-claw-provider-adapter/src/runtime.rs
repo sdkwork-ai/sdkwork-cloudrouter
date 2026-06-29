@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use axum::Router;
-use sdkwork_claw_provider_adapter_core::ProviderAdapter;
+use sdkwork_claw_provider_adapter::ProviderAdapter;
 
 pub const ENV_PROVIDER_ADAPTER_BIND: &str = "SDKWORK_CLAW_PROVIDER_ADAPTER_BIND";
 pub const DEFAULT_PROVIDER_ADAPTER_BIND: &str = "0.0.0.0:39110";

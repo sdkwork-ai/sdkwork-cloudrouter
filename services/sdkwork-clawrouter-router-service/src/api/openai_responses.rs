@@ -381,7 +381,17 @@ where
             return *response;
         }
     };
-    let mut route = route_plan.first_route();
+    let mut route = match route_plan.first_route() {
+        Some(route) => route,
+        None => {
+            return openai_error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "route_plan_empty",
+                "internal_error",
+                "resolved route plan contains no routes",
+            );
+        }
+    };
     if let Err(error) =
         notify_after_route_selection(&state.plugins, &invocation_context, &mut route).await
     {

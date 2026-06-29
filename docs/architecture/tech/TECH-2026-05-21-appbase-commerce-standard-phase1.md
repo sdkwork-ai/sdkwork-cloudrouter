@@ -27,20 +27,20 @@ This phase is intentionally narrow:
 
 Modify these files first because they define the public contract and the enforcement gates:
 
-- Modify `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-contracts/src/index.ts`
+- Modify `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-contracts/src/index.ts`
   - Replace the single `billing` namespace with domain-oriented namespaces and operation groups.
   - Remove every `billing` path, SDK tag, and surface name from the public contract map.
-- Modify `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-sdk-ports/src/index.ts`
+- Modify `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-sdk-ports/src/index.ts`
   - Align service ports with the new commerce domains and remove `billing` naming.
-- Modify `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-service/src/index.ts`
+- Modify `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-service/src/index.ts`
   - Replace legacy app service call groups with the new standard operation tree.
-- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-http-rust/src/lib.rs`
+- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-http-rust/src/lib.rs`
   - Rewrite route metadata for app and backend surface paths, tags, and operation ids.
-- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-http-rust/tests/commerce_http_standard.rs`
+- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-http-rust/tests/commerce_http_standard.rs`
   - Lock the new route taxonomy and reject `/billing` paths or surface-prefixed operation ids.
-- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-http-rust/tests/app_commerce_foundation_router.rs`
+- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-http-rust/tests/app_commerce_foundation_router.rs`
   - Update router assertions to the new standard surface groups.
-- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-http-rust/tests/app_recharge_checkout_router.rs`
+- Modify `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-http-rust/tests/app_recharge_checkout_router.rs`
   - Update recharge/checkout assertions to the new standard route taxonomy.
 - Modify `<workspace-root>/sdkwork-clawrouter/specs/appbase-integration.yaml`
   - Remove `billing` verification names and align the integration manifest to the new standard contract.
@@ -62,12 +62,12 @@ Modify these files first because they define the public contract and the enforce
 ## Task 1: Replace the Commerce Contract Namespace
 
 **Files:**
-- Modify: `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-contracts/src/index.ts`
-- Modify: `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-sdk-ports/src/index.ts`
-- Modify: `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-service/src/index.ts`
-- Test: `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-contracts/tests/commerce-contracts.standard.test.ts`
-- Test: `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-sdk-ports/tests/commerce-sdk-ports.standard.test.ts`
-- Test: `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-service/tests/commerce-service.standard.test.ts`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-contracts/src/index.ts`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-sdk-ports/src/index.ts`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-service/src/index.ts`
+- Test: `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-contracts/tests/commerce-contracts.standard.test.ts`
+- Test: `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-sdk-ports/tests/commerce-sdk-ports.standard.test.ts`
+- Test: `<workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-service/tests/commerce-service.standard.test.ts`
 
 - [ ] **Step 1: Write the failing contract tests**
 
@@ -88,9 +88,9 @@ Add service-port assertions that the public app contract exposes only the new do
 Run:
 
 ```powershell
-pnpm.cmd --dir <workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-contracts test
-pnpm.cmd --dir <workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-sdk-ports test
-pnpm.cmd --dir <workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-service test
+pnpm.cmd --dir <workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-contracts test
+pnpm.cmd --dir <workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-sdk-ports test
+pnpm.cmd --dir <workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-service test
 ```
 
 Expected: tests fail because the current contract still exposes the legacy `billing` shape.
@@ -128,10 +128,10 @@ Commit only the contract changes and their tests once they are green.
 ## Task 2: Rewrite the HTTP Route Taxonomy
 
 **Files:**
-- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-http-rust/src/lib.rs`
-- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-http-rust/tests/commerce_http_standard.rs`
-- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-http-rust/tests/app_commerce_foundation_router.rs`
-- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-http-rust/tests/app_recharge_checkout_router.rs`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-http-rust/src/lib.rs`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-http-rust/tests/commerce_http_standard.rs`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-http-rust/tests/app_commerce_foundation_router.rs`
+- Modify: `<workspace-root>/sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-http-rust/tests/app_recharge_checkout_router.rs`
 
 - [ ] **Step 1: Write the failing route tests**
 
@@ -293,9 +293,9 @@ Commit the final doc and manifest changes once the search is clean.
 Run:
 
 ```powershell
-pnpm.cmd --dir <workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-contracts test
-pnpm.cmd --dir <workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-sdk-ports test
-pnpm.cmd --dir <workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-commerce-service test
+pnpm.cmd --dir <workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-contracts test
+pnpm.cmd --dir <workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-sdk-ports test
+pnpm.cmd --dir <workspace-root>/sdkwork-appbase/packages/common/commerce/sdkwork-商���-service test
 cargo test -p sdkwork_commerce_http
 python -B -m unittest tests.test_appbase_capability_guardian tests.test_appbase_integration_guardian
 ```

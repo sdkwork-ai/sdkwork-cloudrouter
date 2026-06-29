@@ -84,6 +84,10 @@ jobs:
         working-directory: apps/sdkwork-clawrouter-pc
         run: pnpm test
 
+      - name: PC bundle size check
+        working-directory: apps/sdkwork-clawrouter-pc
+        run: pnpm size
+
       - name: Product verification (CI)
         run: pnpm verify:ci --parallel --concurrency 4
 
@@ -135,3 +139,45 @@ jobs:
 
       - name: pnpm audit (npm vulnerabilities)
         run: pnpm audit --audit-level=high
+
+  e2e:
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    permissions:
+      contents: read
+    env:
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:3901
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install PC workspace dependencies
+        working-directory: apps/sdkwork-clawrouter-pc
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright chromium
+        working-directory: apps/sdkwork-clawrouter-pc
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run Playwright E2E suite
+        working-directory: apps/sdkwork-clawrouter-pc
+        env:
+          CI: "true"
+        run: pnpm test:e2e
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/sdkwork-clawrouter-pc/playwright-report/
+          retention-days: 7

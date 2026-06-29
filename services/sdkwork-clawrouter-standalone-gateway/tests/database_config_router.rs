@@ -495,7 +495,7 @@ async fn database_config_billing_reads_return_empty_defaults_when_optional_read_
         "commerce_product_sku",
         "iam_user_security_setting",
         "iam_user_login_event",
-        "ai_usage_fact",
+        "ai_usage",
     ] {
         sqlx::query(&format!("DROP TABLE {table}"))
             .execute(&pool)
@@ -3642,7 +3642,7 @@ async fn create_schema(pool: &SqlitePool) {
             created_at TEXT,
             client_ip_masked TEXT
         )"#,
-        r#"CREATE TABLE ai_usage_fact (
+        r#"CREATE TABLE ai_usage (
             id INTEGER PRIMARY KEY,
             tenant_id INTEGER NOT NULL,
             organization_id INTEGER NOT NULL,
@@ -5074,16 +5074,16 @@ async fn seed_auth_settings_snapshot(pool: &SqlitePool, payload: Value) {
 
 async fn seed_dashboard_data(pool: &SqlitePool) {
     for statement in [
-        r#"INSERT INTO ai_usage_fact
+        r#"INSERT INTO ai_usage
             (id, tenant_id, organization_id, user_id, request_id, status, request_count, total_tokens, customer_charge_amount, cost_amount, modality, occurred_at)
             VALUES (2001, 100001, 0, 30, 'owner-text-request', 1, 5, 1000, '1.000000', '0.700000', 1, '2026-04-29 09:00:00')"#,
-        r#"INSERT INTO ai_usage_fact
+        r#"INSERT INTO ai_usage
             (id, tenant_id, organization_id, user_id, request_id, status, request_count, total_tokens, customer_charge_amount, cost_amount, modality, occurred_at)
             VALUES (2002, 100001, 0, 30, 'owner-image-request', 1, 2, 0, '0.250000', '0.120000', 2, '2026-04-29 11:00:00')"#,
-        r#"INSERT INTO ai_usage_fact
+        r#"INSERT INTO ai_usage
             (id, tenant_id, organization_id, user_id, request_id, status, request_count, total_tokens, customer_charge_amount, cost_amount, modality, occurred_at)
             VALUES (2010, 100001, 0, 30, 'owner-history-request', 1, 3, 300, '1.750000', '1.200000', 1, '2026-03-01 08:00:00')"#,
-        r#"INSERT INTO ai_usage_fact
+        r#"INSERT INTO ai_usage
             (id, tenant_id, organization_id, user_id, request_id, status, request_count, total_tokens, customer_charge_amount, cost_amount, modality, occurred_at)
             VALUES (2003, 100001, 0, 31, 'other-user-request', 1, 99, 9900, '99.000000', '50.000000', 1, '2026-04-29 10:00:00')"#,
         r#"INSERT INTO ai_request_trace
@@ -5179,10 +5179,10 @@ async fn seed_app_routing_runtime_data(pool: &SqlitePool) {
              'Other Tenant Channel', 'official', 'openai_v1', 1,
              'https://other-tenant.example/v1', 'vault://providers/openai/main',
              '["llm"]', 1, 1, 100, 1, 111, 100, 0)"#,
-        r#"INSERT INTO ai_usage_fact
+        r#"INSERT INTO ai_usage
             (id, tenant_id, organization_id, user_id, api_key_id, request_id, model, status, request_count, total_tokens, customer_charge_amount, cost_amount, modality, occurred_at)
             VALUES (4014, 100001, 0, 30, 100, 'owner-runtime-request', 'gpt-4o-mini', 1, 5, 1000, '1.000000', '0.700000', 1, '2026-04-29 13:00:00')"#,
-        r#"INSERT INTO ai_usage_fact
+        r#"INSERT INTO ai_usage
             (id, tenant_id, organization_id, user_id, api_key_id, request_id, model, status, request_count, total_tokens, customer_charge_amount, cost_amount, modality, occurred_at)
             VALUES (4015, 100001, 0, 31, 101, 'other-user-runtime-request', 'gpt-4o-mini', 1, 77, 7700, '77.000000', '7.000000', 1, '2026-04-29 13:05:00')"#,
         r#"INSERT INTO ai_request_trace
@@ -5381,19 +5381,19 @@ async fn seed_settings_runtime_data(pool: &SqlitePool) {
 
 async fn seed_usage_logs_runtime_data(pool: &SqlitePool) {
     for statement in [
-        r#"INSERT INTO ai_usage_fact
+        r#"INSERT INTO ai_usage
             (id, tenant_id, organization_id, user_id, api_key_id, request_id, model, status, request_count, total_tokens, prompt_tokens, cached_tokens, completion_tokens, customer_charge_amount, cost_amount, modality, rate_multiplier, base_input_unit_price, base_output_unit_price, cache_read_unit_price, occurred_at)
             VALUES (6401, 100001, 0, 30, 100, 'usage-owner-success', 'gpt-4o-mini', 1, 1, 160, 100, 10, 50, '0.012345', '0.010000', 1, '1.250000', '0.150000', '0.600000', '0.050000', '2026-04-29 10:15:00')"#,
         r#"INSERT INTO ai_request_trace
             (id, tenant_id, organization_id, user_id, request_id, trace_id, status, created_at, api_key_name_snapshot, channel_group_snapshot, channel_name_snapshot, requested_model, provider_model, started_at, http_status, provider_error_code, error_type, latency_ms, ttft_ms, streaming, prompt_tokens, cached_tokens, completion_tokens, reasoning_effort, total_tokens, client_ip_masked, request_path, endpoint, http_method)
             VALUES (6402, 100001, 0, 30, 'usage-owner-success', 'trace-usage-owner-success', 1, '2026-04-29 10:15:00', 'Owner Usage Key', 'standard-group', 'OpenAI Primary', 'gpt-4o-mini', 'gpt-4o-mini', '2026-04-29 10:15:00', 200, NULL, NULL, 345, 120, 1, 90, 5, 45, 'medium', 160, '203.0.113.***', '/v1/chat/completions', '/v1/chat/completions', 'POST')"#,
-        r#"INSERT INTO ai_usage_fact
+        r#"INSERT INTO ai_usage
             (id, tenant_id, organization_id, user_id, api_key_id, request_id, model, status, request_count, total_tokens, prompt_tokens, cached_tokens, completion_tokens, customer_charge_amount, cost_amount, modality, rate_multiplier, base_input_unit_price, base_output_unit_price, cache_read_unit_price, occurred_at)
             VALUES (6403, 100001, 0, 30, 100, 'usage-owner-error', 'gpt-4o-mini', 1, 1, 25, 20, 0, 5, '0.004000', '0.003000', 1, '1.000000', '0.150000', '0.600000', '0.050000', '2026-04-29 11:15:00')"#,
         r#"INSERT INTO ai_request_trace
             (id, tenant_id, organization_id, user_id, request_id, trace_id, status, created_at, api_key_name_snapshot, channel_group_snapshot, channel_name_snapshot, requested_model, provider_model, started_at, http_status, provider_error_code, error_type, error_message_masked, latency_ms, ttft_ms, streaming, prompt_tokens, cached_tokens, completion_tokens, reasoning_effort, total_tokens, client_ip_masked, request_path, endpoint, http_method)
             VALUES (6404, 100001, 0, 30, 'usage-owner-error', 'trace-usage-owner-error', 1, '2026-04-29 11:15:00', 'Owner Usage Key', 'standard-group', 'OpenAI Primary', 'gpt-4o-mini', 'gpt-4o-mini', '2026-04-29 11:15:00', 502, 'upstream_502', 'provider_error', 'provider timed out before completion', NULL, 0, 0, 20, 0, 5, 'provider_error', 25, '203.0.113.***', '/v1/chat/completions', '/v1/chat/completions', 'POST')"#,
-        r#"INSERT INTO ai_usage_fact
+        r#"INSERT INTO ai_usage
             (id, tenant_id, organization_id, user_id, api_key_id, request_id, model, status, request_count, total_tokens, prompt_tokens, cached_tokens, completion_tokens, customer_charge_amount, cost_amount, modality, rate_multiplier, base_input_unit_price, base_output_unit_price, cache_read_unit_price, occurred_at)
             VALUES (6405, 100001, 0, 31, 101, 'other-user-usage-request', 'gpt-4o-mini', 1, 1, 999, 900, 0, 99, '9.999999', '8.000000', 1, '2.000000', '0.150000', '0.600000', '0.050000', '2026-04-29 10:30:00')"#,
         r#"INSERT INTO ai_request_trace
@@ -5402,7 +5402,7 @@ async fn seed_usage_logs_runtime_data(pool: &SqlitePool) {
         r#"INSERT INTO ai_routing_decision_log
             (id, tenant_id, organization_id, user_id, request_id, status, created_at, requested_model, resolved_model, selected_channel_id)
             VALUES (6407, 100001, 0, 30, 'usage-owner-success', 1, '2026-04-29 10:15:00', 'gpt-4o-mini', 'gpt-4o-mini', 4003)"#,
-        r#"INSERT INTO ai_usage_fact
+        r#"INSERT INTO ai_usage
             (id, tenant_id, organization_id, user_id, api_key_id, request_id, model, status, request_count, total_tokens, prompt_tokens, cached_tokens, completion_tokens, customer_charge_amount, cost_amount, modality, rate_multiplier, base_input_unit_price, base_output_unit_price, cache_read_unit_price, occurred_at)
             VALUES (6408, 100001, 0, 30, 100, 'usage-owner-cost-only', 'gpt-4o-cost-only', 1, 1, 16, 10, 0, 6, NULL, '777.123456', 1, '1.000000', '0.150000', '0.600000', '0.050000', '2026-04-29 12:15:00')"#,
         r#"INSERT INTO ai_request_trace

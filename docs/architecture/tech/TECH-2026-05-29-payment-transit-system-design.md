@@ -13,7 +13,7 @@ The first landing target is definition and design. Runtime provider integrations
 
 The repository already has useful payment foundations, but they are not complete enough for a payment transit station.
 
-Reusable Appbase commerce tables exist in `sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-storage-sqlx-rust/migrations/0001_commerce_foundation.sql`:
+Reusable Appbase commerce tables exist in `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-storage-sqlx-rust/migrations/0001_commerce_foundation.sql`:
 
 - `commerce_order`
 - `commerce_order_item`

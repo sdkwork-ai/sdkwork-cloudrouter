@@ -1,11 +1,9 @@
-import type { AdminProviderSecretMutationResponse } from './admin-provider-secret-mutation-response';
-
 /** Provider secrets update result schema exposed by Claw Router. */
 export interface ProviderSecretsUpdateResult {
   /** Business response code. */
   code: string;
-  /** Data field on provider secrets update result. */
-  data?: AdminProviderSecretMutationResponse;
+  /** No business data returned by this operation. */
+  data?: never;
   /** Human-readable response message. */
   msg?: string;
 }

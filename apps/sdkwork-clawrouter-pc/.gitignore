@@ -9,3 +9,10 @@ coverage/
 
 # Host profile env files (.env.development, …) are ignored via .env*
 config/*.local.toml
+
+# Playwright E2E artifacts
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

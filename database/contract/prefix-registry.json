@@ -48,7 +48,7 @@
       "domain": "clawrouter"
     },
     {
-      "prefix": "commerce_service_provider_exposure",
+      "prefix": "commerce_service_provider_exposure_",
       "owner": "claw-router-platform",
       "domain": "clawrouter"
     }

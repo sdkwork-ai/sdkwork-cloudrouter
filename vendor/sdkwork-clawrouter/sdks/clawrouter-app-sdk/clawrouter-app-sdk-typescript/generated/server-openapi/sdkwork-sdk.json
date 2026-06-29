@@ -1,7 +1,0 @@
-{
-  "language": "typescript",
-  "sdkType": "app",
-  "name": "clawrouter-app-sdk",
-  "packageName": "@sdkwork/clawrouter-app-sdk",
-  "version": "0.1.0"
-}

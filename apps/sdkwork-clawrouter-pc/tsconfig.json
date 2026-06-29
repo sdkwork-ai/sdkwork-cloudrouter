@@ -92,66 +92,6 @@
       "@sdkwork/clawrouter-pc-admin-core": [
         "./packages/sdkwork-clawrouter-pc-admin-core/src/index.ts"
       ],
-      "@sdkwork/commerce-pc-admin-product": [
-        "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/index.tsx"
-      ],
-      "@sdkwork/commerce-pc-billing": [
-        "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-billing/src/index.ts"
-      ],
-      "@sdkwork/commerce-pc-checkout": [
-        "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-checkout/src/index.ts"
-      ],
-      "@sdkwork/commerce-pc-core": [
-        "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-core/src/index.ts"
-      ],
-      "@sdkwork/commerce-pc-coupon": [
-        "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-coupon/src/index.ts"
-      ],
-      "@sdkwork/commerce-pc-invoice": [
-        "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-invoice/src/index.ts"
-      ],
-      "@sdkwork/commerce-pc-membership": [
-        "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-membership/src/index.ts"
-      ],
-      "@sdkwork/commerce-pc-membership-purchase": [
-        "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-membership-purchase/src/index.ts"
-      ],
-      "@sdkwork/commerce-pc-offer": [
-        "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-offer/src/index.ts"
-      ],
-      "@sdkwork/commerce-pc-order": [
-        "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-order/src/index.ts"
-      ],
-      "@sdkwork/commerce-pc-payment": [
-        "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-payment/src/index.ts"
-      ],
-      "@sdkwork/commerce-pc-points": [
-        "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-points/src/index.ts"
-      ],
-      "@sdkwork/commerce-pc-pricing": [
-        "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-pricing/src/index.ts"
-      ],
-      "@sdkwork/commerce-pc-subscription": [
-        "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-subscription/src/index.ts"
-      ],
-      "@sdkwork/commerce-pc-wallet": [
-        "../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-wallet/src/index.ts"
-      ],
-      "@sdkwork/commerce-service": [
-        "../../vendor/sdkwork-commerce/packages/common/commerce/sdkwork-commerce-service/src/index.ts"
-      ],
-      "@sdkwork/commerce-sdk-ports": [
-        "../../vendor/sdkwork-commerce/packages/common/commerce/sdkwork-commerce-sdk-ports/src/index.ts"
-      ],
-      "@sdkwork/commerce-contracts": [
-        "../../vendor/sdkwork-commerce/packages/common/commerce/sdkwork-commerce-contracts/src/index.ts"
-      ],
-      "sdkwork-commerce-app-sdk-generated-typescript": [
-        "../../vendor/sdkwork-commerce/sdks/sdkwork-commerce-app-sdk/sdkwork-commerce-app-sdk-typescript/generated/server-openapi/src/index.ts"
-      ],
-      "sdkwork-commerce-backend-sdk-generated-typescript": [
-        "../../vendor/sdkwork-commerce/sdks/sdkwork-commerce-backend-sdk/sdkwork-commerce-backend-sdk-typescript/generated/server-openapi/src/index.ts"
-      ],
       "@sdkwork/clawrouter-pc-admin-finance": [
         "./packages/sdkwork-clawrouter-pc-admin-finance/src/index.tsx"
       ],

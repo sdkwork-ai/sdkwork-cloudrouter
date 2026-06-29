@@ -10,5 +10,9 @@
   "dependencies": {
     "@tanstack/react-query": "^5.90.12",
     "@sdkwork/clawroutes-pc-commons": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

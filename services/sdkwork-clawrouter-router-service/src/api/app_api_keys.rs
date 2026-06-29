@@ -221,9 +221,7 @@ async fn fetch_keys(
                 snapshot.for_subject(scope.tenant_id, scope.organization_id, scope.user_id);
             Json(PlusApiResult::success(list_response(&scoped_snapshot))).into_response()
         }
-        Err(error) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(PlusApiResult::error(
+        Err(error) => PlusApiResult::error(
                 "5000",
                 format!("api key read model is unavailable: {error}"),
             )),
@@ -247,17 +245,12 @@ async fn fetch_key_groups(
                 snapshot.for_subject(scope.tenant_id, scope.organization_id, scope.user_id);
             Json(PlusApiResult::success(group_list_response(
                 &scoped_snapshot,
-            )))
-            .into_response()
+            ).into_response()
         }
-        Err(error) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(PlusApiResult::error(
+        Err(error) => PlusApiResult::error(
                 "5000",
                 format!("channel group read model is unavailable: {error}"),
-            )),
-        )
-            .into_response(),
+            )).into_response(),
     }
 }
 
@@ -269,26 +262,10 @@ async fn create_key(
 ) -> Response {
     match create_key_inner(state, scope, headers, request).await {
         Ok(response) => Json(PlusApiResult::success(response)).into_response(),
-        Err(AppApiKeyCreateError::Unauthorized(message)) => (
-            StatusCode::UNAUTHORIZED,
-            Json(PlusApiResult::error("4010", message)),
-        )
-            .into_response(),
-        Err(AppApiKeyCreateError::BadRequest(message)) => (
-            StatusCode::BAD_REQUEST,
-            Json(PlusApiResult::error("4001", message)),
-        )
-            .into_response(),
-        Err(AppApiKeyCreateError::System(message)) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(PlusApiResult::error("5000", message)),
-        )
-            .into_response(),
-        Err(AppApiKeyCreateError::Conflict(message)) => (
-            StatusCode::CONFLICT,
-            Json(PlusApiResult::error("4090", message)),
-        )
-            .into_response(),
+        Err(AppApiKeyCreateError::Unauthorized(message)) => PlusApiResult::error("4010", message)).into_response(),
+        Err(AppApiKeyCreateError::BadRequest(message)) => PlusApiResult::error("4001", message)).into_response(),
+        Err(AppApiKeyCreateError::System(message)) => PlusApiResult::error("5000", message)).into_response(),
+        Err(AppApiKeyCreateError::Conflict(message)) => PlusApiResult::error("4090", message)).into_response(),
     }
 }
 
@@ -301,26 +278,10 @@ async fn update_key(
 ) -> Response {
     match update_key_inner(state, scope, headers, api_key_id, request).await {
         Ok(response) => Json(PlusApiResult::success(response)).into_response(),
-        Err(AppApiKeyCreateError::Unauthorized(message)) => (
-            StatusCode::UNAUTHORIZED,
-            Json(PlusApiResult::error("4010", message)),
-        )
-            .into_response(),
-        Err(AppApiKeyCreateError::BadRequest(message)) => (
-            StatusCode::BAD_REQUEST,
-            Json(PlusApiResult::error("4001", message)),
-        )
-            .into_response(),
-        Err(AppApiKeyCreateError::System(message)) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(PlusApiResult::error("5000", message)),
-        )
-            .into_response(),
-        Err(AppApiKeyCreateError::Conflict(message)) => (
-            StatusCode::CONFLICT,
-            Json(PlusApiResult::error("4090", message)),
-        )
-            .into_response(),
+        Err(AppApiKeyCreateError::Unauthorized(message)) => PlusApiResult::error("4010", message)).into_response(),
+        Err(AppApiKeyCreateError::BadRequest(message)) => PlusApiResult::error("4001", message)).into_response(),
+        Err(AppApiKeyCreateError::System(message)) => PlusApiResult::error("5000", message)).into_response(),
+        Err(AppApiKeyCreateError::Conflict(message)) => PlusApiResult::error("4090", message)).into_response(),
     }
 }
 
@@ -332,26 +293,10 @@ async fn delete_key(
 ) -> Response {
     match delete_key_inner(state, scope, headers, api_key_id).await {
         Ok(response) => Json(PlusApiResult::success(response)).into_response(),
-        Err(AppApiKeyCreateError::Unauthorized(message)) => (
-            StatusCode::UNAUTHORIZED,
-            Json(PlusApiResult::error("4010", message)),
-        )
-            .into_response(),
-        Err(AppApiKeyCreateError::BadRequest(message)) => (
-            StatusCode::BAD_REQUEST,
-            Json(PlusApiResult::error("4001", message)),
-        )
-            .into_response(),
-        Err(AppApiKeyCreateError::System(message)) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(PlusApiResult::error("5000", message)),
-        )
-            .into_response(),
-        Err(AppApiKeyCreateError::Conflict(message)) => (
-            StatusCode::CONFLICT,
-            Json(PlusApiResult::error("4090", message)),
-        )
-            .into_response(),
+        Err(AppApiKeyCreateError::Unauthorized(message)) => PlusApiResult::error("4010", message)).into_response(),
+        Err(AppApiKeyCreateError::BadRequest(message)) => PlusApiResult::error("4001", message)).into_response(),
+        Err(AppApiKeyCreateError::System(message)) => PlusApiResult::error("5000", message)).into_response(),
+        Err(AppApiKeyCreateError::Conflict(message)) => PlusApiResult::error("4090", message)).into_response(),
     }
 }
 

@@ -12,8 +12,8 @@ use sdkwork_clawrouter_router_service::application::{
     PayloadExtractionInterceptor, PricingFinalizationInterceptor, PricingPreflightInterceptor,
     PricingSettlementInterceptor, ProviderAdapterDispatchInterceptor,
     ResponseNormalizationInterceptor, RoutePlanningInterceptor, StickyCommitInterceptor,
-    StickyResolutionInterceptor, TraceTelemetryInterceptor, UsageExtractionInterceptor,
-    UsageRecordingInterceptor,
+    StickyResolutionInterceptor, TenantInflightConfig, TenantInflightInterceptor,
+    TraceTelemetryInterceptor, UsageExtractionInterceptor, UsageRecordingInterceptor,
 };
 use sdkwork_clawrouter_router_service::ports::{
     GatewayUsageRecorder, InvocationDispatcher, PricingCatalog, ProviderAdapterRouteResolver,
@@ -62,11 +62,26 @@ fn default_invocation_policy_guard() -> Arc<GatewayInvocationPolicyGuard> {
 pub fn invocation_policy_guard_from_runtime_toml(
     runtime_toml: Option<&RuntimeTomlConfig>,
 ) -> Arc<GatewayInvocationPolicyGuard> {
+    invocation_policy_guard_from_runtime_toml_with_instance_count(runtime_toml, 1)
+}
+
+/// Build a policy guard whose rate limiter divides local-fallback quotas by
+/// `estimated_instance_count` (H-8) when Redis is unavailable.
+///
+/// `estimated_instance_count` should reflect the number of gateway nodes sharing
+/// the limiter so a fleet does not each allow the full configured quota.
+pub fn invocation_policy_guard_from_runtime_toml_with_instance_count(
+    runtime_toml: Option<&RuntimeTomlConfig>,
+    estimated_instance_count: u32,
+) -> Arc<GatewayInvocationPolicyGuard> {
     let redis_config = RedisConfig::from_env_or_runtime_toml(runtime_toml)
         .ok()
         .flatten();
     invocation_policy_guard_from_rate_limiter(Arc::new(
-        GatewayInvocationRateLimiter::try_with_redis_config(redis_config.as_ref()),
+        GatewayInvocationRateLimiter::try_with_redis_config_and_instances(
+            redis_config.as_ref(),
+            estimated_instance_count,
+        ),
     ))
 }
 
@@ -192,19 +207,58 @@ pub fn invocation_router_with_full_pipeline_and_provider_adapter_config<C>(
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
+    invocation_router_with_full_pipeline_provider_adapter_and_tenant_inflight(
+        catalog,
+        api_key_hasher,
+        dispatcher,
+        secret_resolver,
+        sticky_store,
+        usage_recorder,
+        provider_adapter_config,
+        invocation_policy_guard,
+        None,
+        None,
+    )
+}
+
+/// Build an invocation router with tenant in-flight concurrency limiting
+/// (H-9) wired into the pipeline.
+///
+/// When `tenant_inflight_config` is `Some`, a [`TenantInflightInterceptor`]
+/// is inserted immediately before the dispatch executor so concurrent
+/// in-flight provider requests per tenant are bounded. When `redis_config`
+/// is `Some`, the counter is backed by Redis for multi-node HA; otherwise a
+/// local per-node counter is used with a degraded-mode warning.
+pub fn invocation_router_with_full_pipeline_provider_adapter_and_tenant_inflight<C>(
+    catalog: Arc<C>,
+    api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
+    dispatcher: Arc<dyn InvocationDispatcher>,
+    secret_resolver: Option<Arc<dyn ProviderSecretResolver + Send + Sync>>,
+    sticky_store: Option<Arc<dyn StickyRouteStore>>,
+    usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
+    provider_adapter_config: Option<ProviderAdapterConfig>,
+    invocation_policy_guard: Option<Arc<GatewayInvocationPolicyGuard>>,
+    tenant_inflight_config: Option<TenantInflightConfig>,
+    redis_config: Option<&RedisConfig>,
+) -> Router
+where
+    C: PricingCatalog + Send + Sync + 'static,
+{
     let adapter_resolver = provider_adapter_config
         .and_then(InvocationProviderAdapterResolver::from_config)
         .map(|resolver| Arc::new(resolver) as Arc<dyn ProviderAdapterRouteResolver>);
     invocation_router_with_state(invocation_router_state(
         Arc::clone(&catalog),
         api_key_hasher,
-        invocation_pipeline(
+        invocation_pipeline_with_redis(
             catalog,
             dispatcher,
             secret_resolver,
             sticky_store,
             usage_recorder,
             adapter_resolver,
+            redis_config,
+            tenant_inflight_config,
         ),
         invocation_policy_guard.unwrap_or_else(default_invocation_policy_guard),
         false,
@@ -247,6 +301,7 @@ where
             usage_recorder,
             adapter_resolver,
             redis_config,
+            None,
         ),
         invocation_policy_guard.unwrap_or_else(default_invocation_policy_guard),
         trust_forwarded_headers,
@@ -279,6 +334,7 @@ where
         usage_recorder,
         adapter_resolver,
         None,
+        None,
     )
 }
 
@@ -290,6 +346,7 @@ fn invocation_pipeline_with_redis<C>(
     usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
     adapter_resolver: Option<Arc<dyn ProviderAdapterRouteResolver>>,
     redis_config: Option<&sdkwork_claw_config::RedisConfig>,
+    tenant_inflight_config: Option<TenantInflightConfig>,
 ) -> InvocationPipeline
 where
     C: PricingCatalog + Send + Sync + 'static,
@@ -338,8 +395,19 @@ where
     pipeline = pipeline.with_interceptor(PricingPreflightInterceptor::new(Arc::clone(&catalog)));
 
     pipeline = pipeline
-        .with_interceptor(ResponseNormalizationInterceptor::default())
-        .with_interceptor(dispatch_executor);
+        .with_interceptor(ResponseNormalizationInterceptor::default());
+
+    // H-9: bound per-tenant in-flight provider requests just before dispatch so
+    // a tenant cannot exhaust the gateway's provider connection pool. The slot
+    // is released in `after`/`on_error` once the response (or error) is observed.
+    if let Some(inflight_config) = tenant_inflight_config {
+        pipeline = pipeline.with_interceptor(TenantInflightInterceptor::try_with_redis_config(
+            redis_config,
+            inflight_config,
+        ));
+    }
+
+    pipeline = pipeline.with_interceptor(dispatch_executor);
 
     if let Some(sticky_store) = sticky_store {
         pipeline = pipeline.with_interceptor(StickyCommitInterceptor::new(sticky_store));

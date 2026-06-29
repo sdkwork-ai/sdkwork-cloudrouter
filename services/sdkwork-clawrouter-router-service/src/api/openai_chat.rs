@@ -13,6 +13,7 @@ use axum::routing::post;
 use axum::{Json, Router};
 use hyper::body::Frame;
 use sdkwork_claw_http::ApiKeyIdentity;
+use sdkwork_claw_security::redact_error_message;
 use serde_json::Value;
 
 use crate::api::openai_contract::OpenAiChatCompletionRequest;
@@ -567,7 +568,17 @@ where
             return *response;
         }
     };
-    let mut route = route_plan.first_route();
+    let mut route = match route_plan.first_route() {
+        Some(route) => route,
+        None => {
+            return openai_error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "route_plan_empty",
+                "internal_error",
+                "resolved route plan contains no routes",
+            );
+        }
+    };
     if let Err(error) =
         notify_after_route_selection(&state.plugins, &invocation_context, &mut route).await
     {
@@ -1316,7 +1327,7 @@ impl StreamingUsageRecordingBody {
             Ok(Some(usage)) => self.usage = Some(usage),
             Ok(None) => {}
             Err(error) => {
-                tracing::warn!(error = %error, "failed to parse streaming chat usage event");
+                tracing::warn!(error = %redact_error_message(&error), "failed to parse streaming chat usage event");
                 self.terminal_error = Some(error.to_string());
             }
         }
@@ -1339,7 +1350,7 @@ impl StreamingUsageRecordingBody {
             let command = match command_builder.build_zero_token_request() {
                 Ok(command) => command,
                 Err(error) => {
-                    tracing::warn!(error = %error, "failed to build streaming chat zero-token usage record");
+                    tracing::warn!(error = %redact_error_message(&error), "failed to build streaming chat zero-token usage record");
                     self.terminal_error = Some(error.to_string());
                     return;
                 }
@@ -1353,7 +1364,7 @@ impl StreamingUsageRecordingBody {
         let command = match command_builder.build(usage) {
             Ok(command) => command,
             Err(error) => {
-                tracing::warn!(error = %error, "failed to build streaming chat usage record");
+                tracing::warn!(error = %redact_error_message(&error), "failed to build streaming chat usage record");
                 self.terminal_error = Some(error.to_string());
                 return;
             }
@@ -1383,13 +1394,13 @@ impl StreamingUsageRecordingBody {
             Poll::Ready(Err(error)) => {
                 self.recording = None;
                 if self.recording_is_trace_only {
-                    tracing::warn!(error = %error, "failed to record streaming chat trace");
+                    tracing::warn!(error = %redact_error_message(&error), "failed to record streaming chat trace");
                     self.recording_is_trace_only = false;
                     self.usage_recorder = None;
                     self.command_builder = None;
                     return Poll::Ready(Ok(()));
                 }
-                tracing::warn!(error = %error, "failed to record streaming chat usage");
+                tracing::warn!(error = %redact_error_message(&error), "failed to record streaming chat usage");
                 self.terminal_error = Some(error.to_string());
                 self.poll_terminal_error(cx)
             }
@@ -1426,7 +1437,7 @@ impl StreamingUsageRecordingBody {
                     {
                         if let Err(error) = usage_recorder.record_gateway_trace(trace_command).await
                         {
-                            tracing::warn!(error = %error, "failed to record streaming usage error trace");
+                            tracing::warn!(error = %redact_error_message(&error), "failed to record streaming usage error trace");
                         }
                     }
                 }

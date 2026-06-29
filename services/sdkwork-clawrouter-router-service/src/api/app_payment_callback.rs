@@ -729,11 +729,7 @@ fn callback_success_response(ack_mode: AckMode, outcome: PaymentCallbackOutcome)
 
 fn callback_bad_request_response(ack_mode: AckMode, message: String) -> Response {
     match ack_mode {
-        AckMode::Json => (
-            StatusCode::BAD_REQUEST,
-            Json(PlusApiResult::error("4001", message)),
-        )
-            .into_response(),
+        AckMode::Json => PlusApiResult::error("4001", message)).into_response(),
         AckMode::Wechat => (
             StatusCode::BAD_REQUEST,
             [("content-type", "application/xml; charset=utf-8")],
@@ -746,11 +742,7 @@ fn callback_bad_request_response(ack_mode: AckMode, message: String) -> Response
 
 fn callback_conflict_response(ack_mode: AckMode, message: String) -> Response {
     match ack_mode {
-        AckMode::Json => (
-            StatusCode::CONFLICT,
-            Json(PlusApiResult::error("4090", message)),
-        )
-            .into_response(),
+        AckMode::Json => PlusApiResult::error("4090", message)).into_response(),
         AckMode::Wechat => (
             StatusCode::CONFLICT,
             [("content-type", "application/xml; charset=utf-8")],
@@ -763,11 +755,7 @@ fn callback_conflict_response(ack_mode: AckMode, message: String) -> Response {
 
 fn callback_system_response(ack_mode: AckMode, message: &str) -> Response {
     match ack_mode {
-        AckMode::Json => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(PlusApiResult::error("5000", message.to_owned())),
-        )
-            .into_response(),
+        AckMode::Json => PlusApiResult::error("5000", message.to_owned())).into_response(),
         AckMode::Wechat => (
             StatusCode::INTERNAL_SERVER_ERROR,
             [("content-type", "application/xml; charset=utf-8")],

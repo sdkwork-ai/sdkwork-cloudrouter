@@ -194,7 +194,42 @@ pub struct ProviderRelaySectionConfig {
     pub openai: ProviderRelayOpenAiSectionConfig,
     pub runtime: ProviderRelayRuntimeSectionConfig,
     pub retry: ProviderRelayRetrySectionConfig,
+    pub http_pool: ProviderRelayHttpPoolSectionConfig,
     pub passthrough: BTreeMap<String, ProviderPassthroughSectionConfig>,
+    pub rate_limit: ProviderRelayRateLimitSectionConfig,
+}
+
+/// HTTP connection-pool tuning for OpenAI-compatible upstream provider clients.
+///
+/// All fields are optional; missing values fall back to safe production
+/// defaults defined by the router service.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
+#[serde(default)]
+pub struct ProviderRelayHttpPoolSectionConfig {
+    /// Idle connection lifetime before eviction. Defaults to 90 seconds.
+    pub pool_idle_timeout_seconds: Option<u64>,
+    /// Maximum idle connections kept per upstream host. Defaults to 64.
+    pub pool_max_idle_per_host: Option<usize>,
+    /// HTTP/2 keep-alive ping interval. Defaults to 30 seconds.
+    pub http2_keep_alive_interval_seconds: Option<u64>,
+    /// HTTP/2 keep-alive ping timeout. Defaults to 10 seconds.
+    pub http2_keep_alive_timeout_seconds: Option<u64>,
+    /// TCP connect timeout. Defaults to 10 seconds.
+    pub connect_timeout_seconds: Option<u64>,
+}
+
+/// Rate-limit tuning for provider relay invocation traffic.
+///
+/// `estimated_instance_count` allows the local fallback limiter to divide
+/// per-tenant/per-scope quotas when Redis is unavailable, so a fleet of N
+/// gateway nodes does not each allow the full configured quota.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
+#[serde(default)]
+pub struct ProviderRelayRateLimitSectionConfig {
+    /// Estimated number of gateway instances sharing the limiter. Defaults to 1.
+    pub estimated_instance_count: Option<u32>,
+    /// Maximum in-flight provider requests per tenant. Defaults to 100.
+    pub tenant_max_inflight_requests: Option<u32>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
@@ -209,10 +244,15 @@ pub struct ProviderRelayOpenAiSectionConfig {
 #[serde(default)]
 pub struct ProviderRelayRuntimeSectionConfig {
     pub response_timeout_millis: Option<u64>,
+    /// Timeout for streaming (SSE) provider responses. Defaults to 120000 ms.
+    pub stream_response_timeout_millis: Option<u64>,
     pub health_probe_timeout_millis: Option<u64>,
     pub catalog_refresh_interval_millis: Option<u64>,
     pub circuit_breaker_recovery_window_millis: Option<u64>,
     pub failure_strategy: Option<String>,
+    /// Maximum bytes accepted from a non-streaming provider response body.
+    /// Defaults to 64 MiB (67108864). Exceeding the limit aborts the response.
+    pub provider_response_max_bytes: Option<u64>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]

@@ -1,1 +1,0 @@
--- Retired: gateway routing dictionary tables are owned by sdkwork-models and composed at install time.

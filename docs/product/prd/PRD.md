@@ -92,11 +92,25 @@ production-grade observability built in.
 
 ## 8. Open Questions
 
-- Should Claw Router offer a managed cloud offering, or remain self-hosted +
-  licensed?
-- What is the pricing model for commercial license tiers (per-seat, per-token,
-  flat)?
-- Should the OpenAPI-compatible surface support streaming for all generation
+### Resolved
+
+- ~~What is the pricing model for commercial license tiers (per-seat,
+  per-token, flat)?~~ **Resolved (2026-06-27):** Claw Router uses a hybrid
+  model of recurring subscription base fee plus metered per-token usage.
+  Four tiers are defined: Community (AGPL, free), Pro (subscription + token),
+  Enterprise (subscription + token, higher SLA), and OEM (one-time + royalty).
+  See [docs/commercial/PRICING.md](../../commercial/PRICING.md) and the
+  edition tier matrix at [docs/legal/TIER_MATRIX.md](../../legal/TIER_MATRIX.md).
+- ~~Should Claw Router offer a managed cloud offering, or remain self-hosted +
+  licensed?~~ **Resolved (2026-06-27):** Claw Router supports both. The
+  primary commercial model is self-hosted + licensed. A SDKWork-managed SaaS
+  deployment is available as an add-on for Pro and Enterprise editions. See
+  the "Deployment And Customization" section of
+  [docs/legal/TIER_MATRIX.md](../../legal/TIER_MATRIX.md).
+
+### Open
+
+- Should the OpenAI-compatible surface support streaming for all generation
   types, or only chat completions?
 
 ## 9. References

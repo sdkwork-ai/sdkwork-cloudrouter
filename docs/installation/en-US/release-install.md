@@ -64,9 +64,12 @@ Build a Linux x64 service release from a source checkout:
 ```bash
 pnpm release:env:write -- --check
 pnpm release:env:write -- --force
+pnpm verify
 pnpm build
 pnpm install:package:build -- --package-id linux-x64-service
 ```
+
+`pnpm verify` is the full commercial verification gate and must pass before building any release package. The release preflight enforces this: `node scripts/release-preflight.mjs --check` fails when the latest release record under `docs/release` does not record `pnpm verify` evidence, or when it contains skip language such as "skipped" or "not run". `SDKWORK_RELEASE_SKIP_VERIFY=1` is the only escape hatch and is restricted to emergency hotfixes that must be documented in the release record.
 
 The resulting Ubuntu/Debian package uses the public asset name
 `clawrouter-linux-x64-server-0.3.0.deb`.

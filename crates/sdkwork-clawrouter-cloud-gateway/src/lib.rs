@@ -22,12 +22,14 @@ pub use edge_server::{
 };
 pub use invocation_dispatcher::InvocationHttpDispatcher;
 pub use invocation_router::{
+    invocation_policy_guard_from_runtime_toml_with_instance_count,
     invocation_router_with_catalog_api_key_hasher_and_dispatcher,
     invocation_router_with_catalog_api_key_hasher_dispatcher_and_secret_resolver,
     invocation_router_with_catalog_api_key_hasher_dispatcher_secret_resolver_and_sticky_store,
     invocation_router_with_full_pipeline,
     invocation_router_with_full_pipeline_and_provider_adapter_config,
     invocation_router_with_full_pipeline_and_trust_forwarded_headers,
+    invocation_router_with_full_pipeline_provider_adapter_and_tenant_inflight,
 };
 #[rustfmt::skip]
 pub use openai_passthrough_routes::{openai_compatible_passthrough_paths, openai_method_passthrough_paths, stored_chat_completion_passthrough_paths};

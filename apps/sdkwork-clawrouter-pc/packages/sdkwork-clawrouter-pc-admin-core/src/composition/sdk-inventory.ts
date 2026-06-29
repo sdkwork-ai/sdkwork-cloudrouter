@@ -1,4 +1,3 @@
-import compositionManifest from '../../../../specs/dependency.composition.json';
 
 export type SdkworkDependencyCompositionManifest = typeof compositionManifest;
 

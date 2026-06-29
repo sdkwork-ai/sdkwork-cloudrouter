@@ -1,6 +1,6 @@
 # SDKWork Claw Router - SOC 2 Compliance Readiness
 
-**Document Version:** 1.0
+**Document Version:** 1.1
 **Last Updated:** 2026-06-27
 **Framework:** SOC 2 Type II (TSC 2017)
 **Target Audit:** Q1 2027
@@ -50,7 +50,7 @@ This document outlines the SOC 2 Type II compliance readiness plan for SDKWork C
 | CC7.2 | Vulnerability management | ✅ Implemented | None | Security |
 | CC7.3 | Incident response | ✅ Implemented | None | Security |
 | CC8.1 | Change management | ✅ Implemented | None | Engineering |
-| CC9.1 | Risk mitigation | ⚠️ Partial | Third-party monitoring | Security |
+| CC9.1 | Risk mitigation | ⚠️ Partial | Vendor monitoring (supply chain covered) | Security |
 
 ### 2. Availability
 
@@ -123,8 +123,8 @@ This document outlines the SOC 2 Type II compliance readiness plan for SDKWork C
 
 #### 3. Third-Party Vendor Monitoring (CC9.1)
 
-**Current State**: Basic vendor list
-**Gap**: No formal vendor risk monitoring
+**Current State**: Supply chain security implemented (SBOM, SLSA L3 provenance, cosign signing, cargo audit + pnpm audit + Trivy in CI); basic vendor list for non-software vendors
+**Gap**: No formal vendor risk monitoring for non-software vendors (cloud providers, SaaS tools)
 **Remediation**:
 
 | Task | Owner | Due Date |
@@ -142,8 +142,14 @@ This document outlines the SOC 2 Type II compliance readiness plan for SDKWork C
 
 #### 4. DR Exercise (A2.2)
 
-**Current State**: Backup tested monthly
-**Gap**: Full DR exercise not conducted
+**Current State**: Backup tested monthly; recovery and HA runbooks now exist
+([Redis failover](../runbooks/redis-failover.md),
+[PostgreSQL HA failover](../runbooks/postgresql-ha-failover.md),
+[Database migration rollback](../runbooks/database-migration-rollback.md),
+[Disaster recovery plan](../../deployments/runbooks/disaster-recovery-plan.md)).
+**Gap**: Full DR exercise not yet conducted; runbooks provide procedures but
+execution evidence (exercise report, timeline, lessons learned) is still
+required, so A2.2 remains Partial.
 **Remediation**:
 
 | Task | Owner | Due Date |
@@ -227,7 +233,8 @@ compliance/
 | Evidence Type | Collection Method | Owner |
 |---------------|------------------|-------|
 | Access reviews | Automated extraction from IdP | Security |
-| Vulnerability scan results | Trivy/Cargo audit | Security |
+| Vulnerability scan results | Trivy/cargo audit/pnpm audit | Security |
+| SBOM + checksums generation | `pnpm sbom:release` script output | Engineering |
 | Backup success/failure | Automated monitoring | SRE |
 | Incident log review | Manual + automated | Security |
 | Change management | GitHub audit logs | Engineering |
@@ -283,9 +290,34 @@ compliance/
 |---------------|-----------------|
 | CC6.1 | Multi-tenant isolation via SqlScopedSubject |
 | CC6.7 | AES-256-GCM encryption for keys |
-| CC7.2 | Trivy + cargo audit in CI |
+| CC7.2 | Trivy + cargo audit + cargo deny + pnpm audit + gitleaks in CI |
+| CC7.3 | Incident response runbooks (provider outage, tenant isolation, audit investigation) |
+| CC8.1 | SBOM (SPDX 2.3) generated per release via `pnpm sbom:release` |
+| CC9.1 | SLSA L3 provenance + cosign artifact signing + checksums.json verification |
+| A2.1 | Recovery planning runbooks (Redis failover, PostgreSQL HA failover, DB migration rollback) |
 | A2.3 | pg_dump + WAL archiving |
+| A2.4 | Incident runbooks + blameless postmortem template |
 | PI1.1 | Input validation in handlers |
+
+### Recovery & Incident Response Runbooks
+
+The following runbooks document the recovery and incident-response procedures
+that operationalize the Availability and Security common-criteria controls
+above. They are the procedural evidence for A2.1 (Recovery planning), A2.4
+(Incidents), and CC7.3 (Incident response). They do not, by themselves,
+satisfy the *execution* evidence required for A2.2 (Recovery testing) — a DR
+exercise must still be conducted and its report captured.
+
+| Runbook | SOC 2 control | Path |
+|---------|----------------|------|
+| Provider upstream outage | CC7.3, A2.4 | [../runbooks/provider-outage.md](../runbooks/provider-outage.md) |
+| Token / API key rotation | CC6.2, CC6.6 | [../runbooks/token-api-key-rotation.md](../runbooks/token-api-key-rotation.md) |
+| Tenant isolation incident | CC6.1, CC7.3 | [../runbooks/tenant-isolation-incident.md](../runbooks/tenant-isolation-incident.md) |
+| Database migration rollback | A2.1, A2.3 | [../runbooks/database-migration-rollback.md](../runbooks/database-migration-rollback.md) |
+| Rate limit / circuit break tuning | A1.1 | [../runbooks/rate-limit-circuit-break.md](../runbooks/rate-limit-circuit-break.md) |
+| Audit log investigation | CC7.2, CC7.3 | [../runbooks/audit-log-investigation.md](../runbooks/audit-log-investigation.md) |
+| Redis failover | A2.1, A2.4 | [../runbooks/redis-failover.md](../runbooks/redis-failover.md) |
+| PostgreSQL HA failover | A2.1, A2.3 | [../runbooks/postgresql-ha-failover.md](../runbooks/postgresql-ha-failover.md) |
 
 ---
 

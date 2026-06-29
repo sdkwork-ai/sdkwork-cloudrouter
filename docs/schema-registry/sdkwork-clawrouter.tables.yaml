@@ -1,530 +1,494 @@
-schema_registry:
-  name: sdkwork-clawrouter
-  version: 0.1.0
-  date: 2026-04-28
-  standard: ../../specs/DATABASE_SPEC.md
-  api_standard: ../../specs/API_SPEC.md
-  source_docs:
-  - ../18-SkillsHub-AgentSkills-PlusCategory-compatible-design.md
-  - ../19-Finance-Trade-Java-compatible-design.md
-  - ../05-数据库设计.md
-  - ../11-数据契约与核心表设计.md
-  - ../12-前端功能模块与数据库表结构映射.md
-  - ../13-页面级数据结构覆盖与SchemaRegistry落地设计.md
-  - ../14-数据结构细节复核与补强记录.md
-  - ../15-new-api-sub2api价格体系对比与ClawRouter定价设计.md
-  api_prefixes:
-    app: /app/v3/api
-    backend: /backend/v3/api
-    openai_compatible: /v1
-  serialization:
-    int64: string
-    decimal: string
-    instant: iso8601_utc
-    enum: forward_compatible
-  naming_guardrails:
-    allowed_new_prefixes:
-    - system
-    - iam
-    - integration
-    - ai
-    - commerce
-    - platform
-    - c
-    - ops
-    legacy_prefixes: []
-    forbidden_new_prefixes:
-    - claw
-    - router
-    - sdkwork
-    - console
-    - admin
-    - portal
-  legacy_compatibility_guardrails:
-    java_entity_first_required: false
-    rule: Claw-router generated ownership is limited to gateway routing, metering,
-      pricing, integration provider accounts, commerce usage projections, gateway
-      IAM extensions, ops telemetry, and system installation metadata. Agent/chat/MCP/runtime/prompt
-      tables are owned by sdkwork-kernel. Model catalog dictionary tables are owned
-      by sdkwork-models and composed at install time. Notification tables are owned
-      by sdkwork-appbase-messaging. IAM base, verification, commerce, promotion, messaging,
-      appstore, and drive tables are external sibling modules and must not be generated
-      in claw-router schema.sql.
-    protected_domains:
-    - platform
-    - classification
-    - skill
-    forbidden_synonym_tables:
-    - router_order
-    - router_payment
-    - router_account
-    - router_refund
-    - router_invoice
-    - sdkwork_order
-    - sdkwork_payment
-    - sdkwork_account
-    - sdkwork_refund
-    - sdkwork_invoice
-    allowed_projection_exception: Router-owned commerce_usage_* tables may only add
-      usage settlement, statement, export, and analytics projections. c_category remains
-      a transitional appstore-aligned classification projection until sdkwork-appstore
-      publishes canonical DDL.
-  common_column_groups:
-    tenant_entity:
-    - id
-    - uuid
-    - tenant_id
-    - organization_id
-    - data_scope
-    - status
-    - created_at
-    - updated_at
-    - version
-    - deleted_at
-    - deleted_by
-    - metadata
-    user_entity:
-    - id
-    - uuid
-    - tenant_id
-    - organization_id
-    - user_id
-    - owner_type
-    - owner_id
-    - data_scope
-    - status
-    - created_at
-    - updated_at
-    - version
-    - deleted_at
-    - deleted_by
-    - metadata
-    event_log:
-    - id
-    - uuid
-    - tenant_id
-    - organization_id
-    - user_id
-    - request_id
-    - trace_id
-    - payload_hash
-    - status
-    - created_at
-    - retention_until
-    - legal_hold
-    - metadata
-    audit_log:
-    - id
-    - uuid
-    - tenant_id
-    - organization_id
-    - request_id
-    - trace_id
-    - operator_id
-    - action
-    - target_type
-    - target_id
-    - created_at
-    - retention_until
-    - legal_hold
-    - metadata
-    projection:
-    - id
-    - uuid
-    - tenant_id
-    - organization_id
-    - source_type
-    - source_id
-    - source_version
-    - status
-    - created_at
-    - updated_at
-    - rebuild_version
-    - metadata
-domains:
-  iam:
-    owner: identity-access
-    bounded_context: identity-access
-  integration:
-    owner: provider-integration
-    bounded_context: provider-integration
-  ai:
-    owner: ai-gateway
-    bounded_context: ai-routing-metering
-  commerce:
-    owner: commerce-projection
-    bounded_context: router-commerce-projection
-  platform:
-    owner: sdkwork-appstore
-    bounded_context: external-appstore-platform
-  classification:
-    owner: catalog-service
-    bounded_context: cross-cutting-taxonomy
-  ops:
-    owner: platform-ops
-    bounded_context: operations-observability
-domain_names:
-  model_vendor:
-    canonical_name: ModelVendor
-    zh_name: 模型厂商
-    description: Stable model vendor identity. It represents the original model producer
-      or capability owner, not an access channel, cloud platform, relay, or account.
-    persistence:
-      table: ai_model_vendor
-      code_column: vendor_code
-      display_column: display_name
-      db_type: string(64)
-      store_as: stable_string_code
-      never_store_as: enum_ordinal
-    type_bindings:
-      java: com.sdkwork.claw.router.domain.enums.ModelVendor
-      rust: sdkwork_claw_router::domain::ModelVendor
-      typescript: ModelVendor
-      openapi: ModelVendor
-    unknown_policy: preserve_raw_code_and_map_to_unknown
-    builtin_values:
-    - code: openai
-      java: OPENAI
-      rust: OpenAi
-      label: OpenAI
-    - code: anthropic
-      java: ANTHROPIC
-      rust: Anthropic
-      label: Anthropic
-    - code: google
-      java: GOOGLE
-      rust: Google
-      label: Google DeepMind / Gemini
-    - code: alibaba
-      java: ALIBABA
-      rust: Alibaba
-      label: Alibaba
-    - code: baidu
-      java: BAIDU
-      rust: Baidu
-      label: Baidu
-    - code: black_forest_labs
-      java: BLACK_FOREST_LABS
-      rust: BlackForestLabs
-      label: Black Forest Labs
-    - code: bytedance
-      java: BYTEDANCE
-      rust: ByteDance
-      label: ByteDance
-    - code: deepseek
-      java: DEEPSEEK
-      rust: DeepSeek
-      label: DeepSeek
-    - code: elevenlabs
-      java: ELEVENLABS
-      rust: ElevenLabs
-      label: ElevenLabs
-    - code: kuaishou
-      java: KUAISHOU
-      rust: Kuaishou
-      label: Kuaishou
-    - code: minimax
-      java: MINIMAX
-      rust: MiniMax
-      label: MiniMax
-    - code: moonshot
-      java: MOONSHOT
-      rust: Moonshot
-      label: Moonshot AI
-    - code: xai
-      java: XAI
-      rust: Xai
-      label: xAI
-    - code: stability_ai
-      java: STABILITY_AI
-      rust: StabilityAi
-      label: Stability AI
-    - code: suno
-      java: SUNO
-      rust: Suno
-      label: Suno
-    - code: tencent
-      java: TENCENT
-      rust: Tencent
-      label: Tencent
-    - code: zhipu
-      java: ZHIPU
-      rust: Zhipu
-      label: Zhipu AI
-    - code: custom
-      java: CUSTOM
-      rust: Custom
-      label: Custom Vendor
-    - code: unknown
-      java: UNKNOWN
-      rust: Unknown
-      label: Unknown Vendor
-  integration_provider_type:
-    canonical_name: IntegrationProviderType
-    zh_name: 接入供应商类型
-    description: Stable integration provider business type. A provider can be the
-      original model vendor direct API, a cloud platform, another relay or aggregator,
-      a self-hosted gateway, a local runtime, or a custom integration.
-    db_type: enum_int32
-    api_serialization: stable_string_code
-    persistence:
-      table: ai_provider
-      code_column: integration_type
-      display_column: display_name
-      store_as: stable_int_code
-      never_store_as: enum_ordinal
-    type_bindings:
-      java: com.sdkwork.claw.router.domain.enums.IntegrationProviderType
-      rust: sdkwork_claw_router::domain::IntegrationProviderType
-      typescript: IntegrationProviderType
-      openapi: IntegrationProviderType
-    unknown_policy: preserve_raw_code_and_map_to_unknown
-    builtin_values:
-    - code: unknown
-      int_code: 0
-      label: Unknown integration provider type
-    - code: model_vendor_direct
-      int_code: 1
-      label: Model vendor direct API
-    - code: cloud_platform
-      int_code: 2
-      label: Cloud platform provider
-    - code: relay_aggregator
-      int_code: 3
-      label: Relay or aggregator provider
-    - code: self_hosted_gateway
-      int_code: 4
-      label: Self-hosted gateway
-    - code: local_runtime
-      int_code: 5
-      label: Local runtime
-    - code: custom
-      int_code: 6
-      label: Custom integration
-  price_side:
-    canonical_name: PriceSide
-    zh_name: 价格侧
-    description: Price source side for a model or billing meter, such as official
-      reference, upstream cost, customer charge, or internal transfer price.
-    db_type: enum_int32
-    api_serialization: stable_string_code
-    builtin_values:
-    - code: official_reference
-      label: Official reference price
-    - code: upstream_cost
-      label: Upstream cost price
-    - code: customer_charge
-      label: Customer charge price
-    - code: internal_transfer
-      label: Internal transfer price
-  billing_mode:
-    canonical_name: BillingMode
-    zh_name: 计费模式
-    description: How usage is metered and charged, such as token, request, result,
-      duration, character, storage, bandwidth, tiered, or expression billing.
-    db_type: enum_int32
-    api_serialization: stable_string_code
-    builtin_values:
-    - code: token
-      label: Token billing
-    - code: fixed_price
-      label: Fixed price
-    - code: per_request
-      label: Per request
-    - code: per_result
-      label: Per result
-    - code: per_item
-      label: Per item
-    - code: duration
-      label: Duration billing
-    - code: character
-      label: Character billing
-    - code: storage
-      label: Storage billing
-    - code: bandwidth
-      label: Bandwidth billing
-    - code: tiered
-      label: Tiered billing
-    - code: expression
-      label: Expression billing
-    - code: image
-      label: Image billing
-    - code: audio
-      label: Audio billing
-    - code: video
-      label: Video billing
-  billing_meter:
-    canonical_name: BillingMeter
-    zh_name: 计量项
-    description: Measurable usage unit, such as input tokens, output tokens, image
-      results, audio duration, video duration, API requests, tool calls, storage,
-      or bandwidth.
-    persistence:
-      table: ai_billing_meter
-      code_column: meter_code
-      display_column: display_name
-    type_bindings:
-      java: com.sdkwork.claw.router.domain.enums.BillingMeter
-      rust: sdkwork_claw_router::domain::BillingMeter
-      typescript: BillingMeter
-      openapi: BillingMeter
-    builtin_values:
-    - code: llm_input_token
-      label: LLM input token
-    - code: llm_output_token
-      label: LLM output token
-    - code: llm_reasoning_token
-      label: LLM reasoning token
-    - code: llm_cache_write_token
-      label: LLM cache write token
-    - code: llm_cache_read_token
-      label: LLM cached input read token
-    - code: llm_cache_storage_token_hour
-      label: LLM cache storage token-hour
-    - code: embedding_input_token
-      label: Embedding input token
-    - code: embedding_image
-      label: Embedding image input
-    - code: image_input_token
-      label: Image input token
-    - code: image_output_token
-      label: Image output token
-    - code: image_result
-      label: Image result
-    - code: image_pixel
-      label: Image pixel
-    - code: image_megapixel
-      label: Image megapixel
-    - code: audio_input_token
-      label: Audio input token
-    - code: audio_output_token
-      label: Audio output token
-    - code: audio_input_second
-      label: Audio input second
-    - code: audio_output_second
-      label: Audio output second
-    - code: audio_input_minute
-      label: Audio input minute
-    - code: audio_output_minute
-      label: Audio output minute
-    - code: tts_input_character
-      label: Text-to-speech input character
-    - code: speech_character
-      label: Speech character
-    - code: stt_audio_minute
-      label: Speech-to-text audio minute
-    - code: video_input_token
-      label: Video input token
-    - code: video_output_token
-      label: Video output token
-    - code: video_input_second
-      label: Video input second
-    - code: video_output_second
-      label: Video output second
-    - code: video_result
-      label: Video result
-    - code: music_output_second
-      label: Music output second
-    - code: sfx_result
-      label: Sound-effect result
-    - code: rerank_search
-      label: Rerank search
-    - code: rerank_document
-      label: Rerank document
-    - code: api_request
-      label: API request
-    - code: api_result
-      label: API result
-    - code: api_item
-      label: API item
-    - code: tool_call
-      label: Tool call
-    - code: web_search_call
-      label: Web search call
-    - code: file_search_call
-      label: File search call
-    - code: code_interpreter_session
-      label: Code interpreter session
-    - code: container_session
-      label: Container session
-    - code: storage_gb_day
-      label: Storage GB-day
-    - code: bandwidth_gb
-      label: Bandwidth GB
-    - code: unknown
-      label: Unknown billing meter
-  pricing_plan:
-    canonical_name: PricingPlan
-    zh_name: 定价方案
-    description: Reusable pricing strategy set. Account groups, tenants, packages,
-      or SKUs can bind a pricing plan and override defaults through rules and tiers.
-    persistence:
-      table: ai_pricing_plan
-      code_column: plan_code
-      display_column: plan_name
-  pricing_formula_mode:
-    canonical_name: PricingFormulaMode
-    zh_name: 定价公式模式
-    description: Pricing rule calculation mode, including fixed price, multiplier,
-      multiplier plus offset, tiered price, and expression.
-    db_type: enum_int32
-    api_serialization: stable_string_code
-    builtin_values:
-    - code: fixed
-      label: Fixed price
-    - code: multiplier
-      label: Multiplier
-    - code: multiplier_plus_offset
-      label: Multiplier plus offset
-    - code: tiered
-      label: Tiered price
-    - code: expression
-      label: Expression
-table_fragments:
-- tables/001-system.yaml
-- tables/010-iam.yaml
-- tables/011-ai.yaml
-- tables/012-iam.yaml
-- tables/013-integration.yaml
-- tables/015-integration.yaml
-- tables/016-ai.yaml
-- tables/017-integration.yaml
-- tables/018-ai.yaml
-- tables/019-commerce.yaml
-- tables/030-category.yaml
-- tables/022-ops.yaml
-- tables/023-integration.yaml
-- tables/025-ai.yaml
-- tables/026-commerce.yaml
-- tables/028-commerce.yaml
+schemaVersion: 2.0
+kind: sdkwork.database.schema-registry
+owner: claw-router-platform
+description: |
+  Claw Router Schema Registry - 积木架构设计
+  
+  设计原则:
+  1. 单一所有权 - Claw Router只定义自己的16张本地表
+  2. 高内聚低耦合 - 模块内部表聚合，模块间通过引用组合
+  3. 积木架构 - 各模块独立管理自己的schema
+  4. 解耦部署 - 各模块可独立部署、独立升级
+  
+  Claw Router本地表（16张）:
+  - ai-routing模块: 12张表（路由决策）
+  - ai-metering模块: 2张表（用量计量）⭐ 核心价值
+  - ai-pricing模块: 2张表（计费定价）
+  
+  组合模块表（45张）:
+  - 不在claw-router中定义，由各模块自己管理
+  - Claw Router通过registry_dependencies引用
+  - 各模块有自己的schema registry、DDL、migrations
+  
+  表前缀规范（符合DATABASE_SPEC.md）:
+  - ai_: AI路由、计量、定价（Claw Router本地）
+  - iam_: 身份密钥（sdkwork-iam）
+  - commerce_: 账户订单支付（sdkwork-account/order/payment/invoice）
+  - integration_: 供应商集成（sdkwork-integration）
+  - ops_: 监控审计（sdkwork-ops）
+
+modules:
+  
+  # ============================================================
+  # Claw Router本地模块（仅16张表）
+  # ============================================================
+  
+  ai-routing:
+    owner: claw-router-platform
+    description: AI路由决策、渠道管理、供应商路由
+    compliance_level: L2
+    tables_count: 12
+    tables:
+      - ai_channel
+      - ai_channel_binding
+      - ai_channel_metric
+      - ai_channel_quota
+      - ai_group
+      - ai_group_resource
+      - ai_provider_route
+      - ai_routing_policy
+      - ai_routing_rule
+      - ai_routing_log
+      - ai_config_version
+      - ai_config_change
+    ddl_location: database/migrations/ai-routing.sql
+    schema_file: docs/schema-registry/tables/ai-routing.yaml
+  
+  ai-metering:
+    owner: claw-router-platform
+    description: AI用量计量、请求追踪（核心价值表）
+    compliance_level: L3
+    tables_count: 2
+    tables:
+      - ai_usage               # ⭐ 核心计费数据
+      - ai_usage_trace         # ⭐ 请求链路日志
+    ddl_location: database/migrations/ai-metering.sql
+    schema_file: docs/schema-registry/tables/ai-metering.yaml
+  
+  ai-pricing:
+    owner: claw-router-platform
+    description: AI计费定价、价格规则
+    compliance_level: L2
+    tables_count: 2
+    tables:
+      - ai_pricing
+      - ai_pricing_rule
+    ddl_location: database/migrations/ai-pricing.sql
+    schema_file: docs/schema-registry/tables/ai-pricing.yaml
+
+# ============================================================
+# 组合模块引用（不重复定义，只引用）
+# ============================================================
+
 registry_dependencies:
-- module_id: appbase-iam
-  locator: ../sdkwork-appbase
-  registry_path: docs/schema-registry/appbase-iam.tables.yaml
-  order: 10
-  ownership: read_only
-- module_id: appbase-messaging
-  locator: ../sdkwork-appbase
-  registry_path: docs/schema-registry/appbase-messaging.tables.yaml
-  order: 12
-  ownership: read_only
-- module_id: commerce-core
-  locator: ../sdkwork-commerce
-  registry_path: docs/schema-registry/commerce-core.tables.yaml
-  order: 20
-  ownership: read_only
-- module_id: appstore
-  locator: ../sdkwork-appstore
-  registry_path: docs/schema-registry/appstore.tables.yaml
-  order: 30
-  ownership: read_only
-- module_id: sdkwork-models
-  locator: ../sdkwork-models
-  registry_path: docs/schema-registry/sdkwork-models.tables.yaml
-  order: 35
-  ownership: compose_at_install
-- module_id: sdkwork-kernel
-  locator: ../sdkwork-kernel
-  registry_path: docs/schema-registry/sdkwork-kernel.tables.yaml
-  order: 40
-  ownership: read_only
+  
+  # ------------------------------------------------------------
+  # sdkwork-iam模块（身份与密钥管理）
+  # ------------------------------------------------------------
+  - module_id: sdkwork-iam
+    locator: ../sdkwork-iam
+    registry_path: docs/schema-registry/sdkwork-iam.tables.yaml
+    description: |
+      身份认证、API密钥、访问控制、权限管理
+      
+      行业对标: Stripe API Keys + AWS IAM Access Keys
+      
+      模块职责:
+      - 定义iam_api_key等5张表
+      - 管理自己的DDL、migrations
+      - 独立部署、独立升级
+      
+      Claw Router交互方式:
+      - 通过sdkwork-iam-sdk验证API Key
+      - 不直接访问iam_api_key表
+      - 不重复定义iam_*表
+    
+    tables_count: 5
+    tables:
+      - iam_api_key
+      - iam_api_key_binding
+      - iam_api_key_policy
+      - iam_access_policy
+      - iam_risk_rule
+    ownership: independent
+    access: sdk
+  
+  # ------------------------------------------------------------
+  # sdkwork-account模块（账户管理）
+  # ------------------------------------------------------------
+  - module_id: sdkwork-account
+    locator: ../sdkwork-account
+    registry_path: docs/schema-registry/sdkwork-account.tables.yaml
+    description: |
+      账户管理、账户流水、余额管理
+      
+      行业对标: Stripe Customers + Stripe Balance Transactions
+      
+      实际验证: commerce_account表已在sdkwork-account中
+      
+      模块职责:
+      - 定义commerce_account等3张表
+      - 管理自己的DDL、migrations
+      - 独立部署、独立升级
+      
+      Claw Router交互方式:
+      - 通过事件推送用量到commerce_account_ledger_entry
+      - 不直接写入commerce_account表
+      - 不重复定义commerce_*表
+    
+    tables_count: 3
+    tables:
+      - commerce_account
+      - commerce_account_ledger_entry
+      - commerce_idempotency_key
+    ownership: independent
+    access: api_event
+  
+  # ------------------------------------------------------------
+  # sdkwork-order模块（订单管理）
+  # ------------------------------------------------------------
+  - module_id: sdkwork-order
+    locator: ../sdkwork-order
+    registry_path: docs/schema-registry/sdkwork-order.tables.yaml
+    description: |
+      订单管理、订单项管理
+      
+      行业对标: Stripe Orders
+      
+      模块职责:
+      - 定义commerce_order等2张表
+      - 独立管理schema
+    
+    tables_count: 2
+    tables:
+      - commerce_order
+      - commerce_order_item
+    ownership: independent
+    access: api_event
+  
+  # ------------------------------------------------------------
+  # sdkwork-payment模块（支付处理）
+  # ------------------------------------------------------------
+  - module_id: sdkwork-payment
+    locator: ../sdkwork-payment
+    registry_path: docs/schema-registry/sdkwork-payment.tables.yaml
+    description: |
+      支付处理、退款管理
+      
+      行业对标: Stripe Payments
+      
+      模块职责:
+      - 定义commerce_payment等3张表
+      - 独立管理schema
+    
+    tables_count: 3
+    tables:
+      - commerce_payment
+      - commerce_payment_intent
+      - commerce_refund
+    ownership: independent
+    access: api_event
+  
+  # ------------------------------------------------------------
+  # sdkwork-invoice模块（发票管理）
+  # ------------------------------------------------------------
+  - module_id: sdkwork-invoice
+    locator: ../sdkwork-invoice
+    registry_path: docs/schema-registry/sdkwork-invoice.tables.yaml
+    description: |
+      发票管理、发票项管理
+      
+      行业对标: Stripe Invoices
+    
+    tables_count: 2
+    tables:
+      - commerce_invoice
+      - commerce_invoice_item
+    ownership: independent
+    access: api_event
+  
+  # ------------------------------------------------------------
+  # sdkwork-membership模块（会员管理）
+  # ------------------------------------------------------------
+  - module_id: sdkwork-membership
+    locator: ../sdkwork-membership
+    registry_path: docs/schema-registry/sdkwork-membership.tables.yaml
+    description: |
+      会员管理、VIP管理、权益管理
+      
+      行业对标: Stripe Subscriptions
+    
+    tables_count: 3
+    tables:
+      - commerce_membership
+      - commerce_vip
+      - commerce_entitlement
+    ownership: independent
+    access: api_event
+  
+  # ------------------------------------------------------------
+  # sdkwork-promotion模块（促销管理）
+  # ------------------------------------------------------------
+  - module_id: sdkwork-promotion
+    locator: ../sdkwork-promotion
+    registry_path: docs/schema-registry/sdkwork-promotion.tables.yaml
+    description: |
+      促销管理、优惠券管理、折扣管理
+      
+      行业对标: Stripe Coupons
+    
+    tables_count: 3
+    tables:
+      - commerce_promotion
+      - commerce_coupon
+      - commerce_discount
+    ownership: independent
+    access: api_event
+  
+  # ------------------------------------------------------------
+  # sdkwork-ops模块（监控与审计）
+  # ------------------------------------------------------------
+  - module_id: sdkwork-ops
+    locator: ../sdkwork-ops
+    registry_path: docs/schema-registry/sdkwork-ops.tables.yaml
+    description: |
+      系统监控、审计日志、作业调度、告警管理
+      
+      行业对标: AWS CloudTrail + Datadog
+      
+      模块职责:
+      - 定义ops_audit_log等7张表
+      - 独立管理schema
+    
+    tables_count: 7
+    tables:
+      - ops_instance
+      - ops_heartbeat
+      - ops_audit_log
+      - ops_job
+      - ops_alert
+      - ops_config_snapshot
+      - ops_metric
+    ownership: independent
+    access: sdk
+  
+  # ------------------------------------------------------------
+  # sdkwork-integration模块（供应商集成+对账）
+  # ------------------------------------------------------------
+  - module_id: sdkwork-integration
+    locator: ../sdkwork-integration
+    registry_path: docs/schema-registry/sdkwork-integration.tables.yaml
+    description: |
+      外部供应商集成、账号管理、供应商对账
+      
+      行业对标: AWS IAM Roles + Stripe Connect
+      
+      模块职责:
+      - 定义integration_provider_*等17张表
+      - 独立管理schema
+    
+    tables_count: 17
+    tables:
+      - integration_provider_account
+      - integration_provider
+      - integration_provider_member
+      - integration_provider_binding
+      - integration_provider_contract
+      - integration_provider_wallet
+      - integration_provider_price
+      - integration_provider_rule
+      - integration_provider_edge
+      - integration_account_health
+      - integration_proxy
+      - integration_webhook
+      - integration_provider_reconciliation
+      - integration_provider_reconciliation_run
+      - integration_provider_reconciliation_item
+      - integration_provider_statement
+      - integration_provider_adjustment
+    ownership: independent
+    access: sdk
+  
+  # ------------------------------------------------------------
+  # sdkwork-kernel模块（AI内核）
+  # ------------------------------------------------------------
+  - module_id: sdkwork-kernel
+    locator: ../sdkwork-kernel
+    registry_path: docs/schema-registry/sdkwork-kernel.tables.yaml
+    description: |
+      AI内核、Agent管理、提示词、技能、插件
+      
+      行业对标: OpenAI Platform
+    
+    tables_count: 2
+    tables:
+      - ai_provider
+      - ai_provider_health
+    ownership: independent
+    access: sdk
+  
+  # ------------------------------------------------------------
+  # sdkwork-models模块（模型目录）
+  # ------------------------------------------------------------
+  - module_id: sdkwork-models
+    locator: ../sdkwork-models
+    registry_path: docs/schema-registry/sdkwork-models.tables.yaml
+    description: |
+      模型目录、模型信息、模型定价
+      
+      行业对标: OpenAI Models API
+    
+    tables_count: 2
+    tables:
+      - ai_model_catalog
+      - ai_model_mapping
+    ownership: independent
+    access: install_import
+  
+  # ------------------------------------------------------------
+  # sdkwork-analytics模块（统计分析）
+  # ------------------------------------------------------------
+  - module_id: sdkwork-analytics
+    locator: ../sdkwork-analytics
+    registry_path: docs/schema-registry/sdkwork-analytics.tables.yaml
+    description: |
+      统计分析、报表
+      
+      行业对标: AWS Cost Explorer
+    
+    tables_count: 2
+    tables:
+      - analytics_provider_daily
+      - analytics_provider_edge_daily
+    ownership: independent
+    access: read_model
+  
+  # ------------------------------------------------------------
+  # sdkwork-catalog模块（目录管理）
+  # ------------------------------------------------------------
+  - module_id: sdkwork-catalog
+    locator: ../sdkwork-catalog
+    registry_path: docs/schema-registry/sdkwork-catalog.tables.yaml
+    description: |
+      目录管理、分类管理、标签管理
+      
+      行业对标:
+      - Stripe Product Catalog (产品目录)
+      - AWS Service Catalog (服务目录)
+      - OpenAI Model Catalog (模型目录)
+      
+      模块职责:
+      - 定义catalog_*表的完整结构
+      - 管理分类、目录、标签等基础能力
+      - 独立部署、独立升级
+    
+    tables_count: 1
+    tables:
+      - classification_category  # 分类目录（归属catalog模块）
+    ownership: independent
+    access: sdk
+  
+  # ------------------------------------------------------------
+  # sdkwork-platform模块（系统配置）
+  # ------------------------------------------------------------
+  - module_id: sdkwork-platform
+    locator: ../sdkwork-platform
+    registry_path: docs/schema-registry/sdkwork-platform.tables.yaml
+    description: |
+      系统配置、安装状态
+    
+    tables_count: 2
+    tables:
+      - system_installation
+      - system_migration
+    ownership: independent
+    access: install_only
+
+# ============================================================
+# 数据流向（跨模块交互）
+# ============================================================
+
+data_flow:
+  
+  usage_to_account:
+    description: 用量推送到账户模块
+    steps:
+      - ai_usage写入（claw-router本地）
+      - 发布UsageRecorded事件
+      - sdkwork-account订阅事件
+      - commerce_account_ledger_entry写入（sdkwork-account本地）
+  
+  authentication:
+    description: API Key验证
+    steps:
+      - Client请求携带api_key
+      - router-service调用sdkwork-iam-sdk
+      - iam-service验证iam_api_key（sdkwork-iam本地）
+      - 返回验证结果
+  
+  monitoring:
+    description: 监控数据推送
+    steps:
+      - router-service推送监控指标
+      - sdkwork-ops-sdk调用
+      - ops_metric写入（sdkwork-ops本地）
+
+# ============================================================
+# 统计信息（修正后）
+# ============================================================
+
+statistics:
+  claw_router_local_tables: 16
+  combined_module_tables: 45
+  total_tables: 61
+  
+  table_prefix_distribution:
+    ai_: 20                    # Claw Router + sdkwork-kernel + sdkwork-models
+    iam_: 5                    # sdkwork-iam
+    commerce_: 18              # sdkwork-account/order/payment/invoice/membership/promotion
+    integration_: 17           # sdkwork-integration
+    ops_: 7                    # sdkwork-ops
+    analytics_: 2              # sdkwork-analytics
+    catalog_: 1         # sdkwork-catalog
+    system_: 2                 # sdkwork-platform
+  
+  module_distribution:
+    claw-router: 16            # ai-routing(12) + ai-metering(2) + ai-pricing(2)
+    sdkwork-iam: 5             # iam_*
+    sdkwork-account: 3         # commerce_account
+    sdkwork-order: 2           # commerce_order
+    sdkwork-payment: 3         # commerce_payment
+    sdkwork-invoice: 2         # commerce_invoice
+    sdkwork-membership: 3      # commerce_membership
+    sdkwork-promotion: 3       # commerce_promotion
+    sdkwork-ops: 7             # ops_*
+    sdkwork-integration: 17    # integration_*
+    sdkwork-kernel: 2          # ai_provider
+    sdkwork-models: 2          # ai_model_catalog
+    sdkwork-analytics: 2       # analytics_*
+    sdkwork-catalog: 1  # catalog_*
+    sdkwork-platform: 2        # system_*
+
+# ============================================================
+# 合规配置（仅Claw Router本地表）
+# ============================================================
+
+compliance:
+  financial_tables:
+    - ai_usage               # L3 金融级别（claw-router本地）
+  
+  security_tables: []        # iam_*表由sdkwork-iam管理
+  
+  audit_tables:
+    - ai_routing_log         # L2 路由日志（claw-router本地）
+  
+  retention_policy:
+    financial_data:
+      online_retention: 12mo
+      archive_retention: 5y
+    audit_data:
+      online_retention: 12mo
+      archive_retention: 5y
+    usage_data:
+      online_retention: 12mo
+      archive_retention: 5y

@@ -1,13 +1,8 @@
 import { backendApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { AdminChannelCreateRequest, AdminChannelUpdateRequest, AdminProviderSecretCreateRequest, AdminProviderSecretUpdateRequest, ChannelsCreateResult, ChannelsDeleteResult, ChannelsListResult, ChannelsUpdateResult, ChannelsVerifyResult, ProviderSecretsCreateResult, ProviderSecretsDeleteResult, ProviderSecretsListResult, ProviderSecretsUpdateResult } from '../types';
+import type { ChannelsCreateResult, ChannelsUpdateResult, ChannelsVerifyResult, PageInfo, ProviderSecretsCreateResult, ProviderSecretsUpdateResult } from '../types';
 
-
-export interface IntegrationProviderSecretsListParams {
-  providerCode?: string;
-  status?: 'active' | 'disabled';
-}
 
 export class IntegrationProviderSecretsApi {
   private client: HttpClient;
@@ -17,28 +12,24 @@ export class IntegrationProviderSecretsApi {
   }
 
 
-/** List provider secrets */
-  async list(params?: IntegrationProviderSecretsListParams): Promise<ProviderSecretsListResult> {
-    const query = buildQueryString([
-      { name: 'provider_code', value: params?.providerCode, style: 'form', explode: true, allowReserved: false },
-      { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
-    ]);
-    return this.client.get<ProviderSecretsListResult>(appendQueryString(backendApiPath(`/integration/provider_secrets`), query));
+/** List */
+  async list(): Promise<Record<string, unknown>> {
+    return this.client.get<Record<string, unknown>>(backendApiPath(`/integration/provider_secrets`));
   }
 
-/** Create provider secret */
-  async create(body: AdminProviderSecretCreateRequest): Promise<ProviderSecretsCreateResult> {
-    return this.client.post<ProviderSecretsCreateResult>(backendApiPath(`/integration/provider_secrets`), body, undefined, undefined, 'application/json');
+/** Create */
+  async create(): Promise<ProviderSecretsCreateResult> {
+    return this.client.post<ProviderSecretsCreateResult>(backendApiPath(`/integration/provider_secrets`));
   }
 
-/** Update provider secret */
-  async update(body: AdminProviderSecretUpdateRequest): Promise<ProviderSecretsUpdateResult> {
-    return this.client.put<ProviderSecretsUpdateResult>(backendApiPath(`/integration/provider_secrets`), body, undefined, undefined, 'application/json');
+/** Update */
+  async update(): Promise<ProviderSecretsUpdateResult> {
+    return this.client.put<ProviderSecretsUpdateResult>(backendApiPath(`/integration/provider_secrets`));
   }
 
-/** Delete provider secret */
-  async delete(secretId: string): Promise<ProviderSecretsDeleteResult> {
-    return this.client.delete<ProviderSecretsDeleteResult>(backendApiPath(`/integration/provider_secrets/${serializePathParameter(secretId, { name: 'secretId', style: 'simple', explode: false })}`));
+/** Delete */
+  async delete(secretId: string): Promise<Record<string, unknown>> {
+    return this.client.delete<Record<string, unknown>>(backendApiPath(`/integration/provider_secrets/${serializePathParameter(secretId, { name: 'secretId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -50,27 +41,27 @@ export class IntegrationChannelsApi {
   }
 
 
-/** List channels */
-  async list(): Promise<ChannelsListResult> {
-    return this.client.get<ChannelsListResult>(backendApiPath(`/integration/channels`));
+/** List */
+  async list(): Promise<Record<string, unknown>> {
+    return this.client.get<Record<string, unknown>>(backendApiPath(`/integration/channels`));
   }
 
-/** Create channel */
-  async create(body: AdminChannelCreateRequest): Promise<ChannelsCreateResult> {
-    return this.client.post<ChannelsCreateResult>(backendApiPath(`/integration/channels`), body, undefined, undefined, 'application/json');
+/** Create */
+  async create(): Promise<ChannelsCreateResult> {
+    return this.client.post<ChannelsCreateResult>(backendApiPath(`/integration/channels`));
   }
 
-/** Update channel */
-  async update(body: AdminChannelUpdateRequest): Promise<ChannelsUpdateResult> {
-    return this.client.put<ChannelsUpdateResult>(backendApiPath(`/integration/channels`), body, undefined, undefined, 'application/json');
+/** Update */
+  async update(): Promise<ChannelsUpdateResult> {
+    return this.client.put<ChannelsUpdateResult>(backendApiPath(`/integration/channels`));
   }
 
-/** Delete channel */
-  async delete(channelId: string): Promise<ChannelsDeleteResult> {
-    return this.client.delete<ChannelsDeleteResult>(backendApiPath(`/integration/channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}`));
+/** Delete */
+  async delete(channelId: string): Promise<Record<string, unknown>> {
+    return this.client.delete<Record<string, unknown>>(backendApiPath(`/integration/channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}`));
   }
 
-/** Test channel */
+/** Verify */
   async verify(channelId: string): Promise<ChannelsVerifyResult> {
     return this.client.post<ChannelsVerifyResult>(backendApiPath(`/integration/channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}/verify`));
   }
@@ -171,156 +162,4 @@ function serializePathPrimitive(value: unknown): string {
     return JSON.stringify(value);
   }
   return String(value);
-}
-interface QueryParameterSpec {
-  name: string;
-  value: unknown;
-  style: string;
-  explode: boolean;
-  allowReserved: boolean;
-  contentType?: string;
-}
-
-function buildQueryString(parameters: QueryParameterSpec[]): string {
-  const pairs: string[] = [];
-  for (const parameter of parameters) {
-    appendSerializedParameter(pairs, parameter);
-  }
-  return pairs.join('&');
-}
-
-function appendSerializedParameter(pairs: string[], parameter: QueryParameterSpec): void {
-  if (parameter.value === undefined || parameter.value === null) {
-    return;
-  }
-
-  if (parameter.contentType) {
-    pairs.push(`${encodeQueryComponent(parameter.name)}=${encodeQueryValue(JSON.stringify(parameter.value), parameter.allowReserved)}`);
-    return;
-  }
-
-  const style = parameter.style || 'form';
-  if (style === 'deepObject') {
-    appendDeepObjectParameter(pairs, parameter.name, parameter.value, parameter.allowReserved);
-    return;
-  }
-
-  if (Array.isArray(parameter.value)) {
-    appendArrayParameter(pairs, parameter.name, parameter.value, style, parameter.explode, parameter.allowReserved);
-    return;
-  }
-
-  if (typeof parameter.value === 'object') {
-    appendObjectParameter(pairs, parameter.name, parameter.value as Record<string, unknown>, style, parameter.explode, parameter.allowReserved);
-    return;
-  }
-
-  pairs.push(`${encodeQueryComponent(parameter.name)}=${encodeQueryValue(serializePrimitive(parameter.value), parameter.allowReserved)}`);
-}
-
-function appendArrayParameter(
-  pairs: string[],
-  name: string,
-  value: unknown[],
-  style: string,
-  explode: boolean,
-  allowReserved: boolean,
-): void {
-  const values = value
-    .filter((item) => item !== undefined && item !== null)
-    .map((item) => serializePrimitive(item));
-  if (values.length === 0) {
-    return;
-  }
-
-  if (style === 'form' && explode) {
-    for (const item of values) {
-      pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(item, allowReserved)}`);
-    }
-    return;
-  }
-
-  pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(values.join(','), allowReserved)}`);
-}
-
-function appendObjectParameter(
-  pairs: string[],
-  name: string,
-  value: Record<string, unknown>,
-  style: string,
-  explode: boolean,
-  allowReserved: boolean,
-): void {
-  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== undefined && entryValue !== null);
-  if (entries.length === 0) {
-    return;
-  }
-
-  if (style === 'form' && explode) {
-    for (const [key, entryValue] of entries) {
-      pairs.push(`${encodeQueryComponent(key)}=${encodeQueryValue(serializePrimitive(entryValue), allowReserved)}`);
-    }
-    return;
-  }
-
-  const serialized = entries.flatMap(([key, entryValue]) => [key, serializePrimitive(entryValue)]).join(',');
-  pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(serialized, allowReserved)}`);
-}
-
-function appendDeepObjectParameter(
-  pairs: string[],
-  name: string,
-  value: unknown,
-  allowReserved: boolean,
-): void {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(serializePrimitive(value), allowReserved)}`);
-    return;
-  }
-
-  for (const [key, entryValue] of Object.entries(value as Record<string, unknown>)) {
-    if (entryValue === undefined || entryValue === null) {
-      continue;
-    }
-    pairs.push(`${encodeQueryComponent(`${name}[${key}]`)}=${encodeQueryValue(serializePrimitive(entryValue), allowReserved)}`);
-  }
-}
-
-function serializePrimitive(value: unknown): string {
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-  if (typeof value === 'object') {
-    return JSON.stringify(value);
-  }
-  return String(value);
-}
-
-function encodeQueryComponent(value: string): string {
-  return encodeURIComponent(value);
-}
-
-function encodeQueryValue(value: string, allowReserved: boolean): string {
-  const encoded = encodeURIComponent(value);
-  if (!allowReserved) {
-    return encoded;
-  }
-  return encoded.replace(/%3A/gi, ':')
-    .replace(/%2F/gi, '/')
-    .replace(/%3F/gi, '?')
-    .replace(/%23/gi, '#')
-    .replace(/%5B/gi, '[')
-    .replace(/%5D/gi, ']')
-    .replace(/%40/gi, '@')
-    .replace(/%21/gi, '!')
-    .replace(/%24/gi, '$')
-    .replace(/%26/gi, '&')
-    .replace(/%27/gi, "'")
-    .replace(/%28/gi, '(')
-    .replace(/%29/gi, ')')
-    .replace(/%2A/gi, '*')
-    .replace(/%2B/gi, '+')
-    .replace(/%2C/gi, ',')
-    .replace(/%3B/gi, ';')
-    .replace(/%3D/gi, '=');
 }

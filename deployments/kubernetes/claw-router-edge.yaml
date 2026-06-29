@@ -17,7 +17,15 @@ spec:
         app: sdkwork-clawrouter
         component: edge
     spec:
-      terminationGracePeriodSeconds: 60
+      # H-6 fix: graceful shutdown window must exceed the longest upstream
+      # provider request. AI provider requests can take up to 120s (matching
+      # the gateway/upstream timeout), so the previous 60s window caused
+      # SIGTERM to interrupt in-flight requests during rolling deploys. The
+      # new value is 120s provider timeout + 10s buffer = 130s, and is still
+      # well below the AWS ALB deregistration delay default of 300s used as a
+      # cross-industry reference. Keep this value >= the configured provider
+      # timeout whenever that timeout is raised.
+      terminationGracePeriodSeconds: 130
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -69,12 +77,29 @@ spec:
                   name: sdkwork-clawrouter-config
                   key: redis-url
           resources:
+            # H-7 fix: align requests/limits with Google SRE Book capacity
+            # guidance (SRE Book, "Capacity Planning" + "Monitoring Distributed
+            # Systems"). The previous 250m -> 2 CPU (8x) and 512Mi -> 2Gi memory
+            # (4x) ratios caused overcommit-driven throttling and OOM kills
+            # under bursts. The new ratios follow the SRE recommendation to keep
+            # limits close to requests:
+            #   - CPU    500m -> 1    (2:1)  CPU is compressible, so a 2:1 ratio
+            #                                  is acceptable and bounded.
+            #   - Memory 1Gi  -> 1.5Gi (1.5:1) Memory is NOT compressible; a
+            #                                  node under pressure will OOMKill
+            #                                  the pod, so keep this ratio close
+            #                                  to 1:1. The 0.5Gi headroom only
+            #                                  covers brief allocator spikes.
+            # The HPA CPU target below was lowered from 70% to 60% because
+            # requests doubled; 60% of 500m (300m) is comparable to the prior
+            # 70% of 250m (175m) headroom but keeps scaling reactive to real
+            # load instead of compressing into throttling.
             requests:
-              cpu: 250m
-              memory: 512Mi
+              cpu: 500m
+              memory: 1Gi
             limits:
-              cpu: "2"
-              memory: 2Gi
+              cpu: "1"
+              memory: 1.5Gi
           startupProbe:
             httpGet:
               path: /healthz
@@ -86,13 +111,25 @@ spec:
               path: /healthz
               port: http
             periodSeconds: 10
+            # Keep liveness timeout tight (3s): /healthz only checks that the
+            # process is alive and able to answer; a slow response here means
+            # the process is wedged and should be restarted.
             timeoutSeconds: 3
           readinessProbe:
             httpGet:
               path: /readyz
               port: http
             periodSeconds: 5
-            timeoutSeconds: 3
+            # Raised from 3s to 5s: /readyz verifies database and Redis
+            # connectivity, so a brief network partition between this pod and
+            # the managed PostgreSQL/Redis should not flip the pod to
+            # not-ready and trigger churn. 5s tolerates transient latency
+            # without masking a real outage (failureThreshold stays at 3 ->
+            # the pod is marked not-ready after ~15s of consecutive failures).
+            # Readiness must NEVER depend on upstream provider reachability;
+            # only on internal dependencies (DB, Redis) that this service
+            # needs to serve its own requests.
+            timeoutSeconds: 5
             failureThreshold: 3
           volumeMounts:
             - name: config
@@ -125,7 +162,18 @@ kind: PodDisruptionBudget
 metadata:
   name: sdkwork-clawrouter-edge
 spec:
-  minAvailable: 1
+  # PDB strictness: switched from `minAvailable: 1` to `maxUnavailable: 1`
+  # for the same effective behavior with 2 replicas (at most 1 pod may be
+  # voluntarily disrupted at a time) but clearer operational intent. Prefer
+  # `maxUnavailable` for fixed-replica workloads because it explicitly states
+  # the disruption budget rather than relying on the implicit replica count.
+  # Production recommendation: when rolling out, prefer a surge-style
+  # deployment (e.g. `maxSurge: 1, maxUnavailable: 0`) so that capacity is
+  # never reduced below the full replica count during a deploy. The HPA and
+  # PDB together should be reviewed whenever minReplicas or replica count
+  # changes; with 2 replicas, `maxUnavailable: 1` allows one voluntary
+  # disruption (node drain, evict) while keeping at least 1 pod serving.
+  maxUnavailable: 1
   selector:
     matchLabels:
       app: sdkwork-clawrouter
@@ -143,9 +191,36 @@ spec:
   minReplicas: 2
   maxReplicas: 10
   metrics:
+    # CPU target lowered from 70% to 60% as part of H-7: requests.cpu was
+    # raised from 250m to 500m, so 60% of 500m (300m) keeps the autoscaler
+    # reactive to real load. CPU is a compressible resource and a leading
+    # indicator of gateway saturation.
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
+          averageUtilization: 60
+    # Memory metric added so the HPA scales when per-pod RSS approaches the
+    # 1Gi request (e.g. large prompt buffers, in-flight streaming responses).
+    # Requires the metrics-server `Resource` source for memory, available on
+    # Kubernetes >= 1.18 with metrics-server installed. 70% of 1Gi (~716Mi)
+    # leaves headroom before the 1.5Gi limit and avoids OOMKill-driven scale
+    # events.
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
           averageUtilization: 70
+  # TODO(observability): once a Prometheus adapter or KEDA scaler is installed,
+  # add custom/external metrics that drive scaling from real business load:
+  #   - per-pod request QPS (e.g. haproxy_backend_http_rate)
+  #   - p95 upstream-provider latency (alert when > 5s for 60s)
+  #   - in-flight streaming requests gauge
+  # These are better leading indicators than CPU/memory for an AI gateway
+  # because CPU stays low while waiting on provider I/O. See
+  # PERFORMANCE_SPEC.md and OBSERVABILITY_SPEC.md for the canonical metric
+  # names. Adding custom metrics requires deployment of
+  # prometheus-adapter and a corresponding APIService; do not enable the
+  # external metric before the adapter is verified in the target cluster.

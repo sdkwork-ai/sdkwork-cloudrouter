@@ -232,7 +232,7 @@ async fn create_routing_api_key_tables(pool: &SqlitePool) {
         )
         "#,
         r#"
-        CREATE TABLE ai_usage_fact (
+        CREATE TABLE ai_usage (
             id INTEGER PRIMARY KEY,
             tenant_id INTEGER NOT NULL,
             organization_id INTEGER NOT NULL,
@@ -271,7 +271,7 @@ async fn seed_routing_api_key(pool: &SqlitePool, copyable_key_ciphertext: &str) 
     .unwrap();
     sqlx::query(
         r#"
-        INSERT INTO ai_usage_fact (
+        INSERT INTO ai_usage (
             id, tenant_id, organization_id, user_id, api_key_id, request_count, status
         )
         VALUES (9001, 100001, 0, 30, 100, 5, 1)
@@ -326,7 +326,7 @@ async fn create_routing_usage_tables(pool: &SqlitePool) {
         )
         "#,
         r#"
-        CREATE TABLE ai_usage_fact (
+        CREATE TABLE ai_usage (
             id INTEGER PRIMARY KEY,
             tenant_id INTEGER NOT NULL,
             organization_id INTEGER NOT NULL,
@@ -500,7 +500,7 @@ async fn insert_trace(
 
     sqlx::query(
         r#"
-        INSERT INTO ai_usage_fact (
+        INSERT INTO ai_usage (
             tenant_id, organization_id, user_id, status, request_id, catalog_key, model, total_tokens
         )
         VALUES (10, 20, 30, 1, ?, 'openai/gpt-4o-mini', 'gpt-4o-mini', 9)

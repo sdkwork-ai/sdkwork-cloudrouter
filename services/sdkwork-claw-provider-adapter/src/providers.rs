@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use sdkwork_claw_provider_adapter_core::{
+use sdkwork_claw_provider_adapter::{
     AdapterInvocationRequest, AdapterInvocationShape, EndpointAdapter, ProviderAdapter,
     ProviderAdapterEndpoint,
 };

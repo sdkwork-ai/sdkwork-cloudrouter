@@ -66,8 +66,8 @@ test('portal workspace declares Commerce app and backend generated SDK packages'
   assert.equal(commonsPackageJson.dependencies['@sdkwork/clawrouter-pc-core'], 'workspace:*');
 
   for (const workspacePattern of [
-    '../../vendor/sdkwork-commerce/sdks/sdkwork-commerce-app-sdk/sdkwork-commerce-app-sdk-typescript/generated/server-openapi',
-    '../../vendor/sdkwork-commerce/sdks/sdkwork-commerce-backend-sdk/sdkwork-commerce-backend-sdk-typescript/generated/server-openapi',
+    '../../sdks/sdkwork-commerce-app-sdk/sdkwork-commerce-app-sdk-typescript/generated/server-openapi',
+    '../../sdks/sdkwork-commerce-backend-sdk/sdkwork-commerce-backend-sdk-typescript/generated/server-openapi',
   ]) {
     assert.ok(packageJson.workspaces.includes(workspacePattern), `package workspaces must include ${workspacePattern}`);
     assert.ok(workspaceSource.includes(workspacePattern), `pnpm workspace must include ${workspacePattern}`);
@@ -77,7 +77,7 @@ test('portal workspace declares Commerce app and backend generated SDK packages'
     ['sdkwork-commerce-app-sdk-generated-typescript', 'sdkwork-commerce-app-sdk'],
     ['sdkwork-commerce-backend-sdk-generated-typescript', 'sdkwork-commerce-backend-sdk'],
   ]) {
-    const generatedPath = `../../vendor/sdkwork-commerce/sdks/${sdkFamily}/${sdkFamily}-typescript/generated/server-openapi/src/index.ts`;
+    const generatedPath = `../../sdks/${sdkFamily}/${sdkFamily}-typescript/generated/server-openapi/src/index.ts`;
     assert.ok(tsconfigSource.includes(`"${packageName}"`), `${packageName} must be present in tsconfig paths`);
     assert.ok(typecheckSource.includes(`"${packageName}"`), `${packageName} must be present in typecheck paths`);
     assert.ok(tsconfigSource.includes(generatedPath), `${packageName} tsconfig path must point at generated server-openapi`);

@@ -132,7 +132,7 @@ SELECT
     CAST(k.created_at AS TEXT) AS created_at,
     CAST(COALESCE(SUM(COALESCE(u.request_count, 0)), 0) AS TEXT) AS total_usage
 FROM iam_gateway_api_key k
-LEFT JOIN ai_usage_fact u
+LEFT JOIN ai_usage u
   ON u.tenant_id = k.tenant_id
  AND u.organization_id = k.organization_id
  AND u.user_id = k.user_id
@@ -223,7 +223,7 @@ usage_by_request AS (
         request_id,
         MAX(catalog_key) AS catalog_key,
         COALESCE(SUM(COALESCE(total_tokens, 0)), 0) AS total_tokens
-    FROM ai_usage_fact
+    FROM ai_usage
     WHERE status = 1
       AND tenant_id = ?1
       AND organization_id = ?2
@@ -308,7 +308,7 @@ WITH trace_by_model AS (
             organization_id,
             request_id,
             MAX(catalog_key) AS catalog_key
-        FROM ai_usage_fact
+        FROM ai_usage
         WHERE status = 1
           AND tenant_id = ?1
           AND organization_id = ?2
@@ -334,7 +334,7 @@ usage_by_model AS (
     SELECT
         COALESCE(NULLIF(catalog_key, ''), 'unknown') AS model,
         COALESCE(SUM(COALESCE(total_tokens, 0)), 0) AS total_tokens
-    FROM ai_usage_fact
+    FROM ai_usage
     WHERE status = 1
       AND tenant_id = ?1
       AND organization_id = ?2

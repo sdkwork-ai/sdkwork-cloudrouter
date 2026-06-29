@@ -103,8 +103,8 @@ const PORTAL_SOURCE_OPTIMIZE_EXCLUDE = [
   '@sdkwork/auth-pc-react',
   '@sdkwork/iam-core-pc-react',
   '@sdkwork/iam-react',
-  'sdkwork-commerce-app-sdk-generated-typescript',
-  'sdkwork-commerce-backend-sdk-generated-typescript',
+  '@sdkwork/clawrouter-app-sdk',
+  '@sdkwork/clawrouter-backend-sdk',
   'sdkwork-generations-app-sdk-generated-typescript',
   'sdkwork-drive-backend-sdk-generated-typescript',
 ];
@@ -525,10 +525,9 @@ export default defineConfig(({mode}) => {
   const sdkworkImageRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-image');
   const sdkworkCoreRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-core');
   const sdkworkUiRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-ui');
-  const sdkworkCommerceRoot = path.resolve(configDir, '../../vendor/sdkwork-commerce');
-  const sdkworkDocumentsRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-documents');
-  const sdkworkUtilsRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-utils');
-  const env = loadEnv(mode, configDir, '');
+	  const sdkworkDocumentsRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-documents');
+	  const sdkworkUtilsRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-utils');
+	  const env = loadEnv(mode, configDir, '');
   Object.assign(env, readBootstrapLocalEnv(configDir, mode));
   const bootstrapAccessTokenDefine = mode === 'development'
     ? {
@@ -560,8 +559,7 @@ export default defineConfig(({mode}) => {
         sdkworkImageRoot,
         sdkworkCoreRoot,
         sdkworkUiRoot,
-        sdkworkCommerceRoot,
-        sdkworkDocumentsRoot,
+	        sdkworkDocumentsRoot,
         sdkworkUtilsRoot,
       ]),
       tailwindcss(),
@@ -605,27 +603,27 @@ export default defineConfig(({mode}) => {
         { find: '@sdkwork/documents-pc-api-reference/openapiSchemaRuntime', replacement: path.resolve(sdkworkDocumentsRoot, 'apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/openapiSchemaRuntime.ts') },
         { find: '@sdkwork/documents-pc-api-reference', replacement: path.resolve(sdkworkDocumentsRoot, 'apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/index.ts') },
         { find: '@sdkwork/documents-pc-sdk-reference', replacement: path.resolve(sdkworkDocumentsRoot, 'apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-sdk-reference/src/index.ts') },
-        { find: '@sdkwork/commerce-pc-admin-product', replacement: path.resolve(sdkworkCommerceRoot, 'apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-admin-product/src/index.tsx') },
-        { find: '@sdkwork/commerce-pc-billing', replacement: path.resolve(sdkworkCommerceRoot, 'apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-billing/src/index.ts') },
-        { find: '@sdkwork/commerce-pc-host', replacement: path.resolve(sdkworkCommerceRoot, 'apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-host/src/index.ts') },
-        { find: '@sdkwork/commerce-pc-checkout', replacement: path.resolve(sdkworkCommerceRoot, 'apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-checkout/src/index.ts') },
-        { find: '@sdkwork/commerce-pc-core', replacement: path.resolve(sdkworkCommerceRoot, 'apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-core/src/index.ts') },
-        { find: '@sdkwork/commerce-pc-coupon', replacement: path.resolve(sdkworkCommerceRoot, 'apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-coupon/src/index.ts') },
-        { find: '@sdkwork/commerce-pc-invoice', replacement: path.resolve(sdkworkCommerceRoot, 'apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-invoice/src/index.ts') },
-        { find: '@sdkwork/commerce-pc-membership', replacement: path.resolve(sdkworkCommerceRoot, 'apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-membership/src/index.ts') },
-        { find: '@sdkwork/commerce-pc-membership-purchase', replacement: path.resolve(sdkworkCommerceRoot, 'apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-membership-purchase/src/index.ts') },
-        { find: '@sdkwork/commerce-pc-offer', replacement: path.resolve(sdkworkCommerceRoot, 'apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-offer/src/index.ts') },
-        { find: '@sdkwork/commerce-pc-order', replacement: path.resolve(sdkworkCommerceRoot, 'apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-order/src/index.ts') },
-        { find: '@sdkwork/commerce-pc-payment', replacement: path.resolve(sdkworkCommerceRoot, 'apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-payment/src/index.ts') },
-        { find: '@sdkwork/commerce-pc-points', replacement: path.resolve(sdkworkCommerceRoot, 'apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-points/src/index.ts') },
-        { find: '@sdkwork/commerce-pc-pricing', replacement: path.resolve(sdkworkCommerceRoot, 'apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-pricing/src/index.ts') },
-        { find: '@sdkwork/commerce-pc-subscription', replacement: path.resolve(sdkworkCommerceRoot, 'apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-subscription/src/index.ts') },
-        { find: '@sdkwork/commerce-pc-wallet', replacement: path.resolve(sdkworkCommerceRoot, 'apps/sdkwork-commerce-pc/packages/sdkwork-commerce-pc-wallet/src/index.ts') },
+        { find: '@sdkwork/commerce-pc-admin-product', replacement: path.resolve(sdkworkCommerceRoot, 'packages/pc-react/commerce/sdkwork-commerce-pc-admin-product/src/index.tsx') },
+        { find: '@sdkwork/commerce-pc-billing', replacement: path.resolve(sdkworkCommerceRoot, 'packages/pc-react/commerce/sdkwork-commerce-pc-billing/src/index.ts') },
+        { find: '@sdkwork/commerce-pc-host', replacement: path.resolve(sdkworkCommerceRoot, 'packages/pc-react/commerce/sdkwork-commerce-pc-host/src/index.ts') },
+        { find: '@sdkwork/commerce-pc-checkout', replacement: path.resolve(sdkworkCommerceRoot, 'packages/pc-react/commerce/sdkwork-commerce-pc-checkout/src/index.ts') },
+        { find: '@sdkwork/commerce-pc-core', replacement: path.resolve(sdkworkCommerceRoot, 'packages/pc-react/commerce/sdkwork-commerce-pc-core/src/index.ts') },
+        { find: '@sdkwork/commerce-pc-coupon', replacement: path.resolve(sdkworkCommerceRoot, 'packages/pc-react/commerce/sdkwork-commerce-pc-coupon/src/index.ts') },
+        { find: '@sdkwork/commerce-pc-invoice', replacement: path.resolve(sdkworkCommerceRoot, 'packages/pc-react/commerce/sdkwork-commerce-pc-invoice/src/index.ts') },
+        { find: '@sdkwork/commerce-pc-membership', replacement: path.resolve(sdkworkCommerceRoot, 'packages/pc-react/commerce/sdkwork-commerce-pc-membership/src/index.ts') },
+        { find: '@sdkwork/commerce-pc-membership-purchase', replacement: path.resolve(sdkworkCommerceRoot, 'packages/pc-react/commerce/sdkwork-commerce-pc-membership-purchase/src/index.ts') },
+        { find: '@sdkwork/commerce-pc-offer', replacement: path.resolve(sdkworkCommerceRoot, 'packages/pc-react/commerce/sdkwork-commerce-pc-offer/src/index.ts') },
+        { find: '@sdkwork/commerce-pc-order', replacement: path.resolve(sdkworkCommerceRoot, 'packages/pc-react/commerce/sdkwork-commerce-pc-order/src/index.ts') },
+        { find: '@sdkwork/commerce-pc-payment', replacement: path.resolve(sdkworkCommerceRoot, 'packages/pc-react/commerce/sdkwork-commerce-pc-payment/src/index.ts') },
+        { find: '@sdkwork/commerce-pc-points', replacement: path.resolve(sdkworkCommerceRoot, 'packages/pc-react/commerce/sdkwork-commerce-pc-points/src/index.ts') },
+        { find: '@sdkwork/commerce-pc-pricing', replacement: path.resolve(sdkworkCommerceRoot, 'packages/pc-react/commerce/sdkwork-commerce-pc-pricing/src/index.ts') },
+        { find: '@sdkwork/commerce-pc-subscription', replacement: path.resolve(sdkworkCommerceRoot, 'packages/pc-react/commerce/sdkwork-commerce-pc-subscription/src/index.ts') },
+        { find: '@sdkwork/commerce-pc-wallet', replacement: path.resolve(sdkworkCommerceRoot, 'packages/pc-react/commerce/sdkwork-commerce-pc-wallet/src/index.ts') },
         { find: '@sdkwork/commerce-contracts', replacement: path.resolve(sdkworkCommerceRoot, 'packages/common/commerce/sdkwork-commerce-contracts/src/index.ts') },
         { find: '@sdkwork/commerce-sdk-ports', replacement: path.resolve(sdkworkCommerceRoot, 'packages/common/commerce/sdkwork-commerce-sdk-ports/src/index.ts') },
         { find: '@sdkwork/commerce-service', replacement: path.resolve(sdkworkCommerceRoot, 'packages/common/commerce/sdkwork-commerce-service/src/index.ts') },
-        { find: 'sdkwork-commerce-app-sdk-generated-typescript', replacement: path.resolve(sdkworkCommerceRoot, 'sdks/sdkwork-commerce-app-sdk/sdkwork-commerce-app-sdk-typescript/generated/server-openapi/src/index.ts') },
-        { find: 'sdkwork-commerce-backend-sdk-generated-typescript', replacement: path.resolve(sdkworkCommerceRoot, 'sdks/sdkwork-commerce-backend-sdk/sdkwork-commerce-backend-sdk-typescript/generated/server-openapi/src/index.ts') },
+        { find: '@sdkwork/clawrouter-app-sdk', replacement: path.resolve(sdkworkCommerceRoot, 'sdks/sdkwork-commerce-app-sdk/sdkwork-commerce-app-sdk-typescript/generated/server-openapi/src/index.ts') },
+        { find: '@sdkwork/clawrouter-backend-sdk', replacement: path.resolve(sdkworkCommerceRoot, 'sdks/sdkwork-commerce-backend-sdk/sdkwork-commerce-backend-sdk-typescript/generated/server-openapi/src/index.ts') },
         { find: '@sdkwork/core-pc-react', replacement: path.resolve(sdkworkCoreRoot, 'sdkwork-core-pc-react/src/index.ts') },
         { find: '@sdkwork/clawrouter-pc-downloads', replacement: path.resolve(configDir, 'packages/sdkwork-clawrouter-pc-downloads/src/index.ts') },
         { find: '@sdkwork/drive-app-sdk', replacement: path.resolve(sdkworkDriveRoot, 'sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript/src/index.ts') },
@@ -700,10 +698,9 @@ export default defineConfig(({mode}) => {
           sdkworkMemoryRoot,
         sdkworkKernelRoot,
           sdkworkPromptsRoot,
-          sdkworkModelsRoot,
-          sdkworkImageRoot,
-          sdkworkUiRoot,
-          sdkworkCommerceRoot,
+	          sdkworkModelsRoot,
+	          sdkworkImageRoot,
+	          sdkworkUiRoot,
           sdkworkDocumentsRoot,
           sdkworkUtilsRoot,
         ],

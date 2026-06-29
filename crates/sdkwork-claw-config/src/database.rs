@@ -774,6 +774,55 @@ fn required_value(label: &str, value: Option<String>) -> Result<String, String> 
     Ok(value.to_owned())
 }
 
+/// Workspace-standard development passwords from ENVIRONMENT_SPEC §7.1.
+const WORKSPACE_DEVELOPMENT_POSTGRES_PASSWORDS: &[&str] = &[
+    "sdkworkdev123",
+    "postgres_admin_pass",
+];
+
+/// Known example/dev passwords that must never reach a production database URL.
+const KNOWN_PLACEHOLDER_POSTGRES_PASSWORDS: &[&str] = &[
+    "change-me",
+    "<CHANGE_ME>",
+    "<CHANGE-ME>",
+    "sdkworkdev123",
+    "postgres_admin_pass",
+    "sdkwork_claw_test_password",
+];
+
+fn is_workspace_development_postgres_url(parsed: &url::Url) -> bool {
+    let host = parsed.host_str().unwrap_or_default().to_ascii_lowercase();
+    if !matches!(host.as_str(), "localhost" | "127.0.0.1" | "::1") {
+        return false;
+    }
+    let database = parsed
+        .path()
+        .trim_start_matches('/')
+        .split('?')
+        .next()
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    matches!(database.as_str(), "sdkwork_ai_dev" | "postgres")
+}
+
+fn is_workspace_development_postgres_password(password: &str) -> bool {
+    let normalized = password.trim().to_ascii_lowercase();
+    if WORKSPACE_DEVELOPMENT_POSTGRES_PASSWORDS
+        .iter()
+        .any(|known| normalized == known.to_ascii_lowercase())
+    {
+        return true;
+    }
+    let decoded = percent_decode_str(password);
+    if decoded != normalized {
+        let decoded_lower = decoded.trim().to_ascii_lowercase();
+        return WORKSPACE_DEVELOPMENT_POSTGRES_PASSWORDS
+            .iter()
+            .any(|known| decoded_lower == known.to_ascii_lowercase());
+    }
+    false
+}
+
 fn is_placeholder_postgres_url(value: &str) -> bool {
     const LEGACY_SERVER_DEFAULT_POSTGRES_URL: &str =
         "postgresql://sdkwork_claw_router:change-me@localhost:5432/sdkwork_claw_router";
@@ -794,6 +843,12 @@ fn is_placeholder_postgres_url(value: &str) -> bool {
         return true;
     }
 
+    // Catch raw placeholder tokens that may break URL parsing (e.g. <CHANGE_ME>).
+    let value_lower = value.to_ascii_lowercase();
+    if value_lower.contains("<change_me>") || value_lower.contains("<change-me>") {
+        return true;
+    }
+
     let Ok(parsed) = url::Url::parse(value) else {
         return false;
     };
@@ -804,9 +859,66 @@ fn is_placeholder_postgres_url(value: &str) -> bool {
     if host == DatabaseConfig::SERVER_DEFAULT_POSTGRES_HOST {
         return true;
     }
-    parsed
-        .password()
-        .is_some_and(|password| password == DatabaseConfig::SERVER_DEFAULT_POSTGRES_PASSWORD)
+    if is_workspace_development_postgres_url(&parsed) {
+        if parsed
+            .password()
+            .is_some_and(is_workspace_development_postgres_password)
+        {
+            return false;
+        }
+    }
+    parsed.password().is_some_and(is_known_placeholder_password)
+}
+
+fn is_known_placeholder_password(password: &str) -> bool {
+    let normalized = password.trim().to_ascii_lowercase();
+    if KNOWN_PLACEHOLDER_POSTGRES_PASSWORDS
+        .iter()
+        .any(|known| normalized == known.to_ascii_lowercase())
+    {
+        return true;
+    }
+    // Url::password() returns the percent-encoded form; decode before comparing.
+    let decoded = percent_decode_str(password);
+    if decoded != normalized {
+        let decoded_lower = decoded.trim().to_ascii_lowercase();
+        if KNOWN_PLACEHOLDER_POSTGRES_PASSWORDS
+            .iter()
+            .any(|known| decoded_lower == known.to_ascii_lowercase())
+        {
+            return true;
+        }
+    }
+    false
+}
+
+fn percent_decode_str(input: &str) -> String {
+    let bytes = input.as_bytes();
+    let mut result = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] == b'%' && index + 2 < bytes.len() {
+            if let (Some(high), Some(low)) =
+                (hex_digit(bytes[index + 1]), hex_digit(bytes[index + 2]))
+            {
+                result.push(high * 16 + low);
+                index += 3;
+                continue;
+            }
+        }
+        result.push(bytes[index]);
+        index += 1;
+    }
+    String::from_utf8_lossy(&result).into_owned()
+}
+
+fn hex_digit(byte: u8) -> Option<u8> {
+    match byte {
+        b'0'..=b'9' => Some(byte - b'0'),
+        b'a'..=b'f' => Some(byte - b'a' + 10),
+        b'A'..=b'F' => Some(byte - b'A' + 10),
+        _ => None,
+    }
 }
 
 impl RuntimeConfigLocation {

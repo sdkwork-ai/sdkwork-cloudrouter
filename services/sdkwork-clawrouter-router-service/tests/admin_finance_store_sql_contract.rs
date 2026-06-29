@@ -7,8 +7,8 @@ const POSTGRES_ADMIN_FINANCE_STORE: &str =
 fn admin_finance_store_uses_appbase_commerce_finance_tables() {
     for source in [SQLITE_ADMIN_FINANCE_STORE, POSTGRES_ADMIN_FINANCE_STORE] {
         assert!(source.contains("commerce_account_ledger_entry"));
-        assert!(source.contains("commerce_usage_statement"));
-        assert!(source.contains("commerce_usage_settlement"));
+        assert!(source.contains("commerce_statement"));
+        assert!(source.contains("commerce_settlement"));
         assert!(source.contains("commerce_invoice"));
         assert!(
             source.contains("pi.owner_user_id"),

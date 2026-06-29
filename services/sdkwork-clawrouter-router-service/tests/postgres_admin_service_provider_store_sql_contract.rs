@@ -17,10 +17,10 @@ fn service_provider_commercial_tables_exist_in_postgres_schema() {
         "integration_service_provider_price_plan",
         "integration_service_provider_price_rule",
         "ai_usage_service_provider_edge",
-        "commerce_usage_service_provider_statement",
-        "commerce_usage_service_provider_adjustment",
-        "commerce_usage_service_provider_reconciliation_run",
-        "commerce_service_provider_exposure_snapshot",
+        "integration_provider_statement",
+        "integration_provider_adjustment",
+        "integration_provider_reconciliation_run",
+        "integration_provider_exposure_snapshot",
         "analytics_service_provider_daily",
         "analytics_service_provider_edge_daily",
     ] {
@@ -38,8 +38,8 @@ fn service_provider_commercial_tables_exist_in_postgres_schema() {
         "ai_usage_service_provider_edge must not retain the removed chain_id column"
     );
     for removed_table in [
-        "commerce_usage_service_provider_settlement",
-        "commerce_usage_service_provider_statement_item",
+        "integration_provider_reconciliation",
+        "integration_provider_statement_item",
         "integration_service_provider_account_binding",
         "integration_service_provider_contract_version",
         "integration_service_provider_price_change_request",
@@ -182,10 +182,10 @@ fn service_provider_sql_stores_apply_provider_edge_filters_to_read_surfaces() {
             "integration_service_provider_edge",
             "integration_service_provider_price_rule",
             "ai_usage_service_provider_edge",
-            "commerce_usage_service_provider_statement",
-            "commerce_usage_service_provider_adjustment",
-            "commerce_usage_service_provider_reconciliation_run",
-            "commerce_service_provider_exposure_snapshot",
+            "integration_provider_statement",
+            "integration_provider_adjustment",
+            "integration_provider_reconciliation_run",
+            "integration_provider_exposure_snapshot",
             "ops_audit_log",
         ] {
             assert!(

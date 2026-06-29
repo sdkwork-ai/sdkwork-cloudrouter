@@ -119,11 +119,7 @@ async fn fetch_dashboard_overview(
     let validated_query = match validate_dashboard_overview_query(query) {
         Ok(validated_query) => validated_query,
         Err(error) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(PlusApiResult::error("4001", error.message)),
-            )
-                .into_response();
+            return PlusApiResult::error("4001", error.message)).into_response();
         }
     };
 
@@ -133,14 +129,10 @@ async fn fetch_dashboard_overview(
         .await
     {
         Ok(snapshot) => Json(PlusApiResult::success(snapshot)).into_response(),
-        Err(error) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(PlusApiResult::error(
+        Err(error) => PlusApiResult::error(
                 "5000",
                 format!("dashboard overview read model is unavailable: {error}"),
-            )),
-        )
-            .into_response(),
+            )).into_response(),
     }
 }
 

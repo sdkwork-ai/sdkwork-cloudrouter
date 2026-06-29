@@ -8,7 +8,6 @@ const sdksRoot = path.resolve(testDir, '..');
 const appRoot = path.resolve(sdksRoot, '..');
 const appsRoot = path.resolve(appRoot, '..');
 const appbaseRoot = path.join(appsRoot, 'sdkwork-appbase');
-const commerceRoot = path.join(appsRoot, 'sdkwork-commerce');
 
 const dependencyContracts = [
   {
@@ -26,23 +25,6 @@ const dependencyContracts = [
     ),
   },
   {
-    label: 'clawrouter app SDK',
-    sdkFamily: 'clawrouter-app-sdk',
-    prefix: '/app/v3/api',
-    dependencyWorkspace: 'sdkwork-commerce-app-sdk',
-    dependencyDomain: 'commerce',
-    role: 'commerce-app-capability',
-    appbaseAuthority: path.join(
-      commerceRoot,
-      'sdks',
-      'sdkwork-commerce-app-sdk',
-      'sdkwork-commerce-app-sdk-typescript',
-      'generated',
-      'server-openapi',
-      'source-openapi.json',
-    ),
-  },
-  {
     label: 'clawrouter backend SDK',
     sdkFamily: 'clawrouter-backend-sdk',
     prefix: '/backend/v3/api',
@@ -54,23 +36,6 @@ const dependencyContracts = [
       'sdkwork-iam-backend-sdk',
       'openapi',
       'sdkwork-iam-backend-api.openapi.yaml',
-    ),
-  },
-  {
-    label: 'clawrouter backend SDK',
-    sdkFamily: 'clawrouter-backend-sdk',
-    prefix: '/backend/v3/api',
-    dependencyWorkspace: 'sdkwork-commerce-backend-sdk',
-    dependencyDomain: 'commerce',
-    role: 'commerce-backend-management-capability',
-    appbaseAuthority: path.join(
-      commerceRoot,
-      'sdks',
-      'sdkwork-commerce-backend-sdk',
-      'sdkwork-commerce-backend-sdk-typescript',
-      'generated',
-      'server-openapi',
-      'source-openapi.json',
     ),
   },
 ];

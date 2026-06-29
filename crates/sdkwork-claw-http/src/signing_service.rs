@@ -20,7 +20,6 @@
 //! - Old keys remain valid during the rotation window (configurable, default 90 days)
 //! - `resolve_by_kid()` allows verification with any valid key
 
-use async_trait::async_trait;
 use hmac::Mac;
 use sdkwork_claw_security::asymmetric_signing::{
     deserialize_key_material, generate_signing_key, serialize_key_material,
@@ -30,7 +29,7 @@ use sdkwork_claw_security::asymmetric_signing::{
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info, warn};
 
 /// Configuration for the signing service.
 #[derive(Debug, Clone)]
@@ -91,7 +90,7 @@ impl InMemorySigningKeyStore {
         let kid = key_material.key_id(tenant_id);
         let created_at = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
+            .map_err(|e| SigningError::ClockUnavailable(e.to_string()))?
             .as_secs() as i64;
 
         // Serialize and optionally encrypt the key material
@@ -159,7 +158,7 @@ impl InMemorySigningKeyStore {
             key.retired_at = Some(
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
+                    .map_err(|e| e.to_string())?
                     .as_secs() as i64,
             );
             info!(
@@ -249,7 +248,7 @@ impl SessionTokenSigningService {
 
         // Fall back to shared HMAC secret
         if let Some(ref secret) = self.fallback_key {
-            let mut mac = hmac_sha256_simple(secret);
+            let mut mac = hmac_sha256_simple(secret)?;
             mac.update(payload);
             let signature = hex::encode(mac.finalize().into_bytes());
 
@@ -321,7 +320,7 @@ impl SessionTokenSigningService {
 
         // Fall back to shared HMAC secret
         if let Some(ref secret) = self.fallback_key {
-            let mut mac = hmac_sha256_simple(secret);
+            let mut mac = hmac_sha256_simple(secret)?;
             mac.update(payload);
             let sig_bytes = hex::decode(signature_b64)
                 .map_err(|_| SigningError::InvalidSignatureFormat)?;
@@ -376,10 +375,10 @@ impl SessionTokenSigningService {
 }
 
 /// Simple HMAC-SHA256 wrapper for fallback signing.
-fn hmac_sha256_simple(key: &[u8]) -> hmac::Hmac<sha2::Sha256> {
+fn hmac_sha256_simple(key: &[u8]) -> Result<hmac::Hmac<sha2::Sha256>, SigningError> {
     use hmac::{Hmac, Mac};
     Hmac::<sha2::Sha256>::new_from_slice(key)
-        .expect("HMAC can take key of any size")
+        .map_err(|e| SigningError::SigningFailed(format!("HMAC key initialization failed: {e}")))
 }
 
 /// Token signing with embedded key ID for asymmetric algorithms.
@@ -488,7 +487,7 @@ mod tests {
             .is_ok());
 
         // Retire key
-        service.retire_key("tenant-3").await.unwrap();
+        service.key_store().retire_key("tenant-3").await.unwrap();
 
         // Generate new key
         let key2 = service.ensure_active_key("tenant-3").await.unwrap();

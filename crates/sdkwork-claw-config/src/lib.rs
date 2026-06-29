@@ -35,11 +35,12 @@ pub use runtime::{
     ModelRankingSectionConfig, ObservabilitySectionConfig, PathsSectionConfig,
     PortalPublicSectionConfig, PortalSectionConfig, PortalSecuritySectionConfig,
     PortalStaticSectionConfig, PortalToolsSectionConfig, ProviderAdapterSectionConfig,
-    ProviderPassthroughSectionConfig, ProviderRelayOpenAiSectionConfig,
-    ProviderRelayRetrySectionConfig, ProviderRelayRuntimeSectionConfig, ProviderRelaySectionConfig,
-    ProviderSecretMapSectionConfig, RedisSectionConfig, RequestLimitsSectionConfig, RuntimeConfig,
-    RuntimeSectionConfig, RuntimeTomlConfig, SecuritySectionConfig, ServerSectionConfig,
-    ServiceBindSectionConfig, ServicesSectionConfig, UsageSettlementSectionConfig,
+    ProviderPassthroughSectionConfig, ProviderRelayHttpPoolSectionConfig, ProviderRelayOpenAiSectionConfig,
+    ProviderRelayRateLimitSectionConfig, ProviderRelayRetrySectionConfig,
+    ProviderRelayRuntimeSectionConfig, ProviderRelaySectionConfig, ProviderSecretMapSectionConfig,
+    RedisSectionConfig, RequestLimitsSectionConfig, RuntimeConfig, RuntimeSectionConfig,
+    RuntimeTomlConfig, SecuritySectionConfig, ServerSectionConfig, ServiceBindSectionConfig,
+    ServicesSectionConfig, UsageSettlementSectionConfig,
 };
 pub use startup_install::{
     ensure_production_startup_install_policy, is_production_like_runtime_environment,

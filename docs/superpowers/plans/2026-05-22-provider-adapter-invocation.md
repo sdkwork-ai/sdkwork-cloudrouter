@@ -33,12 +33,12 @@ Responsibility: stable JSON contract shared by gateway and adapter service. No d
 
 Responsibility: adapter route config and matching. No provider-native logic.
 
-- Create `crates/sdkwork-claw-provider-adapter-core/Cargo.toml`
-- Create `crates/sdkwork-claw-provider-adapter-core/src/lib.rs`
-- Create `crates/sdkwork-claw-provider-adapter-core/src/adapter.rs`
-- Create `crates/sdkwork-claw-provider-adapter-core/src/native_http.rs`
-- Create `crates/sdkwork-claw-provider-adapter-core/src/normalizer.rs`
-- Create `crates/sdkwork-claw-provider-adapter-core/src/task.rs`
+- Create `crates/sdkwork-claw-provider-adapter/Cargo.toml`
+- Create `crates/sdkwork-claw-provider-adapter/src/lib.rs`
+- Create `crates/sdkwork-claw-provider-adapter/src/adapter.rs`
+- Create `crates/sdkwork-claw-provider-adapter/src/native_http.rs`
+- Create `crates/sdkwork-claw-provider-adapter/src/normalizer.rs`
+- Create `crates/sdkwork-claw-provider-adapter/src/task.rs`
 
 Responsibility: adapter service-side traits and common runtime helpers.
 
@@ -325,13 +325,13 @@ Expected: exit 0.
 ### Task 3: Adapter Core Traits
 
 **Files:**
-- Create: `crates/sdkwork-claw-provider-adapter-core/Cargo.toml`
-- Create: `crates/sdkwork-claw-provider-adapter-core/src/lib.rs`
-- Create: `crates/sdkwork-claw-provider-adapter-core/src/adapter.rs`
-- Create: `crates/sdkwork-claw-provider-adapter-core/src/task.rs`
-- Create: `crates/sdkwork-claw-provider-adapter-core/src/normalizer.rs`
+- Create: `crates/sdkwork-claw-provider-adapter/Cargo.toml`
+- Create: `crates/sdkwork-claw-provider-adapter/src/lib.rs`
+- Create: `crates/sdkwork-claw-provider-adapter/src/adapter.rs`
+- Create: `crates/sdkwork-claw-provider-adapter/src/task.rs`
+- Create: `crates/sdkwork-claw-provider-adapter/src/normalizer.rs`
 - Modify: `Cargo.toml`
-- Test: `crates/sdkwork-claw-provider-adapter-core/tests/adapter_manifest.rs`
+- Test: `crates/sdkwork-claw-provider-adapter/tests/adapter_manifest.rs`
 
 - [ ] **Step 1: Write failing adapter manifest tests**
 
@@ -352,7 +352,7 @@ fn provider_adapter_exposes_manifest_endpoint_metadata() {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cargo test -p sdkwork-claw-provider-adapter-core --test adapter_manifest -- --nocapture`
+Run: `cargo test -p sdkwork-claw-provider-adapter --test adapter_manifest -- --nocapture`
 
 Expected: FAIL because package and traits do not exist.
 
@@ -373,13 +373,13 @@ Use `Pin<Box<dyn Future<Output = Result<AdapterInvocationResponse, AdapterInvoca
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cargo test -p sdkwork-claw-provider-adapter-core --test adapter_manifest -- --nocapture`
+Run: `cargo test -p sdkwork-claw-provider-adapter --test adapter_manifest -- --nocapture`
 
 Expected: PASS.
 
 - [ ] **Step 5: Format**
 
-Run: `cargo fmt -p sdkwork-claw-provider-adapter-core`
+Run: `cargo fmt -p sdkwork-claw-provider-adapter`
 
 Expected: exit 0.
 
@@ -787,7 +787,7 @@ Expected: exit 0.
 ### Task 10: Documentation And Architecture Guards
 
 **Files:**
-- Modify: `docs/06-API-Gateway与接口标准设�?md`
+- Modify: `docs/06-API-Gateway与接口标准设�?md`
 - Modify: `docs/27-rust-runtime-and-sdk-integration-standard.md`
 - Create: `docs/provider-adapter-architecture.md`
 - Create: `tests/test_provider_adapter_architecture_standard.py`
@@ -843,7 +843,7 @@ Run:
 ```bash
 cargo test -p sdkwork-claw-provider-adapter-contract -- --nocapture
 cargo test -p sdkwork-claw-provider-adapter-registry -- --nocapture
-cargo test -p sdkwork-claw-provider-adapter-core -- --nocapture
+cargo test -p sdkwork-claw-provider-adapter -- --nocapture
 cargo test -p sdkwork-claw-provider-adapter-http -- --nocapture
 ```
 

@@ -134,13 +134,6 @@ def update_assembly_guardrails(assembly: dict) -> None:
             "ownership": "read_only",
         },
         {
-            "module_id": "commerce-core",
-            "locator": "../sdkwork-commerce",
-            "registry_path": "docs/schema-registry/commerce-core.tables.yaml",
-            "order": 20,
-            "ownership": "read_only",
-        },
-        {
             "module_id": "appstore",
             "locator": "../sdkwork-appstore",
             "registry_path": "docs/schema-registry/appstore.tables.yaml",

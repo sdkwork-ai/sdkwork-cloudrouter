@@ -2,7 +2,7 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::SqlitePaymen
 use sdkwork_clawrouter_router_service::ports::{
     PaymentCallbackCommand, PaymentCallbackStatus, PaymentCallbackStore,
 };
-use sdkwork_commerce_storage_sqlx::commerce_database_tables;
+use sdkwork_clawrouter_router_service::infrastructure::sql::commerce_bootstrap::commerce_database_tables;
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::{Row, SqlitePool};
 

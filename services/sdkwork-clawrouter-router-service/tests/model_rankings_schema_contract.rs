@@ -29,7 +29,7 @@ fn assert_contains(source: &str, expected: &str, context: &str) {
 fn generated_schema_has_table_field_contract_for_model_ranking_refresh_and_reads() {
     let runtime_schema = runtime_ranking_schema_sql();
     for expected in [
-        "CREATE TABLE IF NOT EXISTS ai_usage_fact",
+        "CREATE TABLE IF NOT EXISTS ai_usage",
         "catalog_key VARCHAR(256) NOT NULL",
         "occurred_at TIMESTAMPTZ",
         "cost_amount NUMERIC(38, 12)",
@@ -71,7 +71,7 @@ fn generated_schema_has_table_field_contract_for_model_ranking_refresh_and_reads
 fn generated_schema_has_index_contract_for_model_ranking_refresh_and_reads() {
     let runtime_schema = runtime_ranking_schema_sql();
     for expected in [
-        "CREATE INDEX IF NOT EXISTS idx_ai_usage_fact_model_occurred ON ai_usage_fact (tenant_id, organization_id, catalog_key, occurred_at, id)",
+        "CREATE INDEX IF NOT EXISTS idx_ai_usage_model_occurred ON ai_usage (tenant_id, organization_id, catalog_key, occurred_at, id)",
         "CREATE INDEX IF NOT EXISTS idx_ops_job_execution_model_ranking_scope_started ON ops_job_execution (tenant_id, organization_id, status, job_type, job_name, started_at, id)",
     ] {
         assert_contains(expected, expected, "test fixture sanity");
@@ -118,7 +118,7 @@ fn schema_registry_declares_the_same_model_ranking_field_and_index_contract() {
         "manual: 2",
         "payload_contract:",
         "required_fields: - rankScope - snapshotDate - snapshotPeriod - windowStart - windowEnd - generatedCount - sourceCount - refreshIntervalSeconds - cacheMaxAgeSeconds - nextRefreshAt - status - attemptCount - retryCount - consecutiveFailureCount - alertRecommended - sourceTables",
-        "source_tables: - ai_usage_fact - ai_model - ai_model_rank_snapshot",
+        "source_tables: - ai_usage - ai_model - ai_model_rank_snapshot",
         "runtime_contract:",
         "scheduler_owner: sdkwork-clawrouter-standalone-gateway",
         "run_on_startup_default: true",
@@ -134,7 +134,7 @@ fn schema_registry_declares_the_same_model_ranking_field_and_index_contract() {
         "columns: - tenant_id - organization_id - status - rank_scope - snapshot_date - snapshot_period - rank_no",
         "idx_ai_model_rank_snapshot_filter_rank",
         "columns: - tenant_id - organization_id - status - snapshot_date - snapshot_period - rank_scope - vendor_code - region_code - modality - rank_no",
-        "idx_ai_usage_fact_model_occurred",
+        "idx_ai_usage_model_occurred",
         "columns: - tenant_id - organization_id - catalog_key - occurred_at - id",
         "idx_ops_job_execution_model_ranking_scope_started",
         "columns: - tenant_id - organization_id - status - job_type - job_name - started_at - id",
@@ -147,7 +147,7 @@ fn schema_registry_declares_the_same_model_ranking_field_and_index_contract() {
 fn schema_manifest_preserves_model_ranking_semantic_contracts_for_release_audit() {
     let manifest: serde_json::Value = serde_json::from_str(SCHEMA_MANIFEST)
         .expect("generated schema manifest must be valid JSON");
-    let usage_fact = manifest_table(&manifest, "ai_usage_fact");
+    let usage_fact = manifest_table(&manifest, "ai_usage");
     assert_eq!(
         "occurred_at",
         usage_fact["semantic_contracts"]["ranking_refresh_source_fact"]["time_field"]
@@ -218,7 +218,7 @@ fn schema_manifest_preserves_model_ranking_semantic_contracts_for_release_audit(
         refresh_contract["payload_contract"]["required_fields"]
     );
     assert_eq!(
-        serde_json::json!(["ai_usage_fact", "ai_model", "ai_model_rank_snapshot"]),
+        serde_json::json!(["ai_usage", "ai_model", "ai_model_rank_snapshot"]),
         refresh_contract["payload_contract"]["source_tables"]
     );
     assert_eq!(

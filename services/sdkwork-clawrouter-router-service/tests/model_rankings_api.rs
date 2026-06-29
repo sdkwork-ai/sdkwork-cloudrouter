@@ -344,7 +344,7 @@ impl ModelRankingRefreshStatusReadStore for StubModelRankingsReadStore {
                 generated_count: 2,
                 source_count: 10,
                 source_tables: vec![
-                    "ai_usage_fact".to_owned(),
+                    "ai_usage".to_owned(),
                     "ai_model".to_owned(),
                     "ai_model_rank_snapshot".to_owned(),
                 ],

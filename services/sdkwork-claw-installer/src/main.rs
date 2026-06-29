@@ -715,7 +715,7 @@ fn status_code(status: &InstallationStatus) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sdkwork_commerce_core::CommerceServiceError;
+    use sdkwork_contract_service::CommerceServiceError;
 
     #[test]
     fn installer_error_code_maps_commerce_bootstrap_errors() {

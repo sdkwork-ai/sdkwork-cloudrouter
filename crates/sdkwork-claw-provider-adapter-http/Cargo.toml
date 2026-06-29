@@ -14,6 +14,6 @@ hyper-util.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sdkwork-claw-provider-adapter-contract.workspace = true
-sdkwork-claw-provider-adapter-core.workspace = true
+sdkwork-claw-provider-adapter.workspace = true
 sdkwork-claw-provider-adapter-registry.workspace = true
 tokio = { workspace = true, features = ["time"] }

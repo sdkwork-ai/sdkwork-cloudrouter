@@ -54,6 +54,7 @@ pub use signing_service::{
 };
 pub use claw_web_resolver::{
     ensure_iam_database_env_for_claw_database, iam_web_resolver_for_claw_database,
+    materialize_federated_database_env_from_claw_config,
 };
 pub use web_bridge::{
     authenticated_principal_failed_trusted_subject_projection,
@@ -61,7 +62,8 @@ pub use web_bridge::{
 };
 pub use web_framework_compat::{
     apply_app_subject_boundary_if_legacy, apply_optional_app_subject_boundary_if_legacy,
-    claw_web_framework_enabled_from_env, merge_web_framework_scoped_app_read_router,
+    claw_web_framework_enabled_from_env, merge_federated_app_capability_router,
+    merge_web_framework_scoped_app_read_router,
     merge_web_framework_scoped_app_router,
     project_trusted_subject_from_web_request_context,
 };

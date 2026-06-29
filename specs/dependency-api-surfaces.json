@@ -42,32 +42,75 @@
       }
     },
     {
-      "workspace": "sdkwork-commerce-app-sdk",
+      "workspace": "sdkwork-invoice-app-sdk",
       "consumerSdkFamily": "clawrouter-app-sdk",
-      "role": "commerce-app-capability",
+      "role": "invoice-app-capability",
       "dependencyMode": "consumer-sdk",
       "surface": "app-api",
       "apiPrefix": "/app/v3/api",
       "runtimeIntegration": {
-        "mode": "external-service",
-        "sameOriginAllowed": false,
+        "mode": "same-origin-mounted",
+        "sameOriginAllowed": true,
         "targetRuntimeIntegration": {
           "mode": "shared-gateway",
           "gatewayApplication": "sdkwork-api-cloud-gateway",
           "commonSdkRootEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
           "catalogPolicy": "no-dedicated-gateway-catalog"
         },
-        "requiredBaseUrlEnv": "VITE_SDKWORK_COMMERCE_APP_API_BASE_URL",
-        "publicBaseUrlEnv": "PORTAL_PUBLIC_COMMERCE_APP_API_BASE_URL",
+        "requiredBaseUrlEnv": "VITE_SDKWORK_INVOICE_APP_API_BASE_URL",
         "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+        "rustRouteContractCrate": {
+          "crate": "sdkwork-routes-invoice-app-api",
+          "executableRouterExport": "gateway_mount"
+        },
+        "handlerAdapterExports": [],
         "mountCoverage": {
-          "status": "not-mounted",
+          "status": "verified",
           "evidence": [
-            "Commerce app API routes are owned by sdkwork-commerce and consumed through sdkwork-commerce-app-sdk.",
-            "Claw Router portal bootstrap derives VITE_SDKWORK_COMMERCE_APP_API_BASE_URL from PORTAL_PUBLIC_SDK_BASE_URL + /app/v3/api when no Commerce-specific override is configured.",
-            "Claw Router app runtime uses product-local contract fallback filtering so Commerce dependency app routes return 404 by default instead of local 501 contract stubs.",
-            "cargo test -p sdkwork-clawrouter-standalone-gateway --test contract_routes default_router_does_not_mount_commerce_foundation_routes_locally verifies default app runtime does not locally serve Commerce foundation routes.",
-            "No Claw Router runtime mount coverage is declared for Commerce app API handlers."
+            "Invoice app routes are owned by sdkwork-invoice and mounted in sdkwork-routes-clawrouter-app-api through invoice_runtime.rs.",
+            "Invoice schema authority lives in sdkwork-invoice/database and is composed into standalone installer via sdkwork-invoice-database-bootstrap.",
+            "services/sdkwork-clawrouter-standalone-gateway/tests/invoices_route.rs verifies /app/v3/api/invoices against commerce_invoice tables."
+          ]
+        }
+      },
+      "dependencyOwnedOperations": [
+        {
+          "method": "GET",
+          "path": "/app/v3/api/invoices",
+          "operationId": "invoices.list",
+          "owner": "sdkwork-invoice",
+          "sdkClient": "getInvoiceAppSdkClient().invoices.list",
+          "consumerRequired": true
+        }
+      ]
+    },
+    {
+      "workspace": "sdkwork-invoice-backend-sdk",
+      "consumerSdkFamily": "clawrouter-backend-sdk",
+      "role": "invoice-backend-management-capability",
+      "dependencyMode": "consumer-sdk",
+      "surface": "backend-api",
+      "apiPrefix": "/backend/v3/api",
+      "runtimeIntegration": {
+        "mode": "same-origin-mounted",
+        "sameOriginAllowed": true,
+        "targetRuntimeIntegration": {
+          "mode": "shared-gateway",
+          "gatewayApplication": "sdkwork-api-cloud-gateway",
+          "commonSdkRootEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "catalogPolicy": "no-dedicated-gateway-catalog"
+        },
+        "requiredBaseUrlEnv": "VITE_SDKWORK_INVOICE_BACKEND_API_BASE_URL",
+        "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+        "rustRouteContractCrate": {
+          "crate": "sdkwork-routes-invoice-backend-api",
+          "executableRouterExport": "gateway_mount"
+        },
+        "handlerAdapterExports": [],
+        "mountCoverage": {
+          "status": "verified",
+          "evidence": [
+            "Invoice backend routes are owned by sdkwork-invoice and mounted in sdkwork-routes-clawrouter-backend-api through invoice_runtime.rs."
           ]
         }
       }
@@ -162,38 +205,7 @@
         }
       }
     },
-    {
-      "workspace": "sdkwork-commerce-backend-sdk",
-      "consumerSdkFamily": "clawrouter-backend-sdk",
-      "role": "commerce-backend-management-capability",
-      "dependencyMode": "consumer-sdk",
-      "surface": "backend-api",
-      "apiPrefix": "/backend/v3/api",
-      "runtimeIntegration": {
-        "mode": "external-service",
-        "sameOriginAllowed": false,
-        "targetRuntimeIntegration": {
-          "mode": "shared-gateway",
-          "gatewayApplication": "sdkwork-api-cloud-gateway",
-          "commonSdkRootEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
-          "catalogPolicy": "no-dedicated-gateway-catalog"
-        },
-        "requiredBaseUrlEnv": "VITE_SDKWORK_COMMERCE_BACKEND_API_BASE_URL",
-        "publicBaseUrlEnv": "PORTAL_PUBLIC_COMMERCE_BACKEND_API_BASE_URL",
-        "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
-        "mountCoverage": {
-          "status": "not-mounted",
-          "evidence": [
-            "Commerce backend API routes are owned by sdkwork-commerce and consumed through sdkwork-commerce-backend-sdk plus @sdkwork/commerce-service.",
-            "Claw Router portal bootstrap derives VITE_SDKWORK_COMMERCE_BACKEND_API_BASE_URL from PORTAL_PUBLIC_SDK_BASE_URL + /backend/v3/api when no Commerce-specific override is configured.",
-            "Claw Router admin runtime uses product-local contract fallback filtering so Commerce dependency backend routes return 404 by default instead of local 501 contract stubs.",
-            "cargo test -p sdkwork-clawrouter-admin-gateway --test contract_routes default_router_does_not_mount_commerce_backend_routes_locally verifies default admin runtime does not locally serve Commerce backend routes.",
-            "No Claw Router runtime mount coverage is declared for Commerce backend API handlers."
-          ]
-        }
-      }
-    },
-    {
+  # REMOVED: sdkwork-commerce-backend-sdk (commerce repository dissolved)
       "workspace": "sdkwork-appstore-app-sdk",
       "consumerSdkFamily": "clawrouter-app-sdk",
       "role": "appstore-app-capability",

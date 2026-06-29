@@ -1,11 +1,9 @@
-import type { StorageProviderHealthCheckResponse } from './storage-provider-health-check-response';
-
 /** Providers health check create result schema exposed by Claw Router. */
 export interface ProvidersHealthCheckCreateResult {
   /** Business response code. */
   code: string;
-  /** Data field on providers health check create result. */
-  data?: StorageProviderHealthCheckResponse;
+  /** No business data returned by this operation. */
+  data?: never;
   /** Human-readable response message. */
   msg?: string;
 }

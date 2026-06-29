@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// @sdkwork/clawrouter-workspace — refresh-standard-alignment-audit.mjs
+// @sdkwork/clawrouter-workspace �??refresh-standard-alignment-audit.mjs
 //
 // Generates `generated/audit/standard-alignment-facts.json` by reading the
 // repository source of truth. The audit document
@@ -397,7 +397,7 @@ function collectMetricsFacts() {
 function collectTableConsistencyFacts() {
   // Count claw-router-owned tables across the three owned sources of truth.
   // The 90-table effective registry and 154-table catalog include sibling
-  // module tables (iam, commerce, etc.) and are NOT drift — they are a
+  // module tables (iam, commerce, etc.) and are NOT drift �??they are a
   // scope difference. The claw-router-owned count must be consistent.
   const ddlPath = "database/ddl/baseline/postgres/0001_clawrouter_legacy_baseline.sql";
   const registryPath = "database/contract/table-registry.json";
@@ -406,7 +406,7 @@ function collectTableConsistencyFacts() {
   let ddlCount = 0;
   if (fileExists(ddlPath)) {
     const ddl = readText(ddlPath);
-    // Count CREATE TABLE IF NOT EXISTS <name> ( — this regex already excludes
+    // Count CREATE TABLE IF NOT EXISTS <name> ( �??this regex already excludes
     // PARTITION OF attachments because they end with DEFAULT; (no opening paren).
     ddlCount = (ddl.match(/CREATE TABLE IF NOT EXISTS\s+\w+\s*\(/g) || []).length;
   }
@@ -555,6 +555,42 @@ function buildP0Status(facts) {
   return items;
 }
 
+function isAllowedVendorGitPath(relativePath) {
+  void relativePath;
+  return false;
+}
+
+function collectVendorWorkspaceFacts() {
+  let tracked = [];
+  try {
+    const output = execSync("git ls-files vendor", {
+      cwd: REPO_ROOT,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    tracked = output
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+  } catch {
+    tracked = [];
+  }
+
+  const disallowed = tracked.filter((entry) => !isAllowedVendorGitPath(entry));
+  const gitignore = fileExists(".gitignore") ? readText(".gitignore") : "";
+  const packageJson = fileExists("package.json") ? readJson("package.json") : { scripts: {} };
+
+  return {
+    trackedCount: tracked.length,
+    disallowedCount: disallowed.length,
+    disallowedSample: disallowed.slice(0, 15),
+    indexClean: disallowed.length === 0,
+    gitignoreHasVendorGuard: gitignore.includes("vendor/*"),
+    packageHasVendorCheck: Boolean(packageJson.scripts?.["check:vendor-workspace"]),
+    packageHasCommerceDebtCheck: Boolean(packageJson.scripts?.["check:commerce-debt"]),
+  };
+}
+
 // --- Main ------------------------------------------------------------------
 
 function collectAllFacts() {
@@ -577,6 +613,7 @@ function collectAllFacts() {
     metrics: collectMetricsFacts(),
     tableConsistency: collectTableConsistencyFacts(),
     tablePartition: collectTablePartitionFacts(),
+    vendorWorkspace: collectVendorWorkspaceFacts(),
   };
 }
 

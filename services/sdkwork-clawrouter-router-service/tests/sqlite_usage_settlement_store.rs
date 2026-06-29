@@ -10,7 +10,7 @@ const SQLITE_USAGE_SETTLEMENT_STORE: &str =
 fn sqlite_usage_settlement_upsert_never_reopens_successful_bridge() {
     assert!(
         SQLITE_USAGE_SETTLEMENT_STORE
-            .contains("WHERE commerce_usage_settlement.settlement_status <> ?"),
+            .contains("WHERE commerce_settlement.settlement_status <> ?"),
         "SQLite usage settlement upsert must not overwrite successful settlement bridge rows"
     );
     assert!(
@@ -59,7 +59,7 @@ async fn sqlite_usage_settlement_debits_appbase_points_once_and_links_usage_to_l
     );
     assert_eq!(
         1,
-        scalar_i64(&pool, "SELECT COUNT(1) FROM commerce_usage_settlement").await
+        scalar_i64(&pool, "SELECT COUNT(1) FROM commerce_settlement").await
     );
     assert_eq!(
         1,
@@ -73,7 +73,7 @@ async fn sqlite_usage_settlement_debits_appbase_points_once_and_links_usage_to_l
     let settlement = sqlx::query(
         r#"
         SELECT id, settlement_no, usage_fact_id, account_id, account_ledger_entry_id, asset_type, direction, amount, points, tokens, currency, settlement_status, failure_code
-        FROM commerce_usage_settlement
+        FROM commerce_settlement
         WHERE usage_fact_id = 501
         "#,
     )
@@ -125,14 +125,14 @@ async fn sqlite_usage_settlement_debits_appbase_points_once_and_links_usage_to_l
         "usage-settlement-501",
         ledger.get::<String, _>("idempotency_key")
     );
-    assert_eq!("ai_usage_fact", ledger.get::<String, _>("source_type"));
+    assert_eq!("ai_usage", ledger.get::<String, _>("source_type"));
     assert_eq!("501", ledger.get::<String, _>("source_id"));
     assert!(ledger
         .get::<String, _>("remark")
         .contains("usage_request=req-usage-501"));
 
     let usage =
-        sqlx::query("SELECT settlement_status, settlement_id FROM ai_usage_fact WHERE id = 501")
+        sqlx::query("SELECT settlement_status, settlement_id FROM ai_usage WHERE id = 501")
             .fetch_one(&pool)
             .await
             .unwrap();
@@ -165,14 +165,14 @@ async fn sqlite_usage_settlement_skips_usage_without_explicit_settlement_status(
     );
     assert_eq!(
         0,
-        scalar_i64(&pool, "SELECT COUNT(1) FROM commerce_usage_settlement").await
+        scalar_i64(&pool, "SELECT COUNT(1) FROM commerce_settlement").await
     );
     assert_eq!(
         0,
         scalar_i64(&pool, "SELECT COUNT(1) FROM commerce_account_ledger_entry").await
     );
     assert!(
-        sqlx::query("SELECT settlement_status FROM ai_usage_fact WHERE id = 504")
+        sqlx::query("SELECT settlement_status FROM ai_usage WHERE id = 504")
             .fetch_one(&pool)
             .await
             .unwrap()
@@ -212,7 +212,7 @@ async fn sqlite_usage_settlement_marks_insufficient_points_failed_and_allows_ret
         3,
         scalar_i64(
             &pool,
-            "SELECT settlement_status FROM ai_usage_fact WHERE id = 502"
+            "SELECT settlement_status FROM ai_usage WHERE id = 502"
         )
         .await
     );
@@ -220,7 +220,7 @@ async fn sqlite_usage_settlement_marks_insufficient_points_failed_and_allows_ret
         "INSUFFICIENT_POINTS",
         scalar_string(
             &pool,
-            "SELECT failure_code FROM commerce_usage_settlement WHERE usage_fact_id = 502"
+            "SELECT failure_code FROM commerce_settlement WHERE usage_fact_id = 502"
         )
         .await
     );
@@ -247,7 +247,7 @@ async fn sqlite_usage_settlement_marks_insufficient_points_failed_and_allows_ret
     );
     assert_eq!(
         1,
-        scalar_i64(&pool, "SELECT COUNT(1) FROM commerce_usage_settlement").await
+        scalar_i64(&pool, "SELECT COUNT(1) FROM commerce_settlement").await
     );
     assert_eq!(
         1,
@@ -257,7 +257,7 @@ async fn sqlite_usage_settlement_marks_insufficient_points_failed_and_allows_ret
         2,
         scalar_i64(
             &pool,
-            "SELECT settlement_status FROM ai_usage_fact WHERE id = 502"
+            "SELECT settlement_status FROM ai_usage WHERE id = 502"
         )
         .await
     );
@@ -265,7 +265,7 @@ async fn sqlite_usage_settlement_marks_insufficient_points_failed_and_allows_ret
         2,
         scalar_i64(
             &pool,
-            "SELECT settlement_status FROM commerce_usage_settlement WHERE usage_fact_id = 502"
+            "SELECT settlement_status FROM commerce_settlement WHERE usage_fact_id = 502"
         )
         .await
     );
@@ -273,7 +273,7 @@ async fn sqlite_usage_settlement_marks_insufficient_points_failed_and_allows_ret
         0,
         scalar_i64(
             &pool,
-            "SELECT COUNT(1) FROM commerce_usage_settlement WHERE usage_fact_id = 502 AND failure_code IS NOT NULL"
+            "SELECT COUNT(1) FROM commerce_settlement WHERE usage_fact_id = 502 AND failure_code IS NOT NULL"
         )
         .await
     );
@@ -302,7 +302,7 @@ async fn sqlite_usage_settlement_zero_tenant_command_settles_global_pending_usag
         2,
         scalar_i64(
             &pool,
-            "SELECT settlement_status FROM ai_usage_fact WHERE id = 503"
+            "SELECT settlement_status FROM ai_usage WHERE id = 503"
         )
         .await
     );
@@ -341,7 +341,7 @@ async fn sqlite_usage_settlement_keeps_micro_amount_pending_until_billable_point
     );
     assert_eq!(
         0,
-        scalar_i64(&pool, "SELECT COUNT(1) FROM commerce_usage_settlement").await
+        scalar_i64(&pool, "SELECT COUNT(1) FROM commerce_settlement").await
     );
     assert_eq!(
         0,
@@ -351,7 +351,7 @@ async fn sqlite_usage_settlement_keeps_micro_amount_pending_until_billable_point
         0,
         scalar_i64(
             &pool,
-            "SELECT settlement_status FROM ai_usage_fact WHERE id = 505"
+            "SELECT settlement_status FROM ai_usage WHERE id = 505"
         )
         .await
     );
@@ -383,7 +383,7 @@ async fn sqlite_usage_settlement_keeps_sub_point_aggregate_pending() {
     );
     assert_eq!(
         0,
-        scalar_i64(&pool, "SELECT COUNT(1) FROM commerce_usage_settlement").await
+        scalar_i64(&pool, "SELECT COUNT(1) FROM commerce_settlement").await
     );
     assert_eq!(
         0,
@@ -397,7 +397,7 @@ async fn sqlite_usage_settlement_keeps_sub_point_aggregate_pending() {
         0,
         scalar_i64(
             &pool,
-            "SELECT COUNT(1) FROM ai_usage_fact WHERE id IN (506, 507) AND settlement_status = 2"
+            "SELECT COUNT(1) FROM ai_usage WHERE id IN (506, 507) AND settlement_status = 2"
         )
         .await
     );
@@ -405,7 +405,7 @@ async fn sqlite_usage_settlement_keeps_sub_point_aggregate_pending() {
         0,
         scalar_i64(
             &pool,
-            "SELECT COALESCE(SUM(points), 0) FROM commerce_usage_settlement WHERE usage_fact_id IN (506, 507)"
+            "SELECT COALESCE(SUM(points), 0) FROM commerce_settlement WHERE usage_fact_id IN (506, 507)"
         )
         .await
     );
@@ -437,7 +437,7 @@ async fn sqlite_usage_settlement_aggregates_to_minimum_billable_point_before_deb
     );
     assert_eq!(
         2,
-        scalar_i64(&pool, "SELECT COUNT(1) FROM commerce_usage_settlement").await
+        scalar_i64(&pool, "SELECT COUNT(1) FROM commerce_settlement").await
     );
     assert_eq!(
         1,
@@ -451,7 +451,7 @@ async fn sqlite_usage_settlement_aggregates_to_minimum_billable_point_before_deb
         2,
         scalar_i64(
             &pool,
-            "SELECT COUNT(1) FROM ai_usage_fact WHERE id IN (510, 511) AND settlement_status = 2"
+            "SELECT COUNT(1) FROM ai_usage WHERE id IN (510, 511) AND settlement_status = 2"
         )
         .await
     );
@@ -459,7 +459,7 @@ async fn sqlite_usage_settlement_aggregates_to_minimum_billable_point_before_deb
         1,
         scalar_i64(
             &pool,
-            "SELECT COALESCE(SUM(points), 0) FROM commerce_usage_settlement WHERE usage_fact_id IN (510, 511)"
+            "SELECT COALESCE(SUM(points), 0) FROM commerce_settlement WHERE usage_fact_id IN (510, 511)"
         )
         .await
     );
@@ -493,7 +493,7 @@ async fn sqlite_usage_settlement_marks_invalid_amount_failed_without_blocking_va
         3,
         scalar_i64(
             &pool,
-            "SELECT settlement_status FROM ai_usage_fact WHERE id = 508"
+            "SELECT settlement_status FROM ai_usage WHERE id = 508"
         )
         .await
     );
@@ -501,7 +501,7 @@ async fn sqlite_usage_settlement_marks_invalid_amount_failed_without_blocking_va
         "INVALID_USAGE_AMOUNT",
         scalar_string(
             &pool,
-            "SELECT failure_code FROM commerce_usage_settlement WHERE usage_fact_id = 508"
+            "SELECT failure_code FROM commerce_settlement WHERE usage_fact_id = 508"
         )
         .await
     );
@@ -509,7 +509,7 @@ async fn sqlite_usage_settlement_marks_invalid_amount_failed_without_blocking_va
         2,
         scalar_i64(
             &pool,
-            "SELECT settlement_status FROM ai_usage_fact WHERE id = 509"
+            "SELECT settlement_status FROM ai_usage WHERE id = 509"
         )
         .await
     );
@@ -536,7 +536,7 @@ async fn test_pool() -> SqlitePool {
 
 async fn create_schema(pool: &SqlitePool) {
     for statement in [
-        r#"CREATE TABLE ai_usage_fact (
+        r#"CREATE TABLE ai_usage (
             id INTEGER PRIMARY KEY,
             uuid TEXT NOT NULL,
             tenant_id INTEGER NOT NULL,
@@ -583,7 +583,7 @@ async fn create_schema(pool: &SqlitePool) {
             settlement_id INTEGER,
             UNIQUE (tenant_id, organization_id, request_id, usage_type)
         )"#,
-        r#"CREATE TABLE commerce_usage_settlement (
+        r#"CREATE TABLE commerce_settlement (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             uuid TEXT NOT NULL,
             tenant_id INTEGER NOT NULL,
@@ -677,7 +677,7 @@ async fn seed_usage_fact(
 ) {
     sqlx::query(
         r#"
-        INSERT INTO ai_usage_fact
+        INSERT INTO ai_usage
             (id, uuid, tenant_id, organization_id, user_id, request_id, trace_id, status,
              api_key_id, api_key_name_snapshot, channel_group_id, channel_group_snapshot,
              owner_type, owner_id, owner_name_snapshot, model, provider_id, channel_id, modality,

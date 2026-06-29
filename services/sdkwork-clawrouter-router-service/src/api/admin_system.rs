@@ -101,9 +101,5 @@ fn installation_status_code(
 }
 
 fn installation_status_error_response(error: DatabaseInstallError) -> Response {
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(PlusApiResult::error("5000", error.to_string())),
-    )
-        .into_response()
+    PlusApiResult::error("5000", error.to_string())).into_response()
 }

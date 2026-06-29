@@ -238,6 +238,9 @@ pub enum SigningError {
 
     #[error("unsupported operation: {0}")]
     UnsupportedOperation(String),
+
+    #[error("system clock unavailable: {0}")]
+    ClockUnavailable(String),
 }
 
 /// Key generation options.

@@ -16,7 +16,7 @@ export const PORTAL_EXTERNAL_TAILWIND_SOURCES = [
   '../../../../sdkwork-appbase/packages/pc-react/host/sdkwork-host-pc-react/src',
   '../../../../sdkwork-ui/sdkwork-ui-pc-react/src',
   '../../../../sdkwork-core/sdkwork-core-pc-react/src',
-  '../../../vendor/sdkwork-commerce/apps/sdkwork-commerce-pc/packages/*/src',
+  '../../../packages/pc-react/commerce/*/src',
   '../../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/*/src',
   '../../../../sdkwork-image/apps/sdkwork-image-pc/packages/*/src',
   '../../../../sdkwork-models/apps/sdkwork-models-pc/packages/*/src',

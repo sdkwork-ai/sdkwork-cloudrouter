@@ -22,56 +22,62 @@ struct HttpMetrics {
     readiness_checks_failed_total: IntCounter,
 }
 
-static HTTP_METRICS: OnceLock<HttpMetrics> = OnceLock::new();
+static HTTP_METRICS: OnceLock<Option<HttpMetrics>> = OnceLock::new();
 
-fn http_metrics() -> &'static HttpMetrics {
-    HTTP_METRICS.get_or_init(|| {
-        let requests_total = IntCounterVec::new(
-            prometheus::Opts::new(
-                "http_requests_total",
-                "Total HTTP requests served by sdkwork-claw-http services.",
-            ),
-            &["method", "status"],
-        )
-        .expect("http_requests_total metric construction must not fail");
-
-        let request_duration_seconds = HistogramVec::new(
-            prometheus::HistogramOpts::new(
-                "http_request_duration_seconds",
-                "HTTP request latency in seconds.",
+fn http_metrics() -> Option<&'static HttpMetrics> {
+    HTTP_METRICS
+        .get_or_init(|| {
+            let requests_total = IntCounterVec::new(
+                prometheus::Opts::new(
+                    "http_requests_total",
+                    "Total HTTP requests served by sdkwork-claw-http services.",
+                ),
+                &["method", "status"],
             )
-            .buckets(vec![
-                0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0,
-            ]),
-            &["method"],
-        )
-        .expect("http_request_duration_seconds metric construction must not fail");
+            .map_err(|e| tracing::error!(error = %e, "failed to construct http_requests_total"))
+            .ok()?;
 
-        let readiness_checks_total = IntCounter::new(
-            "http_readiness_checks_total",
-            "Total readiness probe evaluations.",
-        )
-        .expect("http_readiness_checks_total metric construction must not fail");
+            let request_duration_seconds = HistogramVec::new(
+                prometheus::HistogramOpts::new(
+                    "http_request_duration_seconds",
+                    "HTTP request latency in seconds.",
+                )
+                .buckets(vec![
+                    0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0,
+                ]),
+                &["method"],
+            )
+            .map_err(|e| tracing::error!(error = %e, "failed to construct http_request_duration_seconds"))
+            .ok()?;
 
-        let readiness_checks_failed_total = IntCounter::new(
-            "http_readiness_checks_failed_total",
-            "Total failed readiness probe evaluations.",
-        )
-        .expect("http_readiness_checks_failed_total metric construction must not fail");
+            let readiness_checks_total = IntCounter::new(
+                "http_readiness_checks_total",
+                "Total readiness probe evaluations.",
+            )
+            .map_err(|e| tracing::error!(error = %e, "failed to construct http_readiness_checks_total"))
+            .ok()?;
 
-        let registry = prometheus::default_registry();
-        let _ = registry.register(Box::new(requests_total.clone()));
-        let _ = registry.register(Box::new(request_duration_seconds.clone()));
-        let _ = registry.register(Box::new(readiness_checks_total.clone()));
-        let _ = registry.register(Box::new(readiness_checks_failed_total.clone()));
+            let readiness_checks_failed_total = IntCounter::new(
+                "http_readiness_checks_failed_total",
+                "Total failed readiness probe evaluations.",
+            )
+            .map_err(|e| tracing::error!(error = %e, "failed to construct http_readiness_checks_failed_total"))
+            .ok()?;
 
-        HttpMetrics {
-            requests_total,
-            request_duration_seconds,
-            readiness_checks_total,
-            readiness_checks_failed_total,
-        }
-    })
+            let registry = prometheus::default_registry();
+            let _ = registry.register(Box::new(requests_total.clone()));
+            let _ = registry.register(Box::new(request_duration_seconds.clone()));
+            let _ = registry.register(Box::new(readiness_checks_total.clone()));
+            let _ = registry.register(Box::new(readiness_checks_failed_total.clone()));
+
+            Some(HttpMetrics {
+                requests_total,
+                request_duration_seconds,
+                readiness_checks_total,
+                readiness_checks_failed_total,
+            })
+        })
+        .as_ref()
 }
 
 /// Axum middleware that records per-request metrics with method + status labels.
@@ -87,23 +93,26 @@ pub async fn metrics_middleware(request: Request, next: Next) -> Response {
     let elapsed = start.elapsed().as_secs_f64();
     let status = response.status().as_u16().to_string();
 
-    let metrics = http_metrics();
-    metrics
-        .requests_total
-        .with_label_values(&[method.as_str(), &status])
-        .inc();
-    metrics
-        .request_duration_seconds
-        .with_label_values(&[method.as_str()])
-        .observe(elapsed);
+    if let Some(metrics) = http_metrics() {
+        metrics
+            .requests_total
+            .with_label_values(&[method.as_str(), &status])
+            .inc();
+        metrics
+            .request_duration_seconds
+            .with_label_values(&[method.as_str()])
+            .observe(elapsed);
+    }
 
     response
 }
 
 pub fn record_readiness_check(success: bool) {
-    http_metrics().readiness_checks_total.inc();
-    if !success {
-        http_metrics().readiness_checks_failed_total.inc();
+    if let Some(metrics) = http_metrics() {
+        metrics.readiness_checks_total.inc();
+        if !success {
+            metrics.readiness_checks_failed_total.inc();
+        }
     }
 }
 

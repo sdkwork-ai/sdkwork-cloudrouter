@@ -13,16 +13,7 @@ except ImportError as exc:  # pragma: no cover
 ROOT = Path(__file__).resolve().parents[1]
 MODELS_ROOT = ROOT.parent / "sdkwork-models"
 APPBASE_ROOT = ROOT.parent / "sdkwork-appbase"
-COMMERCE_ROOT = ROOT.parent / "sdkwork-commerce"
 APPSTORE_ROOT = ROOT.parent / "sdkwork-appstore"
-
-COMMERCE_DOMAIN_PREFIXES = {
-    "commerce": "commerce",
-    "promotion": "commerce",
-    "membership": "commerce",
-    "benefit": "commerce",
-    "entitlement": "commerce",
-}
 
 MODELS_CATALOG_TABLES = {
     "ai_model_vendor",
@@ -507,13 +498,6 @@ table_fragments:
             "locator": "../sdkwork-appbase",
             "registry_path": "docs/schema-registry/appbase-messaging.tables.yaml",
             "order": 12,
-            "ownership": "read_only",
-        },
-        {
-            "module_id": "commerce-core",
-            "locator": "../sdkwork-commerce",
-            "registry_path": "docs/schema-registry/commerce-core.tables.yaml",
-            "order": 20,
             "ownership": "read_only",
         },
         {

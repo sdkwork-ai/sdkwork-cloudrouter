@@ -52,74 +52,88 @@ impl SqlitePricingCatalogLoader {
 
     pub async fn load_snapshot(&self) -> Result<SqlPricingCatalogSnapshot, SqlCatalogLoadError> {
         let dictionary = runtime_pricing_dictionary_rows()?;
+        // M-4: wrap all catalog SELECTs in a single transaction so the
+        // pointer-swapped snapshot reflects one consistent database state.
+        // Without this, interleaved writes between individual SELECTs could
+        // produce a snapshot that mixes old and new rows (e.g. a routing rule
+        // referencing a model mapping that was just deleted).
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .map_err(|source| sqlite_query_error("BEGIN_TX", source))?;
+        let api_keys = self.load_api_key_rows(&mut *tx).await?;
         let rows = PricingCatalogRows {
             vendors: dictionary.vendors,
             models: dictionary.models,
             provider_routes: row_mapping::load_provider_routes(
-                &self.pool,
+                &mut *tx,
                 queries::LOAD_PROVIDER_ROUTES,
                 self.circuit_breaker_recovery_window_seconds,
             )
             .await
             .map_err(|source| sqlite_query_error("LOAD_PROVIDER_ROUTES", source))?,
             provider_channel_routes: row_mapping::load_provider_channel_routes(
-                &self.pool,
+                &mut *tx,
                 queries::LOAD_PROVIDER_CHANNEL_ROUTES,
                 self.circuit_breaker_recovery_window_seconds,
             )
             .await
             .map_err(|source| sqlite_query_error("LOAD_PROVIDER_CHANNEL_ROUTES", source))?,
             routing_policies: row_mapping::load_routing_policies(
-                &self.pool,
+                &mut *tx,
                 queries::LOAD_ROUTING_POLICIES,
             )
             .await
             .map_err(|source| sqlite_query_error("LOAD_ROUTING_POLICIES", source))?,
-            routing_rules: row_mapping::load_routing_rules(&self.pool, queries::LOAD_ROUTING_RULES)
+            routing_rules: row_mapping::load_routing_rules(&mut *tx, queries::LOAD_ROUTING_RULES)
                 .await
                 .map_err(|source| sqlite_query_error("LOAD_ROUTING_RULES", source))?,
             model_mappings: row_mapping::load_model_mappings(
-                &self.pool,
+                &mut *tx,
                 queries::LOAD_MODEL_MAPPINGS,
             )
             .await
             .map_err(|source| sqlite_query_error("LOAD_MODEL_MAPPINGS", source))?,
-            pricing_plans: row_mapping::load_pricing_plans(&self.pool, queries::LOAD_PRICING_PLANS)
+            pricing_plans: row_mapping::load_pricing_plans(&mut *tx, queries::LOAD_PRICING_PLANS)
                 .await
                 .map_err(|source| sqlite_query_error("LOAD_PRICING_PLANS", source))?,
             channel_groups: row_mapping::load_channel_groups(
-                &self.pool,
+                &mut *tx,
                 queries::LOAD_API_KEY_GROUPS,
             )
             .await
             .map_err(|source| sqlite_query_error("LOAD_API_KEY_GROUPS", source))?,
-            api_keys: self.load_api_key_rows().await?,
+            api_keys,
             access_policies: row_mapping::load_access_policies(
-                &self.pool,
+                &mut *tx,
                 queries::LOAD_ACCESS_POLICIES,
             )
             .await
             .map_err(|source| sqlite_query_error("LOAD_ACCESS_POLICIES", source))?,
             quota_policies: row_mapping::load_quota_policies(
-                &self.pool,
+                &mut *tx,
                 queries::LOAD_QUOTA_POLICIES,
             )
             .await
             .map_err(|source| sqlite_query_error("LOAD_QUOTA_POLICIES", source))?,
             gateway_risk_rules: row_mapping::load_gateway_risk_rules(
-                &self.pool,
+                &mut *tx,
                 queries::LOAD_GATEWAY_RISK_RULES,
             )
             .await
             .map_err(|source| sqlite_query_error("LOAD_GATEWAY_RISK_RULES", source))?,
             channel_group_metric_snapshots: row_mapping::load_channel_group_metric_snapshots(
-                &self.pool,
+                &mut *tx,
                 queries::LOAD_API_KEY_GROUP_METRIC_SNAPSHOTS,
             )
             .await
             .map_err(|source| sqlite_query_error("LOAD_API_KEY_GROUP_METRIC_SNAPSHOTS", source))?,
             prices: dictionary.prices,
         };
+        tx.commit()
+            .await
+            .map_err(|source| sqlite_query_error("COMMIT_TX", source))?;
         let managed_provider_secrets = managed_provider_secrets_from_rows(
             &rows.provider_routes,
             &rows.provider_channel_routes,
@@ -166,8 +180,14 @@ impl SqlitePricingCatalogLoader {
         .map_err(SqlCatalogLoadError::from)
     }
 
-    async fn load_api_key_rows(&self) -> Result<Vec<GatewayApiKeyRow>, SqlCatalogLoadError> {
-        let rows = row_mapping::load_api_keys(&self.pool, queries::LOAD_API_KEYS).await?;
+    async fn load_api_key_rows<'e, E>(
+        &self,
+        executor: E,
+    ) -> Result<Vec<GatewayApiKeyRow>, SqlCatalogLoadError>
+    where
+        E: sqlx::Executor<'e, Database = sqlx::Sqlite>,
+    {
+        let rows = row_mapping::load_api_keys(executor, queries::LOAD_API_KEYS).await?;
         rows.into_iter()
             .map(|row| decode_api_key_row_copyable_key(row, self.api_key_secret_codec.as_deref()))
             .collect::<DomainResult<Vec<_>>>()

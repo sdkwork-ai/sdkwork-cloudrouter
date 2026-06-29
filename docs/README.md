@@ -30,6 +30,10 @@ Generated SDK transport output, live credentials, private customer data, runtime
 | Standard alignment audit | [standard-alignment-audit.md](standard-alignment-audit.md) |
 | Schema registry catalog | [schema-registry/table-catalog.md](schema-registry/table-catalog.md) |
 | Production runbook | [../deployments/runbooks/production-operations.md](../deployments/runbooks/production-operations.md) |
+| Runbook index | [runbooks/README.md](runbooks/README.md) |
+| Commercial pricing | [commercial/PRICING.md](commercial/PRICING.md) |
+| Service Level Agreement | [legal/SLA.md](legal/SLA.md) |
+| Edition tier matrix | [legal/TIER_MATRIX.md](legal/TIER_MATRIX.md) |
 
 ## Document Domains
 
@@ -43,6 +47,8 @@ Generated SDK transport output, live credentials, private customer data, runtime
 | release | `release/CHANGELOG.md`, `release/VERSION.md` | clawrouter-release |
 | deployment | `../deployments/`, `../etc/nginx/` | clawrouter-release |
 | frontend | `architecture/tech/TECH-portal-*.md` | clawrouter-frontend |
+| commercial | `commercial/PRICING.md` | clawrouter-commercial |
+| legal | `legal/SLA.md`, `legal/TIER_MATRIX.md` | clawrouter-commercial |
 
 ## Index
 

@@ -3,7 +3,7 @@
 Status: active
 Owner: SDKWork Claw Router SRE / clawrouter-release
 Application: sdkwork-clawrouter
-Updated: 2026-06-26
+Updated: 2026-06-27
 Specs: DOCUMENTATION_SPEC.md §7, HEALTH_CHECK_SPEC.md, DEPLOYMENT_SPEC.md
 
 ## Purpose
@@ -13,19 +13,49 @@ production incidents. Each runbook covers a specific failure scenario with
 trigger conditions, diagnostic steps, mitigation, rollback, and post-incident
 checklist.
 
-## Runbook Index
+Scenario-specific runbooks live in this directory (`docs/runbooks/`); the
+top-level disaster recovery plan and production operations runbook live in
+[`deployments/runbooks/`](../../deployments/runbooks/).
+
+## Runbook Index by Category
+
+### Emergency response (应急)
+
+Short-incident runbooks for active outages and data-safety events.
+
+| Scenario | Path | Severity | Last Drill |
+| --- | --- | --- | --- |
+| Provider upstream outage (circuit breaker, failover, retry) | [provider-outage.md](provider-outage.md) | P0 | 2026-06-22 |
+| Tenant isolation incident (cross-tenant data access) | [tenant-isolation-incident.md](tenant-isolation-incident.md) | P0 | 2026-06-21 |
+| Redis failover (Sentinel, degraded mode) | [redis-failover.md](redis-failover.md) | P0 | 2026-06-23 |
+| PostgreSQL HA failover (Patroni, pgBouncer, PITR) | [postgresql-ha-failover.md](postgresql-ha-failover.md) | P0 | 2026-06-23 |
+| Disaster recovery plan (cross-region, full DR) | [../../deployments/runbooks/disaster-recovery-plan.md](../../deployments/runbooks/disaster-recovery-plan.md) | P0 | 2026-06-20 |
+
+### Operations (运维)
+
+Day-2 operations, capacity, and change-management runbooks.
 
 | Scenario | Path | Severity | Last Drill |
 | --- | --- | --- | --- |
 | Production operations (health, shutdown, password rate limit, supply chain) | [../../deployments/runbooks/production-operations.md](../../deployments/runbooks/production-operations.md) | P0 | 2026-06-20 |
-| Provider upstream outage (circuit breaker, failover, retry) | [../../deployments/runbooks/provider-outage.md](../../deployments/runbooks/provider-outage.md) | P0 | 2026-06-22 |
-| Token / API key rotation | [../../deployments/runbooks/token-api-key-rotation.md](../../deployments/runbooks/token-api-key-rotation.md) | P1 | 2026-06-18 |
-| Tenant isolation incident response | [../../deployments/runbooks/tenant-isolation-incident.md](../../deployments/runbooks/tenant-isolation-incident.md) | P0 | 2026-06-21 |
-| Database migration rollback | [../../deployments/runbooks/database-migration-rollback.md](../../deployments/runbooks/database-migration-rollback.md) | P1 | 2026-06-19 |
-| Rate limit / quota circuit break | [../../deployments/runbooks/rate-limit-circuit-break.md](../../deployments/runbooks/rate-limit-circuit-break.md) | P1 | 2026-06-17 |
-| Audit log investigation | [../../deployments/runbooks/audit-log-investigation.md](../../deployments/runbooks/audit-log-investigation.md) | P2 | 2026-06-15 |
-| Redis failover | [../../deployments/runbooks/redis-failover.md](../../deployments/runbooks/redis-failover.md) | P0 | 2026-06-23 |
-| PostgreSQL HA failover | [../../deployments/runbooks/postgresql-ha-failover.md](../../deployments/runbooks/postgresql-ha-failover.md) | P0 | 2026-06-23 |
+| Database migration rollback (Flyway down / PITR) | [database-migration-rollback.md](database-migration-rollback.md) | P1 | 2026-06-19 |
+| Rate limit / circuit break tuning | [rate-limit-circuit-break.md](rate-limit-circuit-break.md) | P1 | 2026-06-17 |
+
+### Security (安全)
+
+Credential lifecycle and trust-boundary runbooks.
+
+| Scenario | Path | Severity | Last Drill |
+| --- | --- | --- | --- |
+| Token / API key rotation (HMAC, provider creds, admin) | [token-api-key-rotation.md](token-api-key-rotation.md) | P1 | 2026-06-18 |
+
+### Compliance (合规)
+
+Audit, evidence, and regulatory-response runbooks.
+
+| Scenario | Path | Severity | Last Drill |
+| --- | --- | --- | --- |
+| Audit log investigation (query, export, SIEM) | [audit-log-investigation.md](audit-log-investigation.md) | P2 | 2026-06-15 |
 
 ## On-Call Workflow
 
@@ -37,7 +67,8 @@ checklist.
    minutes for P1, until resolved.
 5. **Resolve** — confirm recovery via health probes and SLO dashboard.
 6. **Post-incident** — within 48 hours, publish a blameless postmortem covering
-   timeline, root cause, action items with owners and due dates.
+   timeline, root cause, action items with owners and due dates (template in
+   [disaster-recovery-plan.md](../../deployments/runbooks/disaster-recovery-plan.md#post-incident-review)).
 
 ## Health Probe Cheat Sheet
 
@@ -57,7 +88,9 @@ checklist.
 
 ## Related
 
+- [Disaster Recovery Plan](../../deployments/runbooks/disaster-recovery-plan.md)
 - [Production operations runbook](../../deployments/runbooks/production-operations.md)
 - [Standard alignment audit](../standard-alignment-audit.md)
+- [SOC 2 Compliance Readiness](../compliance/SOC2-compliance-readiness.md)
 - [Security policy](../../SECURITY.md)
 - [Deployment manifests](../../deployments/)

@@ -129,8 +129,8 @@ For Kubernetes:
 - Store the database password in a Secret.
 - Store the Redis password in a Secret when Redis authentication is used.
 - Provide `clawrouter.toml` through a ConfigMap or mounted file.
-- Point readinessProbe at `/readyz`.
-- Point livenessProbe at `/healthz`.
+- Point readinessProbe at `/readyz` and livenessProbe at `/healthz`; on edge, keep readiness `timeoutSeconds >= 5` so brief DB/Redis network partitions do not churn pods, and keep readiness focused on internal dependencies only (never upstream provider reachability).
+- Apply `deployments/kubernetes/claw-router-network-policy.yaml` for zero-trust segmentation (default deny-all + explicit per-component ingress). HTTPS egress to upstream AI providers is routed through a dedicated `egress-gateway` namespace; deploy an L7-aware policy engine (Istio, Cilium, or equivalent) there to enforce the provider FQDN allowlist. See `deployments/kubernetes/README.md` for the full sizing and shutdown guidance (resource requests/limits, `terminationGracePeriodSeconds`, HPA, PDB).
 - Do not bake `.env.release` into the image.
 
 ## Source

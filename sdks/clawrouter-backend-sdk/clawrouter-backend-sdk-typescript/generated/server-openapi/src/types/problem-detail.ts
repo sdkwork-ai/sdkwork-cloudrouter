@@ -1,14 +1,14 @@
 import type { FieldError } from './field-error';
+import type { SdkWorkPlatformErrorCode } from './sdk-work-platform-error-code';
 
 export interface ProblemDetail {
-  code?: string;
+  code: SdkWorkPlatformErrorCode;
   detail?: string;
   errors?: FieldError[];
   instance?: string;
-  /** Server-owned request correlation id. */
-  requestId?: string;
   status: number;
   title: string;
-  traceId?: string;
+  /** Server-owned request correlation id. */
+  traceId: string;
   type: string;
 }

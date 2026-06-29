@@ -426,7 +426,7 @@ No hand-written fallback is allowed.
 ## Data Initialization and Integrity
 
 The existing seed entry points stay in
-`sdkwork-appbase/packages/native-rust/commerce/sdkwork-commerce-membership-sqlx-rust/src/seed.rs`:
+`sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-membership-sqlx-rust/src/seed.rs`:
 
 - `upsert_sqlite_commerce_experience_seed`
 - `upsert_postgres_commerce_experience_seed`

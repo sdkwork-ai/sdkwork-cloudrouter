@@ -124,8 +124,8 @@ Kubernetes 部署时建议：
 - 使用 Secret 保存数据库 URL。
 - Redis 启用认证时为 Redis 密码配置 Secret。
 - 使用 ConfigMap 或挂载文件提供 `clawrouter.toml`。
-- 配置 readinessProbe 指向 `/readyz`。
-- 配置 livenessProbe 指向 `/healthz`。
+- 配置 readinessProbe 指向 `/readyz`，livenessProbe 指向 `/healthz`；edge 组件 readiness 的 `timeoutSeconds` 应不低于 5，以避免 DB/Redis 短暂网络分区导致 Pod 误判为 not-ready，且 readiness 只能依赖内部依赖（PostgreSQL、Redis），不得依赖上游 AI provider 的连通性。
+- 应用 `deployments/kubernetes/claw-router-network-policy.yaml` 实现零信任分段（默认 deny-all + 各组件显式 ingress 规则）。访问上游 AI provider 的 HTTPS 出口流量被指向专用的 `egress-gateway` namespace，需在该 namespace 部署 L7 策略引擎（Istio、Cilium 或同等方案）以强制执行 provider FQDN 白名单。完整的资源 sizing 与优雅停机指引（requests/limits、`terminationGracePeriodSeconds`、HPA、PDB）参见 `deployments/kubernetes/README.md`。
 - 不把 `.env.release` bake 到镜像。
 
 ## Source

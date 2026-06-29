@@ -40,7 +40,7 @@
 ```text
 crates/sdkwork-claw-contract
 crates/sdkwork-claw-config
-crates/sdkwork-claw-core
+crates/sdkwork-claw-health
 crates/sdkwork-claw-observability
 crates/sdkwork-clawrouter-cloud-gateway
 services/sdkwork-clawrouter-standalone-gateway

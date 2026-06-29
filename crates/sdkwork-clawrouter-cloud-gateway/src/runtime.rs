@@ -19,7 +19,8 @@ use sdkwork_clawrouter_router_service::api::{
 };
 use sdkwork_clawrouter_router_service::application::{
     resolve_usage_settlement_worker_config, ApiKeySecretCodec, ApiKeySecretHasher,
-    RuntimeCacheManager, RuntimeStreamBus, UsageSettlementWorker, UsageSettlementWorkerConfig,
+    RuntimeCacheManager, RuntimeStreamBus, TenantInflightConfig, UsageSettlementWorker,
+    UsageSettlementWorkerConfig,
 };
 use sdkwork_clawrouter_router_service::domain::{
     ProviderRetryPolicy, DEFAULT_PROVIDER_CIRCUIT_BREAKER_RECOVERY_WINDOW_SECONDS,
@@ -32,11 +33,12 @@ use sdkwork_clawrouter_router_service::infrastructure::provider::{
     AdapterAwareChatCompletionRelay, AdapterAwareChatCompletionStreamRelay,
     AdapterAwareEmbeddingsRelay, AdapterAwareResponsesRelay, OpenAiCompatibleChatCompletionRelay,
     OpenAiCompatibleChatCompletionStreamRelay, OpenAiCompatibleEmbeddingsRelay,
-    OpenAiCompatibleResponsesRelay, RefreshableProviderSecretMapResolver,
-    SecretRefOpenAiCompatibleChatCompletionRelay,
+    OpenAiCompatibleResponsesRelay, ProviderRelayHttpPoolConfig,
+    RefreshableProviderSecretMapResolver, SecretRefOpenAiCompatibleChatCompletionRelay,
     SecretRefOpenAiCompatibleChatCompletionStreamRelay, SecretRefOpenAiCompatibleEmbeddingsRelay,
     SecretRefOpenAiCompatibleResponsesRelay, UpstreamProviderEndpoint,
-    DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS,
+    DEFAULT_PROVIDER_RESPONSE_MAX_BYTES, DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS,
+    DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::{
     RefreshableSqlPricingCatalog, SqlPricingCatalogSnapshotSummary,
@@ -91,6 +93,8 @@ fn router_with_invocation_runtime_routes<C>(
     usage_recorder: Option<UsageRecorder>,
     provider_adapter_config: Option<ProviderAdapterConfig>,
     runtime_toml: Option<&RuntimeTomlConfig>,
+    tenant_inflight_config: Option<TenantInflightConfig>,
+    estimated_instance_count: u32,
 ) -> Router
 where
     C: PricingCatalog + Send + Sync + 'static,
@@ -99,8 +103,11 @@ where
         let resolver: Arc<dyn ProviderSecretResolver + Send + Sync> = resolver;
         resolver
     });
+    let redis_config = sdkwork_claw_config::RedisConfig::from_env_or_runtime_toml(runtime_toml)
+        .ok()
+        .flatten();
     base_router.merge(
-        invocation_router_with_full_pipeline_and_provider_adapter_config(
+        crate::invocation_router::invocation_router_with_full_pipeline_provider_adapter_and_tenant_inflight(
             catalog,
             api_key_hasher,
             Arc::new(InvocationHttpDispatcher::new()),
@@ -108,7 +115,12 @@ where
             sticky_store,
             usage_recorder,
             provider_adapter_config,
-            Some(crate::invocation_router::invocation_policy_guard_from_runtime_toml(runtime_toml)),
+            Some(crate::invocation_router::invocation_policy_guard_from_runtime_toml_with_instance_count(
+                runtime_toml,
+                estimated_instance_count,
+            )),
+            tenant_inflight_config,
+            redis_config.as_ref(),
         ),
     )
 }
@@ -168,6 +180,8 @@ where
             usage_recorder.clone(),
             provider_adapter_config.clone(),
             runtime_toml,
+            Some(provider_runtime_config.tenant_inflight_config),
+            provider_runtime_config.estimated_instance_count,
         )
     } else {
         let relays = build_openai_runtime_relays(
@@ -202,6 +216,8 @@ where
             usage_recorder.clone(),
             provider_adapter_config.clone(),
             runtime_toml,
+            Some(provider_runtime_config.tenant_inflight_config),
+            provider_runtime_config.estimated_instance_count,
         )
     };
     Ok(merge_relay_authenticated_openai_passthrough(
@@ -250,10 +266,62 @@ impl GatewayUsageRecorder for NotifyingGatewayUsageRecorder {
     }
 }
 
-const DEFAULT_OPENAI_RUNTIME_CATALOG_REFRESH_INTERVAL_MILLIS: u64 = 5_000;
+/// Default catalog refresh interval. Raised from 5s to 15s to reduce steady-state
+/// database load: a single `load_snapshot` reads 16+ catalog tables and the
+/// pointer-swap `RefreshableSqlPricingCatalog` keeps serving the previous
+/// snapshot until the new one is ready, so sub-5s refresh adds no freshness
+/// benefit while multiplying read traffic. `SDKWORK_CLAW_PROVIDER_CATALOG_REFRESH_INTERVAL_MILLIS`
+/// still overrides this default at runtime.
+const DEFAULT_OPENAI_RUNTIME_CATALOG_REFRESH_INTERVAL_MILLIS: u64 = 15_000;
 const CATALOG_REFRESH_FALLBACK_TICKS: u64 = 12;
 
 use sdkwork_database_sqlx::DatabasePool;
+
+/// Histogram for catalog refresh duration, labelled by backend (`sqlite`/`postgres`).
+///
+/// M-1: surfaces slow refreshes that keep the previous snapshot pinned for too
+/// long and multiply database load. Alert on p95 > refresh interval.
+fn catalog_refresh_duration_seconds() -> prometheus::HistogramVec {
+    static METRIC: std::sync::OnceLock<prometheus::HistogramVec> = std::sync::OnceLock::new();
+    METRIC
+        .get_or_init(|| {
+            let metric = prometheus::HistogramVec::new(
+                prometheus::HistogramOpts::new(
+                    "catalog_refresh_duration_seconds",
+                    "Duration of a single catalog snapshot refresh, by backend.",
+                )
+                .namespace("clawrouter"),
+                &["backend"],
+            )
+            .expect("catalog_refresh_duration_seconds histogram");
+            let _ = prometheus::register(Box::new(metric.clone()));
+            metric
+        })
+        .clone()
+}
+
+/// Counter for catalog refresh failures, labelled by backend (`sqlite`/`postgres`).
+///
+/// M-1/M-6: a rising failure rate means the gateway is serving a stale pricing
+/// snapshot. Alert on any increase.
+fn catalog_refresh_failures_total() -> prometheus::IntCounterVec {
+    static METRIC: std::sync::OnceLock<prometheus::IntCounterVec> = std::sync::OnceLock::new();
+    METRIC
+        .get_or_init(|| {
+            let metric = prometheus::IntCounterVec::new(
+                prometheus::Opts::new(
+                    "catalog_refresh_failures_total",
+                    "Total catalog snapshot refresh failures, by backend.",
+                )
+                .namespace("clawrouter"),
+                &["backend"],
+            )
+            .expect("catalog_refresh_failures_total counter");
+            let _ = prometheus::register(Box::new(metric.clone()));
+            metric
+        })
+        .clone()
+}
 
 #[derive(Clone)]
 struct AllInOneRuntimeContext {
@@ -1683,6 +1751,7 @@ fn spawn_sqlite_catalog_refresh_worker(
                 refresh_state = refresh_state.after_catalog_refresh_skip(observed_version);
                 continue;
             }
+            let refresh_started_at = std::time::Instant::now();
             match loader.load_snapshot().await {
                 Ok(snapshot) => {
                     let summary = snapshot.summary();
@@ -1694,12 +1763,18 @@ fn spawn_sqlite_catalog_refresh_worker(
                     refresh_state = refresh_state.after_catalog_refresh_success(observed_version);
                 }
                 Err(error) => {
+                    catalog_refresh_failures_total()
+                        .with_label_values(&["sqlite"])
+                        .inc();
                     tracing::warn!(
                         error = %error,
                         "SQLite OpenAI runtime catalog refresh failed; keeping previous snapshot"
                     );
                 }
             }
+            catalog_refresh_duration_seconds()
+                .with_label_values(&["sqlite"])
+                .observe(refresh_started_at.elapsed().as_secs_f64());
         }
         tracing::info!("sqlite catalog refresh worker stopped");
     })
@@ -1741,6 +1816,7 @@ fn spawn_postgres_catalog_refresh_worker(
                 refresh_state = refresh_state.after_catalog_refresh_skip(observed_version);
                 continue;
             }
+            let refresh_started_at = std::time::Instant::now();
             match loader.load_snapshot().await {
                 Ok(snapshot) => {
                     let summary = snapshot.summary();
@@ -1752,12 +1828,18 @@ fn spawn_postgres_catalog_refresh_worker(
                     refresh_state = refresh_state.after_catalog_refresh_success(observed_version);
                 }
                 Err(error) => {
+                    catalog_refresh_failures_total()
+                        .with_label_values(&["postgres"])
+                        .inc();
                     tracing::warn!(
                         error = %error,
                         "Postgres OpenAI runtime catalog refresh failed; keeping previous snapshot"
                     );
                 }
             }
+            catalog_refresh_duration_seconds()
+                .with_label_values(&["postgres"])
+                .observe(refresh_started_at.elapsed().as_secs_f64());
         }
         tracing::info!("postgres catalog refresh worker stopped");
     })
@@ -1972,27 +2054,39 @@ fn build_openai_runtime_relays(
         )
         .map_err(|error| GatewayRouterError::Config(error.to_string()))?;
         return Ok(OpenAiRuntimeRelays {
-            chat: Some(Arc::new(OpenAiCompatibleChatCompletionRelay::with_runtime(
+            chat: Some(Arc::new(OpenAiCompatibleChatCompletionRelay::with_full_runtime(
                 endpoint.clone(),
                 provider_runtime.response_timeout,
+                provider_runtime.stream_response_timeout,
+                provider_runtime.response_max_bytes,
                 provider_runtime.default_retry_policy.clone(),
+                provider_runtime.http_pool_config,
             ))),
             chat_stream: Some(Arc::new(
-                OpenAiCompatibleChatCompletionStreamRelay::with_runtime(
+                OpenAiCompatibleChatCompletionStreamRelay::with_full_runtime(
                     endpoint.clone(),
                     provider_runtime.response_timeout,
+                    provider_runtime.stream_response_timeout,
+                    provider_runtime.response_max_bytes,
                     provider_runtime.default_retry_policy.clone(),
+                    provider_runtime.http_pool_config,
                 ),
             )),
-            embeddings: Some(Arc::new(OpenAiCompatibleEmbeddingsRelay::with_runtime(
+            embeddings: Some(Arc::new(OpenAiCompatibleEmbeddingsRelay::with_full_runtime(
                 endpoint.clone(),
                 provider_runtime.response_timeout,
+                provider_runtime.stream_response_timeout,
+                provider_runtime.response_max_bytes,
                 provider_runtime.default_retry_policy.clone(),
+                provider_runtime.http_pool_config,
             ))),
-            responses: Some(Arc::new(OpenAiCompatibleResponsesRelay::with_runtime(
+            responses: Some(Arc::new(OpenAiCompatibleResponsesRelay::with_full_runtime(
                 endpoint,
                 provider_runtime.response_timeout,
+                provider_runtime.stream_response_timeout,
+                provider_runtime.response_max_bytes,
                 provider_runtime.default_retry_policy,
+                provider_runtime.http_pool_config,
             ))),
         });
     }
@@ -2010,31 +2104,43 @@ fn secret_ref_openai_runtime_relays(
 ) -> OpenAiRuntimeRelays {
     OpenAiRuntimeRelays {
         chat: Some(Arc::new(
-            SecretRefOpenAiCompatibleChatCompletionRelay::with_runtime(
+            SecretRefOpenAiCompatibleChatCompletionRelay::with_full_runtime(
                 resolver.clone(),
                 provider_runtime.response_timeout,
+                provider_runtime.stream_response_timeout,
+                provider_runtime.response_max_bytes,
                 provider_runtime.default_retry_policy.clone(),
+                provider_runtime.http_pool_config,
             ),
         )),
         chat_stream: Some(Arc::new(
-            SecretRefOpenAiCompatibleChatCompletionStreamRelay::with_runtime(
+            SecretRefOpenAiCompatibleChatCompletionStreamRelay::with_full_runtime(
                 resolver.clone(),
                 provider_runtime.response_timeout,
+                provider_runtime.stream_response_timeout,
+                provider_runtime.response_max_bytes,
                 provider_runtime.default_retry_policy.clone(),
+                provider_runtime.http_pool_config,
             ),
         )),
         embeddings: Some(Arc::new(
-            SecretRefOpenAiCompatibleEmbeddingsRelay::with_runtime(
+            SecretRefOpenAiCompatibleEmbeddingsRelay::with_full_runtime(
                 resolver.clone(),
                 provider_runtime.response_timeout,
+                provider_runtime.stream_response_timeout,
+                provider_runtime.response_max_bytes,
                 provider_runtime.default_retry_policy.clone(),
+                provider_runtime.http_pool_config,
             ),
         )),
         responses: Some(Arc::new(
-            SecretRefOpenAiCompatibleResponsesRelay::with_runtime(
+            SecretRefOpenAiCompatibleResponsesRelay::with_full_runtime(
                 resolver,
                 provider_runtime.response_timeout,
+                provider_runtime.stream_response_timeout,
+                provider_runtime.response_max_bytes,
                 provider_runtime.default_retry_policy,
+                provider_runtime.http_pool_config,
             ),
         )),
     }
@@ -2229,16 +2335,24 @@ fn normalize_adapter_path(value: &str) -> String {
 #[derive(Clone)]
 struct ProviderRelayRuntimeConfig {
     response_timeout: Duration,
+    stream_response_timeout: Duration,
+    response_max_bytes: u64,
+    http_pool_config: ProviderRelayHttpPoolConfig,
     default_retry_policy: ProviderRetryPolicy,
     catalog_refresh_interval: Duration,
     circuit_breaker_recovery_window_seconds: u64,
     failure_strategy: OpenAiRuntimeFailureStrategy,
+    tenant_inflight_config: TenantInflightConfig,
+    estimated_instance_count: u32,
 }
 
 fn provider_relay_runtime_config_from_env_or_toml(
     runtime_toml: Option<&RuntimeTomlConfig>,
 ) -> Result<ProviderRelayRuntimeConfig, String> {
     const RESPONSE_TIMEOUT: &str = "SDKWORK_CLAW_PROVIDER_RESPONSE_TIMEOUT_MILLIS";
+    const STREAM_RESPONSE_TIMEOUT: &str =
+        "SDKWORK_CLAW_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS";
+    const RESPONSE_MAX_BYTES: &str = "SDKWORK_CLAW_PROVIDER_RESPONSE_MAX_BYTES";
     const RETRY_MAX_ATTEMPTS: &str = "SDKWORK_CLAW_PROVIDER_RETRY_MAX_ATTEMPTS";
     const RETRY_STATUS_CODES: &str = "SDKWORK_CLAW_PROVIDER_RETRYABLE_STATUS_CODES";
     const RETRY_BACKOFF: &str = "SDKWORK_CLAW_PROVIDER_RETRY_BACKOFF_MILLIS";
@@ -2246,11 +2360,31 @@ fn provider_relay_runtime_config_from_env_or_toml(
     const CIRCUIT_BREAKER_RECOVERY_WINDOW: &str =
         "SDKWORK_CLAW_PROVIDER_CIRCUIT_BREAKER_RECOVERY_WINDOW_MILLIS";
     const FAILURE_STRATEGY: &str = "SDKWORK_CLAW_PROVIDER_FAILURE_STRATEGY";
+    const POOL_IDLE_TIMEOUT: &str = "SDKWORK_CLAW_PROVIDER_HTTP_POOL_IDLE_TIMEOUT_SECONDS";
+    const POOL_MAX_IDLE_PER_HOST: &str = "SDKWORK_CLAW_PROVIDER_HTTP_POOL_MAX_IDLE_PER_HOST";
+    const HTTP2_KEEP_ALIVE_INTERVAL: &str =
+        "SDKWORK_CLAW_PROVIDER_HTTP2_KEEP_ALIVE_INTERVAL_SECONDS";
+    const HTTP2_KEEP_ALIVE_TIMEOUT: &str =
+        "SDKWORK_CLAW_PROVIDER_HTTP2_KEEP_ALIVE_TIMEOUT_SECONDS";
+    const CONNECT_TIMEOUT: &str = "SDKWORK_CLAW_PROVIDER_HTTP_CONNECT_TIMEOUT_SECONDS";
+    const ESTIMATED_INSTANCE_COUNT: &str =
+        "SDKWORK_CLAW_PROVIDER_RATE_LIMIT_ESTIMATED_INSTANCE_COUNT";
+    const TENANT_MAX_INFLIGHT: &str = "SDKWORK_CLAW_PROVIDER_TENANT_MAX_INFLIGHT_REQUESTS";
 
     let response_timeout_millis = parse_positive_u64_config(
         RESPONSE_TIMEOUT,
         runtime_toml.and_then(|config| config.provider_relay.runtime.response_timeout_millis),
         DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS,
+    )?;
+    let stream_response_timeout_millis = parse_positive_u64_config(
+        STREAM_RESPONSE_TIMEOUT,
+        runtime_toml.and_then(|config| config.provider_relay.runtime.stream_response_timeout_millis),
+        DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS,
+    )?;
+    let response_max_bytes = parse_positive_u64_config(
+        RESPONSE_MAX_BYTES,
+        runtime_toml.and_then(|config| config.provider_relay.runtime.provider_response_max_bytes),
+        DEFAULT_PROVIDER_RESPONSE_MAX_BYTES,
     )?;
     let retry_max_attempts = parse_positive_usize_config(
         RETRY_MAX_ATTEMPTS,
@@ -2309,15 +2443,84 @@ fn provider_relay_runtime_config_from_env_or_toml(
             .as_deref(),
     )?;
 
+    let http_pool_section = runtime_toml.map(|config| &config.provider_relay.http_pool);
+    let http_pool_config = match http_pool_section {
+        Some(section) => ProviderRelayHttpPoolConfig::from_section(section),
+        None => ProviderRelayHttpPoolConfig::default(),
+    };
+    let http_pool_config = ProviderRelayHttpPoolConfig {
+        pool_idle_timeout: parse_positive_u64_config(
+            POOL_IDLE_TIMEOUT,
+            http_pool_section.and_then(|section| section.pool_idle_timeout_seconds),
+            http_pool_config.pool_idle_timeout.as_secs(),
+        )
+        .map(Duration::from_secs)?,
+        pool_max_idle_per_host: parse_positive_usize_config(
+            POOL_MAX_IDLE_PER_HOST,
+            http_pool_section.and_then(|section| section.pool_max_idle_per_host),
+            http_pool_config.pool_max_idle_per_host,
+        )?,
+        http2_keep_alive_interval: parse_positive_u64_config(
+            HTTP2_KEEP_ALIVE_INTERVAL,
+            http_pool_section.and_then(|section| section.http2_keep_alive_interval_seconds),
+            http_pool_config.http2_keep_alive_interval.as_secs(),
+        )
+        .map(Duration::from_secs)?,
+        http2_keep_alive_timeout: parse_positive_u64_config(
+            HTTP2_KEEP_ALIVE_TIMEOUT,
+            http_pool_section.and_then(|section| section.http2_keep_alive_timeout_seconds),
+            http_pool_config.http2_keep_alive_timeout.as_secs(),
+        )
+        .map(Duration::from_secs)?,
+        connect_timeout: parse_positive_u64_config(
+            CONNECT_TIMEOUT,
+            http_pool_section.and_then(|section| section.connect_timeout_seconds),
+            http_pool_config.connect_timeout.as_secs(),
+        )
+        .map(Duration::from_secs)?,
+    };
+
+    let rate_limit_section = runtime_toml.map(|config| &config.provider_relay.rate_limit);
+    let estimated_instance_count = parse_positive_u32_config(
+        ESTIMATED_INSTANCE_COUNT,
+        rate_limit_section.and_then(|section| section.estimated_instance_count),
+        1,
+    )?;
+    let tenant_max_inflight = parse_positive_u32_config(
+        TENANT_MAX_INFLIGHT,
+        rate_limit_section.and_then(|section| section.tenant_max_inflight_requests),
+        TenantInflightConfig::default().max_inflight,
+    )?;
+    let tenant_inflight_config = TenantInflightConfig {
+        max_inflight: tenant_max_inflight,
+    };
+
     Ok(ProviderRelayRuntimeConfig {
         response_timeout: Duration::from_millis(response_timeout_millis),
+        stream_response_timeout: Duration::from_millis(stream_response_timeout_millis),
+        response_max_bytes,
+        http_pool_config,
         default_retry_policy,
         catalog_refresh_interval: Duration::from_millis(catalog_refresh_interval_millis),
         circuit_breaker_recovery_window_seconds: seconds_ceil_from_millis(
             circuit_breaker_recovery_window_millis,
         ),
         failure_strategy,
+        tenant_inflight_config,
+        estimated_instance_count,
     })
+}
+
+fn parse_positive_u32_config(
+    name: &str,
+    config_value: Option<u32>,
+    default: u32,
+) -> Result<u32, String> {
+    let parsed = sdkwork_claw_config::runtime::config_u32(name, config_value)?.unwrap_or(default);
+    if parsed == 0 {
+        return Err(format!("{name} must be a positive integer"));
+    }
+    Ok(parsed)
 }
 
 fn parse_openai_runtime_failure_strategy(

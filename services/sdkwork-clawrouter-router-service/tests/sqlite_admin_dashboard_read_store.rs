@@ -36,7 +36,7 @@ async fn sqlite_admin_dashboard_counts_iam_active_users_without_usage_facts() {
 async fn create_schema(pool: &SqlitePool) {
     for statement in [
         r#"
-        CREATE TABLE ai_usage_fact (
+        CREATE TABLE ai_usage (
             id INTEGER PRIMARY KEY,
             tenant_id INTEGER NOT NULL,
             organization_id INTEGER NOT NULL,

@@ -154,25 +154,7 @@ SDK_DEPENDENCIES = {
                 "python": "sdkwork-iam-app-sdk",
             },
         },
-        {
-            "workspace": "sdkwork-commerce-app-sdk",
-            "role": "commerce-app-capability",
-            "required": True,
-            "dependencyMode": "consumer-sdk",
-            "apiPrefix": "/app/v3/api",
-            "generatedTransportImportPolicy": "forbidden",
-            "packageByLanguage": {
-                "typescript": "sdkwork-commerce-app-sdk-generated-typescript",
-                "flutter": "sdkwork_commerce_app_sdk",
-                "rust": "sdkwork-commerce-app-sdk",
-                "java": "com.sdkwork:sdkwork-commerce-app-sdk",
-                "csharp": "SDKWork.Commerce.AppSdk",
-                "swift": "sdkwork-commerce-app-sdk",
-                "kotlin": "com.sdkwork:sdkwork-commerce-app-sdk",
-                "go": "github.com/sdkwork/sdkwork-commerce-app-sdk",
-                "python": "sdkwork-commerce-app-sdk",
-            },
-        },
+        # REMOVED: sdkwork-commerce-app-sdk (sdkwork-commerce repository dissolved)
     ],
     "clawrouter-backend-sdk": [
         {
@@ -194,25 +176,7 @@ SDK_DEPENDENCIES = {
                 "python": "sdkwork-iam-backend-sdk",
             },
         },
-        {
-            "workspace": "sdkwork-commerce-backend-sdk",
-            "role": "commerce-backend-management-capability",
-            "required": True,
-            "dependencyMode": "consumer-sdk",
-            "apiPrefix": "/backend/v3/api",
-            "generatedTransportImportPolicy": "forbidden",
-            "packageByLanguage": {
-                "typescript": "sdkwork-commerce-backend-sdk-generated-typescript",
-                "flutter": "sdkwork_commerce_backend_sdk",
-                "rust": "sdkwork-commerce-backend-sdk",
-                "java": "com.sdkwork:sdkwork-commerce-backend-sdk",
-                "csharp": "SDKWork.Commerce.BackendSdk",
-                "swift": "sdkwork-commerce-backend-sdk",
-                "kotlin": "com.sdkwork:sdkwork-commerce-backend-sdk",
-                "go": "github.com/sdkwork/sdkwork-commerce-backend-sdk",
-                "python": "sdkwork-commerce-backend-sdk",
-            },
-        },
+        # REMOVED: sdkwork-commerce-backend-sdk (sdkwork-commerce repository dissolved)
     ],
 }
 SDK_DEPENDENCY_OPERATION_KEY_OVERRIDES = {
@@ -659,7 +623,6 @@ class SdkRuntimeStandardizer:
 
     def _dependency_authority_path(self, workspace: str) -> Path:
         iam_root = self._dependency_root("sdkwork-iam")
-        commerce_root = self._dependency_root("sdkwork-commerce")
         mapping = {
             "sdkwork-iam-app-sdk": iam_root
             / "sdks"
@@ -671,20 +634,6 @@ class SdkRuntimeStandardizer:
             / "sdkwork-iam-backend-sdk"
             / "openapi"
             / "sdkwork-iam-backend-api.openapi.yaml",
-            "sdkwork-commerce-app-sdk": commerce_root
-            / "sdks"
-            / "sdkwork-commerce-app-sdk"
-            / "sdkwork-commerce-app-sdk-typescript"
-            / "generated"
-            / "server-openapi"
-            / "source-openapi.json",
-            "sdkwork-commerce-backend-sdk": commerce_root
-            / "sdks"
-            / "sdkwork-commerce-backend-sdk"
-            / "sdkwork-commerce-backend-sdk-typescript"
-            / "generated"
-            / "server-openapi"
-            / "source-openapi.json",
         }
         return mapping.get(
             workspace,
@@ -749,8 +698,6 @@ class SdkRuntimeStandardizer:
 
     def _dependency_domain(self, dependency: dict[str, Any]) -> str | None:
         workspace = str(dependency.get("workspace") or "")
-        if workspace.startswith("sdkwork-commerce-"):
-            return "commerce"
         if workspace.startswith("sdkwork-iam-"):
             return "iam"
         return None

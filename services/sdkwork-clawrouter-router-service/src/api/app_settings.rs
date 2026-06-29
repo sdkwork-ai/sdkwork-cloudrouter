@@ -131,21 +131,13 @@ async fn update_settings(
     let settings = match validate_update_settings_request(request) {
         Ok(settings) => settings,
         Err(message) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(PlusApiResult::error("4001", message)),
-            )
-                .into_response();
+            return PlusApiResult::error("4001", message)).into_response();
         }
     };
     let command = match build_update_settings_command(state.clone(), subject, settings) {
         Ok(command) => command,
         Err(error) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(PlusApiResult::error("5000", error.to_string())),
-            )
-                .into_response();
+            return PlusApiResult::error("5000", error.to_string())).into_response();
         }
     };
 
@@ -263,11 +255,7 @@ fn build_update_settings_command(
 }
 
 fn settings_system_response(context: &str, error: DomainError) -> Response {
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(PlusApiResult::error("5000", format!("{context}: {error}"))),
-    )
-        .into_response()
+    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
 }
 
 fn current_timestamp_string() -> String {

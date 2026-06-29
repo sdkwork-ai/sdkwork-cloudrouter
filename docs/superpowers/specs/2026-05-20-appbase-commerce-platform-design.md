@@ -23,22 +23,22 @@ adapters, and calling appbase service facades.
 
 `sdkwork-appbase` already has a strong foundation:
 
-- `sdkwork-commerce-core-rust` defines shared commerce context, money, points,
+- `sdkwork-商���-core-rust` defines shared commerce context, money, points,
   account asset types, ledger direction, status concepts, operation contracts,
   idempotency records, and service errors.
-- `sdkwork-commerce-account-rust`, `sdkwork-commerce-payment-rust`,
-  `sdkwork-commerce-order-rust`, `sdkwork-commerce-promotion-rust`, and
-  `sdkwork-commerce-invoice-rust` define domain objects, commands, queries,
+- `sdkwork-商���-account-rust`, `sdkwork-商���-payment-rust`,
+  `sdkwork-商���-order-rust`, `sdkwork-商���-promotion-rust`, and
+  `sdkwork-商���-invoice-rust` define domain objects, commands, queries,
   ports, and service contracts.
-- `sdkwork-commerce-storage-sqlx-rust` owns the reusable `commerce_*` schema,
+- `sdkwork-商���-storage-sqlx-rust` owns the reusable `commerce_*` schema,
   migration contracts, table catalog, and storage capability manifest.
-- `sdkwork-commerce-runtime-rust` owns runtime dispatch, idempotency, transaction
+- `sdkwork-商���-runtime-rust` owns runtime dispatch, idempotency, transaction
   boundary abstractions, and operation execution envelopes.
-- `sdkwork-commerce-http-rust` defines app/backend route metadata for
+- `sdkwork-商���-http-rust` defines app/backend route metadata for
   `/app/v3/api/billing/*`.
-- `sdkwork-commerce-bootstrap-rust` composes runtime, storage, HTTP, Tauri, and
+- `sdkwork-商���-bootstrap-rust` composes runtime, storage, HTTP, Tauri, and
   bootstrap contract validation.
-- `sdkwork-commerce-membership-sqlx-rust` already behaves like a reusable
+- `sdkwork-商���-membership-sqlx-rust` already behaves like a reusable
   finished block: it provides concrete SQLite/Postgres stores and app/admin
   routers for membership.
 
@@ -115,7 +115,7 @@ reusable appbase runtime/storage/router implementation.
 
 3. Appbase runtime is not yet the source of truth for all exposed operations.
 
-   `sdkwork-commerce-runtime-rust` registers account summary, coupons, orders,
+   `sdkwork-商���-runtime-rust` registers account summary, coupons, orders,
    payment intents/records, membership, and invoices. It does not yet register the
    wallet, points recharge, account points, token, exchange, coupon catalog,
    coupon usage rollback, checkout status, payment webhook, refund,
@@ -124,7 +124,7 @@ reusable appbase runtime/storage/router implementation.
 
 4. Appbase HTTP is still route metadata, not a complete mountable backend.
 
-   `sdkwork-commerce-http-rust` defines route contracts and execution metadata.
+   `sdkwork-商���-http-rust` defines route contracts and execution metadata.
    It does not yet provide full Axum routers wired to appbase runtime handlers
    and SQLx stores for all generic commerce operations.
 
@@ -328,7 +328,7 @@ fake success branches or empty placeholders. The minimum UX contract is:
 
 ### Core Domain Blocks
 
-`sdkwork-commerce-core-rust` remains the shared foundation:
+`sdkwork-商���-core-rust` remains the shared foundation:
 
 - `CommerceRuntimeContext`
 - `CommerceMoney`, points/token asset helpers
@@ -341,27 +341,27 @@ fake success branches or empty placeholders. The minimum UX contract is:
 
 Domain crates keep their narrow responsibilities:
 
-- `sdkwork-commerce-account-rust`: account summary, ledger entry draft, prehold,
+- `sdkwork-商���-account-rust`: account summary, ledger entry draft, prehold,
   wallet summary, points/token balance, top-up, withdrawal, transfer, exchange,
   deduction, account mutation commands, and account queries.
-- `sdkwork-commerce-order-rust`: order draft, order item, amount breakdown,
+- `sdkwork-商���-order-rust`: order draft, order item, amount breakdown,
   order status lifecycle, paid order reference.
-- `sdkwork-commerce-payment-rust`: payment intent, payment attempt, refund,
+- `sdkwork-商���-payment-rust`: payment intent, payment attempt, refund,
   provider command contract, webhook verification contract.
-- `sdkwork-commerce-promotion-rust`: promotion offers, immutable offer
+- `sdkwork-商���-promotion-rust`: promotion offers, immutable offer
   versions, scopes, audience rules, time windows, budgets, stocks, codes, user
   coupons, discount applications, allocations, ledgers, external bindings, and
   event outbox.
-- `sdkwork-commerce-invoice-rust`: invoice title, invoice application, invoice
+- `sdkwork-商���-invoice-rust`: invoice title, invoice application, invoice
   item, invoice status lifecycle, provider command contract.
-- `sdkwork-commerce-membership-rust`: membership, levels, entitlements,
+- `sdkwork-商���-membership-rust`: membership, levels, entitlements,
   usage, benefits.
 
 These crates must stay storage-agnostic and host-agnostic.
 
 ### SQLx Storage Blocks
 
-`sdkwork-commerce-storage-sqlx-rust` should grow from schema catalog into the
+`sdkwork-商���-storage-sqlx-rust` should grow from schema catalog into the
 default concrete storage implementation. It should provide:
 
 - `SqliteCommerceAccountStore` and `PostgresCommerceAccountStore`
@@ -379,7 +379,7 @@ default concrete storage implementation. It should provide:
 - `SqliteCommerceTransactionManager` and `PostgresCommerceTransactionManager`
 
 The stores should expose typed traits from domain crates or from a small shared
-`sdkwork-commerce-platform-rust` facade crate if cross-domain operations need a
+`sdkwork-商���-platform-rust` facade crate if cross-domain operations need a
 single cohesive API.
 
 Postgres implementations must use row locking where concurrent mutation matters.
@@ -388,7 +388,7 @@ SQLite constraints.
 
 ### Runtime Blocks
 
-`sdkwork-commerce-runtime-rust` should provide:
+`sdkwork-商���-runtime-rust` should provide:
 
 - a typed operation registry
 - service handler traits for account/order/payment/promotion/invoice/recharge
@@ -449,7 +449,7 @@ must be present.
 ### HTTP Blocks
 
 Appbase should expose mountable routers, either by extending
-`sdkwork-commerce-http-rust` or by adding `sdkwork-commerce-axum-rust`.
+`sdkwork-商���-http-rust` or by adding `sdkwork-商���-axum-rust`.
 
 Required routers:
 
@@ -495,7 +495,7 @@ write product tables directly.
 
 ### Bootstrap Blocks
 
-`sdkwork-commerce-bootstrap-rust` should produce a one-call host integration
+`sdkwork-商���-bootstrap-rust` should produce a one-call host integration
 surface:
 
 - migration/preflight
@@ -701,10 +701,10 @@ invent new generic commerce errors for appbase-owned failures.
 
 ## Open Decisions
 
-1. Whether to add a new `sdkwork-commerce-platform-rust` facade crate or keep
-   the facade inside `sdkwork-commerce-runtime-rust`.
-2. Whether Axum routers should live in `sdkwork-commerce-http-rust` or a new
-   `sdkwork-commerce-axum-rust` crate.
+1. Whether to add a new `sdkwork-商���-platform-rust` facade crate or keep
+   the facade inside `sdkwork-商���-runtime-rust`.
+2. Whether Axum routers should live in `sdkwork-商���-http-rust` or a new
+   `sdkwork-商���-axum-rust` crate.
 3. Whether admin/backend commerce routes should be generated only from the
    appbase manifest or also hand-mounted by host apps.
 4. Which payment provider adapter should be implemented first for a real

@@ -1790,27 +1790,15 @@ fn request_id_error(error: RequestIdError) -> AdminMarketingCommandBuildError {
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    (
-        StatusCode::BAD_REQUEST,
-        Json(PlusApiResult::error("4001", message.into())),
-    )
-        .into_response()
+    PlusApiResult::error("4001", message.into())).into_response()
 }
 
 fn not_found_response(message: &'static str) -> Response {
-    (
-        StatusCode::NOT_FOUND,
-        Json(PlusApiResult::error("4040", message)),
-    )
-        .into_response()
+    PlusApiResult::error("4040", message)).into_response()
 }
 
 fn conflict_response(error: DomainError) -> Response {
-    (
-        StatusCode::CONFLICT,
-        Json(PlusApiResult::error("4090", error.to_string())),
-    )
-        .into_response()
+    PlusApiResult::error("4090", error.to_string())).into_response()
 }
 
 fn command_build_error_response(error: AdminMarketingCommandBuildError) -> Response {
@@ -1823,11 +1811,7 @@ fn command_build_error_response(error: AdminMarketingCommandBuildError) -> Respo
 }
 
 fn marketing_system_response(context: &str, error: DomainError) -> Response {
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(PlusApiResult::error("5000", format!("{context}: {error}"))),
-    )
-        .into_response()
+    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
 }
 
 fn current_timestamp_string() -> String {

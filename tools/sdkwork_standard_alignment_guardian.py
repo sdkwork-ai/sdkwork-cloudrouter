@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -1038,6 +1039,25 @@ class SdkworkStandardAlignmentGuardian:
             )
         return checks
 
+    def _iter_scan_files(self, root: Path, *, suffixes: tuple[str, ...] = ()) -> list[Path]:
+        skip_dir_names = {"node_modules", "target", "dist", "build", ".git", ".tmp", ".pnpm-store"}
+        matched: list[Path] = []
+        if not root.exists():
+            return matched
+        for dirpath, dirnames, filenames in os.walk(root, topdown=True, onerror=lambda _: None):
+            dirnames[:] = [name for name in dirnames if name not in skip_dir_names]
+            current = Path(dirpath)
+            for filename in filenames:
+                path = current / filename
+                if suffixes and path.suffix not in suffixes:
+                    continue
+                try:
+                    if path.is_file():
+                        matched.append(path)
+                except OSError:
+                    continue
+        return matched
+
     def _check_rpc_discovery_policy(self) -> list[AlignmentCheck]:
         has_grpc = False
         scan_roots = (
@@ -1047,11 +1067,7 @@ class SdkworkStandardAlignmentGuardian:
             self.root / "sdks",
         )
         for root in scan_roots:
-            if not root.exists():
-                continue
-            for path in root.rglob("*"):
-                if not path.is_file():
-                    continue
+            for path in self._iter_scan_files(root, suffixes=(".proto", ".rs")):
                 if path.suffix == ".proto":
                     has_grpc = True
                     break

@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { AdminAnnouncementCreateRequest, AdminAnnouncementUpdateRequest, AnnouncementsCreateResult, AnnouncementsDeleteResult, AnnouncementsListResult, AnnouncementsUpdateResult } from '../types';
+import type { AnnouncementsCreateResult, AnnouncementsUpdateResult, PageInfo } from '../types';
 
 
 export class ContentAnnouncementsApi {
@@ -12,24 +12,24 @@ export class ContentAnnouncementsApi {
   }
 
 
-/** List admin announcements */
-  async list(): Promise<AnnouncementsListResult> {
-    return this.client.get<AnnouncementsListResult>(backendApiPath(`/content/announcements`));
+/** List */
+  async list(): Promise<Record<string, unknown>> {
+    return this.client.get<Record<string, unknown>>(backendApiPath(`/content/announcements`));
   }
 
-/** Create admin announcement */
-  async create(body: AdminAnnouncementCreateRequest): Promise<AnnouncementsCreateResult> {
-    return this.client.post<AnnouncementsCreateResult>(backendApiPath(`/content/announcements`), body, undefined, undefined, 'application/json');
+/** Create */
+  async create(): Promise<AnnouncementsCreateResult> {
+    return this.client.post<AnnouncementsCreateResult>(backendApiPath(`/content/announcements`));
   }
 
-/** Delete admin announcement */
-  async delete(announcementId: string): Promise<AnnouncementsDeleteResult> {
-    return this.client.delete<AnnouncementsDeleteResult>(backendApiPath(`/content/announcements/${serializePathParameter(announcementId, { name: 'announcementId', style: 'simple', explode: false })}`));
+/** Delete */
+  async delete(announcementId: string): Promise<Record<string, unknown>> {
+    return this.client.delete<Record<string, unknown>>(backendApiPath(`/content/announcements/${serializePathParameter(announcementId, { name: 'announcementId', style: 'simple', explode: false })}`));
   }
 
-/** Update admin announcement */
-  async update(announcementId: string, body: AdminAnnouncementUpdateRequest): Promise<AnnouncementsUpdateResult> {
-    return this.client.patch<AnnouncementsUpdateResult>(backendApiPath(`/content/announcements/${serializePathParameter(announcementId, { name: 'announcementId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+/** Update */
+  async update(announcementId: string): Promise<AnnouncementsUpdateResult> {
+    return this.client.patch<AnnouncementsUpdateResult>(backendApiPath(`/content/announcements/${serializePathParameter(announcementId, { name: 'announcementId', style: 'simple', explode: false })}`));
   }
 }
 

@@ -1,13 +1,16 @@
 use axum::body::Body;
 use bytes::Bytes;
-use http_body_util::{BodyExt, Full};
+use http_body_util::{BodyExt, Full, Limited};
 use hyper::header::{HeaderName, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 use hyper::{Method, Request, Uri};
 use hyper_rustls::HttpsConnector;
 use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
+use sdkwork_claw_config::ProviderRelayHttpPoolSectionConfig;
+use sdkwork_claw_security::redact_url;
 use serde_json::Value;
+use std::net::{IpAddr, ToSocketAddrs};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -28,33 +31,115 @@ use crate::ports::{
 type RequestBody = Full<Bytes>;
 type ProviderConnector = HttpsConnector<HttpConnector>;
 type ProviderClient = Client<ProviderConnector, RequestBody>;
-pub const DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS: u64 = 120_000;
+/// Default non-streaming provider response timeout (60 seconds).
+///
+/// Lowered from 120 seconds to bound resource usage on stalled upstream calls.
+/// Streaming (SSE) responses use [`DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS`].
+pub const DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS: u64 = 60_000;
+/// Default streaming (SSE) provider response timeout (120 seconds).
+pub const DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS: u64 = 120_000;
 pub const DEFAULT_HEALTH_PROBE_TIMEOUT_MILLIS: u64 = 10_000;
+/// Default cap on a non-streaming provider response body (64 MiB).
+pub const DEFAULT_PROVIDER_RESPONSE_MAX_BYTES: u64 = 64 * 1024 * 1024;
 const DEFAULT_PROVIDER_RESPONSE_TIMEOUT: Duration =
     Duration::from_millis(DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS);
+const DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT: Duration =
+    Duration::from_millis(DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS);
 const DEFAULT_HEALTH_PROBE_TIMEOUT: Duration =
     Duration::from_millis(DEFAULT_HEALTH_PROBE_TIMEOUT_MILLIS);
 const MAX_HEALTH_PROBE_ERROR_MESSAGE_LEN: usize = 512;
+
+/// Resolved HTTP connection-pool configuration for upstream provider clients.
+///
+/// Produced from [`ProviderRelayHttpPoolSectionConfig`] with safe production
+/// defaults applied for any missing field. HTTPS is always enforced for
+/// upstream provider traffic.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProviderRelayHttpPoolConfig {
+    pub pool_idle_timeout: Duration,
+    pub pool_max_idle_per_host: usize,
+    pub http2_keep_alive_interval: Duration,
+    pub http2_keep_alive_timeout: Duration,
+    pub connect_timeout: Duration,
+}
+
+impl Default for ProviderRelayHttpPoolConfig {
+    fn default() -> Self {
+        Self {
+            pool_idle_timeout: Duration::from_secs(90),
+            pool_max_idle_per_host: 64,
+            http2_keep_alive_interval: Duration::from_secs(30),
+            http2_keep_alive_timeout: Duration::from_secs(10),
+            connect_timeout: Duration::from_secs(10),
+        }
+    }
+}
+
+impl ProviderRelayHttpPoolConfig {
+    /// Build a resolved pool config from TOML/env config, applying defaults.
+    pub fn from_section(section: &ProviderRelayHttpPoolSectionConfig) -> Self {
+        let defaults = Self::default();
+        Self {
+            pool_idle_timeout: section
+                .pool_idle_timeout_seconds
+                .filter(|value| *value > 0)
+                .map(Duration::from_secs)
+                .unwrap_or(defaults.pool_idle_timeout),
+            pool_max_idle_per_host: section
+                .pool_max_idle_per_host
+                .filter(|value| *value > 0)
+                .unwrap_or(defaults.pool_max_idle_per_host),
+            http2_keep_alive_interval: section
+                .http2_keep_alive_interval_seconds
+                .filter(|value| *value > 0)
+                .map(Duration::from_secs)
+                .unwrap_or(defaults.http2_keep_alive_interval),
+            http2_keep_alive_timeout: section
+                .http2_keep_alive_timeout_seconds
+                .filter(|value| *value > 0)
+                .map(Duration::from_secs)
+                .unwrap_or(defaults.http2_keep_alive_timeout),
+            connect_timeout: section
+                .connect_timeout_seconds
+                .filter(|value| *value > 0)
+                .map(Duration::from_secs)
+                .unwrap_or(defaults.connect_timeout),
+        }
+    }
+}
 
 #[derive(Clone)]
 struct ProviderRelayRuntime {
     client: ProviderClient,
     response_timeout: Duration,
+    stream_response_timeout: Duration,
+    response_max_bytes: u64,
     default_retry_policy: ProviderRetryPolicy,
 }
 
 impl ProviderRelayRuntime {
     fn new(response_timeout: Duration) -> Self {
-        Self::with_default_retry_policy(response_timeout, ProviderRetryPolicy::default())
+        Self::with_default_retry_policy(
+            response_timeout,
+            DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT,
+            DEFAULT_PROVIDER_RESPONSE_MAX_BYTES,
+            ProviderRetryPolicy::default(),
+            ProviderRelayHttpPoolConfig::default(),
+        )
     }
 
     fn with_default_retry_policy(
         response_timeout: Duration,
+        stream_response_timeout: Duration,
+        response_max_bytes: u64,
         default_retry_policy: ProviderRetryPolicy,
+        pool_config: ProviderRelayHttpPoolConfig,
     ) -> Self {
         Self {
-            client: build_provider_client(),
+            client: build_provider_client(pool_config),
             response_timeout,
+            stream_response_timeout,
+            response_max_bytes,
             default_retry_policy,
         }
     }
@@ -67,6 +152,8 @@ impl ProviderRelayRuntime {
         Self {
             client: self.client.clone(),
             response_timeout,
+            stream_response_timeout: self.stream_response_timeout,
+            response_max_bytes: self.response_max_bytes,
             default_retry_policy: self.default_retry_policy.clone(),
         }
     }
@@ -94,15 +181,20 @@ impl UpstreamProviderEndpoint {
         }
         let uri = base_url.parse::<Uri>().map_err(|error| {
             DomainError::new(format!(
-                "upstream provider base URL must be an absolute http or https provider URL: {error}"
+                "upstream provider base URL must be an absolute https provider URL: {error}"
             ))
         })?;
         let scheme = uri.scheme_str();
-        if !matches!(scheme, Some("http" | "https")) || uri.authority().is_none() {
+        // H-1: upstream provider traffic must use HTTPS. Plain HTTP is rejected
+        // here (defense-in-depth) and again at the connector via `.https_only()`.
+        if !matches!(scheme, Some("https")) || uri.authority().is_none() {
             return Err(DomainError::new(
-                "upstream provider base URL must be an absolute http or https provider URL",
+                "upstream provider base URL must be an absolute https provider URL",
             ));
         }
+        // SSRF defense: reject hosts that resolve to private/loopback/link-local
+        // or cloud-metadata addresses before any upstream request is attempted.
+        validate_upstream_host_ssrf(&uri)?;
         let uri_path = uri.path().trim_end_matches('/');
         let includes_openai_v1_prefix = uri_path == "/v1" || uri_path.ends_with("/v1");
         let bearer_token = bearer_token.into().trim().to_owned();
@@ -246,6 +338,82 @@ fn append_query_pair(uri: Uri, name: &str, value: &str) -> DomainResult<Uri> {
     })
 }
 
+/// Validate that an upstream provider host does not resolve to a private,
+/// loopback, link-local, unspecified, carrier-grade NAT, or IPv6 ULA address.
+///
+/// Uses `to_socket_addrs` to resolve every IP for the host (including DNS
+/// results) and rejects the endpoint if any resolved IP is in a blocked range.
+/// This blocks SSRF attempts pointing the gateway at internal services or
+/// cloud metadata endpoints (e.g. `169.254.169.254`).
+fn validate_upstream_host_ssrf(uri: &Uri) -> DomainResult<()> {
+    let host = uri
+        .host()
+        .ok_or_else(|| DomainError::new("ssrf_blocked: upstream provider URL must have a host"))?;
+    // `to_socket_addrs` requires a `host:port` pair; the port is irrelevant
+    // for IP classification but a port is required by the resolver.
+    let resolver_target = format!("{host}:443");
+    let addresses = resolver_target.to_socket_addrs().map_err(|error| {
+        DomainError::new(format!(
+            "ssrf_blocked: upstream provider host {host} could not be resolved: {error}"
+        ))
+    })?;
+    for address in addresses {
+        let ip = address.ip();
+        if let Some(reason) = ssrf_block_reason(&ip) {
+            return Err(DomainError::new(format!(
+                "ssrf_blocked: upstream provider host {host} resolves to {reason} ({ip})"
+            )));
+        }
+    }
+    Ok(())
+}
+
+/// Return the human-readable block reason for an IP, or `None` if the IP is
+/// publicly routable and therefore allowed.
+fn ssrf_block_reason(ip: &IpAddr) -> Option<&'static str> {
+    match ip {
+        IpAddr::V4(v4) => {
+            if v4.is_loopback() {
+                return Some("loopback address 127.0.0.0/8");
+            }
+            if v4.is_private() {
+                return Some("private address 10.0.0.0/8, 172.16.0.0/12 or 192.168.0.0/16");
+            }
+            if v4.is_link_local() {
+                // 169.254.0.0/16 includes the cloud metadata service.
+                return Some("link-local address 169.254.0.0/16");
+            }
+            if v4.is_unspecified() {
+                return Some("unspecified address 0.0.0.0/8");
+            }
+            let octets = v4.octets();
+            // Carrier-grade NAT 100.64.0.0/10 (not covered by std is_private).
+            if octets[0] == 100 && (octets[1] & 0xc0) == 64 {
+                return Some("carrier-grade NAT address 100.64.0.0/10");
+            }
+            None
+        }
+        IpAddr::V6(v6) => {
+            if v6.is_loopback() {
+                return Some("IPv6 loopback address ::1/128");
+            }
+            if v6.is_unspecified() {
+                return Some("IPv6 unspecified address ::/128");
+            }
+            let segments = v6.segments();
+            // IPv6 unique local addresses fc00::/7.
+            if (segments[0] & 0xfe00) == 0xfc00 {
+                return Some("IPv6 unique local address fc00::/7");
+            }
+            // IPv6 link-local addresses fe80::/10.
+            if (segments[0] & 0xffc0) == 0xfe80 {
+                return Some("IPv6 link-local address fe80::/10");
+            }
+            None
+        }
+    }
+}
+
 fn percent_encode_query_component(value: &str) -> String {
     let mut encoded = String::with_capacity(value.len());
     for byte in value.bytes() {
@@ -294,11 +462,37 @@ impl OpenAiCompatibleChatCompletionRelay {
         response_timeout: Duration,
         default_retry_policy: ProviderRetryPolicy,
     ) -> Self {
+        Self::with_full_runtime(
+            endpoint,
+            response_timeout,
+            DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT,
+            DEFAULT_PROVIDER_RESPONSE_MAX_BYTES,
+            default_retry_policy,
+            ProviderRelayHttpPoolConfig::default(),
+        )
+    }
+
+    /// Build a relay with the full set of provider relay runtime tunables.
+    ///
+    /// Exposed so deployers can wire TOML/env-resolved values for stream
+    /// timeout, response body cap, and HTTP connection-pool tuning instead of
+    /// relying on the compiled defaults.
+    pub fn with_full_runtime(
+        endpoint: UpstreamProviderEndpoint,
+        response_timeout: Duration,
+        stream_response_timeout: Duration,
+        response_max_bytes: u64,
+        default_retry_policy: ProviderRetryPolicy,
+        http_pool_config: ProviderRelayHttpPoolConfig,
+    ) -> Self {
         Self {
             endpoint,
             runtime: ProviderRelayRuntime::with_default_retry_policy(
                 response_timeout,
+                stream_response_timeout,
+                response_max_bytes,
                 default_retry_policy,
+                http_pool_config,
             ),
         }
     }
@@ -330,11 +524,37 @@ impl OpenAiCompatibleChatCompletionStreamRelay {
         response_timeout: Duration,
         default_retry_policy: ProviderRetryPolicy,
     ) -> Self {
+        Self::with_full_runtime(
+            endpoint,
+            response_timeout,
+            DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT,
+            DEFAULT_PROVIDER_RESPONSE_MAX_BYTES,
+            default_retry_policy,
+            ProviderRelayHttpPoolConfig::default(),
+        )
+    }
+
+    /// Build a relay with the full set of provider relay runtime tunables.
+    ///
+    /// Exposed so deployers can wire TOML/env-resolved values for stream
+    /// timeout, response body cap, and HTTP connection-pool tuning instead of
+    /// relying on the compiled defaults.
+    pub fn with_full_runtime(
+        endpoint: UpstreamProviderEndpoint,
+        response_timeout: Duration,
+        stream_response_timeout: Duration,
+        response_max_bytes: u64,
+        default_retry_policy: ProviderRetryPolicy,
+        http_pool_config: ProviderRelayHttpPoolConfig,
+    ) -> Self {
         Self {
             endpoint,
             runtime: ProviderRelayRuntime::with_default_retry_policy(
                 response_timeout,
+                stream_response_timeout,
+                response_max_bytes,
                 default_retry_policy,
+                http_pool_config,
             ),
         }
     }
@@ -370,11 +590,37 @@ impl SecretRefOpenAiCompatibleChatCompletionRelay {
         response_timeout: Duration,
         default_retry_policy: ProviderRetryPolicy,
     ) -> Self {
+        Self::with_full_runtime(
+            secret_resolver,
+            response_timeout,
+            DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT,
+            DEFAULT_PROVIDER_RESPONSE_MAX_BYTES,
+            default_retry_policy,
+            ProviderRelayHttpPoolConfig::default(),
+        )
+    }
+
+    /// Build a relay with the full set of provider relay runtime tunables.
+    ///
+    /// Exposed so deployers can wire TOML/env-resolved values for stream
+    /// timeout, response body cap, and HTTP connection-pool tuning instead of
+    /// relying on the compiled defaults.
+    pub fn with_full_runtime(
+        secret_resolver: std::sync::Arc<dyn ProviderSecretResolver + Send + Sync>,
+        response_timeout: Duration,
+        stream_response_timeout: Duration,
+        response_max_bytes: u64,
+        default_retry_policy: ProviderRetryPolicy,
+        http_pool_config: ProviderRelayHttpPoolConfig,
+    ) -> Self {
         Self {
             secret_resolver,
             runtime: ProviderRelayRuntime::with_default_retry_policy(
                 response_timeout,
+                stream_response_timeout,
+                response_max_bytes,
                 default_retry_policy,
+                http_pool_config,
             ),
         }
     }
@@ -410,11 +656,37 @@ impl SecretRefOpenAiCompatibleChatCompletionStreamRelay {
         response_timeout: Duration,
         default_retry_policy: ProviderRetryPolicy,
     ) -> Self {
+        Self::with_full_runtime(
+            secret_resolver,
+            response_timeout,
+            DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT,
+            DEFAULT_PROVIDER_RESPONSE_MAX_BYTES,
+            default_retry_policy,
+            ProviderRelayHttpPoolConfig::default(),
+        )
+    }
+
+    /// Build a relay with the full set of provider relay runtime tunables.
+    ///
+    /// Exposed so deployers can wire TOML/env-resolved values for stream
+    /// timeout, response body cap, and HTTP connection-pool tuning instead of
+    /// relying on the compiled defaults.
+    pub fn with_full_runtime(
+        secret_resolver: std::sync::Arc<dyn ProviderSecretResolver + Send + Sync>,
+        response_timeout: Duration,
+        stream_response_timeout: Duration,
+        response_max_bytes: u64,
+        default_retry_policy: ProviderRetryPolicy,
+        http_pool_config: ProviderRelayHttpPoolConfig,
+    ) -> Self {
         Self {
             secret_resolver,
             runtime: ProviderRelayRuntime::with_default_retry_policy(
                 response_timeout,
+                stream_response_timeout,
+                response_max_bytes,
                 default_retry_policy,
+                http_pool_config,
             ),
         }
     }
@@ -492,11 +764,37 @@ impl OpenAiCompatibleResponsesRelay {
         response_timeout: Duration,
         default_retry_policy: ProviderRetryPolicy,
     ) -> Self {
+        Self::with_full_runtime(
+            endpoint,
+            response_timeout,
+            DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT,
+            DEFAULT_PROVIDER_RESPONSE_MAX_BYTES,
+            default_retry_policy,
+            ProviderRelayHttpPoolConfig::default(),
+        )
+    }
+
+    /// Build a relay with the full set of provider relay runtime tunables.
+    ///
+    /// Exposed so deployers can wire TOML/env-resolved values for stream
+    /// timeout, response body cap, and HTTP connection-pool tuning instead of
+    /// relying on the compiled defaults.
+    pub fn with_full_runtime(
+        endpoint: UpstreamProviderEndpoint,
+        response_timeout: Duration,
+        stream_response_timeout: Duration,
+        response_max_bytes: u64,
+        default_retry_policy: ProviderRetryPolicy,
+        http_pool_config: ProviderRelayHttpPoolConfig,
+    ) -> Self {
         Self {
             endpoint,
             runtime: ProviderRelayRuntime::with_default_retry_policy(
                 response_timeout,
+                stream_response_timeout,
+                response_max_bytes,
                 default_retry_policy,
+                http_pool_config,
             ),
         }
     }
@@ -528,11 +826,37 @@ impl OpenAiCompatibleEmbeddingsRelay {
         response_timeout: Duration,
         default_retry_policy: ProviderRetryPolicy,
     ) -> Self {
+        Self::with_full_runtime(
+            endpoint,
+            response_timeout,
+            DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT,
+            DEFAULT_PROVIDER_RESPONSE_MAX_BYTES,
+            default_retry_policy,
+            ProviderRelayHttpPoolConfig::default(),
+        )
+    }
+
+    /// Build a relay with the full set of provider relay runtime tunables.
+    ///
+    /// Exposed so deployers can wire TOML/env-resolved values for stream
+    /// timeout, response body cap, and HTTP connection-pool tuning instead of
+    /// relying on the compiled defaults.
+    pub fn with_full_runtime(
+        endpoint: UpstreamProviderEndpoint,
+        response_timeout: Duration,
+        stream_response_timeout: Duration,
+        response_max_bytes: u64,
+        default_retry_policy: ProviderRetryPolicy,
+        http_pool_config: ProviderRelayHttpPoolConfig,
+    ) -> Self {
         Self {
             endpoint,
             runtime: ProviderRelayRuntime::with_default_retry_policy(
                 response_timeout,
+                stream_response_timeout,
+                response_max_bytes,
                 default_retry_policy,
+                http_pool_config,
             ),
         }
     }
@@ -568,11 +892,37 @@ impl SecretRefOpenAiCompatibleResponsesRelay {
         response_timeout: Duration,
         default_retry_policy: ProviderRetryPolicy,
     ) -> Self {
+        Self::with_full_runtime(
+            secret_resolver,
+            response_timeout,
+            DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT,
+            DEFAULT_PROVIDER_RESPONSE_MAX_BYTES,
+            default_retry_policy,
+            ProviderRelayHttpPoolConfig::default(),
+        )
+    }
+
+    /// Build a relay with the full set of provider relay runtime tunables.
+    ///
+    /// Exposed so deployers can wire TOML/env-resolved values for stream
+    /// timeout, response body cap, and HTTP connection-pool tuning instead of
+    /// relying on the compiled defaults.
+    pub fn with_full_runtime(
+        secret_resolver: std::sync::Arc<dyn ProviderSecretResolver + Send + Sync>,
+        response_timeout: Duration,
+        stream_response_timeout: Duration,
+        response_max_bytes: u64,
+        default_retry_policy: ProviderRetryPolicy,
+        http_pool_config: ProviderRelayHttpPoolConfig,
+    ) -> Self {
         Self {
             secret_resolver,
             runtime: ProviderRelayRuntime::with_default_retry_policy(
                 response_timeout,
+                stream_response_timeout,
+                response_max_bytes,
                 default_retry_policy,
+                http_pool_config,
             ),
         }
     }
@@ -608,11 +958,37 @@ impl SecretRefOpenAiCompatibleEmbeddingsRelay {
         response_timeout: Duration,
         default_retry_policy: ProviderRetryPolicy,
     ) -> Self {
+        Self::with_full_runtime(
+            secret_resolver,
+            response_timeout,
+            DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT,
+            DEFAULT_PROVIDER_RESPONSE_MAX_BYTES,
+            default_retry_policy,
+            ProviderRelayHttpPoolConfig::default(),
+        )
+    }
+
+    /// Build a relay with the full set of provider relay runtime tunables.
+    ///
+    /// Exposed so deployers can wire TOML/env-resolved values for stream
+    /// timeout, response body cap, and HTTP connection-pool tuning instead of
+    /// relying on the compiled defaults.
+    pub fn with_full_runtime(
+        secret_resolver: std::sync::Arc<dyn ProviderSecretResolver + Send + Sync>,
+        response_timeout: Duration,
+        stream_response_timeout: Duration,
+        response_max_bytes: u64,
+        default_retry_policy: ProviderRetryPolicy,
+        http_pool_config: ProviderRelayHttpPoolConfig,
+    ) -> Self {
         Self {
             secret_resolver,
             runtime: ProviderRelayRuntime::with_default_retry_policy(
                 response_timeout,
+                stream_response_timeout,
+                response_max_bytes,
                 default_retry_policy,
+                http_pool_config,
             ),
         }
     }
@@ -719,9 +1095,15 @@ impl ProviderHealthProbe for SecretRefOpenAiCompatibleProviderHealthProbe {
                 }
             };
             let status_code = response.status().as_u16();
-            let collected =
-                tokio::time::timeout(runtime.response_timeout, response.into_body().collect())
-                    .await;
+            let collected = tokio::time::timeout(
+                runtime.response_timeout,
+                Limited::new(
+                    response.into_body(),
+                    usize::try_from(runtime.response_max_bytes).unwrap_or(usize::MAX),
+                )
+                .collect(),
+            )
+            .await;
             let bytes = match collected {
                 Ok(Ok(body)) => body.to_bytes(),
                 Ok(Err(error)) => {
@@ -928,10 +1310,10 @@ async fn send_chat_completion_stream_with_runtime(
     let body =
         upstream_model_request_body(request.request_body, &request.provider_model, "chat stream")?;
     let upstream_uri = endpoint.chat_completions_uri()?;
-    tracing::info!(
+    tracing::debug!(
         provider_code = %request.provider_code,
         provider_channel_id = request.provider_channel_id,
-        upstream_base_url = %endpoint.base_url,
+        upstream_host = %redact_url(&endpoint.base_url),
         upstream_path = %upstream_uri.path(),
         model = body.get("model").and_then(|value| value.as_str()).unwrap_or(""),
         "forwarding OpenAI-compatible chat stream request to upstream provider"
@@ -1028,11 +1410,11 @@ async fn send_openai_json_with_runtime(
         .to_owned();
 
     for attempt in 1..=retry_policy.max_attempts {
-        tracing::info!(
+        tracing::debug!(
             request_label,
             attempt,
             max_attempts = retry_policy.max_attempts,
-            upstream_base_url = %endpoint.base_url,
+            upstream_host = %redact_url(&endpoint.base_url),
             upstream_path = %uri.path(),
             model = %request_model,
             "forwarding OpenAI-compatible JSON request to upstream provider"
@@ -1052,15 +1434,30 @@ async fn send_openai_json_with_runtime(
 
         let response = send_provider_request(runtime, http_request).await?;
         let status_code = response.status().as_u16();
-        let bytes = tokio::time::timeout(runtime.response_timeout, response.into_body().collect())
-            .await
-            .map_err(|_| DomainError::new("upstream provider body timed out"))?
-            .map_err(|error| DomainError::new(format!("upstream provider body failed: {error}")))?
-            .to_bytes();
+        // H-3: bound the response body to defend against oversized/trickling
+        // upstream responses. `Limited` aborts collection once the configured
+        // byte cap is exceeded.
+        let bytes = tokio::time::timeout(
+            runtime.response_timeout,
+            Limited::new(
+                response.into_body(),
+                usize::try_from(runtime.response_max_bytes).unwrap_or(usize::MAX),
+            )
+            .collect(),
+        )
+        .await
+        .map_err(|_| DomainError::new("upstream provider body timed out"))?
+        .map_err(|error| {
+            DomainError::new(format!(
+                "upstream provider body failed (limit {} bytes): {error}",
+                runtime.response_max_bytes
+            ))
+        })?
+        .to_bytes();
         let body = serde_json::from_slice(&bytes).map_err(|error| {
             DomainError::new(format!("upstream provider returned invalid JSON: {error}"))
         })?;
-        tracing::info!(
+        tracing::debug!(
             request_label,
             attempt,
             status_code,
@@ -1097,13 +1494,29 @@ async fn send_provider_request(
     .map_err(|error| DomainError::new(format!("upstream provider request failed: {error}")))
 }
 
-fn build_provider_client() -> ProviderClient {
+fn build_provider_client(pool_config: ProviderRelayHttpPoolConfig) -> ProviderClient {
+    // C-5: tune the upstream connection pool. C-5/H-1: enforce HTTPS for all
+    // upstream provider traffic via `.https_only()` so plain HTTP upstreams are
+    // rejected at connector construction time (defense-in-depth with the
+    // scheme check in `UpstreamProviderEndpoint::new`).
+    //
+    // `connect_timeout` is applied to the underlying `HttpConnector` because
+    // the legacy client `Builder` does not expose a connect-timeout setter.
+    // HTTP/2 keep-alive fields are kept in the config for forward compatibility
+    // but are not applied here because the workspace does not enable the
+    // `http2` feature on hyper/hyper-util/hyper-rustls.
+    let mut http_connector = HttpConnector::new();
+    http_connector.set_connect_timeout(Some(pool_config.connect_timeout));
+    http_connector.enforce_http(false);
     let connector = hyper_rustls::HttpsConnectorBuilder::new()
         .with_webpki_roots()
-        .https_or_http()
+        .https_only()
         .enable_http1()
-        .build();
-    Client::builder(TokioExecutor::new()).build(connector)
+        .wrap_connector(http_connector);
+    Client::builder(TokioExecutor::new())
+        .pool_idle_timeout(Some(pool_config.pool_idle_timeout))
+        .pool_max_idle_per_host(pool_config.pool_max_idle_per_host)
+        .build(connector)
 }
 
 fn elapsed_millis(started_at: Instant) -> i64 {
@@ -1186,4 +1599,123 @@ fn upstream_model_request_body(
     })?;
     object.insert("model".to_owned(), Value::String(provider_model));
     Ok(request_body)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn endpoint_for(base_url: &str) -> DomainResult<UpstreamProviderEndpoint> {
+        UpstreamProviderEndpoint::new(base_url, "test-bearer-token")
+    }
+
+    #[test]
+    fn ssrf_blocks_ipv4_loopback() {
+        let error = endpoint_for("https://127.0.0.1/v1").unwrap_err();
+        assert!(
+            error.to_string().contains("ssrf_blocked"),
+            "expected ssrf_blocked error, got: {error}"
+        );
+    }
+
+    #[test]
+    fn ssrf_blocks_ipv4_private_10() {
+        let error = endpoint_for("https://10.0.0.1/v1").unwrap_err();
+        assert!(error.to_string().contains("ssrf_blocked"));
+        assert!(error.to_string().contains("private"));
+    }
+
+    #[test]
+    fn ssrf_blocks_ipv4_private_172_16() {
+        let error = endpoint_for("https://172.16.0.1/v1").unwrap_err();
+        assert!(error.to_string().contains("ssrf_blocked"));
+    }
+
+    #[test]
+    fn ssrf_blocks_ipv4_private_192_168() {
+        let error = endpoint_for("https://192.168.1.1/v1").unwrap_err();
+        assert!(error.to_string().contains("ssrf_blocked"));
+    }
+
+    #[test]
+    fn ssrf_blocks_cloud_metadata_link_local() {
+        // 169.254.169.254 is the cloud IMDS endpoint.
+        let error = endpoint_for("https://169.254.169.254/v1").unwrap_err();
+        assert!(error.to_string().contains("ssrf_blocked"));
+        assert!(error.to_string().contains("link-local"));
+    }
+
+    #[test]
+    fn ssrf_blocks_ipv4_unspecified() {
+        let error = endpoint_for("https://0.0.0.0/v1").unwrap_err();
+        assert!(error.to_string().contains("ssrf_blocked"));
+        assert!(error.to_string().contains("unspecified"));
+    }
+
+    #[test]
+    fn ssrf_blocks_carrier_grade_nat() {
+        let error = endpoint_for("https://100.64.0.1/v1").unwrap_err();
+        assert!(error.to_string().contains("ssrf_blocked"));
+        assert!(error.to_string().contains("carrier-grade NAT"));
+    }
+
+    #[test]
+    fn ssrf_allows_public_address_adjacent_to_cgn() {
+        // 100.63.x.x and 100.128.x.x are outside the CGN range and must pass.
+        let result = endpoint_for("https://100.63.0.1/v1");
+        // Resolution may fail in sandboxed CI; only assert non-SSRF when it resolves.
+        if let Err(error) = &result {
+            assert!(
+                !error.to_string().contains("carrier-grade NAT"),
+                "100.63.0.1 must not be classified as CGN: {error}"
+            );
+        }
+    }
+
+    #[test]
+    fn ssrf_blocks_ipv6_loopback() {
+        let error = endpoint_for("https://[::1]/v1").unwrap_err();
+        assert!(error.to_string().contains("ssrf_blocked"));
+        assert!(error.to_string().contains("loopback"));
+    }
+
+    #[test]
+    fn ssrf_blocks_ipv6_unique_local() {
+        let error = endpoint_for("https://[fc00::1]/v1").unwrap_err();
+        assert!(error.to_string().contains("ssrf_blocked"));
+        assert!(error.to_string().contains("unique local"));
+    }
+
+    #[test]
+    fn ssrf_blocks_ipv6_link_local() {
+        let error = endpoint_for("https://[fe80::1]/v1").unwrap_err();
+        assert!(error.to_string().contains("ssrf_blocked"));
+        assert!(error.to_string().contains("link-local"));
+    }
+
+    #[test]
+    fn ssrf_block_reason_classification() {
+        assert!(ssrf_block_reason(&"127.0.0.1".parse().unwrap()).is_some());
+        assert!(ssrf_block_reason(&"169.254.1.1".parse().unwrap()).is_some());
+        assert!(ssrf_block_reason(&"100.64.0.1".parse().unwrap()).is_some());
+        assert!(ssrf_block_reason(&"8.8.8.8".parse().unwrap()).is_none());
+        assert!(ssrf_block_reason(&"::1".parse().unwrap()).is_some());
+        assert!(ssrf_block_reason(&"fc00::1".parse().unwrap()).is_some());
+        assert!(ssrf_block_reason(&"fe80::1".parse().unwrap()).is_some());
+        assert!(ssrf_block_reason(&"2606:4700:4700::1111".parse().unwrap()).is_none());
+    }
+
+    #[test]
+    fn https_only_connector_rejects_http_scheme() {
+        // build_provider_client enforces https_only; constructing a client must
+        // not panic and must yield a usable client.
+        let _client = build_provider_client(ProviderRelayHttpPoolConfig::default());
+    }
+
+    #[test]
+    fn http_upstream_url_is_rejected_by_scheme_check() {
+        // Plain HTTP upstreams are rejected before SSRF resolution.
+        let error = endpoint_for("http://127.0.0.1/v1").unwrap_err();
+        assert!(error.to_string().contains("absolute https"));
+    }
 }

@@ -26,3 +26,20 @@ SDKWork may grant commercial rights under a separate written commercial
 license, contract, order form, or authorization letter. The separate written
 authorization controls only for the authorized party, scope, territory,
 duration, and usage described in that authorization.
+
+## Reference Documents
+
+The following documents define the commercial tiers, pricing, and service
+levels available under separate written commercial authorization:
+
+- [docs/commercial/PRICING.md](./docs/commercial/PRICING.md) — Commercial
+  pricing model, license tiers, token metering, additional services, payment
+  methods, and refund policy.
+- [docs/legal/SLA.md](./docs/legal/SLA.md) — Service Level Agreement for Pro
+  and Enterprise editions, including uptime commitments, incident response
+  times, service credits, rate-limit tiers, and support channels.
+- [docs/legal/TIER_MATRIX.md](./docs/legal/TIER_MATRIX.md) — Edition
+  comparison matrix across Community, Pro, Enterprise, and OEM tiers.
+
+Contact `sales@sdkwork.com` to request commercial authorization or negotiate
+custom terms.

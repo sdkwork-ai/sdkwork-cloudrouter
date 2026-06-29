@@ -30,6 +30,7 @@ mod settlement;
 mod sticky;
 mod subject;
 mod telemetry;
+mod tenant_inflight;
 mod trace;
 mod usage;
 mod usage_extraction;
@@ -74,6 +75,10 @@ pub use settlement::PricingSettlementInterceptor;
 pub use sticky::{StickyCommitInterceptor, StickyResolutionInterceptor};
 pub use subject::{InvocationAuthType, InvocationSubject};
 pub use telemetry::{InvocationNormalizedResponse, InvocationTelemetry};
+pub use tenant_inflight::{
+    LocalTenantInflightCounter, RedisTenantInflightCounter, TenantInflightConfig,
+    TenantInflightCounter, TenantInflightInterceptor,
+};
 pub use trace::TraceTelemetryInterceptor;
 pub use usage::{
     InvocationPricingQuote, InvocationUsage, InvocationUsageLine, InvocationUsageLineRole,

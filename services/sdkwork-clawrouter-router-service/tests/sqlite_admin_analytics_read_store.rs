@@ -265,7 +265,7 @@ async fn sqlite_pool() -> SqlitePool {
 async fn create_analytics_tables(pool: &SqlitePool) {
     sqlx::query(
         r#"
-        CREATE TABLE ai_usage_fact (
+        CREATE TABLE ai_usage (
             id INTEGER PRIMARY KEY,
             tenant_id INTEGER NOT NULL,
             organization_id INTEGER NOT NULL,
@@ -317,7 +317,7 @@ async fn seed_regional_catalog_key_usage(pool: &SqlitePool) {
     let regional_catalog_key = legacy_regional_catalog_key_for_negative_test();
     sqlx::query(
         r#"
-        INSERT INTO ai_usage_fact (
+        INSERT INTO ai_usage (
             id, tenant_id, organization_id, user_id, owner_type, owner_id, request_id, status,
             owner_name_snapshot, catalog_key, model, modality, request_count,
             total_tokens, customer_charge_amount, upstream_cost_amount, occurred_at
@@ -415,7 +415,7 @@ async fn seed_usage(pool: &SqlitePool) {
     for row in rows {
         sqlx::query(
             r#"
-            INSERT INTO ai_usage_fact (
+            INSERT INTO ai_usage (
                 id, tenant_id, organization_id, user_id, owner_type, owner_id, request_id, status,
                 owner_name_snapshot, catalog_key, model, modality, request_count,
                 total_tokens, customer_charge_amount, upstream_cost_amount, occurred_at
@@ -464,7 +464,7 @@ async fn seed_usage(pool: &SqlitePool) {
 async fn seed_untimed_usage_with_null_users(pool: &SqlitePool) {
     sqlx::query(
         r#"
-        INSERT INTO ai_usage_fact (
+        INSERT INTO ai_usage (
             id, tenant_id, organization_id, user_id, owner_type, owner_id, request_id, status,
             owner_name_snapshot, catalog_key, model, modality, request_count,
             total_tokens, customer_charge_amount, upstream_cost_amount, occurred_at
@@ -497,7 +497,7 @@ async fn seed_untimed_usage_with_null_users(pool: &SqlitePool) {
 async fn seed_default_scope_usage(pool: &SqlitePool) {
     sqlx::query(
         r#"
-        INSERT INTO ai_usage_fact (
+        INSERT INTO ai_usage (
             id, tenant_id, organization_id, user_id, owner_type, owner_id, request_id, status,
             owner_name_snapshot, catalog_key, model, modality, request_count,
             prompt_tokens, completion_tokens, cached_tokens, total_tokens,
@@ -528,7 +528,7 @@ async fn seed_default_scope_usage(pool: &SqlitePool) {
 async fn seed_duplicate_display_name_usage(pool: &SqlitePool) {
     sqlx::query(
         r#"
-        INSERT INTO ai_usage_fact (
+        INSERT INTO ai_usage (
             id, tenant_id, organization_id, user_id, owner_type, owner_id, request_id, status,
             owner_name_snapshot, catalog_key, model, modality, request_count,
             total_tokens, customer_charge_amount, upstream_cost_amount, occurred_at

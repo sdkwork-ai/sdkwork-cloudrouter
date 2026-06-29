@@ -1,4 +1,4 @@
-use sdkwork_commerce_core::{
+use sdkwork_contract_service::{
     CommerceAccountAssetType, CommerceLedgerDirection, CommercePaymentStatus,
 };
 use serde_json::Value;

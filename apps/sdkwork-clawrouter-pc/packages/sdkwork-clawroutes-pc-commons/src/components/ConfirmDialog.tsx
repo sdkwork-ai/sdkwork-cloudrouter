@@ -70,7 +70,7 @@ export function ConfirmDialog({
             onClick={onConfirm}
             disabled={isBusy || confirmDisabled}
             aria-busy={isBusy}
-            className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:focus:ring-offset-[#1a1a1a] ${confirmClass}`}
+            className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:focus-visible:ring-offset-[#1a1a1a] ${confirmClass}`}
           >
             {isBusy ? t('common.actions.deleting') : confirmLabel}
           </button>

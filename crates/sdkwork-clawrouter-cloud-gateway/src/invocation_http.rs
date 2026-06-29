@@ -458,9 +458,11 @@ pub(crate) fn response_from_invocation_error(error: &InvocationError) -> Respons
         | InvocationErrorKind::Pricing
         | InvocationErrorKind::Dispatch
         | InvocationErrorKind::ProviderPassthroughFailed
-        | InvocationErrorKind::Usage
+        |         InvocationErrorKind::Usage
         | InvocationErrorKind::Telemetry
         | InvocationErrorKind::Internal => StatusCode::BAD_GATEWAY,
+        InvocationErrorKind::Idempotency => StatusCode::CONFLICT,
+        InvocationErrorKind::RateLimit => StatusCode::TOO_MANY_REQUESTS,
     };
     let body = json!({
         "error": {

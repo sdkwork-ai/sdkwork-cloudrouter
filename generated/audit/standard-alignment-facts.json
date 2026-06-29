@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-27T02:15:38.785Z",
+  "generatedAt": "2026-06-29T02:15:47.004Z",
   "facts": {
-    "generatedAt": "2026-06-27T02:15:38.785Z",
+    "generatedAt": "2026-06-29T02:15:47.004Z",
     "identity": {
       "appKey": "sdkwork-clawrouter",
       "version": "0.3.0",
@@ -102,7 +102,7 @@
     "circuitBreaker": {
       "exists": true,
       "implemented": true,
-      "lineCount": 546,
+      "lineCount": 995,
       "hasStateMachine": true,
       "hasRedisDistributedStore": true,
       "hasChannelIdScope": true
@@ -110,7 +110,7 @@
     "idempotency": {
       "exists": true,
       "implemented": true,
-      "lineCount": 369,
+      "lineCount": 742,
       "hasRedisStore": true,
       "hasStreamingExclusion": true,
       "hasSyntheticLocalResponse": true
@@ -158,13 +158,13 @@
     },
     "techArch": {
       "exists": true,
-      "lineCount": 535,
+      "lineCount": 550,
       "emptySections": [],
       "isOnlyIndex": false
     },
     "metrics": {
       "exists": true,
-      "lineCount": 125,
+      "lineCount": 134,
       "hasOnlyAtomicU64Counters": false,
       "hasLabelVec": true
     },
@@ -206,6 +206,15 @@
         }
       ],
       "allPartitioned": true
+    },
+    "vendorWorkspace": {
+      "trackedCount": 0,
+      "disallowedCount": 0,
+      "disallowedSample": [],
+      "indexClean": true,
+      "gitignoreHasVendorGuard": false,
+      "packageHasVendorCheck": true,
+      "packageHasCommerceDebtCheck": true
     }
   },
   "p0Status": [
@@ -260,7 +269,7 @@
       "title": "Prometheus histogram + OTLP metrics",
       "status": "done",
       "evidence": {
-        "lineCount": 125,
+        "lineCount": 134,
         "hasOnlyAtomicU64Counters": false
       }
     },
@@ -305,7 +314,7 @@
       "status": "done",
       "evidence": {
         "emptySections": [],
-        "lineCount": 535
+        "lineCount": 550
       }
     },
     {

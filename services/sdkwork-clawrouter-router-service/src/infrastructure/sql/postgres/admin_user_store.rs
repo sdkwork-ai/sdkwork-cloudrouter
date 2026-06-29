@@ -1,4 +1,4 @@
-use sdkwork_commerce_core::{CommerceAccountAssetType, CommerceLedgerDirection};
+use sdkwork_contract_service::{CommerceAccountAssetType, CommerceLedgerDirection};
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
 use crate::domain::{DecimalValue, DomainError, DomainResult};

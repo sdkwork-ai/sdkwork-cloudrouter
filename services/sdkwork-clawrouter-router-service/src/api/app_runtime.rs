@@ -3418,7 +3418,9 @@ where
         BillingMeter::LlmInputToken,
     )
     .map_err(openai_route_response_error)?;
-    let route = route_plan.first_route();
+    let route = route_plan
+        .first_route()
+        .ok_or_else(|| DomainError::new("resolved route plan contains no routes"))?;
     let request_body = build_runtime_chat_request_body(model, &execution.request_json)?;
     let response = chat_stream_relay
         .create_chat_completion_stream(ChatCompletionRelayRequest {
@@ -5665,35 +5667,19 @@ fn generate_entity_uuid(state: &AppRuntimeState) -> Result<String, AppRuntimeBui
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    (
-        StatusCode::BAD_REQUEST,
-        Json(PlusApiResult::error("4001", message.into())),
-    )
-        .into_response()
+    PlusApiResult::error("4001", message.into())).into_response()
 }
 
 fn not_found(message: impl Into<String>) -> Response {
-    (
-        StatusCode::NOT_FOUND,
-        Json(PlusApiResult::error("4040", message.into())),
-    )
-        .into_response()
+    PlusApiResult::error("4040", message.into())).into_response()
 }
 
 fn conflict(message: impl Into<String>) -> Response {
-    (
-        StatusCode::CONFLICT,
-        Json(PlusApiResult::error("4090", message.into())),
-    )
-        .into_response()
+    PlusApiResult::error("4090", message.into())).into_response()
 }
 
 fn app_runtime_system_response(context: &str, error: DomainError) -> Response {
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(PlusApiResult::error("5000", format!("{context}: {error}"))),
-    )
-        .into_response()
+    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
 }
 
 #[derive(Debug)]

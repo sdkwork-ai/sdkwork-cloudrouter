@@ -621,8 +621,14 @@ class ClawRouterSdkGuardian:
 
     def _check_public_app_model_catalog_types(self, sdk_dir: str, base: Path, messages: list[str]) -> None:
         types_dir = base / "src" / "types"
-        item_source = self._read_text(types_dir / "app-model-catalog-item.ts", messages)
-        availability_source = self._read_text(types_dir / "app-model-catalog-price-availability.ts", messages)
+        item_path = types_dir / "app-model-catalog-item.ts"
+        availability_path = types_dir / "app-model-catalog-price-availability.ts"
+        if not item_path.is_file() and not availability_path.is_file():
+            return
+        item_source = self._read_text(item_path, messages) if item_path.is_file() else None
+        availability_source = (
+            self._read_text(availability_path, messages) if availability_path.is_file() else None
+        )
 
         if item_source is not None:
             for field in self.APP_MODEL_CATALOG_PRIVATE_ITEM_FIELDS:

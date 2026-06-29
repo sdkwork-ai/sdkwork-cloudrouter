@@ -23,27 +23,12 @@
       "moduleId": "iam",
       "ownership": "bootstrap_standalone",
       "enabled": true
-    },
-    {
-      "moduleId": "sdkwork-commerce",
-      "ownership": "compose_standalone",
-      "enabled": true
     }
   ],
   "composeDependencies": [
     {
       "moduleId": "sdkwork-models",
       "ownership": "compose_at_install",
-      "enabled": true
-    },
-    {
-      "moduleId": "iam",
-      "ownership": "bootstrap_standalone",
-      "enabled": true
-    },
-    {
-      "moduleId": "sdkwork-commerce",
-      "ownership": "compose_standalone",
       "enabled": true
     }
   ],

@@ -123,7 +123,7 @@ async fn sqlite_dashboard_overview_excludes_deprecated_hidden_and_catalog_only_t
 async fn create_schema(pool: &sqlx::SqlitePool) {
     for statement in [
         r#"
-        CREATE TABLE ai_usage_fact (
+        CREATE TABLE ai_usage (
             id INTEGER PRIMARY KEY,
             tenant_id INTEGER NOT NULL,
             organization_id INTEGER NOT NULL,

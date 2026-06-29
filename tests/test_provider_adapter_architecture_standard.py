@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_provider_adapter_workspace_boundaries_are_explicit():
     assert (ROOT / "crates/sdkwork-claw-provider-adapter-contract").is_dir()
     assert (ROOT / "crates/sdkwork-claw-provider-adapter-registry").is_dir()
-    assert (ROOT / "crates/sdkwork-claw-provider-adapter-core").is_dir()
+    assert (ROOT / "crates/sdkwork-claw-provider-adapter").is_dir()
     assert (ROOT / "crates/sdkwork-claw-provider-adapter-http").is_dir()
 
     for provider in ("tencent-cloud", "alicloud"):

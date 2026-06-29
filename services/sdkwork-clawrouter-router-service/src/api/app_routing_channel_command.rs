@@ -1159,27 +1159,15 @@ fn request_id_error(error: RequestIdError) -> RoutingChannelCommandBuildError {
 }
 
 fn bad_request(message: String) -> Response {
-    (
-        StatusCode::BAD_REQUEST,
-        Json(PlusApiResult::error("4001", message)),
-    )
-        .into_response()
+    PlusApiResult::error("4001", message)).into_response()
 }
 
 fn not_found_response(message: &'static str) -> Response {
-    (
-        StatusCode::NOT_FOUND,
-        Json(PlusApiResult::error("4040", message)),
-    )
-        .into_response()
+    PlusApiResult::error("4040", message)).into_response()
 }
 
 fn conflict_response(error: DomainError) -> Response {
-    (
-        StatusCode::CONFLICT,
-        Json(PlusApiResult::error("4090", error.to_string())),
-    )
-        .into_response()
+    PlusApiResult::error("4090", error.to_string())).into_response()
 }
 
 fn command_build_error_response(error: RoutingChannelCommandBuildError) -> Response {
@@ -1193,11 +1181,7 @@ fn command_build_error_response(error: RoutingChannelCommandBuildError) -> Respo
 
 fn routing_channel_system_response(context: &str, error: DomainError) -> Response {
     tracing::error!(error = %error, context, "routing channel command API failed");
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(PlusApiResult::error("5000", context.to_owned())),
-    )
-        .into_response()
+    PlusApiResult::error("5000", context.to_owned())).into_response()
 }
 
 fn current_timestamp_string() -> String {

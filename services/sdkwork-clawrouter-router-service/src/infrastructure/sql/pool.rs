@@ -18,6 +18,13 @@ pub const SQLITE_BUSY_TIMEOUT_SECONDS: u64 = 30;
 pub const SQLITE_RUNTIME_MIN_POOL_CONNECTIONS: u32 =
     sdkwork_claw_config::DatabaseConfig::DESKTOP_SQLITE_DEFAULT_MAX_CONNECTIONS;
 
+/// Maximum time a single readiness probe may take before it is reported as
+/// not-ready. A network partition between the gateway and Redis/Postgres must
+/// not hold the readiness endpoint (and therefore Kubernetes Pod readiness)
+/// open indefinitely. 500ms is well above the expected latency of `SELECT 1`
+/// or `PING` against a healthy dependency and far below typical probe intervals.
+pub const READINESS_CHECK_TIMEOUT: Duration = Duration::from_millis(500);
+
 fn postgres_standard_config(database_url: &str, max_connections: u32) -> StandardDatabaseConfig {
     StandardDatabaseConfig {
         engine: StandardDatabaseEngine::Postgres,
@@ -99,15 +106,47 @@ pub fn sqlite_database_readiness_check(
 ) -> sdkwork_claw_http::ReadinessCheckFn {
     std::sync::Arc::new(move || {
         let pool = pool.clone();
-        Box::pin(async move { sqlx::query("SELECT 1").execute(&pool).await.is_ok() })
+        Box::pin(async move {
+            run_with_readiness_timeout("sqlite", sqlx::query("SELECT 1").execute(&pool)).await
+        })
     })
 }
 
 pub fn postgres_database_readiness_check(pool: PgPool) -> sdkwork_claw_http::ReadinessCheckFn {
     std::sync::Arc::new(move || {
         let pool = pool.clone();
-        Box::pin(async move { sqlx::query("SELECT 1").execute(&pool).await.is_ok() })
+        Box::pin(async move {
+            run_with_readiness_timeout("postgres", sqlx::query("SELECT 1").execute(&pool)).await
+        })
     })
+}
+
+/// Wrap a readiness probe in a bounded timeout.
+///
+/// On timeout the probe reports not-ready (`false`) and emits a warning so
+/// operators can correlate readiness flaps with dependency network partitions.
+///
+/// The probe's success value is intentionally ignored: a readiness check only
+/// cares that the dependency answered at all, not what row count it returned.
+async fn run_with_readiness_timeout<F, T>(probe: &'static str, future: F) -> bool
+where
+    F: std::future::Future<Output = Result<T, sqlx::Error>>,
+{
+    match tokio::time::timeout(READINESS_CHECK_TIMEOUT, future).await {
+        Ok(Ok(_)) => true,
+        Ok(Err(error)) => {
+            tracing::warn!(probe, error = %error, "readiness probe failed");
+            false
+        }
+        Err(_) => {
+            tracing::warn!(
+                probe,
+                timeout_ms = READINESS_CHECK_TIMEOUT.as_millis() as u64,
+                "readiness probe timed out; reporting not ready"
+            );
+            false
+        }
+    }
 }
 
 pub fn standard_database_readiness_check(
@@ -125,17 +164,30 @@ pub fn redis_readiness_check(redis_url: String) -> sdkwork_claw_http::ReadinessC
     std::sync::Arc::new(move || {
         let redis_url = redis_url.clone();
         Box::pin(async move {
-            let client = match redis::Client::open(redis_url.as_str()) {
-                Ok(client) => client,
-                Err(_) => return false,
-            };
-            let mut conn = match client.get_multiplexed_async_connection().await {
-                Ok(conn) => conn,
-                Err(_) => return false,
-            };
-            match redis::cmd("PING").query_async::<String>(&mut conn).await {
-                Ok(pong) => pong.eq_ignore_ascii_case("PONG"),
-                Err(_) => false,
+            match tokio::time::timeout(READINESS_CHECK_TIMEOUT, async {
+                let client = match redis::Client::open(redis_url.as_str()) {
+                    Ok(client) => client,
+                    Err(_) => return false,
+                };
+                let mut conn = match client.get_multiplexed_async_connection().await {
+                    Ok(conn) => conn,
+                    Err(_) => return false,
+                };
+                match redis::cmd("PING").query_async::<String>(&mut conn).await {
+                    Ok(pong) => pong.eq_ignore_ascii_case("PONG"),
+                    Err(_) => false,
+                }
+            })
+            .await
+            {
+                Ok(ready) => ready,
+                Err(_) => {
+                    tracing::warn!(
+                        timeout_ms = READINESS_CHECK_TIMEOUT.as_millis() as u64,
+                        "redis readiness check timed out; reporting not ready"
+                    );
+                    false
+                }
             }
         })
     })
@@ -150,8 +202,8 @@ pub async fn sqlite_usage_settlement_schema_ready(
         FROM sqlite_master
         WHERE type = 'table'
           AND name IN (
-              'ai_usage_fact',
-              'commerce_usage_settlement'
+              'ai_usage',
+              'commerce_settlement'
           )
         "#,
     )
@@ -160,7 +212,7 @@ pub async fn sqlite_usage_settlement_schema_ready(
     let usage_column_count: i64 = sqlx::query_scalar(
         r#"
         SELECT COUNT(1)
-        FROM pragma_table_info('ai_usage_fact')
+        FROM pragma_table_info('ai_usage')
         WHERE name IN ('settlement_status', 'settlement_id', 'pricing_snapshot')
         "#,
     )
@@ -176,8 +228,8 @@ pub async fn postgres_usage_settlement_schema_ready(pool: &PgPool) -> Result<boo
         FROM information_schema.tables
         WHERE table_schema = current_schema()
           AND table_name IN (
-              'ai_usage_fact',
-              'commerce_usage_settlement'
+              'ai_usage',
+              'commerce_settlement'
           )
         "#,
     )
@@ -188,7 +240,7 @@ pub async fn postgres_usage_settlement_schema_ready(pool: &PgPool) -> Result<boo
         SELECT COUNT(1)
         FROM information_schema.columns
         WHERE table_schema = current_schema()
-          AND table_name = 'ai_usage_fact'
+          AND table_name = 'ai_usage'
           AND column_name IN ('settlement_status', 'settlement_id', 'pricing_snapshot')
         "#,
     )
@@ -290,4 +342,67 @@ pub fn postgres_runtime_readiness_check(
         checks.push(redis_readiness_check(redis_config.url().to_owned()));
     }
     sdkwork_claw_http::combine_readiness_checks(checks)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn redis_readiness_check_returns_false_for_unreachable_url() {
+        // An unroutable port should fail fast (connection refused) and report false.
+        let check = redis_readiness_check("redis://127.0.0.1:1".to_owned());
+        let ready = check().await;
+        assert!(!ready, "unreachable redis must not report ready");
+    }
+
+    #[tokio::test]
+    async fn redis_readiness_check_times_out_when_server_is_silent() {
+        // Bind a TCP listener that accepts the connection but never speaks RESP,
+        // simulating a network partition where the TCP handshake completes but
+        // the Redis PING never returns. The readiness check must fail within a
+        // bounded time via the timeout wrapper rather than hanging indefinitely.
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let url = format!("redis://{address}");
+
+        // Accept connections but never respond, keeping the connection open.
+        let server = tokio::spawn(async move {
+            loop {
+                if listener.accept().await.is_err() {
+                    break;
+                }
+                // Hold the connection open without sending any RESP bytes.
+            }
+        });
+
+        let check = redis_readiness_check(url);
+        // Use a watchdog longer than the readiness timeout but short enough to
+        // fail the test if the timeout wrapper is missing.
+        let ready = tokio::time::timeout(
+            READINESS_CHECK_TIMEOUT + Duration::from_secs(2),
+            check(),
+        )
+        .await
+        .expect("readiness check must not hang beyond its timeout");
+
+        assert!(!ready, "silent redis must time out and report not ready");
+
+        server.abort();
+    }
+
+    #[tokio::test]
+    async fn sqlite_readiness_check_reports_true_for_healthy_pool() {
+        let pool = sqlx::SqlitePool::connect("sqlite::memory:")
+            .await
+            .expect("sqlite memory pool");
+        let check = sqlite_database_readiness_check(pool);
+        let ready = tokio::time::timeout(
+            READINESS_CHECK_TIMEOUT + Duration::from_secs(2),
+            check(),
+        )
+        .await
+        .expect("sqlite readiness must not hang");
+        assert!(ready, "healthy sqlite pool must report ready");
+    }
 }

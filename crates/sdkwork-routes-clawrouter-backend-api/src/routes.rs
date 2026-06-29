@@ -221,7 +221,10 @@ pub fn router() -> Router {
 async fn finalize_admin_router_with_federated_iam(
     router: Router,
 ) -> Result<Router, ProductCatalogRouterError> {
-    crate::iam_runtime::merge_federated_iam_backend_router(router)
+    let router = crate::iam_runtime::merge_federated_iam_backend_router(router)
+        .await
+        .map_err(ProductCatalogRouterError::Config)?;
+    crate::invoice_runtime::merge_federated_invoice_backend_router(router)
         .await
         .map_err(ProductCatalogRouterError::Config)
 }
@@ -1170,6 +1173,7 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_optional_p
     startup_install_mode: StartupInstallMode,
     runtime_toml: Option<&RuntimeTomlConfig>,
 ) -> Result<Router, ProductCatalogRouterError> {
+    sdkwork_claw_http::materialize_federated_database_env_from_claw_config(&config);
     let request_limits_config = RequestLimitsConfig::from_env_or_runtime_toml(runtime_toml)
         .map_err(ProductCatalogRouterError::Config)?;
     let cache_manager = cache_manager_from_env_or_toml(runtime_toml)?;

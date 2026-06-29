@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::{routing::get, Router};
 use sdkwork_claw_config::DatabaseConfig;
 use sdkwork_claw_contract::{ApiSurface, ContractManifest, ContractOperation};
-use sdkwork_claw_core::DatabaseHealth;
+use sdkwork_claw_health::DatabaseHealth;
 use tower_http::trace::TraceLayer;
 
 use crate::contract_routes::{

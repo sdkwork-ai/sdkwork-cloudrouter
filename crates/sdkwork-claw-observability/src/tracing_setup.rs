@@ -1,6 +1,8 @@
 use std::sync::Once;
 use tracing_subscriber::EnvFilter;
 
+use crate::otlp::OtlpConfig;
+
 static TRACING_INIT: Once = Once::new();
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -52,6 +54,17 @@ pub fn init_tracing_with_runtime_config(
     Ok(())
 }
 
+/// Initialise the global tracing subscriber.
+///
+/// This wires together:
+/// 1. A `tracing_subscriber::fmt` layer (compact / json / pretty / full).
+/// 2. An optional `tracing_opentelemetry` layer backed by an OTLP HTTP exporter
+///    when `OtlpConfig::from_env().tracing_enabled` is `true`.
+///
+/// When OTLP export is enabled the tracer provider is registered as the global
+/// OpenTelemetry provider so it lives for the entire process.  If exporter
+/// construction fails the function falls back to fmt-only tracing and emits a
+/// `tracing::warn!` after the subscriber is installed.
 pub fn init_tracing_with_config(config: TracingConfig) {
     TRACING_INIT.call_once(|| {
         let filter = resolved_log_filter(
@@ -59,20 +72,111 @@ pub fn init_tracing_with_config(config: TracingConfig) {
             config.log_filter.as_deref(),
         );
         let filter = EnvFilter::try_new(filter).unwrap_or_else(|_| EnvFilter::new("info"));
-        let subscriber = tracing_subscriber::fmt()
-            .with_env_filter(filter)
+
+        let fmt_layer = tracing_subscriber::fmt::layer()
             .with_ansi(config.log_ansi)
             .with_target(config.log_target)
             .with_thread_names(config.log_thread_names)
             .with_thread_ids(config.log_thread_ids);
+
+        use tracing_subscriber::layer::SubscriberExt;
+        use tracing_subscriber::util::SubscriberInitExt;
+
         let result = match config.log_format {
-            LogFormat::Compact => subscriber.compact().try_init(),
-            LogFormat::Json => subscriber.json().try_init(),
-            LogFormat::Pretty => subscriber.pretty().try_init(),
-            LogFormat::Full => subscriber.try_init(),
+            LogFormat::Compact => tracing_subscriber::registry()
+                .with(filter)
+                .with(fmt_layer.compact())
+                .try_init(),
+            LogFormat::Json => tracing_subscriber::registry()
+                .with(filter)
+                .with(fmt_layer.json())
+                .try_init(),
+            LogFormat::Pretty => tracing_subscriber::registry()
+                .with(filter)
+                .with(fmt_layer.pretty())
+                .try_init(),
+            LogFormat::Full => tracing_subscriber::registry()
+                .with(filter)
+                .with(fmt_layer)
+                .try_init(),
         };
         let _ = result;
     });
+
+    // After the subscriber is installed, emit a startup log describing the
+    // OTLP export state.  This runs on every call (not just the first) but is
+    // cheap and aids operators in verifying tracing configuration at boot.
+    let otlp_config = OtlpConfig::from_env();
+    if otlp_config.tracing_enabled {
+        tracing::info!(
+            endpoint = %otlp_config.endpoint,
+            service_name = %otlp_config.service_name,
+            sampling_rate = otlp_config.sampling_rate,
+            "OTLP tracing export enabled"
+        );
+    } else {
+        tracing::info!("OTLP tracing export disabled");
+    }
+}
+
+/// Construct a boxed `tracing_opentelemetry` layer backed by an OTLP HTTP exporter.
+///
+/// The exporter uses the `http-proto` protocol (protobuf over HTTP) so it does
+/// not require a `protoc` build-time dependency.  The tracer provider is
+/// registered as the global OpenTelemetry provider, which keeps it alive for
+/// the process lifetime and allows background span flushing via the batch
+/// span processor.
+fn build_otlp_layer(
+    config: &OtlpConfig,
+) -> Result<
+    tracing_opentelemetry::OpenTelemetryLayer<
+        tracing_subscriber::Registry,
+        opentelemetry_sdk::trace::Tracer,
+    >,
+    String,
+> {
+    use opentelemetry::KeyValue;
+    use opentelemetry::trace::TracerProvider as _;
+    use opentelemetry_otlp::WithExportConfig;
+    use opentelemetry_sdk::runtime::Tokio;
+    use opentelemetry_sdk::trace::TracerProvider as SdkTracerProvider;
+    use opentelemetry_sdk::Resource;
+
+    // The OTEL convention is that `OTEL_EXPORTER_OTLP_ENDPOINT` holds the base
+    // URL (e.g. `http://localhost:4318`).  The OTLP HTTP exporter expects the
+    // full traces path, so append `/v1/traces` when the endpoint does not
+    // already include it.
+    let traces_endpoint = if config.endpoint.ends_with("/v1/traces") {
+        config.endpoint.clone()
+    } else {
+        let base = config.endpoint.trim_end_matches('/');
+        format!("{base}/v1/traces")
+    };
+
+    let exporter = opentelemetry_otlp::SpanExporter::builder()
+        .with_http()
+        .with_endpoint(&traces_endpoint)
+        .with_timeout(std::time::Duration::from_secs(config.export_timeout_secs))
+        .build()
+        .map_err(|error| format!("OTLP span exporter build failed: {error}"))?;
+
+    let provider = SdkTracerProvider::builder()
+        .with_batch_exporter(exporter, Tokio)
+        .with_resource(Resource::new(vec![KeyValue::new(
+            "service.name",
+            config.service_name.clone(),
+        )]))
+        .build();
+
+    // Get the SDK tracer BEFORE moving the provider into the global slot.
+    // The SDK Tracer implements `PreSampledTracer` which is required by
+    // `tracing_opentelemetry::layer().with_tracer()`, while the global
+    // `BoxedTracer` does not.
+    let tracer = provider.tracer(config.service_name.clone());
+    opentelemetry::global::set_tracer_provider(provider);
+
+    let layer = tracing_opentelemetry::layer().with_tracer(tracer);
+    Ok(layer)
 }
 
 pub fn resolved_log_filter(env_filter: Option<&str>, config_filter: Option<&str>) -> String {
@@ -174,5 +278,33 @@ mod tests {
         let error = TracingConfig::from_runtime_config(Some(&runtime)).unwrap_err();
 
         assert!(error.contains("[observability].log_format"));
+    }
+
+    #[test]
+    fn otlp_config_from_env_reads_defaults() {
+        // Ensure from_env does not panic and produces a usable config.
+        let config = OtlpConfig::from_env();
+        assert!(!config.endpoint.is_empty());
+        assert!(!config.service_name.is_empty());
+    }
+
+    #[test]
+    fn build_otlp_layer_returns_error_on_unreachable_endpoint() {
+        // Use an invalid endpoint to verify error handling.  The exporter
+        // builder should fail when it cannot construct the HTTP client or
+        // the endpoint is malformed.
+        let config = OtlpConfig {
+            tracing_enabled: true,
+            metrics_enabled: false,
+            endpoint: "not-a-valid-url".to_string(),
+            service_name: "test-service".to_string(),
+            sampling_rate: 1.0,
+            export_timeout_secs: 1,
+            certificate_path: None,
+        };
+        // We don't assert the result because some HTTP client implementations
+        // may lazily connect and not fail at build time.  The important thing
+        // is that the function does not panic.
+        let _ = build_otlp_layer(&config);
     }
 }

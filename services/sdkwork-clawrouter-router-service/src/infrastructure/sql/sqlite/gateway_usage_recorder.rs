@@ -104,7 +104,7 @@ async fn upsert_trace(
             user_agent_hash = excluded.user_agent_hash
         WHERE NOT EXISTS (
             SELECT 1
-            FROM ai_usage_fact settled_usage
+            FROM ai_usage settled_usage
             WHERE settled_usage.tenant_id = ai_request_trace.tenant_id
               AND settled_usage.organization_id = ai_request_trace.organization_id
               AND settled_usage.request_id = ai_request_trace.request_id
@@ -160,7 +160,7 @@ async fn upsert_usage_fact(
 ) -> Result<(), DomainError> {
     sqlx::query(
         r#"
-        INSERT INTO ai_usage_fact
+        INSERT INTO ai_usage
             (id, uuid, tenant_id, organization_id, user_id, request_id, trace_id, status,
              api_key_id, api_key_name_snapshot, channel_group_id, channel_group_snapshot,
              owner_type, owner_id, catalog_key, requested_model_catalog_key, model,
@@ -221,10 +221,10 @@ async fn upsert_usage_fact(
             pricing_snapshot = excluded.pricing_snapshot,
             occurred_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now'),
             settlement_status = excluded.settlement_status
-        WHERE ai_usage_fact.settlement_status = 0
+        WHERE ai_usage.settlement_status = 0
         "#,
     )
-    .bind(next_claw_runtime_id("ai_usage_fact")?)
+    .bind(next_claw_runtime_id("ai_usage")?)
     .bind(usage_uuid(command))
     .bind(command.tenant_id)
     .bind(command.organization_id)
