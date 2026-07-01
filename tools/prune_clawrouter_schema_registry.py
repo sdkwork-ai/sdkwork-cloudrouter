@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ASSEMBLY_PATH = ROOT / "docs/schema-registry/sdkwork-clawrouter.tables.yaml"
 TABLE_REGISTRY_PATH = ROOT / "database/contract/table-registry.json"
 SCHEMA_CONTRACT_PATH = ROOT / "database/contract/schema.yaml"
-BASELINE_PATH = ROOT / "database/ddl/baseline/postgres/0001_clawrouter_legacy_baseline.sql"
+BASELINE_PATH = ROOT / "database/ddl/baseline/postgres/0001_clawrouter_baseline.sql"
 GATEWAY_ROUTING_PATH = ROOT / "database/ddl/baseline/postgres/0003_gateway_routing_dictionary.sql"
 
 # Tables owned by sdkwork-kernel / sdkwork-agent (router must not generate DDL).

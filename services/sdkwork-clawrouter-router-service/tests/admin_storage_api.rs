@@ -49,13 +49,13 @@ async fn admin_storage_route_exposes_complete_oss_management_center() {
         ("/backend/v3/api/storage/gc_jobs?status=created", "gc-job-1"),
     ] {
         let payload = request_json(router.clone(), trusted_request("GET", path)).await;
-        assert_eq!("2000", payload["code"], "{path}");
+        assert_eq!(0, payload["code"], "{path}");
         assert_eq!(expected_id, payload["data"]["items"][0]["id"], "{path}");
         assert!(
             payload["data"]["requestId"].as_str().unwrap().len() > 4,
             "{path}"
         );
-        assert_ne!("Not implemented", payload["msg"], "{path}");
+        assert_ne!("Not implemented", payload["detail"], "{path}");
     }
 }
 
@@ -74,7 +74,7 @@ async fn admin_storage_route_exposes_provider_bucket_quota_and_job_commands() {
         ),
     )
     .await;
-    assert_eq!("2000", provider["code"]);
+    assert_eq!(0, provider["code"].as_i64().unwrap());
     assert_eq!("provider-created", provider["data"]["provider"]["id"]);
     assert_eq!("aws-primary", provider["data"]["provider"]["providerCode"]);
 
@@ -87,7 +87,7 @@ async fn admin_storage_route_exposes_provider_bucket_quota_and_job_commands() {
         ),
     )
     .await;
-    assert_eq!("2000", provider_update["code"]);
+    assert_eq!(0, provider_update["code"].as_i64().unwrap());
     assert_eq!("disabled", provider_update["data"]["provider"]["status"]);
 
     let health = request_json(
@@ -98,7 +98,7 @@ async fn admin_storage_route_exposes_provider_bucket_quota_and_job_commands() {
         ),
     )
     .await;
-    assert_eq!("2000", health["code"]);
+    assert_eq!(0, health["code"].as_i64().unwrap());
     assert_eq!("provider-created", health["data"]["providerId"]);
     assert_eq!(true, health["data"]["healthy"]);
 
@@ -111,7 +111,7 @@ async fn admin_storage_route_exposes_provider_bucket_quota_and_job_commands() {
         ),
     )
     .await;
-    assert_eq!("2000", bucket["code"]);
+    assert_eq!(0, bucket["code"].as_i64().unwrap());
     assert_eq!("bucket-created", bucket["data"]["bucket"]["id"]);
     assert_eq!("tenant-assets", bucket["data"]["bucket"]["bucketName"]);
 
@@ -124,7 +124,7 @@ async fn admin_storage_route_exposes_provider_bucket_quota_and_job_commands() {
         ),
     )
     .await;
-    assert_eq!("2000", bucket_update["code"]);
+    assert_eq!(0, bucket_update["code"].as_i64().unwrap());
     assert_eq!("archived", bucket_update["data"]["bucket"]["status"]);
 
     let default_bucket = request_json(
@@ -136,7 +136,7 @@ async fn admin_storage_route_exposes_provider_bucket_quota_and_job_commands() {
         ),
     )
     .await;
-    assert_eq!("2000", default_bucket["code"]);
+    assert_eq!(0, default_bucket["code"].as_i64().unwrap());
     assert_eq!(
         "tenant_private",
         default_bucket["data"]["defaultBucket"]["logicalScope"]
@@ -151,7 +151,7 @@ async fn admin_storage_route_exposes_provider_bucket_quota_and_job_commands() {
         ),
     )
     .await;
-    assert_eq!("2000", quota["code"]);
+    assert_eq!(0, quota["code"].as_i64().unwrap());
     assert_eq!("quota-created", quota["data"]["quotaPolicy"]["id"]);
     assert_eq!(
         1099511627776_i64,
@@ -167,7 +167,7 @@ async fn admin_storage_route_exposes_provider_bucket_quota_and_job_commands() {
         ),
     )
     .await;
-    assert_eq!("2000", reconciliation["code"]);
+    assert_eq!(0, reconciliation["code"].as_i64().unwrap());
     assert_eq!(
         "reconciliation-created",
         reconciliation["data"]["reconciliationRun"]["id"]
@@ -182,7 +182,7 @@ async fn admin_storage_route_exposes_provider_bucket_quota_and_job_commands() {
         ),
     )
     .await;
-    assert_eq!("2000", gc["code"]);
+    assert_eq!(0, gc["code"].as_i64().unwrap());
     assert_eq!("gc-created", gc["data"]["job"]["id"]);
 }
 
@@ -205,7 +205,7 @@ async fn admin_storage_route_rejects_missing_trusted_subject_before_store_access
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 #[derive(Clone)]

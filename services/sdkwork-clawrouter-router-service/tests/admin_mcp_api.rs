@@ -39,7 +39,7 @@ async fn admin_mcp_route_manages_servers_revisions_tools_health_and_bindings() {
         ),
     )
     .await;
-    assert_eq!("2000", create_server["code"]);
+    assert_eq!(0, create_server["code"].as_i64().unwrap());
     assert_eq!(
         "workspace.context",
         create_server["data"]["item"]["serverKey"]

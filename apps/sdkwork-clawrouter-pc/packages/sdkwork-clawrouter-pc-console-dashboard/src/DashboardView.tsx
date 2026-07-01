@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
   Bell,
@@ -55,11 +55,21 @@ const DEFAULT_VISIBLE_SERIES = SERIES.reduce<Record<string, boolean>>((acc, item
   return acc;
 }, {});
 
+// Time-range selector labels use the aggregation granularity (按小时/按天/按月/按年)
+// so each option unambiguously describes how data is bucketed, not the window span.
 const TIME_RANGE_LABELS: Record<DashboardTimeRange, (t: TranslationFunction) => string> = {
+  hourly: (t) => t("console.dashboard.dashboardview.text.granularityHour", "按小时"),
+  daily: (t) => t("console.dashboard.dashboardview.text.granularityDay", "按天"),
+  monthly: (t) => t("console.dashboard.dashboardview.text.granularityMonth", "按月"),
+  yearly: (t) => t("console.dashboard.dashboardview.text.granularityYear", "按年"),
+};
+
+// Window span shown in the chart subtitle (e.g. "近 10 年 · 10 个数据点").
+const TIME_RANGE_WINDOWS: Record<DashboardTimeRange, (t: TranslationFunction) => string> = {
   hourly: (t) => t("console.dashboard.dashboardview.text.1vwlyi4", "24 小时"),
   daily: (t) => t("console.dashboard.dashboardview.text.16arzm9", "30 天"),
   monthly: (t) => t("console.dashboard.dashboardview.text.1prdfbw", "12 个月"),
-  yearly: (t) => t("console.dashboard.dashboardview.text.ee5di", "3 年"),
+  yearly: (t) => t("console.dashboard.dashboardview.text.ee5di", "10 年"),
 };
 
 function getDashboardLoadErrorMessage(error: unknown, fallback: string): string {
@@ -80,32 +90,67 @@ export function DashboardView() {
   const [visibleSeries, setVisibleSeries] = useState(DEFAULT_VISIBLE_SERIES);
   const [domainSpeedStates, setDomainSpeedStates] = useState<Record<string, ConfigurationDomainSpeedState>>({});
   const [snapshot, setSnapshot] = useState(() => DashboardService.emptyDashboardSnapshot());
-  const [isLoading, setIsLoading] = useState(true);
+  const [hasData, setHasData] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadMessage, setLoadMessage] = useState<string | null>(null);
+  // Refs avoid re-creating loadDashboard (and thus re-triggering the effect) on data arrival,
+  // while still letting the render branch read `hasData` reactively.
+  const hasDataRef = useRef(false);
+  const requestIdRef = useRef(0);
 
   const loadDashboard = useCallback(async () => {
-    setIsLoading(true);
+    const currentRequestId = ++requestIdRef.current;
+    const firstLoad = !hasDataRef.current;
+    if (firstLoad) {
+      setIsInitialLoading(true);
+    } else {
+      setIsRefreshing(true);
+    }
     setLoadError(null);
-    setLoadMessage(null);
     try {
       const data = await DashboardService.fetchDashboardOverview(timeRange);
+      if (currentRequestId !== requestIdRef.current) {
+        // A newer request has started; ignore this stale response.
+        return;
+      }
       setSnapshot(data);
+      hasDataRef.current = true;
+      setHasData(true);
       setLoadMessage(data.warnings[0] ?? null);
     } catch (error) {
-      setSnapshot(DashboardService.emptyDashboardSnapshot(timeRange));
-      setLoadError(getDashboardLoadErrorMessage(
+      if (currentRequestId !== requestIdRef.current) {
+        return;
+      }
+      const message = getDashboardLoadErrorMessage(
         error,
         t("console.dashboard.dashboardview.text.loadErrorFallback", "看板数据加载失败。"),
-      ));
+      );
+      if (firstLoad) {
+        // No prior data to keep; fall back to an empty snapshot for the full error state.
+        setSnapshot(DashboardService.emptyDashboardSnapshot(timeRange));
+      }
+      // On a refresh failure, keep the previous snapshot so the dashboard stays usable.
+      setLoadError(message);
     } finally {
-      setIsLoading(false);
+      if (currentRequestId === requestIdRef.current) {
+        if (firstLoad) {
+          setIsInitialLoading(false);
+        } else {
+          setIsRefreshing(false);
+        }
+      }
     }
   }, [timeRange, t]);
 
   useEffect(() => {
     void loadDashboard();
   }, [loadDashboard]);
+
+  const isBusy = isInitialLoading || isRefreshing;
+  const showFullLoading = isInitialLoading && !hasData;
+  const showFullError = Boolean(loadError) && !hasData;
 
   const chartData = useMemo(() => {
     return snapshot.chartData.map((item) => {
@@ -123,6 +168,10 @@ export function DashboardView() {
       return sum + SERIES.reduce((seriesSum, series) => seriesSum + numberFrom(item[series.key]), 0);
     }, 0);
   }, [chartData]);
+
+  // Thin X-axis ticks for dense series (24 hourly / 30 daily points) while
+  // showing every label for the coarser monthly (12) / yearly (10) ranges.
+  const xAxisInterval = chartData.length > 12 ? Math.ceil(chartData.length / 10) : 0;
 
   const pieData = useMemo(() => {
     const totalRequests = snapshot.topModels.reduce((sum, item) => sum + item.requests, 0);
@@ -186,17 +235,18 @@ export function DashboardView() {
           icon={<Wallet className="h-4 w-4 text-blue-500" />}
           title={t("console.dashboard.dashboardview.text.uvto1d", "可用额度")}
           value={t("console.dashboard.dashboardview.text.pointsValue", "{{value}} 点", { value: formatNumber(snapshot.summary.availableCredits) })}
+          valueIcon={<Zap className="h-6 w-6 text-amber-500" />}
           footerLabel={t("console.dashboard.dashboardview.text.totalUsedCredits", "历史总消耗")}
           footerValue={t("console.dashboard.dashboardview.text.pointsValue", "{{value}} 点", { value: formatNumber(snapshot.summary.totalUsedCredits) })}
           action={
             <button
               className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-[#1f1f1f] dark:text-slate-300 dark:hover:bg-white/10"
-              disabled={isLoading}
+              disabled={isBusy}
               onClick={() => void loadDashboard()}
               title={t("console.dashboard.dashboardview.text.1j62q6w", "刷新数据")}
               aria-label={t("console.dashboard.dashboardview.text.1j62q6w", "刷新数据")}
             >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 ${isBusy ? 'animate-spin' : ''}`} />
             </button>
           }
         />
@@ -240,29 +290,53 @@ export function DashboardView() {
         </div>
       )}
 
-      {isLoading ? (
+      {showFullLoading ? (
         <BusinessStatePanel
           kind="loading"
           title={t("console.dashboard.dashboardview.text.loadingTitle", "正在加载看板数据...")}
           description={t("console.dashboard.dashboardview.text.loadingDescription", "正在获取用量、模型排行和系统消息。")}
           className="rounded-lg border border-slate-200 bg-white dark:border-white/5 dark:bg-[#252525]"
         />
-      ) : loadError ? (
+      ) : showFullError ? (
         <BusinessStatePanel
           kind="error"
           title={t("console.dashboard.dashboardview.text.loadErrorTitle", "看板数据加载失败")}
-          description={loadError}
+          description={loadError ?? undefined}
           onRetry={() => void loadDashboard()}
           className="rounded-lg border border-slate-200 bg-white dark:border-white/5 dark:bg-[#252525]"
         />
       ) : (
         <>
+      {loadError && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
+          <span className="flex items-center gap-2">
+            <span className="h-2 w-2 shrink-0 rounded-full bg-rose-500" aria-hidden="true" />
+            {loadError}
+          </span>
+          <button
+            type="button"
+            disabled={isRefreshing}
+            onClick={() => void loadDashboard()}
+            className="inline-flex items-center gap-1.5 rounded-md border border-rose-300 bg-white px-2.5 py-1 text-xs font-medium text-rose-700 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-rose-400/30 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:bg-rose-500/20"
+          >
+            <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {t("console.dashboard.dashboardview.text.retry", "重试")}
+          </button>
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="flex flex-col gap-6 xl:col-span-2">
           <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-white/5 dark:bg-[#252525]">
             <div className="flex flex-col gap-4 border-b border-slate-100 p-5 dark:border-white/5 md:flex-row md:items-center md:justify-between">
-              <h2 className="flex items-center gap-2 text-base font-bold">
-                <Activity className="h-5 w-5 text-blue-500" /> {t("console.dashboard.dashboardview.text.1bgdsz6", "用量趋势")}</h2>
+              <div className="flex flex-col gap-1">
+                <h2 className="flex items-center gap-2 text-base font-bold">
+                  <Activity className="h-5 w-5 text-blue-500" /> {t("console.dashboard.dashboardview.text.1bgdsz6", "用量趋势")}</h2>
+                <p className="flex items-center gap-1.5 pl-7 text-xs font-medium text-slate-400 dark:text-slate-500">
+                  <span>{t("console.dashboard.dashboardview.text.rangePrefix", "近")} {TIME_RANGE_WINDOWS[timeRange](t)}</span>
+                  <span className="text-slate-300 dark:text-slate-600">·</span>
+                  <span>{t("console.dashboard.dashboardview.text.pointCount", "{{count}} 个数据点", { count: chartData.length })}</span>
+                </p>
+              </div>
               <div className="flex flex-wrap items-center gap-2">
                 <SegmentedControl
                   options={[
@@ -275,6 +349,7 @@ export function DashboardView() {
                 <SegmentedControl
                   options={Object.entries(TIME_RANGE_LABELS).map(([value, label]) => ({ value, label: label(t) }))}
                   value={timeRange}
+                  disabled={isRefreshing}
                   onChange={(value) => setTimeRange(value as DashboardTimeRange)}
                 />
                 <SegmentedControl
@@ -311,14 +386,15 @@ export function DashboardView() {
             </div>
 
             <div className="relative h-[380px] w-full p-6">
-              {chartData.length === 0 ? (
-                <EmptyState label={t("console.dashboard.dashboardview.text.na2gzj", "暂无趋势数据")} />
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  {chartType === 'bar' ? (
-                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
+              <div className={`h-full w-full transition-opacity duration-200 ${isRefreshing ? 'pointer-events-none opacity-40' : 'opacity-100'}`}>
+                {chartData.length === 0 ? (
+                  <EmptyState label={t("console.dashboard.dashboardview.text.na2gzj", "暂无趋势数据")} />
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    {chartType === 'bar' ? (
+                      <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#94a3b8" strokeOpacity={0.14} />
-                      <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} dy={10} />
+                      <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} dy={10} interval={xAxisInterval} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontFamily: 'monospace' }} tickFormatter={formatAxis} width={50} />
                       <Tooltip contentStyle={chartTooltipStyle} formatter={(value: number) => [formatNumber(value), undefined]} />
                       {SERIES.map((series) =>
@@ -328,17 +404,26 @@ export function DashboardView() {
                   ) : (
                     <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#94a3b8" strokeOpacity={0.14} />
-                      <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} dy={10} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontFamily: 'monospace' }} tickFormatter={formatAxis} width={50} />
-                      <Tooltip contentStyle={chartTooltipStyle} formatter={(value: number) => [formatNumber(value), undefined]} />
-                      {SERIES.map((series) =>
-                        visibleSeries[series.key] ? (
-                          <Area key={series.key} type="monotone" dataKey={series.key} name={series.label(t)} stackId="usage" stroke={series.color} fill={series.color} fillOpacity={0.2} strokeWidth={2} />
-                        ) : null,
-                      )}
-                    </AreaChart>
-                  )}
-                </ResponsiveContainer>
+                      <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} dy={10} interval={xAxisInterval} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontFamily: 'monospace' }} tickFormatter={formatAxis} width={50} />
+                        <Tooltip contentStyle={chartTooltipStyle} formatter={(value: number) => [formatNumber(value), undefined]} />
+                        {SERIES.map((series) =>
+                          visibleSeries[series.key] ? (
+                            <Area key={series.key} type="monotone" dataKey={series.key} name={series.label(t)} stackId="usage" stroke={series.color} fill={series.color} fillOpacity={0.2} strokeWidth={2} />
+                          ) : null,
+                        )}
+                      </AreaChart>
+                    )}
+                  </ResponsiveContainer>
+                )}
+              </div>
+              {isRefreshing && (
+                <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+                  <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-[#252525]/90 dark:text-slate-300">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
+                    {t("console.dashboard.dashboardview.text.refreshing", "刷新中…")}
+                  </div>
+                </div>
               )}
             </div>
           </section>
@@ -560,6 +645,7 @@ interface MetricCardProps {
   icon: React.ReactNode;
   title: string;
   value: string;
+  valueIcon?: React.ReactNode;
   footerLabel: string;
   footerValue: string;
   sparkline?: { value: number }[];
@@ -567,7 +653,7 @@ interface MetricCardProps {
   action?: React.ReactNode;
 }
 
-function MetricCard({ icon, title, value, footerLabel, footerValue, sparkline = [], sparklineColor = '#3b82f6', action }: MetricCardProps) {
+function MetricCard({ icon, title, value, valueIcon, footerLabel, footerValue, sparkline = [], sparklineColor = '#3b82f6', action }: MetricCardProps) {
   return (
     <div className="relative overflow-hidden rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-colors hover:border-blue-500/30 dark:border-white/5 dark:bg-[#252525]">
       <div className="relative z-10">
@@ -578,7 +664,7 @@ function MetricCard({ icon, title, value, footerLabel, footerValue, sparkline = 
           {action}
         </div>
         <div className="mb-5 mt-2 flex items-center gap-1.5 text-2xl font-bold text-slate-800 dark:text-white lg:text-3xl">
-          <Zap className="h-6 w-6 text-amber-500" />
+          {valueIcon}
           {value}
         </div>
         <div className="border-t border-slate-100 pt-4 dark:border-white/5">
@@ -604,15 +690,18 @@ function MetricCard({ icon, title, value, footerLabel, footerValue, sparkline = 
 interface SegmentedControlProps {
   options: { value: string; label: string }[];
   value: string;
+  disabled?: boolean;
   onChange: (value: string) => void;
 }
 
-function SegmentedControl({ options, value, onChange }: SegmentedControlProps) {
+function SegmentedControl({ options, value, disabled, onChange }: SegmentedControlProps) {
   return (
-    <div className="flex rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-white/5 dark:bg-[#1e1e1e]">
+    <div className={`flex rounded-lg border border-slate-200 bg-slate-100 p-1 transition-opacity dark:border-white/5 dark:bg-[#1e1e1e] ${disabled ? 'pointer-events-none opacity-60' : ''}`}>
       {options.map((option) => (
         <button
           key={option.value}
+          type="button"
+          disabled={disabled}
           className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
             value === option.value
               ? 'bg-white text-slate-800 shadow-sm dark:bg-white/10 dark:text-white'

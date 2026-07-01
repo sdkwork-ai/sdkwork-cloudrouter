@@ -115,6 +115,7 @@ class ApiContractManifestGenerator:
         "shipments": "commerce",
         "wallet": "commerce",
         "commerce_reports": "commerce",
+        "promotions": "promotion",
         "content": "content",
         "communication": "communication",
         "messaging": "messaging",
@@ -305,7 +306,7 @@ class ApiContractManifestGenerator:
         ("ai_site_", "sites"),
         ("ai_site", "sites"),
         ("ai_", "ai"),
-        ("promotion_", "system"),
+        ("promotion_", "promotions"),
         ("commerce_", "commerce"),
         ("content_", "content"),
         ("messaging_", "messaging"),
@@ -783,8 +784,6 @@ class ApiContractManifestGenerator:
         if not segments:
             return "system"
         tag = self._tag_from_segments(segments, read_sources, write_tables)
-        if self.STANDARD_TAG_DOMAINS.get(tag) == "commerce":
-            return "commerce"
         return tag if tag in self.TOP_LEVEL_TAGS else self._tag_from_tables(read_sources, write_tables) or "system"
 
     def _standard_sdk_domain(
@@ -893,6 +892,7 @@ class ApiContractManifestGenerator:
             "refunds",
             "shipments",
             "wallet",
+            "promotions",
         }:
             return first
         if first in {"coupon", "payment", "vip", "account", "finance"}:

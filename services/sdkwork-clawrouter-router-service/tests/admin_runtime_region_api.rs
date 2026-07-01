@@ -34,7 +34,7 @@ async fn admin_runtime_region_settings_default_to_china_and_persist_updates() {
         );
 
     let initial = request_json(router.clone(), request(Method::GET, SETTINGS_PATH, None)).await;
-    assert_eq!("2000", initial["code"]);
+    assert_eq!(0, initial["code"].as_i64().unwrap());
     assert_eq!("cn", initial["data"]["currentRegionCode"]);
     assert_eq!("China", initial["data"]["currentRegionName"]);
 
@@ -51,12 +51,12 @@ async fn admin_runtime_region_settings_default_to_china_and_persist_updates() {
         ),
     )
     .await;
-    assert_eq!("2000", updated["code"]);
+    assert_eq!(0, updated["code"].as_i64().unwrap());
     assert_eq!("us", updated["data"]["currentRegionCode"]);
     assert_eq!("United States", updated["data"]["currentRegionName"]);
 
     let reloaded = request_json(router, request(Method::GET, SETTINGS_PATH, None)).await;
-    assert_eq!("2000", reloaded["code"]);
+    assert_eq!(0, reloaded["code"].as_i64().unwrap());
     assert_eq!("us", reloaded["data"]["currentRegionCode"]);
     assert_eq!("United States", reloaded["data"]["currentRegionName"]);
 
@@ -95,8 +95,8 @@ async fn admin_runtime_region_settings_reject_invalid_region_code() {
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = response_json(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("currentRegionCode must be a lowercase region code"));

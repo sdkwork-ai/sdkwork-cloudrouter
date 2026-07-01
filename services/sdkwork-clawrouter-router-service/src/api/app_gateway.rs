@@ -6,7 +6,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 use crate::api::app_sql_subject::{map_optional_app_sql_subject, ResolvedAppSqlScopedSubject};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::ports::{
     AppGatewayTraceItem, AppGatewayTraceItems, AppGatewayTracesReadFuture,
     AppGatewayTracesReadStore, AppGatewayTracesSubject,
@@ -63,14 +63,14 @@ async fn fetch_gateway_traces(
     };
 
     match state.read_store.load_gateway_traces(subject).await {
-        Ok(items) => Json(PlusApiResult::success(AppGatewayTraceItems::new(items))).into_response(),
+        Ok(items) => Json(success_envelope(AppGatewayTraceItems::new(items))).into_response(),
         Err(error) => app_gateway_traces_read_model_error(error),
     }
 }
 
 fn app_gateway_traces_read_model_error(error: impl std::fmt::Display) -> Response {
-    PlusApiResult::error(
+    problem_from_wire_code(
             "5000",
             format!("app gateway traces read model is unavailable: {error}"),
-        )).into_response()
+        ).into_response()
 }

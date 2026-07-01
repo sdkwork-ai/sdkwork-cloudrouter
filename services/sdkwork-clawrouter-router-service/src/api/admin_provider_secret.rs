@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::ports::{
@@ -161,7 +161,7 @@ async fn fetch_provider_secrets(
         })
         .await
     {
-        Ok(items) => Json(PlusApiResult::success(AdminProviderSecretListResponse {
+        Ok(items) => Json(success_envelope(AdminProviderSecretListResponse {
             items: items.into_iter().map(to_item_response).collect(),
         }))
         .into_response(),
@@ -192,7 +192,7 @@ async fn fetch_provider_secrets_from_query(
         })
         .await
     {
-        Ok(items) => Json(PlusApiResult::success(AdminProviderSecretListResponse {
+        Ok(items) => Json(success_envelope(AdminProviderSecretListResponse {
             items: items.into_iter().map(to_item_response).collect(),
         }))
         .into_response(),
@@ -224,7 +224,7 @@ async fn create_provider_secret(
     };
 
     match state.store.create_provider_secret(command).await {
-        Ok(item) => Json(PlusApiResult::success(AdminProviderSecretItemEnvelope {
+        Ok(item) => Json(success_envelope(AdminProviderSecretItemEnvelope {
             item: to_item_response(item),
         }))
         .into_response(),
@@ -256,7 +256,7 @@ async fn update_provider_secret(
     };
 
     match state.store.update_provider_secret(command).await {
-        Ok(Some(item)) => Json(PlusApiResult::success(AdminProviderSecretItemEnvelope {
+        Ok(Some(item)) => Json(success_envelope(AdminProviderSecretItemEnvelope {
             item: to_item_response(item),
         }))
         .into_response(),
@@ -285,7 +285,7 @@ async fn delete_provider_secret(
     };
 
     match state.store.delete_provider_secret(command).await {
-        Ok(true) => Json(PlusApiResult::success(AdminProviderSecretDeleteResponse {
+        Ok(true) => Json(success_envelope(AdminProviderSecretDeleteResponse {
             deleted: true,
         }))
         .into_response(),
@@ -744,15 +744,15 @@ fn mask_secret_ref(value: &str) -> String {
 }
 
 fn bad_request(message: String) -> Response {
-    PlusApiResult::error("4001", message)).into_response()
+    problem_from_wire_code("4001", message).into_response()
 }
 
 fn not_found_response(message: &'static str) -> Response {
-    PlusApiResult::error("4040", message)).into_response()
+    problem_from_wire_code("4040", message).into_response()
 }
 
 fn conflict_response(error: DomainError) -> Response {
-    PlusApiResult::error("4090", error.to_string())).into_response()
+    problem_from_wire_code("4090", error.to_string()).into_response()
 }
 
 fn command_build_error_response(error: ProviderSecretCommandBuildError) -> Response {
@@ -765,7 +765,7 @@ fn command_build_error_response(error: ProviderSecretCommandBuildError) -> Respo
 }
 
 fn provider_secret_system_response(context: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }
 
 fn current_timestamp_string() -> String {

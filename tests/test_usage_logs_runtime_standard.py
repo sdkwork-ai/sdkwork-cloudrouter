@@ -58,7 +58,8 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
         self.assertIn("usage logs q must not exceed", app_usage_logs)
         self.assertIn("usage logs start_time must be a valid UTC timestamp", app_usage_logs)
         self.assertIn("usage logs end_time must be greater than or equal to start_time", app_usage_logs)
-        self.assertIn('PlusApiResult::error("4001"', app_usage_logs)
+        self.assertIn('problem_from_wire_code("4001"', app_usage_logs)
+        self.assertNotIn("PlusApiResult", app_usage_logs)
         self.assertIn("EmptyUsageLogsReadStore", app_usage_logs)
         self.assertIn("UsageLogsPage::default()", app_usage_logs)
 

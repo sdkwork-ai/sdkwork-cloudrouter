@@ -8,7 +8,7 @@ function readPortalFile(relativePath: string): string {
 
 test("console access and routing keeps only token management as a local integration module", () => {
   const appSource = readPortalFile("./src/App.tsx");
-  const menuSource = readPortalFile("./packages/sdkwork-clawrouter-pc-console-core/src/ConsoleLayout.tsx");
+  const menuSource = readPortalFile("./packages/sdkwork-clawrouter-pc-console-shell/src/ConsoleLayout.tsx");
   const packageJson = JSON.parse(readPortalFile("./package.json")) as {
     dependencies?: Record<string, string>;
   };
@@ -43,17 +43,55 @@ test("console access and routing keeps only token management as a local integrat
 });
 
 test("retired console providers and routing modules are absent from schema governance", () => {
-  const contractIndex = readPortalFile("../../docs/schema-registry/frontend-field-contracts/index.yaml");
-  const contractRoutes = readPortalFile("../../docs/schema-registry/frontend-field-contracts/routes/routes.yaml");
   const compiledContract = readPortalFile("../../docs/schema-registry/frontend-field-contracts.yaml");
   const routeClassification = readPortalFile("../../docs/schema-registry/frontend-route-classification.yaml");
 
-  for (const source of [contractIndex, contractRoutes, compiledContract, routeClassification]) {
+  for (const source of [compiledContract, routeClassification]) {
     assert.doesNotMatch(source, /\/console\/providers/);
     assert.doesNotMatch(source, /\/console\/routing/);
     assert.doesNotMatch(source, /sdkwork-clawrouter-pc-console-providers/);
     assert.doesNotMatch(source, /sdkwork-clawrouter-pc-console-routing/);
     assert.doesNotMatch(source, /console-providers\.yaml/);
     assert.doesNotMatch(source, /console-routing\.yaml/);
+  }
+});
+
+test("retired relay-external admin routes are absent from schema governance", () => {
+  const routeClassification = readPortalFile("../../docs/schema-registry/frontend-route-classification.yaml");
+
+  for (const retiredPrefix of [
+    "/admin/catalog",
+    "/admin/orders",
+    "/admin/payments",
+    "/admin/memberships",
+    "/admin/marketing",
+    "/admin/finance",
+    "/admin/wallet",
+    "/admin/oauth",
+    "/admin/service-providers",
+    "/admin/agents",
+    "/admin/skill",
+    "/admin/prompts",
+    "/admin/mcp",
+    "/admin/announcement",
+    "/admin/user",
+    "/admin/organization",
+    "/admin/inventory",
+    "/admin/storage",
+    "/admin/drive",
+    "/admin/messaging",
+  ]) {
+    assert.doesNotMatch(routeClassification, new RegExp(`route:\\s*${retiredPrefix.replaceAll("/", "\\/")}`));
+  }
+
+  for (const relayRoute of [
+    "/admin/dashboard",
+    "/admin/model",
+    "/admin/channel",
+    "/admin/settings",
+    "/admin/monitor",
+    "/admin/ratelimit",
+  ]) {
+    assert.match(routeClassification, new RegExp(`route:\\s*${relayRoute.replaceAll("/", "\\/")}`));
   }
 });

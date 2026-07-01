@@ -48,7 +48,7 @@ async fn app_notification_route_uses_notification_domain_and_store_contract() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = response_json(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("notification-1", payload["data"]["items"][0]["id"]);
     assert_eq!("claw-router", payload["data"]["items"][0]["appId"]);
     assert_eq!(true, payload["data"]["items"][0]["showAsPopup"]);
@@ -104,7 +104,7 @@ async fn app_notification_route_allows_console_reads_without_frontend_app_id() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = response_json(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("global-notification", payload["data"]["items"][0]["id"]);
 
     let queries = store.queries.lock().unwrap();
@@ -144,7 +144,7 @@ async fn app_notification_commands_mark_popup_seen_for_trusted_subject() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = response_json(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!(true, payload["data"]["updated"]);
     assert_eq!("popup_seen", payload["data"]["state"]);
 
@@ -207,7 +207,7 @@ async fn app_notification_acknowledge_marks_read_and_popup_seen_for_trusted_subj
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = response_json(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!(true, payload["data"]["updated"]);
     assert_eq!("acknowledged", payload["data"]["state"]);
     assert_eq!(

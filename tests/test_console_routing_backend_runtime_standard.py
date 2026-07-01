@@ -36,7 +36,8 @@ class ConsoleRoutingBackendRuntimeStandardTest(unittest.TestCase):
         self.assertIn("require_subject", app_routing)
         self.assertIn("AppRoutingReadStore", app_routing)
         self.assertIn("EmptyAppRoutingReadStore", app_routing)
-        self.assertIn('PlusApiResult::error("4010"', app_routing)
+        self.assertIn('problem_from_wire_code("4010"', app_routing)
+        self.assertNotIn("PlusApiResult", app_routing)
         self.assertIn("app routing read model is unavailable", app_routing)
 
         self.assertIn("AppRoutingReadStore", app_api)

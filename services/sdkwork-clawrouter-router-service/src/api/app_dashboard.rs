@@ -1,19 +1,23 @@
 use std::sync::Arc;
 
-use axum::extract::{Query, State};
-use axum::http::StatusCode;
+use axum::extract::{Extension, Query, State};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
-use axum::{Json, Router};
+use axum::Router;
 use crate::api::app_sql_subject::{map_optional_app_sql_subject, ResolvedAppSqlScopedSubject};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{
+    json_success_item_response, problem_from_wire_code_for_context, validation_problem_for_context,
+};
+use sdkwork_web_core::WebRequestContext;
 use serde::Deserialize;
 use crate::ports::{
     DashboardOverviewQuery, DashboardOverviewReadFuture, DashboardOverviewReadStore,
     DashboardOverviewSnapshot, DashboardOverviewSubject,
 };
 
-const MAX_DASHBOARD_RANGE_DAYS: i64 = 1096;
+// Allow up to ~10 years (10 * 365 + 3 leap days) so the "yearly" range can
+// cover the past decade as required by the dashboard product design.
+const MAX_DASHBOARD_RANGE_DAYS: i64 = 3653;
 const SECONDS_PER_DAY: i64 = 86_400;
 const NANOS_PER_SECOND: i128 = 1_000_000_000;
 const SUPPORTED_DASHBOARD_RANGES: [&str; 4] = ["hourly", "daily", "monthly", "yearly"];
@@ -107,8 +111,10 @@ fn app_dashboard_overview_router_with_state(
 async fn fetch_dashboard_overview(
     State(state): State<AppDashboardOverviewState>,
     ResolvedAppSqlScopedSubject(subject): ResolvedAppSqlScopedSubject,
+    request_context: Option<Extension<WebRequestContext>>,
     Query(query): Query<AppDashboardOverviewQuery>,
 ) -> Response {
+    let ctx = request_context.map(|context| context.0);
     let subject = match map_optional_app_sql_subject(subject, state.require_subject, |scoped| {
         scoped.into()
     }) {
@@ -119,7 +125,7 @@ async fn fetch_dashboard_overview(
     let validated_query = match validate_dashboard_overview_query(query) {
         Ok(validated_query) => validated_query,
         Err(error) => {
-            return PlusApiResult::error("4001", error.message)).into_response();
+            return validation_problem_for_context(ctx.as_ref(), error.message).into_response();
         }
     };
 
@@ -128,11 +134,13 @@ async fn fetch_dashboard_overview(
         .load_dashboard_overview(validated_query.query, subject)
         .await
     {
-        Ok(snapshot) => Json(PlusApiResult::success(snapshot)).into_response(),
-        Err(error) => PlusApiResult::error(
-                "5000",
-                format!("dashboard overview read model is unavailable: {error}"),
-            )).into_response(),
+        Ok(snapshot) => json_success_item_response(ctx.as_ref(), snapshot),
+        Err(error) => problem_from_wire_code_for_context(
+            ctx.as_ref(),
+            "5000",
+            format!("dashboard overview read model is unavailable: {error}"),
+        )
+        .into_response(),
     }
 }
 

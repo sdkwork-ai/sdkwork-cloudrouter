@@ -1,1 +1,0 @@
--- Retired: legacy projection tables migrated to composed module baselines (sdkwork-appstore, sdkwork-course).

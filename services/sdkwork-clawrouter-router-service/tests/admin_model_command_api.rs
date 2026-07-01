@@ -35,7 +35,7 @@ async fn admin_model_command_route_creates_lists_and_syncs_catalog_models() {
         ),
     )
     .await;
-    assert_eq!("2000", create_vendor["code"]);
+    assert_eq!(0, create_vendor["code"].as_i64().unwrap());
     assert_eq!("1", create_vendor["data"]["item"]["id"]);
     assert_eq!("Acme AI", create_vendor["data"]["item"]["name"]);
     assert_eq!("active", create_vendor["data"]["item"]["status"]);
@@ -95,7 +95,7 @@ async fn admin_model_command_route_creates_lists_and_syncs_catalog_models() {
         ),
     )
     .await;
-    assert_eq!("2000", openrouter_style_model["code"]);
+    assert_eq!(0, openrouter_style_model["code"].as_i64().unwrap());
     assert_eq!(
         "anthropic/claude-3-opus",
         openrouter_style_model["data"]["item"]["name"]
@@ -202,7 +202,7 @@ async fn admin_model_command_route_creates_lists_and_syncs_catalog_models() {
         ),
     )
     .await;
-    assert_eq!("2000", update_openrouter_style_model["code"]);
+    assert_eq!(0, update_openrouter_style_model["code"].as_i64().unwrap());
     assert_eq!(
         "anthropic/claude-3-opus",
         update_openrouter_style_model["data"]["item"]["model"]
@@ -346,7 +346,7 @@ async fn admin_model_command_route_rejects_missing_trusted_subject() {
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 #[tokio::test]
@@ -368,8 +368,8 @@ async fn admin_model_command_route_rejects_invalid_price_without_calling_store()
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("regionPrices[0].priceIn"));
@@ -408,8 +408,8 @@ async fn admin_model_command_route_rejects_integration_provider_as_model_vendor(
 
         assert_eq!(StatusCode::BAD_REQUEST, response.status());
         let payload = json_payload(response).await;
-        assert_eq!("4001", payload["code"]);
-        assert!(payload["msg"]
+        assert_eq!(40001, payload["code"].as_i64().unwrap());
+        assert!(payload["detail"]
             .as_str()
             .unwrap()
             .contains("integration_provider"));

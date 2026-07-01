@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-29T02:15:47.004Z",
+  "generatedAt": "2026-06-30T07:05:57.485Z",
   "facts": {
-    "generatedAt": "2026-06-29T02:15:47.004Z",
+    "generatedAt": "2026-06-30T07:05:57.485Z",
     "identity": {
       "appKey": "sdkwork-clawrouter",
       "version": "0.3.0",
@@ -42,12 +42,16 @@
     "migrations": {
       "postgresMigrationFiles": [
         "0001_initial_schema.down.sql",
-        "0001_initial_schema.up.sql"
+        "0001_initial_schema.up.sql",
+        "0002_rename_ai_usage_fact_to_ai_usage.down.sql",
+        "0002_rename_ai_usage_fact_to_ai_usage.up.sql"
       ],
       "postgresHasInitialSchema": true,
       "sqliteMigrationFiles": [
         "0001_initial_schema.down.sql",
-        "0001_initial_schema.up.sql"
+        "0001_initial_schema.up.sql",
+        "0002_rename_ai_usage_fact_to_ai_usage.down.sql",
+        "0002_rename_ai_usage_fact_to_ai_usage.up.sql"
       ],
       "sqliteHasInitialSchema": true
     },
@@ -158,7 +162,7 @@
     },
     "techArch": {
       "exists": true,
-      "lineCount": 550,
+      "lineCount": 553,
       "emptySections": [],
       "isOnlyIndex": false
     },
@@ -252,7 +256,9 @@
       "evidence": {
         "sqliteFiles": [
           "0001_initial_schema.down.sql",
-          "0001_initial_schema.up.sql"
+          "0001_initial_schema.up.sql",
+          "0002_rename_ai_usage_fact_to_ai_usage.down.sql",
+          "0002_rename_ai_usage_fact_to_ai_usage.up.sql"
         ]
       }
     },
@@ -314,7 +320,7 @@
       "status": "done",
       "evidence": {
         "emptySections": [],
-        "lineCount": 550
+        "lineCount": 553
       }
     },
     {

@@ -873,10 +873,8 @@ test("console user service fails closed when the generated app SDK omits current
 test("console user service fails closed when the generated app SDK omits required current user fields", async () => {
   for (const [field, message] of [
     ["displayName", /User profile display name is required/],
-    ["phone", /User profile phone is required/],
     ["isVerified", /User profile verification status is required/],
     ["twoFactorEnabled", /User profile two-factor status is required/],
-    ["thirdPartyBound", /User profile third-party binding summary is required/],
   ] as const) {
     await withAppSdkResponse(
       {
@@ -939,6 +937,35 @@ test("console user service preserves contract-defined empty current user display
       assert.equal(result.passwordLastChanged, "");
       assert.equal(result.thirdPartyBound, "");
       assert.equal(result.twoFactorEnabled, false);
+    },
+  );
+});
+
+test("console user service treats omitted optional display strings as empty", async () => {
+  await withAppSdkResponse(
+    {
+      code: "2000",
+      data: {
+        item: {
+          displayName: "Ada",
+          email: "ada@example.com",
+          language: "en",
+          avatar: mediaResource("image", "https://cdn.example.test/avatar.png"),
+          isVerified: true,
+          status: "active",
+          registeredAt: "2026-05-01T00:00:00Z",
+          lastLogin: "2026-05-05T08:00:00Z",
+          twoFactorEnabled: false,
+        },
+      },
+    },
+    async () => {
+      const result = await UserService.fetchCurrentUser();
+
+      assert.equal(result.phone, "");
+      assert.equal(result.lastLoginIp, "");
+      assert.equal(result.passwordLastChanged, "");
+      assert.equal(result.thirdPartyBound, "");
     },
   );
 });

@@ -40,7 +40,7 @@ async fn admin_firewall_rule_route_creates_lists_and_deletes_rules() {
 
     assert_eq!(StatusCode::OK, create_response.status());
     let create_payload = json_payload(create_response).await;
-    assert_eq!("2000", create_payload["code"]);
+    assert_eq!(0, create_payload["code"].as_i64().unwrap());
     assert_eq!("IP blacklist", create_payload["data"]["item"]["type"]);
     assert_eq!("192.168.1.0/24", create_payload["data"]["item"]["value"]);
     assert_eq!(
@@ -135,8 +135,8 @@ async fn admin_firewall_rule_route_rejects_invalid_value_without_calling_store()
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("firewall value must be an IP address, CIDR block, email address, or domain"));
@@ -163,7 +163,7 @@ async fn admin_firewall_rule_route_rejects_missing_trusted_subject() {
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 async fn json_payload(response: axum::response::Response) -> Value {

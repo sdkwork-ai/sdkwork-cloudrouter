@@ -42,6 +42,12 @@ This SDK family is owner-only. Dependency-owned routes are consumed through decl
 | Workspace | Role | Mode | API prefix | Generated transport policy |
 | --- | --- | --- | --- | --- |
 | `sdkwork-iam-app-sdk` | `appbase-app-capability` | `consumer-sdk` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `clawrouter-app-wallet-capability` | `wallet-app-capability` | `internal-capability` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `clawrouter-app-membership-capability` | `membership-app-capability` | `internal-capability` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `clawrouter-app-promotion-capability` | `promotion-app-capability` | `internal-capability` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `clawrouter-app-order-capability` | `order-app-capability` | `internal-capability` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `clawrouter-app-payment-capability` | `payment-app-capability` | `internal-capability` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `clawrouter-app-catalog-capability` | `catalog-app-capability` | `internal-capability` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
 
 Package names:
 
@@ -55,6 +61,18 @@ Package names:
 - `kotlin`: `com.sdkwork:sdkwork-iam-app-sdk`
 - `go`: `github.com/sdkwork/sdkwork-iam-app-sdk`
 - `python`: `sdkwork-iam-app-sdk`
+- `clawrouter-app-wallet-capability`
+- `typescript`: `clawrouter-app-domain-transport-generated-typescript`
+- `clawrouter-app-membership-capability`
+- `typescript`: `clawrouter-app-domain-transport-generated-typescript`
+- `clawrouter-app-promotion-capability`
+- `typescript`: `clawrouter-app-domain-transport-generated-typescript`
+- `clawrouter-app-order-capability`
+- `typescript`: `clawrouter-app-domain-transport-generated-typescript`
+- `clawrouter-app-payment-capability`
+- `typescript`: `clawrouter-app-domain-transport-generated-typescript`
+- `clawrouter-app-catalog-capability`
+- `typescript`: `clawrouter-app-domain-transport-generated-typescript`
 
 Regenerate this SDK family from the project root:
 

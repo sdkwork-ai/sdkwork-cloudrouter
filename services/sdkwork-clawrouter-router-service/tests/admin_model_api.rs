@@ -94,9 +94,9 @@ async fn admin_model_catalog_route_returns_plus_result_with_catalog_price_view()
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("2000", payload["code"]);
-    assert_eq!("SUCCESS", payload["msg"]);
-    assert_eq!("SUCCESS", payload["msg"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
+    
+    
     assert_eq!("gpt-4o-mini", payload["data"]["items"][0]["model"]);
     assert_eq!("openai", payload["data"]["items"][0]["vendorCode"]);
     assert_eq!(
@@ -207,7 +207,7 @@ async fn admin_model_catalog_route_accepts_api_key_context_from_header() {
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!(
         "available",
         payload["data"]["items"][0]["priceAvailability"]["status"]
@@ -239,7 +239,7 @@ async fn admin_model_catalog_route_accepts_empty_body_and_marks_customer_price_u
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("gpt-4o-mini", payload["data"]["items"][0]["model"]);
     assert_eq!(
         "unavailable",
@@ -318,8 +318,8 @@ async fn admin_model_catalog_route_rejects_invalid_bearer_credential_when_hasher
     let body = String::from_utf8(body.to_vec()).unwrap();
     let payload: serde_json::Value = serde_json::from_str(&body).unwrap();
 
-    assert_eq!("4001", payload["code"]);
-    assert_eq!("api key credential is invalid", payload["msg"]);
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert_eq!("api key credential is invalid", payload["detail"]);
     assert!(!body.contains("sk-wrong-secret"));
 }
 
@@ -352,6 +352,6 @@ async fn admin_model_catalog_route_rejects_spoofed_api_key_context_when_hasher_i
     let body = String::from_utf8(body.to_vec()).unwrap();
     let payload: serde_json::Value = serde_json::from_str(&body).unwrap();
 
-    assert_eq!("4001", payload["code"]);
-    assert_eq!("api key credential is required", payload["msg"]);
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert_eq!("api key credential is required", payload["detail"]);
 }

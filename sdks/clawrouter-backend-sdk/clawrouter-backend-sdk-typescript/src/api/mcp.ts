@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { PageInfo, RevisionsPublishResult, ServersBindingsCreateResult, ServersBindingsUpdateResult, ServersCreateResult, ServersHealthChecksCreateResult, ServersRetrieveResult, ServersRevisionsCreateResult, ServersToolsRefreshResult, ServersUpdateResult, ToolsUpdateResult } from '../types';
+import type { RevisionsPublishResult, SdkWorkPageData, ServersBindingsCreateResult, ServersBindingsUpdateResult, ServersCreateResult, ServersHealthChecksCreateResult, ServersRetrieveResult, ServersRevisionsCreateResult, ServersToolsRefreshResult, ServersUpdateResult, ToolsUpdateResult } from '../types';
 
 
 export class McpToolsApi {
@@ -41,8 +41,8 @@ export class McpServersRevisionsApi {
 
 
 /** List */
-  async list(serverId: string): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/mcp/servers/${serializePathParameter(serverId, { name: 'serverId', style: 'simple', explode: false })}/revisions`));
+  async list(serverId: string): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/mcp/servers/${serializePathParameter(serverId, { name: 'serverId', style: 'simple', explode: false })}/revisions`));
   }
 
 /** Create */
@@ -79,8 +79,8 @@ export class McpServersToolsApi {
   }
 
 /** List */
-  async list(serverId: string): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/mcp/servers/${serializePathParameter(serverId, { name: 'serverId', style: 'simple', explode: false })}/tools`));
+  async list(serverId: string): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/mcp/servers/${serializePathParameter(serverId, { name: 'serverId', style: 'simple', explode: false })}/tools`));
   }
 }
 
@@ -98,8 +98,8 @@ export class McpServersBindingsApi {
   }
 
 /** List */
-  async list(serverId: string): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/mcp/servers/${serializePathParameter(serverId, { name: 'serverId', style: 'simple', explode: false })}/bindings`));
+  async list(serverId: string): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/mcp/servers/${serializePathParameter(serverId, { name: 'serverId', style: 'simple', explode: false })}/bindings`));
   }
 
 /** Create */
@@ -125,8 +125,8 @@ export class McpServersApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/mcp/servers`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/mcp/servers`));
   }
 
 /** Create */

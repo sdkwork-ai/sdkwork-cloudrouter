@@ -941,7 +941,7 @@ class SdkworkModelsStandardTest(unittest.TestCase):
             / "ddl"
             / "baseline"
             / "postgres"
-            / "0001_sdkwork_models_catalog_baseline.sql"
+            / "0001_sdkwork-models_baseline.sql"
         )
         self.assertIn("supported_protocols JSONB", models_baseline)
         self.assertIn("client_api_compatibility JSONB", models_baseline)

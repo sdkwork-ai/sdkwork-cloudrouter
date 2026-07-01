@@ -1,1 +1,2 @@
--- Retired: messaging SoR is owned by sdkwork-appbase-messaging and consumed via messaging SDK only.
+-- Retired stub: messaging SoR is owned by sdkwork-appbase-messaging and consumed via messaging SDK.
+-- Do not add CREATE TABLE statements to this file.

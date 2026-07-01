@@ -41,9 +41,9 @@
     },
     {
       "from": "services/sdkwork-clawrouter-cloud-gateway (edge/all-in-one entrypoint)",
-      "to": "crates/sdkwork-clawrouter-standalone-gateway",
+      "to": "services/sdkwork-clawrouter-standalone-gateway + crates/sdkwork-clawrouter-standalone-gateway-lib",
       "completedAt": "2026-06-24",
-      "notes": "Standalone deployment-profile gateway split from cloud gateway library"
+      "notes": "Standalone deployment-profile gateway binary under services/ with shared edge logic in standalone-gateway-lib"
     },
     {
       "from": "../sdkwork-api-gateway",

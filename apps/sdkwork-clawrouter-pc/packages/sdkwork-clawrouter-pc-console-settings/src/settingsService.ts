@@ -1,31 +1,18 @@
 import {
   ensureSdkworkApiSuccess,
-  getSdkworkAppbaseAppSdkClient,
+  getClawRouterAppSdkClient,
   isRecord,
   readApiRecord,
+  readRequiredApiItem,
   readRequiredString,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
+import type {
+  SettingsDataResponse as SdkSettingsDataResponse,
+  UpdateSettingsRequest,
+} from '@sdkwork/clawrouter-app-sdk';
 
-interface SdkSettingsNotifications {
-  apiMonitor: boolean;
-  billReminder: boolean;
-  quotaWarning: boolean;
-}
-
-interface SdkSettingsDataResponse {
-  language: string;
-  notifications: SdkSettingsNotifications;
-  timezone: string;
-  webhookUrl: string;
-}
-
-interface SdkUpdateSettingsRequest {
-  language: string;
-  notifications: SdkSettingsNotifications;
-  timezone: string;
-  webhookUrl: string;
-}
+type SdkSettingsNotifications = SdkSettingsDataResponse['notifications'];
 
 interface SettingsNotifications {
   billReminder: SdkSettingsNotifications['billReminder'];
@@ -42,20 +29,20 @@ export interface SettingsData {
 
 export class SettingsService {
   static async fetchSettings(): Promise<SettingsData> {
-    const result = await getSdkworkAppbaseAppSdkClient().iam.users.settings.retrieve();
+    const result = await getClawRouterAppSdkClient().iam.users.settings.retrieve();
     ensureSdkworkApiSuccess(result, 'console.settings.states.loadErrorFallback');
-    return normalizeSettings(readApiRecord(result));
+    return normalizeSettings(readRequiredApiItem(result, 'console.settings.states.loadErrorFallback'));
   }
 
   static async updateSettings(data: SettingsData): Promise<void> {
-    const result = await getSdkworkAppbaseAppSdkClient().iam.users.settings.update(
-      toUpdateSettingsRequest(data) as unknown as Record<string, unknown>,
+    const result = await getClawRouterAppSdkClient().iam.users.settings.update(
+      toUpdateSettingsRequest(data),
     );
     ensureSettingsUpdateSuccess(result);
   }
 }
 
-function toUpdateSettingsRequest(data: SettingsData): SdkUpdateSettingsRequest {
+function toUpdateSettingsRequest(data: SettingsData): UpdateSettingsRequest {
   return {
     language: requiredText(data.language, 'language'),
     timezone: requiredText(data.timezone, 'timezone'),

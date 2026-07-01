@@ -54,21 +54,14 @@ const client = new SdkworkAppClient({
 
 ## API Modules
 
-- `client.commerce` - commerce API
 - `client.system` - system API
 - `client.ai` - ai API
 - `client.chat` - chat API
+- `client.iam` - iam API
 - `client.notification` - notification API
 - `client.runtime` - runtime API
 
 ## Usage Examples
-
-### commerce
-
-```typescript
-// Retrieve
-const result = await client.commerce.accounts.current.summary.retrieve();
-```
 
 ### system
 
@@ -89,6 +82,13 @@ const result = await client.ai.channelGroups.list();
 ```typescript
 // List
 const result = await client.chat.conversations.list();
+```
+
+### iam
+
+```typescript
+// List
+const result = await client.iam.apiKeys.list();
 ```
 
 ### notification

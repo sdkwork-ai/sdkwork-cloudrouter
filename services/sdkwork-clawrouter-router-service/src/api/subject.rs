@@ -3,7 +3,7 @@ use axum::response::{IntoResponse, Response};
 use axum::Json;
 use sdkwork_claw_http::{TrustedRequestSubject, TrustedRequestSubjectError};
 
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 
 #[derive(Debug, Clone, Copy)]
 pub struct AdminOperatorFields {
@@ -34,10 +34,10 @@ pub fn map_optional_app_user_subject<T>(
 }
 
 pub(crate) fn unauthorized_subject_response() -> Response {
-    PlusApiResult::error(
+    problem_from_wire_code(
             "4010",
             TrustedRequestSubjectError::MissingExtension.to_string(),
-        )).into_response()
+        ).into_response()
 }
 
 pub fn required_subject(

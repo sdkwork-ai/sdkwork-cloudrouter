@@ -28,7 +28,8 @@ class ConsoleMessagesBackendRuntimeStandardTest(unittest.TestCase):
         self.assertIn("require_subject", app_messages)
         self.assertIn("AppMessagesReadStore", app_messages)
         self.assertIn("EmptyAppMessagesReadStore", app_messages)
-        self.assertIn('PlusApiResult::error("4010"', app_messages)
+        self.assertIn('problem_from_wire_code("4010"', app_messages)
+        self.assertNotIn("PlusApiResult", app_messages)
         self.assertIn("app messages read model is unavailable", app_messages)
 
         self.assertIn("AppMessagesReadStore", app_api)

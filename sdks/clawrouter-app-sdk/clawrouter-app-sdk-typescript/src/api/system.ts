@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { AfterSalesRequestsCreateResult, AfterSalesRequestsRetrieveResult, AfterSalesRequestsUpdateResult, AfterSalesReturnShipmentsCreateResult, PageInfo, PromotionsCodesRedemptionsCreateResult, PromotionsDiscountApplicationsCreateResult, PromotionsDiscountApplicationsReleaseResult, PromotionsDiscountApplicationsReversalsCreateResult, PromotionsDiscountApplicationsRollbackResult, PromotionsDiscountApplicationsSettleResult, PromotionsOffersRetrieveResult, PromotionsUserCouponsClaimsCreateResult, PromotionsUserCouponsRetrieveResult, PromotionsUserCouponsWalletRetrieveResult, ShopsCurrentApplicationsCreateResult, ShopsCurrentBrandAuthorizationsUpsertResult, ShopsCurrentBusinessHoursRetrieveResult, ShopsCurrentBusinessHoursUpdateResult, ShopsCurrentCategoryBindingsUpsertResult, ShopsCurrentChannelsUpdateResult, ShopsCurrentCustomerServicesUpsertResult, ShopsCurrentDashboardRetrieveResult, ShopsCurrentDepositAccountRetrieveResult, ShopsCurrentFulfillmentProfileRetrieveResult, ShopsCurrentFulfillmentProfileUpdateResult, ShopsCurrentInventoryStocksAdjustmentsCreateResult, ShopsCurrentOrdersFulfillmentsCreateResult, ShopsCurrentOrdersRetrieveResult, ShopsCurrentPoliciesUpdateResult, ShopsCurrentProductsCreateResult, ShopsCurrentProductsPublishResult, ShopsCurrentProductsUnpublishResult, ShopsCurrentProductsUpdateResult, ShopsCurrentQualificationsUpsertResult, ShopsCurrentReadinessRetrieveResult, ShopsCurrentRetrieveResult, ShopsCurrentReturnAddressesUpsertResult, ShopsCurrentServiceAreasCreateResult, ShopsCurrentServiceAreasUpdateResult, ShopsCurrentSettlementProfileRetrieveResult, ShopsCurrentSettlementProfileUpdateResult, ShopsCurrentShippingTemplatesUpsertResult, ShopsRetrieveResult, SiteRuntimeRetrieveResult } from '../types';
+import type { AfterSalesRequestsCreateResult, AfterSalesRequestsRetrieveResult, AfterSalesRequestsUpdateResult, AfterSalesReturnShipmentsCreateResult, SdkWorkPageData, ShopsCurrentApplicationsCreateResult, ShopsCurrentBrandAuthorizationsUpsertResult, ShopsCurrentBusinessHoursRetrieveResult, ShopsCurrentBusinessHoursUpdateResult, ShopsCurrentCategoryBindingsUpsertResult, ShopsCurrentChannelsUpdateResult, ShopsCurrentCustomerServicesUpsertResult, ShopsCurrentDashboardRetrieveResult, ShopsCurrentDepositAccountRetrieveResult, ShopsCurrentFulfillmentProfileRetrieveResult, ShopsCurrentFulfillmentProfileUpdateResult, ShopsCurrentInventoryStocksAdjustmentsCreateResult, ShopsCurrentOrdersFulfillmentsCreateResult, ShopsCurrentOrdersRetrieveResult, ShopsCurrentPoliciesUpdateResult, ShopsCurrentProductsCreateResult, ShopsCurrentProductsPublishResult, ShopsCurrentProductsUnpublishResult, ShopsCurrentProductsUpdateResult, ShopsCurrentQualificationsUpsertResult, ShopsCurrentReadinessRetrieveResult, ShopsCurrentRetrieveResult, ShopsCurrentReturnAddressesUpsertResult, ShopsCurrentServiceAreasCreateResult, ShopsCurrentServiceAreasUpdateResult, ShopsCurrentSettlementProfileRetrieveResult, ShopsCurrentSettlementProfileUpdateResult, ShopsCurrentShippingTemplatesUpsertResult, ShopsRetrieveResult, SiteRuntimeRetrieveResult } from '../types';
 
 
 export class SystemSiteRuntimeApi {
@@ -38,8 +38,8 @@ export class SystemShopsCurrentVerificationsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/shops/current/verifications`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/verifications`));
   }
 }
 
@@ -52,8 +52,8 @@ export class SystemShopsCurrentStatusEventsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/shops/current/status_events`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/status_events`));
   }
 }
 
@@ -66,8 +66,8 @@ export class SystemShopsCurrentShippingTemplatesApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/shops/current/shipping_templates`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/shipping_templates`));
   }
 
 /** Upsert */
@@ -85,8 +85,8 @@ export class SystemShopsCurrentSettlementsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/shops/current/settlements`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/settlements`));
   }
 }
 
@@ -118,8 +118,8 @@ export class SystemShopsCurrentServiceAreasApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/shops/current/service_areas`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/service_areas`));
   }
 
 /** Create */
@@ -142,8 +142,8 @@ export class SystemShopsCurrentRiskSignalsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/shops/current/risk_signals`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/risk_signals`));
   }
 }
 
@@ -156,8 +156,8 @@ export class SystemShopsCurrentReturnAddressesApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/shops/current/return_addresses`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/return_addresses`));
   }
 
 /** Upsert */
@@ -189,8 +189,8 @@ export class SystemShopsCurrentQualificationsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/shops/current/qualifications`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/qualifications`));
   }
 
 /** Upsert */
@@ -208,8 +208,8 @@ export class SystemShopsCurrentProductsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/shops/current/products`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/products`));
   }
 
 /** Create */
@@ -242,8 +242,8 @@ export class SystemShopsCurrentPoliciesApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/shops/current/policies`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/policies`));
   }
 
 /** Update */
@@ -277,8 +277,8 @@ export class SystemShopsCurrentOrdersApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/shops/current/orders`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/orders`));
   }
 
 /** Retrieve */
@@ -312,8 +312,8 @@ export class SystemShopsCurrentInventoryStocksApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/shops/current/inventory/stocks`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/inventory/stocks`));
   }
 }
 
@@ -384,8 +384,8 @@ export class SystemShopsCurrentCustomerServicesApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/shops/current/customer_services`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/customer_services`));
   }
 
 /** Upsert */
@@ -403,8 +403,8 @@ export class SystemShopsCurrentChannelsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/shops/current/channels`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/channels`));
   }
 
 /** Update */
@@ -422,8 +422,8 @@ export class SystemShopsCurrentCategoryBindingsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/shops/current/category_bindings`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/category_bindings`));
   }
 
 /** Upsert */
@@ -460,8 +460,8 @@ export class SystemShopsCurrentBrandAuthorizationsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/shops/current/brand_authorizations`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/brand_authorizations`));
   }
 
 /** Upsert */
@@ -479,8 +479,8 @@ export class SystemShopsCurrentApplicationsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/shops/current/applications`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/applications`));
   }
 
 /** Create */
@@ -560,176 +560,14 @@ export class SystemShopsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/shops`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/shops`));
   }
 
 /** Retrieve */
   async retrieve(shopId: string): Promise<ShopsRetrieveResult> {
     return this.client.get<ShopsRetrieveResult>(appApiPath(`/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}`));
   }
-}
-
-export class SystemPromotionsUserCouponsWalletApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/promotions/user_coupons/wallet`));
-  }
-
-/** Retrieve */
-  async retrieve(userCouponId: string): Promise<PromotionsUserCouponsWalletRetrieveResult> {
-    return this.client.get<PromotionsUserCouponsWalletRetrieveResult>(appApiPath(`/promotions/user_coupons/wallet/${serializePathParameter(userCouponId, { name: 'userCouponId', style: 'simple', explode: false })}`));
-  }
-}
-
-export class SystemPromotionsUserCouponsClaimsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Create */
-  async create(): Promise<PromotionsUserCouponsClaimsCreateResult> {
-    return this.client.post<PromotionsUserCouponsClaimsCreateResult>(appApiPath(`/promotions/user_coupon_claims`));
-  }
-}
-
-export class SystemPromotionsUserCouponsApi {
-  private client: HttpClient;
-  public readonly claims: SystemPromotionsUserCouponsClaimsApi;
-  public readonly wallet: SystemPromotionsUserCouponsWalletApi;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-    this.claims = new SystemPromotionsUserCouponsClaimsApi(client);
-    this.wallet = new SystemPromotionsUserCouponsWalletApi(client);
-  }
-
-
-/** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/promotions/user_coupons`));
-  }
-
-/** Retrieve */
-  async retrieve(userCouponId: string): Promise<PromotionsUserCouponsRetrieveResult> {
-    return this.client.get<PromotionsUserCouponsRetrieveResult>(appApiPath(`/promotions/user_coupons/${serializePathParameter(userCouponId, { name: 'userCouponId', style: 'simple', explode: false })}`));
-  }
-}
-
-export class SystemPromotionsOffersApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/promotions/offers`));
-  }
-
-/** Retrieve */
-  async retrieve(offerId: string): Promise<PromotionsOffersRetrieveResult> {
-    return this.client.get<PromotionsOffersRetrieveResult>(appApiPath(`/promotions/offers/${serializePathParameter(offerId, { name: 'offerId', style: 'simple', explode: false })}`));
-  }
-}
-
-export class SystemPromotionsDiscountApplicationsReversalsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Create */
-  async create(): Promise<PromotionsDiscountApplicationsReversalsCreateResult> {
-    return this.client.post<PromotionsDiscountApplicationsReversalsCreateResult>(appApiPath(`/promotions/discount_applications/reversals`));
-  }
-}
-
-export class SystemPromotionsDiscountApplicationsApi {
-  private client: HttpClient;
-  public readonly reversals: SystemPromotionsDiscountApplicationsReversalsApi;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-    this.reversals = new SystemPromotionsDiscountApplicationsReversalsApi(client);
-  }
-
-
-/** Create */
-  async create(): Promise<PromotionsDiscountApplicationsCreateResult> {
-    return this.client.post<PromotionsDiscountApplicationsCreateResult>(appApiPath(`/promotions/discount_applications`));
-  }
-
-/** Release */
-  async release(applicationId: string): Promise<PromotionsDiscountApplicationsReleaseResult> {
-    return this.client.post<PromotionsDiscountApplicationsReleaseResult>(appApiPath(`/promotions/discount_applications/${serializePathParameter(applicationId, { name: 'applicationId', style: 'simple', explode: false })}/releases`));
-  }
-
-/** Rollback */
-  async rollback(applicationId: string): Promise<PromotionsDiscountApplicationsRollbackResult> {
-    return this.client.post<PromotionsDiscountApplicationsRollbackResult>(appApiPath(`/promotions/discount_applications/${serializePathParameter(applicationId, { name: 'applicationId', style: 'simple', explode: false })}/rollback`));
-  }
-
-/** Settle */
-  async settle(applicationId: string): Promise<PromotionsDiscountApplicationsSettleResult> {
-    return this.client.post<PromotionsDiscountApplicationsSettleResult>(appApiPath(`/promotions/discount_applications/${serializePathParameter(applicationId, { name: 'applicationId', style: 'simple', explode: false })}/settlements`));
-  }
-}
-
-export class SystemPromotionsCodesRedemptionsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Create */
-  async create(): Promise<PromotionsCodesRedemptionsCreateResult> {
-    return this.client.post<PromotionsCodesRedemptionsCreateResult>(appApiPath(`/promotions/codes/redemptions`));
-  }
-}
-
-export class SystemPromotionsCodesApi {
-  private client: HttpClient;
-  public readonly redemptions: SystemPromotionsCodesRedemptionsApi;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-    this.redemptions = new SystemPromotionsCodesRedemptionsApi(client);
-  }
-
-}
-
-export class SystemPromotionsApi {
-  private client: HttpClient;
-  public readonly codes: SystemPromotionsCodesApi;
-  public readonly discountApplications: SystemPromotionsDiscountApplicationsApi;
-  public readonly offers: SystemPromotionsOffersApi;
-  public readonly userCoupons: SystemPromotionsUserCouponsApi;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-    this.codes = new SystemPromotionsCodesApi(client);
-    this.discountApplications = new SystemPromotionsDiscountApplicationsApi(client);
-    this.offers = new SystemPromotionsOffersApi(client);
-    this.userCoupons = new SystemPromotionsUserCouponsApi(client);
-  }
-
 }
 
 export class SystemAfterSalesReturnShipmentsApi {
@@ -741,8 +579,8 @@ export class SystemAfterSalesReturnShipmentsApi {
 
 
 /** List */
-  async list(afterSalesRequestId: string): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}/return_shipments`));
+  async list(afterSalesRequestId: string): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}/return_shipments`));
   }
 
 /** Create */
@@ -760,8 +598,8 @@ export class SystemAfterSalesEventsApi {
 
 
 /** List */
-  async list(afterSalesRequestId: string): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}/events`));
+  async list(afterSalesRequestId: string): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}/events`));
   }
 }
 
@@ -774,8 +612,8 @@ export class SystemAfterSalesRequestsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/after_sales/requests`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/after_sales/requests`));
   }
 
 /** Retrieve */
@@ -812,14 +650,12 @@ export class SystemAfterSalesApi {
 export class SystemApi {
   private client: HttpClient;
   public readonly afterSales: SystemAfterSalesApi;
-  public readonly promotions: SystemPromotionsApi;
   public readonly shops: SystemShopsApi;
   public readonly site: SystemSiteApi;
 
   constructor(client: HttpClient) {
     this.client = client;
     this.afterSales = new SystemAfterSalesApi(client);
-    this.promotions = new SystemPromotionsApi(client);
     this.shops = new SystemShopsApi(client);
     this.site = new SystemSiteApi(client);
   }

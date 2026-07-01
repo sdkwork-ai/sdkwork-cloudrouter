@@ -8,7 +8,7 @@ use axum::routing::get;
 use axum::{Json, Router};
 use serde::Deserialize;
 
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::ports::{
     AdminAnalyticsQuery, AdminAnalyticsReadStore, AdminAnalyticsTimeRange,
 };
@@ -45,11 +45,11 @@ async fn fetch_admin_analytics_overview(
     let query = analytics_query(scoped, params);
 
     match state.read_store.load_admin_analytics(query).await {
-        Ok(snapshot) => Json(PlusApiResult::success(snapshot)).into_response(),
-        Err(error) => PlusApiResult::error(
+        Ok(snapshot) => Json(success_envelope(snapshot)).into_response(),
+        Err(error) => problem_from_wire_code(
                 "5000",
                 format!("admin analytics read model is unavailable: {error}"),
-            )).into_response(),
+            ).into_response(),
     }
 }
 

@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { DashboardRetrieveResult, DownstreamsCreateResult, PageInfo, PriceSimulationCreateResult, PricingRulesCreateResult, PricingRulesUpdateResult } from '../types';
+import type { DashboardRetrieveResult, DownstreamsCreateResult, PriceSimulationCreateResult, PricingRulesCreateResult, PricingRulesUpdateResult, SdkWorkPageData } from '../types';
 
 
 export class ServiceProvidersProviderWalletAccountsApi {
@@ -13,8 +13,8 @@ export class ServiceProvidersProviderWalletAccountsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/service_providers/wallet/accounts`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/service_providers/wallet/accounts`));
   }
 }
 
@@ -27,8 +27,8 @@ export class ServiceProvidersUsageApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/service_providers/usage`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/service_providers/usage`));
   }
 }
 
@@ -41,8 +41,8 @@ export class ServiceProvidersStatementsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/service_providers/statements`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/service_providers/statements`));
   }
 }
 
@@ -55,8 +55,8 @@ export class ServiceProvidersRiskEventsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/service_providers/risk/events`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/service_providers/risk/events`));
   }
 }
 
@@ -69,8 +69,8 @@ export class ServiceProvidersRelationsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/service_providers/relations`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/service_providers/relations`));
   }
 }
 
@@ -83,8 +83,8 @@ export class ServiceProvidersReconciliationRunsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/service_providers/reconciliation_runs`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/service_providers/reconciliation_runs`));
   }
 }
 
@@ -97,8 +97,8 @@ export class ServiceProvidersProviderRegistryApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/service_providers/providers`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/service_providers/providers`));
   }
 }
 
@@ -125,8 +125,8 @@ export class ServiceProvidersPricingRulesApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/service_providers/pricing/rules`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/service_providers/pricing/rules`));
   }
 
 /** Create */
@@ -149,8 +149,8 @@ export class ServiceProvidersMembersApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/service_providers/members`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/service_providers/members`));
   }
 }
 
@@ -163,8 +163,8 @@ export class ServiceProvidersDownstreamsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/service_providers/downstreams`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/service_providers/downstreams`));
   }
 
 /** Create */
@@ -196,8 +196,8 @@ export class ServiceProvidersContractsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/service_providers/contracts`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/service_providers/contracts`));
   }
 }
 
@@ -210,8 +210,8 @@ export class ServiceProvidersBindingsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/service_providers/bindings`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/service_providers/bindings`));
   }
 }
 
@@ -224,8 +224,8 @@ export class ServiceProvidersAuditEventsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/service_providers/audit/events`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/service_providers/audit/events`));
   }
 }
 
@@ -238,8 +238,8 @@ export class ServiceProvidersAdjustmentsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/service_providers/adjustments`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/service_providers/adjustments`));
   }
 }
 

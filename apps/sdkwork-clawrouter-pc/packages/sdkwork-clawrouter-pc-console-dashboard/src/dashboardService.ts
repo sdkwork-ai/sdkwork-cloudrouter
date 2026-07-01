@@ -3,7 +3,7 @@ import {
   ensureSdkworkApiSuccess,
   getClawRouterAppSdkClient,
   isRecord,
-  readApiRecord,
+  readRequiredApiItem,
   readClawRouterRuntimeEnv,
   readRequiredNonNegativeNumber,
   type ApiRecord,
@@ -142,7 +142,10 @@ export class DashboardService {
     const result = await client.ai.dashboard.overview.retrieve(params);
 
     ensureSdkworkApiSuccess(result, 'console.dashboard.dashboardview.text.loadErrorFallback');
-    return normalizeDashboardSnapshot(readApiRecord(result), timeRange);
+    return normalizeDashboardSnapshot(
+      readRequiredApiItem(result, 'console.dashboard.dashboardview.text.loadErrorFallback'),
+      timeRange,
+    );
   }
 }
 
@@ -150,13 +153,18 @@ function buildTimeRangeParams(timeRange: DashboardTimeRange): Record<string, str
   const end = new Date();
   const start = new Date(end);
   if (timeRange === 'hourly') {
-    start.setHours(end.getHours() - 24);
+    // Align to UTC hour boundary so the query window matches the expected
+    // period buckets generated in UTC by buildExpectedChartPeriods.
+    start.setUTCHours(end.getUTCHours() - 24, 0, 0, 0);
   } else if (timeRange === 'daily') {
-    start.setDate(end.getDate() - 30);
+    start.setUTCDate(end.getUTCDate() - 30);
+    start.setUTCHours(0, 0, 0, 0);
   } else if (timeRange === 'monthly') {
-    start.setMonth(end.getMonth() - 12);
+    start.setUTCMonth(end.getUTCMonth() - 12, 1);
+    start.setUTCHours(0, 0, 0, 0);
   } else {
-    start.setFullYear(end.getFullYear() - 3);
+    start.setUTCFullYear(end.getUTCFullYear() - 10);
+    start.setUTCHours(0, 0, 0, 0);
   }
   return {
     startTime: start.toISOString(),
@@ -184,16 +192,16 @@ function createInitialDashboardSnapshot(timeRange: DashboardTimeRange): Dashboar
 
 function normalizeDashboardSnapshot(record: ApiRecord, timeRange: DashboardTimeRange): DashboardSnapshot {
   const initialSnapshot = createInitialDashboardSnapshot(timeRange);
-  const normalizedChartData = normalizeChartData(record);
+  const normalizedChartData = normalizeChartData(record, timeRange);
   const chartData = normalizedChartData.length > 0 ? normalizedChartData : initialSnapshot.chartData;
   const normalizedTopModels = normalizeTopModels(record);
   const normalizedAnnouncements = normalizeAnnouncements(record);
   const normalizedConfigurationDomains = normalizeConfigurationDomains(record);
-  const requestSparkline = normalizeSparkline(record, 'requestSparkline', 'request', chartData, (item) => totalModalityValue(item));
-  const multimodalSparkline = normalizeSparkline(record, 'multimodalSparkline', 'multimodal', chartData, (item) => {
+  const requestSparkline = normalizeSparkline(record, ['requestSparkline', 'request_sparkline'], 'request', chartData, (item) => totalModalityValue(item));
+  const multimodalSparkline = normalizeSparkline(record, ['multimodalSparkline', 'multimodal_sparkline'], 'multimodal', chartData, (item) => {
     return item[MODALITY_KEYS.image] + item[MODALITY_KEYS.video] + item[MODALITY_KEYS.audio] + item[MODALITY_KEYS.music];
   });
-  const performanceSparkline = normalizeSparkline(record, 'performanceSparkline', 'performance', [], () => 0);
+  const performanceSparkline = normalizeSparkline(record, ['performanceSparkline', 'performance_sparkline'], 'performance', [], () => 0);
 
   return {
     summary: normalizeSummary(readRequiredRecordProperty(record, 'summary', 'Dashboard overview summary is required')),
@@ -211,8 +219,8 @@ function normalizeDashboardSnapshot(record: ApiRecord, timeRange: DashboardTimeR
 }
 
 function createInitialChartData(timeRange: DashboardTimeRange): DashboardData[] {
-  return createInitialChartLabels(timeRange).map((time) => ({
-    time,
+  return buildExpectedChartPeriods(timeRange).map(({ label }) => ({
+    time: label,
     [MODALITY_KEYS.text]: 0,
     [MODALITY_KEYS.image]: 0,
     [MODALITY_KEYS.video]: 0,
@@ -221,33 +229,63 @@ function createInitialChartData(timeRange: DashboardTimeRange): DashboardData[] 
   }));
 }
 
-function createInitialChartLabels(timeRange: DashboardTimeRange): string[] {
+/**
+ * Builds the full expected time-series for a range, expressed in UTC so the
+ * `period` key matches the backend bucketing (backend truncates the UTC
+ * `occurred_at` to a fixed-length prefix: hourly→13 "YYYY-MM-DD HH",
+ * daily→10 "YYYY-MM-DD", monthly→7 "YYYY-MM", yearly→4 "YYYY"). The `label` is
+ * the display string rendered on the chart axis. Every bucket in the window is
+ * emitted so the chart always shows the complete series (zero-filled where
+ * there is no usage), satisfying "每个月/每年都要展示".
+ */
+function buildExpectedChartPeriods(timeRange: DashboardTimeRange): Array<{ period: string; label: string }> {
   const now = new Date();
+  const points: Array<{ period: string; label: string }> = [];
+
   if (timeRange === 'hourly') {
-    return Array.from({ length: 7 }, (_, index) => {
+    // Past 24 hours, one point per hour.
+    for (let offset = 23; offset >= 0; offset--) {
       const date = new Date(now);
-      date.setHours(now.getHours() - (6 - index) * 4, 0, 0, 0);
-      return `${pad2(date.getHours())}:00`;
-    });
+      date.setUTCHours(date.getUTCHours() - offset, 0, 0, 0);
+      const period = `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(date.getUTCDate())} ${pad2(date.getUTCHours())}`;
+      points.push({ period, label: `${pad2(date.getUTCHours())}:00` });
+    }
+    return points;
   }
 
   if (timeRange === 'daily') {
-    return Array.from({ length: 7 }, (_, index) => {
+    // Past 30 days, one point per day.
+    for (let offset = 29; offset >= 0; offset--) {
       const date = new Date(now);
-      date.setDate(now.getDate() - (6 - index));
-      return `${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
-    });
+      date.setUTCDate(date.getUTCDate() - offset);
+      date.setUTCHours(0, 0, 0, 0);
+      const period = `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(date.getUTCDate())}`;
+      points.push({ period, label: `${pad2(date.getUTCMonth() + 1)}-${pad2(date.getUTCDate())}` });
+    }
+    return points;
   }
 
   if (timeRange === 'monthly') {
-    return Array.from({ length: 6 }, (_, index) => {
+    // Past 12 months, one point per month.
+    for (let offset = 11; offset >= 0; offset--) {
       const date = new Date(now);
-      date.setMonth(now.getMonth() - (5 - index), 1);
-      return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}`;
-    });
+      date.setUTCMonth(date.getUTCMonth() - offset, 1);
+      date.setUTCHours(0, 0, 0, 0);
+      const period = `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}`;
+      points.push({ period, label: period });
+    }
+    return points;
   }
 
-  return Array.from({ length: 4 }, (_, index) => String(now.getFullYear() - (3 - index)));
+  // Past 10 years, one point per year.
+  for (let offset = 9; offset >= 0; offset--) {
+    const date = new Date(now);
+    date.setUTCFullYear(date.getUTCFullYear() - offset);
+    date.setUTCHours(0, 0, 0, 0);
+    const period = String(date.getUTCFullYear());
+    points.push({ period, label: period });
+  }
+  return points;
 }
 
 function createZeroSparkline(length: number): Array<{ value: number }> {
@@ -283,19 +321,39 @@ function pad2(value: number): string {
   return String(value).padStart(2, '0');
 }
 
-function normalizeChartData(record: ApiRecord): DashboardData[] {
-  return readRequiredRecordArray(record, 'chartData', 'Dashboard overview chartData is required', 'Dashboard overview chart record is required')
+function normalizeChartData(record: ApiRecord, timeRange: DashboardTimeRange): DashboardData[] {
+  const backendRows = readOptionalFirstRecordArray(record, ['chartData', 'chart_data'], 'Dashboard overview chart record is required')
     .map((value) => {
       const item = readRequiredRecord(value, 'Dashboard overview chart record is required');
       return {
-        time: readRequiredFirstString(item, ['time', 'day', 'date', 'period'], 'Dashboard overview chart time is required'),
-        [MODALITY_KEYS.text]: readRequiredFirstNumber(item, ['llm (Text)', 'text', 'textRequests', 'request_count'], 'Dashboard overview text requests are required'),
-        [MODALITY_KEYS.image]: readRequiredFirstNumber(item, ['image (Midjourney/DALL-E)', 'image', 'imageRequests'], 'Dashboard overview image requests are required'),
-        [MODALITY_KEYS.video]: readRequiredFirstNumber(item, ['video (Runway/Sora)', 'video', 'videoRequests'], 'Dashboard overview video requests are required'),
-        [MODALITY_KEYS.audio]: readRequiredFirstNumber(item, ['audio (Whisper)', 'audio', 'audioRequests'], 'Dashboard overview audio requests are required'),
-        [MODALITY_KEYS.music]: readRequiredFirstNumber(item, ['music (Suno)', 'music', 'musicRequests'], 'Dashboard overview music requests are required'),
+        period: readRequiredFirstString(item, ['time', 'day', 'date', 'period'], 'Dashboard overview chart time is required'),
+        text: readRequiredFirstNumber(item, ['llm (Text)', 'text', 'textRequests', 'request_count'], 'Dashboard overview text requests are required'),
+        image: readRequiredFirstNumber(item, ['image (Midjourney/DALL-E)', 'image', 'imageRequests'], 'Dashboard overview image requests are required'),
+        video: readRequiredFirstNumber(item, ['video (Runway/Sora)', 'video', 'videoRequests'], 'Dashboard overview video requests are required'),
+        audio: readRequiredFirstNumber(item, ['audio (Whisper)', 'audio', 'audioRequests'], 'Dashboard overview audio requests are required'),
+        music: readRequiredFirstNumber(item, ['music (Suno)', 'music', 'musicRequests'], 'Dashboard overview music requests are required'),
       };
     });
+
+  const expected = buildExpectedChartPeriods(timeRange);
+  const backendByPeriod = new Map<string, { text: number; image: number; video: number; audio: number; music: number }>();
+  for (const row of backendRows) {
+    backendByPeriod.set(row.period, row);
+  }
+
+  // Merge backend buckets into the complete expected series: every bucket in
+  // the window is rendered, zero-filled where the backend returned no data.
+  return expected.map(({ period, label }) => {
+    const row = backendByPeriod.get(period);
+    return {
+      time: label,
+      [MODALITY_KEYS.text]: row?.text ?? 0,
+      [MODALITY_KEYS.image]: row?.image ?? 0,
+      [MODALITY_KEYS.video]: row?.video ?? 0,
+      [MODALITY_KEYS.audio]: row?.audio ?? 0,
+      [MODALITY_KEYS.music]: row?.music ?? 0,
+    };
+  });
 }
 
 function normalizeTopModels(record: ApiRecord): ModelUsage[] {
@@ -375,15 +433,14 @@ function normalizeSummary(summaryRecord: ApiRecord): DashboardSummary {
 
 function normalizeSparkline(
   record: ApiRecord,
-  key: string,
+  keys: readonly string[],
   label: string,
   fallbackItems: DashboardData[],
   fallbackSelector: (item: DashboardData) => number,
 ): Array<{ value: number }> {
-  const explicit = readRequiredRecordArray(
+  const explicit = readOptionalFirstRecordArray(
     record,
-    key,
-    `Dashboard overview ${key} is required`,
+    keys,
     `Dashboard ${label} sparkline record is required`,
   )
     .map((item) => ({ value: readRequiredNonNegativeNumber(item, 'value', `Dashboard ${label} sparkline value is required`) }));

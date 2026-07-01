@@ -434,33 +434,15 @@ function buildPrecommitVerificationPlan(env = process.env) {
       env,
     },
     {
+      label: 'relay retired admin surfaces guard',
+      command: 'python',
+      args: ['-B', '-m', 'unittest', 'tests.test_relay_retired_admin_surfaces_standard'],
+      env,
+    },
+    {
       label: 'admin route registry runtime tests',
       command: 'python',
       args: ['-B', '-m', 'unittest', 'tests.test_admin_route_registry_runtime_standard'],
-      env,
-    },
-    {
-      label: 'admin file platform storage runtime tests',
-      command: 'python',
-      args: ['-B', '-m', 'unittest', 'tests.test_admin_file_platform_storage_runtime_standard'],
-      env,
-    },
-    {
-      label: 'admin file platform drive runtime tests',
-      command: 'python',
-      args: ['-B', '-m', 'unittest', 'tests.test_admin_file_platform_drive_runtime_standard'],
-      env,
-    },
-    {
-      label: 'admin agents runtime tests',
-      command: 'python',
-      args: ['-B', '-m', 'unittest', 'tests.test_admin_agents_runtime_standard'],
-      env,
-    },
-    {
-      label: 'admin skill runtime tests',
-      command: 'python',
-      args: ['-B', '-m', 'unittest', 'tests.test_admin_skill_runtime_standard'],
       env,
     },
     {

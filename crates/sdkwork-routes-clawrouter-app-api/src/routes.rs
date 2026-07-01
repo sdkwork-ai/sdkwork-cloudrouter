@@ -10,11 +10,13 @@ use sdkwork_claw_config::{
 };
 use sdkwork_claw_http::AppSubjectBoundaryConfig;
 use sdkwork_clawrouter_router_service::application::{
-    ApiKeySecretCodec, EntityUuidGenerator, InMemoryRuntimeStreamBus, ModelRankingRefreshWorker,
-    ModelRankingRefreshWorkerConfig, ModelRankingsService, RuntimeStreamBus,
-    PaymentAggregateRuntimeStore,
+    ApiKeySecretCodec, ApiKeySecretHasher, EntityUuidGenerator, InMemoryRuntimeStreamBus,
+    ModelRankingRefreshWorker, ModelRankingRefreshWorkerConfig, ModelRankingsService,
+    RuntimeStreamBus, PaymentAggregateRuntimeStore,
 };
-use sdkwork_clawrouter_router_service::infrastructure::crypto::RingAeadApiKeySecretCodec;
+use sdkwork_clawrouter_router_service::infrastructure::crypto::{
+    HmacSha256ApiKeySecretHasher, RingAeadApiKeySecretCodec,
+};
 use sdkwork_clawrouter_router_service::infrastructure::provider::{
     ProviderSecretMapResolver, SecretRefOpenAiCompatibleProviderHealthProbe,
     DEFAULT_HEALTH_PROBE_TIMEOUT_MILLIS,
@@ -32,8 +34,8 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::{
     PostgresAppChatStore, PostgresAppGatewayTracesReadStore, PostgresAppNotificationStore,
     PostgresAppProvidersReadStore, PostgresAppRoutingChannelCommandStore,
     PostgresAppRoutingReadStore, PostgresAppRoutingStrategyStore, PostgresAppRuntimeStore,
-    PostgresCatalogLoadError, PostgresDashboardOverviewReadStore, PostgresModelRankingRefreshStore,
-    PostgresModelRankingsReadStore, PostgresPaymentCallbackStore,
+    PostgresCatalogLoadError, PostgresDashboardOverviewReadStore, PostgresGatewayApiKeyCommandStore,
+    PostgresModelRankingRefreshStore, PostgresModelRankingsReadStore, PostgresPaymentCallbackStore,
     PostgresPaymentIntentRuntimeStore, PostgresPricingCatalogLoader, PostgresSettingsStore,
     PostgresSettlementsDashboardReadStore, PostgresSiteSettingsStore, PostgresUsageLogsReadStore,
 };
@@ -41,10 +43,10 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::{
     SqlCatalogLoadError, SqliteAppChatStore, SqliteAppGatewayTracesReadStore,
     SqliteAppNotificationStore, SqliteAppProvidersReadStore, SqliteAppRoutingChannelCommandStore,
     SqliteAppRoutingReadStore, SqliteAppRoutingStrategyStore, SqliteAppRuntimeStore,
-    SqliteDashboardOverviewReadStore, SqliteModelRankingRefreshStore, SqliteModelRankingsReadStore,
-    SqlitePaymentCallbackStore, SqlitePaymentIntentRuntimeStore, SqlitePricingCatalogLoader,
-    SqliteSettingsStore, SqliteSettlementsDashboardReadStore, SqliteSiteSettingsStore,
-    SqliteUsageLogsReadStore,
+    SqliteDashboardOverviewReadStore, SqliteGatewayApiKeyCommandStore,
+    SqliteModelRankingRefreshStore, SqliteModelRankingsReadStore, SqlitePaymentCallbackStore,
+    SqlitePaymentIntentRuntimeStore, SqlitePricingCatalogLoader, SqliteSettingsStore,
+    SqliteSettlementsDashboardReadStore, SqliteSiteSettingsStore, SqliteUsageLogsReadStore,
 };
 use sdkwork_clawrouter_router_service::infrastructure::{
     AppRuntimeGatewayHttpClient, OsApiKeySecretGenerator, RedisRuntimeStreamBus,
@@ -54,10 +56,11 @@ use sdkwork_clawrouter_router_service::ports::PricingCatalog;
 use sdkwork_clawrouter_router_service::ports::{
     AppChatStore, AppGatewayTracesReadStore, AppNotificationStore, AppProvidersReadStore,
     AppRoutingChannelCommandStore, AppRoutingReadStore, AppRoutingStrategyStore, AppRuntimeStore,
-    DashboardOverviewReadStore, ModelRankingRefreshOutcome, ModelRankingRefreshRunStatus,
-    ModelRankingRefreshStore, ModelRankingsCacheInvalidation, ModelRankingsReadModelStore,
-    PaymentCallbackStore, ProviderHealthProbe, SettingsStore, SettlementsDashboardReadStore,
-    SiteSettingsStore, UnconfiguredProviderHealthProbe, UsageLogsReadStore,
+    DashboardOverviewReadStore, GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore,
+    ModelRankingRefreshOutcome, ModelRankingRefreshRunStatus, ModelRankingRefreshStore,
+    ModelRankingsCacheInvalidation, ModelRankingsReadModelStore, PaymentCallbackStore,
+    ProviderHealthProbe, SettingsStore, SettlementsDashboardReadStore, SiteSettingsStore,
+    UnconfiguredProviderHealthProbe, UsageLogsReadStore,
 };
 use sdkwork_content_documents_sdk_reference::app_sdk_reference_router;
 use sdkwork_routes_models_catalog_app_api::{
@@ -77,6 +80,52 @@ pub struct RouterApiRouteModule {
 pub const SERVICE_NAME: &str = "sdkwork-clawrouter-standalone-gateway";
 const DEFAULT_APP_RUNTIME_CATALOG_REFRESH_INTERVAL_MILLIS: u64 = 60_000;
 type ApiKeyCodec = Arc<dyn ApiKeySecretCodec + Send + Sync>;
+
+struct AppApiKeyRuntimeDeps {
+    read_store: Arc<dyn GatewayApiKeyManagementReadStore + Send + Sync>,
+    command_store: Arc<dyn GatewayApiKeyCommandStore + Send + Sync>,
+    api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
+}
+
+fn app_api_key_runtime_deps_for_postgres(
+    pool: PgPool,
+    api_key_security_config: &ApiKeySecurityConfig,
+    api_key_secret_codec: ApiKeyCodec,
+) -> Result<AppApiKeyRuntimeDeps, ProductCatalogRouterError> {
+    let api_key_hasher = HmacSha256ApiKeySecretHasher::new(api_key_security_config.pepper_secret())
+        .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
+    Ok(AppApiKeyRuntimeDeps {
+        read_store: Arc::new(PostgresPricingCatalogLoader::with_api_key_secret_codec(
+            pool.clone(),
+            api_key_secret_codec.clone(),
+        )),
+        command_store: Arc::new(PostgresGatewayApiKeyCommandStore::new(
+            pool,
+            api_key_secret_codec,
+        )),
+        api_key_hasher: Arc::new(api_key_hasher),
+    })
+}
+
+fn app_api_key_runtime_deps_for_sqlite(
+    pool: SqlitePool,
+    api_key_security_config: &ApiKeySecurityConfig,
+    api_key_secret_codec: ApiKeyCodec,
+) -> Result<AppApiKeyRuntimeDeps, ProductCatalogRouterError> {
+    let api_key_hasher = HmacSha256ApiKeySecretHasher::new(api_key_security_config.pepper_secret())
+        .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
+    Ok(AppApiKeyRuntimeDeps {
+        read_store: Arc::new(SqlitePricingCatalogLoader::with_api_key_secret_codec(
+            pool.clone(),
+            api_key_secret_codec.clone(),
+        )),
+        command_store: Arc::new(SqliteGatewayApiKeyCommandStore::new(
+            pool,
+            api_key_secret_codec,
+        )),
+        api_key_hasher: Arc::new(api_key_hasher),
+    })
+}
 type AppGatewayTracesStore = Arc<dyn AppGatewayTracesReadStore + Send + Sync>;
 type AppNotificationRuntimeStore = Arc<dyn AppNotificationStore + Send + Sync>;
 type AppChatRuntimeStore = Arc<dyn AppChatStore + Send + Sync>;
@@ -165,7 +214,19 @@ fn product_local_contract_operation(operation: &sdkwork_claw_http::ContractOpera
         && !is_appbase_dependency_contract_path(&operation.path)
 }
 
+fn is_clawrouter_owned_iam_app_path(path: &str) -> bool {
+    const CLAWROUTER_OWNED_IAM_APP_PREFIXES: &[&str] = &["/app/v3/api/iam/api_keys"];
+
+    CLAWROUTER_OWNED_IAM_APP_PREFIXES
+        .iter()
+        .any(|prefix| path == prefix.trim_end_matches('/') || path.starts_with(&format!("{prefix}/")))
+}
+
 fn is_appbase_dependency_contract_path(path: &str) -> bool {
+    if is_clawrouter_owned_iam_app_path(path) {
+        return false;
+    }
+
     const APPBASE_APP_PREFIXES: &[&str] = &[
         "/app/v3/api/auth/",
         "/app/v3/api/iam/",
@@ -234,16 +295,28 @@ where
         .merge(app_model_catalog_router(Arc::clone(&catalog)))
 }
 
-async fn finalize_product_router_with_federated_iam(
+async fn finalize_product_router_with_federated_capabilities(
     router: Router,
     subject_boundary_config: AppSubjectBoundaryConfig,
+    database_config: Option<&DatabaseConfig>,
 ) -> Result<Router, ProductCatalogRouterError> {
-    let router = crate::iam_runtime::merge_federated_iam_routers(router)
-        .await
-        .map_err(ProductCatalogRouterError::Config)?;
-    crate::invoice_runtime::merge_federated_invoice_app_router(router, subject_boundary_config)
+    let router = crate::invoice_runtime::merge_federated_invoice_app_router(
+        router,
+        subject_boundary_config.clone(),
+    )
+    .await
+    .map_err(ProductCatalogRouterError::Config)?;
+    if let Some(database_config) = database_config {
+        crate::commerce_runtime::merge_federated_commerce_app_routers(
+            router,
+            database_config,
+            subject_boundary_config,
+        )
         .await
         .map_err(ProductCatalogRouterError::Config)
+    } else {
+        Ok(router)
+    }
 }
 
 fn router_with_runtime_stores_and_database_status(
@@ -274,6 +347,7 @@ fn router_with_runtime_stores_and_database_status(
     config: Option<&DatabaseConfig>,
     request_limits_config: RequestLimitsConfig,
     readiness_check: Option<sdkwork_claw_http::ReadinessCheckFn>,
+    api_key_runtime: Option<AppApiKeyRuntimeDeps>,
 ) -> Router {
     let subject_boundary_config =
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
@@ -459,6 +533,18 @@ fn router_with_runtime_stores_and_database_status(
         None => router
             .merge(sdkwork_clawrouter_router_service::api::app_routing_channel_command_router()),
     };
+    if let Some(api_key_runtime) = api_key_runtime {
+        router = sdkwork_claw_http::merge_web_framework_scoped_app_router(
+            router,
+            sdkwork_clawrouter_router_service::api::app_api_key_router_with_read_store_and_command_store(
+                api_key_runtime.read_store,
+                api_key_runtime.command_store,
+                api_key_runtime.api_key_hasher,
+                Arc::new(OsApiKeySecretGenerator),
+            ),
+            subject_boundary_config.clone(),
+        );
+    }
     router = match settings_store {
         Some(store) => sdkwork_claw_http::merge_web_framework_scoped_app_router(
             router,
@@ -483,6 +569,7 @@ fn router_with_runtime_stores_and_database_status(
 
 pub async fn router_with_sqlite_product_catalog(
     pool: SqlitePool,
+    database_config: DatabaseConfig,
     api_key_security_config: ApiKeySecurityConfig,
     trusted_subject_config: TrustedSubjectConfig,
     app_session_config: AppSessionConfig,
@@ -525,9 +612,14 @@ pub async fn router_with_sqlite_product_catalog(
         Arc::new(SqliteAppRoutingChannelCommandStore::new(pool.clone()));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
     let app_site_settings_store = Arc::new(SqliteSiteSettingsStore::new(pool.clone()));
+    let api_key_runtime = Some(app_api_key_runtime_deps_for_sqlite(
+        pool.clone(),
+        &api_key_security_config,
+        api_key_secret_codec.clone(),
+    )?);
     let subject_boundary_config =
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
-    finalize_product_router_with_federated_iam(
+    finalize_product_router_with_federated_capabilities(
         router_with_runtime_stores_and_database_status(
         Some(app_site_settings_store),
         entity_uuid_generator,
@@ -553,17 +645,20 @@ pub async fn router_with_sqlite_product_catalog(
         Some(app_routing_strategy_store),
         Some(app_routing_channel_command_store),
         Some(model_catalog_router),
-        None,
+        Some(&database_config),
         RequestLimitsConfig::default(),
         None,
+        api_key_runtime,
         ),
         subject_boundary_config,
+        Some(&database_config),
     )
     .await
 }
 
 pub async fn router_with_postgres_product_catalog(
     pool: PgPool,
+    database_config: DatabaseConfig,
     api_key_security_config: ApiKeySecurityConfig,
     trusted_subject_config: TrustedSubjectConfig,
     app_session_config: AppSessionConfig,
@@ -607,9 +702,14 @@ pub async fn router_with_postgres_product_catalog(
         Arc::new(PostgresAppRoutingChannelCommandStore::new(pool.clone()));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
     let app_site_settings_store = Arc::new(PostgresSiteSettingsStore::new(pool.clone()));
+    let api_key_runtime = Some(app_api_key_runtime_deps_for_postgres(
+        pool.clone(),
+        &api_key_security_config,
+        api_key_secret_codec.clone(),
+    )?);
     let subject_boundary_config =
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
-    finalize_product_router_with_federated_iam(
+    finalize_product_router_with_federated_capabilities(
         router_with_runtime_stores_and_database_status(
         Some(app_site_settings_store),
         entity_uuid_generator,
@@ -635,11 +735,13 @@ pub async fn router_with_postgres_product_catalog(
         Some(app_routing_strategy_store),
         Some(app_routing_channel_command_store),
         Some(model_catalog_router),
-        None,
+        Some(&database_config),
         RequestLimitsConfig::default(),
         None,
+        api_key_runtime,
         ),
         subject_boundary_config,
+        Some(&database_config),
     )
     .await
 }
@@ -702,9 +804,14 @@ pub async fn router_with_sqlite_shared_runtime(
         ),
     );
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
+    let api_key_runtime = Some(app_api_key_runtime_deps_for_sqlite(
+        pool.clone(),
+        &api_key_security_config,
+        api_key_secret_codec.clone(),
+    )?);
     let subject_boundary_config =
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
-    finalize_product_router_with_federated_iam(
+    finalize_product_router_with_federated_capabilities(
         router_with_runtime_stores_and_database_status(
         Some(Arc::new(SqliteSiteSettingsStore::new(pool.clone()))),
         entity_uuid_generator,
@@ -733,8 +840,10 @@ pub async fn router_with_sqlite_shared_runtime(
         Some(&config),
         request_limits_config,
         None,
+        api_key_runtime,
         ),
         subject_boundary_config,
+        Some(&config),
     )
     .await
 }
@@ -798,9 +907,14 @@ pub async fn router_with_postgres_shared_runtime(
         ),
     );
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
+    let api_key_runtime = Some(app_api_key_runtime_deps_for_postgres(
+        pool.clone(),
+        &api_key_security_config,
+        api_key_secret_codec.clone(),
+    )?);
     let subject_boundary_config =
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
-    finalize_product_router_with_federated_iam(
+    finalize_product_router_with_federated_capabilities(
         router_with_runtime_stores_and_database_status(
         Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
         entity_uuid_generator,
@@ -829,8 +943,10 @@ pub async fn router_with_postgres_shared_runtime(
         Some(&config),
         request_limits_config,
         None,
+        api_key_runtime,
         ),
         subject_boundary_config,
+        Some(&config),
     )
     .await
 }
@@ -1082,6 +1198,11 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
                 ),
             );
             let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
+            let api_key_runtime = Some(app_api_key_runtime_deps_for_sqlite(
+                pool.clone(),
+                &api_key_security_config,
+                api_key_secret_codec.clone(),
+            )?);
             let usage_settlement_worker_config =
                 sdkwork_clawrouter_router_service::application::resolve_usage_settlement_worker_config(
                     runtime_toml,
@@ -1092,7 +1213,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
                     runtime_toml,
                     usage_settlement_worker_config,
                 );
-            finalize_product_router_with_federated_iam(
+            finalize_product_router_with_federated_capabilities(
                 router_with_runtime_stores_and_database_status(
                 Some(Arc::new(SqliteSiteSettingsStore::new(pool.clone()))),
                 entity_uuid_generator,
@@ -1121,8 +1242,10 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
                 Some(&config),
                 request_limits_config,
                 readiness_check,
+                api_key_runtime,
                 ),
                 subject_boundary_config.clone(),
+                Some(&config),
             )
             .await
         }
@@ -1208,6 +1331,11 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
                 ),
             );
             let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
+            let api_key_runtime = Some(app_api_key_runtime_deps_for_postgres(
+                pool.clone(),
+                &api_key_security_config,
+                api_key_secret_codec.clone(),
+            )?);
             let usage_settlement_worker_config =
                 sdkwork_clawrouter_router_service::application::resolve_usage_settlement_worker_config(
                     runtime_toml,
@@ -1218,7 +1346,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
                     runtime_toml,
                     usage_settlement_worker_config,
                 );
-            finalize_product_router_with_federated_iam(
+            finalize_product_router_with_federated_capabilities(
                 router_with_runtime_stores_and_database_status(
                 Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
                 entity_uuid_generator,
@@ -1247,8 +1375,10 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
                 Some(&config),
                 request_limits_config,
                 readiness_check,
+                api_key_runtime,
                 ),
                 subject_boundary_config,
+                Some(&config),
             )
             .await
         }
@@ -1461,7 +1591,10 @@ pub async fn shared_runtime_stream_bus_from_runtime_toml(
 }
 
 fn allow_in_memory_runtime_stream_bus_fallback(deployment_mode: DeploymentMode) -> bool {
-    matches!(deployment_mode, DeploymentMode::Desktop)
+    matches!(
+        deployment_mode,
+        DeploymentMode::Desktop | DeploymentMode::Server
+    )
 }
 
 fn app_runtime_gateway_base_url(runtime_toml: Option<&RuntimeTomlConfig>) -> String {

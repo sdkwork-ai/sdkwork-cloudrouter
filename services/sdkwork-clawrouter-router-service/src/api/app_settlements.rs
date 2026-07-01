@@ -6,7 +6,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 use crate::api::app_sql_subject::{map_optional_app_sql_subject, ResolvedAppSqlScopedSubject};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use serde::Deserialize;
 use crate::ports::{
     SettlementsDashboardQuery, SettlementsDashboardReadFuture, SettlementsDashboardReadStore,
@@ -99,7 +99,7 @@ async fn fetch_settlements_dashboard(
     let validated_query = match validate_settlements_dashboard_query(query) {
         Ok(validated_query) => validated_query,
         Err(error) => {
-            return PlusApiResult::error("4001", error.message)).into_response();
+            return problem_from_wire_code("4001", error.message).into_response();
         }
     };
 
@@ -108,11 +108,11 @@ async fn fetch_settlements_dashboard(
         .load_settlements_dashboard(validated_query.query, subject)
         .await
     {
-        Ok(snapshot) => Json(PlusApiResult::success(snapshot)).into_response(),
-        Err(error) => PlusApiResult::error(
+        Ok(snapshot) => Json(success_envelope(snapshot)).into_response(),
+        Err(error) => problem_from_wire_code(
                 "5000",
                 format!("settlements dashboard read model is unavailable: {error}"),
-            )).into_response(),
+            ).into_response(),
     }
 }
 

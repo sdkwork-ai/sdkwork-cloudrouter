@@ -40,7 +40,7 @@ async fn admin_site_create_generates_site_code_when_portal_omits_it() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!(
         "site_00000000000040008000000000000001",
         payload["data"]["item"]["siteCode"]

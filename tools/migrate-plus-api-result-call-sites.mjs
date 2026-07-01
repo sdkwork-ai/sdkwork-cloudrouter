@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Rewrites legacy `(StatusCode::*, Json(PlusApiResult::error(...))).into_response()`
- * to `PlusApiResult::error(...).into_response()`.
+ * to `PlusApiResult::error(...).into_response()`, then repairs the extra `)` left
+ * when `Json(PlusApiResult::error(...))` wrappers were removed incrementally.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -41,8 +42,8 @@ const patterns = [
     replace: "PlusApiResult::error($1).into_response()",
   },
   {
-    re: /Json\(PlusApiResult(?:::<[^>]+>)?::error\(([\s\S]*?)\)\)/g,
-    replace: "PlusApiResult::error($1)",
+    re: /PlusApiResult(?:::<[^>]+>)?::error\(([\s\S]*?)\)\)\s*\.into_response\(\)/g,
+    replace: "PlusApiResult::error($1).into_response()",
   },
 ];
 
@@ -53,6 +54,22 @@ for (const filePath of walk(apiRoot)) {
   for (const { re, replace } of patterns) {
     next = next.replace(re, replace);
   }
+  next = next
+    .split(/\r?\n/)
+    .map((line) => {
+      if (/^\s+\)\)\.into_response\(\)/.test(line)) {
+        return line.replace(')).into_response()', ').into_response()');
+      }
+      if (
+        line.includes('PlusApiResult::error')
+        && !line.includes('Json(')
+        && line.includes(')).into_response()')
+      ) {
+        return line.replace(')).into_response()', ').into_response()');
+      }
+      return line;
+    })
+    .join('\n');
   if (next !== source) {
     fs.writeFileSync(filePath, next, "utf8");
     changed += 1;

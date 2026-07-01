@@ -3,7 +3,8 @@ use std::sync::Arc;
 use axum::Router;
 use sdkwork_api_cloud_gateway_config::{
     DependencyApiSurfaceConfig, DependencyRuntimeMode, GatewayMode, GatewayRuntimeConfig,
-    APPBASE_APP_API_SERVICE_ID, APPBASE_BACKEND_API_PREFIX, APPBASE_BACKEND_API_SERVICE_ID,
+    APPBASE_APP_API_PREFIX, APPBASE_APP_API_SERVICE_ID, APPBASE_BACKEND_API_PREFIX,
+    APPBASE_BACKEND_API_SERVICE_ID,
 };
 use sdkwork_claw_config::{
     ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig, DatabaseEngine, DeploymentMode,
@@ -1161,17 +1162,11 @@ async fn build_embedded_sdkwork_api_cloud_gateway_router(
         [
             (
                 APPBASE_APP_API_SERVICE_ID.to_owned(),
-                build_claw_embedded_appbase_app_api_router().await?,
+                crate::iam_embedded::build_claw_embedded_iam_app_api_router().await?,
             ),
             (
                 APPBASE_BACKEND_API_SERVICE_ID.to_owned(),
-                sdkwork_api_cloud_gateway::build_embedded_sdkwork_iam_backend_api_router()
-                    .await
-                    .map_err(|error| {
-                        GatewayRouterError::Config(format!(
-                            "failed to build embedded SDKWork Appbase backend API router: {error}"
-                        ))
-                    })?,
+                crate::iam_embedded::build_claw_embedded_iam_backend_api_router().await?,
             ),
             (
                 CLAW_ROUTER_BACKEND_API_SERVICE_ID.to_owned(),
@@ -1187,19 +1182,50 @@ async fn build_embedded_sdkwork_api_cloud_gateway_router(
     })
 }
 
-async fn build_claw_embedded_appbase_app_api_router() -> Result<Router, GatewayRouterError> {
-    let resolver = sdkwork_iam_web_adapter::iam_web_request_context_resolver_from_env().await;
-    sdkwork_routes_iam_app_api::build_sdkwork_iam_app_api_router_with_web_resolver(resolver)
-        .await
-        .map_err(|error| {
-            GatewayRouterError::Config(format!(
-                "failed to build embedded SDKWork Appbase app API router: {error}"
-            ))
-        })
+fn claw_router_product_iam_api_keys_dependency_surface() -> DependencyApiSurfaceConfig {
+    DependencyApiSurfaceConfig {
+        service_id: CLAW_ROUTER_APP_API_SERVICE_ID.to_owned(),
+        workspace: "sdkwork-clawrouter".to_owned(),
+        sdk_family: sdkwork_routes_clawrouter_app_api::manifest::SDK_FAMILY.to_owned(),
+        api_authority: sdkwork_routes_clawrouter_app_api::manifest::API_AUTHORITY.to_owned(),
+        surface: "app".to_owned(),
+        api_prefix: "/app/v3/api/iam/api_keys".to_owned(),
+        runtime_mode: DependencyRuntimeMode::Embedded,
+        same_origin_allowed: true,
+        executable_export: Some(
+            "sdkwork_routes_clawrouter_app_api::build_sdkwork_claw_router_app_api_router".to_owned(),
+        ),
+        cargo_feature: None,
+        cargo_dependency: Some("sdkwork-routes-clawrouter-app-api".to_owned()),
+        coverage: "clawrouter-product-iam-api-keys-route-crate".to_owned(),
+        required_base_url_key: None,
+    }
 }
 
-fn claw_router_gateway_dependency_surfaces() -> [DependencyApiSurfaceConfig; 3] {
+fn claw_router_appbase_app_dependency_surface() -> DependencyApiSurfaceConfig {
+    DependencyApiSurfaceConfig {
+        service_id: APPBASE_APP_API_SERVICE_ID.to_owned(),
+        workspace: "sdkwork-appbase".to_owned(),
+        sdk_family: "sdkwork-iam-app-sdk".to_owned(),
+        api_authority: "sdkwork-iam-app-api".to_owned(),
+        surface: "app".to_owned(),
+        api_prefix: APPBASE_APP_API_PREFIX.to_owned(),
+        runtime_mode: DependencyRuntimeMode::Embedded,
+        same_origin_allowed: true,
+        executable_export: Some(
+            "sdkwork_routes_iam_app_api::build_sdkwork_iam_app_api_router".to_owned(),
+        ),
+        cargo_feature: Some("foundation-appbase".to_owned()),
+        cargo_dependency: Some("sdkwork-routes-iam-app-api".to_owned()),
+        coverage: "appbase-iam-app-routes".to_owned(),
+        required_base_url_key: None,
+    }
+}
+
+fn claw_router_gateway_dependency_surfaces() -> [DependencyApiSurfaceConfig; 5] {
     [
+        claw_router_product_iam_api_keys_dependency_surface(),
+        claw_router_appbase_app_dependency_surface(),
         claw_router_appbase_backend_dependency_surface(),
         DependencyApiSurfaceConfig {
             service_id: CLAW_ROUTER_BACKEND_API_SERVICE_ID.to_owned(),
@@ -2596,6 +2622,41 @@ mod tests {
         let _router = build_embedded_sdkwork_api_cloud_gateway_router(Router::new(), Router::new())
             .await
             .expect("embedded SDKWork API Gateway router should build");
+    }
+
+    #[test]
+    fn gateway_dependency_surfaces_resolve_product_api_keys_before_broad_iam_catch_all() {
+        use sdkwork_api_cloud_gateway_config::APPBASE_APP_API_SERVICE_ID;
+        use sdkwork_api_cloud_gateway_registry::GatewayRouteRegistry;
+
+        let surfaces = claw_router_gateway_dependency_surfaces();
+        assert_eq!(5, surfaces.len());
+        assert_eq!(
+            surfaces[0].api_prefix,
+            "/app/v3/api/iam/api_keys",
+            "product-owned api_keys surface must be declared first for precedence"
+        );
+        assert_eq!(
+            surfaces[1].service_id, APPBASE_APP_API_SERVICE_ID,
+            "sdkwork-iam app-api surface must be declared for auth/iam/oauth catch-all routes"
+        );
+
+        let registry = GatewayRouteRegistry::from_dependency_surfaces(&surfaces);
+        let api_keys_route = registry
+            .resolve("GET", "/app/v3/api/iam/api_keys")
+            .expect("api_keys list route should resolve");
+        assert_eq!(
+            api_keys_route.service_id, CLAW_ROUTER_APP_API_SERVICE_ID,
+            "api_keys must route to clawrouter product app-api"
+        );
+
+        let iam_user_route = registry
+            .resolve("GET", "/app/v3/api/iam/users/current")
+            .expect("iam users/current route should resolve");
+        assert_eq!(
+            iam_user_route.service_id, APPBASE_APP_API_SERVICE_ID,
+            "generic iam paths must route to sdkwork-iam app-api"
+        );
     }
 
     #[test]

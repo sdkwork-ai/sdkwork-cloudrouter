@@ -30,33 +30,19 @@ class AdminRouteRegistryRuntimeStandardTest(unittest.TestCase):
         registry_paths = _collect_registry_paths(registry_source)
         app_paths = _collect_app_route_paths(app_source)
 
-        required_prefixes = [
-            "/admin/storage",
-            "/admin/drive",
-            "/admin/agents",
-            "/admin/skill",
-        ]
-        for required_prefix in required_prefixes:
-            matching_registry_paths = [
-                path
-                for path in registry_paths
-                if path == required_prefix or path.startswith(f"{required_prefix}/")
-            ]
-            self.assertTrue(
-                matching_registry_paths,
-                f"admin module registry is missing menu path for {required_prefix}",
+        self.assertTrue(registry_paths, "admin module registry must declare menu paths")
+
+        for registry_path in sorted(registry_paths):
+            if registry_path in app_paths:
+                continue
+            covered = any(
+                app_path == registry_path or registry_path.startswith(f"{app_path}/")
+                for app_path in app_paths
             )
-            for registry_path in matching_registry_paths:
-                if registry_path in app_paths:
-                    continue
-                covered = any(
-                    app_path == registry_path or registry_path.startswith(f"{app_path}/")
-                    for app_path in app_paths
-                )
-                self.assertTrue(
-                    covered,
-                    f"App.tsx is missing a route mount for registry path {registry_path}",
-                )
+            self.assertTrue(
+                covered,
+                f"App.tsx is missing a route mount for registry path {registry_path}",
+            )
 
 
 if __name__ == "__main__":

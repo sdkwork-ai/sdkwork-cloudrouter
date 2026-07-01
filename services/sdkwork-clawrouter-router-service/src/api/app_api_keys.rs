@@ -11,7 +11,7 @@ use crate::api::app_sql_subject::{RequiredAppSqlScopedSubject, SqlScopedSubject}
 use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::{ApiKeySecretGenerator, ApiKeySecretHasher};
 use crate::domain::{
     ChannelGroup, ChannelGroupMetricSnapshot, DecimalValue, DomainError, GatewayAccessPolicy,
@@ -191,7 +191,7 @@ where
     C: PricingCatalog + Send + Sync + 'static,
 {
     let snapshot = GatewayApiKeyManagementSnapshot::from_pricing_catalog(state.catalog.as_ref());
-    Json(PlusApiResult::success(public_catalog_list_response(
+    Json(success_envelope(public_catalog_list_response(
         &snapshot,
     )))
 }
@@ -203,7 +203,7 @@ where
     C: PricingCatalog + Send + Sync + 'static,
 {
     let snapshot = GatewayApiKeyManagementSnapshot::from_pricing_catalog(state.catalog.as_ref());
-    Json(PlusApiResult::success(group_list_response(&snapshot)))
+    Json(success_envelope(group_list_response(&snapshot)))
 }
 
 async fn fetch_keys(
@@ -219,13 +219,12 @@ async fn fetch_keys(
         Ok(snapshot) => {
             let scoped_snapshot =
                 snapshot.for_subject(scope.tenant_id, scope.organization_id, scope.user_id);
-            Json(PlusApiResult::success(list_response(&scoped_snapshot))).into_response()
+            Json(success_envelope(list_response(&scoped_snapshot))).into_response()
         }
-        Err(error) => PlusApiResult::error(
+        Err(error) => problem_from_wire_code(
                 "5000",
                 format!("api key read model is unavailable: {error}"),
-            )),
-        )
+            )
             .into_response(),
     }
 }
@@ -243,14 +242,14 @@ async fn fetch_key_groups(
         Ok(snapshot) => {
             let scoped_snapshot =
                 snapshot.for_subject(scope.tenant_id, scope.organization_id, scope.user_id);
-            Json(PlusApiResult::success(group_list_response(
+            Json(success_envelope(group_list_response(
                 &scoped_snapshot,
-            ).into_response()
+            ))).into_response()
         }
-        Err(error) => PlusApiResult::error(
+        Err(error) => problem_from_wire_code(
                 "5000",
                 format!("channel group read model is unavailable: {error}"),
-            )).into_response(),
+            ).into_response(),
     }
 }
 
@@ -261,11 +260,11 @@ async fn create_key(
     Json(request): Json<AppApiKeyCreateRequest>,
 ) -> Response {
     match create_key_inner(state, scope, headers, request).await {
-        Ok(response) => Json(PlusApiResult::success(response)).into_response(),
-        Err(AppApiKeyCreateError::Unauthorized(message)) => PlusApiResult::error("4010", message)).into_response(),
-        Err(AppApiKeyCreateError::BadRequest(message)) => PlusApiResult::error("4001", message)).into_response(),
-        Err(AppApiKeyCreateError::System(message)) => PlusApiResult::error("5000", message)).into_response(),
-        Err(AppApiKeyCreateError::Conflict(message)) => PlusApiResult::error("4090", message)).into_response(),
+        Ok(response) => Json(success_envelope(response)).into_response(),
+        Err(AppApiKeyCreateError::Unauthorized(message)) => problem_from_wire_code("4010", message).into_response(),
+        Err(AppApiKeyCreateError::BadRequest(message)) => problem_from_wire_code("4001", message).into_response(),
+        Err(AppApiKeyCreateError::System(message)) => problem_from_wire_code("5000", message).into_response(),
+        Err(AppApiKeyCreateError::Conflict(message)) => problem_from_wire_code("4090", message).into_response(),
     }
 }
 
@@ -277,11 +276,11 @@ async fn update_key(
     Json(request): Json<AppApiKeyUpdateRequest>,
 ) -> Response {
     match update_key_inner(state, scope, headers, api_key_id, request).await {
-        Ok(response) => Json(PlusApiResult::success(response)).into_response(),
-        Err(AppApiKeyCreateError::Unauthorized(message)) => PlusApiResult::error("4010", message)).into_response(),
-        Err(AppApiKeyCreateError::BadRequest(message)) => PlusApiResult::error("4001", message)).into_response(),
-        Err(AppApiKeyCreateError::System(message)) => PlusApiResult::error("5000", message)).into_response(),
-        Err(AppApiKeyCreateError::Conflict(message)) => PlusApiResult::error("4090", message)).into_response(),
+        Ok(response) => Json(success_envelope(response)).into_response(),
+        Err(AppApiKeyCreateError::Unauthorized(message)) => problem_from_wire_code("4010", message).into_response(),
+        Err(AppApiKeyCreateError::BadRequest(message)) => problem_from_wire_code("4001", message).into_response(),
+        Err(AppApiKeyCreateError::System(message)) => problem_from_wire_code("5000", message).into_response(),
+        Err(AppApiKeyCreateError::Conflict(message)) => problem_from_wire_code("4090", message).into_response(),
     }
 }
 
@@ -292,11 +291,11 @@ async fn delete_key(
     Path(api_key_id): Path<i64>,
 ) -> Response {
     match delete_key_inner(state, scope, headers, api_key_id).await {
-        Ok(response) => Json(PlusApiResult::success(response)).into_response(),
-        Err(AppApiKeyCreateError::Unauthorized(message)) => PlusApiResult::error("4010", message)).into_response(),
-        Err(AppApiKeyCreateError::BadRequest(message)) => PlusApiResult::error("4001", message)).into_response(),
-        Err(AppApiKeyCreateError::System(message)) => PlusApiResult::error("5000", message)).into_response(),
-        Err(AppApiKeyCreateError::Conflict(message)) => PlusApiResult::error("4090", message)).into_response(),
+        Ok(response) => Json(success_envelope(response)).into_response(),
+        Err(AppApiKeyCreateError::Unauthorized(message)) => problem_from_wire_code("4010", message).into_response(),
+        Err(AppApiKeyCreateError::BadRequest(message)) => problem_from_wire_code("4001", message).into_response(),
+        Err(AppApiKeyCreateError::System(message)) => problem_from_wire_code("5000", message).into_response(),
+        Err(AppApiKeyCreateError::Conflict(message)) => problem_from_wire_code("4090", message).into_response(),
     }
 }
 

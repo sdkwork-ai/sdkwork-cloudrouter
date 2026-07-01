@@ -39,7 +39,7 @@ async fn admin_api_key_rate_limit_route_creates_and_lists_token_limits() {
 
     assert_eq!(StatusCode::OK, create_response.status());
     let create_payload = json_payload(create_response).await;
-    assert_eq!("2000", create_payload["code"]);
+    assert_eq!(0, create_payload["code"].as_i64().unwrap());
     assert_eq!("sk-test", create_payload["data"]["item"]["keyPrefix"]);
     assert_eq!("30", create_payload["data"]["item"]["user"]);
     assert_eq!(7, create_payload["data"]["item"]["rps"]);
@@ -91,8 +91,8 @@ async fn admin_api_key_rate_limit_route_rejects_placeholder_prefix_without_calli
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("keyPrefix must identify an existing API key prefix"));
@@ -119,7 +119,7 @@ async fn admin_api_key_rate_limit_route_rejects_missing_trusted_subject() {
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 async fn json_payload(response: axum::response::Response) -> Value {

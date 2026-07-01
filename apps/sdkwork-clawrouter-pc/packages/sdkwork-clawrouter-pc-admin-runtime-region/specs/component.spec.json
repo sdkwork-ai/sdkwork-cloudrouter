@@ -11,7 +11,7 @@
     "declaredDomain": null,
     "capability": "im",
     "surface": "backend-admin",
-    "status": "standardizing",
+    "status": "ready",
     "languages": [
       "typescript"
     ],

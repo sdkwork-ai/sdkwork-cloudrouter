@@ -35,6 +35,10 @@ import {
   resolveServiceLayoutFromRuntimeMode,
   waitForWorkspaceHealthSurfaces,
 } from '../lib/claw-router-topology.mjs';
+import {
+  deriveFoundationEnvFromResolution,
+  resolveComposition,
+} from '../../../sdkwork-specs/tools/lib/composition-resolver.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -136,9 +140,44 @@ function managedSdkworkApiGatewayBaseUrl(settings) {
 }
 
 function sharedFoundationGatewayBaseUrl(settings) {
-  return settings.runtimeMode === 'all-in-one'
-    ? loopbackUrl(settings.serverBind, '')
-    : managedSdkworkApiGatewayBaseUrl(settings);
+  return managedSdkworkApiGatewayBaseUrl(settings);
+}
+
+function loadCompositionResolution(workspaceRoot) {
+  try {
+    return resolveComposition(workspaceRoot);
+  } catch (error) {
+    console.warn(
+      `[start-workspace] composition resolver unavailable: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    return {
+      integrations: [],
+      env: {},
+      requiresPlatformGatewayProcess: false,
+      issues: [],
+    };
+  }
+}
+
+function deriveFoundationPortalEnv(runtimeEnv, settings, {
+  clawRouterAppApiBaseUrl,
+  clawRouterBackendApiBaseUrl,
+  compositionResolution,
+}) {
+  const platformGatewayOrigin = managedSdkworkApiGatewayBaseUrl(settings);
+  const derived = deriveFoundationEnvFromResolution(compositionResolution, {
+    platformGatewayOrigin,
+    productAppApiBaseUrl: clawRouterAppApiBaseUrl,
+    productBackendApiBaseUrl: clawRouterBackendApiBaseUrl,
+  });
+
+  const merged = { ...runtimeEnv };
+  for (const [key, value] of Object.entries(derived)) {
+    if (merged[key] === undefined) {
+      merged[key] = value;
+    }
+  }
+  return merged;
 }
 
 function sharedFoundationAppApiBaseUrl(settings) {
@@ -159,6 +198,7 @@ function withBrowserDevelopmentViteRuntimeEnv(env, settings, {
 
 function withSharedFoundationPortalRuntimeEnv(env, settings, {
   productSurfaceMode = 'same-origin',
+  compositionResolution = loadCompositionResolution(repositoryRoot),
 } = {}) {
   const sdkBaseUrl = String(
     env.PORTAL_PUBLIC_SDK_BASE_URL ?? sharedFoundationGatewayBaseUrl(settings),
@@ -197,22 +237,16 @@ function withSharedFoundationPortalRuntimeEnv(env, settings, {
     ?? runtimeEnv.PORTAL_PUBLIC_BACKEND_API_BASE_URL
     ?? appendPath(sdkBaseUrl, BACKEND_API_PREFIX);
 
-  return {
+  return deriveFoundationPortalEnv({
     ...runtimeEnv,
     VITE_CLAWROUTER_OPEN_API_BASE_URL: clawRouterOpenApiBaseUrl,
     VITE_CLAWROUTER_APP_API_BASE_URL: clawRouterAppApiBaseUrl,
     VITE_CLAWROUTER_BACKEND_API_BASE_URL: clawRouterBackendApiBaseUrl,
-    VITE_SDKWORK_APPBASE_APP_API_BASE_URL:
-      runtimeEnv.VITE_SDKWORK_APPBASE_APP_API_BASE_URL ?? clawRouterAppApiBaseUrl,
-    VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL:
-      runtimeEnv.VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL ?? sharedFoundationBackendApiBaseUrl(settings),
-    VITE_SDKWORK_DRIVE_APP_API_BASE_URL:
-      runtimeEnv.VITE_SDKWORK_DRIVE_APP_API_BASE_URL ?? sharedFoundationAppApiBaseUrl(settings),
-    VITE_SDKWORK_GENERATIONS_APP_API_BASE_URL:
-      runtimeEnv.VITE_SDKWORK_GENERATIONS_APP_API_BASE_URL ?? sharedFoundationAppApiBaseUrl(settings),
-    VITE_SDKWORK_GENERATIONS_PC_APP_API_BASE_URL:
-      runtimeEnv.VITE_SDKWORK_GENERATIONS_PC_APP_API_BASE_URL ?? sharedFoundationAppApiBaseUrl(settings),
-  };
+  }, settings, {
+    clawRouterAppApiBaseUrl,
+    clawRouterBackendApiBaseUrl,
+    compositionResolution,
+  });
 }
 
 function normalizeExternalScheme(value, flagName) {
@@ -858,10 +892,18 @@ export function buildWorkspaceCommandPlan(settings, {
     },
     ]
     : [];
+  const compositionResolution = loadCompositionResolution(workspaceRoot);
+  const resolvedPlatformGatewayMode = String(
+    process.env.SDKWORK_API_CLOUD_GATEWAY_MODE
+      ?? (settings.runtimeMode === 'all-in-one' ? 'embedded' : 'split'),
+  ).trim();
+  const platformGatewayEmbedded = resolvedPlatformGatewayMode === 'embedded';
+  const needsPlatformGatewayStep = !platformGatewayEmbedded
+    && (settings.runtimeMode !== 'all-in-one' || compositionResolution.requiresPlatformGatewayProcess);
   const interactiveRuntimeSteps = [
-    ...(settings.runtimeMode === 'all-in-one'
-      ? []
-      : [sdkworkApiGatewayStep(settings, { workspaceRoot, platform })]),
+    ...(needsPlatformGatewayStep
+      ? [sdkworkApiGatewayStep(settings, { workspaceRoot, platform })]
+      : []),
     {
       name: 'portal',
       command: pnpmCommand(platform),
@@ -903,7 +945,8 @@ export function workspaceBindTargets(settings) {
       : [
           { name: 'server', bind: settings.serverBind },
         ];
-  const managedSdkworkApiGatewayTargets = settings.runtimeMode === 'all-in-one'
+  const managedSdkworkApiGatewayTargets = (settings.runtimeMode === 'all-in-one'
+    && !loadCompositionResolution(repositoryRoot).requiresPlatformGatewayProcess)
     ? []
     : [{ name: 'sdkwork-api-cloud-gateway', bind: settings.sdkworkApiGatewayBind }];
   return [

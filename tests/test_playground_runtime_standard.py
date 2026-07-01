@@ -255,9 +255,7 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
         self.assertNotIn("ai.playground.models", service_source)
 
     def test_playground_generation_runtime_uses_generations_pc_workspace(self) -> None:
-        portal_workspace_source = (
-            ROOT / "apps" / "sdkwork-clawrouter-pc" / "pnpm-workspace.yaml"
-        ).read_text(encoding="utf-8")
+        portal_workspace_source = (ROOT / "pnpm-workspace.yaml").read_text(encoding="utf-8")
         portal_package_source = (
             ROOT / "apps" / "sdkwork-clawrouter-pc" / "package.json"
         ).read_text(encoding="utf-8")

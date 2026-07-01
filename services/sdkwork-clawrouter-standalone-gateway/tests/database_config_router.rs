@@ -41,7 +41,7 @@ struct CapturedProviderHealthProbe {
 }
 
 #[tokio::test]
-async fn database_config_app_api_keys_are_not_mounted_locally() {
+async fn database_config_app_api_keys_are_mounted_locally() {
     let database_url = unique_sqlite_url();
     let pool = create_sqlite_pool(&database_url).await;
     create_schema(&pool).await;
@@ -50,28 +50,21 @@ async fn database_config_app_api_keys_are_not_mounted_locally() {
 
     let router = configured_router(&database_url).await;
 
-    for (method, uri) in [
-        ("GET", API_KEYS_PATH.to_owned()),
-        ("POST", API_KEYS_PATH.to_owned()),
-        ("PATCH", format!("{API_KEYS_PATH}/100")),
-        ("DELETE", format!("{API_KEYS_PATH}/100")),
-    ] {
-        let response = router
-            .clone()
-            .oneshot(
-                session_authorization_header(
-                    Request::builder().method(method).uri(uri.as_str()),
-                    TEST_SUBJECT_TENANT_ID,
-                    TEST_SUBJECT_ORGANIZATION_ID,
-                    TEST_SUBJECT_USER_ID,
-                )
-                .body(Body::empty())
-                .unwrap(),
+    let response = router
+        .clone()
+        .oneshot(
+            session_authorization_header(
+                Request::builder().method("GET").uri(API_KEYS_PATH),
+                TEST_SUBJECT_TENANT_ID,
+                TEST_SUBJECT_ORGANIZATION_ID,
+                TEST_SUBJECT_USER_ID,
             )
-            .await
-            .unwrap();
-        assert_eq!(StatusCode::NOT_FOUND, response.status(), "{method} {uri}");
-    }
+            .body(Body::empty())
+            .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::OK, response.status(), "GET {API_KEYS_PATH}");
 }
 
 #[tokio::test]
@@ -241,6 +234,10 @@ async fn database_config_billing_redeem_persists_points_and_history_for_subject(
         )
         .header("content-type", "application/json")
         .header("Idempotency-Key", "redeem-idem-standard-1")
+        .header(
+            "Sdkwork-Request-Hash",
+            app_write_request_hash("promotions.codes.redeem", r#"{"code":"WELCOME"}"#),
+        )
         .header("Sdkwork-Request-No", "redeem-request-standard-1")
         .body(Body::from(r#"{"code":"WELCOME"}"#))
         .unwrap(),
@@ -2049,7 +2046,7 @@ async fn database_config_checkout_requires_session_and_scopes_order_status_to_su
     assert_eq!("TRADE-OWNER-1", owner_payload["data"]["outTradeNo"]);
     assert_eq!("10.00", owner_payload["data"]["amount"]);
     assert_eq!(125, owner_payload["data"]["points"]);
-    assert_eq!("wechat", owner_payload["data"]["paymentMethod"]);
+    assert_eq!("wechat_pay", owner_payload["data"]["paymentMethod"]);
     assert_eq!("success", owner_payload["data"]["orderStatus"]);
     assert_eq!("success", owner_payload["data"]["paymentStatus"]);
     assert_eq!("success", owner_payload["data"]["rechargeStatus"]);
@@ -2155,15 +2152,21 @@ async fn database_config_recharge_lists_packages_and_persists_pending_payment_or
     assert!(!packs_body_text.contains("6103"));
     assert!(!packs_body_text.contains("Other Org Recharge Pack"));
 
+    let recharge_request_body =
+        r#"{"amount":"10.00","currencyCode":"CNY","method":"wechat","packageId":"6101","source":"app-api-test"}"#;
+    let recharge_request_hash_body =
+        r#"{"amount":"10.00","currencyCode":"CNY","packageId":"6101","source":"app-api-test"}"#;
     let (recharge_status, recharge_payload, recharge_body_text) = request_json(
         router,
         session_request_builder("POST", "/app/v3/api/recharges/orders", 100001, 0, 30)
             .header("content-type", "application/json")
             .header("Idempotency-Key", "recharge-owner-idem-1")
+            .header(
+                "Sdkwork-Request-Hash",
+                app_write_request_hash("recharge.submit", recharge_request_hash_body),
+            )
             .header("Sdkwork-Request-No", "recharge-owner-request-1")
-            .body(Body::from(
-                r#"{"amount":"10.00","currencyCode":"CNY","method":"wechat","packageId":"6101","source":"app-api-test"}"#,
-            ))
+            .body(Body::from(recharge_request_body))
             .unwrap(),
     )
     .await;
@@ -2172,7 +2175,7 @@ async fn database_config_recharge_lists_packages_and_persists_pending_payment_or
     assert_eq!(true, recharge_payload["data"]["success"]);
     assert_eq!("10.00", recharge_payload["data"]["amount"]);
     assert_eq!(125, recharge_payload["data"]["points"]);
-    assert_eq!("wechat", recharge_payload["data"]["paymentMethod"]);
+    assert_eq!("wechat_pay", recharge_payload["data"]["paymentMethod"]);
     assert_eq!("pending", recharge_payload["data"]["status"]);
     assert!(recharge_payload["data"]["orderNo"]
         .as_str()
@@ -2255,7 +2258,7 @@ async fn database_config_commerce_foundation_reads_exchange_rules_for_session_sc
         ),
     )
     .await;
-    assert_eq!(StatusCode::OK, rate_status);
+    assert_eq!(StatusCode::OK, rate_status, "{rate_body_text}");
     assert_eq!("2000", rate_payload["code"]);
     assert_eq!("POINTS", rate_payload["data"]["sourceAssetType"]);
     assert_eq!("CASH", rate_payload["data"]["targetAssetType"]);
@@ -2579,8 +2582,11 @@ fn enable_legacy_app_api_subject_boundary_for_integration_tests() {
 async fn configured_router(database_url: &str) -> axum::Router {
     enable_legacy_app_api_subject_boundary_for_integration_tests();
     let pool = create_sqlite_pool(database_url).await;
+    let database_config =
+        DatabaseConfig::from_url_with_max_connections(database_url, 1).expect("sqlite database config");
     sdkwork_clawrouter_standalone_gateway::router_with_sqlite_product_catalog(
         pool,
+        database_config,
         api_key_security_config(),
         trusted_subject_config(),
         app_session_config(),
@@ -2716,6 +2722,66 @@ impl AppRuntimeWorkerEnvGuard {
             ),
         }
     }
+}
+
+fn stable_command_request_hash(scope: &str, parts: &[&str]) -> String {
+    let mut normalized = vec![scope];
+    normalized.extend(parts);
+    normalized
+        .iter()
+        .map(|part| {
+            part.chars()
+                .map(|character| {
+                    if character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.') {
+                        character
+                    } else {
+                        '-'
+                    }
+                })
+                .collect::<String>()
+        })
+        .collect::<Vec<_>>()
+        .join("-")
+}
+
+fn canonical_json_string(value: &Value) -> String {
+    match value {
+        Value::Null => "null".to_string(),
+        Value::Bool(value) => value.to_string(),
+        Value::Number(value) => value.to_string(),
+        Value::String(value) => serde_json::to_string(value).unwrap_or_else(|_| "\"\"".to_owned()),
+        Value::Array(values) => {
+            let items = values
+                .iter()
+                .map(canonical_json_string)
+                .collect::<Vec<_>>()
+                .join(",");
+            format!("[{items}]")
+        }
+        Value::Object(values) => {
+            let mut keys = values.keys().collect::<Vec<_>>();
+            keys.sort_unstable();
+            let items = keys
+                .into_iter()
+                .filter(|key| !values[*key].is_null())
+                .map(|key| {
+                    format!(
+                        "{}:{}",
+                        serde_json::to_string(key).unwrap_or_else(|_| "\"\"".to_owned()),
+                        canonical_json_string(&values[key])
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(",");
+            format!("{{{items}}}")
+        }
+    }
+}
+
+fn app_write_request_hash(scope: &str, body_json: &str) -> String {
+    let value: Value =
+        serde_json::from_str(body_json).expect("app write payload must be valid json");
+    stable_command_request_hash(scope, &[&canonical_json_string(&value)])
 }
 
 fn session_request(
@@ -5343,7 +5409,7 @@ async fn seed_recharge_runtime_data(pool: &SqlitePool) {
             ('6103', '100001', '21', 'other-org-recharge-pack', '6403', 'Other Org Recharge Pack', '30.00', 'CNY', 75, 'active', '2026-01-01 00:00:00', '2099-01-01 00:00:00', 3, '2026-04-29 08:00:00', '2026-04-29 08:00:00')"#,
         r#"INSERT INTO commerce_payment_method
             (id, tenant_id, organization_id, method_key, display_name, provider, status, sort_weight, created_at, updated_at)
-            VALUES ('6201', '100001', '0', 'wechat', 'Wechat Pay', 'wechat', 'active', 1, '2026-04-29 08:00:00', '2026-04-29 08:00:00')"#,
+            VALUES ('6201', '100001', '0', 'wechat_pay', 'Wechat Pay', 'wechat', 'active', 1, '2026-04-29 08:00:00', '2026-04-29 08:00:00')"#,
     ] {
         sqlx::query(statement).execute(pool).await.unwrap();
     }

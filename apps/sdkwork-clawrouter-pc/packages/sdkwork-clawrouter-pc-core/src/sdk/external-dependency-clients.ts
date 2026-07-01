@@ -8,11 +8,11 @@ export {
 } from 'sdkwork-generations-app-sdk-generated-typescript';
 
 export {
-  SdkworkAppClient as SdkworkCommerceAppSdkClient,
-  type SdkworkAppConfig as SdkworkCommerceAppSdkConfig,
-} from 'sdkwork-commerce-app-sdk-generated-typescript';
+  SdkworkAppClient as ClawRouterAppDomainTransportSdkClient,
+  type SdkworkAppConfig as ClawRouterAppDomainTransportSdkConfig,
+} from 'clawrouter-app-domain-transport-generated-typescript';
 
 export {
-  SdkworkBackendClient as SdkworkCommerceBackendSdkClient,
-  type SdkworkBackendConfig as SdkworkCommerceBackendSdkConfig,
-} from 'sdkwork-commerce-backend-sdk-generated-typescript';
+  SdkworkBackendClient as ClawRouterBackendDomainTransportSdkClient,
+  type SdkworkBackendConfig as ClawRouterBackendDomainTransportSdkConfig,
+} from 'clawrouter-backend-domain-transport-generated-typescript';

@@ -6,7 +6,7 @@
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "dependencies": {
-    "@sdkwork/app-topology": "workspace:*"
+    "@sdkwork/app-topology": "file:../sdkwork-app-topology"
   },
   "scripts": {
     "install:deps:ensure": "node scripts/lib/ensure-claw-router-node-deps.mjs",
@@ -28,7 +28,7 @@
     "test": "pnpm topology:validate && pnpm test:topology && node scripts/run-claw-router-application.test.mjs",
     "build": "node scripts/build-claw-router-production.mjs",
     "start": "node scripts/start-claw-router-production.mjs",
-    "check": "pnpm check:application-env && pnpm check:gateway-request-identity && pnpm check:dependency-composition && pnpm check:vendor-workspace && pnpm check:commerce-debt && node scripts/run-claw-router-application.mjs check",
+    "check": "pnpm check:application-env && pnpm check:gateway-request-identity && pnpm check:app-composition && pnpm check:vendor-workspace && pnpm check:commerce-debt && node scripts/run-claw-router-application.mjs check",
     "clean": "node scripts/clean-claw-router-workspace.mjs",
     "clean:fast": "node scripts/clean-claw-router-workspace.mjs",
     "typecheck": "pnpm --dir apps/sdkwork-clawrouter-pc typecheck",
@@ -87,7 +87,7 @@
     "test:postgres": "node scripts/run-postgres-integration.mjs",
     "test:postgres:required": "node scripts/run-postgres-integration.mjs --require-database",
     "test:postgres:docker": "node scripts/run-postgres-integration.mjs --with-docker",
-    "verify": "node scripts/verify-claw-router-application.mjs",
+    "verify": "node scripts/verify-claw-router-application.mjs && pnpm run check:app-composition",
     "verify:fast": "node scripts/verify-claw-router-application.mjs --fast",
     "verify:precommit": "node scripts/verify-claw-router-application.mjs --precommit",
     "verify:ci": "node scripts/verify-claw-router-application.mjs --ci",
@@ -124,12 +124,12 @@
     "check:alignment": "python tools/sdkwork_standard_alignment_guardian.py --strict && node scripts/refresh-standard-alignment-audit.mjs --strict",
     "check:alignment:audit:facts": "node scripts/refresh-standard-alignment-audit.mjs",
     "check:alignment:audit:facts:check": "node scripts/refresh-standard-alignment-audit.mjs --check",
-    "db:materialize:contract": "node ../sdkwork-specs/tools/materialize-database-contract-from-baseline.mjs --root . --baseline database/ddl/baseline/postgres/0001_clawrouter_legacy_baseline.sql --module-id clawrouter --owner claw-router-platform --prefixes claw_ --engines postgres",
+    "db:materialize:contract": "node ../sdkwork-specs/tools/materialize-database-contract-from-baseline.mjs --root . --baseline database/ddl/baseline/postgres/0001_clawrouter_baseline.sql --module-id clawrouter --owner claw-router-platform --prefixes ai_ --engines postgres,sqlite",
     "db:validate": "node ../sdkwork-specs/tools/check-database-framework-standard.mjs --root .",
     "check:database-ownership": "node scripts/check-database-ownership.mjs",
     "check:application-env": "node --test scripts/lib/claw-router-browser-env-contract.test.mjs scripts/lib/claw-router-edge-env-contract.test.mjs scripts/dev/claw-router-application-env.test.mjs scripts/dev/ensure-claw-router-env.test.mjs scripts/write-release-env.test.mjs scripts/release-environment-validation.test.mjs && node scripts/check-claw-router-application-env.mjs",
     "check:gateway-request-identity": "node scripts/check-claw-router-gateway-request-identity.mjs",
-    "check:dependency-composition": "node ../sdkwork-specs/tools/check-dependency-composition.mjs --workspace .",
+    "check:app-composition": "node ../sdkwork-specs/tools/verify-repo.mjs --root .",
     "check:vendor-workspace": "node scripts/check-vendor-workspace.mjs",
     "check:commerce-debt": "node scripts/check-commerce-debt.mjs --report",
     "check:commerce-debt:strict": "node scripts/check-commerce-debt.mjs",
@@ -146,6 +146,39 @@
     "gateway:assembly:materialize": "node scripts/gateway/assembly-materialize.mjs",
     "gateway:assembly:validate": "node scripts/gateway/assembly-validate.mjs",
     "db:postgres:init": "node ../sdkwork-specs/tools/postgres/postgres-db-cli.mjs --mode init --config .env.postgres --app-root .",
-    "db:postgres:plan": "node ../sdkwork-specs/tools/postgres/postgres-db-cli.mjs --mode plan --config .env.postgres --app-root . --dry-run"
+    "db:postgres:plan": "node ../sdkwork-specs/tools/postgres/postgres-db-cli.mjs --mode plan --config .env.postgres --app-root . --dry-run",
+    "db:postgres:recreate": "bash ../sdkwork-specs/tools/postgres/recreate-dev-database.sh"
+  },
+  "pnpm": {
+    "packageExtensions": {
+      "@sdkwork/models-pc-admin-catalog": {
+        "dependencies": {
+          "@sdkwork/clawrouter-pc-commons": "workspace:*"
+        }
+      },
+      "@sdkwork/models-pc-admin-resource": {
+        "dependencies": {
+          "@sdkwork/clawrouter-pc-commons": "workspace:*"
+        }
+      },
+      "@sdkwork/image-pc-generation": {
+        "dependencies": {
+          "@sdkwork/ui-pc-react": "workspace:*"
+        }
+      },
+      "@sdkwork/image-pc": {
+        "dependencies": {
+          "@sdkwork/ui-pc-react": "workspace:*"
+        }
+      }
+    },
+    "peerDependencyRules": {
+      "allowAny": [
+        "@sdkwork/ui-pc-react",
+        "@sdkwork/clawrouter-pc-commons",
+        "@sdkwork/appbase-pc-react",
+        "@sdkwork/core-pc-react"
+      ]
+    }
   }
 }

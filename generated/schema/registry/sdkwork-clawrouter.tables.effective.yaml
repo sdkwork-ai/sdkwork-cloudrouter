@@ -256,6 +256,14 @@ domain_names:
       java: ZHIPU
       rust: Zhipu
       label: Zhipu AI
+    - code: stepfun
+      java: STEPFUN
+      rust: StepFun
+      label: StepFun
+    - code: xiaomi
+      java: XIAOMI
+      rust: Xiaomi
+      label: Xiaomi MiMo
     - code: custom
       java: CUSTOM
       rust: Custom

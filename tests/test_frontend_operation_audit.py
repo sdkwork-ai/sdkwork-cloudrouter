@@ -1026,7 +1026,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "frontend operation apps/sdkwork-clawrouter-pc/packages/demo/src/billingService.ts#fetchWallet must use getSdkworkCommerceService for commerce dependency app api_surface",
+                "frontend operation apps/sdkwork-clawrouter-pc/packages/demo/src/billingService.ts#fetchWallet must use getClawRouterBackendSdkClient().<domain>, getClawRouterAppSdkClient().<domain>, or missingCommerceDependencyOperation for app api_surface",
                 result.messages,
             )
 
@@ -1268,7 +1268,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
 
             self.assertTrue(result.ok, result.messages)
 
-    def test_reports_legacy_commerce_runtime_import_as_dependency_boundary_bypass(self) -> None:
+    def test_accepts_legacy_commerce_runtime_import_when_backed_by_domain_transport_sdk(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_file(
@@ -1316,11 +1316,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
 
             result = FrontendOperationAudit(root=root).validate()
 
-            self.assertFalse(result.ok)
-            self.assertIn(
-                "frontend operation apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/commerce-console-service.ts#fetchAccountDetails must use getSdkworkCommerceService for app api_surface",
-                result.messages,
-            )
+            self.assertTrue(result.ok, result.messages)
 
     def test_accepts_local_runtime_adapter_import_as_generated_sdk_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

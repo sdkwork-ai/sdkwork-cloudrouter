@@ -1,0 +1,312 @@
+{
+  "components": {
+    "schemas": {
+      "FieldError": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "format": "int32",
+            "maximum": 40099,
+            "minimum": 40011,
+            "type": "integer"
+          },
+          "field": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "message"
+        ],
+        "type": "object"
+      },
+      "PageInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "hasMore": {
+            "type": "boolean"
+          },
+          "mode": {
+            "enum": [
+              "offset",
+              "cursor"
+            ],
+            "type": "string"
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "page": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "pageSize": {
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "totalItems": {
+            "pattern": "^[0-9]+$",
+            "type": "string"
+          },
+          "totalPages": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "mode"
+        ],
+        "type": "object"
+      },
+      "ProblemDetail": {
+        "additionalProperties": true,
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/SdkWorkPlatformErrorCode"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/FieldError"
+            },
+            "type": "array"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "status": {
+            "maximum": 599,
+            "minimum": 100,
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "traceId": {
+            "description": "Server-owned request correlation id.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "type": {
+            "format": "uri-reference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code",
+          "traceId"
+        ],
+        "type": "object"
+      },
+      "SdkWorkApiResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "default": 0,
+            "enum": [
+              0
+            ],
+            "format": "int32",
+            "maximum": 0,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "data": {
+            "description": "Operation-specific payload typed per response schema."
+          },
+          "traceId": {
+            "description": "Server-owned request correlation id.",
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "data",
+          "traceId"
+        ],
+        "type": "object"
+      },
+      "SdkWorkListResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/SdkWorkPageData"
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "SdkWorkPageData": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
+      "SdkWorkPlatformErrorCode": {
+        "description": "Platform or domain error code per API_SPEC.md §15.3.",
+        "format": "int32",
+        "maximum": 79999,
+        "minimum": 40001,
+        "type": "integer"
+      }
+    },
+    "securitySchemes": {
+      "AccessToken": {
+        "in": "header",
+        "name": "Access-Token",
+        "type": "apiKey"
+      },
+      "AuthToken": {
+        "bearerFormat": "SDKWork auth token",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Claw Router backend domain transport for wallet, membership, promotion, catalog, order, payment, inventory, and finance modules.",
+    "title": "SDKWork Claw Router Backend Domain Transport API",
+    "version": "0.1.0",
+    "x-sdkwork-api-authority": "sdkwork-clawrouter.backend",
+    "x-sdkwork-audience": "Admin, management, and operator-facing clients.",
+    "x-sdkwork-owner": "sdkwork-clawrouter",
+    "x-sdkwork-sdk-family": "clawrouter-backend-domain-transport"
+  },
+  "openapi": "3.1.2",
+  "paths": {
+    "/backend/v3/api/audit/commerce_events": {
+      "get": {
+        "description": "List. Reads commerce. Writes none. File targets none.",
+        "operationId": "audit.commerceEvents.list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SdkWorkListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List",
+        "tags": [
+          "audit"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "commerce"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "commerce",
+        "x-sdkwork-domain": "commerce",
+        "x-sdkwork-resource": "audit.commerceEvents",
+        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-write-tables": []
+      }
+    }
+  },
+  "security": [
+    {
+      "AccessToken": [],
+      "AuthToken": []
+    }
+  ],
+  "servers": [
+    {
+      "description": "Local backend API server",
+      "url": "http://localhost:18081"
+    }
+  ],
+  "tags": [
+    {
+      "description": "audit API resources.",
+      "name": "audit",
+      "x-sdk-nested-resource-surface": true
+    }
+  ]
+}

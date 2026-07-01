@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { NotificationsAcknowledgeCreateResult, NotificationsPopupSeenCreateResult, PageInfo } from '../types';
+import type { NotificationsAcknowledgeCreateResult, NotificationsPopupSeenCreateResult, SdkWorkPageData } from '../types';
 
 
 export class NotificationPopupSeenApi {
@@ -45,8 +45,8 @@ export class NotificationApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/notification/notifications`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/notification/notifications`));
   }
 }
 

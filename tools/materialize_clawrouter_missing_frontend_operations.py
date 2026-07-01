@@ -17,13 +17,13 @@ except ImportError as exc:  # pragma: no cover
 else:
     _YAML_IMPORT_ERROR = None
 
-COMMERCE_CHAIN_PATTERN = re.compile(
-    r"BackendCommerceService\['([^']+)'\](?:\['([^']+)'\])+"
+BACKEND_CLIENT_CHAIN_PATTERN = re.compile(
+    r"BackendClient\['([^']+)'\](?:\['([^']+)'\])+"
 )
-COMMERCE_CALL_PATTERN = re.compile(
-    r"\.commerce\.([a-zA-Z0-9_.]+)\("
+BACKEND_DOMAIN_CALL_PATTERN = re.compile(
+    r"getClawRouterBackendSdkClient\(\)\.([a-zA-Z0-9_.]+)\("
 )
-COMMERCE_SERVICE_CALL_PATTERN = re.compile(
+LEGACY_COMMERCE_SERVICE_CALL_PATTERN = re.compile(
     r"getSdkworkCommerceService\(\)\.(?:admin\.)?([a-zA-Z0-9_.]+)\("
 )
 DELEGATE_CALL_PATTERN = re.compile(
@@ -57,17 +57,6 @@ KIND_BY_METHOD = {
 }
 
 SERVICE_PACKAGES = {
-    "sdkwork-clawrouter-pc-admin-payments": "operations/backend-commerce-payments.yaml",
-    "sdkwork-clawrouter-pc-admin-wallet": "operations/backend-commerce-wallet.yaml",
-    "sdkwork-clawrouter-pc-admin-orders": "operations/backend-commerce-orders.yaml",
-    "sdkwork-clawrouter-pc-admin-memberships": "operations/backend-commerce-memberships.yaml",
-    "sdkwork-clawrouter-pc-admin-marketing": "operations/backend-commerce-marketing.yaml",
-    "sdkwork-clawrouter-pc-admin-finance": "operations/backend-commerce-finance.yaml",
-    "sdkwork-clawrouter-pc-admin-inventory": "operations/backend-commerce-inventory.yaml",
-    "sdkwork-clawrouter-pc-admin-oauth": "operations/backend-oauth-admin.yaml",
-    "sdkwork-clawrouter-pc-admin-agents": "operations/backend-agents-admin.yaml",
-    "sdkwork-clawrouter-pc-admin-skill": "operations/backend-skill-admin.yaml",
-    "sdkwork-clawrouter-pc-admin-file-platform": "operations/backend-drive-admin.yaml",
     "sdkwork-models-pc-admin-catalog": "operations/backend-models-catalog-admin.yaml",
 }
 
@@ -180,7 +169,7 @@ def _resolve_delegate_chain(source_text: str, function_body: str) -> str | None:
     visited: set[str] = set()
     current_body = function_body
     while current_body:
-        chain = _commerce_chain_from_function(current_body)
+        chain = _backend_domain_chain_from_function(current_body)
         if chain is not None:
             return chain
         models_match = MODELS_BACKEND_CHAIN_PATTERN.search(current_body)
@@ -233,10 +222,6 @@ MANUAL_OPERATION_SPECS: dict[str, tuple[str, str, str, str]] = {
 
 
 DEFAULT_ROUTES_BY_SOURCE: dict[str, str] = {
-    "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-oauth/src/oauthAdminService.ts": "/admin/oauth",
-    "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-agents/src/agentService.ts": "/admin/agents",
-    "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-skill/src/skillService.ts": "/admin/skill",
-    "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/driveService.ts": "/admin/drive/spaces",
     "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts": "/admin/model",
 }
 
@@ -300,16 +285,16 @@ def _resolve_operation_from_chain(chain: str, openapi_index: dict[str, tuple[str
     return operation_id, method, api_path, sdk_domain, "backend"
 
 
-def _commerce_chain_from_function(function_body: str) -> str | None:
-    service_match = COMMERCE_SERVICE_CALL_PATTERN.search(function_body)
+def _backend_domain_chain_from_function(function_body: str) -> str | None:
+    service_match = LEGACY_COMMERCE_SERVICE_CALL_PATTERN.search(function_body)
     if service_match:
         return service_match.group(1)
-    type_match = re.search(r"BackendCommerceService((?:\['[^']+'\])+)", function_body)
+    type_match = re.search(r"BackendClient((?:\['[^']+'\])+)", function_body)
     if type_match:
         parts = re.findall(r"\['([^']+)'\]", type_match.group(1))
         if parts:
             return ".".join(parts)
-    call_match = COMMERCE_CALL_PATTERN.search(function_body)
+    call_match = BACKEND_DOMAIN_CALL_PATTERN.search(function_body)
     if call_match:
         return call_match.group(1)
     return None

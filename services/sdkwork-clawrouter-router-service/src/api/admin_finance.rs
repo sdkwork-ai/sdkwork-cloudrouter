@@ -8,7 +8,7 @@ use axum::routing::get;
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::domain::DomainError;
 use crate::ports::{
     AdminFinanceStore, AdminFinanceSubject, ListAdminBillingRecordsQuery,
@@ -179,13 +179,13 @@ fn list_response<T>(items: Vec<T>) -> Response
 where
     T: Serialize,
 {
-    Json(PlusApiResult::success(AdminFinanceListResponse { items })).into_response()
+    Json(success_envelope(AdminFinanceListResponse { items })).into_response()
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4001", message.into())).into_response()
+    problem_from_wire_code("4001", message.into()).into_response()
 }
 
 fn finance_system_response(context: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }

@@ -234,6 +234,27 @@ sdkwork_routes_invoice_app_api = { package = "sdkwork-routes-invoice-app-api", p
 sdkwork_routes_invoice_backend_api = { package = "sdkwork-routes-invoice-backend-api", path = "../sdkwork-invoice/crates/sdkwork-routes-invoice-backend-api" }
 sdkwork_invoice_service_host = { package = "sdkwork-invoice-service-host", path = "../sdkwork-invoice/crates/sdkwork-invoice-service-host" }
 sdkwork_invoice_database_host = { package = "sdkwork-invoice-database-host", path = "../sdkwork-invoice/crates/sdkwork-invoice-database-host" }
+sdkwork_routes_account_app_api = { package = "sdkwork-routes-account-app-api", path = "../sdkwork-account/crates/sdkwork-routes-account-app-api" }
+sdkwork_account_service_host = { package = "sdkwork-account-service-host", path = "../sdkwork-account/crates/sdkwork-account-service-host" }
+sdkwork_account_database_host = { package = "sdkwork-account-database-host", path = "../sdkwork-account/crates/sdkwork-account-database-host" }
+sdkwork_routes_payment_app_api = { package = "sdkwork-routes-payment-app-api", path = "../sdkwork-payment/crates/sdkwork-routes-payment-app-api" }
+sdkwork_payment_service_host = { package = "sdkwork-payment-service-host", path = "../sdkwork-payment/crates/sdkwork-payment-service-host" }
+sdkwork_payment_database_host = { package = "sdkwork-payment-database-host", path = "../sdkwork-payment/crates/sdkwork-payment-database-host" }
+sdkwork_routes_promotion_app_api = { package = "sdkwork-routes-promotion-app-api", path = "../sdkwork-promotion/crates/sdkwork-routes-promotion-app-api" }
+sdkwork_promotion_service_host = { package = "sdkwork-promotion-service-host", path = "../sdkwork-promotion/crates/sdkwork-promotion-service-host" }
+sdkwork_promotion_database_host = { package = "sdkwork-promotion-database-host", path = "../sdkwork-promotion/crates/sdkwork-promotion-database-host" }
+sdkwork_routes_membership_app_api = { package = "sdkwork-routes-membership-app-api", path = "../sdkwork-membership/crates/sdkwork-routes-membership-app-api" }
+sdkwork_membership_service_host = { package = "sdkwork-membership-service-host", path = "../sdkwork-membership/crates/sdkwork-membership-service-host" }
+sdkwork_membership_database_host = { package = "sdkwork-membership-database-host", path = "../sdkwork-membership/crates/sdkwork-membership-database-host" }
+sdkwork_routes_order_app_api = { package = "sdkwork-routes-order-app-api", path = "../sdkwork-order/crates/sdkwork-routes-order-app-api" }
+sdkwork_order_service_host = { package = "sdkwork-order-service-host", path = "../sdkwork-order/crates/sdkwork-order-service-host" }
+sdkwork_order_database_host = { package = "sdkwork-order-database-host", path = "../sdkwork-order/crates/sdkwork-order-database-host" }
+sdkwork_routes_shop_app_api = { package = "sdkwork-routes-shop-app-api", path = "../sdkwork-shop/crates/sdkwork-routes-shop-app-api" }
+sdkwork_shop_service_host = { package = "sdkwork-shop-service-host", path = "../sdkwork-shop/crates/sdkwork-shop-service-host" }
+sdkwork_shop_database_host = { package = "sdkwork-shop-database-host", path = "../sdkwork-shop/crates/sdkwork-shop-database-host" }
+sdkwork_routes_commerce_catalog_app_api = { package = "sdkwork-routes-catalog-app-api", path = "../sdkwork-catalog/crates/sdkwork-routes-catalog-app-api" }
+sdkwork_catalog_service_host = { package = "sdkwork-catalog-service-host", path = "../sdkwork-catalog/crates/sdkwork-catalog-service-host" }
+sdkwork_catalog_database_host = { package = "sdkwork-catalog-database-host", path = "../sdkwork-catalog/crates/sdkwork-catalog-database-host" }
 sdkwork_invoice_database_bootstrap = { package = "sdkwork-invoice-database-bootstrap", path = "../sdkwork-invoice/crates/sdkwork-invoice-database-bootstrap" }
 sdkwork-web-bootstrap = { path = "../sdkwork-web-framework/crates/sdkwork-web-bootstrap" }
 

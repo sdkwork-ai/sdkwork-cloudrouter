@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { DefaultBucketsUpdateResult, GcJobsCreateResult, OssBucketsCreateResult, OssBucketsUpdateResult, OssProvidersCreateResult, OssProvidersUpdateResult, OssQuotasCreateResult, OssStorageReconciliationRunsCreateResult, PageInfo, ProvidersHealthCheckCreateResult } from '../types';
+import type { DefaultBucketsUpdateResult, GcJobsCreateResult, OssBucketsCreateResult, OssBucketsUpdateResult, OssProvidersCreateResult, OssProvidersUpdateResult, OssQuotasCreateResult, OssStorageReconciliationRunsCreateResult, ProvidersHealthCheckCreateResult, SdkWorkPageData } from '../types';
 
 
 export class StorageProvidersHealthCheckApi {
@@ -38,8 +38,8 @@ export class StorageGcJobsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/storage/gc_jobs`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/storage/gc_jobs`));
   }
 
 /** Create */
@@ -57,8 +57,8 @@ export class StorageDefaultBucketsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/storage/default_buckets`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/storage/default_buckets`));
   }
 
 /** Update */
@@ -76,8 +76,8 @@ export class StorageOssUsageApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/storage/usage`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/storage/usage`));
   }
 }
 
@@ -90,8 +90,8 @@ export class StorageOssStorageReconciliationRunsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/storage/reconciliation_runs`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/storage/reconciliation_runs`));
   }
 
 /** Create */
@@ -109,8 +109,8 @@ export class StorageOssQuotasApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/storage/quotas`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/storage/quotas`));
   }
 
 /** Create */
@@ -128,8 +128,8 @@ export class StorageOssProvidersApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/storage/providers`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/storage/providers`));
   }
 
 /** Create */
@@ -152,8 +152,8 @@ export class StorageOssBucketsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/storage/buckets`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/storage/buckets`));
   }
 
 /** Create */

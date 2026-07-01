@@ -83,7 +83,10 @@ test("dev server enables React Fast Refresh and HMR by default", async () => {
 
   assert.ok(plugins.some((plugin) => hasPluginName(plugin, "vite:react-babel")));
   assert.ok(plugins.some((plugin) => hasPluginName(plugin, "vite:react-refresh")));
-  assert.equal(config.server?.hmr, true);
+  assert.deepEqual(config.server?.hmr, {
+    clientPort: 3901,
+    host: "127.0.0.1",
+  });
 });
 
 test("dependency optimizer pre-bundles recharts instead of serving its mixed ESM and CommonJS sources", async () => {

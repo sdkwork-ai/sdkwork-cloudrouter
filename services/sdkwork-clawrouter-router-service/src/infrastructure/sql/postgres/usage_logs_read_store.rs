@@ -25,8 +25,8 @@ WITH selected_trace AS (
           AND t.organization_id = $2
           AND t.user_id = $3
           AND t.started_at IS NOT NULL
-          AND ($4::text IS NULL OR t.started_at >= ($4::timestamp AT TIME ZONE 'UTC'))
-          AND ($5::text IS NULL OR t.started_at <= ($5::timestamp AT TIME ZONE 'UTC'))
+          AND ($4::text IS NULL OR t.started_at >= $4::timestamptz)
+          AND ($5::text IS NULL OR t.started_at <= $5::timestamptz)
     )
     WHERE trace_rank = 1
 ),
@@ -55,8 +55,8 @@ usage_by_request AS (
       AND organization_id = $2
       AND user_id = $3
       AND NULLIF(request_id, '') IS NOT NULL
-      AND ($4::text IS NULL OR occurred_at >= ($4::timestamp AT TIME ZONE 'UTC'))
-      AND ($5::text IS NULL OR occurred_at <= ($5::timestamp AT TIME ZONE 'UTC'))
+      AND ($4::text IS NULL OR occurred_at >= $4::timestamptz)
+      AND ($5::text IS NULL OR occurred_at <= $5::timestamptz)
     GROUP BY tenant_id, organization_id, request_id
 )
 SELECT
@@ -175,8 +175,8 @@ WITH selected_trace AS (
           AND t.organization_id = $2
           AND t.user_id = $3
           AND t.started_at IS NOT NULL
-          AND ($4::text IS NULL OR t.started_at >= ($4::timestamp AT TIME ZONE 'UTC'))
-          AND ($5::text IS NULL OR t.started_at <= ($5::timestamp AT TIME ZONE 'UTC'))
+          AND ($4::text IS NULL OR t.started_at >= $4::timestamptz)
+          AND ($5::text IS NULL OR t.started_at <= $5::timestamptz)
     )
     WHERE trace_rank = 1
 ),
@@ -191,8 +191,8 @@ usage_by_request AS (
       AND organization_id = $2
       AND user_id = $3
       AND NULLIF(request_id, '') IS NOT NULL
-      AND ($4::text IS NULL OR occurred_at >= ($4::timestamp AT TIME ZONE 'UTC'))
-      AND ($5::text IS NULL OR occurred_at <= ($5::timestamp AT TIME ZONE 'UTC'))
+      AND ($4::text IS NULL OR occurred_at >= $4::timestamptz)
+      AND ($5::text IS NULL OR occurred_at <= $5::timestamptz)
     GROUP BY tenant_id, organization_id, request_id
 )
 SELECT CAST(COUNT(1) AS TEXT) AS total

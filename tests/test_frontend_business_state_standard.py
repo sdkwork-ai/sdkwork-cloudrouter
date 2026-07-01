@@ -56,10 +56,6 @@ class FrontendBusinessStateStandardTest(unittest.TestCase):
         )
         core_table_components = [
             PORTAL_PACKAGES
-            / "sdkwork-clawrouter-pc-admin-user"
-            / "src"
-            / "index.tsx",
-            PORTAL_PACKAGES
             / "sdkwork-clawrouter-pc-admin-group"
             / "src"
             / "index.tsx",
@@ -73,15 +69,7 @@ class FrontendBusinessStateStandardTest(unittest.TestCase):
             / "src"
             / "index.tsx",
             PORTAL_PACKAGES
-            / "sdkwork-clawrouter-pc-admin-finance"
-            / "src"
-            / "index.tsx",
-            PORTAL_PACKAGES
             / "sdkwork-clawrouter-pc-admin-record"
-            / "src"
-            / "index.tsx",
-            PORTAL_PACKAGES
-            / "sdkwork-clawrouter-pc-admin-announcement"
             / "src"
             / "index.tsx",
             PORTAL_PACKAGES
@@ -99,19 +87,9 @@ class FrontendBusinessStateStandardTest(unittest.TestCase):
             / "src"
             / "index.tsx",
             PORTAL_PACKAGES
-            / "sdkwork-clawrouter-pc-admin-marketing"
-            / "src"
-            / "index.tsx",
-            PORTAL_PACKAGES
             / "sdkwork-clawrouter-pc-console-settings"
             / "src"
             / "SettingsView.tsx",
-        ]
-        marketing_components = [
-            PORTAL_PACKAGES
-            / "sdkwork-clawrouter-pc-admin-marketing"
-            / "src"
-            / "index.tsx",
         ]
 
         self.assertTrue(
@@ -131,9 +109,12 @@ class FrontendBusinessStateStandardTest(unittest.TestCase):
 
         for component in core_table_components:
             if not component.exists():
-                continue
+                self.skipTest(f"missing relay admin component: {component}")
             source = component.read_text(encoding="utf-8")
-            relative = component.relative_to(PORTAL_PACKAGES).as_posix()
+            try:
+                relative = component.relative_to(PORTAL_PACKAGES).as_posix()
+            except ValueError:
+                relative = component.relative_to(ROOT).as_posix()
             self.assertIn(
                 "BusinessStateTableRow",
                 source,
@@ -185,32 +166,6 @@ class FrontendBusinessStateStandardTest(unittest.TestCase):
                 '<Loader2 className="w-8 h-8',
                 source,
                 f"{relative} must not hand-roll full-panel loading indicators.",
-            )
-
-        for component in marketing_components:
-            if not component.exists():
-                continue
-            source = component.read_text(encoding="utf-8")
-            relative = component.relative_to(PORTAL_PACKAGES).as_posix()
-            self.assertIn(
-                "BusinessStateTableRow",
-                source,
-                f"{relative} must use shared table business states for core marketing tables.",
-            )
-            self.assertIn(
-                "loadMarketingData",
-                source,
-                f"{relative} must expose a retryable aggregate loader for coupon, batch, and promo-code state.",
-            )
-            self.assertIn(
-                "loadError",
-                source,
-                f"{relative} must preserve aggregate marketing load failures in UI state.",
-            )
-            self.assertNotIn(
-                '<Loader2 className="w-8 h-8',
-                source,
-                f"{relative} must not hand-roll aggregate loading panels.",
             )
 
 

@@ -90,6 +90,12 @@
       "import": "./src/sdkwork-utils.ts",
       "require": "./src/sdkwork-utils.ts",
       "default": "./src/sdkwork-utils.ts"
+    },
+    "./domain-service-providers": {
+      "types": "./src/domain-service-providers.ts",
+      "import": "./src/domain-service-providers.ts",
+      "require": "./src/domain-service-providers.ts",
+      "default": "./src/domain-service-providers.ts"
     }
   },
   "scripts": {
@@ -109,7 +115,11 @@
     "@sdkwork/models-app-sdk": "workspace:*",
     "@sdkwork/clawrouter-open-sdk": "workspace:*",
     "@sdkwork/drive-app-sdk": "workspace:*",
-    "@sdkwork/commerce-service": "workspace:*",
+    "@sdkwork/account-service": "workspace:*",
+    "@sdkwork/membership-service": "workspace:*",
+    "@sdkwork/order-service": "workspace:*",
+    "@sdkwork/payment-service": "workspace:*",
+    "@sdkwork/promotion-service": "workspace:*",
     "@sdkwork/iam-contracts": "workspace:*",
     "@sdkwork/iam-credential-entry": "workspace:*",
     "@sdkwork/iam-runtime": "workspace:*",
@@ -118,8 +128,8 @@
     "@sdkwork/sdk-common": "^1.0.2",
     "@tanstack/react-query": "^5.90.12",
     "@sdkwork/memory-app-sdk": "workspace:*",
-    "@sdkwork/agent-app-sdk": "workspace:*",
-    "@sdkwork/agent-backend-sdk": "workspace:*",
+    "@sdkwork/agents-app-sdk": "workspace:*",
+    "@sdkwork/agents-backend-sdk": "workspace:*",
     "@sdkwork/prompts-backend-sdk": "workspace:*",
     "@sdkwork/utils": "workspace:*"
   },

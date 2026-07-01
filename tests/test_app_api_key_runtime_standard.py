@@ -779,7 +779,7 @@ class AppApiKeyRuntimeStandardTest(unittest.TestCase):
         self.assertIn("sign_trusted_request_subject", http_auth_source)
         self.assertIn("attach_trusted_request_subject", http_auth_source)
         self.assertIn("session_authorization_header", route_test_source)
-        self.assertIn("database_config_app_api_keys_are_not_mounted_locally", route_test_source)
+        self.assertIn("database_config_app_api_keys_are_mounted_locally", route_test_source)
         self.assertNotIn('header("x-sdkwork-tenant-id", "10")', route_test_source)
         self.assertNotIn("x-sdkwork-tenant-id header is required", route_test_source)
 

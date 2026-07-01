@@ -7,7 +7,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::ports::{AdminDashboardQuery, AdminDashboardReadStore};
 
 #[derive(Clone)]
@@ -35,10 +35,10 @@ async fn fetch_admin_dashboard_overview(
     };
 
     match state.read_store.load_dashboard(query).await {
-        Ok(snapshot) => Json(PlusApiResult::success(snapshot)).into_response(),
-        Err(error) => PlusApiResult::error(
+        Ok(snapshot) => Json(success_envelope(snapshot)).into_response(),
+        Err(error) => problem_from_wire_code(
                 "5000",
                 format!("admin dashboard read model is unavailable: {error}"),
-            )).into_response(),
+            ).into_response(),
     }
 }

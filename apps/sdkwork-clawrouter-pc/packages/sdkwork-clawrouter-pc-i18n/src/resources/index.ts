@@ -4,17 +4,7 @@ import {
   publicSdkReferenceMessages,
 } from '@sdkwork/documents-pc-i18n';
 import { mergeI18nBundles } from './merge';
-import { adminCommerceCatalogMessages } from './admin-commerce/catalog';
-import { adminCommerceFinanceMessages } from './admin-commerce/finance';
-import { adminCommerceInventoryMessages } from './admin-commerce/inventory';
-import { adminCommerceMarketingMessages } from './admin-commerce/marketing';
-import { adminCommerceMembershipsMessages } from './admin-commerce/memberships';
-import { adminCommerceOrdersMessages } from './admin-commerce/orders';
-import { adminCommercePaymentsMessages } from './admin-commerce/payments';
-import { adminCommerceVipMessages } from './admin-commerce/vip';
-import { adminCommerceWalletMessages } from './admin-commerce/wallet';
 import { adminAnalyticsRecordMessages } from './admin/analytics-record';
-import { adminAnnouncementMessages } from './admin/announcement';
 import { adminAuthSettingsMessages } from './admin/auth-settings';
 import { adminCacheMessages } from './admin/cache';
 import { adminChannelMessages } from './admin/channel';
@@ -22,20 +12,12 @@ import { adminChannelResourceRoutingMessages } from './admin/channel-resource-ro
 import { adminCoreColumnsMessages } from './admin/core-columns';
 import { adminCoreNavigationMessages } from './admin/core-navigation';
 import { adminDashboardMessages } from './admin/dashboard';
-import { adminFilePlatformMessages } from './admin/file-platform';
-import { adminFinanceMessages } from './admin/finance';
 import { adminGroupUserMessages } from './admin/group-user';
 import { adminMiscMessages } from './admin/misc';
 import { adminModelMessages } from './admin/model';
-import { adminMcpMessages } from './admin/mcp';
-import { adminOAuthBlueprintMessages } from './admin/oauth-blueprints';
-import { adminOAuthMessages } from './admin/oauth';
-import { adminOrganizationMessages } from './admin/organization';
-import { adminPromptsMessages } from './admin/prompts';
 import { adminRateLimitMessages } from './admin/rate-limit';
 import { adminRuntimeRegionMessages } from './admin/runtime-region';
 import { adminServiceNodesMessages } from './admin/service-nodes';
-import { adminServiceProviderMessages } from './admin/service-provider';
 import { adminSiteSettingsMessages } from './admin/site-settings';
 import { consoleAccountMessages } from './console/account';
 import { consoleApiKeysMessages } from './console/api-keys';
@@ -63,17 +45,7 @@ import { sharedCommonMessages } from './shared/common';
 import { sharedNavigationMessages } from './shared/navigation';
 
 export const resources = mergeI18nBundles([
-  adminCommerceCatalogMessages,
-  adminCommerceFinanceMessages,
-  adminCommerceInventoryMessages,
-  adminCommerceMarketingMessages,
-  adminCommerceMembershipsMessages,
-  adminCommerceOrdersMessages,
-  adminCommercePaymentsMessages,
-  adminCommerceVipMessages,
-  adminCommerceWalletMessages,
   adminAnalyticsRecordMessages,
-  adminAnnouncementMessages,
   adminAuthSettingsMessages,
   adminCacheMessages,
   adminChannelMessages,
@@ -81,20 +53,12 @@ export const resources = mergeI18nBundles([
   adminCoreColumnsMessages,
   adminCoreNavigationMessages,
   adminDashboardMessages,
-  adminFilePlatformMessages,
-  adminFinanceMessages,
   adminGroupUserMessages,
   adminMiscMessages,
   adminModelMessages,
-  adminMcpMessages,
-  adminOAuthBlueprintMessages,
-  adminOAuthMessages,
-  adminOrganizationMessages,
-  adminPromptsMessages,
   adminRateLimitMessages,
   adminRuntimeRegionMessages,
   adminServiceNodesMessages,
-  adminServiceProviderMessages,
   adminSiteSettingsMessages,
   consoleAccountMessages,
   consoleApiKeysMessages,

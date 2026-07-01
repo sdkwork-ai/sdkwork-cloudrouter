@@ -44,7 +44,7 @@ async fn admin_ai_resource_route_lists_resources_with_members() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("vendor.openai", payload["data"]["items"][0]["resourceCode"]);
     assert_eq!("vendor", payload["data"]["items"][0]["resourceType"]);
     assert_eq!(
@@ -80,7 +80,7 @@ async fn admin_ai_resource_group_route_manages_groups_and_static_all_api_resourc
 
     assert_eq!(StatusCode::OK, list_response.status());
     let list_payload = json_payload(list_response).await;
-    assert_eq!("2000", list_payload["code"]);
+    assert_eq!(0, list_payload["code"].as_i64().unwrap());
     assert_eq!("api.all", list_payload["data"]["items"][0]["groupCode"]);
     assert_eq!("全部API", list_payload["data"]["items"][0]["groupName"]);
     assert_eq!("all", list_payload["data"]["items"][0]["selectionMode"]);
@@ -104,7 +104,7 @@ async fn admin_ai_resource_group_route_manages_groups_and_static_all_api_resourc
 
     assert_eq!(StatusCode::OK, all_resources_response.status());
     let all_resources_payload = json_payload(all_resources_response).await;
-    assert_eq!("2000", all_resources_payload["code"]);
+    assert_eq!(0, all_resources_payload["code"].as_i64().unwrap());
     assert_eq!(
         "api.openai.chat_completions",
         all_resources_payload["data"]["items"][0]["resourceCode"]
@@ -204,7 +204,7 @@ async fn admin_ai_resource_route_creates_and_updates_resources() {
 
     assert_eq!(StatusCode::OK, create_response.status());
     let create_payload = json_payload(create_response).await;
-    assert_eq!("2000", create_payload["code"]);
+    assert_eq!(0, create_payload["code"].as_i64().unwrap());
     assert_eq!(
         "bundle.openrouter.openai.standard",
         create_payload["data"]["item"]["resourceCode"]
@@ -343,8 +343,8 @@ async fn admin_ai_resource_route_maps_missing_member_resource_to_not_found() {
 
     assert_eq!(StatusCode::NOT_FOUND, create_response.status());
     let create_payload = json_payload(create_response).await;
-    assert_eq!("4040", create_payload["code"]);
-    assert!(create_payload["msg"]
+    assert_eq!(40401, create_payload["code"].as_i64().unwrap());
+    assert!(create_payload["detail"]
         .as_str()
         .unwrap()
         .contains("model.openai.missing.chat"));
@@ -366,8 +366,8 @@ async fn admin_ai_resource_route_maps_missing_member_resource_to_not_found() {
 
     assert_eq!(StatusCode::NOT_FOUND, update_response.status());
     let update_payload = json_payload(update_response).await;
-    assert_eq!("4040", update_payload["code"]);
-    assert!(update_payload["msg"]
+    assert_eq!(40401, update_payload["code"].as_i64().unwrap());
+    assert!(update_payload["detail"]
         .as_str()
         .unwrap()
         .contains("model.openai.missing.chat"));

@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { AnnouncementsCreateResult, AnnouncementsUpdateResult, PageInfo } from '../types';
+import type { AnnouncementsCreateResult, AnnouncementsUpdateResult, SdkWorkCommandData, SdkWorkPageData } from '../types';
 
 
 export class ContentAnnouncementsApi {
@@ -13,8 +13,8 @@ export class ContentAnnouncementsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/content/announcements`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/content/announcements`));
   }
 
 /** Create */
@@ -23,8 +23,8 @@ export class ContentAnnouncementsApi {
   }
 
 /** Delete */
-  async delete(announcementId: string): Promise<Record<string, unknown>> {
-    return this.client.delete<Record<string, unknown>>(backendApiPath(`/content/announcements/${serializePathParameter(announcementId, { name: 'announcementId', style: 'simple', explode: false })}`));
+  async delete(announcementId: string): Promise<SdkWorkCommandData> {
+    return this.client.delete<SdkWorkCommandData>(backendApiPath(`/content/announcements/${serializePathParameter(announcementId, { name: 'announcementId', style: 'simple', explode: false })}`));
   }
 
 /** Update */

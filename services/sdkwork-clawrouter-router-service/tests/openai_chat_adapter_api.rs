@@ -299,7 +299,7 @@ async fn openai_chat_registry_hit_requires_gateway_secret_resolution() {
     assert!(direct_calls.lock().unwrap().is_empty());
     assert!(fake_adapter.calls.lock().unwrap().is_empty());
     let payload = response_json(response).await;
-    assert_eq!("provider_relay_failed", payload["error"]["code"]);
+    assert_eq!("provider_relay_failed", payload["error"]["code"].as_i64().unwrap());
     assert!(payload["error"]["message"]
         .as_str()
         .unwrap()

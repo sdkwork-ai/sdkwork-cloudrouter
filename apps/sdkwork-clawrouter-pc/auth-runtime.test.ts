@@ -37,6 +37,10 @@ function readPortalFile(relativePath: string): string {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8");
 }
 
+function readRepoFile(relativePath: string): string {
+  return readFileSync(new URL(relativePath, new URL("../../", import.meta.url)), "utf8");
+}
+
 function readPortalSourceFiles(relativeDirectory: string): Array<{ relativePath: string; source: string }> {
   const root = new URL(relativeDirectory, import.meta.url);
   const files: Array<{ relativePath: string; source: string }> = [];
@@ -397,8 +401,8 @@ test("claw router auth controller reuses appbase runtime while preserving app SD
   assert.match(sdkClientsSource, /function buildAppbaseAppConfig\(options: SdkworkAppbaseAppSdkClientOptions\): SdkworkAppbaseAppConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
   assert.match(sdkClientsSource, /function buildGenerationsAppConfig\(options: SdkworkGenerationsAppSdkClientOptions\): SdkworkGenerationsAppConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
   assert.match(sdkClientsSource, /function buildDriveAppConfig\(options: SdkworkDriveAppSdkClientOptions\): SdkworkDriveAppConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
-  assert.match(sdkClientsSource, /function buildCommerceAppConfig\(options: SdkworkCommerceAppSdkClientOptions\): SdkworkCommerceAppConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
-  assert.match(sdkClientsSource, /function buildCommerceBackendConfig\(\s*options: SdkworkCommerceBackendSdkClientOptions,\s*\): SdkworkCommerceBackendConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
+  assert.match(sdkClientsSource, /function buildAppDomainTransportConfig\(options: ClawRouterAppDomainTransportSdkClientOptions\): ClawRouterAppDomainTransportConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
+  assert.match(sdkClientsSource, /function buildBackendDomainTransportConfig\(\s*options: ClawRouterBackendDomainTransportSdkClientOptions,\s*\): ClawRouterBackendDomainTransportConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
   assert.doesNotMatch(sdkClientsSource, /authToken:\s*options\.authToken/);
   assert.doesNotMatch(sdkClientsSource, /accessToken:\s*options\.accessToken/);
   assert.doesNotMatch(sdkClientsSource, /getStoredAppSessionAuthToken\(\)/);
@@ -598,6 +602,8 @@ test("claw router app auth composes the appbase IAM OAuth dependency SDK without
   const backendSdkSystemSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/api/system.ts");
   const backendSdkIndexSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/sdk.ts");
   const backendSdkAuthSettingsUpdateSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/types/admin-auth-settings-update-request.ts");
+  const backendSdkAuthVerificationPolicySource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/types/admin-auth-verification-policy.ts");
+  const backendSdkAuthWechatSettingsSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/types/admin-auth-wechat-settings-update.ts");
   const appSdkTypesSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/types/index.ts");
   const backendSdkTypesSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/types/index.ts");
   const appbaseAuthServiceSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-service.ts");
@@ -607,7 +613,7 @@ test("claw router app auth composes the appbase IAM OAuth dependency SDK without
   const retiredProviderPlatformCamel = "open" + "Platform";
   const retiredQrNamespace = "qr" + "Auth";
 
-  for (const operationId of [
+  const iamAppbaseOperationIds = [
     "oauth.authorizationUrls.create",
     "oauth.sessions.create",
     "sessions.create",
@@ -621,34 +627,36 @@ test("claw router app auth composes the appbase IAM OAuth dependency SDK without
     "iam.runtime.retrieve",
     "iam.verificationPolicy.retrieve",
     "users.current.retrieve",
-  ]) {
-    assert.match(contractSource, new RegExp(`operation_id:\\s*${operationId.replaceAll(".", "\\.")}`));
+  ] as const;
+
+  for (const operationId of iamAppbaseOperationIds) {
+    assert.match(appbaseAppOpenApiSource, new RegExp(`"operationId":\\s*"${operationId.replaceAll(".", "\\.")}"`));
   }
-  assert.match(contractSource, /api_path:\s*\/app\/v3\/api\/oauth\/authorization_urls/);
-  assert.match(contractSource, /api_path:\s*\/app\/v3\/api\/oauth\/sessions/);
+  assert.match(appbaseAppOpenApiSource, /"\/app\/v3\/api\/oauth\/authorization_urls"/);
+  assert.match(appbaseAppOpenApiSource, /"\/app\/v3\/api\/oauth\/sessions"/);
   assert.doesNotMatch(contractSource, new RegExp(`/app/v3/api/${retiredProviderPlatformSnake}`));
   assert.doesNotMatch(contractSource, /api_path:\s*\/app\/v3\/api\/auth\/oauth_authorization_urls/);
   assert.doesNotMatch(contractSource, /api_path:\s*\/app\/v3\/api\/auth\/oauth_sessions/);
   assert.doesNotMatch(contractSource, /api_path:\s*\/app\/v3\/api\/auth\/qr_login_codes/);
-  assert.match(contractSource, /api_path:\s*\/app\/v3\/api\/auth\/sessions/);
-  assert.match(contractSource, /api_path:\s*\/app\/v3\/api\/auth\/registrations/);
+  assert.match(appbaseAppOpenApiSource, /"\/app\/v3\/api\/auth\/sessions"/);
+  assert.match(appbaseAppOpenApiSource, /"\/app\/v3\/api\/auth\/registrations"/);
   assert.match(contractSource, /operation_id:\s*auth\.settings\.retrieve/);
   assert.match(contractSource, /operation_id:\s*auth\.settings\.update/);
   assert.match(contractSource, /api_path:\s*\/backend\/v3\/api\/system\/auth\/settings/);
-  assert.match(contractSource, /operation_id:\s*iam\.runtime\.retrieve/);
-  assert.match(contractSource, /api_path:\s*\/app\/v3\/api\/system\/iam\/runtime/);
-  assert.match(contractSource, /operation_id:\s*iam\.verificationPolicy\.retrieve/);
-  assert.match(contractSource, /api_path:\s*\/app\/v3\/api\/system\/iam\/verification_policy/);
+  assert.match(appbaseAppOpenApiSource, /"operationId":\s*"iam\.runtime\.retrieve"/);
+  assert.match(appbaseAppOpenApiSource, /"\/app\/v3\/api\/system\/iam\/runtime"/);
+  assert.match(appbaseAppOpenApiSource, /"operationId":\s*"iam\.verificationPolicy\.retrieve"/);
+  assert.match(appbaseAppOpenApiSource, /"\/app\/v3\/api\/system\/iam\/verification_policy"/);
   assert.doesNotMatch(contractSource, /api_path:\s*\/app\/v3\/api\/auth\/runtime_settings/);
   assert.doesNotMatch(contractSource, /api_path:\s*\/app\/v3\/api\/auth\/verification_policy/);
-  assert.match(contractSource, /emailRegistrationVerificationRequired:\s*(?:\r?\n\s*)?\{?\s*type:\s*boolean/);
-  assert.match(contractSource, /phoneRegistrationVerificationRequired:\s*(?:\r?\n\s*)?\{?\s*type:\s*boolean/);
-  assert.match(contractSource, /qrLoginType/);
-  assert.match(contractSource, /wechat/);
-  assert.match(contractSource, /admin_auth_wechat_official/);
-  assert.match(contractSource, /admin_auth_wechat_mini/);
-  assert.match(contractSource, /api_path:\s*\/app\/v3\/api\/auth\/password_reset_requests/);
-  assert.match(contractSource, /api_path:\s*\/app\/v3\/api\/iam\/users\/current/);
+  assert.match(backendSdkAuthVerificationPolicySource, /emailRegistrationVerificationRequired\?:\s*boolean/);
+  assert.match(backendSdkAuthVerificationPolicySource, /phoneRegistrationVerificationRequired\?:\s*boolean/);
+  assert.match(backendSdkAuthSettingsUpdateSource, /qrLoginType/);
+  assert.match(backendSdkAuthSettingsUpdateSource, /wechat\?:/);
+  assert.match(backendSdkAuthWechatSettingsSource, /official/);
+  assert.match(backendSdkAuthWechatSettingsSource, /mini/);
+  assert.match(appbaseAppOpenApiSource, /"\/app\/v3\/api\/auth\/password_reset_requests"/);
+  assert.match(appbaseAppOpenApiSource, /"\/app\/v3\/api\/iam\/users\/current"/);
   assert.doesNotMatch(contractSource, /api_path:\s*\/app\/v3\/api\/auth\/login/);
   assert.doesNotMatch(contractSource, /api_path:\s*\/app\/v3\/api\/auth\/session\b/);
 
@@ -832,7 +840,7 @@ test("portal exposes backend-backed admin auth settings configuration", () => {
   assert.doesNotMatch(settingsServiceSource, /\/backend\/v3\/api\/system\/auth\/settings/);
   assert.match(routeClassificationSource, /route:\s*\/admin\/settings/);
   assert.match(routeClassificationSource, /api_surface:\s*backend/);
-  assert.match(routeClassificationSource, /apps\/sdkwork-clawrouter-pc\/packages\/sdkwork-clawrouter-pc-admin-site\/src\/ClawRouterAuthSettingsPage\.tsx/);
+  assert.match(routeClassificationSource, /apps\/sdkwork-clawrouter-pc\/packages\/sdkwork-clawrouter-pc-admin-site\/src\/AuthSettingsService\.ts/);
 });
 
 test("admin auth settings page localizes visible copy and uses the available content width", () => {
@@ -1367,7 +1375,7 @@ test("claw router app session persists across module reload in the same browser 
   }
 });
 
-test("claw router app session does not leak into a new browser tab", async () => {
+test("claw router app session persists across browser tabs via shared localStorage", async () => {
   const storageHarness = createPortalSessionStorageHarness();
   const expiresAt = Math.floor(Date.now() / 1000) + 3600;
 
@@ -1376,19 +1384,24 @@ test("claw router app session does not leak into a new browser tab", async () =>
     firstTab.storeAppSessionFromResult({
       code: "200",
       data: {
-        accessToken: "tab-one-access-token",
-        authToken: "tab-one-auth-token",
+        accessToken: "shared-access-token",
+        authToken: "shared-auth-token",
         expiresAt,
-        refreshToken: "tab-one-refresh-token",
-        sessionId: "tab-one-session-id",
+        refreshToken: "shared-refresh-token",
+        sessionId: "shared-session-id",
       },
     });
 
     storageHarness.openNewTab();
     const newTab = await importFreshAppSessionTokenModule();
-    assert.equal(newTab.loadStoredAppSessionToken(), null);
-    assert.equal(newTab.getStoredAppSessionAuthToken(), undefined);
-    assert.equal(newTab.getStoredAppSessionAccessToken(), undefined);
+    const restored = newTab.loadStoredAppSessionToken();
+    assert.ok(restored);
+    assert.equal(restored.accessToken, "shared-access-token");
+    assert.equal(restored.authToken, "shared-auth-token");
+    assert.equal(restored.refreshToken, "shared-refresh-token");
+    assert.equal(restored.sessionId, "shared-session-id");
+    assert.equal(newTab.getStoredAppSessionAuthToken(), "shared-auth-token");
+    assert.equal(newTab.getStoredAppSessionAccessToken(), "shared-access-token");
   } finally {
     clearStoredAppSessionToken();
     storageHarness.restore();
@@ -1405,9 +1418,9 @@ test("admin layout enforces route permission guard for protected admin pages", a
   assert.match(guardSource, /isAdminRouteAllowed/);
   assert.match(guardSource, /shared\.auth\.adminAccess\.forbiddenTitle/);
   assert.match(permissionsSource, /resolveAdminRoutePermissionHint/);
-  assert.equal(isAdminRouteAllowed("/admin/prompts", ["clawrouter.admin.access"]), true);
-  assert.equal(isAdminRouteAllowed("/admin/prompts", ["iam.users.read"]), false);
-  assert.equal(isAdminRouteAllowed("/admin/user", ["iam.users.read"]), true);
+  assert.equal(isAdminRouteAllowed("/admin/group", ["iam.users.read"]), true);
+  assert.equal(isAdminRouteAllowed("/admin/group", ["clawrouter.admin.access"]), false);
+  assert.equal(isAdminRouteAllowed("/admin/dashboard", ["clawrouter.admin.access"]), true);
 });
 
 test("portal i18n keeps document language aligned with active locale", () => {
@@ -1422,7 +1435,7 @@ test("generated SDK auth errors clear the app session and redirect protected pag
   const redirects: string[] = [];
   const restoreWindow = installPortalAuthRedirectWindow({
     hash: "#risk",
-    pathname: "/admin/service-providers/dashboard",
+    pathname: "/admin/channel",
     replace: (to) => redirects.push(to),
     search: "?provider_id=2",
   });
@@ -1449,7 +1462,7 @@ test("generated SDK auth errors clear the app session and redirect protected pag
 
     assert.equal(loadStoredAppSessionToken(), null);
     assert.deepEqual(redirects, [
-      "/auth/login?redirect=%2Fadmin%2Fservice-providers%2Fdashboard%3Fprovider_id%3D2%23risk",
+      "/auth/login?redirect=%2Fadmin%2Fchannel%3Fprovider_id%3D2%23risk",
     ]);
   } finally {
     clearStoredAppSessionToken();
@@ -1735,7 +1748,7 @@ test("portal wires console and admin routes through the protected session guard"
   assert.match(guardSource, /@sdkwork\/clawroutes-pc-commons\/runtime/);
   assert.doesNotMatch(guardSource, /sdkwork-clawroutes-pc-commons\/runtime/);
   assert.match(sharedAuthSource, /hasPortalIamSession/);
-  assert.match(sharedAuthSource, /resolveStoredPortalTenantId/);
+  assert.match(sharedAuthSource, /loadStoredAppSessionToken/);
   assert.doesNotMatch(guardSource, /\bfetch\s*\(/);
   assert.doesNotMatch(guardSource, /\baxios\b/);
   assert.doesNotMatch(guardSource, /Authorization/);
@@ -1768,9 +1781,7 @@ test("admin sidebar labels are resolved through i18n keys", () => {
   assert.match(adminLayoutSource, /useTranslation/);
   assert.match(adminRegistrySource, /groupBlock\('admin\.menu\.home\.modelManagement'/);
   assert.match(adminRegistrySource, /groupBlock\('admin\.menu\.home\.accountPoolManagement'/);
-  assert.match(adminRegistrySource, /groupBlock\('admin\.menu\.home\.agentSkills'/);
   assert.match(adminRegistrySource, /groupBlock\('admin\.menu\.home\.dataManagement'/);
-  assert.match(adminRegistrySource, /labelKey:\s*'admin\.menu\.agentSkills'/);
   assert.match(adminRegistrySource, /labelKey:\s*'admin\.menu\.analytics'/);
   assert.match(adminRegistrySource, /labelKey:\s*'admin\.menu\.authSettings'/);
   assert.match(adminLayoutSource, /t\(group\.groupKey\)/);
@@ -1786,9 +1797,7 @@ test("admin sidebar labels are resolved through i18n keys", () => {
   for (const key of [
     "admin.menu.home.modelManagement",
     "admin.menu.home.accountPoolManagement",
-    "admin.menu.home.agentSkills",
     "admin.menu.home.dataManagement",
-    "admin.menu.agentSkills",
     "admin.menu.analytics",
     "admin.menu.authSettings",
     "admin.menu.logout",
@@ -1830,8 +1839,8 @@ test("admin module registry labels have English and Chinese translations", () =>
     ...findOrderedMatches(adminRegistrySource, /labelKey:\s*'([^']+)'/g),
   ]);
 
-  assert.ok(registryKeys.has("admin.header.messagingCenter"), "messaging center module must be covered");
-  assert.ok(registryKeys.has("admin.menu.messaging.providers"), "messaging center menu must be covered");
+  assert.ok(registryKeys.has("admin.header.home"), "home module must be covered");
+  assert.ok(registryKeys.has("admin.header.operations"), "operations module must be covered");
 
   for (const key of [...registryKeys].sort()) {
     assert.ok(enKeys.has(key), `${key} must be present in English i18n resources`);
@@ -1868,7 +1877,6 @@ test("admin auth and site settings belong to the operations module", () => {
   const homeHeaderModule = findAdminModuleDefinitionSource(adminRegistrySource, "home");
   const operationsHeaderModule = findAdminModuleDefinitionSource(adminRegistrySource, "operations");
 
-  assert.match(homeLayoutModule, /path:\s*'\/admin\/announcement'/);
   assert.doesNotMatch(homeLayoutModule, /path:\s*'\/admin\/settings'/);
   assert.doesNotMatch(homeLayoutModule, /path:\s*'\/admin\/site'/);
 
@@ -1904,8 +1912,8 @@ test("admin model vendor item is grouped under model management", () => {
     /groupBlock\('admin\.menu\.home\.modelManagement',\s*\[\s*itemBlock\(\{\s*path:\s*'\/admin\/model',\s*labelKey:\s*'admin\.menu\.models'/s,
   );
 
-  const agentsAndSkillsGroup = findAdminMenuGroupSource(adminRegistrySource, "admin.menu.home.agentSkills");
-  assert.doesNotMatch(agentsAndSkillsGroup, /path:\s*'\/admin\/model'/);
+  const modelManagementGroup = findAdminMenuGroupSource(adminRegistrySource, "admin.menu.home.modelManagement");
+  assert.match(modelManagementGroup, /path:\s*'\/admin\/model'/);
   assert.match(i18nSource, /"admin\.menu\.home\.modelManagement":\s*"Model Management"/);
   assert.match(i18nSource, /"admin\.menu\.home\.modelManagement":\s*"\u6a21\u578b\u7ba1\u7406"/);
   assert.match(i18nSource, /"admin\.layout\.links\.models":\s*"Model Vendors"/);
@@ -1921,19 +1929,15 @@ test("admin group and AI channels are grouped under AI channel management", () =
 
   assert.match(
     adminRegistrySource,
-    /groupBlock\('admin\.menu\.home\.modelManagement'[\s\S]*groupBlock\('admin\.menu\.home\.accountPoolManagement'[\s\S]*groupBlock\('admin\.menu\.home\.agentSkills'/,
+    /groupBlock\('admin\.menu\.home\.modelManagement'[\s\S]*groupBlock\('admin\.menu\.home\.accountPoolManagement'/,
   );
   assert.match(
     adminRegistrySource,
     /groupBlock\('admin\.menu\.home\.accountPoolManagement',\s*\[\s*itemBlock\(\{\s*path:\s*'\/admin\/group',\s*labelKey:\s*'admin\.menu\.groups'[\s\S]*itemBlock\(\{\s*path:\s*'\/admin\/channel',\s*labelKey:\s*'admin\.menu\.channels'/s,
   );
 
-  const userManagementGroup = findAdminMenuGroupSource(adminRegistrySource, "admin.menu.home.userManagement");
-  assert.doesNotMatch(userManagementGroup, /path:\s*'\/admin\/group'/);
-
-  const agentsAndSkillsGroup = findAdminMenuGroupSource(adminRegistrySource, "admin.menu.home.agentSkills");
-  assert.doesNotMatch(agentsAndSkillsGroup, /path:\s*'\/admin\/group'/);
-  assert.doesNotMatch(agentsAndSkillsGroup, /path:\s*'\/admin\/channel'/);
+  assert.doesNotMatch(adminRegistrySource, /groupBlock\('admin\.menu\.home\.userManagement'/);
+  assert.doesNotMatch(adminRegistrySource, /groupBlock\('admin\.menu\.home\.agentSkills'/);
   assert.match(i18nSource, /"admin\.menu\.home\.accountPoolManagement":\s*"AI Channel Management"/);
   assert.match(i18nSource, /"admin\.menu\.home\.accountPoolManagement":\s*"AI \u6e20\u9053\u7ba1\u7406"/);
 });
@@ -1979,562 +1983,52 @@ test("admin channel table keeps channel and provider content on one line", () =>
   assert.match(channelSource, /<span className="min-w-0 truncate">\{channel\.accessType\}<\/span>/);
 });
 
-test("admin OAuth module lives under operations", () => {
+test("admin module registry is relay-focused with home and operations only", () => {
   const adminRegistrySource = readAdminRegistrySource();
-  const i18nSource = readI18nResourceSource();
-  const operationsHeaderModule = findAdminModuleDefinitionSource(adminRegistrySource, "operations");
-  const homeHeaderModule = findAdminModuleDefinitionSource(adminRegistrySource, "home");
-  const operationsMenu = findAdminModuleMenuSource(adminRegistrySource, "operations");
-  const homeMenu = findAdminModuleMenuSource(adminRegistrySource, "home");
-  const retiredAdminProviderPath = "/admin/" + "open" + "-platform";
-
-  for (const moduleId of ["home", "productCenter", "transactionCenter", "memberCenter", "marketingCenter", "financeCenter", "storageCenter", "driveCenter", "operations", "serviceProviderCenter"]) {
-    assert.match(adminRegistrySource, new RegExp(`\\| '${moduleId}'`), `${moduleId} must be part of AdminModuleId`);
-  }
-  assert.doesNotMatch(adminRegistrySource, /id:\s*'oauth'/);
-  assert.doesNotMatch(adminRegistrySource, /id:\s*'appCenter'/);
-  assert.match(
-    operationsHeaderModule,
-    /id:\s*'operations',\s*nameKey:\s*'admin\.header\.operations'[\s\S]*pathPrefixes:\s*\[[^\]]*'\/admin\/oauth'[^\]]*\]/,
-  );
-  assert.doesNotMatch(homeHeaderModule, /'\/admin\/app'/);
-  assert.doesNotMatch(homeHeaderModule, new RegExp(retiredAdminProviderPath.replaceAll("/", "\\/")));
-
-  assert.match(operationsMenu, /moduleId:\s*'operations'/);
-  assert.match(operationsMenu, /groupBlock\('admin\.menu\.ops\.oauth'/);
-  assert.match(operationsMenu, /path:\s*'\/admin\/oauth\/login-platforms',\s*labelKey:\s*'admin\.menu\.oauth\.loginPlatforms'/);
-  assert.match(operationsMenu, /path:\s*'\/admin\/oauth\/official-accounts',\s*labelKey:\s*'admin\.menu\.oauth\.officialAccounts'/);
-  assert.match(operationsMenu, /path:\s*'\/admin\/oauth\/mini-programs',\s*labelKey:\s*'admin\.menu\.oauth\.miniPrograms'/);
-  assert.doesNotMatch(homeMenu, /path:\s*'\/admin\/app'/);
-  assert.doesNotMatch(homeMenu, /\/admin\/oauth/);
-  assert.match(i18nSource, /"admin\.menu\.oauth\.loginPlatforms":\s*"OAuth Login Platform Accounts"/);
-  assert.match(i18nSource, /"admin\.menu\.oauth\.officialAccounts":\s*"Official Accounts"/);
-  assert.match(i18nSource, /"admin\.menu\.oauth\.miniPrograms":\s*"Mini Programs"/);
-});
-
-test("admin commerce module is split into product transaction member marketing and finance centers", () => {
-  const adminRegistrySource = readAdminRegistrySource();
-  const i18nSource = readI18nResourceSource();
-  const transactionHeaderModule = findAdminModuleDefinitionSource(adminRegistrySource, "transactionCenter");
-
-  assert.doesNotMatch(adminRegistrySource, /id:\s*'commerce'/);
-  assert.doesNotMatch(adminRegistrySource, /moduleId:\s*'commerce'/);
-  assert.match(
-    adminRegistrySource,
-    /id:\s*'productCenter',\s*nameKey:\s*'admin\.header\.productCenter'[\s\S]*defaultPath:\s*'\/admin\/catalog\/products'[\s\S]*pathPrefixes:\s*\[[^\]]*'\/admin\/catalog'[^\]]*'\/admin\/inventory'[^\]]*\]/,
-  );
-  assert.match(
-    adminRegistrySource,
-    /id:\s*'transactionCenter',\s*nameKey:\s*'admin\.header\.transactionCenter'[\s\S]*defaultPath:\s*'\/admin\/orders\/orders'[\s\S]*pathPrefixes:\s*\[[^\]]*'\/admin\/orders'[^\]]*'\/admin\/payments'[^\]]*\]/,
-  );
-  assert.doesNotMatch(transactionHeaderModule, /'\/admin\/memberships'/);
-  assert.match(
-    adminRegistrySource,
-    /id:\s*'memberCenter',\s*nameKey:\s*'admin\.header\.memberCenter'[\s\S]*defaultPath:\s*'\/admin\/memberships\/packages'[\s\S]*pathPrefixes:\s*\[[^\]]*'\/admin\/memberships'[^\]]*\]/,
-  );
-  assert.match(
-    adminRegistrySource,
-    /id:\s*'marketingCenter',\s*nameKey:\s*'admin\.header\.marketingCenter'[\s\S]*defaultPath:\s*'\/admin\/marketing\/offers'[\s\S]*pathPrefixes:\s*\[[^\]]*'\/admin\/marketing'[^\]]*\]/,
-  );
-  assert.match(
-    adminRegistrySource,
-    /id:\s*'financeCenter',\s*nameKey:\s*'admin\.header\.financeCenter'[\s\S]*defaultPath:\s*'\/admin\/finance\/order-revenue'[\s\S]*pathPrefixes:\s*\[[^\]]*'\/admin\/finance'[^\]]*'\/admin\/wallet'[^\]]*\]/,
-  );
-
-  for (const key of [
-    "admin.header.productCenter",
-    "admin.header.transactionCenter",
-    "admin.header.memberCenter",
-    "admin.header.marketingCenter",
-    "admin.header.financeCenter",
-  ]) {
-    assert.match(i18nSource, new RegExp(`"${key.replaceAll(".", "\\.")}"`), `${key} must be present in i18n resources`);
-  }
-
-  assert.match(i18nSource, /"admin\.header\.productCenter":\s*"Product Center"/);
-  assert.match(i18nSource, /"admin\.header\.transactionCenter":\s*"Transaction Center"/);
-  assert.match(i18nSource, /"admin\.header\.memberCenter":\s*"Member Center"/);
-  assert.match(i18nSource, /"admin\.header\.memberCenter":\s*"\u4f1a\u5458\u4e2d\u5fc3"/);
-  assert.match(i18nSource, /"admin\.header\.marketingCenter":\s*"Marketing Center"/);
-  assert.match(i18nSource, /"admin\.header\.financeCenter":\s*"Finance Center"/);
-  assert.match(i18nSource, /"admin\.header\.productCenter":\s*"\u5546\u54c1\u4e2d\u5fc3"/);
-  assert.match(i18nSource, /"admin\.header\.transactionCenter":\s*"\u4ea4\u6613\u4e2d\u5fc3"/);
-  assert.match(i18nSource, /"admin\.header\.marketingCenter":\s*"\u8425\u9500\u4e2d\u5fc3"/);
-  assert.match(i18nSource, /"admin\.header\.financeCenter":\s*"\u8d22\u52a1\u4e2d\u5fc3"/);
-});
-
-test("admin commerce second-level sections are promoted into the left sidebar", () => {
-  const adminRegistrySource = readAdminRegistrySource();
-  const i18nSource = readI18nResourceSource();
-
-  const productCenterModule = findAdminModuleMenuSource(adminRegistrySource, "productCenter");
-  assert.match(productCenterModule, /groupBlock\('admin\.menu\.productCenter\.catalog'/);
-  assert.match(productCenterModule, /path:\s*'\/admin\/catalog\/products',\s*labelKey:\s*'admin\.menu\.catalogProducts'/);
-  assert.match(productCenterModule, /path:\s*'\/admin\/catalog\/skus',\s*labelKey:\s*'admin\.menu\.catalogSkus'/);
-  assert.match(productCenterModule, /groupBlock\('admin\.menu\.productCenter\.inventory'/);
-  assert.match(productCenterModule, /path:\s*'\/admin\/inventory\/stocks',\s*labelKey:\s*'admin\.menu\.inventoryStocks'/);
-  assert.match(productCenterModule, /path:\s*'\/admin\/inventory\/reservations',\s*labelKey:\s*'admin\.menu\.inventoryReservations'/);
-  assert.match(productCenterModule, /path:\s*'\/admin\/inventory\/ledger',\s*labelKey:\s*'admin\.menu\.inventoryLedger'/);
-
-  const transactionCenterModule = findAdminModuleMenuSource(adminRegistrySource, "transactionCenter");
-  assert.match(transactionCenterModule, /path:\s*'\/admin\/orders\/orders',\s*labelKey:\s*'admin\.menu\.orderList'/);
-  assert.match(transactionCenterModule, /path:\s*'\/admin\/orders\/refunds',\s*labelKey:\s*'admin\.menu\.orderRefunds'/);
-  assert.match(transactionCenterModule, /path:\s*'\/admin\/payments\/provider-accounts',\s*labelKey:\s*'admin\.menu\.paymentProviderAccounts'/);
-  assert.doesNotMatch(transactionCenterModule, /path:\s*'\/admin\/memberships\//);
-
-  const memberCenterModule = findAdminModuleMenuSource(adminRegistrySource, "memberCenter");
-  assert.match(memberCenterModule, /groupBlock\('admin\.menu\.memberCenter\.memberships'/);
-  assert.match(memberCenterModule, /path:\s*'\/admin\/memberships\/packages',\s*labelKey:\s*'admin\.menu\.membershipPackages'/);
-  assert.match(memberCenterModule, /path:\s*'\/admin\/memberships\/plans',\s*labelKey:\s*'admin\.menu\.membershipPlans'/);
-  assert.match(memberCenterModule, /path:\s*'\/admin\/memberships\/members',\s*labelKey:\s*'admin\.menu\.membershipMembers'/);
-  assert.match(memberCenterModule, /path:\s*'\/admin\/memberships\/entitlements',\s*labelKey:\s*'admin\.menu\.membershipEntitlements'/);
-  assert.match(memberCenterModule, /path:\s*'\/admin\/memberships\/recharge-packages',\s*labelKey:\s*'admin\.menu\.membershipRechargePackages'/);
-  assert.match(
-    memberCenterModule,
-    /path:\s*'\/admin\/memberships\/packages'[\s\S]*path:\s*'\/admin\/memberships\/plans'[\s\S]*path:\s*'\/admin\/memberships\/members'/,
-  );
-
-  const marketingCenterModule = findAdminModuleMenuSource(adminRegistrySource, "marketingCenter");
-  assert.match(marketingCenterModule, /groupBlock\('admin\.menu\.marketingCenter\.offers'/);
-  assert.match(marketingCenterModule, /groupBlock\('admin\.menu\.marketingCenter\.lifecycle'/);
-  assert.match(marketingCenterModule, /groupBlock\('admin\.menu\.marketingCenter\.ledger'/);
-  assert.match(marketingCenterModule, /path:\s*'\/admin\/marketing\/offers',\s*labelKey:\s*'admin\.menu\.marketingPromotionOffers'/);
-  assert.match(marketingCenterModule, /path:\s*'\/admin\/marketing\/promotion-coupon-stocks',\s*labelKey:\s*'admin\.menu\.marketingPromotionCouponStocks'/);
-  assert.match(marketingCenterModule, /path:\s*'\/admin\/marketing\/promotion-codes',\s*labelKey:\s*'admin\.menu\.marketingPromotionCodes'/);
-  assert.match(marketingCenterModule, /path:\s*'\/admin\/marketing\/promotion-code-redemptions',\s*labelKey:\s*'admin\.menu\.marketingPromotionCodeRedemptions'/);
-  assert.match(marketingCenterModule, /path:\s*'\/admin\/marketing\/user-coupons',\s*labelKey:\s*'admin\.menu\.marketingUserCoupons'/);
-  assert.match(marketingCenterModule, /path:\s*'\/admin\/marketing\/discount-applications',\s*labelKey:\s*'admin\.menu\.marketingDiscountApplications'/);
-  assert.match(marketingCenterModule, /path:\s*'\/admin\/marketing\/discount-allocations',\s*labelKey:\s*'admin\.menu\.marketingDiscountAllocations'/);
-  assert.match(marketingCenterModule, /path:\s*'\/admin\/marketing\/promotion-coupon-ledger',\s*labelKey:\s*'admin\.menu\.marketingPromotionCouponLedger'/);
-  assert.match(marketingCenterModule, /path:\s*'\/admin\/marketing\/budget-ledger',\s*labelKey:\s*'admin\.menu\.marketingBudgetLedger'/);
-  assert.match(marketingCenterModule, /path:\s*'\/admin\/marketing\/external-bindings',\s*labelKey:\s*'admin\.menu\.marketingExternalBindings'/);
-  assert.match(marketingCenterModule, /path:\s*'\/admin\/marketing\/events',\s*labelKey:\s*'admin\.menu\.marketingEvents'/);
-  assert.match(marketingCenterModule, /path:\s*'\/admin\/marketing\/referrals',\s*labelKey:\s*'admin\.menu\.marketingReferrals'/);
-  assert.doesNotMatch(marketingCenterModule, /coupon-templates|coupon-campaigns|coupon-redemptions|financeCoupon/);
-
-  const financeCenterModule = findAdminModuleMenuSource(adminRegistrySource, "financeCenter");
-  assert.match(financeCenterModule, /path:\s*'\/admin\/wallet\/wallet-accounts',\s*labelKey:\s*'admin\.menu\.walletAccounts'/);
-  assert.match(financeCenterModule, /path:\s*'\/admin\/wallet\/wallet-ledger',\s*labelKey:\s*'admin\.menu\.walletLedger'/);
-  assert.match(financeCenterModule, /path:\s*'\/admin\/finance\/order-revenue',\s*labelKey:\s*'admin\.menu\.financeOrderRevenue'/);
-  assert.match(financeCenterModule, /path:\s*'\/admin\/finance\/invoices',\s*labelKey:\s*'admin\.menu\.financeInvoices'/);
-  assert.doesNotMatch(financeCenterModule, /financeCouponTemplates/);
-  assert.doesNotMatch(financeCenterModule, /financeCenter\.coupons/);
-
-  for (const key of [
-    "admin.menu.productCenter.catalog",
-    "admin.menu.productCenter.inventory",
-    "admin.menu.transactionCenter.orders",
-    "admin.menu.transactionCenter.payments",
-    "admin.menu.memberCenter.memberships",
-    "admin.menu.marketingCenter.growth",
-    "admin.menu.marketingCenter.offers",
-    "admin.menu.marketingCenter.lifecycle",
-    "admin.menu.marketingCenter.ledger",
-    "admin.menu.marketingPromotionOffers",
-    "admin.menu.marketingPromotionCouponStocks",
-    "admin.menu.marketingPromotionCodes",
-    "admin.menu.marketingPromotionCodeRedemptions",
-    "admin.menu.marketingUserCoupons",
-    "admin.menu.marketingDiscountApplications",
-    "admin.menu.marketingDiscountAllocations",
-    "admin.menu.marketingPromotionCouponLedger",
-    "admin.menu.marketingBudgetLedger",
-    "admin.menu.marketingExternalBindings",
-    "admin.menu.marketingEvents",
-    "admin.menu.financeCenter.wallet",
-    "admin.menu.financeCenter.reports",
-    "admin.menu.inventoryStocks",
-    "admin.menu.inventoryReservations",
-    "admin.menu.inventoryLedger",
-    "admin.menu.paymentProviderAccounts",
-    "admin.menu.membershipPackages",
-    "admin.menu.membershipPlans",
-    "admin.menu.membershipMembers",
-    "admin.menu.marketingReferrals",
-    "admin.menu.financeOrderRevenue",
-  ]) {
-    assert.match(i18nSource, new RegExp(`"${key.replaceAll(".", "\\.")}"`), `${key} must be present in i18n resources`);
-  }
-});
-
-test("admin commerce section routes mount section-specific pages", () => {
-  const appSource = readPortalFile("./src/App.tsx");
-
-  assert.match(appSource, /<Route path="catalog" element=\{<Navigate to="\/admin\/catalog\/products" replace \/>} \/>/);
-  assert.match(appSource, /<Route path="catalog\/products" element=\{<CatalogAdmin sectionId="products" \/>} \/>/);
-  assert.match(appSource, /<Route path="inventory" element=\{<Navigate to="\/admin\/inventory\/stocks" replace \/>} \/>/);
-  assert.match(appSource, /<Route path="inventory\/stocks" element=\{<InventoryAdmin sectionId="stocks" \/>} \/>/);
-  assert.match(appSource, /<Route path="inventory\/reservations" element=\{<InventoryAdmin sectionId="reservations" \/>} \/>/);
-  assert.match(appSource, /<Route path="orders\/refunds" element=\{<OrdersAdmin sectionId="refunds" \/>} \/>/);
-  assert.match(appSource, /<Route path="payments\/provider-accounts" element=\{<PaymentsAdmin sectionId="providerAccounts" \/>} \/>/);
-  assert.match(appSource, /<Route path="memberships\/packages" element=\{<MembershipsAdmin sectionId="packages" \/>} \/>/);
-  assert.match(appSource, /<Route path="memberships\/plans" element=\{<MembershipsAdmin sectionId="plans" \/>} \/>/);
-  assert.match(appSource, /<Route path="memberships\/members" element=\{<MembershipsAdmin sectionId="members" \/>} \/>/);
-  assert.match(appSource, /<Route path="memberships\/recharge-packages" element=\{<MembershipsAdmin sectionId="rechargePackages" \/>} \/>/);
-  assert.match(appSource, /<Route path="wallet\/wallet-ledger" element=\{<WalletAdmin sectionId="walletLedger" \/>} \/>/);
-  assert.match(appSource, /<Route path="finance\/order-revenue" element=\{<FinanceAdmin sectionId="orderRevenueReport" \/>} \/>/);
-  assert.match(appSource, /<Route path="marketing\/offers" element=\{<MarketingAdmin sectionId="promotionOffers" \/>} \/>/);
-  assert.match(appSource, /<Route path="marketing\/promotion-coupon-stocks" element=\{<MarketingAdmin sectionId="promotionCouponStocks" \/>} \/>/);
-  assert.match(appSource, /<Route path="marketing\/promotion-codes" element=\{<MarketingAdmin sectionId="promotionCodes" \/>} \/>/);
-  assert.match(appSource, /<Route path="marketing\/promotion-code-redemptions" element=\{<MarketingAdmin sectionId="promotionCodeRedemptions" \/>} \/>/);
-  assert.match(appSource, /<Route path="marketing\/user-coupons" element=\{<MarketingAdmin sectionId="userCoupons" \/>} \/>/);
-  assert.match(appSource, /<Route path="marketing\/discount-applications" element=\{<MarketingAdmin sectionId="discountApplications" \/>} \/>/);
-  assert.match(appSource, /<Route path="marketing\/discount-allocations" element=\{<MarketingAdmin sectionId="discountAllocations" \/>} \/>/);
-  assert.match(appSource, /<Route path="marketing\/promotion-coupon-ledger" element=\{<MarketingAdmin sectionId="promotionCouponLedger" \/>} \/>/);
-  assert.match(appSource, /<Route path="marketing\/budget-ledger" element=\{<MarketingAdmin sectionId="budgetLedger" \/>} \/>/);
-  assert.match(appSource, /<Route path="marketing\/external-bindings" element=\{<MarketingAdmin sectionId="externalBindings" \/>} \/>/);
-  assert.match(appSource, /<Route path="marketing\/events" element=\{<MarketingAdmin sectionId="promotionEvents" \/>} \/>/);
-  assert.match(appSource, /<Route path="marketing\/referrals" element=\{<MarketingAdmin sectionId="referrals" \/>} \/>/);
-  assert.doesNotMatch(appSource, /marketing\/coupon-templates|marketing\/coupon-campaigns|marketing\/coupon-redemptions|finance\/coupon-/);
-});
-
-test("admin finance no longer owns legacy coupon marketing surface", () => {
-  const financeSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-finance/src/index.tsx");
-  const i18nSource = readI18nResourceSource();
-
-  assert.doesNotMatch(financeSource, /surface\?: 'finance' \| 'marketing'/);
-  assert.doesNotMatch(financeSource, /DEFAULT_MARKETING_COUPON_SECTION_ID/);
-  assert.doesNotMatch(financeSource, /couponTemplates|couponCampaigns|couponCodes|couponRedemptions/);
-  assert.doesNotMatch(financeSource, /admin\.commerce\.marketing\.coupons/);
-  assert.doesNotMatch(financeSource, /description=\{t\('admin\.commerce\.finance\.desc', 'Invoices, coupons/);
-
-  for (const key of [
-    "admin.commerce.marketing.coupons.title",
-    "admin.commerce.marketing.coupons.desc",
-    "admin.commerce.marketing.coupons.empty",
-    "admin.commerce.marketing.coupons.error",
-    "admin.commerce.marketing.coupons.loading",
-    "admin.commerce.finance.couponTemplates.title",
-    "admin.commerce.finance.couponCampaigns.title",
-    "admin.commerce.finance.couponCodes.title",
-    "admin.commerce.finance.couponRedemptions.title",
-    "admin.menu.financeCouponTemplates",
-    "admin.menu.financeCouponCampaigns",
-    "admin.menu.financeCouponCodes",
-    "admin.menu.financeCouponRedemptions",
-  ]) {
-    assert.doesNotMatch(i18nSource, new RegExp(`"${key.replaceAll(".", "\\.")}"`), `${key} must be removed from i18n resources`);
-  }
-});
-
-test("admin service provider center is an independent package backed by backend SDK", () => {
   const packageJson = JSON.parse(readPortalFile("./package.json")) as { dependencies: Record<string, string> };
-  const tsconfigSource = readPortalFile("./tsconfig.typecheck.json");
-  const adminRegistrySource = readAdminRegistrySource();
   const appSource = readPortalFile("./src/App.tsx");
-  const i18nSource = readI18nResourceSource();
-  const serviceProviderPackageJson = JSON.parse(readPortalFile("./packages/sdkwork-clawrouter-pc-admin-service-provider/package.json")) as { name: string; dependencies: Record<string, string> };
-  const serviceProviderSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-service-provider/src/index.tsx");
-  const serviceProviderServiceSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts");
-  const serviceProviderHeaderModule = findAdminModuleDefinitionSource(adminRegistrySource, "serviceProviderCenter");
-  const serviceProviderMenu = findAdminModuleMenuSource(adminRegistrySource, "serviceProviderCenter");
-
-  assert.equal(packageJson.dependencies["@sdkwork/clawrouter-pc-admin-service-provider"], "workspace:*");
-  assert.equal(serviceProviderPackageJson.name, "@sdkwork/clawrouter-pc-admin-service-provider");
-  assert.equal(serviceProviderPackageJson.dependencies["@sdkwork/clawrouter-backend-sdk"], undefined);
-  assert.equal(serviceProviderPackageJson.dependencies["@sdkwork/clawroutes-pc-commons"], "workspace:*");
-  assert.match(tsconfigSource, /"@sdkwork\/clawrouter-pc-admin-service-provider":\s*\[\s*"\.\/packages\/sdkwork-clawrouter-pc-admin-service-provider\/src\/index\.tsx"\s*\]/);
-
-  assert.match(
-    serviceProviderHeaderModule,
-    /id:\s*'serviceProviderCenter',\s*nameKey:\s*'admin\.header\.serviceProviderCenter'[\s\S]*defaultPath:\s*'\/admin\/service-providers\/dashboard'[\s\S]*pathPrefixes:\s*\[[^\]]*'\/admin\/service-providers'[^\]]*\]/,
-  );
-  assert.deepEqual(findOrderedMatches(adminRegistrySource, /id:\s*'([^']+)'/g).slice(-1), ["serviceProviderCenter"]);
-  assert.deepEqual(findOrderedMatches(adminRegistrySource, /moduleId:\s*'([^']+)'/g).slice(-1), ["serviceProviderCenter"]);
-  for (const groupKey of [
-    "admin.menu.serviceProviderCenter.operations",
-    "admin.menu.serviceProviderCenter.governance",
-    "admin.menu.serviceProviderCenter.finance",
-    "admin.menu.serviceProviderCenter.control",
-  ]) {
-    assert.match(serviceProviderMenu, new RegExp(`groupBlock\\('${groupKey.replaceAll(".", "\\.")}'`));
-  }
-  for (const [path, labelKey] of [
-    ["/admin/service-providers/dashboard", "admin.menu.serviceProvider.dashboard"],
-    ["/admin/service-providers/providers", "admin.menu.serviceProvider.providers"],
-    ["/admin/service-providers/relations", "admin.menu.serviceProvider.relations"],
-    ["/admin/service-providers/downstreams", "admin.menu.serviceProvider.downstreams"],
-    ["/admin/service-providers/members", "admin.menu.serviceProvider.members"],
-    ["/admin/service-providers/bindings", "admin.menu.serviceProvider.bindings"],
-    ["/admin/service-providers/contracts", "admin.menu.serviceProvider.contracts"],
-    ["/admin/service-providers/pricing", "admin.menu.serviceProvider.pricing"],
-    ["/admin/service-providers/usage", "admin.menu.serviceProvider.usage"],
-    ["/admin/service-providers/wallet", "admin.menu.serviceProvider.wallet"],
-    ["/admin/service-providers/statements", "admin.menu.serviceProvider.statements"],
-    ["/admin/service-providers/reconciliation", "admin.menu.serviceProvider.reconciliation"],
-    ["/admin/service-providers/adjustments", "admin.menu.serviceProvider.adjustments"],
-    ["/admin/service-providers/risk", "admin.menu.serviceProvider.risk"],
-    ["/admin/service-providers/audit", "admin.menu.serviceProvider.audit"],
-  ]) {
-    assert.match(
-      serviceProviderMenu,
-      new RegExp(`path:\\s*'${path.replaceAll("/", "\\/")}',\\s*labelKey:\\s*'${labelKey.replaceAll(".", "\\.")}'`),
-    );
-  }
-
-  assert.match(appSource, /const ServiceProviderAdmin = lazyRoute<AdminSectionRouteProps>\(\(\) => import\('@sdkwork\/clawrouter-pc-admin-service-provider'\), 'ServiceProviderAdmin'\);/);
-  assert.match(appSource, /<Route path="service-providers" element=\{<Navigate to="\/admin\/service-providers\/dashboard" replace \/>} \/>/);
-  for (const sectionId of [
-    "dashboard",
-    "providers",
-    "relations",
-    "downstreams",
-    "members",
-    "bindings",
-    "contracts",
-    "pricing",
-    "usage",
-    "wallet",
-    "statements",
-    "reconciliation",
-    "adjustments",
-    "risk",
-    "audit",
-  ]) {
-    assert.match(
-      appSource,
-      new RegExp(`<Route path="service-providers\\/${sectionId}" element=\\{<ServiceProviderAdmin sectionId="${sectionId}" \\/>\\} \\/>`),
-    );
-  }
-
-  assert.match(i18nSource, /"admin\.header\.serviceProviderCenter":\s*"Service Provider Center"/);
-  assert.match(i18nSource, /"admin\.menu\.serviceProviderCenter\.operations":\s*"Operations"/);
-  assert.match(i18nSource, /"admin\.menu\.serviceProviderCenter\.governance":\s*"Governance"/);
-  assert.match(i18nSource, /"admin\.menu\.serviceProviderCenter\.finance":\s*"Finance"/);
-  assert.match(i18nSource, /"admin\.menu\.serviceProviderCenter\.control":\s*"Control"/);
-  assert.match(i18nSource, /"admin\.menu\.serviceProvider\.dashboard":\s*"Operating Dashboard"/);
-  assert.match(i18nSource, /"admin\.menu\.serviceProvider\.providers":\s*"Provider Registry"/);
-
-  assert.match(serviceProviderSource, /export function ServiceProviderAdmin/);
-  assert.match(serviceProviderSource, /const DEFAULT_SECTION_ID: ServiceProviderAdminSectionId = 'dashboard'/);
-  assert.match(serviceProviderSource, /<AdminResourceCenter<ServiceProviderAdminSectionId, ServiceProviderAdminGroup>/);
-  for (const serviceCall of [
-    /getClawRouterBackendSdkClient\(\)\.serviceProviders\.dashboard\.retrieve\(params\)/,
-    /getClawRouterBackendSdkClient\(\)\.serviceProviders\.providerRegistry\.list\(params\)/,
-    /getClawRouterBackendSdkClient\(\)\.serviceProviders\.relations\.list\(params\)/,
-    /getClawRouterBackendSdkClient\(\)\.serviceProviders\.downstreams\.list\(params\)/,
-    /getClawRouterBackendSdkClient\(\)\.serviceProviders\.downstreams\.create\(input,/,
-    /getClawRouterBackendSdkClient\(\)\.serviceProviders\.members\.list\(params\)/,
-    /getClawRouterBackendSdkClient\(\)\.serviceProviders\.bindings\.list\(params\)/,
-    /getClawRouterBackendSdkClient\(\)\.serviceProviders\.contracts\.list\(params\)/,
-    /getClawRouterBackendSdkClient\(\)\.serviceProviders\.pricingRules\.list\(params\)/,
-    /getClawRouterBackendSdkClient\(\)\.serviceProviders\.pricingRules\.create\(input,/,
-    /getClawRouterBackendSdkClient\(\)\.serviceProviders\.pricingRules\.update\(ruleId, input,/,
-    /getClawRouterBackendSdkClient\(\)\.serviceProviders\.priceSimulation\.create\(input,/,
-    /getClawRouterBackendSdkClient\(\)\.serviceProviders\.usage\.list\(params\)/,
-    /getClawRouterBackendSdkClient\(\)\.serviceProviders\.providerWalletAccounts\.list\(params\)/,
-    /getClawRouterBackendSdkClient\(\)\.serviceProviders\.statements\.list\(params\)/,
-    /getClawRouterBackendSdkClient\(\)\.serviceProviders\.reconciliationRuns\.list\(params\)/,
-    /getClawRouterBackendSdkClient\(\)\.serviceProviders\.adjustments\.list\(params\)/,
-    /getClawRouterBackendSdkClient\(\)\.serviceProviders\.riskEvents\.list\(params\)/,
-    /getClawRouterBackendSdkClient\(\)\.serviceProviders\.auditEvents\.list\(params\)/,
-  ]) {
-    assert.match(serviceProviderServiceSource, serviceCall);
-  }
-  assert.doesNotMatch(serviceProviderServiceSource, /ServiceProviderAccountService/);
-  const retiredBackendProviderResource = "getClawRouterBackendSdkClient()." + "open" + "Platform";
-  assert.doesNotMatch(serviceProviderServiceSource, new RegExp(retiredBackendProviderResource.replaceAll(".", "\\.")));
-  assert.doesNotMatch(serviceProviderServiceSource, /\bfetch\s*\(/);
-  assert.doesNotMatch(serviceProviderServiceSource, /\baxios\b/);
-  assert.doesNotMatch(serviceProviderServiceSource, /\/backend\/v3\/api/);
-});
-
-test("admin OAuth owns official account and mini program resource-account sections through appbase backend SDK", () => {
-  const packageJson = JSON.parse(readPortalFile("./package.json")) as { dependencies: Record<string, string> };
-  const tsconfigSource = readPortalFile("./tsconfig.typecheck.json");
-  const adminRegistrySource = readAdminRegistrySource();
-  const adminLayoutSource = readAdminLayoutSource();
-  const appSource = readPortalFile("./src/App.tsx");
-  const i18nSource = readI18nResourceSource();
-  const oauthPackageJson = JSON.parse(readPortalFile("./packages/sdkwork-clawrouter-pc-admin-oauth/package.json")) as { name: string; dependencies: Record<string, string> };
-  const oauthSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-oauth/src/index.tsx");
-  const oauthServiceSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-oauth/src/oauthAdminService.ts");
-  const legacyAdminProviderPackage = "sdkwork-clawrouter-pc-admin-" + "open" + "-platform";
-  const legacyOfficialPackage = "sdkwork-clawrouter-pc-admin-wechat-official-account";
-  const legacyMiniProgramPackage = "sdkwork-clawrouter-pc-admin-wechat-mini-program";
-  const retiredBackendSdkResource = "getClawRouterBackendSdkClient()." + "open" + "Platform";
-
-  assert.equal(packageJson.dependencies["@sdkwork/clawrouter-pc-admin-oauth"], "workspace:*");
-  assert.equal(packageJson.dependencies[legacyAdminProviderPackage], undefined);
-  assert.equal(packageJson.dependencies[legacyOfficialPackage], undefined);
-  assert.equal(packageJson.dependencies[legacyMiniProgramPackage], undefined);
-  assert.equal(oauthPackageJson.name, "@sdkwork/clawrouter-pc-admin-oauth");
-  assert.equal(oauthPackageJson.dependencies["@sdkwork/clawrouter-backend-sdk"], undefined);
-  assert.equal(oauthPackageJson.dependencies["@sdkwork/clawroutes-pc-commons"], "workspace:*");
-  assert.match(tsconfigSource, /"@sdkwork\/clawrouter-pc-admin-oauth":\s*\[\s*"\.\/packages\/sdkwork-clawrouter-pc-admin-oauth\/src\/index\.tsx"\s*\]/);
-
-  const operationsHeaderModule = findAdminModuleDefinitionSource(adminRegistrySource, "operations");
-  assert.match(operationsHeaderModule, /'\/admin\/oauth'/);
   const operationsMenu = findAdminModuleMenuSource(adminRegistrySource, "operations");
-  assert.match(operationsMenu, /groupBlock\('admin\.menu\.ops\.oauth'/);
-  assert.match(operationsMenu, /path:\s*'\/admin\/oauth\/login-platforms',\s*labelKey:\s*'admin\.menu\.oauth\.loginPlatforms'/);
-  assert.match(operationsMenu, /path:\s*'\/admin\/oauth\/official-accounts',\s*labelKey:\s*'admin\.menu\.oauth\.officialAccounts'/);
-  assert.match(operationsMenu, /path:\s*'\/admin\/oauth\/mini-programs',\s*labelKey:\s*'admin\.menu\.oauth\.miniPrograms'/);
-  assert.match(adminLayoutSource, /from '\.\/adminSidebarActive'/);
-  assert.match(adminLayoutSource, /hasActiveSidebarGroupItem\(location\.pathname, group\)/);
-  assert.match(adminLayoutSource, /isSidebarItemActive\(location\.pathname, item, group\.items\)/);
-  assert.match(adminLayoutSource, /isSidebarItemActive\(location\.pathname, item, siblingItems\)/);
-  assert.match(adminLayoutSource, /aria-current=\{isActive \? 'page' : undefined\}/);
-  assert.doesNotMatch(adminLayoutSource, /end=\{isSidebarItemExact\(item\)\}/);
 
-  assert.match(appSource, /const OAuthAdmin = lazyRoute\(\(\) => import\('@sdkwork\/clawrouter-pc-admin-oauth'\), 'OAuthAdmin'\);/);
-  assert.match(appSource, /<Route path="oauth" element=\{<Navigate to="\/admin\/oauth\/login-platforms" replace \/>} \/>/);
-  assert.match(appSource, /<Route path="oauth\/login-platforms" element=\{<OAuthAdmin sectionId="oauthLoginPlatforms" \/>} \/>/);
-  assert.match(appSource, /<Route path="oauth\/official-accounts" element=\{<OAuthAdmin sectionId="officialAccounts" \/>} \/>/);
-  assert.match(appSource, /<Route path="oauth\/mini-programs" element=\{<OAuthAdmin sectionId="miniPrograms" \/>} \/>/);
+  assert.deepEqual(findOrderedMatches(adminRegistrySource, /id:\s*'([^']+)'/g), ["home", "operations"]);
+  assert.deepEqual(findOrderedMatches(adminRegistrySource, /moduleId:\s*'([^']+)'/g), ["home", "operations"]);
+  assert.doesNotMatch(adminRegistrySource, /productCenter|transactionCenter|memberCenter|marketingCenter|financeCenter|serviceProviderCenter|messagingCenter|storageCenter|driveCenter|appCenter/);
+  assert.doesNotMatch(operationsMenu, /\/admin\/oauth/);
+  assert.doesNotMatch(adminRegistrySource, /path:\s*'\/admin\/(catalog|orders|payments|memberships|marketing|finance|wallet|oauth|service-providers|agents|skill|prompts|mcp|announcement|user|organization)'/);
 
-  for (const key of [
-    "admin.menu.oauth.loginPlatforms",
-    "admin.menu.oauth.officialAccounts",
-    "admin.menu.oauth.miniPrograms",
-    "admin.oauth.sections.oauthLoginPlatforms",
-    "admin.oauth.sections.officialAccounts",
-    "admin.oauth.sections.miniPrograms",
+  for (const pkg of [
+    "@sdkwork/clawrouter-pc-admin-catalog",
+    "@sdkwork/clawrouter-pc-admin-orders",
+    "@sdkwork/clawrouter-pc-admin-payments",
+    "@sdkwork/clawrouter-pc-admin-memberships",
+    "@sdkwork/clawrouter-pc-admin-marketing",
+    "@sdkwork/clawrouter-pc-admin-finance",
+    "@sdkwork/clawrouter-pc-admin-wallet",
+    "@sdkwork/clawrouter-pc-admin-messaging",
+    "@sdkwork/clawrouter-pc-admin-agents",
+    "@sdkwork/clawrouter-pc-admin-skill",
+    "@sdkwork/clawrouter-pc-admin-prompts",
+    "@sdkwork/clawrouter-pc-admin-mcp",
+    "@sdkwork/clawrouter-pc-admin-announcement",
+    "@sdkwork/clawrouter-pc-admin-user",
+    "@sdkwork/clawrouter-pc-admin-organization",
+    "@sdkwork/clawrouter-pc-admin-oauth",
+    "@sdkwork/clawrouter-pc-admin-service-provider",
   ]) {
-    assert.match(i18nSource, new RegExp(`"${key.replaceAll(".", "\\.")}"`), `${key} must be present in i18n resources`);
-  }
-  assert.match(i18nSource, /"admin\.menu\.oauth\.officialAccounts":\s*"Official Accounts"/);
-  assert.match(i18nSource, /"admin\.menu\.oauth\.miniPrograms":\s*"Mini Programs"/);
-
-  assert.match(oauthSource, /export function OAuthAdmin/);
-  assert.match(oauthSource, /sectionId\?: string/);
-  assert.match(oauthSource, /const DEFAULT_SECTION_ID: OAuthAdminSectionId = 'oauthLoginPlatforms'/);
-  assert.match(oauthSource, /route:\s*'\/admin\/oauth\/official-accounts'/);
-  assert.match(oauthSource, /route:\s*'\/admin\/oauth\/mini-programs'/);
-  assert.match(oauthSource, /resourceAccountKind: 'official_account'/);
-  assert.match(oauthSource, /resourceAccountKind: 'mini_program'/);
-  assert.match(oauthSource, /AdminResourceCenter/);
-  assert.match(oauthSource, /activeSectionId=\{activeSection\.id\}/);
-  assert.match(oauthSource, /showSectionNavigation=\{false\}/);
-
-  for (const sdkMarker of [
-    "getSdkworkAppbaseBackendSdkClient",
-    "iam.oauth.resourceAccounts",
-  ]) {
-    assert.ok(oauthServiceSource.includes(sdkMarker), `OAuth service must use appbase backend SDK marker: ${sdkMarker}`);
-  }
-  assert.doesNotMatch(oauthServiceSource, new RegExp(retiredBackendSdkResource.replaceAll(".", "\\.")));
-  assert.doesNotMatch(oauthServiceSource, /\bfetch\s*\(/);
-  assert.doesNotMatch(oauthServiceSource, /\baxios\b/);
-  assert.doesNotMatch(oauthServiceSource, /\/backend\/v3\/api/);
-});
-
-test("admin commerce pages no longer render nested second-level sidebars", () => {
-  const adminResourceCenterSource = readPortalFile("./packages/sdkwork-clawroutes-pc-commons/src/components/AdminResourceCenter.tsx");
-  const catalogWrapperSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-catalog/src/index.tsx");
-  const catalogSource = readPortalFile("../../packages/pc-react/commerce/sdkwork-commerce-pc-admin-product/src/index.tsx");
-  const inventorySource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-inventory/src/index.tsx");
-  const ordersSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-orders/src/index.tsx");
-  const paymentsSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-payments/src/index.tsx");
-  const walletSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-wallet/src/index.tsx");
-  const financeSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-finance/src/index.tsx");
-  const membershipsSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-memberships/src/index.tsx");
-  const marketingSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-marketing/src/index.tsx");
-
-  assert.match(adminResourceCenterSource, /activeSectionId\?: TSectionId/);
-  assert.match(adminResourceCenterSource, /showSectionNavigation\?: boolean/);
-  assert.match(adminResourceCenterSource, /showSectionNavigation && \(/);
-  assert.match(catalogWrapperSource, /from "@sdkwork\/commerce-pc-admin-product"/);
-
-  for (const source of [catalogSource, inventorySource, ordersSource, paymentsSource, walletSource, financeSource]) {
-    assert.match(source, /activeSectionId=\{activeSectionId\}/);
-    assert.match(source, /showSectionNavigation=\{false\}/);
+    assert.equal(packageJson.dependencies[pkg], undefined, `package.json must not depend on ${pkg}`);
   }
 
-  assert.match(membershipsSource, /sectionId\?: string/);
-  assert.match(membershipsSource, /resolveMembershipSectionId/);
-  assert.match(membershipsSource, /export type MembershipsAdminSectionId =[\s\S]*\| 'packageGroups'[\s\S]*\| 'rechargePackages'/);
-  assert.match(membershipsSource, /sectionId === 'plans'/);
-  assert.match(membershipsSource, /import \{ MembershipPlansPage \} from '\.\/pages\/MembershipPlansPage'/);
-  assert.match(membershipsSource, /<MembershipPlansPage \/>/);
-  assert.match(membershipsSource, /const activeSection = resolveMembershipSectionId\(sectionId\);/);
-  assert.match(membershipsSource, /activeSection === 'packages'/);
-  assert.match(membershipsSource, /activeSection === 'packageGroups'/);
-  assert.doesNotMatch(membershipsSource, /setActiveTab/);
-  assert.doesNotMatch(marketingSource, /<aside className=/);
+  assert.doesNotMatch(appSource, /CatalogAdmin|OrdersAdmin|PaymentsAdmin|MembershipsAdmin|MarketingAdmin|FinanceAdmin|WalletAdmin|OauthAdmin|ServiceProviderAdmin|AgentsAdmin|SkillAdmin|PromptsAdmin|McpAdmin|AnnouncementAdmin|UserAdmin|OrganizationAdmin|MessagingAdmin/);
+  assert.match(appSource, /ModelAdmin|ChannelAdmin|RecordAdmin|AnalyticsAdmin|MonitorAdmin|RateLimitAdmin/);
 });
 
-test("admin membership member level and entitlement sections do not depend on package catalog loading", () => {
-  const membershipsSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-memberships/src/index.tsx");
-  const packagesPageSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipPackagesPage.tsx");
-  const plansPageSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipPlansPage.tsx");
-  const membersPageSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipMembersPage.tsx");
-  const entitlementsPageSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipEntitlementsPage.tsx");
-
-  assert.match(membershipsSource, /<MembershipPackagesPage \/>/);
-  assert.match(membershipsSource, /<MembershipPlansPage \/>/);
-  assert.match(membershipsSource, /<MembersTab \/>/);
-  assert.match(membershipsSource, /<EntitlementsTab loadEntitlements=\{fetchMembershipAdminEntitlements\} \/>/);
-  assert.doesNotMatch(membershipsSource, /fetchMembershipAdminPackageCatalog/);
-  assert.doesNotMatch(membershipsSource, /useEffect\(\(\) => \{\s*void loadData\(\);\s*\}, \[\]\);/);
-  assert.match(packagesPageSource, /const loadCatalog = useCallback\(async \([^)]*\) => \{/);
-  assert.match(
-    packagesPageSource,
-    /useEffect\(\(\) => \{\s*void loadCatalog\(\);\s*\}, \[loadCatalog\]\);/,
-  );
-  assert.match(packagesPageSource, /fetchMembershipAdminPackageCatalog/);
-  assert.doesNotMatch(plansPageSource, /fetchMembershipAdminPackageCatalog/);
-  assert.doesNotMatch(membersPageSource, /fetchMembershipAdminPackageCatalog/);
-  assert.doesNotMatch(entitlementsPageSource, /fetchMembershipAdminPackageCatalog/);
-  assert.match(plansPageSource, /fetchMembershipAdminPlans\(\)/);
-  assert.match(membersPageSource, /fetchMembershipAdminMembers\(\)/);
-  assert.match(entitlementsPageSource, /loadEntitlements = fetchMembershipAdminEntitlements/);
-});
-
-test("admin membership level management uses backend SDK memberships plans", () => {
-  const plansPageSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipPlansPage.tsx");
-  const membershipsServiceSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts");
-  const i18nSource = readI18nResourceSource();
-
-  assert.match(plansPageSource, /export function MembershipPlansPage\(\)/);
-  assert.match(plansPageSource, /fetchMembershipAdminPlans/);
-  assert.match(plansPageSource, /createMembershipAdminPlan/);
-  assert.match(plansPageSource, /updateMembershipAdminPlan/);
-  assert.match(plansPageSource, /deleteMembershipAdminPlan/);
-  assert.match(plansPageSource, /<MembershipPlanDrawerForm/);
-  assert.match(plansPageSource, /Level/);
-  assert.match(membershipsServiceSource, /backendMembershipsPlansList/);
-  assert.match(membershipsServiceSource, /backendMembershipsPlansCreate/);
-  assert.match(membershipsServiceSource, /backendMembershipsPlansUpdate/);
-  assert.match(membershipsServiceSource, /backendMembershipsPlansDelete/);
-  assert.match(membershipsServiceSource, /getSdkworkCommerceService\(\)\.admin\.memberships\.plans\.list/);
-  assert.match(membershipsServiceSource, /getSdkworkCommerceService\(\)\.admin\.memberships\.plans\.create/);
-  assert.match(membershipsServiceSource, /getSdkworkCommerceService\(\)\.admin\.memberships\.plans\.update/);
-  assert.match(membershipsServiceSource, /getSdkworkCommerceService\(\)\.admin\.memberships\.plans\.delete/);
-  assert.doesNotMatch(membershipsServiceSource, /\bfetch\s*\(/);
-  assert.doesNotMatch(membershipsServiceSource, /\baxios\b/);
-  assert.doesNotMatch(membershipsServiceSource, /\/backend\/v3\/api/);
-
-  for (const key of [
-    "admin.menu.membershipPlans",
-    "admin.commerce.memberships.plans.add",
-    "admin.commerce.memberships.plans.empty",
-    "admin.commerce.memberships.plans.form.code",
-    "admin.commerce.memberships.plans.form.name",
-    "admin.commerce.memberships.plans.form.rank",
-    "admin.commerce.memberships.plans.form.status",
-    "admin.commerce.memberships.plans.form.submit",
-  ]) {
-    assert.match(i18nSource, new RegExp(`"${key.replaceAll(".", "\\.")}"`), `${key} must be present in i18n resources`);
-  }
-});
-
-test("admin home product platform group is renamed to agents and skills", () => {
+test("admin relay home menu excludes retired platform and commerce groups", () => {
   const adminRegistrySource = readAdminRegistrySource();
-  const i18nSource = readI18nResourceSource();
 
-  assert.match(
-    adminRegistrySource,
-    /groupBlock\('admin\.menu\.home\.agentSkills',\s*\[\s*itemBlock\(\{\s*path:\s*'\/admin\/agents',\s*labelKey:\s*'admin\.menu\.agents'[\s\S]*itemBlock\(\{\s*path:\s*'\/admin\/skill',\s*labelKey:\s*'admin\.menu\.agentSkills'/,
-  );
+  assert.doesNotMatch(adminRegistrySource, /groupBlock\('admin\.menu\.home\.agentSkills'/);
+  assert.doesNotMatch(adminRegistrySource, /groupBlock\('admin\.menu\.home\.userManagement'/);
   assert.doesNotMatch(adminRegistrySource, /groupBlock\('admin\.menu\.home\.productPlatform'/);
-
-  const agentsAndSkillsGroup = findAdminMenuGroupSource(adminRegistrySource, "admin.menu.home.agentSkills");
-  const retiredAdminProviderPath = "/admin/" + "open" + "-platform";
-  assert.doesNotMatch(agentsAndSkillsGroup, /path:\s*'\/admin\/app'/);
-  assert.doesNotMatch(agentsAndSkillsGroup, new RegExp(`path:\\s*'${retiredAdminProviderPath.replaceAll("/", "\\/")}'`));
-  assert.match(i18nSource, /"admin\.menu\.home\.agentSkills":\s*"Agents & Skills"/);
-  assert.match(i18nSource, /"admin\.menu\.home\.agentSkills":\s*"\u667a\u80fd\u4f53\u548c\u6280\u80fd"/);
+  assert.doesNotMatch(adminRegistrySource, /path:\s*'\/admin\/agents'/);
+  assert.doesNotMatch(adminRegistrySource, /path:\s*'\/admin\/skill'/);
 });
 
 test("admin usage records and analytics are grouped under home data management", () => {
@@ -2545,10 +2039,6 @@ test("admin usage records and analytics are grouped under home data management",
   const homeHeaderModule = findAdminModuleDefinitionSource(adminRegistrySource, "home");
   const operationsHeaderModule = findAdminModuleDefinitionSource(adminRegistrySource, "operations");
 
-  assert.match(
-    homeMenu,
-    /groupBlock\('admin\.menu\.home\.agentSkills'[\s\S]*groupBlock\('admin\.menu\.home\.dataManagement'[\s\S]*groupBlock\('admin\.menu\.home\.system'/,
-  );
   assert.match(
     homeMenu,
     /groupBlock\('admin\.menu\.home\.dataManagement',\s*\[\s*itemBlock\(\{\s*path:\s*'\/admin\/record',\s*labelKey:\s*'admin\.menu\.records'[\s\S]*itemBlock\(\{\s*path:\s*'\/admin\/analytics',\s*labelKey:\s*'admin\.menu\.analytics'/,
@@ -2576,7 +2066,7 @@ test("portal aliases appbase auth and Tauri host packages for local reuse", () =
   const packageJson = JSON.parse(readPortalFile("./package.json")) as { dependencies: Record<string, string> };
   const tsconfigSource = readPortalFile("./tsconfig.json");
   const viteConfigSource = readPortalFile("./vite.config.ts");
-  const workspaceSource = readPortalFile("./pnpm-workspace.yaml");
+  const workspaceSource = readRepoFile("pnpm-workspace.yaml");
   const tauriBridgeSource = readPortalFile("./src/auth/clawRouterTauriAuthHost.ts");
   const legacyAppbasePackageFamilyPattern = new RegExp(`packages/${["pc-react", "identity"].join("/")}`);
 
@@ -2650,7 +2140,7 @@ test("portal consumes sdkwork UI from source so Vite does not ship the UI dist r
   assert.match(viteConfigSource, /sdkwork-ui-pc-react\/src\/theme\/index\.ts/);
   assert.match(
     viteConfigSource,
-    /clawrouterPortalWorkspaceDependencyResolver\(configDir,\s*\[[\s\S]*appbaseRoot,[\s\S]*sdkworkCommerceRoot,[\s\S]*\]\)/,
+    /clawrouterPortalWorkspaceDependencyResolver\(configDir,\s*\[[\s\S]*appbaseRoot,[\s\S]*sdkworkAccountRoot,[\s\S]*\]\)/,
   );
   assert.match(viteConfigSource, /workspaceDependencyRoots\.some/);
   assert.match(viteConfigSource, /function isPortalWorkspaceDependencyImporter/);
@@ -2663,49 +2153,45 @@ test("portal consumes sdkwork UI from source so Vite does not ship the UI dist r
   assert.doesNotMatch(tsconfigSource, /sdkwork-ui-pc-react\/dist\/index\.d\.ts/);
 });
 
-test("portal resolves Commerce workspace modules and their peer dependencies from source", () => {
+test("portal resolves T1 domain console packages from source and no longer uses repository packages/pc-react", () => {
   const packageJson = JSON.parse(readPortalFile("./package.json")) as { dependencies: Record<string, string> };
   const tsconfigSource = readPortalFile("./tsconfig.json");
   const viteConfigSource = readPortalFile("./vite.config.ts");
-  const workspaceSource = readPortalFile("./pnpm-workspace.yaml");
+  const workspaceSource = readRepoFile("pnpm-workspace.yaml");
 
-  assert.equal(packageJson.dependencies["@sdkwork/commerce-pc-admin-product"], "workspace:*");
-  assert.equal(packageJson.dependencies["@sdkwork/commerce-pc-wallet"], "workspace:*");
-  assert.equal(packageJson.dependencies["@sdkwork/commerce-pc-membership"], "workspace:*");
-  assert.equal(packageJson.dependencies["@sdkwork/commerce-pc-membership-purchase"], "workspace:*");
-  assert.equal(packageJson.dependencies["@sdkwork/commerce-pc-billing"], "workspace:*");
-  assert.equal(packageJson.dependencies["@sdkwork/commerce-pc-checkout"], "workspace:*");
-  assert.equal(packageJson.dependencies["@sdkwork/commerce-pc-payment"], "workspace:*");
-  assert.equal(packageJson.dependencies["@sdkwork/commerce-service"], "workspace:*");
-  assert.match(tsconfigSource, /sdkwork-commerce-pc-checkout\/src\/index\.ts/);
-  assert.match(tsconfigSource, /sdkwork-commerce-pc-payment\/src\/index\.ts/);
-  assert.match(tsconfigSource, /sdkwork-commerce-pc-admin-product\/src\/index\.tsx/);
-  assert.match(tsconfigSource, /sdkwork-commerce-pc-wallet\/src\/index\.ts/);
-  assert.match(tsconfigSource, /sdkwork-commerce-pc-membership\/src\/index\.ts/);
-  assert.match(tsconfigSource, /sdkwork-commerce-pc-membership-purchase\/src\/index\.ts/);
-  assert.match(tsconfigSource, /sdkwork-commerce-pc-billing\/src\/index\.ts/);
-  assert.match(tsconfigSource, /sdkwork-commerce-service\/src\/index\.ts/);
-  assert.match(tsconfigSource, /sdkwork-commerce-sdk-ports\/src\/index\.ts/);
-  assert.match(tsconfigSource, /sdkwork-commerce-contracts\/src\/index\.ts/);
-  assert.match(viteConfigSource, /find: '@sdkwork\/commerce-pc-admin-product'/);
-  assert.match(viteConfigSource, /find: '@sdkwork\/commerce-pc-wallet'/);
-  assert.match(viteConfigSource, /find: '@sdkwork\/commerce-pc-membership'/);
-  assert.match(viteConfigSource, /find: '@sdkwork\/commerce-pc-membership-purchase'/);
-  assert.match(viteConfigSource, /find: '@sdkwork\/commerce-pc-billing'/);
-  assert.match(viteConfigSource, /find: '@sdkwork\/commerce-pc-checkout'/);
-  assert.match(viteConfigSource, /find: '@sdkwork\/commerce-pc-payment'/);
-  assert.match(viteConfigSource, /find: '@sdkwork\/commerce-service'/);
-  assert.match(viteConfigSource, /find: '@sdkwork\/commerce-sdk-ports'/);
-  assert.match(viteConfigSource, /find: '@sdkwork\/commerce-contracts'/);
-  assert.match(viteConfigSource, /sdkworkCommerceRoot/);
+  assert.equal(packageJson.dependencies["@sdkwork/commerce-pc-admin-product"], undefined);
+  assert.equal(packageJson.dependencies["@sdkwork/account-pc-wallet"], "workspace:*");
+  assert.equal(packageJson.dependencies["@sdkwork/membership-pc-membership"], "workspace:*");
+  assert.equal(packageJson.dependencies["@sdkwork/membership-pc-subscription"], "workspace:*");
+  assert.equal(packageJson.dependencies["@sdkwork/payment-pc-payment"], "workspace:*");
+  assert.equal(packageJson.dependencies["@sdkwork/order-pc-order"], "workspace:*");
+  assert.equal(packageJson.dependencies["@sdkwork/commerce-service"], undefined);
+  assert.doesNotMatch(tsconfigSource, /sdkwork-clawrouter-pc-admin-catalog\/src\/index\.tsx/);
+  assert.doesNotMatch(tsconfigSource, /sdkwork-file-platform-pc-react\/src\/index\.ts/);
+  assert.equal(packageJson.dependencies['@sdkwork/clawrouter-pc-admin-inventory'], undefined);
+  assert.equal(packageJson.dependencies['@sdkwork/clawrouter-pc-admin-file-platform'], undefined);
+  assert.match(tsconfigSource, /sdkwork-account-pc-wallet\/src\/index\.ts/);
+  assert.match(tsconfigSource, /sdkwork-membership-pc-membership\/src\/index\.ts/);
+  assert.match(tsconfigSource, /sdkwork-payment-pc-payment\/src\/index\.ts/);
+  assert.doesNotMatch(tsconfigSource, /sdkwork-commerce-service\/src\/index\.ts/);
+  assert.doesNotMatch(tsconfigSource, /sdkwork-commerce-sdk-ports\/src\/index\.ts/);
+  assert.doesNotMatch(tsconfigSource, /sdkwork-commerce-contracts\/src\/index\.ts/);
+  assert.doesNotMatch(viteConfigSource, /find: '@sdkwork\/commerce-pc-admin-product'/);
+  assert.match(viteConfigSource, /find: '@sdkwork\/account-pc-wallet'/);
+  assert.match(viteConfigSource, /find: '@sdkwork\/membership-pc-membership'/);
+  assert.match(viteConfigSource, /find: '@sdkwork\/payment-pc-payment'/);
+  assert.doesNotMatch(viteConfigSource, /find: '@sdkwork\/commerce-service'/);
+  assert.doesNotMatch(viteConfigSource, /find: '@sdkwork\/commerce-sdk-ports'/);
+  assert.doesNotMatch(viteConfigSource, /find: '@sdkwork\/commerce-contracts'/);
+  assert.doesNotMatch(viteConfigSource, /sdkworkCommerceRoot/);
   assert.match(viteConfigSource, /return isPortalWorkspaceDependencyImporter\(importer, workspaceDependencyRoots\)\s*&& !isSdkworkWorkspaceDependency\(source\)/);
   assert.match(viteConfigSource, /rootDefaultExport/);
-  assert.match(workspaceSource, /packages\/pc-react\/commerce\/sdkwork-commerce-pc-admin-product/);
-  assert.match(workspaceSource, /packages\/pc-react\/commerce\/sdkwork-commerce-pc-wallet/);
-  assert.match(workspaceSource, /packages\/pc-react\/commerce\/sdkwork-commerce-pc-membership/);
-  assert.match(workspaceSource, /packages\/pc-react\/commerce\/sdkwork-commerce-pc-membership-purchase/);
-  assert.match(workspaceSource, /packages\/pc-react\/commerce\/sdkwork-commerce-pc-billing/);
-  assert.match(workspaceSource, /packages\/common\/commerce\/\*/);
+  assert.doesNotMatch(workspaceSource, /^\s*- 'packages\/pc-react\//m);
+  assert.match(workspaceSource, /sdkwork-account\/apps\/sdkwork-account-pc\/packages\/sdkwork-account-pc-wallet/);
+  assert.match(workspaceSource, /sdkwork-membership\/apps\/sdkwork-membership-pc\/packages\/sdkwork-membership-pc-membership/);
+  assert.match(workspaceSource, /sdkwork-payment\/apps\/sdkwork-payment-pc\/packages\/sdkwork-payment-pc-payment/);
+  assert.doesNotMatch(workspaceSource, /packages\/common\/commerce\/\*/);
+  assert.equal(packageJson.dependencies["@sdkwork/commerce-pc-host"], undefined);
   assert.doesNotMatch(viteConfigSource, /find: 'react-i18next'/);
   assert.doesNotMatch(viteConfigSource, /find: 'react-router-dom'/);
   assert.doesNotMatch(viteConfigSource, /find: 'lucide-react'/);

@@ -28,7 +28,8 @@ class ConsoleGatewayBackendRuntimeStandardTest(unittest.TestCase):
         self.assertIn("map_optional_app_user_subject", app_gateway)
         self.assertIn("AppGatewayTracesReadStore", app_gateway)
         self.assertIn("EmptyAppGatewayTracesReadStore", app_gateway)
-        self.assertIn("PlusApiResult::error", app_gateway)
+        self.assertIn("problem_from_wire_code", app_gateway)
+        self.assertNotIn("PlusApiResult", app_gateway)
         self.assertIn('"5000"', app_gateway)
         self.assertIn("app gateway traces read model is unavailable", app_gateway)
 

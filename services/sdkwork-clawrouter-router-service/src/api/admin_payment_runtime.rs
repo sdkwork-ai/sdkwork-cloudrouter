@@ -6,7 +6,7 @@ use axum::{Json, Router};
 use serde::Deserialize;
 use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::{
     InMemoryPaymentProviderRuntimeSnapshotStore, PaymentProviderRuntimeSnapshotService,
     PaymentProviderRuntimeSnapshotStore,
@@ -60,7 +60,7 @@ where
         Err(response) => return response,
     };
     match state.snapshot_service.load_latest(&environment).await {
-        Some(snapshot) => Json(PlusApiResult::success(snapshot)).into_response(),
+        Some(snapshot) => Json(success_envelope(snapshot)).into_response(),
         None => not_found_response(format!(
             "payment provider runtime snapshot was not found for environment {environment}"
         )),
@@ -87,9 +87,9 @@ fn normalize_environment(environment: Option<String>) -> Result<String, Response
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4001", message.into())).into_response()
+    problem_from_wire_code("4001", message.into()).into_response()
 }
 
 fn not_found_response(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4040", message.into())).into_response()
+    problem_from_wire_code("4040", message.into()).into_response()
 }

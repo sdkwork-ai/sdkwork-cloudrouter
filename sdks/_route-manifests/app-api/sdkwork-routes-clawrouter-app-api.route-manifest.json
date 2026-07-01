@@ -309,8 +309,8 @@
         "ai"
       ],
       "auth": {
-        "mode": "dual-token",
-        "required": true
+        "mode": "public",
+        "required": false
       },
       "handler": {
         "module": "crate::routes",
@@ -331,8 +331,8 @@
         "ai"
       ],
       "auth": {
-        "mode": "dual-token",
-        "required": true
+        "mode": "public",
+        "required": false
       },
       "handler": {
         "module": "crate::routes",
@@ -353,8 +353,8 @@
         "ai"
       ],
       "auth": {
-        "mode": "dual-token",
-        "required": true
+        "mode": "public",
+        "required": false
       },
       "handler": {
         "module": "crate::routes",
@@ -2638,7 +2638,7 @@
       "path": "/app/v3/api/promotions/codes/redemptions",
       "operationId": "promotions.codes.redemptions.create",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2660,7 +2660,7 @@
       "path": "/app/v3/api/promotions/discount_applications",
       "operationId": "promotions.discountApplications.create",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2682,7 +2682,7 @@
       "path": "/app/v3/api/promotions/discount_applications/reversals",
       "operationId": "promotions.discountApplications.reversals.create",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2704,7 +2704,7 @@
       "path": "/app/v3/api/promotions/discount_applications/{applicationId}/releases",
       "operationId": "promotions.discountApplications.release",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2726,7 +2726,7 @@
       "path": "/app/v3/api/promotions/discount_applications/{applicationId}/rollback",
       "operationId": "promotions.discountApplications.rollback",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2748,7 +2748,7 @@
       "path": "/app/v3/api/promotions/discount_applications/{applicationId}/settlements",
       "operationId": "promotions.discountApplications.settle",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2770,7 +2770,7 @@
       "path": "/app/v3/api/promotions/offers",
       "operationId": "promotions.offers.list",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2792,7 +2792,7 @@
       "path": "/app/v3/api/promotions/offers/{offerId}",
       "operationId": "promotions.offers.retrieve",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2814,7 +2814,7 @@
       "path": "/app/v3/api/promotions/user_coupon_claims",
       "operationId": "promotions.userCoupons.claims.create",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2836,7 +2836,7 @@
       "path": "/app/v3/api/promotions/user_coupons",
       "operationId": "promotions.userCoupons.list",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2858,7 +2858,7 @@
       "path": "/app/v3/api/promotions/user_coupons/wallet",
       "operationId": "promotions.userCoupons.wallet.list",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2880,7 +2880,7 @@
       "path": "/app/v3/api/promotions/user_coupons/wallet/{userCouponId}",
       "operationId": "promotions.userCoupons.wallet.retrieve",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2902,7 +2902,7 @@
       "path": "/app/v3/api/promotions/user_coupons/{userCouponId}",
       "operationId": "promotions.userCoupons.retrieve",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2993,8 +2993,8 @@
         "commerce"
       ],
       "auth": {
-        "mode": "dual-token",
-        "required": true
+        "mode": "public",
+        "required": false
       },
       "handler": {
         "module": "crate::routes",
@@ -4549,6 +4549,28 @@
     },
     {
       "method": "GET",
+      "path": "/app/v3/api/wallet/accounts/cash",
+      "operationId": "wallet.accounts.cash.retrieve",
+      "tags": [
+        "commerce"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-clawrouter",
+        "apiAuthority": "sdkwork-clawrouter-app-api"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
       "path": "/app/v3/api/wallet/accounts/tokens",
       "operationId": "wallet.accounts.tokens.retrieve",
       "tags": [
@@ -4639,6 +4661,28 @@
       "method": "GET",
       "path": "/app/v3/api/wallet/exchange_rules",
       "operationId": "wallet.exchangeRules.list",
+      "tags": [
+        "commerce"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-clawrouter",
+        "apiAuthority": "sdkwork-clawrouter-app-api"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/holds",
+      "operationId": "wallet.holds.list",
       "tags": [
         "commerce"
       ],

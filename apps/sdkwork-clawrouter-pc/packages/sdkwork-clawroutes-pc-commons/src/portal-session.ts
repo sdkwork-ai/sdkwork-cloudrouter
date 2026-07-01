@@ -1,6 +1,6 @@
 import { CancelledError, ForbiddenError, TimeoutError, type RequestConfig } from '@sdkwork/sdk-common';
 import { readApiRecord } from './api-result.ts';
-import { clearStoredAppSessionToken, storeAppSessionFromResult } from './app-session-token.ts';
+import { clearStoredAppSessionToken, loadStoredAppSessionToken, shouldRefreshStoredAppSession, storeAppSessionFromResult } from './app-session-token.ts';
 import { resetClawRouterIamRuntime } from './iam-runtime.ts';
 import { getClawRouterBackendSdkClient, getSdkworkAppbaseAppSdkClient, resetClawRouterSdkClients } from './sdk-clients.ts';
 import { hasPortalAdminSurfaceAccess, readPortalPermissionScope } from './portal-permission-scope.ts';
@@ -51,6 +51,53 @@ export async function fetchCurrentPortalSession(): Promise<PortalSessionResponse
   return currentSessionPromise;
 }
 
+let currentRefreshPromise: Promise<PortalSessionResponse | null> | null = null;
+
+// Proactively refresh the session when the access token is within the refresh
+// threshold. Uses the stored refresh token via the appbase SDK. Falls back to
+// clearing the session on auth errors so the existing 401 boundary redirects.
+export async function refreshPortalSessionIfNeeded(): Promise<PortalSessionResponse | null> {
+  if (!shouldRefreshStoredAppSession()) {
+    return readStoredPortalSession();
+  }
+  if (currentRefreshPromise) {
+    return currentRefreshPromise;
+  }
+  currentRefreshPromise = getSdkworkAppbaseAppSdkClient()
+    .auth.sessions.current.retrieve()
+    .then((result) => {
+      const session = readCurrentPortalSession(result);
+      if (session) {
+        storeAppSessionFromResult(result);
+        resetClawRouterSdkClients();
+      }
+      return session;
+    })
+    .catch((error) => {
+      if (isPortalSessionAuthError(error)) {
+        clearPortalSessionState();
+        return null;
+      }
+      throw error;
+    })
+    .finally(() => {
+      currentRefreshPromise = null;
+    });
+  return currentRefreshPromise;
+}
+
+function readStoredPortalSession(): PortalSessionResponse | null {
+  const token = loadStoredAppSessionToken();
+  if (!token) {
+    return null;
+  }
+  return {
+    accessToken: token.accessToken,
+    authToken: token.authToken,
+    ...(token.refreshToken ? { refreshToken: token.refreshToken } : {}),
+  };
+}
+
 export async function revokeCurrentPortalSession(): Promise<void> {
   try {
     await getSdkworkAppbaseAppSdkClient().auth.sessions.current.delete();
@@ -66,6 +113,11 @@ export async function revokeCurrentPortalSession(): Promise<void> {
 export async function verifyCurrentPortalAdminAccess(
   options: VerifyCurrentPortalAdminAccessOptions = {},
 ): Promise<PortalAdminAccessState> {
+  // Proactively refresh if the token is within the refresh threshold, so
+  // admin route guards do not bounce the user to login on a soon-to-expire
+  // token.
+  await refreshPortalSessionIfNeeded();
+
   const session = await fetchCurrentPortalSession();
   if (!session) {
     return 'anonymous';

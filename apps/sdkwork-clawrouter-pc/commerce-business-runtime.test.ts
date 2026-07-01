@@ -2,8 +2,6 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
-import { mapCommerceRouteToHost } from "../../packages/pc-react/commerce/sdkwork-commerce-pc-host/src/commerce-host-navigation.ts";
-
 function readPortalFile(relativePath: string): string {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8");
 }
@@ -12,31 +10,30 @@ function portalFileExists(relativePath: string): boolean {
   return existsSync(new URL(relativePath, import.meta.url));
 }
 
-test("mapCommerceRouteToHost maps checkout and payment routes into console scope", () => {
-  assert.equal(
-    mapCommerceRouteToHost("/checkout?kind=subscription", { routePrefix: "/console" }),
-    "/console/checkout?kind=subscription",
-  );
-  assert.equal(
-    mapCommerceRouteToHost("/payments?paymentId=pay-1", { routePrefix: "/console" }),
-    "/console/payment?paymentId=pay-1",
-  );
-});
-
-test("clawrouter mounts sdkwork-commerce host pages directly", () => {
+test("console business host mounts T1 domain wallet, membership, coupon, checkout, and payment routes", () => {
   const appSource = readPortalFile("./src/App.tsx");
-  const mountSource = readPortalFile("./src/commerce/commerceHostMount.tsx");
+  const mountSource = readPortalFile("./src/console-business/consoleBusinessHostMount.tsx");
   const packageJson = JSON.parse(readPortalFile("./package.json")) as { dependencies: Record<string, string> };
 
-  assert.match(appSource, /ClawRouterConsoleCommerceHostRoutes/);
-  assert.match(appSource, /SdkworkCommerceHostNavbarActions/);
-  assert.match(appSource, /from '@sdkwork\/commerce-pc-host'/);
-  assert.match(mountSource, /SdkworkCommerceHostRoutes/);
-  assert.match(mountSource, /CLAWROUTER_CONSOLE_COMMERCE_ROUTE_PREFIX/);
-  assert.doesNotMatch(appSource, /consoleCommerceViews/);
-  assert.doesNotMatch(appSource, /import\('@sdkwork\/commerce-pc-wallet'\), 'SdkworkWalletPage'/);
-  assert.match(appSource, /import\('@sdkwork\/commerce-pc-billing'\), 'SdkworkBillingPage'/);
-  assert.equal(packageJson.dependencies["@sdkwork/commerce-pc-host"], "workspace:*");
+  assert.match(appSource, /ClawRouterConsoleBusinessHostRoutes/);
+  assert.match(appSource, /ClawRouterConsoleBusinessNavbarActions/);
+  assert.match(mountSource, /@sdkwork\/account-pc-wallet/);
+  assert.match(mountSource, /@sdkwork\/membership-pc-membership/);
+  assert.match(mountSource, /@sdkwork\/promotion-pc-coupon/);
+  assert.match(mountSource, /@sdkwork\/payment-pc-payment/);
+  assert.doesNotMatch(appSource, /from '@sdkwork\/commerce-pc-host'/);
+  assert.doesNotMatch(appSource, /ClawRouterConsoleCommerceHostRoutes/);
+  assert.equal(packageJson.dependencies["@sdkwork/account-pc-wallet"], "workspace:*");
+  assert.equal(packageJson.dependencies["@sdkwork/payment-pc-payment"], "workspace:*");
+});
+
+test("console coupons route is reachable from sidebar navigation", () => {
+  const consoleLayoutSource = readPortalFile("./packages/sdkwork-clawrouter-pc-console-shell/src/ConsoleLayout.tsx");
+
+  assert.match(consoleLayoutSource, /path:\s*'\/console\/coupons'/);
+  assert.match(consoleLayoutSource, /console\.menu\.coupons/);
+  assert.doesNotMatch(consoleLayoutSource, /path:\s*'\/console\/checkout'/);
+  assert.doesNotMatch(consoleLayoutSource, /path:\s*'\/console\/payment'/);
 });
 
 test("console checkout and payment routes stay hidden from sidebar navigation", () => {
@@ -46,17 +43,78 @@ test("console checkout and payment routes stay hidden from sidebar navigation", 
   assert.doesNotMatch(consoleLayoutSource, /path:\s*'\/console\/payment'/);
 });
 
-test("sdkwork-commerce wallet and billing pages own recharge and settlement UI", () => {
-  const walletPagePath = "../../packages/pc-react/commerce/sdkwork-commerce-pc-wallet/src/pages/WalletPage.tsx";
-  const billingPagePath = "../../packages/pc-react/commerce/sdkwork-commerce-pc-billing/src/pages/BillingPage.tsx";
+test("console account and settlements views compose T1 domain packages", () => {
+  const accountSource = readPortalFile("./src/console-business/ConsoleAccountView.tsx");
+  const settlementsSource = readPortalFile("./src/console-business/ConsoleSettlementsView.tsx");
 
-  if (portalFileExists(walletPagePath)) {
-    assert.match(readPortalFile(walletPagePath), /navigateWalletRechargeCheckout/);
+  assert.match(accountSource, /@sdkwork\/account-pc-wallet/);
+  assert.match(settlementsSource, /@sdkwork\/order-pc-order/);
+});
+
+test("T1 wallet package owns recharge checkout navigation", () => {
+  const walletPagePath = "../../../sdkwork-account/apps/sdkwork-account-pc/packages/sdkwork-account-pc-wallet/src/pages/WalletPage.tsx";
+  if (!portalFileExists(walletPagePath)) {
+    return;
+  }
+  const walletSource = readPortalFile(walletPagePath);
+  assert.match(walletSource, /navigateWalletRechargeCheckout|checkoutBasePath/);
+});
+
+test("console commerce pages guard bootstrap against failure loops", () => {
+  const guardedSources = [
+    ["../../../sdkwork-account/apps/sdkwork-account-pc/packages/sdkwork-account-pc-wallet/src/pages/WalletPage.tsx", "wallet page"],
+    ["../../../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-membership/src/pages/MembershipPage.tsx", "membership page"],
+    ["../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-order/src/pages/OrderPage.tsx", "order page"],
+    ["../../../sdkwork-promotion/apps/sdkwork-promotion-pc/packages/sdkwork-promotion-pc-coupon/src/pages/CouponPage.tsx", "coupon page"],
+    ["../../../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-payment/src/pages/PaymentPage.tsx", "payment page"],
+    ["./src/console-business/ConsoleAccountView.tsx", "console account view"],
+  ] as const;
+
+  for (const [relativePath, label] of guardedSources) {
+    if (!portalFileExists(relativePath)) {
+      continue;
+    }
+
+    const source = readPortalFile(relativePath);
+    assert.match(source, /!state\.lastError/, `${label} must stop retrying bootstrap after failure`);
+    assert.match(source, /bootstrap\(\)\.catch/, `${label} must swallow bootstrap rejection to avoid effect noise`);
+  }
+});
+
+test("membership page renders all sections with sticky anchor navigation", () => {
+  const membershipPagePath = "../../../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-membership/src/pages/MembershipPage.tsx";
+  if (!portalFileExists(membershipPagePath)) {
+    return;
   }
 
-  if (portalFileExists(billingPagePath)) {
-    const billingSource = readPortalFile(billingPagePath);
-    assert.match(billingSource, /SdkworkBillingSummaryCards/);
-    assert.match(billingSource, /SdkworkBillingBreakdownTable/);
-  }
+  const source = readPortalFile(membershipPagePath);
+  assert.match(source, /scrollToMembershipSection/);
+  assert.match(source, /membership-section-plans/);
+  assert.match(source, /membership-section-benefits/);
+  assert.match(source, /membership-section-levels/);
+});
+
+test("console payment host avoids duplicate bootstrap and waits for controller readiness", () => {
+  const mountSource = readPortalFile("./src/console-business/consoleBusinessHostMount.tsx");
+
+  assert.match(mountSource, /useSdkworkPaymentControllerState/);
+  assert.match(mountSource, /state\.isBootstrapped/);
+  assert.doesNotMatch(mountSource, /controller\.bootstrap\(\)\.then/);
+});
+
+test("console coupons page passes resolved locale", () => {
+  const mountSource = readPortalFile("./src/console-business/consoleBusinessHostMount.tsx");
+  const localeSource = readPortalFile("./src/console-business/consoleCommerceLocale.ts");
+
+  assert.match(mountSource, /resolveConsoleCouponLocale/);
+  assert.match(mountSource, /<SdkworkCouponPage locale=\{locale\} \/>/);
+  assert.match(localeSource, /normalizeSdkworkCouponLocale/);
+});
+
+test("app bootstrap wires T1 domain service providers to Claw Router app SDK domains", () => {
+  const mainSource = readPortalFile("./src/main.tsx");
+
+  assert.match(mainSource, /configureClawRouterDomainServiceProviders/);
+  assert.match(mainSource, /getClawRouterAppSdkClient/);
+  assert.doesNotMatch(mainSource, /configureSdkworkCommerceServiceProvider/);
 });

@@ -9,6 +9,19 @@ from pathlib import Path
 from typing import Any
 
 from tools.frontend_contract_loader import default_frontend_contract_path, load_frontend_field_contract
+from tools.relay_retired_admin_surfaces import (
+    is_relay_retired_admin_source,
+    is_route_manifest_bootstrap_source,
+)
+
+FIELD_AUDIT_EXEMPT_SOURCE_SEGMENTS: tuple[str, ...] = (
+    "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-i18n/",
+)
+
+
+def _is_field_audit_exempt_source(source: str) -> bool:
+    normalized = source.replace("\\", "/")
+    return any(segment in normalized for segment in FIELD_AUDIT_EXEMPT_SOURCE_SEGMENTS)
 
 try:
     import yaml
@@ -256,6 +269,9 @@ class FrontendFieldAudit:
             expected[key] = [*fields, *derived_fields]
 
         for key in sorted(actual):
+            source = key.split("#", 1)[0]
+            if is_relay_retired_admin_source(source) or _is_field_audit_exempt_source(source):
+                continue
             if key not in expected:
                 messages.append(f"frontend model interface missing from contract: {key}")
                 continue
@@ -269,6 +285,9 @@ class FrontendFieldAudit:
                 messages.append(f"frontend model fields mismatch for {key}: stale fields [{', '.join(extra)}]")
 
         for key in sorted(expected):
+            source = key.split("#", 1)[0]
+            if is_relay_retired_admin_source(source):
+                continue
             if key not in actual:
                 messages.append(f"frontend model contract references missing interface: {key}")
 

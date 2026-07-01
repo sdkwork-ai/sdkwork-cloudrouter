@@ -7,10 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from tests.test_commerce_standard import (
-    CANONICAL_COMMERCE_API_OPERATIONS,
-    MIGRATED_COMMERCE_PRODUCT_CENTER_API_OPERATIONS,
-)
+from tools.appbase_openapi_schema_guardian import CANONICAL_COMMERCE_API_OPERATIONS
 from tools.frontend_contract_loader import (
     DEFAULT_CONTRACT_INDEX,
     DEFAULT_CONTRACT_SNAPSHOT,
@@ -51,27 +48,12 @@ MATURITY_RANK: dict[str, int] = {
 
 REQUIRED_FRONTEND_ADAPTERS: dict[str, tuple[str, ...]] = {
     "commerce": (
-        "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-catalog/src/catalogService.ts",
-        "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-inventory/src/inventoryService.ts",
-        "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src/ordersService.ts",
-        "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
-        "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-        "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-wallet/src/walletService.ts",
-        "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-finance/src/financeService.ts",
         "apps/sdkwork-clawrouter-pc/src/App.tsx",
-        "apps/sdkwork-clawrouter-pc/src/commerce/commerceHostMount.tsx",
+        "apps/sdkwork-clawrouter-pc/src/console-business/consoleBusinessHostMount.tsx",
     ),
 }
 
-COMMERCE_FRONTEND_FEATURE_ROOTS: tuple[str, ...] = (
-    "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-catalog/src",
-    "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-inventory/src",
-    "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src",
-    "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src",
-    "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src",
-    "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-wallet/src",
-    "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-finance/src",
-)
+COMMERCE_FRONTEND_FEATURE_ROOTS: tuple[str, ...] = ()
 
 FRONTEND_SOURCE_SUFFIXES: tuple[str, ...] = (
     ".ts",
@@ -147,7 +129,7 @@ COMMERCE_REQUIRED_PRODUCT_CENTER_TABLES: tuple[str, ...] = (
     "commerce_inventory_reservation",
     "commerce_inventory_ledger",
 )
-COMMERCE_REQUIRED_PRODUCT_CENTER_API_OPERATIONS = MIGRATED_COMMERCE_PRODUCT_CENTER_API_OPERATIONS
+COMMERCE_REQUIRED_PRODUCT_CENTER_API_OPERATIONS: tuple[tuple[str, str, str, str], ...] = ()
 COMMERCE_REQUIRED_API_OPERATIONS = tuple(
     dict.fromkeys(
         (

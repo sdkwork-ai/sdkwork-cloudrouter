@@ -222,7 +222,7 @@ class FrontendFieldAuditTest(unittest.TestCase):
                 [entry["interface"] for entry in audit["interfaces"]],
             )
             self.assertEqual(
-                ["id", "instructor", "instructor.name", "instructor.avatar"],
+                ["id", "author", "author.name", "author.avatar"],
                 audit["interfaces"][0]["fields"],
             )
 

@@ -12,11 +12,15 @@
 @source "../../../../sdkwork-appbase/packages/pc-react/host/sdkwork-host-pc-react/src";
 @source "../../../../sdkwork-ui/sdkwork-ui-pc-react/src";
 @source "../../../../sdkwork-core/sdkwork-core-pc-react/src";
-@source "../../../packages/pc-react/commerce/*/src";
+@source "../../../../sdkwork-account/apps/sdkwork-account-pc/packages/sdkwork-account-pc-wallet/src";
+@source "../../../../sdkwork-promotion/apps/sdkwork-promotion-pc/packages/sdkwork-promotion-pc-coupon/src";
+@source "../../../../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-membership/src";
+@source "../../../../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-subscription/src";
+@source "../../../../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-payment/src";
+@source "../../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-order/src";
 @source "../../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/*/src";
 @source "../../../../sdkwork-image/apps/sdkwork-image-pc/packages/*/src";
 @source "../../../../sdkwork-models/apps/sdkwork-models-pc/packages/*/src";
-@source "../../../packages/pc-react/file/sdkwork-file-platform-pc-react/src";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -159,6 +163,50 @@ optgroup {
     [class*=" ring"]
   ):not([class*="rounded-full"]) {
   border-radius: var(--sdkwork-console-card-radius) !important;
+}
+
+.claw-router-navbar-wallet-entry button {
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.claw-router-console-commerce-surface {
+  color: var(--sdk-color-text-primary, rgb(15 23 42));
+}
+
+html.dark .claw-router-console-commerce-surface {
+  color: var(--sdk-color-text-primary, rgb(248 250 252));
+}
+
+.claw-router-console-commerce-surface [class~="border-white/5"],
+.claw-router-console-commerce-surface [class~="border-white/10"],
+.claw-router-console-commerce-surface [class~="border-white/20"],
+.claw-router-console-commerce-surface [class~="divide-white/5"],
+.claw-router-console-commerce-surface [class~="divide-white/10"] {
+  border-color: var(--sdk-color-border-default) !important;
+}
+
+.claw-router-console-commerce-surface [class~="border-[color-mix(in_srgb,var(--sdk-color-border-default)_72%,transparent)]"] {
+  border-color: var(--sdk-color-border-default) !important;
+}
+
+html.dark [data-slot="dialog-overlay"] {
+  background: rgb(0 0 0 / 0.62) !important;
+}
+
+html:not(.dark) [data-slot="dialog-overlay"] {
+  background: rgb(15 23 42 / 0.42) !important;
+}
+
+html.dark [data-slot="dialog-content"] {
+  background-color: var(--sdk-color-surface-panel, #18181b) !important;
+  border-color: var(--sdk-color-border-default, rgb(63 63 70 / 0.8)) !important;
+  color: var(--sdk-color-text-primary, #fafafa) !important;
+}
+
+html:not(.dark) [data-slot="dialog-content"] {
+  background-color: var(--sdk-color-surface-panel, #ffffff) !important;
+  border-color: var(--sdk-color-border-default, rgb(226 232 240)) !important;
+  color: var(--sdk-color-text-primary, #0f172a) !important;
 }
 
 .claw-router-navbar-notification-bell {

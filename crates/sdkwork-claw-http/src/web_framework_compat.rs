@@ -1,10 +1,12 @@
 use axum::extract::Request;
-use axum::http::StatusCode;
+use axum::http::{header, HeaderName, HeaderValue, StatusCode};
 use axum::middleware::{from_fn, from_fn_with_state, Next};
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 use axum::Router;
-use serde::Serialize;
+use sdkwork_claw_config::is_production_like_runtime_environment;
+use sdkwork_utils_rust::{SdkWorkProblemDetail, SdkWorkProblemRouting, SdkWorkResultCode};
+use sdkwork_web_core::WebRequestContext;
 
 use crate::auth::{
     app_request_subject_boundary, federated_app_request_subject_boundary,
@@ -12,14 +14,6 @@ use crate::auth::{
     AppSubjectBoundaryConfig, TrustedRequestSubject,
 };
 use crate::web_bridge::authenticated_principal_failed_trusted_subject_projection;
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct ProjectionErrorEnvelope {
-    code: &'static str,
-    msg: String,
-    data: Option<()>,
-}
 
 fn env_flag_enabled(value: Option<&str>) -> bool {
     matches!(value, Some("1" | "true" | "TRUE" | "yes" | "YES"))
@@ -62,23 +56,73 @@ pub async fn project_trusted_subject_from_web_request_context(
             project_trusted_subject_for_legacy_handlers(&mut request, subject);
         } else if authenticated_principal_failed_trusted_subject_projection(request.extensions())
         {
-            return trusted_subject_projection_failed_response();
+            return trusted_subject_projection_failed_response(&request);
         }
     }
     next.run(request).await
 }
 
-fn trusted_subject_projection_failed_response() -> Response {
-    (
+/// Fail fast when production-like deployments disable sdkwork-web-framework IAM.
+pub fn ensure_production_web_framework_security_policy() {
+    let runtime_toml = sdkwork_claw_config::RuntimeTomlConfig::from_env_config_file()
+        .ok()
+        .flatten();
+    if !is_production_like_runtime_environment(runtime_toml.as_ref()) {
+        return;
+    }
+    if env_flag_enabled(
+        std::env::var("SDKWORK_CLAW_WEB_FRAMEWORK_LEGACY")
+            .ok()
+            .as_deref(),
+    ) {
+        panic!(
+            "SDKWORK_CLAW_WEB_FRAMEWORK_LEGACY must not be enabled in production-like environments"
+        );
+    }
+    if !claw_web_framework_enabled_from_env() {
+        panic!(
+            "sdkwork-web-framework must remain enabled in production-like environments; do not set SDKWORK_CLAW_WEB_FRAMEWORK_ENABLED=false"
+        );
+    }
+}
+
+fn trusted_subject_projection_failed_response(request: &Request<axum::body::Body>) -> Response {
+    let trace_id = request
+        .extensions()
+        .get::<WebRequestContext>()
+        .map(|context| context.resolved_trace_id())
+        .unwrap_or_else(sdkwork_utils_rust::uuid);
+    let routing = request
+        .extensions()
+        .get::<WebRequestContext>()
+        .map(WebRequestContext::problem_routing)
+        .unwrap_or_else(|| {
+            SdkWorkProblemRouting::from_parts(
+                Some(request.method().as_str()),
+                None,
+                Some(request.uri().path()),
+                None,
+            )
+        });
+    let problem = SdkWorkProblemDetail::platform_enriched(
+        SdkWorkResultCode::InternalError,
+        "authenticated principal could not be projected to trusted request subject",
+        trace_id.clone(),
+        routing,
+    );
+    let mut response = (
         StatusCode::INTERNAL_SERVER_ERROR,
-        Json(ProjectionErrorEnvelope {
-            code: "5001",
-            msg: "authenticated principal could not be projected to trusted request subject"
-                .to_owned(),
-            data: None,
-        }),
+        [(header::CONTENT_TYPE, "application/problem+json")],
+        Json(problem),
     )
-        .into_response()
+        .into_response();
+    if let Ok(value) = HeaderValue::from_str(&trace_id) {
+        response.headers_mut().insert(
+            HeaderName::from_static("x-sdkwork-trace-id"),
+            value,
+        );
+    }
+    response
 }
 
 pub fn apply_app_subject_boundary_if_legacy(
@@ -141,6 +185,21 @@ pub fn merge_federated_app_capability_router(
         capability_router.layer(from_fn_with_state(
             legacy_config,
             federated_app_request_subject_boundary,
+        )),
+    )
+}
+
+/// Merges federated commerce routers that include manifest-public routes such as
+/// `GET /app/v3/api/recharges/packages`.
+pub fn merge_federated_app_capability_router_with_optional_auth(
+    router: Router,
+    capability_router: Router,
+    legacy_config: AppSubjectBoundaryConfig,
+) -> Router {
+    router.merge(
+        capability_router.layer(from_fn_with_state(
+            legacy_config,
+            optional_app_request_subject_boundary,
         )),
     )
 }

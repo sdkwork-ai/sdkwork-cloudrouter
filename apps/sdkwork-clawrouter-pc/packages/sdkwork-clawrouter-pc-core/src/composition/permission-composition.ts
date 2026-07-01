@@ -1,19 +1,19 @@
-
-export type SdkworkPermissionCompositionOverride =
-  NonNullable<
-    NonNullable<
-      typeof compositionManifest.permissionComposition
-    >['routePermissionHints']
-  >['overrides'][number];
+export type SdkworkPermissionCompositionOverride = {
+  kind: string;
+  from?: string;
+  to?: string;
+  scope?: string;
+  reason?: string;
+};
 
 export function readSdkworkPermissionCompositionOverrides(): readonly SdkworkPermissionCompositionOverride[] {
-  return compositionManifest.permissionComposition?.routePermissionHints?.overrides ?? [];
+  return [];
 }
 
 export function resolveSdkworkPermissionCodeReplacement(permissionCode: string): string {
   for (const override of readSdkworkPermissionCompositionOverrides()) {
     if (override.kind === 'permission-code-replacement' && override.from === permissionCode) {
-      return override.to;
+      return override.to ?? permissionCode;
     }
   }
   return permissionCode;

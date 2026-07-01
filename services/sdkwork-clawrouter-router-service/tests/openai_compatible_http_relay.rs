@@ -449,7 +449,7 @@ async fn openai_compatible_relay_uses_configured_retryable_statuses_without_defa
         .unwrap();
 
     assert_eq!(500, response.status_code);
-    assert_eq!("provider_error", response.body["error"]["code"]);
+    assert_eq!("provider_error", response.body["error"]["code"].as_i64().unwrap());
 
     let state = state.lock().unwrap();
     assert_eq!(1, state.requests.len());
@@ -503,7 +503,7 @@ async fn openai_compatible_relay_does_not_retry_non_retryable_upstream_status() 
         .unwrap();
 
     assert_eq!(401, response.status_code);
-    assert_eq!("invalid_api_key", response.body["error"]["code"]);
+    assert_eq!("invalid_api_key", response.body["error"]["code"].as_i64().unwrap());
 
     let state = state.lock().unwrap();
     assert_eq!(1, state.requests.len());

@@ -24,8 +24,8 @@ WHERE status = 1
   AND tenant_id = $1
   AND organization_id = $2
   AND user_id = $3
-  AND ($4::text IS NULL OR occurred_at >= ($4::timestamp AT TIME ZONE 'UTC'))
-  AND ($5::text IS NULL OR occurred_at <= ($5::timestamp AT TIME ZONE 'UTC'))
+  AND ($4::text IS NULL OR occurred_at >= $4::timestamptz)
+  AND ($5::text IS NULL OR occurred_at <= $5::timestamptz)
 "#;
 
 const LOAD_ERROR_COUNT: &str = r#"
@@ -36,8 +36,8 @@ WHERE status = 1
   AND organization_id = $2
   AND user_id = $3
   AND started_at IS NOT NULL
-  AND ($4::text IS NULL OR started_at >= ($4::timestamp AT TIME ZONE 'UTC'))
-  AND ($5::text IS NULL OR started_at <= ($5::timestamp AT TIME ZONE 'UTC'))
+  AND ($4::text IS NULL OR started_at >= $4::timestamptz)
+  AND ($5::text IS NULL OR started_at <= $5::timestamptz)
   AND (
     (http_status IS NOT NULL AND http_status >= 400)
     OR error_type IS NOT NULL
@@ -70,8 +70,8 @@ WHERE status = 1
   AND organization_id = $2
   AND user_id = $3
   AND occurred_at IS NOT NULL
-  AND ($4::text IS NULL OR occurred_at >= ($4::timestamp AT TIME ZONE 'UTC'))
-  AND ($5::text IS NULL OR occurred_at <= ($5::timestamp AT TIME ZONE 'UTC'))
+  AND ($4::text IS NULL OR occurred_at >= $4::timestamptz)
+  AND ($5::text IS NULL OR occurred_at <= $5::timestamptz)
 GROUP BY period
 ORDER BY period ASC
 LIMIT 60

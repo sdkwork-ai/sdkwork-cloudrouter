@@ -5,7 +5,7 @@
 
 **Goal:** Complete the admin Membership Center with independent CRUD page components, drawer-based create/edit flows, generated backend SDK service coverage, and seed integrity diagnostics.
 
-**Architecture:** Keep the portal package boundary stable by exporting `MembershipsAdmin` from `index.tsx`, but move each membership subpage into focused `pages/*Page.tsx` files and drawer forms into `forms/*DrawerForm.tsx`. Keep all remote calls inside `membershipsService.ts` through `getClawRouterBackendSdkClient().commerce.*`; add Rust seed diagnostics in the membership SQLx seed module without schema changes.
+**Architecture:** Keep the portal package boundary stable by exporting `MembershipsAdmin` from `index.tsx`, but move each membership subpage into focused `pages/*Page.tsx` files and drawer forms into `forms/*DrawerForm.tsx`. Keep all remote calls inside `membershipsService.ts` through `getClawRouterBackendSdkClient().memberships.*`; add Rust seed diagnostics in the membership SQLx seed module without schema changes.
 
 **Tech Stack:** React 19, TypeScript, lucide-react, generated `@sdkwork/clawrouter-backend-sdk`, Node `node:test`, Rust, Axum, SQLx SQLite/Postgres.
 
@@ -156,10 +156,10 @@ Expected: FAIL because integrity report functions/types do not exist.
 Add typed inputs and functions for package groups, packages, plans, and member status. Use only:
 
 ```ts
-getClawRouterBackendSdkClient().commerce.memberships.packageGroups.*
-getClawRouterBackendSdkClient().commerce.memberships.packages.*
-getClawRouterBackendSdkClient().commerce.memberships.plans.*
-getClawRouterBackendSdkClient().commerce.memberships.members.status.update
+getClawRouterBackendSdkClient().memberships.packageGroups.*
+getClawRouterBackendSdkClient().memberships.packages.*
+getClawRouterBackendSdkClient().memberships.plans.*
+getClawRouterBackendSdkClient().memberships.members.status.update
 ```
 
 - [ ] **Step 2: Add validation helpers**

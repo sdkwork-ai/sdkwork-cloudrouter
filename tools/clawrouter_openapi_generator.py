@@ -56,6 +56,33 @@ class ClawRouterOpenApiGenerator:
         "/backend/v3/api/ai/resources",
         "/backend/v3/api/ai/resource_groups",
     )
+    DOMAIN_TRANSPORT_DOMAINS = frozenset({"commerce", "promotion"})
+    DOMAIN_TRANSPORT_OUTPUTS = {
+        "app": Path("sdks/clawrouter-app-sdk/openapi/clawrouter-app-domain-transport.openapi.json"),
+        "backend": Path("sdks/clawrouter-backend-sdk/openapi/clawrouter-backend-domain-transport.openapi.json"),
+    }
+    DOMAIN_TRANSPORT_INFO = {
+        "app": {
+            "title": "SDKWork Claw Router App Domain Transport API",
+            "description": (
+                "Claw Router app domain transport for wallet, membership, promotion, catalog, "
+                "order, and payment modules."
+            ),
+            "sdk_family": "clawrouter-app-domain-transport",
+            "api_authority": "sdkwork-clawrouter.app",
+            "audience": "App, desktop, mobile, H5, and user-facing clients.",
+        },
+        "backend": {
+            "title": "SDKWork Claw Router Backend Domain Transport API",
+            "description": (
+                "Claw Router backend domain transport for wallet, membership, promotion, catalog, "
+                "order, payment, inventory, and finance modules."
+            ),
+            "sdk_family": "clawrouter-backend-domain-transport",
+            "api_authority": "sdkwork-clawrouter.backend",
+            "audience": "Admin, management, and operator-facing clients.",
+        },
+    }
     COMMERCE_DEPENDENCY_OPENAPI_CANDIDATES = {
         "app": (
             "generated/openapi/commerce-app-api.openapi.json",
@@ -96,6 +123,11 @@ class ClawRouterOpenApiGenerator:
         "verificationCodes.verify",
     }
     REFRESH_TOKEN_OPERATION_IDS = {"sessions.refresh"}
+    PUBLIC_MODELS_APP_CATALOG_OPERATION_IDS = {
+        "models.list",
+        "modelVendors.list",
+        "modelRankings.list",
+    }
     PUBLIC_PROJECT_LEGACY_RECORD_COMPONENTS = {
         "PlusAgentSkillPackageRecord",
         "PlusAgentSkillRecord",
@@ -159,6 +191,7 @@ class ClawRouterOpenApiGenerator:
                 operation,
                 operation_ids[id(operation)],
                 schema_components,
+                surface=surface,
             )
 
         components = self._components(operations, operation_ids, schema_components)
@@ -437,6 +470,7 @@ class ClawRouterOpenApiGenerator:
                 operation,
                 operation_ids[id(operation)],
                 schema_components,
+                surface=surface,
             )
             operation_spec["x-sdkwork-owner"] = "sdkwork-models"
             operation_spec["x-sdkwork-api-authority"] = (
@@ -494,6 +528,14 @@ class ClawRouterOpenApiGenerator:
                 newline="\n",
             )
             outputs[f"models-catalog-{surface}"] = models_catalog_output
+            domain_transport_output = self.domain_transport_output_path(surface)
+            domain_transport_output.parent.mkdir(parents=True, exist_ok=True)
+            domain_transport_output.write_text(
+                self.render_domain_transport_json(surface),
+                encoding="utf-8",
+                newline="\n",
+            )
+            outputs[f"domain-transport-{surface}"] = domain_transport_output
         return outputs
 
     def check(self) -> ClawRouterOpenApiCheckResult:
@@ -520,6 +562,18 @@ class ClawRouterOpenApiGenerator:
                     messages.append(
                         f"clawrouter models catalog {surface} OpenAPI spec is stale: {models_catalog_output}"
                     )
+                domain_transport_output = self.domain_transport_output_path(surface)
+                domain_transport_expected = self.render_domain_transport_json(surface)
+                if not domain_transport_output.exists():
+                    messages.append(
+                        f"clawrouter domain transport {surface} OpenAPI spec is missing: {domain_transport_output}"
+                    )
+                    continue
+                domain_transport_actual = domain_transport_output.read_text(encoding="utf-8")
+                if domain_transport_actual != domain_transport_expected:
+                    messages.append(
+                        f"clawrouter domain transport {surface} OpenAPI spec is stale: {domain_transport_output}"
+                    )
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             messages.append(str(exc))
         return ClawRouterOpenApiCheckResult(ok=not messages, messages=messages)
@@ -534,11 +588,114 @@ class ClawRouterOpenApiGenerator:
             raise ValueError(f"unsupported OpenAPI surface: {surface}")
         return self.output_dir / self.MODELS_CATALOG_OUTPUTS[surface]
 
+    def domain_transport_output_path(self, surface: str) -> Path:
+        if surface not in self.DOMAIN_TRANSPORT_OUTPUTS:
+            raise ValueError(f"unsupported OpenAPI surface: {surface}")
+        return self.root / self.DOMAIN_TRANSPORT_OUTPUTS[surface]
+
+    def render_domain_transport_json(self, surface: str) -> str:
+        source = self.generate(surface)
+        payload = self._extract_domain_transport_spec(source, surface)
+        return json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+
+    def _extract_domain_transport_spec(self, source: dict[str, Any], surface: str) -> dict[str, Any]:
+        metadata = self.DOMAIN_TRANSPORT_INFO[surface]
+        paths: dict[str, Any] = {}
+        used_tags: set[str] = set()
+        for path_key, path_item in (source.get("paths") or {}).items():
+            if not isinstance(path_item, dict):
+                continue
+            filtered_methods: dict[str, Any] = {}
+            for method, operation in path_item.items():
+                if method.startswith("x-") or not isinstance(operation, dict):
+                    continue
+                domain = self._string(operation.get("x-sdkwork-domain")) or self._string(operation.get("x-sdk-domain"))
+                if domain not in self.DOMAIN_TRANSPORT_DOMAINS:
+                    continue
+                filtered_methods[method] = copy.deepcopy(operation)
+                for tag in operation.get("tags", []):
+                    if isinstance(tag, str) and tag.strip():
+                        used_tags.add(tag.strip())
+            if filtered_methods:
+                paths[path_key] = filtered_methods
+
+        components = copy.deepcopy(source.get("components") or {})
+        self._prune_unreachable_component_schemas(paths, components)
+
+        source_info = source.get("info")
+        version = "1.0.0"
+        if isinstance(source_info, dict):
+            version = self._string(source_info.get("version")) or version
+
+        return {
+            "openapi": source.get("openapi", "3.1.2"),
+            "info": {
+                "title": metadata["title"],
+                "version": version,
+                "description": metadata["description"],
+                "x-sdkwork-api-authority": metadata["api_authority"],
+                "x-sdkwork-sdk-family": metadata["sdk_family"],
+                "x-sdkwork-audience": metadata["audience"],
+                "x-sdkwork-owner": "sdkwork-clawrouter",
+            },
+            "servers": copy.deepcopy(source.get("servers") or []),
+            "tags": [
+                {
+                    "name": tag,
+                    "description": f"{self._tag_label(tag)} API resources.",
+                    "x-sdk-nested-resource-surface": True,
+                }
+                for tag in sorted(used_tags)
+            ],
+            "security": copy.deepcopy(source.get("security") or []),
+            "paths": paths,
+            "components": components,
+        }
+
+    def _prune_unreachable_component_schemas(self, paths: dict[str, Any], components: dict[str, Any]) -> None:
+        schemas = components.get("schemas")
+        if not isinstance(schemas, dict):
+            return
+
+        reachable = self._collect_component_schema_refs(paths)
+        queue = list(reachable)
+        while queue:
+            schema_name = queue.pop()
+            schema = schemas.get(schema_name)
+            if not isinstance(schema, (dict, list)):
+                continue
+            for nested_ref in self._collect_component_schema_refs(schema):
+                if nested_ref in reachable:
+                    continue
+                reachable.add(nested_ref)
+                queue.append(nested_ref)
+
+        for schema_name in list(schemas.keys()):
+            if schema_name not in reachable:
+                del schemas[schema_name]
+
+    def _collect_component_schema_refs(self, value: Any) -> set[str]:
+        refs: set[str] = set()
+        if isinstance(value, list):
+            for item in value:
+                refs.update(self._collect_component_schema_refs(item))
+            return refs
+        if not isinstance(value, dict):
+            return refs
+        ref = value.get("$ref")
+        if isinstance(ref, str) and ref.startswith("#/components/schemas/"):
+            refs.add(ref.removeprefix("#/components/schemas/"))
+        for item in value.values():
+            refs.update(self._collect_component_schema_refs(item))
+        return refs
+
     def _operation_spec(
         self,
         operation: dict[str, Any],
         operation_id: str,
         schema_components: dict[str, Any],
+        *,
+        surface: str | None = None,
     ) -> dict[str, Any]:
         method = self._string(operation.get("api_method")).upper()
         path_params = self._string_list(operation.get("path_params"))
@@ -574,7 +731,7 @@ class ClawRouterOpenApiGenerator:
             "x-write-tables": self._string_list(operation.get("write_tables")),
             "x-file-targets": self._string_list(operation.get("file_targets")),
         }
-        spec["security"] = self._operation_security(operation_id)
+        spec["security"] = self._operation_security(operation_id, surface=surface)
         sdk_domain = self._string(operation.get("sdk_domain"))
         if sdk_domain:
             spec["x-sdkwork-domain"] = sdk_domain
@@ -838,8 +995,15 @@ class ClawRouterOpenApiGenerator:
             candidate = f"operation{candidate[0].upper()}{candidate[1:]}"
         return candidate
 
-    def _operation_security(self, operation_id: str) -> list[dict[str, list[str]]]:
+    def _operation_security(
+        self, operation_id: str, *, surface: str | None = None
+    ) -> list[dict[str, list[str]]]:
         if operation_id in self.PUBLIC_IAM_OPERATION_IDS:
+            return []
+        if (
+            surface == "app"
+            and operation_id in self.PUBLIC_MODELS_APP_CATALOG_OPERATION_IDS
+        ):
             return []
         if operation_id in self.REFRESH_TOKEN_OPERATION_IDS:
             return [{"AuthToken": [], "AccessToken": []}]

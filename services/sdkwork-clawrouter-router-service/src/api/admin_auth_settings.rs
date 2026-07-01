@@ -11,7 +11,7 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::ports::{
@@ -182,7 +182,7 @@ async fn fetch_auth_settings(
         .get_auth_settings(GetAdminAuthSettingsQuery { subject })
         .await
     {
-        Ok(settings) => Json(PlusApiResult::success(to_response(settings))).into_response(),
+        Ok(settings) => Json(success_envelope(to_response(settings))).into_response(),
         Err(error) => {
             auth_settings_system_response("auth settings read model is unavailable", error)
         }
@@ -220,7 +220,7 @@ async fn update_auth_settings(
     };
 
     match state.store.update_auth_settings(command).await {
-        Ok(settings) => Json(PlusApiResult::success(to_response(settings))).into_response(),
+        Ok(settings) => Json(success_envelope(to_response(settings))).into_response(),
         Err(error) => {
             auth_settings_system_response("auth settings command store is unavailable", error)
         }
@@ -741,7 +741,7 @@ fn to_wechat_response(settings: AdminAuthWechatSettings) -> AdminAuthWechatRespo
 }
 
 fn bad_request(message: String) -> Response {
-    PlusApiResult::error("4001", message)).into_response()
+    problem_from_wire_code("4001", message).into_response()
 }
 
 fn command_build_error_response(error: AuthSettingsCommandBuildError) -> Response {
@@ -754,7 +754,7 @@ fn command_build_error_response(error: AuthSettingsCommandBuildError) -> Respons
 }
 
 fn auth_settings_system_response(context: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }
 
 fn current_timestamp_string() -> String {

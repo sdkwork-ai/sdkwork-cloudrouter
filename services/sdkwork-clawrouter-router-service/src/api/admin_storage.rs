@@ -9,7 +9,7 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::domain::DomainError;
 use crate::ports::{
     AdminStorageCollection, AdminStorageJsonRecord, AdminStorageStore, AdminStorageSubject,
@@ -298,7 +298,7 @@ async fn create_provider(
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.create_provider(command).await {
-        Ok(provider) => Json(PlusApiResult::success(StorageProviderMutationResponse {
+        Ok(provider) => Json(success_envelope(StorageProviderMutationResponse {
             provider,
             request_id,
         }))
@@ -320,7 +320,7 @@ async fn update_provider(
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.update_provider(command).await {
-        Ok(provider) => Json(PlusApiResult::success(StorageProviderMutationResponse {
+        Ok(provider) => Json(success_envelope(StorageProviderMutationResponse {
             provider,
             request_id,
         }))
@@ -343,7 +343,7 @@ async fn check_provider_health(
         Ok(mut item) => {
             item.entry("requestId".to_owned())
                 .or_insert_with(|| serde_json::Value::String(response_request_id(None)));
-            Json(PlusApiResult::success(item)).into_response()
+            Json(success_envelope(item)).into_response()
         }
         Err(error) => storage_error_response("storage provider health check is unavailable", error),
     }
@@ -376,7 +376,7 @@ async fn create_bucket(
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.create_bucket(command).await {
-        Ok(bucket) => Json(PlusApiResult::success(StorageBucketMutationResponse {
+        Ok(bucket) => Json(success_envelope(StorageBucketMutationResponse {
             bucket,
             request_id,
         }))
@@ -398,7 +398,7 @@ async fn update_bucket(
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.update_bucket(command).await {
-        Ok(bucket) => Json(PlusApiResult::success(StorageBucketMutationResponse {
+        Ok(bucket) => Json(success_envelope(StorageBucketMutationResponse {
             bucket,
             request_id,
         }))
@@ -436,7 +436,7 @@ async fn set_default_bucket(
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.set_default_bucket(command).await {
-        Ok(default_bucket) => Json(PlusApiResult::success(
+        Ok(default_bucket) => Json(success_envelope(
             StorageDefaultBucketMutationResponse {
                 default_bucket,
                 request_id,
@@ -474,7 +474,7 @@ async fn create_quota_policy(
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.create_quota_policy(command).await {
-        Ok(quota_policy) => Json(PlusApiResult::success(StorageQuotaPolicyMutationResponse {
+        Ok(quota_policy) => Json(success_envelope(StorageQuotaPolicyMutationResponse {
             quota_policy,
             request_id,
         }))
@@ -555,7 +555,7 @@ async fn create_reconciliation_run(
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.create_reconciliation_run(command).await {
-        Ok(reconciliation_run) => Json(PlusApiResult::success(
+        Ok(reconciliation_run) => Json(success_envelope(
             StorageReconciliationRunMutationResponse {
                 reconciliation_run,
                 request_id,
@@ -593,7 +593,7 @@ async fn create_gc_job(
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.create_gc_job(command).await {
-        Ok(job) => Json(PlusApiResult::success(
+        Ok(job) => Json(success_envelope(
             StorageGarbageCollectionJobMutationResponse { job, request_id },
         ))
         .into_response(),
@@ -625,7 +625,7 @@ where
 }
 
 fn collection_response(collection: AdminStorageCollection) -> Response {
-    Json(PlusApiResult::success(StorageListResponse {
+    Json(success_envelope(StorageListResponse {
         items: collection.items,
         next_cursor: collection.next_cursor,
         request_id: collection.request_id,
@@ -995,19 +995,19 @@ fn response_request_id(value: Option<&str>) -> String {
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4001", message.into())).into_response()
+    problem_from_wire_code("4001", message.into()).into_response()
 }
 
 fn storage_error_response(context: &str, error: DomainError) -> Response {
     if error.is_not_found() {
-        return PlusApiResult::error("4004", error.to_string())).into_response();
+        return problem_from_wire_code("4040", error.to_string()).into_response();
     }
     if error.is_conflict() {
-        return PlusApiResult::error("4090", error.to_string())).into_response();
+        return problem_from_wire_code("4090", error.to_string()).into_response();
     }
     storage_system_response(context, error)
 }
 
 fn storage_system_response(context: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }

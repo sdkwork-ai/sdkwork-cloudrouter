@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "4e1de1c7a426669c04a0e326a8d30c761424a3d36e76fd4949d7258918042b3c",
+  "changeFingerprint": "5e4575375782efdf697b5d795149112a6d6134716c34ad58f39ab15ba6142e04",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -32,7 +32,7 @@
           "src/api/ai.ts",
           "src/api/base.ts",
           "src/api/chat.ts",
-          "src/api/commerce.ts",
+          "src/api/iam.ts",
           "src/api/index.ts",
           "src/api/notification.ts",
           "src/api/paths.ts",
@@ -45,14 +45,6 @@
       {
         "area": "models",
         "paths": [
-          "src/types/accounts-current-summary-retrieve-response.ts",
-          "src/types/accounts-current-summary-retrieve-result.ts",
-          "src/types/addresses-create-response.ts",
-          "src/types/addresses-create-result.ts",
-          "src/types/addresses-default-selection-create-response.ts",
-          "src/types/addresses-default-selection-create-result.ts",
-          "src/types/addresses-update-response.ts",
-          "src/types/addresses-update-result.ts",
           "src/types/after-sales-requests-create-response.ts",
           "src/types/after-sales-requests-create-result.ts",
           "src/types/after-sales-requests-retrieve-response.ts",
@@ -61,32 +53,12 @@
           "src/types/after-sales-requests-update-result.ts",
           "src/types/after-sales-return-shipments-create-response.ts",
           "src/types/after-sales-return-shipments-create-result.ts",
+          "src/types/api-keys-create-response.ts",
+          "src/types/api-keys-create-result.ts",
+          "src/types/api-keys-update-response.ts",
+          "src/types/api-keys-update-result.ts",
           "src/types/artifacts-create-response.ts",
           "src/types/artifacts-create-result.ts",
-          "src/types/cart-current-retrieve-response.ts",
-          "src/types/cart-current-retrieve-result.ts",
-          "src/types/cart-items-create-response.ts",
-          "src/types/cart-items-create-result.ts",
-          "src/types/cart-items-update-response.ts",
-          "src/types/cart-items-update-result.ts",
-          "src/types/catalog-categories-retrieve-response.ts",
-          "src/types/catalog-categories-retrieve-result.ts",
-          "src/types/catalog-products-retrieve-response.ts",
-          "src/types/catalog-products-retrieve-result.ts",
-          "src/types/catalog-skus-prices-retrieve-response.ts",
-          "src/types/catalog-skus-prices-retrieve-result.ts",
-          "src/types/catalog-skus-retrieve-response.ts",
-          "src/types/catalog-skus-retrieve-result.ts",
-          "src/types/catalog-spus-retrieve-response.ts",
-          "src/types/catalog-spus-retrieve-result.ts",
-          "src/types/checkout-sessions-create-response.ts",
-          "src/types/checkout-sessions-create-result.ts",
-          "src/types/checkout-sessions-orders-create-response.ts",
-          "src/types/checkout-sessions-orders-create-result.ts",
-          "src/types/checkout-sessions-quotes-create-response.ts",
-          "src/types/checkout-sessions-quotes-create-result.ts",
-          "src/types/checkout-sessions-retrieve-response.ts",
-          "src/types/checkout-sessions-retrieve-result.ts",
           "src/types/common.ts",
           "src/types/conversations-create-response.ts",
           "src/types/conversations-create-result.ts",
@@ -95,8 +67,6 @@
           "src/types/dashboard-overview-retrieve-response.ts",
           "src/types/dashboard-overview-retrieve-result.ts",
           "src/types/field-error.ts",
-          "src/types/fulfillments-retrieve-response.ts",
-          "src/types/fulfillments-retrieve-result.ts",
           "src/types/index.ts",
           "src/types/invocation-events-create-response.ts",
           "src/types/invocation-events-create-result.ts",
@@ -106,130 +76,18 @@
           "src/types/invocations-retrieve-result.ts",
           "src/types/invocations-submit-response.ts",
           "src/types/invocations-submit-result.ts",
-          "src/types/invoices-cancellations-create-response.ts",
-          "src/types/invoices-cancellations-create-result.ts",
-          "src/types/invoices-create-response.ts",
-          "src/types/invoices-create-result.ts",
-          "src/types/invoices-retrieve-response.ts",
-          "src/types/invoices-retrieve-result.ts",
-          "src/types/invoices-statistics-retrieve-response.ts",
-          "src/types/invoices-statistics-retrieve-result.ts",
-          "src/types/invoices-submissions-create-response.ts",
-          "src/types/invoices-submissions-create-result.ts",
-          "src/types/invoices-update-response.ts",
-          "src/types/invoices-update-result.ts",
-          "src/types/memberships-current-retrieve-response.ts",
-          "src/types/memberships-current-retrieve-result.ts",
-          "src/types/memberships-current-status-retrieve-response.ts",
-          "src/types/memberships-current-status-retrieve-result.ts",
-          "src/types/memberships-package-groups-retrieve-response.ts",
-          "src/types/memberships-package-groups-retrieve-result.ts",
-          "src/types/memberships-packages-retrieve-response.ts",
-          "src/types/memberships-packages-retrieve-result.ts",
-          "src/types/memberships-points-balance-retrieve-response.ts",
-          "src/types/memberships-points-balance-retrieve-result.ts",
-          "src/types/memberships-points-daily-rewards-create-response.ts",
-          "src/types/memberships-points-daily-rewards-create-result.ts",
-          "src/types/memberships-points-daily-rewards-status-retrieve-response.ts",
-          "src/types/memberships-points-daily-rewards-status-retrieve-result.ts",
-          "src/types/memberships-privileges-speed-ups-create-response.ts",
-          "src/types/memberships-privileges-speed-ups-create-result.ts",
-          "src/types/memberships-privileges-usage-retrieve-response.ts",
-          "src/types/memberships-privileges-usage-retrieve-result.ts",
-          "src/types/memberships-purchases-create-response.ts",
-          "src/types/memberships-purchases-create-result.ts",
-          "src/types/memberships-purchases-renew-response.ts",
-          "src/types/memberships-purchases-renew-result.ts",
-          "src/types/memberships-purchases-upgrade-response.ts",
-          "src/types/memberships-purchases-upgrade-result.ts",
           "src/types/notifications-acknowledge-create-response.ts",
           "src/types/notifications-acknowledge-create-result.ts",
           "src/types/notifications-popup-seen-create-response.ts",
           "src/types/notifications-popup-seen-create-result.ts",
-          "src/types/orders-cancel-response.ts",
-          "src/types/orders-cancel-result.ts",
-          "src/types/orders-cancellations-create-response.ts",
-          "src/types/orders-cancellations-create-result.ts",
-          "src/types/orders-create-response.ts",
-          "src/types/orders-create-result.ts",
-          "src/types/orders-pay-response.ts",
-          "src/types/orders-pay-result.ts",
-          "src/types/orders-payment-success-retrieve-response.ts",
-          "src/types/orders-payment-success-retrieve-result.ts",
-          "src/types/orders-retrieve-response.ts",
-          "src/types/orders-retrieve-result.ts",
-          "src/types/orders-statistics-retrieve-response.ts",
-          "src/types/orders-statistics-retrieve-result.ts",
-          "src/types/orders-status-retrieve-response.ts",
-          "src/types/orders-status-retrieve-result.ts",
           "src/types/page-info.ts",
-          "src/types/payments-attempts-retrieve-response.ts",
-          "src/types/payments-attempts-retrieve-result.ts",
-          "src/types/payments-checkout-retrieve-response.ts",
-          "src/types/payments-checkout-retrieve-result.ts",
-          "src/types/payments-close-response.ts",
-          "src/types/payments-close-result.ts",
-          "src/types/payments-create-response.ts",
-          "src/types/payments-create-result.ts",
-          "src/types/payments-intents-attempts-create-response.ts",
-          "src/types/payments-intents-attempts-create-result.ts",
-          "src/types/payments-intents-cancel-response.ts",
-          "src/types/payments-intents-cancel-result.ts",
-          "src/types/payments-intents-create-response.ts",
-          "src/types/payments-intents-create-result.ts",
-          "src/types/payments-intents-retrieve-response.ts",
-          "src/types/payments-intents-retrieve-result.ts",
-          "src/types/payments-reconcile-response.ts",
-          "src/types/payments-reconcile-result.ts",
-          "src/types/payments-records-retrieve-response.ts",
-          "src/types/payments-records-retrieve-result.ts",
-          "src/types/payments-statistics-retrieve-response.ts",
-          "src/types/payments-statistics-retrieve-result.ts",
-          "src/types/payments-status-retrieve-by-out-trade-no-response.ts",
-          "src/types/payments-status-retrieve-by-out-trade-no-result.ts",
-          "src/types/payments-status-retrieve-response.ts",
-          "src/types/payments-status-retrieve-result.ts",
           "src/types/problem-detail.ts",
-          "src/types/promotions-codes-redemptions-create-response.ts",
-          "src/types/promotions-codes-redemptions-create-result.ts",
-          "src/types/promotions-discount-applications-create-response.ts",
-          "src/types/promotions-discount-applications-create-result.ts",
-          "src/types/promotions-discount-applications-release-response.ts",
-          "src/types/promotions-discount-applications-release-result.ts",
-          "src/types/promotions-discount-applications-reversals-create-response.ts",
-          "src/types/promotions-discount-applications-reversals-create-result.ts",
-          "src/types/promotions-discount-applications-rollback-response.ts",
-          "src/types/promotions-discount-applications-rollback-result.ts",
-          "src/types/promotions-discount-applications-settle-response.ts",
-          "src/types/promotions-discount-applications-settle-result.ts",
-          "src/types/promotions-offers-retrieve-response.ts",
-          "src/types/promotions-offers-retrieve-result.ts",
-          "src/types/promotions-user-coupons-claims-create-response.ts",
-          "src/types/promotions-user-coupons-claims-create-result.ts",
-          "src/types/promotions-user-coupons-retrieve-response.ts",
-          "src/types/promotions-user-coupons-retrieve-result.ts",
-          "src/types/promotions-user-coupons-wallet-retrieve-response.ts",
-          "src/types/promotions-user-coupons-wallet-retrieve-result.ts",
-          "src/types/recharges-orders-cancel-response.ts",
-          "src/types/recharges-orders-cancel-result.ts",
-          "src/types/recharges-orders-create-response.ts",
-          "src/types/recharges-orders-create-result.ts",
-          "src/types/recharges-orders-retrieve-response.ts",
-          "src/types/recharges-orders-retrieve-result.ts",
-          "src/types/recharges-settings-retrieve-response.ts",
-          "src/types/recharges-settings-retrieve-result.ts",
-          "src/types/refunds-create-response.ts",
-          "src/types/refunds-create-result.ts",
-          "src/types/refunds-retrieve-response.ts",
-          "src/types/refunds-retrieve-result.ts",
           "src/types/sdk-work-api-response.ts",
           "src/types/sdk-work-command-data.ts",
           "src/types/sdk-work-command-response.ts",
           "src/types/sdk-work-list-response.ts",
           "src/types/sdk-work-page-data.ts",
           "src/types/sdk-work-platform-error-code.ts",
-          "src/types/shipments-retrieve-response.ts",
-          "src/types/shipments-retrieve-result.ts",
           "src/types/shops-current-applications-create-response.ts",
           "src/types/shops-current-applications-create-result.ts",
           "src/types/shops-current-brand-authorizations-upsert-response.ts",
@@ -293,45 +151,7 @@
           "src/types/turn-responses-create-response.ts",
           "src/types/turn-responses-create-result.ts",
           "src/types/turns-create-response.ts",
-          "src/types/turns-create-result.ts",
-          "src/types/wallet-accounts-overview-retrieve-response.ts",
-          "src/types/wallet-accounts-overview-retrieve-result.ts",
-          "src/types/wallet-accounts-points-retrieve-response.ts",
-          "src/types/wallet-accounts-points-retrieve-result.ts",
-          "src/types/wallet-accounts-retrieve-response.ts",
-          "src/types/wallet-accounts-retrieve-result.ts",
-          "src/types/wallet-accounts-tokens-retrieve-response.ts",
-          "src/types/wallet-accounts-tokens-retrieve-result.ts",
-          "src/types/wallet-adjustments-create-response.ts",
-          "src/types/wallet-adjustments-create-result.ts",
-          "src/types/wallet-exchange-rate-retrieve-response.ts",
-          "src/types/wallet-exchange-rate-retrieve-result.ts",
-          "src/types/wallet-holds-create-response.ts",
-          "src/types/wallet-holds-create-result.ts",
-          "src/types/wallet-holds-releases-create-response.ts",
-          "src/types/wallet-holds-releases-create-result.ts",
-          "src/types/wallet-holds-settlements-create-response.ts",
-          "src/types/wallet-holds-settlements-create-result.ts",
-          "src/types/wallet-ledger-entries-retrieve-response.ts",
-          "src/types/wallet-ledger-entries-retrieve-result.ts",
-          "src/types/wallet-overview-retrieve-response.ts",
-          "src/types/wallet-overview-retrieve-result.ts",
-          "src/types/wallet-point-exchanges-create-response.ts",
-          "src/types/wallet-point-exchanges-create-result.ts",
-          "src/types/wallet-point-exchanges-retrieve-response.ts",
-          "src/types/wallet-point-exchanges-retrieve-result.ts",
-          "src/types/wallet-point-transfers-create-response.ts",
-          "src/types/wallet-point-transfers-create-result.ts",
-          "src/types/wallet-requests-retrieve-response.ts",
-          "src/types/wallet-requests-retrieve-result.ts",
-          "src/types/wallet-tokens-retrieve-response.ts",
-          "src/types/wallet-tokens-retrieve-result.ts",
-          "src/types/wallet-topup-transfers-create-response.ts",
-          "src/types/wallet-topup-transfers-create-result.ts",
-          "src/types/wallet-transactions-retrieve-response.ts",
-          "src/types/wallet-transactions-retrieve-result.ts",
-          "src/types/wallet-withdrawal-transfers-create-response.ts",
-          "src/types/wallet-withdrawal-transfers-create-result.ts"
+          "src/types/turns-create-result.ts"
         ]
       },
       {
@@ -499,28 +319,12 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 315,
-    "models": 286,
+    "totalFiles": 135,
+    "models": 106,
     "apis": 6,
-    "types": 288
+    "types": 108
   },
   "warnings": [
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/accounts-current-summary-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/addresses-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/addresses-default-selection-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/addresses-update-result.ts"
-    },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/after-sales-requests-create-result.ts"
@@ -539,55 +343,15 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/api-keys-create-result.ts"
+    },
+    {
+      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/api-keys-update-result.ts"
+    },
+    {
+      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/artifacts-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/cart-current-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/cart-items-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/cart-items-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-categories-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-products-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-skus-prices-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-skus-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-spus-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/checkout-sessions-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/checkout-sessions-orders-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/checkout-sessions-quotes-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/checkout-sessions-retrieve-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -600,10 +364,6 @@
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/dashboard-overview-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/fulfillments-retrieve-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -623,235 +383,11 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/invoices-cancellations-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/invoices-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/invoices-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/invoices-statistics-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/invoices-submissions-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/invoices-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/memberships-current-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/memberships-current-status-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/memberships-package-groups-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/memberships-packages-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/memberships-points-balance-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/memberships-points-daily-rewards-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/memberships-points-daily-rewards-status-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/memberships-privileges-speed-ups-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/memberships-privileges-usage-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/memberships-purchases-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/memberships-purchases-renew-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/memberships-purchases-upgrade-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/notifications-acknowledge-create-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/notifications-popup-seen-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/orders-cancel-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/orders-cancellations-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/orders-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/orders-pay-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/orders-payment-success-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/orders-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/orders-statistics-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/orders-status-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-attempts-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-checkout-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-close-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-intents-attempts-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-intents-cancel-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-intents-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-intents-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-reconcile-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-records-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-statistics-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-status-retrieve-by-out-trade-no-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-status-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/promotions-codes-redemptions-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/promotions-discount-applications-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/promotions-discount-applications-release-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/promotions-discount-applications-reversals-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/promotions-discount-applications-rollback-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/promotions-discount-applications-settle-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/promotions-offers-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/promotions-user-coupons-claims-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/promotions-user-coupons-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/promotions-user-coupons-wallet-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/recharges-orders-cancel-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/recharges-orders-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/recharges-orders-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/recharges-settings-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/refunds-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/refunds-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/shipments-retrieve-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -983,82 +519,6 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-accounts-overview-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-accounts-points-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-accounts-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-accounts-tokens-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-adjustments-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-exchange-rate-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-holds-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-holds-releases-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-holds-settlements-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-ledger-entries-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-overview-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-point-exchanges-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-point-exchanges-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-point-transfers-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-requests-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-tokens-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-topup-transfers-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-transactions-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-withdrawal-transfers-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/index.ts"
     },
     {
@@ -1085,12 +545,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 314,
+    "writtenFiles": 134,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "4e1de1c7a426669c04a0e326a8d30c761424a3d36e76fd4949d7258918042b3c",
+    "changeFingerprint": "5e4575375782efdf697b5d795149112a6d6134716c34ad58f39ab15ba6142e04",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -1106,7 +566,7 @@
         "src/api/ai.ts",
         "src/api/base.ts",
         "src/api/chat.ts",
-        "src/api/commerce.ts",
+        "src/api/iam.ts",
         "src/api/index.ts",
         "src/api/notification.ts",
         "src/api/paths.ts",
@@ -1117,14 +577,6 @@
         "src/http/index.ts",
         "src/index.ts",
         "src/sdk.ts",
-        "src/types/accounts-current-summary-retrieve-response.ts",
-        "src/types/accounts-current-summary-retrieve-result.ts",
-        "src/types/addresses-create-response.ts",
-        "src/types/addresses-create-result.ts",
-        "src/types/addresses-default-selection-create-response.ts",
-        "src/types/addresses-default-selection-create-result.ts",
-        "src/types/addresses-update-response.ts",
-        "src/types/addresses-update-result.ts",
         "src/types/after-sales-requests-create-response.ts",
         "src/types/after-sales-requests-create-result.ts",
         "src/types/after-sales-requests-retrieve-response.ts",
@@ -1133,32 +585,12 @@
         "src/types/after-sales-requests-update-result.ts",
         "src/types/after-sales-return-shipments-create-response.ts",
         "src/types/after-sales-return-shipments-create-result.ts",
+        "src/types/api-keys-create-response.ts",
+        "src/types/api-keys-create-result.ts",
+        "src/types/api-keys-update-response.ts",
+        "src/types/api-keys-update-result.ts",
         "src/types/artifacts-create-response.ts",
         "src/types/artifacts-create-result.ts",
-        "src/types/cart-current-retrieve-response.ts",
-        "src/types/cart-current-retrieve-result.ts",
-        "src/types/cart-items-create-response.ts",
-        "src/types/cart-items-create-result.ts",
-        "src/types/cart-items-update-response.ts",
-        "src/types/cart-items-update-result.ts",
-        "src/types/catalog-categories-retrieve-response.ts",
-        "src/types/catalog-categories-retrieve-result.ts",
-        "src/types/catalog-products-retrieve-response.ts",
-        "src/types/catalog-products-retrieve-result.ts",
-        "src/types/catalog-skus-prices-retrieve-response.ts",
-        "src/types/catalog-skus-prices-retrieve-result.ts",
-        "src/types/catalog-skus-retrieve-response.ts",
-        "src/types/catalog-skus-retrieve-result.ts",
-        "src/types/catalog-spus-retrieve-response.ts",
-        "src/types/catalog-spus-retrieve-result.ts",
-        "src/types/checkout-sessions-create-response.ts",
-        "src/types/checkout-sessions-create-result.ts",
-        "src/types/checkout-sessions-orders-create-response.ts",
-        "src/types/checkout-sessions-orders-create-result.ts",
-        "src/types/checkout-sessions-quotes-create-response.ts",
-        "src/types/checkout-sessions-quotes-create-result.ts",
-        "src/types/checkout-sessions-retrieve-response.ts",
-        "src/types/checkout-sessions-retrieve-result.ts",
         "src/types/common.ts",
         "src/types/conversations-create-response.ts",
         "src/types/conversations-create-result.ts",
@@ -1167,8 +599,6 @@
         "src/types/dashboard-overview-retrieve-response.ts",
         "src/types/dashboard-overview-retrieve-result.ts",
         "src/types/field-error.ts",
-        "src/types/fulfillments-retrieve-response.ts",
-        "src/types/fulfillments-retrieve-result.ts",
         "src/types/index.ts",
         "src/types/invocation-events-create-response.ts",
         "src/types/invocation-events-create-result.ts",
@@ -1178,130 +608,18 @@
         "src/types/invocations-retrieve-result.ts",
         "src/types/invocations-submit-response.ts",
         "src/types/invocations-submit-result.ts",
-        "src/types/invoices-cancellations-create-response.ts",
-        "src/types/invoices-cancellations-create-result.ts",
-        "src/types/invoices-create-response.ts",
-        "src/types/invoices-create-result.ts",
-        "src/types/invoices-retrieve-response.ts",
-        "src/types/invoices-retrieve-result.ts",
-        "src/types/invoices-statistics-retrieve-response.ts",
-        "src/types/invoices-statistics-retrieve-result.ts",
-        "src/types/invoices-submissions-create-response.ts",
-        "src/types/invoices-submissions-create-result.ts",
-        "src/types/invoices-update-response.ts",
-        "src/types/invoices-update-result.ts",
-        "src/types/memberships-current-retrieve-response.ts",
-        "src/types/memberships-current-retrieve-result.ts",
-        "src/types/memberships-current-status-retrieve-response.ts",
-        "src/types/memberships-current-status-retrieve-result.ts",
-        "src/types/memberships-package-groups-retrieve-response.ts",
-        "src/types/memberships-package-groups-retrieve-result.ts",
-        "src/types/memberships-packages-retrieve-response.ts",
-        "src/types/memberships-packages-retrieve-result.ts",
-        "src/types/memberships-points-balance-retrieve-response.ts",
-        "src/types/memberships-points-balance-retrieve-result.ts",
-        "src/types/memberships-points-daily-rewards-create-response.ts",
-        "src/types/memberships-points-daily-rewards-create-result.ts",
-        "src/types/memberships-points-daily-rewards-status-retrieve-response.ts",
-        "src/types/memberships-points-daily-rewards-status-retrieve-result.ts",
-        "src/types/memberships-privileges-speed-ups-create-response.ts",
-        "src/types/memberships-privileges-speed-ups-create-result.ts",
-        "src/types/memberships-privileges-usage-retrieve-response.ts",
-        "src/types/memberships-privileges-usage-retrieve-result.ts",
-        "src/types/memberships-purchases-create-response.ts",
-        "src/types/memberships-purchases-create-result.ts",
-        "src/types/memberships-purchases-renew-response.ts",
-        "src/types/memberships-purchases-renew-result.ts",
-        "src/types/memberships-purchases-upgrade-response.ts",
-        "src/types/memberships-purchases-upgrade-result.ts",
         "src/types/notifications-acknowledge-create-response.ts",
         "src/types/notifications-acknowledge-create-result.ts",
         "src/types/notifications-popup-seen-create-response.ts",
         "src/types/notifications-popup-seen-create-result.ts",
-        "src/types/orders-cancel-response.ts",
-        "src/types/orders-cancel-result.ts",
-        "src/types/orders-cancellations-create-response.ts",
-        "src/types/orders-cancellations-create-result.ts",
-        "src/types/orders-create-response.ts",
-        "src/types/orders-create-result.ts",
-        "src/types/orders-pay-response.ts",
-        "src/types/orders-pay-result.ts",
-        "src/types/orders-payment-success-retrieve-response.ts",
-        "src/types/orders-payment-success-retrieve-result.ts",
-        "src/types/orders-retrieve-response.ts",
-        "src/types/orders-retrieve-result.ts",
-        "src/types/orders-statistics-retrieve-response.ts",
-        "src/types/orders-statistics-retrieve-result.ts",
-        "src/types/orders-status-retrieve-response.ts",
-        "src/types/orders-status-retrieve-result.ts",
         "src/types/page-info.ts",
-        "src/types/payments-attempts-retrieve-response.ts",
-        "src/types/payments-attempts-retrieve-result.ts",
-        "src/types/payments-checkout-retrieve-response.ts",
-        "src/types/payments-checkout-retrieve-result.ts",
-        "src/types/payments-close-response.ts",
-        "src/types/payments-close-result.ts",
-        "src/types/payments-create-response.ts",
-        "src/types/payments-create-result.ts",
-        "src/types/payments-intents-attempts-create-response.ts",
-        "src/types/payments-intents-attempts-create-result.ts",
-        "src/types/payments-intents-cancel-response.ts",
-        "src/types/payments-intents-cancel-result.ts",
-        "src/types/payments-intents-create-response.ts",
-        "src/types/payments-intents-create-result.ts",
-        "src/types/payments-intents-retrieve-response.ts",
-        "src/types/payments-intents-retrieve-result.ts",
-        "src/types/payments-reconcile-response.ts",
-        "src/types/payments-reconcile-result.ts",
-        "src/types/payments-records-retrieve-response.ts",
-        "src/types/payments-records-retrieve-result.ts",
-        "src/types/payments-statistics-retrieve-response.ts",
-        "src/types/payments-statistics-retrieve-result.ts",
-        "src/types/payments-status-retrieve-by-out-trade-no-response.ts",
-        "src/types/payments-status-retrieve-by-out-trade-no-result.ts",
-        "src/types/payments-status-retrieve-response.ts",
-        "src/types/payments-status-retrieve-result.ts",
         "src/types/problem-detail.ts",
-        "src/types/promotions-codes-redemptions-create-response.ts",
-        "src/types/promotions-codes-redemptions-create-result.ts",
-        "src/types/promotions-discount-applications-create-response.ts",
-        "src/types/promotions-discount-applications-create-result.ts",
-        "src/types/promotions-discount-applications-release-response.ts",
-        "src/types/promotions-discount-applications-release-result.ts",
-        "src/types/promotions-discount-applications-reversals-create-response.ts",
-        "src/types/promotions-discount-applications-reversals-create-result.ts",
-        "src/types/promotions-discount-applications-rollback-response.ts",
-        "src/types/promotions-discount-applications-rollback-result.ts",
-        "src/types/promotions-discount-applications-settle-response.ts",
-        "src/types/promotions-discount-applications-settle-result.ts",
-        "src/types/promotions-offers-retrieve-response.ts",
-        "src/types/promotions-offers-retrieve-result.ts",
-        "src/types/promotions-user-coupons-claims-create-response.ts",
-        "src/types/promotions-user-coupons-claims-create-result.ts",
-        "src/types/promotions-user-coupons-retrieve-response.ts",
-        "src/types/promotions-user-coupons-retrieve-result.ts",
-        "src/types/promotions-user-coupons-wallet-retrieve-response.ts",
-        "src/types/promotions-user-coupons-wallet-retrieve-result.ts",
-        "src/types/recharges-orders-cancel-response.ts",
-        "src/types/recharges-orders-cancel-result.ts",
-        "src/types/recharges-orders-create-response.ts",
-        "src/types/recharges-orders-create-result.ts",
-        "src/types/recharges-orders-retrieve-response.ts",
-        "src/types/recharges-orders-retrieve-result.ts",
-        "src/types/recharges-settings-retrieve-response.ts",
-        "src/types/recharges-settings-retrieve-result.ts",
-        "src/types/refunds-create-response.ts",
-        "src/types/refunds-create-result.ts",
-        "src/types/refunds-retrieve-response.ts",
-        "src/types/refunds-retrieve-result.ts",
         "src/types/sdk-work-api-response.ts",
         "src/types/sdk-work-command-data.ts",
         "src/types/sdk-work-command-response.ts",
         "src/types/sdk-work-list-response.ts",
         "src/types/sdk-work-page-data.ts",
         "src/types/sdk-work-platform-error-code.ts",
-        "src/types/shipments-retrieve-response.ts",
-        "src/types/shipments-retrieve-result.ts",
         "src/types/shops-current-applications-create-response.ts",
         "src/types/shops-current-applications-create-result.ts",
         "src/types/shops-current-brand-authorizations-upsert-response.ts",
@@ -1366,44 +684,6 @@
         "src/types/turn-responses-create-result.ts",
         "src/types/turns-create-response.ts",
         "src/types/turns-create-result.ts",
-        "src/types/wallet-accounts-overview-retrieve-response.ts",
-        "src/types/wallet-accounts-overview-retrieve-result.ts",
-        "src/types/wallet-accounts-points-retrieve-response.ts",
-        "src/types/wallet-accounts-points-retrieve-result.ts",
-        "src/types/wallet-accounts-retrieve-response.ts",
-        "src/types/wallet-accounts-retrieve-result.ts",
-        "src/types/wallet-accounts-tokens-retrieve-response.ts",
-        "src/types/wallet-accounts-tokens-retrieve-result.ts",
-        "src/types/wallet-adjustments-create-response.ts",
-        "src/types/wallet-adjustments-create-result.ts",
-        "src/types/wallet-exchange-rate-retrieve-response.ts",
-        "src/types/wallet-exchange-rate-retrieve-result.ts",
-        "src/types/wallet-holds-create-response.ts",
-        "src/types/wallet-holds-create-result.ts",
-        "src/types/wallet-holds-releases-create-response.ts",
-        "src/types/wallet-holds-releases-create-result.ts",
-        "src/types/wallet-holds-settlements-create-response.ts",
-        "src/types/wallet-holds-settlements-create-result.ts",
-        "src/types/wallet-ledger-entries-retrieve-response.ts",
-        "src/types/wallet-ledger-entries-retrieve-result.ts",
-        "src/types/wallet-overview-retrieve-response.ts",
-        "src/types/wallet-overview-retrieve-result.ts",
-        "src/types/wallet-point-exchanges-create-response.ts",
-        "src/types/wallet-point-exchanges-create-result.ts",
-        "src/types/wallet-point-exchanges-retrieve-response.ts",
-        "src/types/wallet-point-exchanges-retrieve-result.ts",
-        "src/types/wallet-point-transfers-create-response.ts",
-        "src/types/wallet-point-transfers-create-result.ts",
-        "src/types/wallet-requests-retrieve-response.ts",
-        "src/types/wallet-requests-retrieve-result.ts",
-        "src/types/wallet-tokens-retrieve-response.ts",
-        "src/types/wallet-tokens-retrieve-result.ts",
-        "src/types/wallet-topup-transfers-create-response.ts",
-        "src/types/wallet-topup-transfers-create-result.ts",
-        "src/types/wallet-transactions-retrieve-response.ts",
-        "src/types/wallet-transactions-retrieve-result.ts",
-        "src/types/wallet-withdrawal-transfers-create-response.ts",
-        "src/types/wallet-withdrawal-transfers-create-result.ts",
         "tsconfig.json"
       ],
       "updatedGeneratedFiles": [],
@@ -1435,7 +715,7 @@
             "src/api/ai.ts",
             "src/api/base.ts",
             "src/api/chat.ts",
-            "src/api/commerce.ts",
+            "src/api/iam.ts",
             "src/api/index.ts",
             "src/api/notification.ts",
             "src/api/paths.ts",
@@ -1448,14 +728,6 @@
         {
           "area": "models",
           "paths": [
-            "src/types/accounts-current-summary-retrieve-response.ts",
-            "src/types/accounts-current-summary-retrieve-result.ts",
-            "src/types/addresses-create-response.ts",
-            "src/types/addresses-create-result.ts",
-            "src/types/addresses-default-selection-create-response.ts",
-            "src/types/addresses-default-selection-create-result.ts",
-            "src/types/addresses-update-response.ts",
-            "src/types/addresses-update-result.ts",
             "src/types/after-sales-requests-create-response.ts",
             "src/types/after-sales-requests-create-result.ts",
             "src/types/after-sales-requests-retrieve-response.ts",
@@ -1464,32 +736,12 @@
             "src/types/after-sales-requests-update-result.ts",
             "src/types/after-sales-return-shipments-create-response.ts",
             "src/types/after-sales-return-shipments-create-result.ts",
+            "src/types/api-keys-create-response.ts",
+            "src/types/api-keys-create-result.ts",
+            "src/types/api-keys-update-response.ts",
+            "src/types/api-keys-update-result.ts",
             "src/types/artifacts-create-response.ts",
             "src/types/artifacts-create-result.ts",
-            "src/types/cart-current-retrieve-response.ts",
-            "src/types/cart-current-retrieve-result.ts",
-            "src/types/cart-items-create-response.ts",
-            "src/types/cart-items-create-result.ts",
-            "src/types/cart-items-update-response.ts",
-            "src/types/cart-items-update-result.ts",
-            "src/types/catalog-categories-retrieve-response.ts",
-            "src/types/catalog-categories-retrieve-result.ts",
-            "src/types/catalog-products-retrieve-response.ts",
-            "src/types/catalog-products-retrieve-result.ts",
-            "src/types/catalog-skus-prices-retrieve-response.ts",
-            "src/types/catalog-skus-prices-retrieve-result.ts",
-            "src/types/catalog-skus-retrieve-response.ts",
-            "src/types/catalog-skus-retrieve-result.ts",
-            "src/types/catalog-spus-retrieve-response.ts",
-            "src/types/catalog-spus-retrieve-result.ts",
-            "src/types/checkout-sessions-create-response.ts",
-            "src/types/checkout-sessions-create-result.ts",
-            "src/types/checkout-sessions-orders-create-response.ts",
-            "src/types/checkout-sessions-orders-create-result.ts",
-            "src/types/checkout-sessions-quotes-create-response.ts",
-            "src/types/checkout-sessions-quotes-create-result.ts",
-            "src/types/checkout-sessions-retrieve-response.ts",
-            "src/types/checkout-sessions-retrieve-result.ts",
             "src/types/common.ts",
             "src/types/conversations-create-response.ts",
             "src/types/conversations-create-result.ts",
@@ -1498,8 +750,6 @@
             "src/types/dashboard-overview-retrieve-response.ts",
             "src/types/dashboard-overview-retrieve-result.ts",
             "src/types/field-error.ts",
-            "src/types/fulfillments-retrieve-response.ts",
-            "src/types/fulfillments-retrieve-result.ts",
             "src/types/index.ts",
             "src/types/invocation-events-create-response.ts",
             "src/types/invocation-events-create-result.ts",
@@ -1509,130 +759,18 @@
             "src/types/invocations-retrieve-result.ts",
             "src/types/invocations-submit-response.ts",
             "src/types/invocations-submit-result.ts",
-            "src/types/invoices-cancellations-create-response.ts",
-            "src/types/invoices-cancellations-create-result.ts",
-            "src/types/invoices-create-response.ts",
-            "src/types/invoices-create-result.ts",
-            "src/types/invoices-retrieve-response.ts",
-            "src/types/invoices-retrieve-result.ts",
-            "src/types/invoices-statistics-retrieve-response.ts",
-            "src/types/invoices-statistics-retrieve-result.ts",
-            "src/types/invoices-submissions-create-response.ts",
-            "src/types/invoices-submissions-create-result.ts",
-            "src/types/invoices-update-response.ts",
-            "src/types/invoices-update-result.ts",
-            "src/types/memberships-current-retrieve-response.ts",
-            "src/types/memberships-current-retrieve-result.ts",
-            "src/types/memberships-current-status-retrieve-response.ts",
-            "src/types/memberships-current-status-retrieve-result.ts",
-            "src/types/memberships-package-groups-retrieve-response.ts",
-            "src/types/memberships-package-groups-retrieve-result.ts",
-            "src/types/memberships-packages-retrieve-response.ts",
-            "src/types/memberships-packages-retrieve-result.ts",
-            "src/types/memberships-points-balance-retrieve-response.ts",
-            "src/types/memberships-points-balance-retrieve-result.ts",
-            "src/types/memberships-points-daily-rewards-create-response.ts",
-            "src/types/memberships-points-daily-rewards-create-result.ts",
-            "src/types/memberships-points-daily-rewards-status-retrieve-response.ts",
-            "src/types/memberships-points-daily-rewards-status-retrieve-result.ts",
-            "src/types/memberships-privileges-speed-ups-create-response.ts",
-            "src/types/memberships-privileges-speed-ups-create-result.ts",
-            "src/types/memberships-privileges-usage-retrieve-response.ts",
-            "src/types/memberships-privileges-usage-retrieve-result.ts",
-            "src/types/memberships-purchases-create-response.ts",
-            "src/types/memberships-purchases-create-result.ts",
-            "src/types/memberships-purchases-renew-response.ts",
-            "src/types/memberships-purchases-renew-result.ts",
-            "src/types/memberships-purchases-upgrade-response.ts",
-            "src/types/memberships-purchases-upgrade-result.ts",
             "src/types/notifications-acknowledge-create-response.ts",
             "src/types/notifications-acknowledge-create-result.ts",
             "src/types/notifications-popup-seen-create-response.ts",
             "src/types/notifications-popup-seen-create-result.ts",
-            "src/types/orders-cancel-response.ts",
-            "src/types/orders-cancel-result.ts",
-            "src/types/orders-cancellations-create-response.ts",
-            "src/types/orders-cancellations-create-result.ts",
-            "src/types/orders-create-response.ts",
-            "src/types/orders-create-result.ts",
-            "src/types/orders-pay-response.ts",
-            "src/types/orders-pay-result.ts",
-            "src/types/orders-payment-success-retrieve-response.ts",
-            "src/types/orders-payment-success-retrieve-result.ts",
-            "src/types/orders-retrieve-response.ts",
-            "src/types/orders-retrieve-result.ts",
-            "src/types/orders-statistics-retrieve-response.ts",
-            "src/types/orders-statistics-retrieve-result.ts",
-            "src/types/orders-status-retrieve-response.ts",
-            "src/types/orders-status-retrieve-result.ts",
             "src/types/page-info.ts",
-            "src/types/payments-attempts-retrieve-response.ts",
-            "src/types/payments-attempts-retrieve-result.ts",
-            "src/types/payments-checkout-retrieve-response.ts",
-            "src/types/payments-checkout-retrieve-result.ts",
-            "src/types/payments-close-response.ts",
-            "src/types/payments-close-result.ts",
-            "src/types/payments-create-response.ts",
-            "src/types/payments-create-result.ts",
-            "src/types/payments-intents-attempts-create-response.ts",
-            "src/types/payments-intents-attempts-create-result.ts",
-            "src/types/payments-intents-cancel-response.ts",
-            "src/types/payments-intents-cancel-result.ts",
-            "src/types/payments-intents-create-response.ts",
-            "src/types/payments-intents-create-result.ts",
-            "src/types/payments-intents-retrieve-response.ts",
-            "src/types/payments-intents-retrieve-result.ts",
-            "src/types/payments-reconcile-response.ts",
-            "src/types/payments-reconcile-result.ts",
-            "src/types/payments-records-retrieve-response.ts",
-            "src/types/payments-records-retrieve-result.ts",
-            "src/types/payments-statistics-retrieve-response.ts",
-            "src/types/payments-statistics-retrieve-result.ts",
-            "src/types/payments-status-retrieve-by-out-trade-no-response.ts",
-            "src/types/payments-status-retrieve-by-out-trade-no-result.ts",
-            "src/types/payments-status-retrieve-response.ts",
-            "src/types/payments-status-retrieve-result.ts",
             "src/types/problem-detail.ts",
-            "src/types/promotions-codes-redemptions-create-response.ts",
-            "src/types/promotions-codes-redemptions-create-result.ts",
-            "src/types/promotions-discount-applications-create-response.ts",
-            "src/types/promotions-discount-applications-create-result.ts",
-            "src/types/promotions-discount-applications-release-response.ts",
-            "src/types/promotions-discount-applications-release-result.ts",
-            "src/types/promotions-discount-applications-reversals-create-response.ts",
-            "src/types/promotions-discount-applications-reversals-create-result.ts",
-            "src/types/promotions-discount-applications-rollback-response.ts",
-            "src/types/promotions-discount-applications-rollback-result.ts",
-            "src/types/promotions-discount-applications-settle-response.ts",
-            "src/types/promotions-discount-applications-settle-result.ts",
-            "src/types/promotions-offers-retrieve-response.ts",
-            "src/types/promotions-offers-retrieve-result.ts",
-            "src/types/promotions-user-coupons-claims-create-response.ts",
-            "src/types/promotions-user-coupons-claims-create-result.ts",
-            "src/types/promotions-user-coupons-retrieve-response.ts",
-            "src/types/promotions-user-coupons-retrieve-result.ts",
-            "src/types/promotions-user-coupons-wallet-retrieve-response.ts",
-            "src/types/promotions-user-coupons-wallet-retrieve-result.ts",
-            "src/types/recharges-orders-cancel-response.ts",
-            "src/types/recharges-orders-cancel-result.ts",
-            "src/types/recharges-orders-create-response.ts",
-            "src/types/recharges-orders-create-result.ts",
-            "src/types/recharges-orders-retrieve-response.ts",
-            "src/types/recharges-orders-retrieve-result.ts",
-            "src/types/recharges-settings-retrieve-response.ts",
-            "src/types/recharges-settings-retrieve-result.ts",
-            "src/types/refunds-create-response.ts",
-            "src/types/refunds-create-result.ts",
-            "src/types/refunds-retrieve-response.ts",
-            "src/types/refunds-retrieve-result.ts",
             "src/types/sdk-work-api-response.ts",
             "src/types/sdk-work-command-data.ts",
             "src/types/sdk-work-command-response.ts",
             "src/types/sdk-work-list-response.ts",
             "src/types/sdk-work-page-data.ts",
             "src/types/sdk-work-platform-error-code.ts",
-            "src/types/shipments-retrieve-response.ts",
-            "src/types/shipments-retrieve-result.ts",
             "src/types/shops-current-applications-create-response.ts",
             "src/types/shops-current-applications-create-result.ts",
             "src/types/shops-current-brand-authorizations-upsert-response.ts",
@@ -1696,45 +834,7 @@
             "src/types/turn-responses-create-response.ts",
             "src/types/turn-responses-create-result.ts",
             "src/types/turns-create-response.ts",
-            "src/types/turns-create-result.ts",
-            "src/types/wallet-accounts-overview-retrieve-response.ts",
-            "src/types/wallet-accounts-overview-retrieve-result.ts",
-            "src/types/wallet-accounts-points-retrieve-response.ts",
-            "src/types/wallet-accounts-points-retrieve-result.ts",
-            "src/types/wallet-accounts-retrieve-response.ts",
-            "src/types/wallet-accounts-retrieve-result.ts",
-            "src/types/wallet-accounts-tokens-retrieve-response.ts",
-            "src/types/wallet-accounts-tokens-retrieve-result.ts",
-            "src/types/wallet-adjustments-create-response.ts",
-            "src/types/wallet-adjustments-create-result.ts",
-            "src/types/wallet-exchange-rate-retrieve-response.ts",
-            "src/types/wallet-exchange-rate-retrieve-result.ts",
-            "src/types/wallet-holds-create-response.ts",
-            "src/types/wallet-holds-create-result.ts",
-            "src/types/wallet-holds-releases-create-response.ts",
-            "src/types/wallet-holds-releases-create-result.ts",
-            "src/types/wallet-holds-settlements-create-response.ts",
-            "src/types/wallet-holds-settlements-create-result.ts",
-            "src/types/wallet-ledger-entries-retrieve-response.ts",
-            "src/types/wallet-ledger-entries-retrieve-result.ts",
-            "src/types/wallet-overview-retrieve-response.ts",
-            "src/types/wallet-overview-retrieve-result.ts",
-            "src/types/wallet-point-exchanges-create-response.ts",
-            "src/types/wallet-point-exchanges-create-result.ts",
-            "src/types/wallet-point-exchanges-retrieve-response.ts",
-            "src/types/wallet-point-exchanges-retrieve-result.ts",
-            "src/types/wallet-point-transfers-create-response.ts",
-            "src/types/wallet-point-transfers-create-result.ts",
-            "src/types/wallet-requests-retrieve-response.ts",
-            "src/types/wallet-requests-retrieve-result.ts",
-            "src/types/wallet-tokens-retrieve-response.ts",
-            "src/types/wallet-tokens-retrieve-result.ts",
-            "src/types/wallet-topup-transfers-create-response.ts",
-            "src/types/wallet-topup-transfers-create-result.ts",
-            "src/types/wallet-transactions-retrieve-response.ts",
-            "src/types/wallet-transactions-retrieve-result.ts",
-            "src/types/wallet-withdrawal-transfers-create-response.ts",
-            "src/types/wallet-withdrawal-transfers-create-result.ts"
+            "src/types/turns-create-result.ts"
           ]
         },
         {

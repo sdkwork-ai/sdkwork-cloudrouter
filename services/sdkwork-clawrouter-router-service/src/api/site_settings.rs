@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::ports::{
@@ -149,7 +149,7 @@ async fn fetch_site_settings(
         .get_site_settings(GetSiteSettingsQuery { subject })
         .await
     {
-        Ok(settings) => Json(PlusApiResult::success(to_response(settings))).into_response(),
+        Ok(settings) => Json(success_envelope(to_response(settings))).into_response(),
         Err(error) => {
             site_settings_system_response("site settings read model is unavailable", error)
         }
@@ -187,7 +187,7 @@ async fn update_site_settings(
     };
 
     match state.store.update_site_settings(command).await {
-        Ok(settings) => Json(PlusApiResult::success(to_response(settings))).into_response(),
+        Ok(settings) => Json(success_envelope(to_response(settings))).into_response(),
         Err(error) => {
             site_settings_system_response("site settings command store is unavailable", error)
         }
@@ -199,7 +199,7 @@ async fn fetch_site_runtime_settings(
     Query(query): Query<SiteRuntimeSettingsQuery>,
 ) -> Response {
     let Some(store) = state.store.as_ref() else {
-        return Json(PlusApiResult::success(to_response(SiteSettings::default()))).into_response();
+        return Json(success_envelope(to_response(SiteSettings::default()))).into_response();
     };
     let tenant_code = match normalize_optional_field(
         "tenant_code",
@@ -224,9 +224,9 @@ async fn fetch_site_runtime_settings(
         })
         .await
     {
-        Ok(settings) => Json(PlusApiResult::success(to_response(settings))).into_response(),
+        Ok(settings) => Json(success_envelope(to_response(settings))).into_response(),
         Err(error) if error.is_not_found() => {
-            Json(PlusApiResult::success(to_response(SiteSettings::default()))).into_response()
+            Json(success_envelope(to_response(SiteSettings::default()))).into_response()
         }
         Err(error) => site_settings_system_response("site runtime settings are unavailable", error),
     }
@@ -488,7 +488,7 @@ fn to_response(settings: SiteSettings) -> SiteSettingsResponse {
 }
 
 fn bad_request(message: String) -> Response {
-    PlusApiResult::error("4001", message)).into_response()
+    problem_from_wire_code("4001", message).into_response()
 }
 
 fn command_build_error_response(error: SiteSettingsCommandBuildError) -> Response {
@@ -501,7 +501,7 @@ fn command_build_error_response(error: SiteSettingsCommandBuildError) -> Respons
 }
 
 fn site_settings_system_response(context: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }
 
 fn current_timestamp_string() -> String {

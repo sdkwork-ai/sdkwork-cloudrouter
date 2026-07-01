@@ -23,8 +23,8 @@
 | --- | --- | --- |
 | 开发者 | 统一接入 OpenAI 兼容 API，多模型、多 Provider、低迁移成本 | `/v1/*` Gateway、API Reference、SDK Reference、Playground |
 | 企业用户 | 管理 API Key、路由、模型偏好、供应商账号、用量、账单、充值 | `/console/*` |
-| 平台管理员 | 管理用户、分组、模型、渠道、公告、营销、财务、记录、限流、监控 | `/admin/*` |
-| 运营团队 | 配置套餐、优惠券、公告、模型价格、供应商状态、账务对账 | `/admin/marketing`、`/admin/finance`、`/admin/channel` |
+| 平台管理员 | 管理模型、渠道、分组、用量记录、限流、监控与系统设置 | `/admin/*` |
+| 运营团队 | 配置模型价格、供应商状态、渠道账号、运行时区域 | `/admin/model`、`/admin/channel`、`/admin/site` |
 | 私有化客户 | 快速本地、服务器、Docker、K8S 部署，保留可观测与安全审计 | 部署包、安装向导、运维监控 |
 | 平台开发团队 | 使用标准数据库、标准 API SDK、清晰模块边界快速扩展 | 设计文档、契约、SDK、模块规划 |
 
@@ -41,8 +41,8 @@
 | 排行榜 | `/rankings` | 已实现 |
 | 产品文档 / API Reference / SDK Reference | `/docs`, `/api-reference`, `/sdk-reference` | 已实现（`@sdkwork/documents-pc-*`） |
 | Playground | `/playground`, `/c/:conversationId` | 已实现 |
-| 应用中心 | `/apps` | **P2 规划**（Admin 侧已有 app/skill 管理能力） |
-| 技能中心（Public） | `/skills` | **P2 规划**（Admin `/admin/skill` 已实现） |
+| 应用中心 | `/apps` | **P2 规划** |
+| 技能中心（Public） | `/skills` | **P2 规划** |
 | 论坛 | `/forum` | **P2 规划** |
 | 课程 | `/courses` | **P2 规划** |
 
@@ -68,7 +68,16 @@ Console API 统一走 Rust app-api 标准路径，通过 `@sdkwork/clawrouter-ap
 
 ### 3.3 Admin 管理后台
 
-当前前端 `/admin` 路由作为后台控制平面（Rust backend-api + `@sdkwork/clawrouter-backend-sdk`），已覆盖 PRD 基线并扩展 commerce、agents、prompts、MCP、file-platform 等模块。
+当前前端 `/admin` 路由作为 **AI Router 专用**后台控制平面（Rust backend-api + `@sdkwork/clawrouter-backend-sdk`），仅承载网关与路由运维能力；commerce、IAM 用户组织、OAuth、消息、agents/skill/prompts/MCP、file-platform 等平台域能力由 `sdkwork-manager` 或对应域应用承接，不再挂载在 Claw Router Admin。
+
+| 模块 | 路由前缀 | 说明 |
+| --- | --- | --- |
+| 首页 | `/admin/dashboard` | 运营概览 |
+| 模型治理 | `/admin/model/*` | 厂商、资源、上游站点、映射（复用 `@sdkwork/models-pc-admin-catalog`） |
+| 渠道与分组 | `/admin/group`、`/admin/channel` | 账号池与渠道供应商 |
+| 数据 | `/admin/record`、`/admin/analytics` | 使用记录与统计 |
+| 运维 | `/admin/monitor`、`/admin/ratelimit`、`/admin/service-nodes`、`/admin/cache` | 监控、限流、节点、缓存 |
+| 系统 | `/admin/settings`、`/admin/runtime-region`、`/admin/site` | 认证、运行区域、站点设置 |
 
 Admin API 统一走 Rust backend-api 标准路径，通过 `@sdkwork/clawrouter-backend-sdk` 调用。不同部署环境只切换 SDK base URL，不改变资源路径。
 

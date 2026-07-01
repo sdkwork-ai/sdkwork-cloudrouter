@@ -32,11 +32,12 @@
         "requiredBaseUrlEnv": "VITE_SDKWORK_APPBASE_APP_API_BASE_URL",
         "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
         "mountCoverage": {
-          "status": "not-mounted",
+          "status": "gateway-embedded",
           "evidence": [
-            "Default Claw Router app runtime treats appbase app API as a dependency surface served by sdkwork-api-cloud-gateway through PORTAL_PUBLIC_SDK_BASE_URL.",
-            "services/sdkwork-clawrouter-standalone-gateway/tests/contract_routes.rs verifies the default app router does not locally mount appbase IAM app routes.",
-            "Standalone database-backed runtime merges federated IAM via crates/sdkwork-routes-clawrouter-app-api/src/iam_runtime.rs (BirdCoder-aligned wire_iam_routers)."
+            "All-in-one runtime mounts sdkwork-iam app-api through sdkwork-api-cloud-gateway embedded dependency surfaces.",
+            "crates/sdkwork-clawrouter-cloud-gateway/src/iam_embedded.rs bootstraps IAM tenant state and builds app/backend routers for the gateway layer.",
+            "Product app routers do not merge federated IAM; services/sdkwork-clawrouter-standalone-gateway/tests/contract_routes.rs verifies default router does not locally mount appbase IAM routes.",
+            "Product-owned gateway API keys at /app/v3/api/iam/api_keys resolve to sdkwork-clawrouter-app-api before the broad /app/v3/api/iam/* IAM catch-all."
           ]
         }
       }
@@ -196,16 +197,16 @@
         "requiredBaseUrlEnv": "VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL",
         "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
         "mountCoverage": {
-          "status": "not-mounted",
+          "status": "gateway-embedded",
           "evidence": [
-            "Default Claw Router backend runtime treats appbase backend IAM API as a dependency surface served by sdkwork-api-cloud-gateway through PORTAL_PUBLIC_SDK_BASE_URL.",
-            "services/sdkwork-clawrouter-admin-gateway/tests/contract_routes.rs verifies the default admin router does not locally mount appbase backend IAM routes.",
-            "Standalone database-backed admin runtime merges federated IAM backend routes via crates/sdkwork-routes-clawrouter-backend-api/src/iam_runtime.rs."
+            "All-in-one runtime mounts sdkwork-iam backend-api through sdkwork-api-cloud-gateway embedded dependency surfaces.",
+            "crates/sdkwork-clawrouter-cloud-gateway/src/iam_embedded.rs builds the embedded IAM backend router for the gateway layer.",
+            "Product backend routers do not merge federated IAM; services/sdkwork-clawrouter-admin-gateway/tests/contract_routes.rs verifies the default admin router does not locally mount appbase backend IAM routes."
           ]
         }
       }
     },
-  # REMOVED: sdkwork-commerce-backend-sdk (commerce repository dissolved)
+    {
       "workspace": "sdkwork-appstore-app-sdk",
       "consumerSdkFamily": "clawrouter-app-sdk",
       "role": "appstore-app-capability",

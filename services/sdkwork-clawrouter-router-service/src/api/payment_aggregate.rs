@@ -9,7 +9,7 @@ use axum::{Json, Router};
 use crate::api::app_sql_subject::RequiredAppSqlScopedSubject;
 use serde::{Deserialize, Serialize};
 
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::{
     default_payment_provider_registry, EntityUuidGenerator, InMemoryPaymentIntentRuntimeStore,
     PaymentAggregateRuntimeStore, PaymentIntentRuntimeRecord, PaymentIntentRuntimeService,
@@ -212,7 +212,7 @@ async fn cancel_refund(
         })
         .await
     {
-        Ok(refund) => Json(PlusApiResult::success(refund_response_data(refund))).into_response(),
+        Ok(refund) => Json(success_envelope(refund_response_data(refund))).into_response(),
         Err(error) if error.is_conflict() => conflict(error.to_string()),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) => unprocessable(error.to_string()),
@@ -261,7 +261,7 @@ async fn create_refund(
         })
         .await
     {
-        Ok(refund) => Json(PlusApiResult::success(refund_response_data(refund))).into_response(),
+        Ok(refund) => Json(success_envelope(refund_response_data(refund))).into_response(),
         Err(error) if error.is_conflict() => conflict(error.to_string()),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) => unprocessable(error.to_string()),
@@ -308,7 +308,7 @@ async fn create_payment_intent(
         })
         .await
     {
-        Ok(intent) => Json(PlusApiResult::success(intent_response_data(intent))).into_response(),
+        Ok(intent) => Json(success_envelope(intent_response_data(intent))).into_response(),
         Err(error) if error.is_conflict() => conflict(error.to_string()),
         Err(error) => unprocessable(error.to_string()),
     }
@@ -346,7 +346,7 @@ async fn confirm_payment_intent(
         })
         .await
     {
-        Ok(intent) => Json(PlusApiResult::success(intent_response_data(intent))).into_response(),
+        Ok(intent) => Json(success_envelope(intent_response_data(intent))).into_response(),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) => unprocessable(error.to_string()),
     }
@@ -389,7 +389,7 @@ async fn capture_payment_intent(
         })
         .await
     {
-        Ok(intent) => Json(PlusApiResult::success(intent_response_data(intent))).into_response(),
+        Ok(intent) => Json(success_envelope(intent_response_data(intent))).into_response(),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) => unprocessable(error.to_string()),
     }
@@ -431,7 +431,7 @@ async fn cancel_payment_intent(
         })
         .await
     {
-        Ok(intent) => Json(PlusApiResult::success(intent_response_data(intent))).into_response(),
+        Ok(intent) => Json(success_envelope(intent_response_data(intent))).into_response(),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) => unprocessable(error.to_string()),
     }
@@ -547,17 +547,17 @@ fn required_header(headers: &HeaderMap, name: &'static str) -> Result<String, St
 }
 
 fn bad_request(message: String) -> Response {
-    PlusApiResult::error("4001", message)).into_response()
+    problem_from_wire_code("4001", message).into_response()
 }
 
 fn not_found(message: String) -> Response {
-    PlusApiResult::error("4040", message)).into_response()
+    problem_from_wire_code("4040", message).into_response()
 }
 
 fn conflict(message: String) -> Response {
-    PlusApiResult::error("4090", message)).into_response()
+    problem_from_wire_code("4090", message).into_response()
 }
 
 fn unprocessable(message: String) -> Response {
-    PlusApiResult::error("4220", message)).into_response()
+    problem_from_wire_code("4220", message).into_response()
 }

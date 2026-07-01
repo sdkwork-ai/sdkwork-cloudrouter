@@ -3936,7 +3936,7 @@
       "path": "/backend/v3/api/promotions/budget_ledger_entries",
       "operationId": "promotions.budgetLedgerEntries.list",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -3958,7 +3958,7 @@
       "path": "/backend/v3/api/promotions/codes",
       "operationId": "promotions.codes.list",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -3980,7 +3980,7 @@
       "path": "/backend/v3/api/promotions/codes",
       "operationId": "promotions.codes.create",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4002,7 +4002,7 @@
       "path": "/backend/v3/api/promotions/codes/redemptions",
       "operationId": "promotions.codes.redemptions.list",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4024,7 +4024,7 @@
       "path": "/backend/v3/api/promotions/coupon_ledger_entries",
       "operationId": "promotions.couponLedgerEntries.list",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4046,7 +4046,7 @@
       "path": "/backend/v3/api/promotions/coupon_stocks",
       "operationId": "promotions.couponStocks.list",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4068,7 +4068,7 @@
       "path": "/backend/v3/api/promotions/coupon_stocks",
       "operationId": "promotions.couponStocks.create",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4090,7 +4090,7 @@
       "path": "/backend/v3/api/promotions/discount_allocations",
       "operationId": "promotions.discountAllocations.list",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4112,7 +4112,7 @@
       "path": "/backend/v3/api/promotions/discount_applications",
       "operationId": "promotions.discountApplications.list",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4134,7 +4134,7 @@
       "path": "/backend/v3/api/promotions/events",
       "operationId": "promotions.events.list",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4156,7 +4156,7 @@
       "path": "/backend/v3/api/promotions/external_bindings",
       "operationId": "promotions.externalBindings.list",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4178,7 +4178,7 @@
       "path": "/backend/v3/api/promotions/offers",
       "operationId": "promotions.offers.management.list",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4200,7 +4200,7 @@
       "path": "/backend/v3/api/promotions/offers",
       "operationId": "promotions.offers.create",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4222,7 +4222,7 @@
       "path": "/backend/v3/api/promotions/offers/{offerId}",
       "operationId": "promotions.offers.update",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4244,7 +4244,7 @@
       "path": "/backend/v3/api/promotions/user_coupons",
       "operationId": "promotions.userCoupons.management.list",
       "tags": [
-        "system"
+        "promotions"
       ],
       "auth": {
         "mode": "dual-token",

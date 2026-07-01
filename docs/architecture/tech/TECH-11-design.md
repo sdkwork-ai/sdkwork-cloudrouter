@@ -1581,9 +1581,9 @@ admin/backend API
 
 app/backend API 的路径和返回包装必须跟 Java 标准一致：
 
-- 用户面：`/app/v3/api/{resource-path}`，返回 `PlusApiResult<T>`。
-- 管理面：`/backend/v3/api/{resource-path}`，返回 `PlusApiResult<T>`。
-- OpenAI 兼容面：`/v1/*`，不包装 `PlusApiResult<T>`。
+- 用户面：`/app/v3/api/{resource-path}`，返回 `SdkWorkApiResponse`。
+- 管理面：`/backend/v3/api/{resource-path}`，返回 `SdkWorkApiResponse`。
+- OpenAI 兼容面：`/v1/*`，不包装 `SdkWorkApiResponse`（`x-sdkwork-wire-protocol: external`）。
 
 ## 18. CI 和评审门禁
 

@@ -33,7 +33,7 @@ async fn admin_payment_runtime_route_returns_latest_provider_snapshot() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("sandbox", payload["data"]["environment"]);
     assert_eq!("2026-05-30T09:00:00Z", payload["data"]["recordedAt"]);
     assert_eq!(3, payload["data"]["summary"]["total"]);
@@ -72,7 +72,7 @@ async fn admin_payment_runtime_route_reports_missing_snapshot_as_not_found() {
 
     assert_eq!(StatusCode::NOT_FOUND, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4040", payload["code"]);
+    assert_eq!(40401, payload["code"].as_i64().unwrap());
 }
 
 #[tokio::test]
@@ -92,8 +92,8 @@ async fn admin_payment_runtime_route_rejects_invalid_environment() {
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("environment must be one of sandbox, production"));
@@ -119,7 +119,7 @@ async fn admin_payment_runtime_route_rejects_missing_trusted_subject() {
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 fn signed_request(method: &str, path: &str) -> Request<Body> {

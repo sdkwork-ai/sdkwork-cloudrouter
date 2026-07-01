@@ -8,7 +8,7 @@ use axum::routing::post;
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::{
     AuthenticatedApiKeyContext, ProviderRouteSelectionErrorKind, ProviderRouteSelector,
     SelectProviderChannelRouteQuery, SelectProviderRouteQuery, SelectedProviderChannelRoute,
@@ -173,7 +173,7 @@ where
         }
     };
 
-    Json(PlusApiResult::success(AdminRouteExplainResponse {
+    Json(success_envelope(AdminRouteExplainResponse {
         source: "runtime_selector",
         ready: blocked_reasons.is_empty(),
         resource_code: normalized.resource_code,
@@ -423,5 +423,5 @@ fn parse_billing_meter(value: &str) -> Result<BillingMeter, String> {
 }
 
 fn bad_request(message: String) -> Response {
-    PlusApiResult::error("4001", message)).into_response()
+    problem_from_wire_code("4001", message).into_response()
 }

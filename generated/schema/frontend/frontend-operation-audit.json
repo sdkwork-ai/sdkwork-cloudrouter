@@ -2,21 +2,6 @@
   "operations": [
     {
       "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/agents",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listManagedAgents",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/agents",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-agents/src/agentService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
       "api_path": "/backend/v3/api/system/analytics/admin/overview",
       "api_surface": "backend",
       "file_targets": [],
@@ -30,81 +15,6 @@
       "route": "/admin/analytics",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts",
       "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/content/announcements",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "addAnnouncement",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_notification_message"
-      ],
-      "route": "/admin/announcement",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-announcement/src/announcementService.ts",
-      "write_tables": [
-        "ops_notification_message",
-        "ops_notification_recipient",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/content/announcements/{announcementId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "deleteAnnouncement",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_notification_message",
-        "ops_notification_recipient"
-      ],
-      "route": "/admin/announcement",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-announcement/src/announcementService.ts",
-      "write_tables": [
-        "ops_notification_message",
-        "ops_notification_recipient",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/content/announcements",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchAnnouncements",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_notification_message",
-        "ops_notification_recipient"
-      ],
-      "route": "/admin/announcement",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-announcement/src/announcementService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/content/announcements/{announcementId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateAnnouncement",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_notification_message",
-        "ops_notification_recipient"
-      ],
-      "route": "/admin/announcement",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-announcement/src/announcementService.ts",
-      "write_tables": [
-        "ops_notification_message",
-        "ops_notification_recipient",
-        "ops_audit_log"
-      ]
     },
     {
       "api_method": "DELETE",
@@ -557,66 +467,6 @@
       ]
     },
     {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/prompts",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createAdminAiCategory",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_mcp_server"
-      ],
-      "route": "/admin/prompts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-core/src/admin-category-options.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/prompts/{categoryId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "deleteAdminAiCategory",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_mcp_server"
-      ],
-      "route": "/admin/prompts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-core/src/admin-category-options.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/prompts",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listAdminAiCategoryOptions",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_mcp_server"
-      ],
-      "route": "/admin/prompts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-core/src/admin-category-options.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/prompts/{categoryId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateAdminAiCategory",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_mcp_server"
-      ],
-      "route": "/admin/prompts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-core/src/admin-category-options.ts",
-      "write_tables": []
-    },
-    {
       "api_method": "GET",
       "api_path": "/backend/v3/api/system/dashboard/admin/overview",
       "api_surface": "backend",
@@ -649,446 +499,6 @@
       ],
       "route": "/admin/dashboard",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/drive/audit/events",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listDriveAuditEvents",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/drive/audit",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/driveService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/drive/spaces/{spaceId}/nodes",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listDriveNodes",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/drive/nodes",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/driveService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/drive/nodes/{nodeId}/permissions",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listDrivePermissions",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/drive/permissions",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/driveService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/drive/nodes/{nodeId}/share_links",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listDriveShareLinks",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/drive/share-links",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/driveService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/drive/spaces",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listDriveSpaces",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/drive/spaces",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/driveService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/storage/buckets",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "createStorageBucket",
-      "operation_scope": null,
-      "read_sources": [
-        "dr_drive_space"
-      ],
-      "route": "/admin/storage/buckets",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts",
-      "write_tables": [
-        "dr_drive_space"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/storage/gc_jobs",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "createStorageGarbageCollectionJob",
-      "operation_scope": null,
-      "read_sources": [
-        "dr_drive_maintenance_job"
-      ],
-      "route": "/admin/storage/garbage-collection",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts",
-      "write_tables": [
-        "dr_drive_maintenance_job"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/storage/providers",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "createStorageProvider",
-      "operation_scope": null,
-      "read_sources": [
-        "dr_drive_storage_provider"
-      ],
-      "route": "/admin/storage/providers",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts",
-      "write_tables": [
-        "dr_drive_storage_provider"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/storage/quotas",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "createStorageQuota",
-      "operation_scope": null,
-      "read_sources": [
-        "dr_drive_space_version_policy"
-      ],
-      "route": "/admin/storage/quotas",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts",
-      "write_tables": [
-        "dr_drive_space_version_policy"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/storage/reconciliation_runs",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "createStorageReconciliationRun",
-      "operation_scope": null,
-      "read_sources": [
-        "dr_drive_maintenance_job"
-      ],
-      "route": "/admin/storage/reconciliation",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts",
-      "write_tables": [
-        "dr_drive_maintenance_job"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/storage/providers/{providerId}/health_check",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "healthCheckStorageProvider",
-      "operation_scope": null,
-      "read_sources": [
-        "dr_drive_storage_provider"
-      ],
-      "route": "/admin/storage/providers",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/storage/buckets",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listStorageBuckets",
-      "operation_scope": null,
-      "read_sources": [
-        "dr_drive_space"
-      ],
-      "route": "/admin/storage/buckets",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/storage/default_buckets",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listStorageDefaultBuckets",
-      "operation_scope": null,
-      "read_sources": [
-        "dr_drive_space_app_upload_profile",
-        "dr_drive_space"
-      ],
-      "route": "/admin/storage/default-buckets",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/storage/gc_jobs",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listStorageGarbageCollectionJobs",
-      "operation_scope": null,
-      "read_sources": [
-        "dr_drive_maintenance_job"
-      ],
-      "route": "/admin/storage/garbage-collection",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/storage/providers",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listStorageProviders",
-      "operation_scope": null,
-      "read_sources": [
-        "dr_drive_storage_provider"
-      ],
-      "route": "/admin/storage/providers",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/storage/quotas",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listStorageQuotas",
-      "operation_scope": null,
-      "read_sources": [
-        "dr_drive_space_version_policy"
-      ],
-      "route": "/admin/storage/quotas",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/storage/reconciliation_runs",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listStorageReconciliationRuns",
-      "operation_scope": null,
-      "read_sources": [
-        "dr_drive_maintenance_job"
-      ],
-      "route": "/admin/storage/reconciliation",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/storage/usage",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listStorageUsage",
-      "operation_scope": null,
-      "read_sources": [
-        "dr_drive_storage_object"
-      ],
-      "route": "/admin/storage/usage",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/storage/buckets/{bucketId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateStorageBucket",
-      "operation_scope": null,
-      "read_sources": [
-        "dr_drive_space"
-      ],
-      "route": "/admin/storage/buckets",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts",
-      "write_tables": [
-        "dr_drive_space"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/storage/default_buckets/{logicalScope}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateStorageDefaultBucket",
-      "operation_scope": null,
-      "read_sources": [
-        "dr_drive_space_app_upload_profile",
-        "dr_drive_space"
-      ],
-      "route": "/admin/storage/default-buckets",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts",
-      "write_tables": [
-        "dr_drive_space_app_upload_profile"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/storage/providers/{providerId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateStorageProvider",
-      "operation_scope": null,
-      "read_sources": [
-        "dr_drive_storage_provider"
-      ],
-      "route": "/admin/storage/providers",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts",
-      "write_tables": [
-        "dr_drive_storage_provider"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/audit/commerce_events",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendAuditCommerceEventsList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_settlement"
-      ],
-      "route": "/admin/finance",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-finance/src/financeService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/commerce_reports/order_revenue",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendCommerceReportsOrderRevenueList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_settlement"
-      ],
-      "route": "/admin/finance/order-revenue",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-finance/src/financeService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/commerce_reports/payment_reconciliation",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendCommerceReportsPaymentReconciliationRetrieve",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_settlement"
-      ],
-      "route": "/admin/finance/payment-reconciliation",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-finance/src/financeService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/commerce_reports/refunds",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendCommerceReportsRefundsList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_settlement"
-      ],
-      "route": "/admin/finance",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-finance/src/financeService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/invoices",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendInvoicesList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_settlement"
-      ],
-      "route": "/admin/finance/invoices",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-finance/src/financeService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/invoices/{invoiceId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendInvoicesRetrieve",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_settlement"
-      ],
-      "route": "/admin/finance/invoices",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-finance/src/financeService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/invoices/titles",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendInvoicesTitlesList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_settlement"
-      ],
-      "route": "/admin/finance/invoices",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-finance/src/financeService.ts",
       "write_tables": []
     },
     {
@@ -1157,7 +567,6 @@
       "operation": "fetchAssignableResourceGroups",
       "operation_scope": null,
       "read_sources": [
-        "ai_resource_group",
         "ai_resource_group_item"
       ],
       "route": "/admin/group",
@@ -1244,19 +653,15 @@
       "operation": "fetchRuntimeRouteExplain",
       "operation_scope": "app_shell",
       "read_sources": [
-        "ai_api_key",
         "ai_channel_group",
         "ai_channel_group_member",
-        "ai_model_provider_route",
-        "ai_provider_route",
-        "ai_routing_policy",
-        "ai_routing_rule",
-        "ai_model_pricing",
         "ai_pricing_plan"
       ],
       "route": "/admin/group",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts",
-      "write_tables": []
+      "write_tables": [
+        "ops_audit_log"
+      ]
     },
     {
       "api_method": "PUT",
@@ -1304,1512 +709,6 @@
     },
     {
       "api_method": "GET",
-      "api_path": "/backend/v3/api/inventory/movements",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listInventoryLedgerEntries",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/inventory/ledger",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-inventory/src/inventoryService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/inventory/reservations",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listInventoryReservations",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/inventory/reservations",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-inventory/src/inventoryService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/inventory/stocks",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listInventoryStocks",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/inventory/stocks",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-inventory/src/inventoryService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/inventory/stocks/{stockId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateInventoryStock",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/inventory",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-inventory/src/inventoryService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/promotions/budget_ledger_entries",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPromotionBudgetLedgerEntriesList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_settlement"
-      ],
-      "route": "/admin/marketing/budget-ledger",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/promotions/codes/redemptions",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPromotionCodeRedemptionsList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_settlement"
-      ],
-      "route": "/admin/marketing/promotion-code-redemptions",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/promotions/codes",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPromotionCodesList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_settlement"
-      ],
-      "route": "/admin/marketing/promotion-codes",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/promotions/coupon_ledger_entries",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPromotionCouponLedgerEntriesList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_settlement"
-      ],
-      "route": "/admin/marketing/promotion-coupon-ledger",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/promotions/coupon_stocks",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPromotionCouponStocksList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_settlement"
-      ],
-      "route": "/admin/marketing/promotion-coupon-stocks",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/promotions/discount_allocations",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPromotionDiscountAllocationsList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_settlement"
-      ],
-      "route": "/admin/marketing/discount-allocations",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/promotions/discount_applications",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPromotionDiscountApplicationsList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_settlement"
-      ],
-      "route": "/admin/marketing/discount-applications",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/promotions/events",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPromotionEventsList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_settlement"
-      ],
-      "route": "/admin/marketing/events",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/promotions/external_bindings",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPromotionExternalBindingsList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_settlement"
-      ],
-      "route": "/admin/marketing/external-bindings",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/promotions/offers",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPromotionOffersList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_settlement"
-      ],
-      "route": "/admin/marketing/offers",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/promotions/user_coupons",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPromotionUserCouponsList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_settlement"
-      ],
-      "route": "/admin/marketing/user-coupons",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/system/marketing/referral_stats",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchReferralStats",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_referral_stat_snapshot"
-      ],
-      "route": "/admin/marketing/referrals",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/mcp/servers/{serverId}/health_check",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "checkMcpServerHealth",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_mcp_server",
-        "ai_mcp_server_revision"
-      ],
-      "route": "/admin/mcp",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts",
-      "write_tables": [
-        "ai_mcp_server",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/mcp/servers/{serverId}/bindings",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createMcpBinding",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_mcp_server",
-        "ai_mcp_server_revision",
-        "ai_mcp_tool",
-        "ai_mcp_binding"
-      ],
-      "route": "/admin/mcp",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts",
-      "write_tables": [
-        "ai_mcp_binding",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/mcp/servers",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createMcpServer",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_mcp_server",
-        "c_category"
-      ],
-      "route": "/admin/mcp",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts",
-      "write_tables": [
-        "ai_mcp_server",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/mcp/servers/{serverId}/revisions",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createMcpServerRevision",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_mcp_server",
-        "ai_mcp_server_revision"
-      ],
-      "route": "/admin/mcp",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts",
-      "write_tables": [
-        "ai_mcp_server",
-        "ai_mcp_server_revision",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/mcp/servers/{serverId}/discover",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "discoverMcpTools",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_mcp_server",
-        "ai_mcp_server_revision",
-        "ai_mcp_tool"
-      ],
-      "route": "/admin/mcp",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts",
-      "write_tables": [
-        "ai_mcp_tool",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/mcp/servers/{serverId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "getMcpServer",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_mcp_server",
-        "c_category"
-      ],
-      "route": "/admin/mcp",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/mcp/servers/{serverId}/bindings",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listMcpBindings",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_mcp_server",
-        "ai_mcp_server_revision",
-        "ai_mcp_tool",
-        "ai_mcp_binding"
-      ],
-      "route": "/admin/mcp",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/mcp/servers/{serverId}/revisions",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listMcpServerRevisions",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_mcp_server",
-        "ai_mcp_server_revision"
-      ],
-      "route": "/admin/mcp",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/mcp/servers",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listMcpServers",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_mcp_server",
-        "c_category"
-      ],
-      "route": "/admin/mcp",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/mcp/servers/{serverId}/tools",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listMcpTools",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_mcp_server",
-        "ai_mcp_server_revision",
-        "ai_mcp_tool"
-      ],
-      "route": "/admin/mcp",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/mcp/revisions/{revisionId}/publish",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "publishMcpServerRevision",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_mcp_server",
-        "ai_mcp_server_revision"
-      ],
-      "route": "/admin/mcp",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts",
-      "write_tables": [
-        "ai_mcp_server",
-        "ai_mcp_server_revision",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PUT",
-      "api_path": "/backend/v3/api/mcp/bindings/{bindingId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateMcpBinding",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_mcp_server",
-        "ai_mcp_server_revision",
-        "ai_mcp_tool",
-        "ai_mcp_binding"
-      ],
-      "route": "/admin/mcp",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts",
-      "write_tables": [
-        "ai_mcp_binding",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PUT",
-      "api_path": "/backend/v3/api/mcp/servers/{serverId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateMcpServer",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_mcp_server",
-        "c_category"
-      ],
-      "route": "/admin/mcp",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts",
-      "write_tables": [
-        "ai_mcp_server",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PUT",
-      "api_path": "/backend/v3/api/mcp/tools/{toolId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateMcpTool",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_mcp_server",
-        "ai_mcp_tool"
-      ],
-      "route": "/admin/mcp",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-mcp/src/mcpService.ts",
-      "write_tables": [
-        "ai_mcp_tool",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/memberships/entitlements",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendMembershipsEntitlementsList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/entitlements",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/memberships/members",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendMembershipsMembersList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/memberships/members/{membershipId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "backendMembershipsMembersStatusUpdate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/memberships/package_groups",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "backendMembershipsPackageGroupsCreate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/memberships/package_groups/{packageGroupId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "backendMembershipsPackageGroupsDelete",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/memberships/package_groups",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendMembershipsPackageGroupsList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/memberships/package_groups/{packageGroupId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "backendMembershipsPackageGroupsUpdate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/memberships/packages",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "backendMembershipsPackagesCreate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/memberships/packages/{packageId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "backendMembershipsPackagesDelete",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/memberships/packages",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendMembershipsPackagesList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/memberships/packages/{packageId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "backendMembershipsPackagesUpdate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/memberships/plans",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "backendMembershipsPlansCreate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/memberships/plans/{planId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "backendMembershipsPlansDelete",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/memberships/plans",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendMembershipsPlansList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/memberships/plans/{planId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "backendMembershipsPlansUpdate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/recharges/packages",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "backendMembershipsRechargePackagesCreate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/recharges/packages/{packageId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "backendMembershipsRechargePackagesDelete",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/recharges/packages",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendMembershipsRechargePackagesList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/recharges/packages/{packageId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "backendMembershipsRechargePackagesUpdate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/recharges/settings",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendMembershipsRechargeSettingsRetrieve",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "PUT",
-      "api_path": "/backend/v3/api/recharges/settings",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "backendMembershipsRechargeSettingsUpdate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/memberships/packages",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createMembershipAdminPackage",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/packages",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/memberships/package_groups",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createMembershipAdminPackageGroup",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/packages",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/memberships/plans",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createMembershipAdminPlan",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/plans",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/recharges/packages",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createMembershipAdminRechargePackage",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/recharge-packages",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/memberships/packages/{packageId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "deleteMembershipAdminPackage",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/packages",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/memberships/package_groups/{packageGroupId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "deleteMembershipAdminPackageGroup",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/packages",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/memberships/plans/{planId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "deleteMembershipAdminPlan",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/plans",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/recharges/packages/{packageId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "deleteMembershipAdminRechargePackage",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/recharge-packages",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/memberships/entitlements",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchMembershipAdminEntitlements",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/entitlements",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/memberships/members",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchMembershipAdminMembers",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/memberships/packages",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchMembershipAdminPackageCatalog",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/packages",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/memberships/package_groups",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchMembershipAdminPackageGroups",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/packages",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/memberships/packages",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchMembershipAdminPackages",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/packages",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/memberships/plans",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchMembershipAdminPlans",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/plans",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/recharges/packages",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchMembershipAdminRechargePackages",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/recharge-packages",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/recharges/settings",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchMembershipAdminRechargeSettings",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/recharge-packages",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/memberships/members/{membershipId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateMembershipAdminMemberStatus",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/memberships/packages/{packageId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateMembershipAdminPackage",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/packages",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/memberships/package_groups/{packageGroupId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateMembershipAdminPackageGroup",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/packages",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/memberships/plans/{planId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateMembershipAdminPlan",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/plans",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/recharges/packages/{packageId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateMembershipAdminRechargePackage",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/recharge-packages",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PUT",
-      "api_path": "/backend/v3/api/recharges/settings",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateMembershipAdminRechargeSettings",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/memberships/recharge-packages",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/messaging/provider_accounts",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "createMessagingProviderAccount",
-      "operation_scope": null,
-      "read_sources": [
-        "messaging_provider_capability"
-      ],
-      "route": "/admin/messaging/providers",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-messaging/src/messagingService.ts",
-      "write_tables": [
-        "messaging_provider_capability"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/messaging/route_rules",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "createMessagingRouteRule",
-      "operation_scope": null,
-      "read_sources": [
-        "messaging_route_rule",
-        "messaging_route_rule_target"
-      ],
-      "route": "/admin/messaging/route-rules",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-messaging/src/messagingService.ts",
-      "write_tables": [
-        "messaging_route_rule",
-        "messaging_route_rule_target"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/messaging/sender_identities",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "createMessagingSenderIdentity",
-      "operation_scope": null,
-      "read_sources": [
-        "messaging_sender_identity"
-      ],
-      "route": "/admin/messaging/sender-identities",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-messaging/src/messagingService.ts",
-      "write_tables": [
-        "messaging_sender_identity"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/messaging/suppressions",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "createMessagingSuppression",
-      "operation_scope": null,
-      "read_sources": [
-        "messaging_suppression"
-      ],
-      "route": "/admin/messaging/suppressions",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-messaging/src/messagingService.ts",
-      "write_tables": [
-        "messaging_suppression"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/messaging/templates",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "createMessagingTemplate",
-      "operation_scope": null,
-      "read_sources": [
-        "messaging_template",
-        "messaging_template_version"
-      ],
-      "route": "/admin/messaging/templates",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-messaging/src/messagingService.ts",
-      "write_tables": [
-        "messaging_template",
-        "messaging_template_version"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/messaging/provider_accounts",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listMessagingProviderAccounts",
-      "operation_scope": null,
-      "read_sources": [
-        "messaging_provider_capability"
-      ],
-      "route": "/admin/messaging/providers",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-messaging/src/messagingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/messaging/rate_limit_buckets",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listMessagingRateLimitBuckets",
-      "operation_scope": null,
-      "read_sources": [
-        "messaging_rate_limit_bucket"
-      ],
-      "route": "/admin/messaging/rate-limits",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-messaging/src/messagingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/messaging/route_rules",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listMessagingRouteRules",
-      "operation_scope": null,
-      "read_sources": [
-        "messaging_route_rule",
-        "messaging_route_rule_target"
-      ],
-      "route": "/admin/messaging/route-rules",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-messaging/src/messagingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/messaging/send_requests",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listMessagingSendRequests",
-      "operation_scope": null,
-      "read_sources": [
-        "messaging_send_request",
-        "messaging_send_attempt",
-        "messaging_delivery_event"
-      ],
-      "route": "/admin/messaging/send-requests",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-messaging/src/messagingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/messaging/sender_identities",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listMessagingSenderIdentities",
-      "operation_scope": null,
-      "read_sources": [
-        "messaging_sender_identity"
-      ],
-      "route": "/admin/messaging/sender-identities",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-messaging/src/messagingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/messaging/suppressions",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listMessagingSuppressions",
-      "operation_scope": null,
-      "read_sources": [
-        "messaging_suppression"
-      ],
-      "route": "/admin/messaging/suppressions",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-messaging/src/messagingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/messaging/templates",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listMessagingTemplates",
-      "operation_scope": null,
-      "read_sources": [
-        "messaging_template",
-        "messaging_template_version",
-        "messaging_template_variant"
-      ],
-      "route": "/admin/messaging/templates",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-messaging/src/messagingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/messaging/verification_policies",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listVerificationPolicies",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_verification_scene_policy"
-      ],
-      "route": "/admin/messaging/verification-policies",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-messaging/src/messagingService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/messaging/templates/{templateId}/versions/{versionId}/publish",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "publishMessagingTemplateVersion",
-      "operation_scope": null,
-      "read_sources": [
-        "messaging_template_version"
-      ],
-      "route": "/admin/messaging/templates",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-messaging/src/messagingService.ts",
-      "write_tables": [
-        "messaging_template_version"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/messaging/template_sends",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "sendMessagingTemplate",
-      "operation_scope": null,
-      "read_sources": [
-        "messaging_send_request",
-        "messaging_send_attempt"
-      ],
-      "route": "/admin/messaging/templates",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-messaging/src/messagingService.ts",
-      "write_tables": [
-        "messaging_send_request",
-        "messaging_send_attempt"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/messaging/diagnostics/route_simulation",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "simulateMessagingRoute",
-      "operation_scope": null,
-      "read_sources": [
-        "messaging_route_rule",
-        "messaging_route_rule_target"
-      ],
-      "route": "/admin/messaging/diagnostics",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-messaging/src/messagingService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/messaging/diagnostics/test_sends",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "testMessagingSend",
-      "operation_scope": null,
-      "read_sources": [
-        "messaging_send_request"
-      ],
-      "route": "/admin/messaging/diagnostics",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-messaging/src/messagingService.ts",
-      "write_tables": [
-        "messaging_send_request"
-      ]
-    },
-    {
-      "api_method": "PUT",
-      "api_path": "/backend/v3/api/messaging/verification_policies/{policyId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateVerificationPolicy",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_verification_scene_policy"
-      ],
-      "route": "/admin/messaging/verification-policies",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-messaging/src/messagingService.ts",
-      "write_tables": [
-        "iam_verification_scene_policy"
-      ]
-    },
-    {
-      "api_method": "GET",
       "api_path": "/backend/v3/api/router/monitor/alerts",
       "api_surface": "backend",
       "file_targets": [],
@@ -2853,1271 +752,6 @@
       "route": "/admin/monitor",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts",
       "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/iam/oauth/resource_accounts",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createOAuthResourceAccount",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/oauth",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-oauth/src/oauthAdminService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/iam/oauth/resource_accounts",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listOAuthResourceAccounts",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/oauth",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-oauth/src/oauthAdminService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/iam/oauth/resource_accounts/{resourceAccountId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateOAuthResourceAccount",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/oauth",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-oauth/src/oauthAdminService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/fulfillments",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "backendFulfillmentCreate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/orders",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src/ordersService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/fulfillments/{fulfillmentId}/shipments",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "backendFulfillmentShipmentCreate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/orders/fulfillments",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src/ordersService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/fulfillments/{fulfillmentId}/shipments/{shipmentId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "backendFulfillmentShipmentUpdate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/orders/fulfillments",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src/ordersService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/fulfillments/{fulfillmentId}/shipments/{shipmentId}/tracking_events",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "backendFulfillmentTrackingEventCreate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/orders",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src/ordersService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/fulfillments/{fulfillmentId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "backendFulfillmentUpdate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/orders",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src/ordersService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/fulfillments",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendFulfillmentsList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/orders/fulfillments",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src/ordersService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/orders/{orderId}/events",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendOrdersEventsList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/orders/orders",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src/ordersService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/orders",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendOrdersList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/orders/orders",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src/ordersService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/orders/{orderId}/cancel",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "backendOrdersManagementCancel",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/orders/orders",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src/ordersService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/orders/{orderId}/close",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "backendOrdersManagementClose",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/orders/orders",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src/ordersService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/orders/{orderId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendOrdersRetrieve",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/orders/orders",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src/ordersService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/refunds/{refundId}/approvals",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "backendRefundApprovalCreate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/orders",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src/ordersService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/refunds/{refundId}/attempts",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "backendRefundAttemptCreate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/orders",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src/ordersService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/refunds",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendRefundsList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/orders/refunds",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src/ordersService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/refunds/{refundId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendRefundsRetrieve",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/orders/refunds",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src/ordersService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/shipments",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendShipmentsList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/orders/shipments",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src/ordersService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/shipments/{shipmentId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendShipmentsRetrieve",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/orders/shipments",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src/ordersService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/shipments/{shipmentId}/tracking_events",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendShipmentsTrackingEventsList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/orders/shipments",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/src/ordersService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/iam/role_bindings",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "bindRole",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_role",
-        "iam_organization_membership"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_user_role",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/iam/departments",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createDepartment",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_organization"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_organization",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/iam/department_assignments",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createDepartmentAssignment",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_organization",
-        "iam_organization_membership"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_organization_membership",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/iam/organization_memberships",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createMembership",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_user",
-        "iam_organization"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_organization_membership",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/iam/organizations",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createOrganization",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_organization"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_organization",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/iam/permissions",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createPermission",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_permission"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_permission",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/iam/positions",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createPosition",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_organization"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_organization",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/iam/position_assignments",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createPositionAssignment",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_organization",
-        "iam_organization_membership"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_organization_membership",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/iam/roles",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createRole",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_role"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_role",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/iam/department_assignments/{assignmentId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "deactivateDepartmentAssignment",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_organization_membership"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_organization_membership",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/iam/organization_memberships/{membershipId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "deactivateMembership",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_organization_membership"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_organization_membership",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/iam/position_assignments/{assignmentId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "deactivatePositionAssignment",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_organization_membership"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_organization_membership",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/iam/departments/{departmentId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "deleteDepartment",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_organization"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_organization",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/iam/organizations/{organizationId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "deleteOrganization",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_organization"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_organization",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/iam/permissions/{permissionId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "deletePermission",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_permission"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_permission",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/iam/positions/{positionId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "deletePosition",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_organization"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_organization",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/iam/roles/{roleId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "deleteRole",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_role"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_role",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/iam/role_bindings/{roleBindingId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "deleteRoleBinding",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_user_role"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_user_role",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/iam/roles/{roleId}/permissions",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "grantRolePermission",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_role",
-        "iam_permission"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_role_permission",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/iam/departments",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listDepartments",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_organization",
-        "iam_organization_membership"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/iam/roles/{roleId}/permissions",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listRolePermissions",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_role",
-        "iam_permission",
-        "iam_role_permission"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/iam/users",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "loadDirectory",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "iam_user",
-        "iam_organization",
-        "iam_organization_membership",
-        "iam_role",
-        "iam_permission",
-        "iam_role_permission",
-        "iam_user_role"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/iam/roles/{roleId}/permissions/{permissionId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "revokeRolePermission",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_role_permission"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_role_permission",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/iam/departments/{departmentId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateDepartment",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_organization"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_organization",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/iam/department_assignments/{assignmentId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateDepartmentAssignment",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_organization_membership"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_organization_membership",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/iam/organization_memberships/{membershipId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateMembership",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_organization_membership"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_organization_membership",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/iam/organizations/{organizationId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateOrganization",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_organization"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_organization",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/iam/permissions/{permissionId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updatePermission",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_permission"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_permission",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/iam/positions/{positionId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updatePosition",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_organization"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_organization",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/iam/position_assignments/{assignmentId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updatePositionAssignment",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_organization_membership"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_organization_membership",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/iam/roles/{roleId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateRole",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_role"
-      ],
-      "route": "/admin/organization",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-organization/src/organizationService.ts",
-      "write_tables": [
-        "iam_role",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/payments/attempts",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPaymentsAttemptsList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/payments/attempts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/payments/channels",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPaymentsChannelsList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/payments/channels",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/payments/intents",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPaymentsIntentsList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/payments/intents",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/payments/methods",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPaymentsMethodsList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/payments/methods",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/payments/provider_accounts",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "backendPaymentsProviderAccountsCreate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/payments/provider-accounts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/payments/provider_accounts/{providerAccountId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "backendPaymentsProviderAccountsDelete",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/payments/provider-accounts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/payments/provider_accounts",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPaymentsProviderAccountsList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/payments/provider-accounts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/payments/provider_accounts/{providerAccountId}/status",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "backendPaymentsProviderAccountsStatusUpdate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/payments/provider-accounts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/payments/provider_accounts/{providerAccountId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "backendPaymentsProviderAccountsUpdate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/payments/provider-accounts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/payments/providers",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPaymentsProvidersList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/payments/providers",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/payments/reconciliation_runs",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPaymentsReconciliationRunsList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/payments/reconciliation-runs",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/payments/route_rules",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPaymentsRouteRulesList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/payments/route-rules",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/payments/runtime/snapshot",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPaymentsRuntimeSnapshotRetrieve",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/payments",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/payments/webhook_events",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendPaymentsWebhookEventsList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/payments/webhook-events",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/prompts",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createPrompt",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/prompts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-prompts/src/promptService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/prompts/{promptId}/bindings",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createPromptBinding",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/prompts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-prompts/src/promptService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/prompts/{promptId}/versions",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createPromptVersion",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/prompts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-prompts/src/promptService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/prompts/{promptId}/bindings",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listPromptBindings",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/prompts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-prompts/src/promptService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/prompts/{promptId}/versions",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listPromptVersions",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/prompts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-prompts/src/promptService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/prompts",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listPrompts",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/prompts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-prompts/src/promptService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/prompts/versions/{versionId}/publish",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "publishPromptVersion",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/prompts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-prompts/src/promptService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/prompts/versions/{versionId}/renders",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "renderPromptVersion",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/prompts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-prompts/src/promptService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/prompts/bindings/{bindingId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updatePromptBinding",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/prompts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-prompts/src/promptService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
     },
     {
       "api_method": "POST",
@@ -4539,326 +1173,6 @@
     },
     {
       "api_method": "GET",
-      "api_path": "/backend/v3/api/service_providers/adjustments",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendServiceProviderAdjustmentsList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_service_provider_adjustment"
-      ],
-      "route": "/admin/service-providers/adjustments",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/service_providers/audit/events",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendServiceProviderAuditEventsList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/service-providers/audit",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/service_providers/bindings",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendServiceProviderBindingsList",
-      "operation_scope": null,
-      "read_sources": [
-        "integration_service_provider_subject_binding",
-        "iam_gateway_api_key",
-        "ai_channel_group"
-      ],
-      "route": "/admin/service-providers/bindings",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/service_providers/contracts",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendServiceProviderContractsList",
-      "operation_scope": null,
-      "read_sources": [
-        "integration_service_provider_contract",
-        "integration_service_provider_finance_profile"
-      ],
-      "route": "/admin/service-providers/contracts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/service_providers/dashboard",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendServiceProviderDashboardRetrieve",
-      "operation_scope": null,
-      "read_sources": [
-        "integration_service_provider",
-        "integration_service_provider_edge",
-        "integration_service_provider_closure",
-        "ai_usage_service_provider_edge",
-        "commerce_service_provider_exposure_snapshot",
-        "analytics_service_provider_daily"
-      ],
-      "route": "/admin/service-providers/dashboard",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/service_providers/downstreams",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "backendServiceProviderDownstreamCreate",
-      "operation_scope": null,
-      "read_sources": [
-        "integration_service_provider",
-        "integration_service_provider_closure"
-      ],
-      "route": "/admin/service-providers/downstreams",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts",
-      "write_tables": [
-        "integration_service_provider",
-        "integration_service_provider_edge",
-        "integration_service_provider_closure",
-        "integration_service_provider_price_plan",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/service_providers/downstreams",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendServiceProviderDownstreamsList",
-      "operation_scope": null,
-      "read_sources": [
-        "integration_service_provider",
-        "integration_service_provider_edge",
-        "integration_service_provider_closure",
-        "analytics_service_provider_edge_daily"
-      ],
-      "route": "/admin/service-providers/downstreams",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/service_providers/members",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendServiceProviderMembersList",
-      "operation_scope": null,
-      "read_sources": [
-        "integration_service_provider_member"
-      ],
-      "route": "/admin/service-providers/members",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/service_providers/pricing/simulations",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "backendServiceProviderPriceSimulationCreate",
-      "operation_scope": null,
-      "read_sources": [
-        "integration_service_provider_price_plan",
-        "integration_service_provider_price_rule"
-      ],
-      "route": "/admin/service-providers/pricing",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/service_providers/pricing/rules",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "backendServiceProviderPricingRuleCreate",
-      "operation_scope": null,
-      "read_sources": [
-        "integration_service_provider_edge",
-        "integration_service_provider_price_plan"
-      ],
-      "route": "/admin/service-providers/pricing",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts",
-      "write_tables": [
-        "integration_service_provider_price_plan",
-        "integration_service_provider_price_rule",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/service_providers/pricing/rules/{ruleId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "backendServiceProviderPricingRuleUpdate",
-      "operation_scope": null,
-      "read_sources": [
-        "integration_service_provider_price_rule",
-        "integration_service_provider_price_plan"
-      ],
-      "route": "/admin/service-providers/pricing",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts",
-      "write_tables": [
-        "integration_service_provider_price_rule",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/service_providers/pricing/rules",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendServiceProviderPricingRulesList",
-      "operation_scope": null,
-      "read_sources": [
-        "integration_service_provider_price_plan",
-        "integration_service_provider_price_rule"
-      ],
-      "route": "/admin/service-providers/pricing",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/service_providers/reconciliation_runs",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendServiceProviderReconciliationRunsList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_service_provider_reconciliation_run",
-        "commerce_usage_service_provider_reconciliation_item"
-      ],
-      "route": "/admin/service-providers/reconciliation",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/service_providers/relations",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendServiceProviderRelationsList",
-      "operation_scope": null,
-      "read_sources": [
-        "integration_service_provider_edge",
-        "integration_service_provider_closure"
-      ],
-      "route": "/admin/service-providers/relations",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/service_providers/risk/events",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendServiceProviderRiskEventsList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_service_provider_exposure_snapshot",
-        "ops_audit_log"
-      ],
-      "route": "/admin/service-providers/risk",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/service_providers/statements",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendServiceProviderStatementsList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_usage_service_provider_statement"
-      ],
-      "route": "/admin/service-providers/statements",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/service_providers/usage",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendServiceProviderUsageList",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_usage_fact",
-        "ai_usage_service_provider_edge"
-      ],
-      "route": "/admin/service-providers/usage",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/service_providers/wallet/accounts",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendServiceProviderWalletAccountsList",
-      "operation_scope": null,
-      "read_sources": [
-        "commerce_service_provider_exposure_snapshot"
-      ],
-      "route": "/admin/service-providers/wallet",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/service_providers/providers",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendServiceProvidersList",
-      "operation_scope": null,
-      "read_sources": [
-        "integration_service_provider"
-      ],
-      "route": "/admin/service-providers/providers",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-provider/src/serviceProviderService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
       "api_path": "/backend/v3/api/system/auth/settings",
       "api_surface": "backend",
       "file_targets": [],
@@ -4924,541 +1238,81 @@
       ]
     },
     {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/agents",
-      "api_surface": "backend",
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
       "file_targets": [],
-      "kind": "read",
-      "operation": "listAgentSkillBindings",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/skill",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-skill/src/skillService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/iam/users",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "addUser",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_user",
-        "iam_role",
-        "iam_user_role"
-      ],
-      "route": "/admin/user",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-user/src/userService.ts",
-      "write_tables": [
-        "iam_user",
-        "commerce_account",
-        "iam_user_role",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/apikey",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createApiKey",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_user",
-        "iam_gateway_api_key"
-      ],
-      "route": "/admin/user",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-user/src/userService.ts",
-      "write_tables": [
-        "iam_gateway_api_key",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/apikey/{apiKeyId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "deleteApiKey",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_user",
-        "iam_gateway_api_key"
-      ],
-      "route": "/admin/user",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-user/src/userService.ts",
-      "write_tables": [
-        "iam_gateway_api_key",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/iam/api_keys",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchApiKeysMap",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_gateway_api_key"
-      ],
-      "route": "/admin/user",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-user/src/userService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/iam/users",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchUsers",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_user",
-        "commerce_account",
-        "iam_role",
-        "iam_user_role",
-        "iam_user_login_event"
-      ],
-      "route": "/admin/user",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-user/src/userService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/iam/users/{userId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateUser",
-      "operation_scope": null,
-      "read_sources": [
-        "iam_user",
-        "iam_role",
-        "iam_user_role"
-      ],
-      "route": "/admin/user",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-user/src/userService.ts",
-      "write_tables": [
-        "iam_user",
-        "iam_user_role",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/recharges/orders",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendRechargesOrdersList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/wallet",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-wallet/src/walletService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/wallet/accounts",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendWalletAccountsList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/wallet/wallet-accounts",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-wallet/src/walletService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/wallet/adjustments",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "backendWalletAdjustmentsCreate",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/wallet",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-wallet/src/walletService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/wallet/exchange_rules",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendWalletExchangeRulesList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/wallet/exchange-rules",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-wallet/src/walletService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/wallet/ledger_entries",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendWalletLedgerEntriesList",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/wallet/wallet-ledger",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-wallet/src/walletService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/iam/department_assignments",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchIamDepartmentAssignments",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "iam_organization",
-        "iam_organization_membership"
-      ],
-      "route": "/console/user",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/iam/departments/tree",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchIamDepartmentTree",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "iam_organization",
-        "iam_organization_membership"
-      ],
-      "route": "/console/user",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/iam/departments",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchIamDepartments",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "iam_organization",
-        "iam_organization_membership"
-      ],
-      "route": "/console/user",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/iam/organization_memberships",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchIamOrganizationMemberships",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "iam_organization_membership"
-      ],
-      "route": "/console/user",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/iam/organizations/tree",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchIamOrganizationTree",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "iam_organization",
-        "iam_organization_membership"
-      ],
-      "route": "/console/user",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/iam/organizations",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchIamOrganizations",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "iam_organization",
-        "iam_organization_membership"
-      ],
-      "route": "/console/user",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/iam/position_assignments",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchIamPositionAssignments",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "iam_organization",
-        "iam_organization_membership"
-      ],
-      "route": "/console/user",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/iam/positions",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchIamPositions",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "iam_organization",
-        "iam_organization_membership"
-      ],
-      "route": "/console/user",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/iam/role_bindings",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchIamRoleBindings",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "iam_organization",
-        "iam_organization_membership"
-      ],
-      "route": "/console/user",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/notification/notifications/{notificationId}/acknowledge",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "create",
+      "kind": null,
       "operation": "acknowledge",
       "operation_scope": null,
-      "read_sources": [
-        "ops_notification_delivery"
-      ],
-      "route": "/console/notifications",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts",
-      "write_tables": [
-        "ops_notification_delivery"
-      ]
+      "read_sources": [],
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-commons/src/notificationService.ts",
+      "write_tables": []
     },
     {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/notification/notifications",
-      "api_surface": "app",
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
       "file_targets": [],
-      "kind": "read",
+      "kind": null,
       "operation": "fetchNotifications",
       "operation_scope": null,
-      "read_sources": [
-        "ops_notification_message",
-        "ops_notification_delivery"
-      ],
-      "route": "/console/notifications",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts",
+      "read_sources": [],
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-commons/src/notificationService.ts",
       "write_tables": []
     },
     {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/notification/notifications",
-      "api_surface": "app",
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
       "file_targets": [],
-      "kind": "read",
+      "kind": null,
       "operation": "list",
       "operation_scope": null,
-      "read_sources": [
-        "ops_notification_message",
-        "ops_notification_delivery"
-      ],
-      "route": "/console/notifications",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts",
+      "read_sources": [],
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-commons/src/notificationService.ts",
       "write_tables": []
     },
     {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/notification/notifications/{notificationId}/popup_seen",
-      "api_surface": "app",
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
       "file_targets": [],
-      "kind": "create",
+      "kind": null,
       "operation": "markPopupSeen",
       "operation_scope": null,
-      "read_sources": [
-        "ops_notification_delivery"
-      ],
-      "route": "/console/notifications",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts",
-      "write_tables": [
-        "ops_notification_delivery"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/ai/routing/api_keys",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchRoutingApiKeys",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "iam_gateway_api_key",
-        "ai_usage_fact"
-      ],
-      "route": "/console/api-keys",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts",
+      "read_sources": [],
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-commons/src/notificationService.ts",
       "write_tables": []
     },
     {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/ai/routing/channels",
-      "api_surface": "app",
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
       "file_targets": [],
-      "kind": "read",
-      "operation": "fetchRoutingChannels",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_channel",
-        "ai_channel_credential",
-        "ai_channel_resource",
-        "ai_resource",
-        "ai_resource_group"
-      ],
-      "route": "/console/api-keys",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/ai/routing/request_traces",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchRoutingRequestTraces",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_request_trace",
-        "ai_routing_decision_log",
-        "ai_usage_fact"
-      ],
-      "route": "/console/gateway",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/ai/routing/usage",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchRoutingUsage",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_request_trace",
-        "ai_usage_fact",
-        "ai_routing_decision_log"
-      ],
-      "route": "/console/usage",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/auth/sessions",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "create",
+      "kind": null,
       "operation": "createAppSession",
       "operation_scope": null,
-      "read_sources": [
-        "iam_user",
-        "iam_session"
-      ],
-      "route": "/auth/login",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/sessionService.ts",
-      "write_tables": [
-        "iam_session",
-        "iam_security_event",
-        "iam_audit_event"
-      ]
+      "read_sources": [],
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-commons/src/sessionService.ts",
+      "write_tables": []
     },
     {
-      "api_method": "DELETE",
-      "api_path": "/app/v3/api/auth/sessions/current",
-      "api_surface": "app",
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
       "file_targets": [],
-      "kind": "delete",
+      "kind": null,
       "operation": "revokeAppSession",
       "operation_scope": null,
-      "read_sources": [
-        "iam_session"
-      ],
-      "route": "/auth/login",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/sessionService.ts",
-      "write_tables": [
-        "iam_session",
-        "iam_security_event"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/system/site/runtime",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchSiteBranding",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ops_config_snapshot"
-      ],
-      "route": "/",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/siteBranding.ts",
+      "read_sources": [],
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-commons/src/sessionService.ts",
       "write_tables": []
     },
     {
@@ -5531,7 +1385,6 @@
         "ai_channel_group_metric_snapshot",
         "iam_gateway_access_policy",
         "ai_quota_policy",
-        "ai_model_pricing",
         "ai_pricing_plan"
       ],
       "route": "/console/api-keys",
@@ -5572,8 +1425,6 @@
       "read_sources": [
         "ai_usage_fact",
         "ai_request_trace",
-        "ai_model_rank_snapshot",
-        "ops_notification_message",
         "ops_metric_snapshot",
         "ops_gateway_instance"
       ],
@@ -5606,12 +1457,12 @@
       "operation": "acknowledge",
       "operation_scope": null,
       "read_sources": [
-        "ops_notification_delivery"
+        "ops_audit_log"
       ],
       "route": "/console/notifications",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-messages/src/messagesService.ts",
       "write_tables": [
-        "ops_notification_delivery"
+        "ops_audit_log"
       ]
     },
     {
@@ -5623,8 +1474,7 @@
       "operation": "fetchMessages",
       "operation_scope": null,
       "read_sources": [
-        "ops_notification_message",
-        "ops_notification_delivery"
+        "ops_audit_log"
       ],
       "route": "/console/notifications",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-messages/src/messagesService.ts",
@@ -5639,12 +1489,12 @@
       "operation": "markPopupSeen",
       "operation_scope": null,
       "read_sources": [
-        "ops_notification_delivery"
+        "ops_audit_log"
       ],
       "route": "/console/notifications",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-messages/src/messagesService.ts",
       "write_tables": [
-        "ops_notification_delivery"
+        "ops_audit_log"
       ]
     },
     {
@@ -5709,9 +1559,7 @@
       "operation": "fetchCurrentUser",
       "operation_scope": null,
       "read_sources": [
-        "iam_user",
-        "iam_user_identity",
-        "iam_session"
+        "ops_audit_log"
       ],
       "route": "/console/user",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-user/src/userService.ts",
@@ -5726,10 +1574,6 @@
       "operation": "fetchModels",
       "operation_scope": null,
       "read_sources": [
-        "ai_model_vendor",
-        "ai_model",
-        "ai_model_capability",
-        "ai_model_pricing",
         "ai_channel_group",
         "ai_channel_group_member"
       ],
@@ -5835,7 +1679,9 @@
       ],
       "route": "/playground",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "write_tables": []
+      "write_tables": [
+        "ai_agent"
+      ]
     },
     {
       "api_method": "POST",
@@ -5850,7 +1696,9 @@
       ],
       "route": "/playground",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "write_tables": []
+      "write_tables": [
+        "ai_agent"
+      ]
     },
     {
       "api_method": "POST",
@@ -5981,10 +1829,7 @@
       "operation": "listModelCatalog",
       "operation_scope": null,
       "read_sources": [
-        "ai_model_vendor",
-        "ai_model",
-        "ai_model_capability",
-        "ai_model_pricing"
+        "ai_agent"
       ],
       "route": "/playground",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
@@ -6219,8 +2064,7 @@
       "operation": "runPlaygroundGeneration",
       "operation_scope": "app_shell",
       "read_sources": [
-        "ai_model",
-        "ai_model_capability"
+        "ai_agent"
       ],
       "route": "/playground",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationService.ts",
@@ -6237,8 +2081,7 @@
       "operation": "fetchPlaygroundGenerationHistoryFromService",
       "operation_scope": "app_shell",
       "read_sources": [
-        "ai_model",
-        "ai_model_capability"
+        "ai_agent"
       ],
       "route": "/playground",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationsService.ts",
@@ -6253,8 +2096,7 @@
       "operation": "runPlaygroundAssetGeneration",
       "operation_scope": "app_shell",
       "read_sources": [
-        "ai_model",
-        "ai_model_capability"
+        "ai_agent"
       ],
       "route": "/playground",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationsService.ts",
@@ -6271,8 +2113,7 @@
       "operation": "fetchGenerationHistory",
       "operation_scope": "app_shell",
       "read_sources": [
-        "ai_model",
-        "ai_model_capability"
+        "ai_agent"
       ],
       "route": "/playground",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundService.ts",
@@ -6287,10 +2128,7 @@
       "operation": "fetchModelGroups",
       "operation_scope": "app_shell",
       "read_sources": [
-        "ai_model_vendor",
-        "ai_model",
-        "ai_model_capability",
-        "ai_model_pricing"
+        "ai_agent"
       ],
       "route": "/playground",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundService.ts",
@@ -6305,8 +2143,7 @@
       "operation": "runAgentGeneration",
       "operation_scope": "app_shell",
       "read_sources": [
-        "ai_model",
-        "ai_model_capability"
+        "ai_agent"
       ],
       "route": "/playground",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundService.ts",
@@ -6323,8 +2160,7 @@
       "operation": "runGeneration",
       "operation_scope": "app_shell",
       "read_sources": [
-        "ai_model",
-        "ai_model_capability"
+        "ai_agent"
       ],
       "route": "/playground",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundService.ts",
@@ -6341,7 +2177,7 @@
       "operation": "fetchModelRankings",
       "operation_scope": null,
       "read_sources": [
-        "ai_model_rank_snapshot"
+        "ops_audit_log"
       ],
       "route": "/rankings",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/src/rankingService.ts",
@@ -6356,11 +2192,324 @@
       "operation": "fetchModelVendors",
       "operation_scope": null,
       "read_sources": [
-        "ai_model_vendor",
-        "ai_model"
+        "ops_audit_log"
       ],
       "route": "/rankings",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/src/rankingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/iam/department_assignments",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchIamDepartmentAssignments",
+      "operation_scope": "app_shell",
+      "read_sources": [
+        "ops_audit_log"
+      ],
+      "route": "/console/user",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/iam/departments/tree",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchIamDepartmentTree",
+      "operation_scope": "app_shell",
+      "read_sources": [
+        "ops_audit_log"
+      ],
+      "route": "/console/user",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/iam/departments",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchIamDepartments",
+      "operation_scope": "app_shell",
+      "read_sources": [
+        "ops_audit_log"
+      ],
+      "route": "/console/user",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/iam/organization_memberships",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchIamOrganizationMemberships",
+      "operation_scope": "app_shell",
+      "read_sources": [
+        "ops_audit_log"
+      ],
+      "route": "/console/user",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/iam/organizations/tree",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchIamOrganizationTree",
+      "operation_scope": "app_shell",
+      "read_sources": [
+        "ops_audit_log"
+      ],
+      "route": "/console/user",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/iam/organizations",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchIamOrganizations",
+      "operation_scope": "app_shell",
+      "read_sources": [
+        "ops_audit_log"
+      ],
+      "route": "/console/user",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/iam/position_assignments",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchIamPositionAssignments",
+      "operation_scope": "app_shell",
+      "read_sources": [
+        "ops_audit_log"
+      ],
+      "route": "/console/user",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/iam/positions",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchIamPositions",
+      "operation_scope": "app_shell",
+      "read_sources": [
+        "ops_audit_log"
+      ],
+      "route": "/console/user",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/iam/role_bindings",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchIamRoleBindings",
+      "operation_scope": "app_shell",
+      "read_sources": [
+        "ops_audit_log"
+      ],
+      "route": "/console/user",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/app/v3/api/notification/notifications/{notificationId}/acknowledge",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "acknowledge",
+      "operation_scope": null,
+      "read_sources": [
+        "ops_audit_log"
+      ],
+      "route": "/console/notifications",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/notification/notifications",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchNotifications",
+      "operation_scope": null,
+      "read_sources": [
+        "ops_audit_log"
+      ],
+      "route": "/console/notifications",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/notification/notifications",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "list",
+      "operation_scope": null,
+      "read_sources": [
+        "ops_audit_log"
+      ],
+      "route": "/console/notifications",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/app/v3/api/notification/notifications/{notificationId}/popup_seen",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "markPopupSeen",
+      "operation_scope": null,
+      "read_sources": [
+        "ops_audit_log"
+      ],
+      "route": "/console/notifications",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/ai/routing/api_keys",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchRoutingApiKeys",
+      "operation_scope": "app_shell",
+      "read_sources": [
+        "iam_gateway_api_key"
+      ],
+      "route": "/console/api-keys",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/ai/routing/channels",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchRoutingChannels",
+      "operation_scope": "app_shell",
+      "read_sources": [
+        "ai_channel_group"
+      ],
+      "route": "/console/api-keys",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/ai/routing/request_traces",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchRoutingRequestTraces",
+      "operation_scope": "app_shell",
+      "read_sources": [
+        "ai_request_trace"
+      ],
+      "route": "/console/gateway",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/ai/routing/usage",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchRoutingUsage",
+      "operation_scope": "app_shell",
+      "read_sources": [
+        "ai_request_trace",
+        "ai_usage_fact",
+        "ai_routing_decision_log"
+      ],
+      "route": "/console/usage",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/app/v3/api/auth/sessions",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "createAppSession",
+      "operation_scope": null,
+      "read_sources": [
+        "iam_user",
+        "iam_session"
+      ],
+      "route": "/auth/login",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/sessionService.ts",
+      "write_tables": [
+        "iam_session",
+        "iam_security_event",
+        "iam_audit_event"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/app/v3/api/auth/sessions/current",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "delete",
+      "operation": "revokeAppSession",
+      "operation_scope": null,
+      "read_sources": [
+        "iam_session"
+      ],
+      "route": "/auth/login",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/sessionService.ts",
+      "write_tables": [
+        "iam_session",
+        "iam_security_event"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/system/site/runtime",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchSiteBranding",
+      "operation_scope": "app_shell",
+      "read_sources": [
+        "ops_audit_log"
+      ],
+      "route": "/",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/siteBranding.ts",
       "write_tables": []
     },
     {
@@ -6392,7 +2541,9 @@
       ],
       "route": "/auth/oauth/callback/:provider",
       "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
-      "write_tables": []
+      "write_tables": [
+        "ops_audit_log"
+      ]
     },
     {
       "api_method": "POST",
@@ -6483,17 +2634,11 @@
       "operation": "sendVerifyCode",
       "operation_scope": null,
       "read_sources": [
-        "iam_user_identity",
-        "iam_verification_scene_policy",
-        "messaging_template",
-        "messaging_route_rule"
+        "iam_user_identity"
       ],
       "route": "/auth/login",
       "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
       "write_tables": [
-        "iam_verification_challenge",
-        "messaging_send_request",
-        "messaging_rate_limit_bucket",
         "iam_security_event"
       ]
     },
@@ -6646,14 +2791,11 @@
       "operation": "verifyCode",
       "operation_scope": null,
       "read_sources": [
-        "iam_verification_challenge"
+        "ops_config_snapshot"
       ],
       "route": "/auth/login",
       "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
       "write_tables": [
-        "iam_verification_challenge",
-        "iam_verification_attempt",
-        "messaging_rate_limit_bucket",
         "iam_security_event"
       ]
     },
@@ -6664,7 +2806,7 @@
       "file_targets": [],
       "kind": "read",
       "operation": "fetchClawRouterAuthRuntimeSettings",
-      "operation_scope": null,
+      "operation_scope": "app_shell",
       "read_sources": [
         "ops_config_snapshot"
       ],
@@ -6679,7 +2821,7 @@
       "file_targets": [],
       "kind": "read",
       "operation": "fetchClawRouterAuthVerificationPolicy",
-      "operation_scope": null,
+      "operation_scope": "app_shell",
       "read_sources": [
         "ops_config_snapshot"
       ],
@@ -6696,17 +2838,11 @@
       "operation": "addModel",
       "operation_scope": null,
       "read_sources": [
-        "ai_model_vendor",
-        "ai_model",
-        "ai_model_capability",
-        "ai_model_pricing"
+        "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
       "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
-        "ai_model",
-        "ai_model_capability",
-        "ai_model_pricing",
         "ops_audit_log"
       ]
     },
@@ -6719,12 +2855,11 @@
       "operation": "addVendor",
       "operation_scope": null,
       "read_sources": [
-        "ai_model_vendor"
+        "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
       "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
-        "ai_model_vendor",
         "ops_audit_log"
       ]
     },
@@ -6759,16 +2894,11 @@
       "operation": "deleteModel",
       "operation_scope": null,
       "read_sources": [
-        "ai_model",
-        "ai_model_capability",
-        "ai_model_pricing"
+        "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
       "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
-        "ai_model",
-        "ai_model_capability",
-        "ai_model_pricing",
         "ops_audit_log"
       ]
     },
@@ -6803,7 +2933,7 @@
       "operation": "fetchAllModels",
       "operation_scope": null,
       "read_sources": [
-        "ai_model_vendor"
+        "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
       "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
@@ -6818,7 +2948,7 @@
       "operation": "fetchInitializedCatalog",
       "operation_scope": null,
       "read_sources": [
-        "ai_model_vendor"
+        "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
       "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
@@ -6850,8 +2980,7 @@
       "operation": "fetchModelOptionsCatalog",
       "operation_scope": null,
       "read_sources": [
-        "ai_model",
-        "ai_model_vendor"
+        "ai_model_mapping_rule"
       ],
       "route": "/admin/model/mappings",
       "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
@@ -6881,7 +3010,6 @@
       "operation": "fetchModelRankingRefreshStatus",
       "operation_scope": null,
       "read_sources": [
-        "ai_model_rank_snapshot",
         "ops_job_execution"
       ],
       "route": "/admin/model",
@@ -6897,7 +3025,7 @@
       "operation": "fetchModelRankings",
       "operation_scope": null,
       "read_sources": [
-        "ai_model_rank_snapshot"
+        "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
       "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
@@ -6912,10 +3040,7 @@
       "operation": "fetchModels",
       "operation_scope": null,
       "read_sources": [
-        "ai_model_vendor",
-        "ai_model",
-        "ai_model_pricing",
-        "ai_model_rank_snapshot"
+        "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
       "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
@@ -6930,7 +3055,7 @@
       "operation": "fetchModelsPage",
       "operation_scope": null,
       "read_sources": [
-        "ai_model_vendor"
+        "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
       "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
@@ -6945,7 +3070,7 @@
       "operation": "fetchVendors",
       "operation_scope": null,
       "read_sources": [
-        "ai_model_vendor"
+        "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
       "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
@@ -6979,19 +3104,11 @@
       "operation": "syncVendorsAndModels",
       "operation_scope": null,
       "read_sources": [
-        "ai_model_vendor",
-        "ai_model",
-        "ai_model_capability",
-        "ai_model_pricing",
         "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
       "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
-        "ai_model_vendor",
-        "ai_model",
-        "ai_model_capability",
-        "ai_model_pricing",
         "ai_pricing_import_snapshot",
         "ops_audit_log"
       ]
@@ -7005,14 +3122,11 @@
       "operation": "triggerModelRankingRefresh",
       "operation_scope": null,
       "read_sources": [
-        "ai_model",
-        "ai_usage_fact",
-        "ai_model_rank_snapshot"
+        "ai_usage_fact"
       ],
       "route": "/admin/model",
       "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
-        "ai_model_rank_snapshot",
         "ops_job_execution"
       ]
     },
@@ -7025,17 +3139,11 @@
       "operation": "updateModel",
       "operation_scope": null,
       "read_sources": [
-        "ai_model_vendor",
-        "ai_model",
-        "ai_model_capability",
-        "ai_model_pricing"
+        "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
       "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
-        "ai_model",
-        "ai_model_capability",
-        "ai_model_pricing",
         "ops_audit_log"
       ]
     },
@@ -7171,8 +3279,8 @@
     }
   ],
   "summary": {
-    "operation_count": 417,
-    "source_file_count": 56,
-    "write_operation_count": 212
+    "operation_count": 189,
+    "source_file_count": 38,
+    "write_operation_count": 91
   }
 }

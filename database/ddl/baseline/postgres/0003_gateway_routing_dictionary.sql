@@ -1,1 +1,3 @@
--- Retired: gateway routing dictionary tables are owned by sdkwork-models and composed at install time.
+-- Retired stub: gateway routing dictionary tables are owned by sdkwork-models.
+-- DDL authority: sdkwork-models-database-bootstrap; composed at install time when enabled.
+-- Do not add CREATE TABLE statements to this file.

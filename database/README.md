@@ -21,27 +21,23 @@ Gateway / routing / ops tables remain owned by `clawrouter` in `generated/schema
 
 See `docs/31-product-composition-model.md`.
 
-## Migration strategy
+## Initialization state
 
-`baselineStrategy` is `baseline-plus-migrations`:
+This module is in **initialization state** for greenfield deployments:
 
-1. **Baseline** — `database/ddl/baseline/postgres/0001_clawrouter_legacy_baseline.sql` is the authoritative initial schema snapshot (regenerated from schema registry when the contract changes).
-2. **Incremental migrations** — post-baseline schema changes MUST be added under `database/migrations/postgres/` using `{version}_{name}.up.sql` (and optional `.down.sql`). Do not mutate production databases by editing the baseline alone after GA.
-3. **Drift** — use `pnpm db:drift:check` before release; production uses `SDKWORK_CLAW_STARTUP_INSTALL_MODE=skip` and controlled upgrade jobs.
-
-`0002`–`0004` baseline stubs are retired (empty commentary only).
+1. **Baseline** — `database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql` contains the full DDL snapshot.
+2. **Migrations** — `database/migrations/{engine}/` is reserved for post-GA incremental schema changes only. It is intentionally empty at initialization.
+3. **Drift** — run `pnpm db:drift:check` before release.
 
 ## Commands
 
 ```bash
 pnpm run db:validate
+pnpm run db:materialize:contract
 pnpm run db:plan
 pnpm run db:init
 pnpm run db:migrate
 pnpm run db:seed
 pnpm run db:status
 pnpm run db:drift:check
-pnpm run check:database-ownership
 ```
-
-Runtime services create pools through `sdkwork-database-sqlx` and register `DefaultDatabaseModule` at bootstrap.

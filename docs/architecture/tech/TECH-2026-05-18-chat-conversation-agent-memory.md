@@ -9,7 +9,7 @@
 
 **Architecture:** Add formal schema and typed backend ports for Chat and Agent sessions, with Memory and Runtime as shared domains. Deliver product APIs under `/app/v3/api/chat/...` and `/app/v3/api/agents/...`; keep Playground only as a `sourceSurface`.
 
-**Tech Stack:** Rust, Axum, SQLx, SQLite/Postgres DDL, project schema registry YAML, existing `PlusApiResult` response envelope.
+**Tech Stack:** Rust, Axum, SQLx, SQLite/Postgres DDL, project schema registry YAML, `SdkWorkApiResponse` / `ProblemDetail` envelope (`API_SPEC.md` §15).
 
 ---
 

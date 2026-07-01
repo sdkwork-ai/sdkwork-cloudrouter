@@ -62,7 +62,7 @@ function main() {
 
   const baselinePath = path.join(
     args.root,
-    'database/ddl/baseline/postgres/0001_clawrouter_legacy_baseline.sql',
+    'database/ddl/baseline/postgres/0001_clawrouter_baseline.sql',
   );
   const baselineSql = fs.readFileSync(baselinePath, 'utf8');
   const clawRouterBaselinePrefixes = [

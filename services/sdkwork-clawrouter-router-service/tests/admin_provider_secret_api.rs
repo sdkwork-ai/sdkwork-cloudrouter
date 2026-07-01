@@ -45,7 +45,7 @@ async fn admin_provider_secret_route_creates_lists_updates_and_soft_deletes_meta
 
     assert_eq!(StatusCode::OK, create_response.status());
     let create_payload = json_payload(create_response).await;
-    assert_eq!("2000", create_payload["code"]);
+    assert_eq!(0, create_payload["code"].as_i64().unwrap());
     assert_eq!("OpenAI production", create_payload["data"]["item"]["name"]);
     assert_eq!("openai", create_payload["data"]["item"]["providerCode"]);
     assert_eq!(
@@ -249,7 +249,7 @@ async fn admin_provider_secret_route_rejects_missing_trusted_subject() {
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 #[tokio::test]
@@ -277,8 +277,8 @@ async fn admin_provider_secret_route_rejects_plaintext_secret_without_calling_st
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("plaintext provider secret values are not accepted"));
@@ -310,8 +310,8 @@ async fn admin_provider_secret_route_rejects_invalid_secret_ref_without_calling_
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("secretRef must start with vault:// or secret://"));
@@ -345,8 +345,8 @@ async fn admin_provider_secret_route_rejects_plaintext_alias_and_empty_locator_w
 
     assert_eq!(StatusCode::BAD_REQUEST, plaintext_alias_response.status());
     let plaintext_alias_payload = json_payload(plaintext_alias_response).await;
-    assert_eq!("4001", plaintext_alias_payload["code"]);
-    assert!(plaintext_alias_payload["msg"]
+    assert_eq!(40001, plaintext_alias_payload["code"].as_i64().unwrap());
+    assert!(plaintext_alias_payload["detail"]
         .as_str()
         .unwrap()
         .contains("plaintext provider secret values are not accepted"));
@@ -368,8 +368,8 @@ async fn admin_provider_secret_route_rejects_plaintext_alias_and_empty_locator_w
 
     assert_eq!(StatusCode::BAD_REQUEST, empty_locator_response.status());
     let empty_locator_payload = json_payload(empty_locator_response).await;
-    assert_eq!("4001", empty_locator_payload["code"]);
-    assert!(empty_locator_payload["msg"]
+    assert_eq!(40001, empty_locator_payload["code"].as_i64().unwrap());
+    assert!(empty_locator_payload["detail"]
         .as_str()
         .unwrap()
         .contains("secretRef must include a non-empty locator"));

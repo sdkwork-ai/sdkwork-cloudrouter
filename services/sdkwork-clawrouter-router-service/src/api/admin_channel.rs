@@ -13,7 +13,7 @@ use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::EntityUuidGenerator;
 use crate::domain::{DomainError, ProviderCircuitBreakerPolicy, ProviderRetryPolicy};
 use crate::ports::{
@@ -229,7 +229,7 @@ async fn fetch_channels(
         .list_channels(ListAdminChannelsQuery { subject })
         .await
     {
-        Ok(items) => Json(PlusApiResult::success(AdminChannelListResponse {
+        Ok(items) => Json(success_envelope(AdminChannelListResponse {
             items: items.into_iter().map(to_safe_item_response).collect(),
         }))
         .into_response(),
@@ -258,7 +258,7 @@ async fn create_channel(
     };
 
     match state.store.create_channel(command).await {
-        Ok(item) => Json(PlusApiResult::success(AdminChannelItemEnvelope {
+        Ok(item) => Json(success_envelope(AdminChannelItemEnvelope {
             item: to_safe_item_response(item),
         }))
         .into_response(),
@@ -288,7 +288,7 @@ async fn update_channel(
     };
 
     match state.store.update_channel(command).await {
-        Ok(Some(item)) => Json(PlusApiResult::success(AdminChannelItemEnvelope {
+        Ok(Some(item)) => Json(success_envelope(AdminChannelItemEnvelope {
             item: to_safe_item_response(item),
         }))
         .into_response(),
@@ -315,7 +315,7 @@ async fn delete_channel(
     };
 
     match state.store.delete_channel(command).await {
-        Ok(true) => Json(PlusApiResult::success(AdminChannelDeleteResponse {
+        Ok(true) => Json(success_envelope(AdminChannelDeleteResponse {
             deleted: true,
         }))
         .into_response(),
@@ -342,7 +342,7 @@ async fn test_channel(
     };
 
     match state.store.test_channel(command).await {
-        Ok(Some(outcome)) => Json(PlusApiResult::success(AdminChannelTestResponse {
+        Ok(Some(outcome)) => Json(success_envelope(AdminChannelTestResponse {
             channel_id: outcome.channel_id,
             success: outcome.success,
             status: outcome.status,
@@ -1597,15 +1597,15 @@ fn circuit_breaker_policy_error_message(message: &str) -> String {
 }
 
 fn bad_request(message: String) -> Response {
-    PlusApiResult::error("4001", message)).into_response()
+    problem_from_wire_code("4001", message).into_response()
 }
 
 fn not_found_response(message: &'static str) -> Response {
-    PlusApiResult::error("4040", message)).into_response()
+    problem_from_wire_code("4040", message).into_response()
 }
 
 fn conflict_response(error: DomainError) -> Response {
-    PlusApiResult::error("4090", error.to_string())).into_response()
+    problem_from_wire_code("4090", error.to_string()).into_response()
 }
 
 fn command_build_error_response(error: ChannelCommandBuildError) -> Response {
@@ -1618,7 +1618,7 @@ fn command_build_error_response(error: ChannelCommandBuildError) -> Response {
 }
 
 fn channel_system_response(context: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }
 
 fn current_timestamp_string() -> String {

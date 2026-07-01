@@ -47,7 +47,7 @@ async fn admin_channel_group_route_creates_lists_updates_and_soft_deletes_groups
 
     assert_eq!(StatusCode::OK, create_response.status());
     let create_payload = json_payload(create_response).await;
-    assert_eq!("2000", create_payload["code"]);
+    assert_eq!(0, create_payload["code"].as_i64().unwrap());
     assert_eq!(
         expected_create_name,
         create_payload["data"]["item"]["groupName"]
@@ -216,7 +216,7 @@ async fn admin_channel_group_route_lists_and_replaces_channel_bindings() {
 
     assert_eq!(StatusCode::OK, list_response.status());
     let list_payload = json_payload(list_response).await;
-    assert_eq!("2000", list_payload["code"]);
+    assert_eq!(0, list_payload["code"].as_i64().unwrap());
     assert_eq!(2, list_payload["data"]["items"].as_array().unwrap().len());
     assert_eq!("3001", list_payload["data"]["items"][0]["channelId"]);
     assert_eq!(
@@ -247,7 +247,7 @@ async fn admin_channel_group_route_lists_and_replaces_channel_bindings() {
 
     assert_eq!(StatusCode::OK, replace_response.status());
     let replace_payload = json_payload(replace_response).await;
-    assert_eq!("2000", replace_payload["code"]);
+    assert_eq!(0, replace_payload["code"].as_i64().unwrap());
     assert_eq!(
         2,
         replace_payload["data"]["items"].as_array().unwrap().len()
@@ -338,7 +338,7 @@ async fn admin_channel_group_route_explain_reports_backend_config_readiness() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("backend_config", payload["data"]["source"]);
     assert_eq!(true, payload["data"]["ready"]);
     assert_eq!(2, payload["data"]["configuredResourceAccessCount"]);
@@ -525,7 +525,7 @@ async fn admin_channel_group_route_rejects_missing_trusted_subject() {
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 #[tokio::test]
@@ -553,8 +553,8 @@ async fn admin_channel_group_route_rejects_invalid_multiplier_without_calling_st
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("rateMultiplier must be between"));

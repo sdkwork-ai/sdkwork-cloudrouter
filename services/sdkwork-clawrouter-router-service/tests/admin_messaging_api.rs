@@ -56,7 +56,7 @@ async fn admin_messaging_route_exposes_delivery_management_center() {
         ),
     ] {
         let payload = request_json(router.clone(), trusted_request("GET", path)).await;
-        assert_eq!("2000", payload["code"], "{path}");
+        assert_eq!(0, payload["code"], "{path}");
         assert_eq!(expected_id, payload["data"]["items"][0]["id"], "{path}");
         assert_eq!(1, payload["data"]["total"], "{path}");
         assert!(payload["data"]["pageSize"].as_i64().unwrap() >= 1, "{path}");
@@ -78,7 +78,7 @@ async fn admin_messaging_route_exposes_provider_sender_template_and_route_writes
         ),
     )
     .await;
-    assert_eq!("2000", provider["code"]);
+    assert_eq!(0, provider["code"].as_i64().unwrap());
     assert_eq!("provider-account-created", provider["data"]["id"]);
     assert_eq!("active", provider["data"]["status"]);
 
@@ -91,7 +91,7 @@ async fn admin_messaging_route_exposes_provider_sender_template_and_route_writes
         ),
     )
     .await;
-    assert_eq!("2000", sender["code"]);
+    assert_eq!(0, sender["code"].as_i64().unwrap());
     assert_eq!("sender-created", sender["data"]["id"]);
 
     let template = request_json(
@@ -103,7 +103,7 @@ async fn admin_messaging_route_exposes_provider_sender_template_and_route_writes
         ),
     )
     .await;
-    assert_eq!("2000", template["code"]);
+    assert_eq!(0, template["code"].as_i64().unwrap());
     assert_eq!("template-created", template["data"]["id"]);
 
     let published = request_json(
@@ -114,7 +114,7 @@ async fn admin_messaging_route_exposes_provider_sender_template_and_route_writes
         ),
     )
     .await;
-    assert_eq!("2000", published["code"]);
+    assert_eq!(0, published["code"].as_i64().unwrap());
     assert_eq!("301", published["data"]["id"]);
     assert_eq!("published", published["data"]["status"]);
 
@@ -127,7 +127,7 @@ async fn admin_messaging_route_exposes_provider_sender_template_and_route_writes
         ),
     )
     .await;
-    assert_eq!("2000", route_rule["code"]);
+    assert_eq!(0, route_rule["code"].as_i64().unwrap());
     assert_eq!("route-rule-created", route_rule["data"]["id"]);
 }
 
@@ -146,7 +146,7 @@ async fn admin_messaging_route_exposes_diagnostics_and_verification_policy_actio
         ),
     )
     .await;
-    assert_eq!("2000", simulation["code"]);
+    assert_eq!(0, simulation["code"].as_i64().unwrap());
     assert_eq!(true, simulation["data"]["matched"]);
     assert_eq!("route-rule-1", simulation["data"]["routeRuleId"]);
     assert_eq!("101", simulation["data"]["targets"][0]["providerAccountId"]);
@@ -160,7 +160,7 @@ async fn admin_messaging_route_exposes_diagnostics_and_verification_policy_actio
         ),
     )
     .await;
-    assert_eq!("2000", test_send["code"]);
+    assert_eq!(0, test_send["code"].as_i64().unwrap());
     assert_eq!("message-request-1", test_send["data"]["requestId"]);
     assert_eq!("queued", test_send["data"]["deliveryStatus"]);
     assert_eq!("smtp", test_send["data"]["providerCode"]);
@@ -174,7 +174,7 @@ async fn admin_messaging_route_exposes_diagnostics_and_verification_policy_actio
         ),
     )
     .await;
-    assert_eq!("2000", marketing_send["code"]);
+    assert_eq!(0, marketing_send["code"].as_i64().unwrap());
     assert_eq!(
         "message-request-marketing",
         marketing_send["data"]["requestId"]
@@ -191,7 +191,7 @@ async fn admin_messaging_route_exposes_diagnostics_and_verification_policy_actio
         ),
     )
     .await;
-    assert_eq!("2000", suppression["code"]);
+    assert_eq!(0, suppression["code"].as_i64().unwrap());
     assert_eq!("suppression-created", suppression["data"]["id"]);
     assert_eq!("active", suppression["data"]["status"]);
 
@@ -204,7 +204,7 @@ async fn admin_messaging_route_exposes_diagnostics_and_verification_policy_actio
         ),
     )
     .await;
-    assert_eq!("2000", policy["code"]);
+    assert_eq!(0, policy["code"].as_i64().unwrap());
     assert_eq!("policy-login", policy["data"]["id"]);
     assert_eq!("active", policy["data"]["status"]);
 }
@@ -228,7 +228,7 @@ async fn admin_messaging_route_rejects_missing_trusted_subject() {
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 #[tokio::test]
@@ -249,8 +249,8 @@ async fn admin_messaging_write_routes_require_idempotency_key_when_the_operation
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .expect("error message should be text")
         .contains("Idempotency-Key"));
@@ -273,8 +273,8 @@ async fn admin_messaging_route_rejects_invalid_channel_and_empty_route_targets_b
         .unwrap();
     assert_eq!(StatusCode::BAD_REQUEST, invalid_channel.status());
     let payload = json_payload(invalid_channel).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"].as_str().unwrap().contains("channel"));
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"].as_str().unwrap().contains("channel"));
 
     let invalid_provider_purpose = router
         .clone()
@@ -287,8 +287,8 @@ async fn admin_messaging_route_rejects_invalid_channel_and_empty_route_targets_b
         .unwrap();
     assert_eq!(StatusCode::BAD_REQUEST, invalid_provider_purpose.status());
     let payload = json_payload(invalid_provider_purpose).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"].as_str().unwrap().contains("deliveryPurpose"));
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"].as_str().unwrap().contains("deliveryPurpose"));
 
     let invalid_email_sender = router
         .clone()
@@ -301,8 +301,8 @@ async fn admin_messaging_route_rejects_invalid_channel_and_empty_route_targets_b
         .unwrap();
     assert_eq!(StatusCode::BAD_REQUEST, invalid_email_sender.status());
     let payload = json_payload(invalid_email_sender).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"].as_str().unwrap().contains("fromEmail"));
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"].as_str().unwrap().contains("fromEmail"));
 
     let invalid_sms_sender = router
         .clone()
@@ -315,8 +315,8 @@ async fn admin_messaging_route_rejects_invalid_channel_and_empty_route_targets_b
         .unwrap();
     assert_eq!(StatusCode::BAD_REQUEST, invalid_sms_sender.status());
     let payload = json_payload(invalid_sms_sender).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"].as_str().unwrap().contains("signName"));
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"].as_str().unwrap().contains("signName"));
 
     let invalid_sms_format = router
         .clone()
@@ -329,8 +329,8 @@ async fn admin_messaging_route_rejects_invalid_channel_and_empty_route_targets_b
         .unwrap();
     assert_eq!(StatusCode::BAD_REQUEST, invalid_sms_format.status());
     let payload = json_payload(invalid_sms_format).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"].as_str().unwrap().contains("contentFormat"));
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"].as_str().unwrap().contains("contentFormat"));
 
     let invalid_variable_schema = router
         .clone()
@@ -343,8 +343,8 @@ async fn admin_messaging_route_rejects_invalid_channel_and_empty_route_targets_b
         .unwrap();
     assert_eq!(StatusCode::BAD_REQUEST, invalid_variable_schema.status());
     let payload = json_payload(invalid_variable_schema).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"].as_str().unwrap().contains("variableSchema"));
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"].as_str().unwrap().contains("variableSchema"));
 
     let empty_targets = router
         .clone()
@@ -357,8 +357,8 @@ async fn admin_messaging_route_rejects_invalid_channel_and_empty_route_targets_b
         .unwrap();
     assert_eq!(StatusCode::BAD_REQUEST, empty_targets.status());
     let payload = json_payload(empty_targets).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"].as_str().unwrap().contains("targets"));
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"].as_str().unwrap().contains("targets"));
 
     let duplicate_target_order = router
         .clone()
@@ -371,8 +371,8 @@ async fn admin_messaging_route_rejects_invalid_channel_and_empty_route_targets_b
         .unwrap();
     assert_eq!(StatusCode::BAD_REQUEST, duplicate_target_order.status());
     let payload = json_payload(duplicate_target_order).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("targets.targetOrder"));
@@ -391,8 +391,8 @@ async fn admin_messaging_route_rejects_invalid_channel_and_empty_route_targets_b
         invalid_suppression_time_order.status()
     );
     let payload = json_payload(invalid_suppression_time_order).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"].as_str().unwrap().contains("endsAt"));
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"].as_str().unwrap().contains("endsAt"));
 
     let invalid_suppression_timestamp = router
         .oneshot(trusted_json_request(
@@ -407,8 +407,8 @@ async fn admin_messaging_route_rejects_invalid_channel_and_empty_route_targets_b
         invalid_suppression_timestamp.status()
     );
     let payload = json_payload(invalid_suppression_timestamp).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"].as_str().unwrap().contains("startsAt"));
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"].as_str().unwrap().contains("startsAt"));
 }
 
 fn trusted_request(method: &str, path: &str) -> Request<Body> {

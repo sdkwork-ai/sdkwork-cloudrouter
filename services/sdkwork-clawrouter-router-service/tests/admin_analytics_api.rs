@@ -31,7 +31,7 @@ async fn admin_analytics_route_returns_usage_snapshot_for_trusted_subject() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!(7, payload["data"]["summary"]["totalRequests"]);
     assert_eq!(1200.0, payload["data"]["summary"]["totalTokens"]);
     assert_eq!(38.5, payload["data"]["summary"]["totalPoints"]);
@@ -74,7 +74,7 @@ async fn admin_analytics_route_rejects_missing_trusted_subject() {
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 fn signed_request(method: &str, path: &str) -> Request<Body> {

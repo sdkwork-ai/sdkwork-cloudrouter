@@ -12,6 +12,7 @@ import {
   LogOut,
   Receipt,
   Settings,
+  Ticket,
   Wallet,
   type LucideIcon,
 } from 'lucide-react';
@@ -49,17 +50,18 @@ const consoleSidebarItems = [
 ];
 
 const consoleSidebarGroups = [
-  groupBlock('console.menu.group.observability', 'Usage & Observability', [
-    itemBlock({ path: '/console/usage', labelKey: 'console.menu.usage', fallbackLabel: 'Call statistics', icon: Activity }),
-  ]),
   groupBlock('console.menu.group.integration', 'Access & Routing', [
     itemBlock({ path: '/console/api-keys', labelKey: 'console.menu.apiKeys', fallbackLabel: 'Token management', icon: Key }),
   ]),
   groupBlock('console.menu.group.accountBusiness', 'Account & Commerce', [
-    itemBlock({ path: '/console/account', labelKey: 'console.menu.account', fallbackLabel: 'Account details', icon: CreditCard }),
-    itemBlock({ path: '/console/wallet', labelKey: 'console.menu.wallet', fallbackLabel: 'Recharge exchange', icon: Wallet }),
+    itemBlock({ path: '/console/account', labelKey: 'console.menu.account', fallbackLabel: 'Account overview', icon: CreditCard }),
+    itemBlock({ path: '/console/wallet', labelKey: 'console.menu.wallet', fallbackLabel: 'Wallet & top-up', icon: Wallet }),
+    itemBlock({ path: '/console/coupons', labelKey: 'console.menu.coupons', fallbackLabel: 'Coupons', icon: Ticket }),
     itemBlock({ path: '/console/memberships', labelKey: 'console.menu.memberships', fallbackLabel: 'Memberships', icon: Crown }),
     itemBlock({ path: '/console/settlements', labelKey: 'console.menu.settlements', fallbackLabel: 'Bills and Reports', icon: Receipt }),
+  ]),
+  groupBlock('console.menu.group.observability', 'Usage & Observability', [
+    itemBlock({ path: '/console/usage', labelKey: 'console.menu.usage', fallbackLabel: 'Call statistics', icon: Activity }),
   ]),
   groupBlock('console.menu.group.notificationsSettings', 'Notifications & Settings', [
     itemBlock({ path: '/console/settings', labelKey: 'console.menu.settings', fallbackLabel: 'Configuration center', icon: Settings }),
@@ -295,7 +297,7 @@ export function ConsoleLayout({
 
         {/* Main Content Pane */}
         <div className="flex-1 flex flex-col min-w-0 max-h-[calc(100vh-72px)] overflow-y-auto custom-scrollbar bg-slate-50 dark:bg-[#121212]">
-          <main className="flex-1">
+          <main className="claw-router-console-commerce-surface flex-1">
             <Outlet context={{ isDark, toggleTheme, theme, setTheme, themeColor, setThemeColor }} />
           </main>
         </div>

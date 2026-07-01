@@ -6,7 +6,7 @@ use axum::{Json, Router};
 use serde::Deserialize;
 use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::{
     CacheNamespaceKeyList, CacheOperationOutcome, CacheRuntimeSnapshot, RuntimeCacheManager,
 };
@@ -156,7 +156,7 @@ fn cache_success<T>(data: T) -> Response
 where
     T: serde::Serialize,
 {
-    Json(PlusApiResult::success(data)).into_response()
+    Json(success_envelope(data)).into_response()
 }
 
 fn normalize_key_list_limit(limit: Option<usize>) -> crate::domain::DomainResult<Option<usize>> {
@@ -203,7 +203,7 @@ fn cache_system_response(context: &str, error: crate::domain::DomainError) -> Re
     };
     (
         status,
-        PlusApiResult::error(code, format!("{context}: {error}")),
+        problem_from_wire_code(code, format!("{context}: {error}")),
     )
         .into_response()
 }

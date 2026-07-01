@@ -237,14 +237,14 @@ function assertGatewayReadsCanonicalEdgeEnvKeys() {
   const gatewayMainPath = path.join(
     WORKSPACE_ROOT,
     'crates',
-    'sdkwork-clawrouter-standalone-gateway',
+    'sdkwork-clawrouter-standalone-gateway-lib',
     'src',
     'main.rs',
   );
   const edgeEnvPath = path.join(
     WORKSPACE_ROOT,
     'crates',
-    'sdkwork-clawrouter-standalone-gateway',
+    'sdkwork-clawrouter-standalone-gateway-lib',
     'src',
     'edge_env.rs',
   );

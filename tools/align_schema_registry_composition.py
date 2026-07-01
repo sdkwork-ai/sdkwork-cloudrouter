@@ -144,7 +144,7 @@ def generate_commerce_registry() -> int:
 
 
 def generate_appstore_registry() -> int:
-    baseline_path = APPSTORE_ROOT / "database/ddl/baseline/postgres/0001_appstore_legacy_baseline.sql"
+    baseline_path = APPSTORE_ROOT / "database/ddl/baseline/postgres/0001_appstore_baseline.sql"
     baseline = baseline_path.read_text(encoding="utf-8")
     table_names = sorted(set(re.findall(r"CREATE TABLE IF NOT EXISTS (\w+)", baseline)))
     tables = [

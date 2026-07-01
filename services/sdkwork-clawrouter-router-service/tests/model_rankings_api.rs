@@ -39,8 +39,8 @@ async fn app_model_rankings_route_reports_service_unavailable_when_read_store_is
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("5030", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(50301, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("database-backed model rankings store is not configured"));
@@ -107,7 +107,7 @@ async fn admin_model_ranking_status_route_returns_refresh_observability_snapshot
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("ready", payload["data"]["status"]);
     assert_eq!(10, payload["data"]["tenantId"]);
     assert_eq!(20, payload["data"]["organizationId"]);
@@ -149,7 +149,7 @@ async fn admin_model_ranking_jobs_route_returns_recent_refresh_execution_history
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!(
         "model_ranking_refresh",
         payload["data"]["items"][0]["jobName"]
@@ -219,7 +219,7 @@ async fn admin_model_ranking_manual_refresh_route_runs_worker_and_returns_result
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!(true, payload["data"]["triggered"]);
     assert_eq!("succeeded", payload["data"]["status"]);
     assert_eq!(10, payload["data"]["tenantId"]);

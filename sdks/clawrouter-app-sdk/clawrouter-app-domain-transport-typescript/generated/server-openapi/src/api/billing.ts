@@ -1,0 +1,42 @@
+import { appApiPath } from './paths';
+import type { HttpClient } from '../http/client';
+
+import type { SdkWorkPageData } from '../types';
+
+
+export class BillingHistoryApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List */
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/billing/history`));
+  }
+}
+
+export class BillingApi {
+  private client: HttpClient;
+  public readonly history: BillingHistoryApi;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+    this.history = new BillingHistoryApi(client);
+  }
+
+}
+
+export function createBillingApi(client: HttpClient): BillingApi {
+  return new BillingApi(client);
+}
+
+function appendQueryString(path: string, rawQueryString: string): string {
+  const query = rawQueryString.replace(/^\?+/, '');
+  if (!query) {
+    return path;
+  }
+  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
+}

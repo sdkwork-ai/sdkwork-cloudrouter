@@ -35,7 +35,7 @@ async fn admin_user_route_lists_users_and_api_keys_by_user() {
         .unwrap();
     assert_eq!(StatusCode::OK, users_response.status());
     let users_payload = json_payload(users_response).await;
-    assert_eq!("2000", users_payload["code"]);
+    assert_eq!(0, users_payload["code"].as_i64().unwrap());
     assert_eq!(30, users_payload["data"]["items"][0]["id"]);
     assert_eq!(
         "owner@example.com",
@@ -50,7 +50,7 @@ async fn admin_user_route_lists_users_and_api_keys_by_user() {
         .unwrap();
     assert_eq!(StatusCode::OK, api_keys_response.status());
     let api_keys_payload = json_payload(api_keys_response).await;
-    assert_eq!("2000", api_keys_payload["code"]);
+    assert_eq!(0, api_keys_payload["code"].as_i64().unwrap());
     assert_eq!("Production", api_keys_payload["data"]["30"][0]["name"]);
     assert_eq!("sk-live********", api_keys_payload["data"]["30"][0]["key"]);
 }
@@ -116,7 +116,7 @@ async fn admin_user_api_key_command_route_serves_backend_iam_api_key_commands() 
     assert_eq!(StatusCode::OK, delete_key_response.status());
 
     assert_eq!(1, store.commands.lock().unwrap().len());
-    assert_eq!(1, store.delete_commands.lock().unwrap().len());
+    assert_eq!(1, store.delete_org_commands.lock().unwrap().len());
 }
 
 #[tokio::test]
@@ -255,7 +255,7 @@ async fn admin_user_route_rejects_missing_trusted_subject() {
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 #[tokio::test]
@@ -280,8 +280,8 @@ async fn admin_user_route_returns_not_found_when_api_key_user_is_missing() {
 
     assert_eq!(StatusCode::NOT_FOUND, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4004", payload["code"]);
-    assert_eq!("user was not found", payload["msg"]);
+    assert_eq!(40401, payload["code"].as_i64().unwrap());
+    assert_eq!("user was not found", payload["detail"]);
 }
 
 fn signed_request(method: &str, path: &str, body: &str) -> Request<Body> {
@@ -314,6 +314,7 @@ struct TestAdminUserStore {
 struct TestApiKeyCommandStore {
     commands: Mutex<Vec<CreateGatewayApiKeyCommand>>,
     delete_commands: Mutex<Vec<DeleteGatewayApiKeyCommand>>,
+    delete_org_commands: Mutex<Vec<DeleteGatewayApiKeyForOrganizationCommand>>,
 }
 
 impl GatewayApiKeyCommandStore for TestApiKeyCommandStore {
@@ -386,9 +387,12 @@ impl GatewayApiKeyCommandStore for TestApiKeyCommandStore {
 
     fn delete_gateway_api_key_for_organization<'a>(
         &'a self,
-        _command: DeleteGatewayApiKeyForOrganizationCommand,
+        command: DeleteGatewayApiKeyForOrganizationCommand,
     ) -> ApiKeyCommandStoreFuture<'a, bool> {
-        Box::pin(async move { Ok(true) })
+        Box::pin(async move {
+            self.delete_org_commands.lock().unwrap().push(command);
+            Ok(true)
+        })
     }
 }
 

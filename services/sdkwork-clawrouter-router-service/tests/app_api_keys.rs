@@ -38,7 +38,7 @@ async fn app_api_key_create_ensures_default_group_when_missing() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("default", payload["data"]["item"]["channelGroup"]);
     assert_eq!("Default", payload["data"]["item"]["channelGroupName"]);
     assert_eq!("sk-claw-test-secret", payload["data"]["rawKey"]);
@@ -77,7 +77,7 @@ async fn app_api_key_update_rebinds_key_to_available_group_for_owner() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("701", payload["data"]["item"]["id"]);
     assert_eq!("Updated Console Key", payload["data"]["item"]["name"]);
     assert_eq!("premium", payload["data"]["item"]["channelGroup"]);
@@ -109,7 +109,7 @@ async fn app_api_key_update_marks_one_owner_key_as_runtime_default() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("701", payload["data"]["item"]["id"]);
     assert_eq!(true, payload["data"]["item"]["defaultForRuntime"]);
 }
@@ -132,7 +132,7 @@ async fn app_api_key_list_returns_persisted_copyable_key_for_owner() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("701", payload["data"]["items"][0]["id"]);
     assert_eq!(
         "sk-claw-owner-secret",
@@ -147,9 +147,9 @@ async fn app_api_key_list_returns_persisted_copyable_key_for_owner() {
         "Default customers",
         payload["data"]["items"][0]["channelGroupName"]
     );
-    assert_eq!("premium", payload["data"]["groups"][0]["code"]);
+    assert_eq!("premium", payload["data"]["groups"][0]["code"].as_i64().unwrap());
     assert_eq!("Premium customers", payload["data"]["groups"][0]["name"]);
-    assert_eq!("default", payload["data"]["groups"][1]["code"]);
+    assert_eq!("default", payload["data"]["groups"][1]["code"].as_i64().unwrap());
     assert_eq!("Default customers", payload["data"]["groups"][1]["name"]);
     assert_eq!(2, payload["data"]["groups"].as_array().unwrap().len());
 }
@@ -172,10 +172,10 @@ async fn app_channel_group_list_returns_owner_groups_with_display_names() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("2000", payload["code"]);
-    assert_eq!("premium", payload["data"]["items"][0]["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
+    assert_eq!("premium", payload["data"]["items"][0]["code"].as_i64().unwrap());
     assert_eq!("Premium customers", payload["data"]["items"][0]["name"]);
-    assert_eq!("default", payload["data"]["items"][1]["code"]);
+    assert_eq!("default", payload["data"]["items"][1]["code"].as_i64().unwrap());
     assert_eq!("Default customers", payload["data"]["items"][1]["name"]);
     assert_eq!(2, payload["data"]["items"].as_array().unwrap().len());
 }
@@ -198,7 +198,7 @@ async fn app_api_key_delete_revokes_owner_key() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("701", payload["data"]["id"]);
 }
 

@@ -13,7 +13,7 @@ impl AppSessionConfig {
     pub const ENV_APP_SESSION_MAX_CLOCK_SKEW_SECONDS: &'static str =
         "SDKWORK_CLAW_APP_SESSION_MAX_CLOCK_SKEW_SECONDS";
     pub const MIN_SIGNING_SECRET_LEN: usize = 32;
-    pub const DEFAULT_SESSION_TTL_SECONDS: u64 = 86_400;
+    pub const DEFAULT_SESSION_TTL_SECONDS: u64 = 2_592_000;
     pub const DEFAULT_MAX_CLOCK_SKEW_SECONDS: u64 = 300;
     pub const MAX_SESSION_TTL_SECONDS: u64 = 2_592_000;
     pub const MAX_CLOCK_SKEW_SECONDS: u64 = 3_600;

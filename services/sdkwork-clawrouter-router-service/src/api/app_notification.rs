@@ -12,7 +12,7 @@ use crate::api::app_sql_subject::{
     map_optional_app_sql_subject, map_required_app_sql_subject, RequiredAppSqlScopedSubject,
     ResolvedAppSqlScopedSubject,
 };
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::domain::DomainError;
 use crate::ports::{
     AcknowledgeAppNotificationCommand, AppNotificationFuture, AppNotificationItems,
@@ -130,7 +130,7 @@ async fn list_notifications(
         Err(response) => return response,
     };
     let Some(subject) = subject else {
-        return Json(PlusApiResult::success(
+        return Json(success_envelope(
             AppNotificationItems::new(Vec::new()),
         ))
         .into_response();
@@ -153,7 +153,7 @@ async fn list_notifications(
         })
         .await
     {
-        Ok(items) => Json(PlusApiResult::success(items)).into_response(),
+        Ok(items) => Json(success_envelope(items)).into_response(),
         Err(error) => app_notification_error("app notifications are unavailable", error),
     }
 }
@@ -256,7 +256,7 @@ fn normalize_page(query: &NotificationListQuery) -> (i64, i64) {
 }
 
 fn mutation_success(state: &'static str) -> Response {
-    Json(PlusApiResult::success(NotificationMutationResponse {
+    Json(success_envelope(NotificationMutationResponse {
         updated: true,
         state,
     }))
@@ -264,14 +264,14 @@ fn mutation_success(state: &'static str) -> Response {
 }
 
 fn bad_request(message: &str) -> Response {
-    PlusApiResult::error("4001", message)).into_response()
+    problem_from_wire_code("4001", message).into_response()
 }
 
 fn not_found(message: String) -> Response {
-    PlusApiResult::error("4040", message)).into_response()
+    problem_from_wire_code("4040", message).into_response()
 }
 
 fn app_notification_error(context: &str, error: DomainError) -> Response {
     tracing::error!(error = %error, context, "app notification API failed");
-    PlusApiResult::error("5000", context.to_owned())).into_response()
+    problem_from_wire_code("5000", context.to_owned()).into_response()
 }

@@ -1,4 +1,5 @@
 # sdkwork-clawrouter
+repository-kind: application
 
 Commercial AI gateway and console workspace for SDKWork Claw Router.
 

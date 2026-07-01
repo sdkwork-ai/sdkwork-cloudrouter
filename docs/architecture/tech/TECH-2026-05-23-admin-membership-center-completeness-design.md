@@ -74,7 +74,7 @@ package:
   - `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts`
 
 The service already uses the generated backend SDK through
-`getClawRouterBackendSdkClient().commerce.*` and must keep doing so.
+`getClawRouterBackendSdkClient().memberships.*` and must keep doing so.
 
 The backend membership router already exposes the required management endpoints:
 

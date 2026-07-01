@@ -52,7 +52,7 @@ async fn payment_aggregate_api_creates_payment_intent_and_records_route_decision
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = response_json(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("order-api-1001", payload["data"]["item"]["merchantOrderNo"]);
     assert_eq!("requires_confirmation", payload["data"]["item"]["status"]);
     assert_eq!("stripe", payload["data"]["item"]["providerCode"]);
@@ -98,8 +98,8 @@ async fn payment_aggregate_api_confirm_records_operation_attempt_and_returns_cap
 
     assert_eq!(StatusCode::UNPROCESSABLE_ENTITY, response.status());
     let payload = response_json(response).await;
-    assert_eq!("4220", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(42201, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("ConfirmPaymentIntent"));
@@ -219,8 +219,8 @@ async fn payment_aggregate_api_create_refund_records_failed_refund_runtime() {
 
     assert_eq!(StatusCode::UNPROCESSABLE_ENTITY, response.status());
     let payload = response_json(response).await;
-    assert_eq!("4220", payload["code"]);
-    assert!(payload["msg"].as_str().unwrap().contains("CreateRefund"));
+    assert_eq!(42201, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"].as_str().unwrap().contains("CreateRefund"));
     assert_eq!(1, store.refunds().len());
     assert_eq!("failed", store.refunds()[0].status.as_str());
     assert_eq!(2, store.refund_items().len());
@@ -285,8 +285,8 @@ async fn payment_aggregate_api_rejects_refund_item_currency_mismatch() {
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = response_json(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"].as_str().unwrap().contains("currency"));
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"].as_str().unwrap().contains("currency"));
     assert!(store.refunds().is_empty());
     assert!(store.refund_items().is_empty());
 }
@@ -349,8 +349,8 @@ async fn payment_aggregate_api_cancel_terminal_refund_returns_conflict() {
 
     assert_eq!(StatusCode::CONFLICT, response.status());
     let payload = response_json(response).await;
-    assert_eq!("4090", payload["code"]);
-    assert!(payload["msg"].as_str().unwrap().contains("terminal"));
+    assert_eq!(40901, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"].as_str().unwrap().contains("terminal"));
 }
 
 fn trusted_json_request(

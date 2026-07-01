@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
-import { User, Activity, Shield, CheckCircle } from 'lucide-react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { BusinessStatePanel, readMediaResourceUrl } from '@sdkwork/clawroutes-pc-commons';
 import { UserService, UserProfile } from './userService';
 
@@ -11,6 +10,33 @@ function getLoadErrorMessage(error: unknown, fallback: string, t: TranslationFun
     return fallback;
   }
   return error.message.startsWith('console.') ? t(error.message, fallback) : error.message;
+}
+
+function ProfileSection({
+  children,
+  title,
+}: {
+  children: ReactNode;
+  title: string;
+}) {
+  return (
+    <section className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-white/10 dark:bg-[#252525]">
+      <div className="border-b border-slate-100 px-5 py-3 dark:border-white/5">
+        <h3 className="text-sm font-semibold text-slate-800 dark:text-white">{title}</h3>
+      </div>
+      <div className="px-5 py-4">{children}</div>
+    </section>
+  );
+}
+
+function ProfileField({ label, value }: { label: string; value: string }) {
+  const displayValue = value.trim() || '—';
+  return (
+    <div>
+      <dt className="text-xs text-slate-500">{label}</dt>
+      <dd className="mt-1 text-sm font-medium text-slate-800 dark:text-slate-200">{displayValue}</dd>
+    </div>
+  );
 }
 
 export function UserView() {
@@ -52,11 +78,11 @@ export function UserView() {
 
   if (loading) {
     return (
-      <div className="min-h-[calc(100vh-72px)] w-full max-w-6xl mx-auto bg-slate-50 p-[5px] animate-in fade-in duration-500 dark:bg-[#121212]">
+      <div className="mx-auto w-full max-w-3xl p-4">
         <BusinessStatePanel
           kind="loading"
           title={t('console.user.states.loading', '正在加载用户资料...')}
-          className="min-h-[400px]"
+          className="min-h-[320px]"
         />
       </div>
     );
@@ -64,13 +90,13 @@ export function UserView() {
 
   if (loadError) {
     return (
-      <div className="min-h-[calc(100vh-72px)] w-full max-w-6xl mx-auto bg-slate-50 p-[5px] animate-in fade-in duration-500 dark:bg-[#121212]">
+      <div className="mx-auto w-full max-w-3xl p-4">
         <BusinessStatePanel
           kind="error"
           title={t('console.user.states.loadErrorTitle', '用户资料加载失败')}
           description={loadError}
           onRetry={() => void loadUserProfile()}
-          className="min-h-[400px]"
+          className="min-h-[320px]"
         />
       </div>
     );
@@ -78,13 +104,13 @@ export function UserView() {
 
   if (!profile) {
     return (
-      <div className="min-h-[calc(100vh-72px)] w-full max-w-6xl mx-auto bg-slate-50 p-[5px] animate-in fade-in duration-500 dark:bg-[#121212]">
+      <div className="mx-auto w-full max-w-3xl p-4">
         <BusinessStatePanel
           kind="empty"
           title={t('console.user.states.emptyTitle', '未找到账户资料')}
           description={t('console.user.states.emptyDescription', '当前会话暂时没有可展示的用户资料。')}
           onRetry={() => void loadUserProfile()}
-          className="min-h-[400px]"
+          className="min-h-[320px]"
         />
       </div>
     );
@@ -94,108 +120,86 @@ export function UserView() {
   const avatarFallback = profile.name.trim().slice(0, 1).toUpperCase() || 'U';
 
   return (
-    <div className="min-h-[calc(100vh-72px)] w-full max-w-6xl mx-auto space-y-6 bg-slate-50 p-[5px] animate-in fade-in duration-500 dark:bg-[#121212]">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-1 space-y-6">
-           <div className="bg-white dark:bg-[#252525] rounded-2xl border border-slate-200 dark:border-white/5 p-6 shadow-sm flex flex-col items-center text-center">
-             <div className="relative group mb-4">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-3xl font-bold text-white shadow-lg border-4 border-white dark:border-[#1e1e1e]">
-                  {avatarSrc ? (
-                    <img alt={profile.name} className="h-full w-full rounded-full object-cover" src={avatarSrc} />
-                  ) : avatarFallback}
-                </div>
-             </div>
-             <h2 className="text-lg font-bold text-slate-800 dark:text-white">{profile.name}</h2>
-             <p className="text-sm text-slate-500 mb-4">{profile.email}</p>
-             {profile.isVerified && (
-               <span className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 w-max mx-auto shadow-sm">
-                  <CheckCircle className="w-3.5 h-3.5" /> {t("console.user.userview.text.vkfgq6", "已验证")}</span>
-             )}
-           </div>
-
-           <div className="bg-white dark:bg-[#252525] rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden flex flex-col">
-              <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center gap-2 bg-slate-50 dark:bg-[#1a1a1a]">
-                 <Activity className="w-4 h-4 text-slate-400" />
-                 <h3 className="font-semibold text-slate-700 dark:text-slate-300 text-sm">{t("console.user.userview.text.1vsx6tx", "账户摘要")}</h3>
-              </div>
-              <div className="p-4 space-y-3">
-                 <div className="flex justify-between text-sm">
-                   <span className="text-slate-500">{t("console.user.userview.text.1k2q0zz", "账户状态")}</span>
-                   <span className="text-emerald-600 font-medium">{profile.status}</span>
-                 </div>
-                 <div className="flex justify-between text-sm">
-                   <span className="text-slate-500">{t("console.user.userview.text.jam5gz", "注册时间")}</span>
-                   <span className="font-mono text-slate-800 dark:text-slate-300">{profile.registeredAt}</span>
-                 </div>
-                 <div className="flex justify-between text-sm">
-                   <span className="text-slate-500">{t("console.user.userview.text.18y22pz", "最后登录")}</span>
-                   <span className="font-mono text-slate-800 dark:text-slate-300 text-right">{profile.lastLogin}<br/><span className="text-[10px] text-slate-400">{profile.lastLoginIp}</span></span>
-                 </div>
-              </div>
-           </div>
+    <div className="mx-auto w-full max-w-3xl space-y-4 p-4">
+      <section className="rounded-lg border border-slate-200 bg-white px-5 py-5 dark:border-white/10 dark:bg-[#252525]">
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-lg font-semibold text-slate-600 dark:bg-white/10 dark:text-slate-200">
+            {avatarSrc ? (
+              <img alt={profile.name} className="h-full w-full object-cover" src={avatarSrc} />
+            ) : avatarFallback}
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{profile.name || '—'}</h2>
+            <p className="text-sm text-slate-500">{profile.email || '—'}</p>
+            {profile.isVerified ? (
+              <span className="mt-2 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400">
+                {t('console.user.userview.text.vkfgq6', '已验证')}
+              </span>
+            ) : null}
+          </div>
         </div>
+      </section>
 
-        <div className="md:col-span-2 space-y-6">
-           <div className="bg-white dark:bg-[#252525] rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden flex flex-col">
-              <div className="p-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
-                 <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                   <User className="w-5 h-5 text-blue-500" /> {t("console.user.userview.text.dzqq9w", "基本资料")}</h3>
-              </div>
-              <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8">
-                 <div>
-                   <label className="block text-xs font-medium text-slate-500 mb-1 uppercase tracking-wider">{t("console.user.userview.text.1c2rfxc", "昵称")}</label>
-                   <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{profile.name}</div>
-                 </div>
-                 <div>
-                   <label className="block text-xs font-medium text-slate-500 mb-1 uppercase tracking-wider">{t("console.user.userview.text.6o7cg1", "电子邮箱")}</label>
-                   <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{profile.email}</div>
-                 </div>
-                 <div>
-                   <label className="block text-xs font-medium text-slate-500 mb-1 uppercase tracking-wider">{t("console.user.userview.text.uy4glv", "电话号码")}</label>
-                   <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{profile.phone}</div>
-                 </div>
-                 <div>
-                   <label className="block text-xs font-medium text-slate-500 mb-1 uppercase tracking-wider">{t("console.user.userview.text.11koehh", "首选语言")}</label>
-                   <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{profile.language}</div>
-                 </div>
-              </div>
-           </div>
+      <ProfileSection title={t('console.user.userview.text.1vsx6tx', '账户摘要')}>
+        <dl className="grid gap-4 sm:grid-cols-3">
+          <ProfileField label={t('console.user.userview.text.1k2q0zz', '账户状态')} value={profile.status} />
+          <ProfileField label={t('console.user.userview.text.jam5gz', '注册时间')} value={profile.registeredAt} />
+          <ProfileField label={t('console.user.userview.text.18y22pz', '最后登录')} value={profile.lastLogin} />
+        </dl>
+      </ProfileSection>
 
-           <div className="bg-white dark:bg-[#252525] rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden flex flex-col">
-              <div className="p-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
-                 <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                   <Shield className="w-5 h-5 text-indigo-500" /> {t("console.user.userview.text.17vdspk", "登录与安全")}</h3>
-              </div>
-              <div className="divide-y divide-slate-100 dark:divide-white/5">
-                 <div className="p-5 flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-sm text-slate-800 dark:text-slate-200 mb-1">{t("console.user.userview.text.iuz08w", "登录密码")}</div>
-                      <div className="text-xs text-slate-500">{t("console.user.userview.text.15lpi24", "最后修改于")}{profile.passwordLastChanged}</div>
-                    </div>
-                 </div>
-                 <div className="p-5 flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-sm text-slate-800 dark:text-slate-200 mb-1">{t("console.user.userview.text.14ixcpb", "二步验证 (2FA)")}</div>
-                      <div className="text-xs text-slate-500">{t("console.user.userview.text.iwvnpq", "通过身份验证器 App 保护您的账户")}</div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      {profile.twoFactorEnabled ? (
-                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-0.5 rounded">{t("console.user.userview.text.gdd4q1", "开启状态")}</span>
-                      ) : (
-                        <span className="text-xs font-semibold text-slate-500 bg-slate-100 dark:bg-white/5 px-2.5 py-0.5 rounded">{t("console.user.userview.text.oxxuyg", "未开启")}</span>
-                      )}
-                    </div>
-                 </div>
-                 <div className="p-5 flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-sm text-slate-800 dark:text-slate-200 mb-1">{t("console.user.userview.text.l6f6k9", "第三方账号绑定")}</div>
-                      <div className="text-xs text-slate-500">{t("console.user.userview.text.ht5wde", "已绑定")}{profile.thirdPartyBound}</div>
-                    </div>
-                 </div>
-              </div>
-           </div>
-        </div>
-      </div>
+      <ProfileSection title={t('console.user.userview.text.dzqq9w', '基本资料')}>
+        <dl className="grid gap-4 sm:grid-cols-2">
+          <ProfileField label={t('console.user.userview.text.1c2rfxc', '昵称')} value={profile.name} />
+          <ProfileField label={t('console.user.userview.text.6o7cg1', '电子邮箱')} value={profile.email} />
+          <ProfileField label={t('console.user.userview.text.uy4glv', '电话号码')} value={profile.phone} />
+          <ProfileField label={t('console.user.userview.text.11koehh', '首选语言')} value={profile.language} />
+        </dl>
+      </ProfileSection>
+
+      <ProfileSection title={t('console.user.userview.text.17vdspk', '登录与安全')}>
+        <dl className="divide-y divide-slate-100 dark:divide-white/5">
+          <div className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+            <div>
+              <dt className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                {t('console.user.userview.text.iuz08w', '登录密码')}
+              </dt>
+              <dd className="mt-1 text-xs text-slate-500">
+                {profile.passwordLastChanged
+                  ? `${t('console.user.userview.text.15lpi24', '最后修改于')}${profile.passwordLastChanged}`
+                  : t('console.user.userview.text.1no3pfx', '尚未修改')}
+              </dd>
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-4 py-3">
+            <div>
+              <dt className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                {t('console.user.userview.text.14ixcpb', '二步验证 (2FA)')}
+              </dt>
+              <dd className="mt-1 text-xs text-slate-500">
+                {t('console.user.userview.text.iwvnpq', '通过身份验证器 App 保护您的账户')}
+              </dd>
+            </div>
+            <dd className="text-xs font-medium text-slate-600 dark:text-slate-400">
+              {profile.twoFactorEnabled
+                ? t('console.user.userview.text.gdd4q1', '开启状态')
+                : t('console.user.userview.text.oxxuyg', '未开启')}
+            </dd>
+          </div>
+          <div className="flex items-center justify-between gap-4 py-3">
+            <div>
+              <dt className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                {t('console.user.userview.text.l6f6k9', '第三方账号绑定')}
+              </dt>
+              <dd className="mt-1 text-xs text-slate-500">
+                {profile.thirdPartyBound
+                  ? `${t('console.user.userview.text.ht5wde', '已绑定')}${profile.thirdPartyBound}`
+                  : t('console.user.userview.text.1ab2cd3', '未绑定')}
+              </dd>
+            </div>
+          </div>
+        </dl>
+      </ProfileSection>
     </div>
   );
 }

@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::ports::{
@@ -400,7 +400,7 @@ async fn create_promotion_offer(
         };
 
     match state.store.create_promotion_offer(command).await {
-        Ok(item) => Json(PlusApiResult::success(AdminMarketingItemEnvelope {
+        Ok(item) => Json(success_envelope(AdminMarketingItemEnvelope {
             item: promotion_offer_item(item),
         }))
         .into_response(),
@@ -429,7 +429,7 @@ async fn delete_promotion_offer(
         };
 
     match state.store.delete_promotion_offer(command).await {
-        Ok(true) => Json(PlusApiResult::success(AdminMarketingDeleteResponse {
+        Ok(true) => Json(success_envelope(AdminMarketingDeleteResponse {
             deleted: true,
         }))
         .into_response(),
@@ -469,7 +469,7 @@ async fn update_promotion_offer(
     };
 
     match state.store.update_promotion_offer(command).await {
-        Ok(item) => Json(PlusApiResult::success(AdminMarketingItemEnvelope {
+        Ok(item) => Json(success_envelope(AdminMarketingItemEnvelope {
             item: promotion_offer_item(item),
         }))
         .into_response(),
@@ -506,7 +506,7 @@ async fn generate_promotion_coupon_stock(
     };
 
     match state.store.generate_promotion_coupon_stock(command).await {
-        Ok((item, codes)) => Json(PlusApiResult::success(
+        Ok((item, codes)) => Json(success_envelope(
             PromotionCouponStockGenerateResponse {
                 item: promotion_coupon_stock_item(item),
                 codes: codes.into_iter().map(promotion_code_item).collect(),
@@ -550,7 +550,7 @@ async fn update_promotion_code_status(
     };
 
     match state.store.update_promotion_code_status(command).await {
-        Ok(true) => Json(PlusApiResult::success(AdminMarketingUpdateResponse {
+        Ok(true) => Json(success_envelope(AdminMarketingUpdateResponse {
             updated: true,
         }))
         .into_response(),
@@ -596,7 +596,7 @@ async fn fetch_recharge_record(
         .await
     {
         Ok(Some(item)) => {
-            Json(PlusApiResult::success(AdminMarketingItemEnvelope { item })).into_response()
+            Json(success_envelope(AdminMarketingItemEnvelope { item })).into_response()
         }
         Ok(None) => not_found_response("recharge record was not found"),
         Err(error) => marketing_system_response("recharge read model is unavailable", error),
@@ -646,7 +646,7 @@ async fn create_recharge_package(
 
     match state.store.create_recharge_package(command).await {
         Ok(item) => {
-            Json(PlusApiResult::success(AdminMarketingItemEnvelope { item })).into_response()
+            Json(success_envelope(AdminMarketingItemEnvelope { item })).into_response()
         }
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
@@ -685,7 +685,7 @@ async fn update_recharge_package(
 
     match state.store.update_recharge_package(command).await {
         Ok(item) => {
-            Json(PlusApiResult::success(AdminMarketingItemEnvelope { item })).into_response()
+            Json(success_envelope(AdminMarketingItemEnvelope { item })).into_response()
         }
         Err(error) if error.is_not_found() => not_found_response("recharge package was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
@@ -713,7 +713,7 @@ async fn delete_recharge_package(
         };
 
     match state.store.delete_recharge_package(command).await {
-        Ok(true) => Json(PlusApiResult::success(AdminMarketingDeleteResponse {
+        Ok(true) => Json(success_envelope(AdminMarketingDeleteResponse {
             deleted: true,
         }))
         .into_response(),
@@ -732,7 +732,7 @@ async fn fetch_recharge_settings(
 ) -> Response {
     let subject = scoped.into();
     match state.store.load_recharge_settings(subject).await {
-        Ok(item) => Json(PlusApiResult::success(item)).into_response(),
+        Ok(item) => Json(success_envelope(item)).into_response(),
         Err(error) => {
             marketing_system_response("recharge settings read model is unavailable", error)
         }
@@ -756,7 +756,7 @@ async fn update_recharge_settings(
         Err(error) => return command_build_error_response(error),
     };
     match state.store.update_recharge_settings(command).await {
-        Ok(item) => Json(PlusApiResult::success(item)).into_response(),
+        Ok(item) => Json(success_envelope(item)).into_response(),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
             marketing_system_response("recharge settings command store is unavailable", error)
@@ -811,7 +811,7 @@ async fn fetch_exchange_rules(
         })
         .await
     {
-        Ok(items) => Json(PlusApiResult::success(items)).into_response(),
+        Ok(items) => Json(success_envelope(items)).into_response(),
         Err(error) => marketing_system_response("exchange rule read model is unavailable", error),
     }
 }
@@ -835,7 +835,7 @@ async fn update_exchange_rule(
 
     match state.store.update_exchange_rule(command).await {
         Ok(item) => {
-            Json(PlusApiResult::success(AdminMarketingItemEnvelope { item })).into_response()
+            Json(success_envelope(AdminMarketingItemEnvelope { item })).into_response()
         }
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
@@ -864,7 +864,7 @@ fn list_response<T>(items: Vec<T>) -> Response
 where
     T: Serialize,
 {
-    Json(PlusApiResult::success(AdminMarketingListResponse { items })).into_response()
+    Json(success_envelope(AdminMarketingListResponse { items })).into_response()
 }
 
 fn promotion_offer_item(item: PromotionOfferItem) -> PromotionOfferListItem {
@@ -1790,15 +1790,15 @@ fn request_id_error(error: RequestIdError) -> AdminMarketingCommandBuildError {
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4001", message.into())).into_response()
+    problem_from_wire_code("4001", message.into()).into_response()
 }
 
 fn not_found_response(message: &'static str) -> Response {
-    PlusApiResult::error("4040", message)).into_response()
+    problem_from_wire_code("4040", message).into_response()
 }
 
 fn conflict_response(error: DomainError) -> Response {
-    PlusApiResult::error("4090", error.to_string())).into_response()
+    problem_from_wire_code("4090", error.to_string()).into_response()
 }
 
 fn command_build_error_response(error: AdminMarketingCommandBuildError) -> Response {
@@ -1811,7 +1811,7 @@ fn command_build_error_response(error: AdminMarketingCommandBuildError) -> Respo
 }
 
 fn marketing_system_response(context: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }
 
 fn current_timestamp_string() -> String {

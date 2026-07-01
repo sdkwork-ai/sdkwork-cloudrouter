@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { ConversationsCreateResult, ConversationsRetrieveResult, PageInfo, TurnResponsesCreateResult, TurnsCreateResult } from '../types';
+import type { ConversationsCreateResult, ConversationsRetrieveResult, SdkWorkPageData, TurnResponsesCreateResult, TurnsCreateResult } from '../types';
 
 
 export class ChatTurnResponsesApi {
@@ -41,8 +41,8 @@ export class ChatConversationMessagesApi {
 
 
 /** List */
-  async list(conversationId: string): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/chat/conversations/${serializePathParameter(conversationId, { name: 'conversationId', style: 'simple', explode: false })}/messages`));
+  async list(conversationId: string): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/chat/conversations/${serializePathParameter(conversationId, { name: 'conversationId', style: 'simple', explode: false })}/messages`));
   }
 }
 
@@ -55,8 +55,8 @@ export class ChatConversationsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/chat/conversations`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/chat/conversations`));
   }
 
 /** Create */

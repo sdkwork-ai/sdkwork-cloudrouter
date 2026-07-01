@@ -1,8 +1,5 @@
 import { createClientOperationToken } from '@sdkwork/clawroutes-pc-commons/idempotency';
-import {
-  getClawRouterAppSdkClient,
-  getSdkworkAppbaseAppSdkClient,
-} from '@sdkwork/clawroutes-pc-commons/sdk-clients';
+import { getClawRouterAppSdkClient } from '@sdkwork/clawroutes-pc-commons/sdk-clients';
 import {
   ensureSdkworkApiSuccess,
   isRecord,
@@ -14,72 +11,32 @@ import {
   readRequiredString,
   readString,
 } from '@sdkwork/clawroutes-pc-commons/api-result';
+import type {
+  CreateApiKeyRequest,
+  AppApiKeyListResponse as SdkAppApiKeyListResponse,
+  UpdateApiKeyRequest,
+} from '@sdkwork/clawrouter-app-sdk';
 import { DEFAULT_CHANNEL_GROUP } from './apiKeyForm.ts';
 
-type ApiKeyModality = 'audio' | 'image' | 'music' | 'text' | 'video';
-
-interface CreateApiKeyRequest {
-  channelGroup: string;
-  defaultForRuntime?: boolean;
-  expires?: string;
-  ipLimit?: string;
-  isUnlimitedQuota?: boolean;
-  modalities?: ApiKeyModality[];
-  name: string;
-  quota?: string;
-}
-
-interface UpdateApiKeyRequest {
-  channelGroup?: string;
-  defaultForRuntime?: boolean;
-  expires?: string;
-  ipLimit?: string;
-  isUnlimitedQuota?: boolean;
-  modalities?: ApiKeyModality[];
-  name?: string;
-  quota?: string;
-}
-
-interface SdkAppApiKeyListResponse {
-  groups: unknown[];
-  items: Array<{
-    channelGroup: string;
-    channelGroupName?: string | null;
-    copyableKey?: string | null;
-    created: string;
-    defaultForRuntime: boolean;
-    expires: string;
-    id: string;
-    ipLimit: string;
-    maskedKey: string;
-    modalities: ApiKeyModality[];
-    name: string;
-    quota: string;
-    rate?: string | null;
-    status: 'disabled' | 'enabled';
-    usedQuota: string;
-  }>;
-}
-
-type SdkAppApiKeyItem = SdkAppApiKeyListResponse['items'][number];
+type ApiKeyModality = NonNullable<CreateApiKeyRequest['modalities']>[number];
 
 export interface ApiKey {
   id: SdkAppApiKeyListResponse['items'][number]['id'];
-  name: SdkAppApiKeyItem['name'];
+  name: SdkAppApiKeyListResponse['items'][number]['name'];
   displayName: string;
-  maskedKey: string & SdkAppApiKeyItem['maskedKey'];
+  maskedKey: string & SdkAppApiKeyListResponse['items'][number]['maskedKey'];
   copyableKey: string | null;
   channelGroup: string;
   channelGroupName: string | null;
-  rate: SdkAppApiKeyItem['rate'];
-  quota: SdkAppApiKeyItem['quota'];
-  usedQuota: SdkAppApiKeyItem['usedQuota'];
-  modalities: SdkAppApiKeyItem['modalities'];
-  ipLimit: SdkAppApiKeyItem['ipLimit'];
-  created: SdkAppApiKeyItem['created'];
-  expires: SdkAppApiKeyItem['expires'];
-  status: SdkAppApiKeyItem['status'];
-  defaultForRuntime: SdkAppApiKeyItem['defaultForRuntime'];
+  rate: SdkAppApiKeyListResponse['items'][number]['rate'];
+  quota: SdkAppApiKeyListResponse['items'][number]['quota'];
+  usedQuota: SdkAppApiKeyListResponse['items'][number]['usedQuota'];
+  modalities: SdkAppApiKeyListResponse['items'][number]['modalities'];
+  ipLimit: SdkAppApiKeyListResponse['items'][number]['ipLimit'];
+  created: SdkAppApiKeyListResponse['items'][number]['created'];
+  expires: SdkAppApiKeyListResponse['items'][number]['expires'];
+  status: SdkAppApiKeyListResponse['items'][number]['status'];
+  defaultForRuntime: SdkAppApiKeyListResponse['items'][number]['defaultForRuntime'];
 }
 
 export interface ChannelGroup {
@@ -111,7 +68,7 @@ const UNRESTRICTED_MODALITIES: ApiKeyModality[] = ['text', 'image', 'video', 'au
 export class ApiKeyService {
   static async fetchKeys(): Promise<ApiKey[]> {
     try {
-      const result = await getSdkworkAppbaseAppSdkClient().iam.apiKeys.list();
+      const result = await getClawRouterAppSdkClient().iam.apiKeys.list();
       ensureSdkworkApiSuccess(result, 'console.apiKeys.errors.loadFallback');
       const items = readRequiredApiItems(result, 'console.apiKeys.errors.loadFallback');
       return items.map(normalizeApiKey);
@@ -134,8 +91,8 @@ export class ApiKeyService {
   static async createKey(input: CreateApiKeyInput): Promise<CreatedApiKey> {
     const idempotencyKey = createClientOperationToken('create-api-key');
     try {
-      const result = await getSdkworkAppbaseAppSdkClient().iam.apiKeys.create(
-        toCreateApiKeyRequest(input) as unknown as Record<string, unknown>,
+      const result = await getClawRouterAppSdkClient().iam.apiKeys.create(
+        toCreateApiKeyRequest(input),
         { idempotencyKey },
       );
 
@@ -156,9 +113,9 @@ export class ApiKeyService {
 
   static async updateKey(keyId: string, input: UpdateApiKeyInput): Promise<ApiKey> {
     try {
-      const result = await getSdkworkAppbaseAppSdkClient().iam.apiKeys.update(
+      const result = await getClawRouterAppSdkClient().iam.apiKeys.update(
         requiredText(keyId, 'apiKeyId'),
-        toUpdateApiKeyRequest(input) as unknown as Record<string, unknown>,
+        toUpdateApiKeyRequest(input),
       );
       return normalizeApiKey(readRequiredApiItem(result, 'API key update response is missing key data', ['item']));
     } catch (error) {
@@ -168,7 +125,7 @@ export class ApiKeyService {
 
   static async deleteKey(keyId: string): Promise<void> {
     try {
-      const result = await getSdkworkAppbaseAppSdkClient().iam.apiKeys.delete(requiredText(keyId, 'apiKeyId'));
+      const result = await getClawRouterAppSdkClient().iam.apiKeys.delete(requiredText(keyId, 'apiKeyId'));
       ensureSdkworkApiSuccess(result, 'console.apiKeys.errors.deleteFallback');
     } catch (error) {
       throw new Error(readSdkErrorMessage(error, 'console.apiKeys.errors.deleteFallback'));
@@ -343,7 +300,7 @@ function isApiKeyModality(value: string): value is ApiKeyModality {
   return (UNRESTRICTED_MODALITIES as readonly string[]).includes(value);
 }
 
-function readApiKeyModalities(value: Record<string, unknown>): SdkAppApiKeyItem['modalities'] {
+function readApiKeyModalities(value: Record<string, unknown>): SdkAppApiKeyListResponse['items'][number]['modalities'] {
   const raw = value.modalities;
   if (!Array.isArray(raw)) {
     throw new Error('API key modalities are required');
@@ -365,7 +322,7 @@ function readApiKeyModalities(value: Record<string, unknown>): SdkAppApiKeyItem[
   return [...new Set(modalities)];
 }
 
-function readApiKeyStatus(value: Record<string, unknown>): SdkAppApiKeyItem['status'] {
+function readApiKeyStatus(value: Record<string, unknown>): SdkAppApiKeyListResponse['items'][number]['status'] {
   const status = readRequiredString(value, 'status', 'API key status is required');
   if (status === 'enabled' || status === 'disabled') {
     return status;

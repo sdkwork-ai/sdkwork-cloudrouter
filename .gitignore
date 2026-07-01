@@ -18,7 +18,7 @@ __pycache__/
 .env
 .env.*
 !.env.*.example
-# Host profile env files (.env.development, .env.release, â€¦) are ignored via .env.*
+# Host profile env files (.env.development, .env.release, â€? are ignored via .env.*
 
 node_modules/
 dist/
@@ -80,3 +80,23 @@ full_check.txt
 
 # Monorepo uses root pnpm-lock.yaml only
 apps/*/packages/*/pnpm-lock.yaml
+**/node_modules/
+**/target/
+!.env.example
+!.env.postgres.example
+**/dist/
+coverage/
+**/.pnpm-store/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+**/.sdkwork/local/
+**/.sdkwork/secrets/
+**/.sdkwork/cache/
+**/.sdkwork/tmp/
+**/.sdkwork/dart/pub-cache/
+**/.sdkwork/manual-backups/
+**/.sdkwork/sdkwork-generator-changes.json
+**/.sdkwork/sdkwork-generator-manifest.json
+**/.sdkwork/sdkwork-generator-report.json

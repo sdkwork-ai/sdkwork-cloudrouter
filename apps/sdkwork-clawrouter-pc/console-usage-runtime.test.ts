@@ -266,6 +266,14 @@ test("console usage logs do not expand the first record until the user clicks it
   assert.match(source, /onClick=\{\(e\) => toggleExpand\(log\.id, e\)\}/);
 });
 
+test("console usage service reads SdkWork list totals from pageInfo.totalItems", () => {
+  const serviceSource = readPortalFile("./packages/sdkwork-clawrouter-pc-console-usage/src/usageService.ts");
+
+  assert.match(serviceSource, /readUsageLogPageTotal/);
+  assert.match(serviceSource, /totalItems', 'total_items'/);
+  assert.match(serviceSource, /readRequiredApiItems\(data,/);
+});
+
 test("console usage model cell displays provider native model and exposes catalog key as hover title", () => {
   const viewSource = readPortalFile("./packages/sdkwork-clawrouter-pc-console-usage/src/UsageView.tsx");
   const serviceSource = readPortalFile("./packages/sdkwork-clawrouter-pc-console-usage/src/usageService.ts");
@@ -320,24 +328,18 @@ test("console dashboard stays product-focused without read-only caveats", () => 
 });
 
 test("console settlement reports stay product-focused without read-only caveats", () => {
-  const billingPagePath = "../../packages/pc-react/commerce/sdkwork-commerce-pc-billing/src/pages/BillingPage.tsx";
-  if (!portalFileExists(billingPagePath)) {
-    return;
-  }
-  const source = readPortalFile(billingPagePath);
-
-  assertNoImplementationCaveats(source);
+  const settlementsSource = readPortalFile("./src/console-business/ConsoleSettlementsView.tsx");
+  assertNoImplementationCaveats(settlementsSource);
 });
 
-test("console settlement reports keep billing breakdown visible when there is no data", () => {
-  const billingPagePath = "../../packages/pc-react/commerce/sdkwork-commerce-pc-billing/src/pages/BillingPage.tsx";
-  if (!portalFileExists(billingPagePath)) {
+test("console settlement reports keep order breakdown visible when there is no data", () => {
+  const orderPagePath = "../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-order/src/pages/OrderPage.tsx";
+  if (!portalFileExists(orderPagePath)) {
     return;
   }
-  const source = readPortalFile(billingPagePath);
+  const source = readPortalFile(orderPagePath);
 
-  assert.match(source, /SdkworkBillingBreakdownTable/);
-  assert.match(source, /breakdowns/);
+  assert.match(source, /SdkworkOrderPage|controller/);
   assert.doesNotMatch(source, /read-only/i);
 });
 
@@ -350,18 +352,17 @@ test("console settlement page keeps menu copy in navigation without page title c
   assert.match(coreMessages, /"console\.menu\.settlements": "Bills and Reports"/);
   assert.match(coreMessages, /"console\.menu\.settlements": "账单与报�?/);
   assert.match(appSource, /path="settlements" element=\{<SettlementsView/);
-  assert.match(appSource, /import\('@sdkwork\/commerce-pc-billing'\), 'SdkworkBillingPage'/);
+  assert.match(appSource, /ConsoleSettlementsView/);
 });
 
-test("console billing dashboard is owned by sdkwork-commerce billing package", () => {
-  const billingPagePath = "../../packages/pc-react/commerce/sdkwork-commerce-pc-billing/src/pages/BillingPage.tsx";
-  if (!portalFileExists(billingPagePath)) {
+test("console order dashboard is owned by sdkwork-order package", () => {
+  const orderPagePath = "../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-order/src/pages/OrderPage.tsx";
+  if (!portalFileExists(orderPagePath)) {
     return;
   }
-  const source = readPortalFile(billingPagePath);
+  const source = readPortalFile(orderPagePath);
 
-  assert.match(source, /SdkworkBillingSummaryCards/);
-  assert.match(source, /useSdkworkBillingController/);
+  assert.match(source, /SdkworkOrderPage|createSdkworkOrderController/);
   assertNoImplementationCaveats(source);
 });
 
@@ -401,17 +402,17 @@ test("console gateway tooling stays product-focused without implementation cavea
   assertNoImplementationCaveats(source);
 });
 
-test("console account and recharge surfaces are owned by sdkwork-commerce PC packages", () => {
+test("console account and recharge surfaces are owned by T1 domain PC packages", () => {
   const appSource = readPortalFile("./src/App.tsx");
-  const mountSource = readPortalFile("./src/commerce/commerceHostMount.tsx");
+  const accountSource = readPortalFile("./src/console-business/ConsoleAccountView.tsx");
+  const mountSource = readPortalFile("./src/console-business/consoleBusinessHostMount.tsx");
   const packageJson = JSON.parse(readPortalFile("./package.json")) as { dependencies: Record<string, string> };
 
-  assert.match(appSource, /import\('@sdkwork\/commerce-pc-billing'\), 'SdkworkBillingPage'/);
-  assert.match(appSource, /ClawRouterConsoleCommerceHostRoutes/);
-  assert.match(mountSource, /SdkworkCommerceHostRoutes/);
-  assert.doesNotMatch(appSource, /import\('@sdkwork\/commerce-pc-wallet'\), 'SdkworkWalletPage'/);
-  assert.equal(packageJson.dependencies["@sdkwork/commerce-pc-billing"], "workspace:*");
-  assert.equal(packageJson.dependencies["@sdkwork/commerce-pc-wallet"], "workspace:*");
+  assert.match(accountSource, /@sdkwork\/account-pc-wallet/);
+  assert.match(mountSource, /SdkworkWalletPage/);
+  assert.match(appSource, /ClawRouterConsoleBusinessHostRoutes/);
+  assert.equal(packageJson.dependencies["@sdkwork/account-pc-wallet"], "workspace:*");
+  assert.equal(packageJson.dependencies["@sdkwork/commerce-pc-host"], undefined);
   assert.doesNotMatch(appSource, /clawrouter-pc-console-account/);
   assert.doesNotMatch(appSource, /clawrouter-pc-console-recharge/);
 });
@@ -494,15 +495,14 @@ test("portal applies persisted theme preferences before first React render", () 
   assert.match(mainSource, /initializeThemePreferences\(\);[\s\S]*createRoot/);
 });
 
-test("console commerce recharge UI is owned by sdkwork-commerce wallet package", () => {
-  const walletPagePath = "../../packages/pc-react/commerce/sdkwork-commerce-pc-wallet/src/pages/WalletPage.tsx";
+test("console wallet recharge UI is owned by sdkwork-account wallet package", () => {
+  const walletPagePath = "../../../sdkwork-account/apps/sdkwork-account-pc/packages/sdkwork-account-pc-wallet/src/pages/WalletPage.tsx";
   if (!portalFileExists(walletPagePath)) {
     return;
   }
   const source = readPortalFile(walletPagePath);
 
-  assert.match(source, /navigateWalletRechargeCheckout/);
-  assert.match(source, /wallet-checkout-navigation/);
+  assert.match(source, /navigateWalletRechargeCheckout|checkoutBasePath/);
   assertNoImplementationCaveats(source);
 });
 

@@ -25,8 +25,11 @@ sdkwork-claw-security.workspace = true
 sdkwork-api-cloud-gateway.workspace = true
 sdkwork-api-cloud-gateway-config.workspace = true
 sdkwork-claw-http.workspace = true
+sdkwork-iam-database-host.workspace = true
+sdkwork-iam-embedded-application-bootstrap.workspace = true
 sdkwork-iam-web-adapter.workspace = true
 sdkwork-routes-iam-app-api.workspace = true
+sdkwork-routes-iam-backend-api.workspace = true
 sdkwork-claw-observability.workspace = true
 sdkwork-claw-provider-adapter-contract.workspace = true
 sdkwork-claw-provider-adapter-http.workspace = true
@@ -46,5 +49,6 @@ tracing.workspace = true
 [dev-dependencies]
 futures-core.workspace = true
 serde_json.workspace = true
+sdkwork-api-cloud-gateway-registry = { path = "../../../sdkwork-api-cloud-gateway/crates/sdkwork-api-cloud-gateway-registry" }
 sdkwork-claw-test-support.workspace = true
 sdkwork-web-core.workspace = true

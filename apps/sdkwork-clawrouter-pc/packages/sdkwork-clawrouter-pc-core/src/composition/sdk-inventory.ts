@@ -1,18 +1,24 @@
-
-export type SdkworkDependencyCompositionManifest = typeof compositionManifest;
-
-export type SdkworkDependencyCompositionSdkClient =
-  SdkworkDependencyCompositionManifest['surfaces'][number]['sdkClients'][number];
-
-export type SdkworkPermissionComposition =
-  NonNullable<SdkworkDependencyCompositionManifest['permissionComposition']>;
-
-const APP_SURFACE = compositionManifest.surfaces.find((entry) => entry.surface === 'app');
-
-export function listSdkworkCoreSdkInventory(): readonly SdkworkDependencyCompositionSdkClient[] {
-  return APP_SURFACE?.sdkClients ?? [];
+export interface SdkworkSdkInventoryEntry {
+  workspace: string;
+  surface: string;
+  credentialMode: string;
 }
 
-export function readSdkworkCorePermissionComposition(): SdkworkPermissionComposition | undefined {
-  return compositionManifest.permissionComposition;
+export function listSdkworkCoreSdkInventory(): readonly SdkworkSdkInventoryEntry[] {
+  return [
+    { workspace: 'clawrouter-app-sdk', surface: 'app-api', credentialMode: 'authenticated-app-api' },
+    { workspace: 'clawrouter-open-sdk', surface: 'open-api', credentialMode: 'protected-open-api-flexible' },
+    { workspace: 'sdkwork-iam-app-sdk', surface: 'app-api', credentialMode: 'authenticated-app-api' },
+    { workspace: 'clawrouter-app-wallet-capability', surface: 'app-api', credentialMode: 'authenticated-app-api' },
+    { workspace: 'clawrouter-app-membership-capability', surface: 'app-api', credentialMode: 'authenticated-app-api' },
+    { workspace: 'clawrouter-app-promotion-capability', surface: 'app-api', credentialMode: 'authenticated-app-api' },
+    { workspace: 'clawrouter-app-order-capability', surface: 'app-api', credentialMode: 'authenticated-app-api' },
+    { workspace: 'clawrouter-app-payment-capability', surface: 'app-api', credentialMode: 'authenticated-app-api' },
+    { workspace: 'clawrouter-app-catalog-capability', surface: 'app-api', credentialMode: 'authenticated-app-api' },
+    { workspace: 'clawrouter-app-domain-transport-generated-typescript', surface: 'app-api', credentialMode: 'authenticated-app-api' },
+  ] as const;
+}
+
+export function readSdkworkCorePermissionComposition() {
+  return undefined;
 }

@@ -7,7 +7,7 @@
     "version": "0.1.0",
     "type": "rust-route-crate",
     "root": "sdkwork-clawrouter/crates/sdkwork-routes-payment-open-api",
-    "domain": "commerce",
+    "domain": "payment",
     "capability": "payment",
     "surface": "open-api",
     "languages": ["rust"],

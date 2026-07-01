@@ -17,7 +17,7 @@ use sdkwork_claw_http::TrustedRequestSubject;
 
 use sdkwork_clawrouter_app_providers_repository_sqlx::AppProvidersSubject;
 
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::api::subject::unauthorized_subject_response;
 use crate::ports::{
     AppChatSubject, AppNotificationSubject, AppRoutingStrategySubject, AppRoutingSubject,
@@ -283,7 +283,7 @@ pub fn subject_mapping_failed_response(
             }
         }
     };
-    PlusApiResult::error("4220", message)).into_response()
+    problem_from_wire_code("4220", message).into_response()
 }
 
 fn map_iam_sql_parse_error<T>(

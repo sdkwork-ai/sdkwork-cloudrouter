@@ -11,7 +11,7 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::domain::DomainError;
 use crate::ports::{
     AdminInventoryCollection, AdminInventoryJsonRecord, AdminInventoryStore, AdminInventorySubject,
@@ -136,7 +136,7 @@ async fn update_stock(
     };
     match state.store.update_stock(command).await {
         Ok(item) => {
-            Json(PlusApiResult::success(InventoryResourceResponse { item })).into_response()
+            Json(success_envelope(InventoryResourceResponse { item })).into_response()
         }
         Err(error) => domain_error_response("inventory stock command failed", error),
     }
@@ -157,7 +157,7 @@ where
         Err(response) => return response,
     };
     match load(query).await {
-        Ok(collection) => Json(PlusApiResult::success(InventoryCollectionResponse {
+        Ok(collection) => Json(success_envelope(InventoryCollectionResponse {
             items: collection.items,
             total: collection.total,
             page: collection.page_no,
@@ -323,17 +323,17 @@ fn normalize_optional_text(
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4001", message.into())).into_response()
+    problem_from_wire_code("4001", message.into()).into_response()
 }
 
 fn domain_error_response(context: &str, error: DomainError) -> Response {
     if error.is_conflict() {
-        return PlusApiResult::error("4090", error.to_string())).into_response();
+        return problem_from_wire_code("4090", error.to_string()).into_response();
     }
     if error.is_not_found() {
-        return PlusApiResult::error("4040", error.to_string())).into_response();
+        return problem_from_wire_code("4040", error.to_string()).into_response();
     }
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }
 
 fn current_timestamp_string() -> String {

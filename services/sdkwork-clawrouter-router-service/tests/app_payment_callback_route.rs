@@ -105,7 +105,7 @@ async fn app_payment_callback_route_accepts_signed_json_and_passes_canonical_com
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("order-1001", payload["data"]["outTradeNo"]);
     assert_eq!("txn-9001", payload["data"]["transactionId"]);
     assert_eq!(880, payload["data"]["creditedPoints"]);
@@ -155,8 +155,8 @@ async fn app_payment_callback_route_rejects_missing_signature_before_store() {
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("4001", payload["code"]);
-    assert_eq!("payment callback signature is required", payload["msg"]);
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert_eq!("payment callback signature is required", payload["detail"]);
     assert_eq!(None, payload.get("message"));
     assert!(captured.lock().unwrap().is_empty());
 }
@@ -196,10 +196,10 @@ async fn app_payment_callback_route_rejects_sub_cent_amount_before_store() {
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("4001", payload["code"]);
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
     assert_eq!(
         "payment callback amount must not contain sub-cent precision",
-        payload["msg"]
+        payload["detail"]
     );
     assert_eq!(None, payload.get("message"));
     assert!(captured.lock().unwrap().is_empty());

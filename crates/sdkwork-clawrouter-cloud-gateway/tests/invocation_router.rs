@@ -84,8 +84,15 @@ impl InvocationDispatcher for CapturingDispatcher {
                     }),
                 ));
             }
-            Ok(InvocationDispatchResponse::json(
-                200,
+            let response_body = if invocation.request.path == "/v1/files" {
+                json!({
+                    "id": "chatcmpl-invocation-router",
+                    "object": "file",
+                    "filename": "upload.bin",
+                    "bytes": 0,
+                    "purpose": "assistants"
+                })
+            } else {
                 json!({
                     "id": "chatcmpl-invocation-router",
                     "object": "chat.completion",
@@ -101,8 +108,9 @@ impl InvocationDispatcher for CapturingDispatcher {
                         "completion_tokens": 2,
                         "total_tokens": 5
                     }
-                }),
-            ))
+                })
+            };
+            Ok(InvocationDispatchResponse::json(200, response_body))
         })
     }
 }

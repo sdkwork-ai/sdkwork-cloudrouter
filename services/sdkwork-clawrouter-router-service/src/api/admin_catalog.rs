@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::{load_admin_category_seed_bundles, DEFAULT_ADMIN_CATEGORY_SEED_DATASETS};
 use crate::domain::DomainError;
 use crate::ports::{
@@ -376,7 +376,7 @@ async fn delete_category(
     };
     match state.store.delete_category(command).await {
         Ok(deleted) => {
-            Json(PlusApiResult::success(CatalogDeleteResponse { deleted })).into_response()
+            Json(success_envelope(CatalogDeleteResponse { deleted })).into_response()
         }
         Err(error) => domain_error_response("catalog category delete failed", error),
     }
@@ -422,7 +422,7 @@ async fn initialize_category_seeds(
         requested_at: current_timestamp_string(),
     };
     match state.store.initialize_category_seeds(command).await {
-        Ok(items) => Json(PlusApiResult::success(CategorySeedInitializeResponse {
+        Ok(items) => Json(success_envelope(CategorySeedInitializeResponse {
             items,
         }))
         .into_response(),
@@ -497,7 +497,7 @@ async fn delete_product(
     };
     match state.store.delete_product(command).await {
         Ok(deleted) => {
-            Json(PlusApiResult::success(CatalogDeleteResponse { deleted })).into_response()
+            Json(success_envelope(CatalogDeleteResponse { deleted })).into_response()
         }
         Err(error) => domain_error_response("catalog product delete failed", error),
     }
@@ -570,7 +570,7 @@ async fn delete_sku(
     };
     match state.store.delete_sku(command).await {
         Ok(deleted) => {
-            Json(PlusApiResult::success(CatalogDeleteResponse { deleted })).into_response()
+            Json(success_envelope(CatalogDeleteResponse { deleted })).into_response()
         }
         Err(error) => domain_error_response("catalog sku delete failed", error),
     }
@@ -665,7 +665,7 @@ async fn delete_category_attribute(
     };
     match state.store.delete_category_attribute(command).await {
         Ok(deleted) => {
-            Json(PlusApiResult::success(CatalogDeleteResponse { deleted })).into_response()
+            Json(success_envelope(CatalogDeleteResponse { deleted })).into_response()
         }
         Err(error) => domain_error_response("catalog category attribute delete failed", error),
     }
@@ -706,7 +706,7 @@ where
         Err(response) => return response,
     };
     match load(query).await {
-        Ok(collection) => Json(PlusApiResult::success(CatalogCollectionResponse {
+        Ok(collection) => Json(success_envelope(CatalogCollectionResponse {
             items: collection.items,
             total: collection.total,
             page: collection.page_no,
@@ -719,7 +719,7 @@ where
 
 fn resource_result(result: Result<AdminCatalogJsonRecord, DomainError>, context: &str) -> Response {
     match result {
-        Ok(item) => Json(PlusApiResult::success(CatalogResourceResponse { item })).into_response(),
+        Ok(item) => Json(success_envelope(CatalogResourceResponse { item })).into_response(),
         Err(error) => domain_error_response(context, error),
     }
 }
@@ -1150,17 +1150,17 @@ fn normalize_optional_media_resource(
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4001", message.into())).into_response()
+    problem_from_wire_code("4001", message.into()).into_response()
 }
 
 fn domain_error_response(context: &str, error: DomainError) -> Response {
     if error.is_conflict() {
-        return PlusApiResult::error("4090", error.to_string())).into_response();
+        return problem_from_wire_code("4090", error.to_string()).into_response();
     }
     if error.is_not_found() {
-        return PlusApiResult::error("4040", error.to_string())).into_response();
+        return problem_from_wire_code("4040", error.to_string()).into_response();
     }
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }
 
 fn current_timestamp_string() -> String {

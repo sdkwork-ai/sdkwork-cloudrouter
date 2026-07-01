@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::domain::DomainError;
 use crate::ports::{
     AdminMessagingCollection, AdminMessagingCommandFuture, AdminMessagingRouteSimulationCommand,
@@ -334,7 +334,7 @@ async fn create_provider_account(
         Err(response) => return response,
     };
     match state.store.create_provider_account(command).await {
-        Ok(item) => Json(PlusApiResult::success(item)).into_response(),
+        Ok(item) => Json(success_envelope(item)).into_response(),
         Err(error) => {
             messaging_error_response("messaging provider account create is unavailable", error)
         }
@@ -364,7 +364,7 @@ async fn create_sender_identity(
         Err(response) => return response,
     };
     match state.store.create_sender_identity(command).await {
-        Ok(item) => Json(PlusApiResult::success(item)).into_response(),
+        Ok(item) => Json(success_envelope(item)).into_response(),
         Err(error) => {
             messaging_error_response("messaging sender identity create is unavailable", error)
         }
@@ -391,7 +391,7 @@ async fn create_template(
         Err(response) => return response,
     };
     match state.store.create_template(command).await {
-        Ok(item) => Json(PlusApiResult::success(item)).into_response(),
+        Ok(item) => Json(success_envelope(item)).into_response(),
         Err(error) => messaging_error_response("messaging template create is unavailable", error),
     }
 }
@@ -412,7 +412,7 @@ async fn publish_template_version(
         Err(response) => return response,
     };
     match state.store.publish_template_version(command).await {
-        Ok(item) => Json(PlusApiResult::success(item)).into_response(),
+        Ok(item) => Json(success_envelope(item)).into_response(),
         Err(error) => {
             messaging_error_response("messaging template version publish is unavailable", error)
         }
@@ -439,7 +439,7 @@ async fn create_route_rule(
         Err(response) => return response,
     };
     match state.store.create_route_rule(command).await {
-        Ok(item) => Json(PlusApiResult::success(item)).into_response(),
+        Ok(item) => Json(success_envelope(item)).into_response(),
         Err(error) => messaging_error_response("messaging route rule create is unavailable", error),
     }
 }
@@ -467,7 +467,7 @@ async fn simulate_route(
         Err(response) => return response,
     };
     match state.store.simulate_route(command).await {
-        Ok(item) => Json(PlusApiResult::success(item)).into_response(),
+        Ok(item) => Json(success_envelope(item)).into_response(),
         Err(error) => messaging_system_response("messaging route simulation is unavailable", error),
     }
 }
@@ -483,7 +483,7 @@ async fn test_send(
         Err(response) => return response,
     };
     match state.store.test_send(command).await {
-        Ok(item) => Json(PlusApiResult::success(item)).into_response(),
+        Ok(item) => Json(success_envelope(item)).into_response(),
         Err(error) => messaging_error_response("messaging test send is unavailable", error),
     }
 }
@@ -499,7 +499,7 @@ async fn send_template(
         Err(response) => return response,
     };
     match state.store.send_template(command).await {
-        Ok(item) => Json(PlusApiResult::success(item)).into_response(),
+        Ok(item) => Json(success_envelope(item)).into_response(),
         Err(error) => messaging_error_response("messaging template send is unavailable", error),
     }
 }
@@ -524,7 +524,7 @@ async fn create_suppression(
         Err(response) => return response,
     };
     match state.store.create_suppression(command).await {
-        Ok(item) => Json(PlusApiResult::success(item)).into_response(),
+        Ok(item) => Json(success_envelope(item)).into_response(),
         Err(error) => {
             messaging_error_response("messaging suppression create is unavailable", error)
         }
@@ -568,7 +568,7 @@ async fn update_verification_policy(
             Err(response) => return response,
         };
     match state.store.update_verification_policy(command).await {
-        Ok(item) => Json(PlusApiResult::success(item)).into_response(),
+        Ok(item) => Json(success_envelope(item)).into_response(),
         Err(error) => {
             messaging_error_response("messaging verification policy update is unavailable", error)
         }
@@ -596,7 +596,7 @@ where
 }
 
 fn collection_response(collection: AdminMessagingCollection) -> Response {
-    Json(PlusApiResult::success(MessagingCollectionResponse {
+    Json(success_envelope(MessagingCollectionResponse {
         items: collection.items,
         total: collection.total,
         page: collection.page_no,
@@ -1413,15 +1413,15 @@ fn optional_range_i64(
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4001", message.into())).into_response()
+    problem_from_wire_code("4001", message.into()).into_response()
 }
 
 fn not_found_response(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4004", message.into())).into_response()
+    problem_from_wire_code("4040", message.into()).into_response()
 }
 
 fn conflict_response(error: DomainError) -> Response {
-    PlusApiResult::error("4090", error.to_string())).into_response()
+    problem_from_wire_code("4090", error.to_string()).into_response()
 }
 
 fn messaging_error_response(context: &str, error: DomainError) -> Response {
@@ -1435,5 +1435,5 @@ fn messaging_error_response(context: &str, error: DomainError) -> Response {
 }
 
 fn messaging_system_response(context: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }

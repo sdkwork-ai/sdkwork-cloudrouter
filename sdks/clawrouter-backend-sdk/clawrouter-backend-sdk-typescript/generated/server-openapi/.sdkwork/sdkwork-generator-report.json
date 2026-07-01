@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "c50fe069036bc6b83c14971840901b0892850ed07627928834bad4a65afa3b25",
+  "changeFingerprint": "7ae2317465fbe0f839ea1037616902b97d9aad4c892b059bcf8ce1fa391b4564",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -31,7 +31,6 @@
         "paths": [
           "src/api/ai.ts",
           "src/api/base.ts",
-          "src/api/commerce.ts",
           "src/api/content.ts",
           "src/api/index.ts",
           "src/api/integration.ts",
@@ -49,8 +48,17 @@
       {
         "area": "models",
         "paths": [
-          "src/types/after-sales-management-retrieve-response.ts",
-          "src/types/after-sales-management-retrieve-result.ts",
+          "src/types/admin-auth-settings-response.ts",
+          "src/types/admin-auth-settings-update-request.ts",
+          "src/types/admin-auth-verification-policy.ts",
+          "src/types/admin-auth-wechat-mini.ts",
+          "src/types/admin-auth-wechat-official.ts",
+          "src/types/admin-auth-wechat-settings-update.ts",
+          "src/types/admin-auth-wechat-settings.ts",
+          "src/types/admin-runtime-region-settings-response.ts",
+          "src/types/admin-runtime-region-settings-update-request.ts",
+          "src/types/admin-site-settings-response.ts",
+          "src/types/admin-site-settings-update-request.ts",
           "src/types/after-sales-reviews-create-response.ts",
           "src/types/after-sales-reviews-create-result.ts",
           "src/types/ai-resource-groups-create-response.ts",
@@ -79,36 +87,6 @@
           "src/types/cache-overview-retrieve-result.ts",
           "src/types/cache-refresh-create-response.ts",
           "src/types/cache-refresh-create-result.ts",
-          "src/types/catalog-attributes-create-response.ts",
-          "src/types/catalog-attributes-create-result.ts",
-          "src/types/catalog-categories-create-response.ts",
-          "src/types/catalog-categories-create-result.ts",
-          "src/types/catalog-categories-update-response.ts",
-          "src/types/catalog-categories-update-result.ts",
-          "src/types/catalog-category-attributes-create-response.ts",
-          "src/types/catalog-category-attributes-create-result.ts",
-          "src/types/catalog-category-attributes-update-response.ts",
-          "src/types/catalog-category-attributes-update-result.ts",
-          "src/types/catalog-category-seeds-create-response.ts",
-          "src/types/catalog-category-seeds-create-result.ts",
-          "src/types/catalog-products-create-response.ts",
-          "src/types/catalog-products-create-result.ts",
-          "src/types/catalog-products-management-retrieve-response.ts",
-          "src/types/catalog-products-management-retrieve-result.ts",
-          "src/types/catalog-products-update-response.ts",
-          "src/types/catalog-products-update-result.ts",
-          "src/types/catalog-skus-create-response.ts",
-          "src/types/catalog-skus-create-result.ts",
-          "src/types/catalog-skus-update-response.ts",
-          "src/types/catalog-skus-update-result.ts",
-          "src/types/catalog-spus-archive-response.ts",
-          "src/types/catalog-spus-archive-result.ts",
-          "src/types/catalog-spus-create-response.ts",
-          "src/types/catalog-spus-create-result.ts",
-          "src/types/catalog-spus-publish-response.ts",
-          "src/types/catalog-spus-publish-result.ts",
-          "src/types/catalog-spus-update-response.ts",
-          "src/types/catalog-spus-update-result.ts",
           "src/types/channel-groups-bindings-update-response.ts",
           "src/types/channel-groups-channel-bindings-update-result.ts",
           "src/types/channel-groups-create-response.ts",
@@ -123,8 +101,6 @@
           "src/types/channels-update-result.ts",
           "src/types/channels-verify-response.ts",
           "src/types/channels-verify-result.ts",
-          "src/types/commerce-reports-payment-reconciliation-retrieve-response.ts",
-          "src/types/commerce-reports-payment-reconciliation-retrieve-result.ts",
           "src/types/common.ts",
           "src/types/dashboard-admin-overview-retrieve-response.ts",
           "src/types/dashboard-admin-overview-retrieve-result.ts",
@@ -141,10 +117,6 @@
           "src/types/field-error.ts",
           "src/types/firewalls-rules-create-response.ts",
           "src/types/firewalls-rules-create-result.ts",
-          "src/types/fulfillments-management-retrieve-response.ts",
-          "src/types/fulfillments-management-retrieve-result.ts",
-          "src/types/fulfillments-update-response.ts",
-          "src/types/fulfillments-update-result.ts",
           "src/types/gc-jobs-create-response.ts",
           "src/types/gc-jobs-create-result.ts",
           "src/types/health-check-create-response.ts",
@@ -152,28 +124,7 @@
           "src/types/index.ts",
           "src/types/installation-status-retrieve-response.ts",
           "src/types/installation-status-retrieve-result.ts",
-          "src/types/inventory-stocks-update-response.ts",
-          "src/types/inventory-stocks-update-result.ts",
-          "src/types/invoices-issuances-create-response.ts",
-          "src/types/invoices-issuances-create-result.ts",
-          "src/types/invoices-management-retrieve-response.ts",
-          "src/types/invoices-management-retrieve-result.ts",
-          "src/types/invoices-voids-create-response.ts",
-          "src/types/invoices-voids-create-result.ts",
-          "src/types/memberships-members-update-response.ts",
-          "src/types/memberships-members-update-result.ts",
-          "src/types/memberships-package-groups-create-response.ts",
-          "src/types/memberships-package-groups-create-result.ts",
-          "src/types/memberships-package-groups-update-response.ts",
-          "src/types/memberships-package-groups-update-result.ts",
-          "src/types/memberships-packages-create-response.ts",
-          "src/types/memberships-packages-create-result.ts",
-          "src/types/memberships-packages-update-response.ts",
-          "src/types/memberships-packages-update-result.ts",
-          "src/types/memberships-plans-create-response.ts",
-          "src/types/memberships-plans-create-result.ts",
-          "src/types/memberships-plans-update-response.ts",
-          "src/types/memberships-plans-update-result.ts",
+          "src/types/media-resource.ts",
           "src/types/model-mappings-create-response.ts",
           "src/types/model-mappings-create-result.ts",
           "src/types/model-mappings-replace-response.ts",
@@ -194,12 +145,6 @@
           "src/types/models-refresh-result.ts",
           "src/types/models-update-response.ts",
           "src/types/models-update-result.ts",
-          "src/types/orders-management-cancel-response.ts",
-          "src/types/orders-management-cancel-result.ts",
-          "src/types/orders-management-close-response.ts",
-          "src/types/orders-management-close-result.ts",
-          "src/types/orders-management-retrieve-response.ts",
-          "src/types/orders-management-retrieve-result.ts",
           "src/types/oss-buckets-create-response.ts",
           "src/types/oss-buckets-create-result.ts",
           "src/types/oss-buckets-update-response.ts",
@@ -213,34 +158,6 @@
           "src/types/oss-storage-reconciliation-runs-create-response.ts",
           "src/types/oss-storage-reconciliation-runs-create-result.ts",
           "src/types/page-info.ts",
-          "src/types/payments-channels-create-response.ts",
-          "src/types/payments-channels-create-result.ts",
-          "src/types/payments-channels-update-response.ts",
-          "src/types/payments-channels-update-result.ts",
-          "src/types/payments-intents-management-retrieve-response.ts",
-          "src/types/payments-intents-management-retrieve-result.ts",
-          "src/types/payments-methods-create-response.ts",
-          "src/types/payments-methods-create-result.ts",
-          "src/types/payments-methods-update-response.ts",
-          "src/types/payments-methods-update-result.ts",
-          "src/types/payments-provider-accounts-create-response.ts",
-          "src/types/payments-provider-accounts-create-result.ts",
-          "src/types/payments-provider-accounts-status-update-response.ts",
-          "src/types/payments-provider-accounts-status-update-result.ts",
-          "src/types/payments-provider-accounts-update-response.ts",
-          "src/types/payments-provider-accounts-update-result.ts",
-          "src/types/payments-providers-update-response.ts",
-          "src/types/payments-providers-update-result.ts",
-          "src/types/payments-reconciliation-runs-create-response.ts",
-          "src/types/payments-reconciliation-runs-create-result.ts",
-          "src/types/payments-route-rules-create-response.ts",
-          "src/types/payments-route-rules-create-result.ts",
-          "src/types/payments-route-rules-update-response.ts",
-          "src/types/payments-route-rules-update-result.ts",
-          "src/types/payments-runtime-snapshot-retrieve-response.ts",
-          "src/types/payments-runtime-snapshot-retrieve-result.ts",
-          "src/types/payments-webhook-events-replays-create-response.ts",
-          "src/types/payments-webhook-events-replays-create-result.ts",
           "src/types/price-simulation-create-response.ts",
           "src/types/price-simulation-create-result.ts",
           "src/types/pricing-rules-create-response.ts",
@@ -248,14 +165,6 @@
           "src/types/pricing-rules-update-response.ts",
           "src/types/pricing-rules-update-result.ts",
           "src/types/problem-detail.ts",
-          "src/types/promotions-codes-create-response.ts",
-          "src/types/promotions-codes-create-result.ts",
-          "src/types/promotions-coupon-stocks-create-response.ts",
-          "src/types/promotions-coupon-stocks-create-result.ts",
-          "src/types/promotions-offers-create-response.ts",
-          "src/types/promotions-offers-create-result.ts",
-          "src/types/promotions-offers-update-response.ts",
-          "src/types/promotions-offers-update-result.ts",
           "src/types/provider-accounts-create-response.ts",
           "src/types/provider-accounts-create-result.ts",
           "src/types/provider-secrets-create-response.ts",
@@ -270,20 +179,6 @@
           "src/types/rate-limits-ip-create-result.ts",
           "src/types/rate-limits-models-create-response.ts",
           "src/types/rate-limits-models-create-result.ts",
-          "src/types/recharges-orders-management-retrieve-response.ts",
-          "src/types/recharges-orders-management-retrieve-result.ts",
-          "src/types/recharges-packages-create-response.ts",
-          "src/types/recharges-packages-create-result.ts",
-          "src/types/recharges-packages-update-response.ts",
-          "src/types/recharges-packages-update-result.ts",
-          "src/types/recharges-settings-management-retrieve-response.ts",
-          "src/types/recharges-settings-management-retrieve-result.ts",
-          "src/types/recharges-settings-update-response.ts",
-          "src/types/recharges-settings-update-result.ts",
-          "src/types/refunds-management-retrieve-response.ts",
-          "src/types/refunds-management-retrieve-result.ts",
-          "src/types/reports-commerce-overview-retrieve-response.ts",
-          "src/types/reports-commerce-overview-retrieve-result.ts",
           "src/types/revisions-publish-response.ts",
           "src/types/revisions-publish-result.ts",
           "src/types/route-explain-create-response.ts",
@@ -324,18 +219,10 @@
           "src/types/service-nodes-status-update-result.ts",
           "src/types/service-nodes-update-response.ts",
           "src/types/service-nodes-update-result.ts",
-          "src/types/shipments-management-retrieve-response.ts",
-          "src/types/shipments-management-retrieve-result.ts",
-          "src/types/shipments-packages-create-response.ts",
-          "src/types/shipments-packages-create-result.ts",
-          "src/types/shipments-packages-update-response.ts",
-          "src/types/shipments-packages-update-result.ts",
           "src/types/shops-approve-response.ts",
           "src/types/shops-approve-result.ts",
           "src/types/shops-brand-authorizations-upsert-response.ts",
           "src/types/shops-brand-authorizations-upsert-result.ts",
-          "src/types/shops-business-hours-retrieve-response.ts",
-          "src/types/shops-business-hours-retrieve-result.ts",
           "src/types/shops-business-hours-update-response.ts",
           "src/types/shops-business-hours-update-result.ts",
           "src/types/shops-category-bindings-upsert-response.ts",
@@ -350,26 +237,18 @@
           "src/types/shops-create-result.ts",
           "src/types/shops-customer-services-upsert-response.ts",
           "src/types/shops-customer-services-upsert-result.ts",
-          "src/types/shops-deposit-account-retrieve-response.ts",
-          "src/types/shops-deposit-account-retrieve-result.ts",
           "src/types/shops-deposit-account-review-response.ts",
           "src/types/shops-deposit-account-review-result.ts",
           "src/types/shops-deposit-account-update-response.ts",
           "src/types/shops-deposit-account-update-result.ts",
-          "src/types/shops-fulfillment-profile-retrieve-response.ts",
-          "src/types/shops-fulfillment-profile-retrieve-result.ts",
           "src/types/shops-fulfillment-profile-update-response.ts",
           "src/types/shops-fulfillment-profile-update-result.ts",
-          "src/types/shops-management-retrieve-response.ts",
-          "src/types/shops-management-retrieve-result.ts",
           "src/types/shops-policies-create-response.ts",
           "src/types/shops-policies-create-result.ts",
           "src/types/shops-policies-update-response.ts",
           "src/types/shops-policies-update-result.ts",
           "src/types/shops-qualifications-upsert-response.ts",
           "src/types/shops-qualifications-upsert-result.ts",
-          "src/types/shops-readiness-retrieve-response.ts",
-          "src/types/shops-readiness-retrieve-result.ts",
           "src/types/shops-reject-response.ts",
           "src/types/shops-reject-result.ts",
           "src/types/shops-resume-response.ts",
@@ -388,8 +267,6 @@
           "src/types/shops-settlement-profile-approve-result.ts",
           "src/types/shops-settlement-profile-reject-response.ts",
           "src/types/shops-settlement-profile-reject-result.ts",
-          "src/types/shops-settlement-profile-retrieve-response.ts",
-          "src/types/shops-settlement-profile-retrieve-result.ts",
           "src/types/shops-settlement-profile-update-response.ts",
           "src/types/shops-settlement-profile-update-result.ts",
           "src/types/shops-shipping-templates-upsert-response.ts",
@@ -423,11 +300,7 @@
           "src/types/tools-update-response.ts",
           "src/types/tools-update-result.ts",
           "src/types/verification-policies-update-response.ts",
-          "src/types/verification-policies-update-result.ts",
-          "src/types/wallet-adjustments-management-create-response.ts",
-          "src/types/wallet-adjustments-management-create-result.ts",
-          "src/types/wallet-exchange-rules-update-response.ts",
-          "src/types/wallet-exchange-rules-update-result.ts"
+          "src/types/verification-policies-update-result.ts"
         ]
       },
       {
@@ -595,16 +468,12 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 411,
-    "models": 378,
-    "apis": 10,
-    "types": 380
+    "totalFiles": 284,
+    "models": 252,
+    "apis": 9,
+    "types": 254
   },
   "warnings": [
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/after-sales-management-retrieve-result.ts"
-    },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/after-sales-reviews-create-result.ts"
@@ -639,14 +508,6 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/auth-settings-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/auth-settings-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/cache-instances-refresh-create-result.ts"
     },
     {
@@ -660,66 +521,6 @@
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/cache-refresh-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-attributes-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-categories-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-categories-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-category-attributes-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-category-attributes-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-category-seeds-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-products-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-products-management-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-products-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-skus-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-skus-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-spus-archive-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-spus-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-spus-publish-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/catalog-spus-update-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -751,10 +552,6 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/commerce-reports-payment-reconciliation-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/dashboard-admin-overview-retrieve-result.ts"
     },
     {
@@ -783,14 +580,6 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/fulfillments-management-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/fulfillments-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/gc-jobs-create-result.ts"
     },
     {
@@ -800,50 +589,6 @@
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/installation-status-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/inventory-stocks-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/invoices-issuances-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/invoices-management-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/invoices-voids-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/memberships-members-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/memberships-package-groups-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/memberships-package-groups-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/memberships-packages-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/memberships-packages-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/memberships-plans-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/memberships-plans-update-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -887,18 +632,6 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/orders-management-cancel-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/orders-management-close-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/orders-management-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/oss-buckets-create-result.ts"
     },
     {
@@ -923,62 +656,6 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-channels-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-channels-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-intents-management-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-methods-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-methods-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-provider-accounts-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-provider-accounts-status-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-provider-accounts-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-providers-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-reconciliation-runs-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-route-rules-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-route-rules-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-runtime-snapshot-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/payments-webhook-events-replays-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/price-simulation-create-result.ts"
     },
     {
@@ -988,22 +665,6 @@
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/pricing-rules-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/promotions-codes-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/promotions-coupon-stocks-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/promotions-offers-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/promotions-offers-update-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -1035,34 +696,6 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/recharges-orders-management-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/recharges-packages-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/recharges-packages-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/recharges-settings-management-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/recharges-settings-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/refunds-management-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/reports-commerce-overview-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/revisions-publish-result.ts"
     },
     {
@@ -1072,14 +705,6 @@
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/route-rules-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/runtime-region-settings-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/runtime-region-settings-update-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -1131,27 +756,11 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/shipments-management-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/shipments-packages-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/shipments-packages-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/shops-approve-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/shops-brand-authorizations-upsert-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/shops-business-hours-retrieve-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -1183,10 +792,6 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/shops-deposit-account-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/shops-deposit-account-review-result.ts"
     },
     {
@@ -1195,15 +800,7 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/shops-fulfillment-profile-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/shops-fulfillment-profile-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/shops-management-retrieve-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -1216,10 +813,6 @@
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/shops-qualifications-upsert-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/shops-readiness-retrieve-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -1259,10 +852,6 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/shops-settlement-profile-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/shops-settlement-profile-update-result.ts"
     },
     {
@@ -1288,14 +877,6 @@
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/site-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/site-settings-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/site-settings-update-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -1331,14 +912,6 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-adjustments-management-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/wallet-exchange-rules-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/index.ts"
     },
     {
@@ -1365,12 +938,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 410,
+    "writtenFiles": 283,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "c50fe069036bc6b83c14971840901b0892850ed07627928834bad4a65afa3b25",
+    "changeFingerprint": "7ae2317465fbe0f839ea1037616902b97d9aad4c892b059bcf8ce1fa391b4564",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -1385,7 +958,6 @@
         "sdkwork-sdk.json",
         "src/api/ai.ts",
         "src/api/base.ts",
-        "src/api/commerce.ts",
         "src/api/content.ts",
         "src/api/index.ts",
         "src/api/integration.ts",
@@ -1401,8 +973,17 @@
         "src/http/index.ts",
         "src/index.ts",
         "src/sdk.ts",
-        "src/types/after-sales-management-retrieve-response.ts",
-        "src/types/after-sales-management-retrieve-result.ts",
+        "src/types/admin-auth-settings-response.ts",
+        "src/types/admin-auth-settings-update-request.ts",
+        "src/types/admin-auth-verification-policy.ts",
+        "src/types/admin-auth-wechat-mini.ts",
+        "src/types/admin-auth-wechat-official.ts",
+        "src/types/admin-auth-wechat-settings-update.ts",
+        "src/types/admin-auth-wechat-settings.ts",
+        "src/types/admin-runtime-region-settings-response.ts",
+        "src/types/admin-runtime-region-settings-update-request.ts",
+        "src/types/admin-site-settings-response.ts",
+        "src/types/admin-site-settings-update-request.ts",
         "src/types/after-sales-reviews-create-response.ts",
         "src/types/after-sales-reviews-create-result.ts",
         "src/types/ai-resource-groups-create-response.ts",
@@ -1431,36 +1012,6 @@
         "src/types/cache-overview-retrieve-result.ts",
         "src/types/cache-refresh-create-response.ts",
         "src/types/cache-refresh-create-result.ts",
-        "src/types/catalog-attributes-create-response.ts",
-        "src/types/catalog-attributes-create-result.ts",
-        "src/types/catalog-categories-create-response.ts",
-        "src/types/catalog-categories-create-result.ts",
-        "src/types/catalog-categories-update-response.ts",
-        "src/types/catalog-categories-update-result.ts",
-        "src/types/catalog-category-attributes-create-response.ts",
-        "src/types/catalog-category-attributes-create-result.ts",
-        "src/types/catalog-category-attributes-update-response.ts",
-        "src/types/catalog-category-attributes-update-result.ts",
-        "src/types/catalog-category-seeds-create-response.ts",
-        "src/types/catalog-category-seeds-create-result.ts",
-        "src/types/catalog-products-create-response.ts",
-        "src/types/catalog-products-create-result.ts",
-        "src/types/catalog-products-management-retrieve-response.ts",
-        "src/types/catalog-products-management-retrieve-result.ts",
-        "src/types/catalog-products-update-response.ts",
-        "src/types/catalog-products-update-result.ts",
-        "src/types/catalog-skus-create-response.ts",
-        "src/types/catalog-skus-create-result.ts",
-        "src/types/catalog-skus-update-response.ts",
-        "src/types/catalog-skus-update-result.ts",
-        "src/types/catalog-spus-archive-response.ts",
-        "src/types/catalog-spus-archive-result.ts",
-        "src/types/catalog-spus-create-response.ts",
-        "src/types/catalog-spus-create-result.ts",
-        "src/types/catalog-spus-publish-response.ts",
-        "src/types/catalog-spus-publish-result.ts",
-        "src/types/catalog-spus-update-response.ts",
-        "src/types/catalog-spus-update-result.ts",
         "src/types/channel-groups-bindings-update-response.ts",
         "src/types/channel-groups-channel-bindings-update-result.ts",
         "src/types/channel-groups-create-response.ts",
@@ -1475,8 +1026,6 @@
         "src/types/channels-update-result.ts",
         "src/types/channels-verify-response.ts",
         "src/types/channels-verify-result.ts",
-        "src/types/commerce-reports-payment-reconciliation-retrieve-response.ts",
-        "src/types/commerce-reports-payment-reconciliation-retrieve-result.ts",
         "src/types/common.ts",
         "src/types/dashboard-admin-overview-retrieve-response.ts",
         "src/types/dashboard-admin-overview-retrieve-result.ts",
@@ -1493,10 +1042,6 @@
         "src/types/field-error.ts",
         "src/types/firewalls-rules-create-response.ts",
         "src/types/firewalls-rules-create-result.ts",
-        "src/types/fulfillments-management-retrieve-response.ts",
-        "src/types/fulfillments-management-retrieve-result.ts",
-        "src/types/fulfillments-update-response.ts",
-        "src/types/fulfillments-update-result.ts",
         "src/types/gc-jobs-create-response.ts",
         "src/types/gc-jobs-create-result.ts",
         "src/types/health-check-create-response.ts",
@@ -1504,28 +1049,7 @@
         "src/types/index.ts",
         "src/types/installation-status-retrieve-response.ts",
         "src/types/installation-status-retrieve-result.ts",
-        "src/types/inventory-stocks-update-response.ts",
-        "src/types/inventory-stocks-update-result.ts",
-        "src/types/invoices-issuances-create-response.ts",
-        "src/types/invoices-issuances-create-result.ts",
-        "src/types/invoices-management-retrieve-response.ts",
-        "src/types/invoices-management-retrieve-result.ts",
-        "src/types/invoices-voids-create-response.ts",
-        "src/types/invoices-voids-create-result.ts",
-        "src/types/memberships-members-update-response.ts",
-        "src/types/memberships-members-update-result.ts",
-        "src/types/memberships-package-groups-create-response.ts",
-        "src/types/memberships-package-groups-create-result.ts",
-        "src/types/memberships-package-groups-update-response.ts",
-        "src/types/memberships-package-groups-update-result.ts",
-        "src/types/memberships-packages-create-response.ts",
-        "src/types/memberships-packages-create-result.ts",
-        "src/types/memberships-packages-update-response.ts",
-        "src/types/memberships-packages-update-result.ts",
-        "src/types/memberships-plans-create-response.ts",
-        "src/types/memberships-plans-create-result.ts",
-        "src/types/memberships-plans-update-response.ts",
-        "src/types/memberships-plans-update-result.ts",
+        "src/types/media-resource.ts",
         "src/types/model-mappings-create-response.ts",
         "src/types/model-mappings-create-result.ts",
         "src/types/model-mappings-replace-response.ts",
@@ -1546,12 +1070,6 @@
         "src/types/models-refresh-result.ts",
         "src/types/models-update-response.ts",
         "src/types/models-update-result.ts",
-        "src/types/orders-management-cancel-response.ts",
-        "src/types/orders-management-cancel-result.ts",
-        "src/types/orders-management-close-response.ts",
-        "src/types/orders-management-close-result.ts",
-        "src/types/orders-management-retrieve-response.ts",
-        "src/types/orders-management-retrieve-result.ts",
         "src/types/oss-buckets-create-response.ts",
         "src/types/oss-buckets-create-result.ts",
         "src/types/oss-buckets-update-response.ts",
@@ -1565,34 +1083,6 @@
         "src/types/oss-storage-reconciliation-runs-create-response.ts",
         "src/types/oss-storage-reconciliation-runs-create-result.ts",
         "src/types/page-info.ts",
-        "src/types/payments-channels-create-response.ts",
-        "src/types/payments-channels-create-result.ts",
-        "src/types/payments-channels-update-response.ts",
-        "src/types/payments-channels-update-result.ts",
-        "src/types/payments-intents-management-retrieve-response.ts",
-        "src/types/payments-intents-management-retrieve-result.ts",
-        "src/types/payments-methods-create-response.ts",
-        "src/types/payments-methods-create-result.ts",
-        "src/types/payments-methods-update-response.ts",
-        "src/types/payments-methods-update-result.ts",
-        "src/types/payments-provider-accounts-create-response.ts",
-        "src/types/payments-provider-accounts-create-result.ts",
-        "src/types/payments-provider-accounts-status-update-response.ts",
-        "src/types/payments-provider-accounts-status-update-result.ts",
-        "src/types/payments-provider-accounts-update-response.ts",
-        "src/types/payments-provider-accounts-update-result.ts",
-        "src/types/payments-providers-update-response.ts",
-        "src/types/payments-providers-update-result.ts",
-        "src/types/payments-reconciliation-runs-create-response.ts",
-        "src/types/payments-reconciliation-runs-create-result.ts",
-        "src/types/payments-route-rules-create-response.ts",
-        "src/types/payments-route-rules-create-result.ts",
-        "src/types/payments-route-rules-update-response.ts",
-        "src/types/payments-route-rules-update-result.ts",
-        "src/types/payments-runtime-snapshot-retrieve-response.ts",
-        "src/types/payments-runtime-snapshot-retrieve-result.ts",
-        "src/types/payments-webhook-events-replays-create-response.ts",
-        "src/types/payments-webhook-events-replays-create-result.ts",
         "src/types/price-simulation-create-response.ts",
         "src/types/price-simulation-create-result.ts",
         "src/types/pricing-rules-create-response.ts",
@@ -1600,14 +1090,6 @@
         "src/types/pricing-rules-update-response.ts",
         "src/types/pricing-rules-update-result.ts",
         "src/types/problem-detail.ts",
-        "src/types/promotions-codes-create-response.ts",
-        "src/types/promotions-codes-create-result.ts",
-        "src/types/promotions-coupon-stocks-create-response.ts",
-        "src/types/promotions-coupon-stocks-create-result.ts",
-        "src/types/promotions-offers-create-response.ts",
-        "src/types/promotions-offers-create-result.ts",
-        "src/types/promotions-offers-update-response.ts",
-        "src/types/promotions-offers-update-result.ts",
         "src/types/provider-accounts-create-response.ts",
         "src/types/provider-accounts-create-result.ts",
         "src/types/provider-secrets-create-response.ts",
@@ -1622,20 +1104,6 @@
         "src/types/rate-limits-ip-create-result.ts",
         "src/types/rate-limits-models-create-response.ts",
         "src/types/rate-limits-models-create-result.ts",
-        "src/types/recharges-orders-management-retrieve-response.ts",
-        "src/types/recharges-orders-management-retrieve-result.ts",
-        "src/types/recharges-packages-create-response.ts",
-        "src/types/recharges-packages-create-result.ts",
-        "src/types/recharges-packages-update-response.ts",
-        "src/types/recharges-packages-update-result.ts",
-        "src/types/recharges-settings-management-retrieve-response.ts",
-        "src/types/recharges-settings-management-retrieve-result.ts",
-        "src/types/recharges-settings-update-response.ts",
-        "src/types/recharges-settings-update-result.ts",
-        "src/types/refunds-management-retrieve-response.ts",
-        "src/types/refunds-management-retrieve-result.ts",
-        "src/types/reports-commerce-overview-retrieve-response.ts",
-        "src/types/reports-commerce-overview-retrieve-result.ts",
         "src/types/revisions-publish-response.ts",
         "src/types/revisions-publish-result.ts",
         "src/types/route-explain-create-response.ts",
@@ -1676,18 +1144,10 @@
         "src/types/service-nodes-status-update-result.ts",
         "src/types/service-nodes-update-response.ts",
         "src/types/service-nodes-update-result.ts",
-        "src/types/shipments-management-retrieve-response.ts",
-        "src/types/shipments-management-retrieve-result.ts",
-        "src/types/shipments-packages-create-response.ts",
-        "src/types/shipments-packages-create-result.ts",
-        "src/types/shipments-packages-update-response.ts",
-        "src/types/shipments-packages-update-result.ts",
         "src/types/shops-approve-response.ts",
         "src/types/shops-approve-result.ts",
         "src/types/shops-brand-authorizations-upsert-response.ts",
         "src/types/shops-brand-authorizations-upsert-result.ts",
-        "src/types/shops-business-hours-retrieve-response.ts",
-        "src/types/shops-business-hours-retrieve-result.ts",
         "src/types/shops-business-hours-update-response.ts",
         "src/types/shops-business-hours-update-result.ts",
         "src/types/shops-category-bindings-upsert-response.ts",
@@ -1702,26 +1162,18 @@
         "src/types/shops-create-result.ts",
         "src/types/shops-customer-services-upsert-response.ts",
         "src/types/shops-customer-services-upsert-result.ts",
-        "src/types/shops-deposit-account-retrieve-response.ts",
-        "src/types/shops-deposit-account-retrieve-result.ts",
         "src/types/shops-deposit-account-review-response.ts",
         "src/types/shops-deposit-account-review-result.ts",
         "src/types/shops-deposit-account-update-response.ts",
         "src/types/shops-deposit-account-update-result.ts",
-        "src/types/shops-fulfillment-profile-retrieve-response.ts",
-        "src/types/shops-fulfillment-profile-retrieve-result.ts",
         "src/types/shops-fulfillment-profile-update-response.ts",
         "src/types/shops-fulfillment-profile-update-result.ts",
-        "src/types/shops-management-retrieve-response.ts",
-        "src/types/shops-management-retrieve-result.ts",
         "src/types/shops-policies-create-response.ts",
         "src/types/shops-policies-create-result.ts",
         "src/types/shops-policies-update-response.ts",
         "src/types/shops-policies-update-result.ts",
         "src/types/shops-qualifications-upsert-response.ts",
         "src/types/shops-qualifications-upsert-result.ts",
-        "src/types/shops-readiness-retrieve-response.ts",
-        "src/types/shops-readiness-retrieve-result.ts",
         "src/types/shops-reject-response.ts",
         "src/types/shops-reject-result.ts",
         "src/types/shops-resume-response.ts",
@@ -1740,8 +1192,6 @@
         "src/types/shops-settlement-profile-approve-result.ts",
         "src/types/shops-settlement-profile-reject-response.ts",
         "src/types/shops-settlement-profile-reject-result.ts",
-        "src/types/shops-settlement-profile-retrieve-response.ts",
-        "src/types/shops-settlement-profile-retrieve-result.ts",
         "src/types/shops-settlement-profile-update-response.ts",
         "src/types/shops-settlement-profile-update-result.ts",
         "src/types/shops-shipping-templates-upsert-response.ts",
@@ -1776,10 +1226,6 @@
         "src/types/tools-update-result.ts",
         "src/types/verification-policies-update-response.ts",
         "src/types/verification-policies-update-result.ts",
-        "src/types/wallet-adjustments-management-create-response.ts",
-        "src/types/wallet-adjustments-management-create-result.ts",
-        "src/types/wallet-exchange-rules-update-response.ts",
-        "src/types/wallet-exchange-rules-update-result.ts",
         "tsconfig.json"
       ],
       "updatedGeneratedFiles": [],
@@ -1810,7 +1256,6 @@
           "paths": [
             "src/api/ai.ts",
             "src/api/base.ts",
-            "src/api/commerce.ts",
             "src/api/content.ts",
             "src/api/index.ts",
             "src/api/integration.ts",
@@ -1828,8 +1273,17 @@
         {
           "area": "models",
           "paths": [
-            "src/types/after-sales-management-retrieve-response.ts",
-            "src/types/after-sales-management-retrieve-result.ts",
+            "src/types/admin-auth-settings-response.ts",
+            "src/types/admin-auth-settings-update-request.ts",
+            "src/types/admin-auth-verification-policy.ts",
+            "src/types/admin-auth-wechat-mini.ts",
+            "src/types/admin-auth-wechat-official.ts",
+            "src/types/admin-auth-wechat-settings-update.ts",
+            "src/types/admin-auth-wechat-settings.ts",
+            "src/types/admin-runtime-region-settings-response.ts",
+            "src/types/admin-runtime-region-settings-update-request.ts",
+            "src/types/admin-site-settings-response.ts",
+            "src/types/admin-site-settings-update-request.ts",
             "src/types/after-sales-reviews-create-response.ts",
             "src/types/after-sales-reviews-create-result.ts",
             "src/types/ai-resource-groups-create-response.ts",
@@ -1858,36 +1312,6 @@
             "src/types/cache-overview-retrieve-result.ts",
             "src/types/cache-refresh-create-response.ts",
             "src/types/cache-refresh-create-result.ts",
-            "src/types/catalog-attributes-create-response.ts",
-            "src/types/catalog-attributes-create-result.ts",
-            "src/types/catalog-categories-create-response.ts",
-            "src/types/catalog-categories-create-result.ts",
-            "src/types/catalog-categories-update-response.ts",
-            "src/types/catalog-categories-update-result.ts",
-            "src/types/catalog-category-attributes-create-response.ts",
-            "src/types/catalog-category-attributes-create-result.ts",
-            "src/types/catalog-category-attributes-update-response.ts",
-            "src/types/catalog-category-attributes-update-result.ts",
-            "src/types/catalog-category-seeds-create-response.ts",
-            "src/types/catalog-category-seeds-create-result.ts",
-            "src/types/catalog-products-create-response.ts",
-            "src/types/catalog-products-create-result.ts",
-            "src/types/catalog-products-management-retrieve-response.ts",
-            "src/types/catalog-products-management-retrieve-result.ts",
-            "src/types/catalog-products-update-response.ts",
-            "src/types/catalog-products-update-result.ts",
-            "src/types/catalog-skus-create-response.ts",
-            "src/types/catalog-skus-create-result.ts",
-            "src/types/catalog-skus-update-response.ts",
-            "src/types/catalog-skus-update-result.ts",
-            "src/types/catalog-spus-archive-response.ts",
-            "src/types/catalog-spus-archive-result.ts",
-            "src/types/catalog-spus-create-response.ts",
-            "src/types/catalog-spus-create-result.ts",
-            "src/types/catalog-spus-publish-response.ts",
-            "src/types/catalog-spus-publish-result.ts",
-            "src/types/catalog-spus-update-response.ts",
-            "src/types/catalog-spus-update-result.ts",
             "src/types/channel-groups-bindings-update-response.ts",
             "src/types/channel-groups-channel-bindings-update-result.ts",
             "src/types/channel-groups-create-response.ts",
@@ -1902,8 +1326,6 @@
             "src/types/channels-update-result.ts",
             "src/types/channels-verify-response.ts",
             "src/types/channels-verify-result.ts",
-            "src/types/commerce-reports-payment-reconciliation-retrieve-response.ts",
-            "src/types/commerce-reports-payment-reconciliation-retrieve-result.ts",
             "src/types/common.ts",
             "src/types/dashboard-admin-overview-retrieve-response.ts",
             "src/types/dashboard-admin-overview-retrieve-result.ts",
@@ -1920,10 +1342,6 @@
             "src/types/field-error.ts",
             "src/types/firewalls-rules-create-response.ts",
             "src/types/firewalls-rules-create-result.ts",
-            "src/types/fulfillments-management-retrieve-response.ts",
-            "src/types/fulfillments-management-retrieve-result.ts",
-            "src/types/fulfillments-update-response.ts",
-            "src/types/fulfillments-update-result.ts",
             "src/types/gc-jobs-create-response.ts",
             "src/types/gc-jobs-create-result.ts",
             "src/types/health-check-create-response.ts",
@@ -1931,28 +1349,7 @@
             "src/types/index.ts",
             "src/types/installation-status-retrieve-response.ts",
             "src/types/installation-status-retrieve-result.ts",
-            "src/types/inventory-stocks-update-response.ts",
-            "src/types/inventory-stocks-update-result.ts",
-            "src/types/invoices-issuances-create-response.ts",
-            "src/types/invoices-issuances-create-result.ts",
-            "src/types/invoices-management-retrieve-response.ts",
-            "src/types/invoices-management-retrieve-result.ts",
-            "src/types/invoices-voids-create-response.ts",
-            "src/types/invoices-voids-create-result.ts",
-            "src/types/memberships-members-update-response.ts",
-            "src/types/memberships-members-update-result.ts",
-            "src/types/memberships-package-groups-create-response.ts",
-            "src/types/memberships-package-groups-create-result.ts",
-            "src/types/memberships-package-groups-update-response.ts",
-            "src/types/memberships-package-groups-update-result.ts",
-            "src/types/memberships-packages-create-response.ts",
-            "src/types/memberships-packages-create-result.ts",
-            "src/types/memberships-packages-update-response.ts",
-            "src/types/memberships-packages-update-result.ts",
-            "src/types/memberships-plans-create-response.ts",
-            "src/types/memberships-plans-create-result.ts",
-            "src/types/memberships-plans-update-response.ts",
-            "src/types/memberships-plans-update-result.ts",
+            "src/types/media-resource.ts",
             "src/types/model-mappings-create-response.ts",
             "src/types/model-mappings-create-result.ts",
             "src/types/model-mappings-replace-response.ts",
@@ -1973,12 +1370,6 @@
             "src/types/models-refresh-result.ts",
             "src/types/models-update-response.ts",
             "src/types/models-update-result.ts",
-            "src/types/orders-management-cancel-response.ts",
-            "src/types/orders-management-cancel-result.ts",
-            "src/types/orders-management-close-response.ts",
-            "src/types/orders-management-close-result.ts",
-            "src/types/orders-management-retrieve-response.ts",
-            "src/types/orders-management-retrieve-result.ts",
             "src/types/oss-buckets-create-response.ts",
             "src/types/oss-buckets-create-result.ts",
             "src/types/oss-buckets-update-response.ts",
@@ -1992,34 +1383,6 @@
             "src/types/oss-storage-reconciliation-runs-create-response.ts",
             "src/types/oss-storage-reconciliation-runs-create-result.ts",
             "src/types/page-info.ts",
-            "src/types/payments-channels-create-response.ts",
-            "src/types/payments-channels-create-result.ts",
-            "src/types/payments-channels-update-response.ts",
-            "src/types/payments-channels-update-result.ts",
-            "src/types/payments-intents-management-retrieve-response.ts",
-            "src/types/payments-intents-management-retrieve-result.ts",
-            "src/types/payments-methods-create-response.ts",
-            "src/types/payments-methods-create-result.ts",
-            "src/types/payments-methods-update-response.ts",
-            "src/types/payments-methods-update-result.ts",
-            "src/types/payments-provider-accounts-create-response.ts",
-            "src/types/payments-provider-accounts-create-result.ts",
-            "src/types/payments-provider-accounts-status-update-response.ts",
-            "src/types/payments-provider-accounts-status-update-result.ts",
-            "src/types/payments-provider-accounts-update-response.ts",
-            "src/types/payments-provider-accounts-update-result.ts",
-            "src/types/payments-providers-update-response.ts",
-            "src/types/payments-providers-update-result.ts",
-            "src/types/payments-reconciliation-runs-create-response.ts",
-            "src/types/payments-reconciliation-runs-create-result.ts",
-            "src/types/payments-route-rules-create-response.ts",
-            "src/types/payments-route-rules-create-result.ts",
-            "src/types/payments-route-rules-update-response.ts",
-            "src/types/payments-route-rules-update-result.ts",
-            "src/types/payments-runtime-snapshot-retrieve-response.ts",
-            "src/types/payments-runtime-snapshot-retrieve-result.ts",
-            "src/types/payments-webhook-events-replays-create-response.ts",
-            "src/types/payments-webhook-events-replays-create-result.ts",
             "src/types/price-simulation-create-response.ts",
             "src/types/price-simulation-create-result.ts",
             "src/types/pricing-rules-create-response.ts",
@@ -2027,14 +1390,6 @@
             "src/types/pricing-rules-update-response.ts",
             "src/types/pricing-rules-update-result.ts",
             "src/types/problem-detail.ts",
-            "src/types/promotions-codes-create-response.ts",
-            "src/types/promotions-codes-create-result.ts",
-            "src/types/promotions-coupon-stocks-create-response.ts",
-            "src/types/promotions-coupon-stocks-create-result.ts",
-            "src/types/promotions-offers-create-response.ts",
-            "src/types/promotions-offers-create-result.ts",
-            "src/types/promotions-offers-update-response.ts",
-            "src/types/promotions-offers-update-result.ts",
             "src/types/provider-accounts-create-response.ts",
             "src/types/provider-accounts-create-result.ts",
             "src/types/provider-secrets-create-response.ts",
@@ -2049,20 +1404,6 @@
             "src/types/rate-limits-ip-create-result.ts",
             "src/types/rate-limits-models-create-response.ts",
             "src/types/rate-limits-models-create-result.ts",
-            "src/types/recharges-orders-management-retrieve-response.ts",
-            "src/types/recharges-orders-management-retrieve-result.ts",
-            "src/types/recharges-packages-create-response.ts",
-            "src/types/recharges-packages-create-result.ts",
-            "src/types/recharges-packages-update-response.ts",
-            "src/types/recharges-packages-update-result.ts",
-            "src/types/recharges-settings-management-retrieve-response.ts",
-            "src/types/recharges-settings-management-retrieve-result.ts",
-            "src/types/recharges-settings-update-response.ts",
-            "src/types/recharges-settings-update-result.ts",
-            "src/types/refunds-management-retrieve-response.ts",
-            "src/types/refunds-management-retrieve-result.ts",
-            "src/types/reports-commerce-overview-retrieve-response.ts",
-            "src/types/reports-commerce-overview-retrieve-result.ts",
             "src/types/revisions-publish-response.ts",
             "src/types/revisions-publish-result.ts",
             "src/types/route-explain-create-response.ts",
@@ -2103,18 +1444,10 @@
             "src/types/service-nodes-status-update-result.ts",
             "src/types/service-nodes-update-response.ts",
             "src/types/service-nodes-update-result.ts",
-            "src/types/shipments-management-retrieve-response.ts",
-            "src/types/shipments-management-retrieve-result.ts",
-            "src/types/shipments-packages-create-response.ts",
-            "src/types/shipments-packages-create-result.ts",
-            "src/types/shipments-packages-update-response.ts",
-            "src/types/shipments-packages-update-result.ts",
             "src/types/shops-approve-response.ts",
             "src/types/shops-approve-result.ts",
             "src/types/shops-brand-authorizations-upsert-response.ts",
             "src/types/shops-brand-authorizations-upsert-result.ts",
-            "src/types/shops-business-hours-retrieve-response.ts",
-            "src/types/shops-business-hours-retrieve-result.ts",
             "src/types/shops-business-hours-update-response.ts",
             "src/types/shops-business-hours-update-result.ts",
             "src/types/shops-category-bindings-upsert-response.ts",
@@ -2129,26 +1462,18 @@
             "src/types/shops-create-result.ts",
             "src/types/shops-customer-services-upsert-response.ts",
             "src/types/shops-customer-services-upsert-result.ts",
-            "src/types/shops-deposit-account-retrieve-response.ts",
-            "src/types/shops-deposit-account-retrieve-result.ts",
             "src/types/shops-deposit-account-review-response.ts",
             "src/types/shops-deposit-account-review-result.ts",
             "src/types/shops-deposit-account-update-response.ts",
             "src/types/shops-deposit-account-update-result.ts",
-            "src/types/shops-fulfillment-profile-retrieve-response.ts",
-            "src/types/shops-fulfillment-profile-retrieve-result.ts",
             "src/types/shops-fulfillment-profile-update-response.ts",
             "src/types/shops-fulfillment-profile-update-result.ts",
-            "src/types/shops-management-retrieve-response.ts",
-            "src/types/shops-management-retrieve-result.ts",
             "src/types/shops-policies-create-response.ts",
             "src/types/shops-policies-create-result.ts",
             "src/types/shops-policies-update-response.ts",
             "src/types/shops-policies-update-result.ts",
             "src/types/shops-qualifications-upsert-response.ts",
             "src/types/shops-qualifications-upsert-result.ts",
-            "src/types/shops-readiness-retrieve-response.ts",
-            "src/types/shops-readiness-retrieve-result.ts",
             "src/types/shops-reject-response.ts",
             "src/types/shops-reject-result.ts",
             "src/types/shops-resume-response.ts",
@@ -2167,8 +1492,6 @@
             "src/types/shops-settlement-profile-approve-result.ts",
             "src/types/shops-settlement-profile-reject-response.ts",
             "src/types/shops-settlement-profile-reject-result.ts",
-            "src/types/shops-settlement-profile-retrieve-response.ts",
-            "src/types/shops-settlement-profile-retrieve-result.ts",
             "src/types/shops-settlement-profile-update-response.ts",
             "src/types/shops-settlement-profile-update-result.ts",
             "src/types/shops-shipping-templates-upsert-response.ts",
@@ -2202,11 +1525,7 @@
             "src/types/tools-update-response.ts",
             "src/types/tools-update-result.ts",
             "src/types/verification-policies-update-response.ts",
-            "src/types/verification-policies-update-result.ts",
-            "src/types/wallet-adjustments-management-create-response.ts",
-            "src/types/wallet-adjustments-management-create-result.ts",
-            "src/types/wallet-exchange-rules-update-response.ts",
-            "src/types/wallet-exchange-rules-update-result.ts"
+            "src/types/verification-policies-update-result.ts"
           ]
         },
         {

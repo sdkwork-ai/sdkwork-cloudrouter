@@ -166,6 +166,72 @@
           "go": "github.com/sdkwork/sdkwork-iam-app-sdk",
           "python": "sdkwork-iam-app-sdk"
         }
+      },
+      {
+        "workspace": "clawrouter-app-wallet-capability",
+        "role": "wallet-app-capability",
+        "required": true,
+        "dependencyMode": "internal-capability",
+        "apiPrefix": "/app/v3/api",
+        "generatedTransportImportPolicy": "forbidden",
+        "packageByLanguage": {
+          "typescript": "clawrouter-app-domain-transport-generated-typescript"
+        }
+      },
+      {
+        "workspace": "clawrouter-app-membership-capability",
+        "role": "membership-app-capability",
+        "required": true,
+        "dependencyMode": "internal-capability",
+        "apiPrefix": "/app/v3/api",
+        "generatedTransportImportPolicy": "forbidden",
+        "packageByLanguage": {
+          "typescript": "clawrouter-app-domain-transport-generated-typescript"
+        }
+      },
+      {
+        "workspace": "clawrouter-app-promotion-capability",
+        "role": "promotion-app-capability",
+        "required": true,
+        "dependencyMode": "internal-capability",
+        "apiPrefix": "/app/v3/api",
+        "generatedTransportImportPolicy": "forbidden",
+        "packageByLanguage": {
+          "typescript": "clawrouter-app-domain-transport-generated-typescript"
+        }
+      },
+      {
+        "workspace": "clawrouter-app-order-capability",
+        "role": "order-app-capability",
+        "required": true,
+        "dependencyMode": "internal-capability",
+        "apiPrefix": "/app/v3/api",
+        "generatedTransportImportPolicy": "forbidden",
+        "packageByLanguage": {
+          "typescript": "clawrouter-app-domain-transport-generated-typescript"
+        }
+      },
+      {
+        "workspace": "clawrouter-app-payment-capability",
+        "role": "payment-app-capability",
+        "required": true,
+        "dependencyMode": "internal-capability",
+        "apiPrefix": "/app/v3/api",
+        "generatedTransportImportPolicy": "forbidden",
+        "packageByLanguage": {
+          "typescript": "clawrouter-app-domain-transport-generated-typescript"
+        }
+      },
+      {
+        "workspace": "clawrouter-app-catalog-capability",
+        "role": "catalog-app-capability",
+        "required": true,
+        "dependencyMode": "internal-capability",
+        "apiPrefix": "/app/v3/api",
+        "generatedTransportImportPolicy": "forbidden",
+        "packageByLanguage": {
+          "typescript": "clawrouter-app-domain-transport-generated-typescript"
+        }
       }
     ],
     "routeManifest": null

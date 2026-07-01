@@ -12,7 +12,7 @@ use sdkwork_claw_config::PaymentWebhookConfig;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::{default_payment_provider_registry, EntityUuidGenerator};
 use crate::domain::{DecimalValue, DomainError};
 use crate::infrastructure::OsApiKeySecretGenerator;
@@ -716,7 +716,7 @@ fn has_sub_cent_precision(value: &str) -> bool {
 
 fn callback_success_response(ack_mode: AckMode, outcome: PaymentCallbackOutcome) -> Response {
     match ack_mode {
-        AckMode::Json => Json(PlusApiResult::success(outcome)).into_response(),
+        AckMode::Json => Json(success_envelope(outcome)).into_response(),
         AckMode::Wechat => (
             StatusCode::OK,
             [("content-type", "application/xml; charset=utf-8")],
@@ -729,7 +729,7 @@ fn callback_success_response(ack_mode: AckMode, outcome: PaymentCallbackOutcome)
 
 fn callback_bad_request_response(ack_mode: AckMode, message: String) -> Response {
     match ack_mode {
-        AckMode::Json => PlusApiResult::error("4001", message)).into_response(),
+        AckMode::Json => problem_from_wire_code("4001", message).into_response(),
         AckMode::Wechat => (
             StatusCode::BAD_REQUEST,
             [("content-type", "application/xml; charset=utf-8")],
@@ -742,7 +742,7 @@ fn callback_bad_request_response(ack_mode: AckMode, message: String) -> Response
 
 fn callback_conflict_response(ack_mode: AckMode, message: String) -> Response {
     match ack_mode {
-        AckMode::Json => PlusApiResult::error("4090", message)).into_response(),
+        AckMode::Json => problem_from_wire_code("4090", message).into_response(),
         AckMode::Wechat => (
             StatusCode::CONFLICT,
             [("content-type", "application/xml; charset=utf-8")],
@@ -755,7 +755,7 @@ fn callback_conflict_response(ack_mode: AckMode, message: String) -> Response {
 
 fn callback_system_response(ack_mode: AckMode, message: &str) -> Response {
     match ack_mode {
-        AckMode::Json => PlusApiResult::error("5000", message.to_owned())).into_response(),
+        AckMode::Json => problem_from_wire_code("5000", message.to_owned()).into_response(),
         AckMode::Wechat => (
             StatusCode::INTERNAL_SERVER_ERROR,
             [("content-type", "application/xml; charset=utf-8")],

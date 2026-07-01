@@ -613,12 +613,12 @@ test("portal notification and commerce dependency SDK facades expose component-c
   }
 
   for (const marker of [
-    "type BackendCommerceDependencyOverlay =",
-    "function createBackendCommerceCanonicalFacade(commerce: BackendCommerceDependencyOverlay)",
+    "type BackendDomainDependencyOverlay =",
+    "function createBackendDomainCanonicalFacade(domainTransport: BackendDomainDependencyOverlay)",
     "attachManagementAlias(facade.wallet.accounts, 'list')",
-    "createBackendCommerceCanonicalFacade(",
+    "createBackendDomainCanonicalFacade(",
   ]) {
-    assert.ok(sdkClientsSource.includes(marker), `missing commerce backend facade marker: ${marker}`);
+    assert.ok(sdkClientsSource.includes(marker), `missing backend domain transport facade marker: ${marker}`);
   }
 
   assert.doesNotMatch(
@@ -865,19 +865,16 @@ test("console sidebar keeps dashboard top-level and groups the remaining menus b
   assert.doesNotMatch(source, /\bBot\b/);
 });
 
-test("console commerce routes mount sdkwork-commerce PC pages directly", () => {
+test("console business routes mount T1 domain PC packages directly", () => {
   const appSource = readPortalSource("./src/App.tsx");
-  const mountSource = readPortalSource("./src/commerce/commerceHostMount.tsx");
+  const mountSource = readPortalSource("./src/console-business/consoleBusinessHostMount.tsx");
 
-  assert.match(appSource, /ClawRouterConsoleCommerceHostRoutes/);
-  assert.match(appSource, /SdkworkCommerceHostNavbarActions/);
-  assert.match(appSource, /navbarAuthenticatedActionsStart=\{<SdkworkCommerceHostNavbarActions routePrefix="\/console" \/>}/);
-  assert.match(appSource, /from '@sdkwork\/commerce-pc-host'/);
-  assert.match(mountSource, /SdkworkCommerceHostRoutes/);
-  assert.doesNotMatch(appSource, /import\('@sdkwork\/commerce-pc-wallet'\), 'SdkworkWalletPage'/);
-  assert.match(appSource, /import\('@sdkwork\/commerce-pc-billing'\), 'SdkworkBillingPage'/);
-  assert.doesNotMatch(appSource, /path="checkout"/);
-  assert.doesNotMatch(appSource, /path="payment"/);
+  assert.match(appSource, /ClawRouterConsoleBusinessHostRoutes/);
+  assert.match(appSource, /ClawRouterConsoleBusinessNavbarActions/);
+  assert.match(mountSource, /@sdkwork\/account-pc-wallet/);
+  assert.match(mountSource, /@sdkwork\/payment-pc-payment/);
+  assert.doesNotMatch(appSource, /from '@sdkwork\/commerce-pc-host'/);
+  assert.doesNotMatch(appSource, /ClawRouterConsoleCommerceHostRoutes/);
   assert.doesNotMatch(appSource, /consoleCommerceViews/);
   assert.doesNotMatch(appSource, /clawrouter-pc-console-wallet/);
   assert.doesNotMatch(appSource, /clawrouter-pc-console-recharge/);
@@ -898,7 +895,7 @@ test("console recharge exchange wording stays consistent in shell navigation and
     "utf8",
   );
 
-  assert.match(consoleShellSource, /fallbackLabel: 'Recharge exchange'/);
+  assert.match(consoleShellSource, /fallbackLabel: 'Wallet & top-up'/);
   assert.match(billingI18nSource, /"console\.billing\.billingview\.text\.gd62li": "\u5145\u503c\u5151\u6362"/u);
   assert.match(billingI18nSource, /"console\.billing\.billingview\.text\.1iq97ql": "\u5151\u6362"/u);
   assert.match(billingI18nSource, /"console\.billing\.billingview\.text\.1wlfhep": "\u5145\u503c"/u);
@@ -1612,23 +1609,11 @@ test("BusinessStatePanel resolves invalid or missing kind before reading style m
   assert.match(source, /aria-live=\{resolvedKind === 'loading' \? 'polite' : 'assertive'\}/);
 });
 
-test("storageService consumes drive backend SDK instead of clawrouter oss", () => {
-  const source = readPackageSource("packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts");
-
-  assert.match(source, /getSdkworkDriveBackendSdkClient/u);
-  assert.doesNotMatch(source, /getClawRouterBackendSdkClient/u);
-  assert.doesNotMatch(source, /\.oss\./u);
-});
-
 test("app-surface services do not supply client auth context selectors", () => {
   const sdkClientsSource = readPackageSource("packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts");
   const appSurfaceServiceSources = [
-    "packages/sdkwork-clawrouter-pc-admin-file-platform/src/driveService.ts",
-    "packages/sdkwork-clawrouter-pc-admin-file-platform/src/storageService.ts",
-    "packages/sdkwork-clawrouter-pc-admin-agents/src/agentService.ts",
-    "packages/sdkwork-clawrouter-pc-admin-skill/src/skillService.ts",
+    "packages/sdkwork-clawrouter-pc-admin-record/src/recordService.ts",
     "packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationsService.ts",
-    "../../packages/common/file/sdkwork-file-sdk-adapter/src/index.ts",
   ];
 
   assert.match(sdkClientsSource, /sanitizeSdkHttpRequestOptions/);
@@ -1640,16 +1625,6 @@ test("app-surface services do not supply client auth context selectors", () => {
     assert.doesNotMatch(source, /resolveDriveTenantId/u, `${relativePath} must not resolve drive tenant for API calls`);
     assert.doesNotMatch(source, /resolveAgentTenantId/u, `${relativePath} must not resolve agent tenant for API calls`);
     assert.doesNotMatch(source, /tenantId:\s*resolve/u, `${relativePath} must not pass resolved tenantId to SDK calls`);
-  }
-
-  const fileAdapterSource = readPackageSource("../../packages/common/file/sdkwork-file-sdk-adapter/src/index.ts");
-  for (const marker of [
-    "organizationId: input.organizationId",
-    "userId: input.userId",
-    "operatorId:",
-    "tenantId:",
-  ]) {
-    assert.doesNotMatch(fileAdapterSource, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u"), `file adapter must not forward ${marker} to Drive upload`);
   }
 });
 

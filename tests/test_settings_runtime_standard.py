@@ -178,9 +178,10 @@ class SettingsRuntimeStandardTest(unittest.TestCase):
         self.assertIn('"/app/v3/api/iam/users/settings"', app_settings)
         self.assertIn("validate_update_settings_request", app_settings)
         self.assertIn("webhook URL must use http or https", app_settings)
-        self.assertIn('PlusApiResult::error("4001"', app_settings)
-        self.assertIn('PlusApiResult::error("4010"', app_settings)
-        self.assertIn('PlusApiResult::error("5000"', app_settings)
+        self.assertIn('problem_from_wire_code("4001"', app_settings)
+        self.assertIn('problem_from_wire_code("4010"', app_settings)
+        self.assertIn('problem_from_wire_code("5000"', app_settings)
+        self.assertNotIn("PlusApiResult", app_settings)
 
         for store in [sqlite_store, postgres_store]:
             self.assertIn("iam_user_preference", store)

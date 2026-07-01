@@ -237,7 +237,7 @@ async fn app_model_catalog_route_returns_standard_items_for_playground_grouping(
     let body_text = String::from_utf8(body.to_vec()).unwrap();
     let payload: serde_json::Value = serde_json::from_str(&body_text).unwrap();
 
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     let items = payload["data"]["items"].as_array().unwrap();
     let gpt = items
         .iter()
@@ -360,7 +360,7 @@ async fn app_model_vendor_route_returns_catalog_vendors_with_model_counts() {
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!(
         serde_json::json!([
             { "label": "Anthropic", "code": "anthropic", "modelCount": 1 },
@@ -393,8 +393,8 @@ async fn app_model_catalog_route_returns_public_plus_result_without_secret_mater
     let body_text = String::from_utf8(body.to_vec()).unwrap();
     let payload: serde_json::Value = serde_json::from_str(&body_text).unwrap();
 
-    assert_eq!("2000", payload["code"]);
-    assert_eq!("SUCCESS", payload["msg"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
+    
     assert_eq!(None, payload.get("message"));
     assert_eq!(1, payload["data"]["items"].as_array().unwrap().len());
     assert_eq!("gpt-4o-mini", payload["data"]["items"][0]["model"]);

@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use sdkwork_claw_config::{DatabaseConfig, DatabaseEngine};
@@ -28,21 +28,87 @@ pub fn ensure_iam_database_env_for_claw_database(database_config: &DatabaseConfi
 /// Standalone gateway tests and embedded runtimes pass `DatabaseConfig` directly without
 /// exporting `SDKWORK_CLAW_DATABASE_URL`; invoice and other federated hosts must still
 /// resolve the same database URL/engine as the product installer.
+const FEDERATED_CAPABILITY_SERVICE_CODES: &[&str] = &[
+    "ACCOUNT", "CATALOG", "INVOICE", "MEMBERSHIP", "ORDER", "PAYMENT", "PROMOTION", "SHOP",
+];
+
+const FEDERATED_CAPABILITY_REPO_DIRS: &[(&str, &str)] = &[
+    ("ACCOUNT", "sdkwork-account"),
+    ("CATALOG", "sdkwork-catalog"),
+    ("INVOICE", "sdkwork-invoice"),
+    ("MEMBERSHIP", "sdkwork-membership"),
+    ("ORDER", "sdkwork-order"),
+    ("PAYMENT", "sdkwork-payment"),
+    ("PROMOTION", "sdkwork-promotion"),
+    ("SHOP", "sdkwork-shop"),
+];
+
 pub fn materialize_federated_database_env_from_claw_config(database_config: &DatabaseConfig) {
-    materialize_capability_database_env("INVOICE", database_config);
+    for service_code in FEDERATED_CAPABILITY_SERVICE_CODES {
+        materialize_capability_database_env(service_code, database_config);
+    }
+    materialize_federated_capability_app_roots();
+    materialize_federated_commerce_lifecycle_env();
     ensure_iam_database_env_for_claw_database(database_config);
 }
 
-fn materialize_capability_database_env(service_code: &str, database_config: &DatabaseConfig) {
-    let prefix = format!("SDKWORK_{}", service_code.to_uppercase());
-    let database_url_key = format!("{prefix}_DATABASE_URL");
-    if std::env::var(&database_url_key)
+fn materialize_federated_commerce_lifecycle_env() {
+    // Claw Router composes legacy appbase commerce tables with T1 route handlers. Account L3
+    // migrations must not run against that schema until the unified cutover is complete.
+    materialize_capability_auto_migrate_env("ACCOUNT", false);
+    materialize_capability_auto_migrate_env("MEMBERSHIP", false);
+}
+
+fn materialize_capability_auto_migrate_env(service_code: &str, auto_migrate: bool) {
+    let key = format!("SDKWORK_{service_code}_AUTO_MIGRATE");
+    if std::env::var(&key)
         .ok()
         .filter(|value| !value.trim().is_empty())
         .is_some()
     {
         return;
     }
+
+    // SAFETY: router bootstrap runs sequentially on the main thread before async handlers start.
+    unsafe {
+        std::env::set_var(&key, if auto_migrate { "true" } else { "false" });
+    }
+}
+
+fn materialize_federated_capability_app_roots() {
+    let claw_root = resolve_clawrouter_app_root();
+    for (service_code, repo_dir) in FEDERATED_CAPABILITY_REPO_DIRS {
+        materialize_capability_app_root_env(service_code, sibling_capability_app_root(&claw_root, repo_dir));
+    }
+}
+
+fn sibling_capability_app_root(claw_root: &Path, repo_dir: &str) -> PathBuf {
+    claw_root
+        .join("..")
+        .join(repo_dir)
+        .canonicalize()
+        .unwrap_or_else(|_| claw_root.join("..").join(repo_dir))
+}
+
+fn materialize_capability_app_root_env(service_code: &str, app_root: PathBuf) {
+    let key = format!("SDKWORK_{service_code}_APP_ROOT");
+    if std::env::var(&key)
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .is_some()
+    {
+        return;
+    }
+
+    // SAFETY: router bootstrap runs sequentially on the main thread before async handlers start.
+    unsafe {
+        std::env::set_var(&key, app_root.as_os_str());
+    }
+}
+
+fn materialize_capability_database_env(service_code: &str, database_config: &DatabaseConfig) {
+    let prefix = format!("SDKWORK_{}", service_code.to_uppercase());
+    let database_url_key = format!("{prefix}_DATABASE_URL");
 
     // SAFETY: router bootstrap runs sequentially on the main thread before async handlers start.
     unsafe {
@@ -78,15 +144,23 @@ pub async fn iam_web_resolver_for_claw_database(
 }
 
 fn resolve_clawrouter_app_root() -> PathBuf {
-    std::env::var("SDKWORK_CLAW_APP_ROOT")
-        .ok()
-        .map(PathBuf::from)
-        .or_else(|| {
-            std::env::current_dir()
-                .ok()
-                .and_then(|cwd| cwd.canonicalize().ok())
-        })
-        .unwrap_or_else(|| PathBuf::from("."))
+    for key in [
+        "SDKWORK_CLAW_APP_ROOT",
+        "SDKWORK_APP_ROOT",
+        "SDKWORK_CLAW_ROUTER_APP_ROOT",
+    ] {
+        if let Ok(value) = std::env::var(key) {
+            let trimmed = value.trim();
+            if !trimmed.is_empty() {
+                return PathBuf::from(trimmed);
+            }
+        }
+    }
+
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .canonicalize()
+        .unwrap_or_else(|_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."))
 }
 
 #[cfg(test)]

@@ -110,7 +110,6 @@
     "@sdkwork/models-app-sdk": "workspace:*",
     "@sdkwork/clawrouter-open-sdk": "workspace:*",
     "@sdkwork/drive-app-sdk": "workspace:*",
-    "@sdkwork/commerce-service": "workspace:*",
     "@sdkwork/account-service": "workspace:*",
     "@sdkwork/membership-service": "workspace:*",
     "@sdkwork/order-service": "workspace:*",

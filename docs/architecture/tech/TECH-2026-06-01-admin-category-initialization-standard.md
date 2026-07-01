@@ -1,7 +1,8 @@
 > Migrated from `docs/superpowers/plans/2026-06-01-admin-category-initialization-standard.md` on 2026-06-24.
 > Owner: SDKWork maintainers
+> Status: **retired** — portal category admin UI removed (2026-06-30); backend seed APIs may remain for domain apps
 
-# Admin Category Initialization Standard Implementation Plan
+# Admin Category Initialization Standard Implementation Plan (Archive)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -62,7 +63,7 @@
 
 - [ ] Add `catalog.categorySeeds.initialize` to `backend-commerce-catalog.yaml`.
 - [ ] Regenerate manifest/OpenAPI/backend TypeScript SDK with the repository SDK generation commands.
-- [ ] Verify the portal service uses only `getClawRouterBackendSdkClient().commerce.catalog.categorySeeds.initialize`.
+- [ ] Verify the portal service uses only `getClawRouterBackendSdkClient().catalog.categorySeeds.initialize`.
 
 ### Task 5: Admin UI
 

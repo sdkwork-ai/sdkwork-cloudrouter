@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::ports::{
@@ -214,7 +214,7 @@ async fn fetch_sites(
         })
         .await
     {
-        Ok(items) => Json(PlusApiResult::success(SiteListResponse {
+        Ok(items) => Json(success_envelope(SiteListResponse {
             items: items.into_iter().map(to_site_response).collect(),
         }))
         .into_response(),
@@ -238,7 +238,7 @@ async fn create_site(
         Err(error) => return command_build_error_response(error),
     };
     match state.store.create_site(command).await {
-        Ok(item) => Json(PlusApiResult::success(SiteEnvelope {
+        Ok(item) => Json(success_envelope(SiteEnvelope {
             item: to_site_response(item),
         }))
         .into_response(),
@@ -268,7 +268,7 @@ async fn update_site(
         Err(error) => return command_build_error_response(error),
     };
     match state.store.update_site(command).await {
-        Ok(Some(item)) => Json(PlusApiResult::success(SiteEnvelope {
+        Ok(Some(item)) => Json(success_envelope(SiteEnvelope {
             item: to_site_response(item),
         }))
         .into_response(),
@@ -294,7 +294,7 @@ async fn delete_site(
         Err(error) => return command_build_error_response(error),
     };
     match state.store.delete_site(command).await {
-        Ok(deleted) => Json(PlusApiResult::success(SiteDeleteResponse { deleted })).into_response(),
+        Ok(deleted) => Json(success_envelope(SiteDeleteResponse { deleted })).into_response(),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => system_response("Site command store is unavailable", error),
     }
@@ -316,7 +316,7 @@ async fn fetch_site_channels(
         .list_site_channels(ListAdminSiteChannelsQuery { subject, site_id })
         .await
     {
-        Ok(items) => Json(PlusApiResult::success(SiteChannelsResponse {
+        Ok(items) => Json(success_envelope(SiteChannelsResponse {
             items: items.into_iter().map(to_site_channel_response).collect(),
         }))
         .into_response(),
@@ -360,7 +360,7 @@ async fn site_connection_action(
             Err(error) => return command_build_error_response(error),
         };
     match state.store.test_site_connection(command).await {
-        Ok(item) => Json(PlusApiResult::success(to_connection_response(item))).into_response(),
+        Ok(item) => Json(success_envelope(to_connection_response(item))).into_response(),
         Err(error) if error.is_not_found() => not_found_response(error.to_string()),
         Err(error) => system_response("Site connection check is unavailable", error),
     }
@@ -823,17 +823,17 @@ fn command_build_error_response(error: SiteCommandBuildError) -> Response {
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4000", message.into())).into_response()
+    problem_from_wire_code("4000", message.into()).into_response()
 }
 
 fn not_found_response(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4040", message.into())).into_response()
+    problem_from_wire_code("4040", message.into()).into_response()
 }
 
 fn conflict_response(error: DomainError) -> Response {
-    PlusApiResult::error("4090", error.to_string())).into_response()
+    problem_from_wire_code("4090", error.to_string()).into_response()
 }
 
 fn system_response(message: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{message}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{message}: {error}")).into_response()
 }

@@ -1,1 +1,1 @@
-export * from './admin-category-options';
+export * from './composition/index.js';

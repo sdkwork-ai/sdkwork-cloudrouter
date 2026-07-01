@@ -30,7 +30,7 @@ async fn admin_dashboard_route_serializes_active_users_as_int64_string() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("2", payload["data"]["activeUsers"]);
 }
 

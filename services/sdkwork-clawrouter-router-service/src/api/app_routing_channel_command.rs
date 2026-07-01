@@ -12,7 +12,7 @@ use serde::Deserialize;
 use serde_json::{Map, Value};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::EntityUuidGenerator;
 use crate::domain::{DomainError, ProviderCircuitBreakerPolicy, ProviderRetryPolicy};
 use crate::infrastructure::OsApiKeySecretGenerator;
@@ -204,7 +204,7 @@ async fn create_routing_channel(
     };
 
     match state.store.create_channel(command).await {
-        Ok(outcome) => Json(PlusApiResult::success(outcome)).into_response(),
+        Ok(outcome) => Json(success_envelope(outcome)).into_response(),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
             routing_channel_system_response("routing channel command store is unavailable", error)
@@ -238,7 +238,7 @@ async fn update_routing_channel(
     };
 
     match state.store.update_channel(command).await {
-        Ok(Some(outcome)) => Json(PlusApiResult::success(outcome)).into_response(),
+        Ok(Some(outcome)) => Json(success_envelope(outcome)).into_response(),
         Ok(None) => not_found_response("routing channel was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
@@ -269,7 +269,7 @@ async fn set_routing_channel_status(
     };
 
     match state.store.set_channel_status(command).await {
-        Ok(Some(outcome)) => Json(PlusApiResult::success(outcome)).into_response(),
+        Ok(Some(outcome)) => Json(success_envelope(outcome)).into_response(),
         Ok(None) => not_found_response("routing channel was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
@@ -295,7 +295,7 @@ async fn delete_routing_channel(
     };
 
     match state.store.delete_channel(command).await {
-        Ok(outcome) if outcome.deleted => Json(PlusApiResult::success(outcome)).into_response(),
+        Ok(outcome) if outcome.deleted => Json(success_envelope(outcome)).into_response(),
         Ok(_) => not_found_response("routing channel was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
@@ -321,7 +321,7 @@ async fn test_routing_channel(
     };
 
     match state.store.test_channel(command).await {
-        Ok(Some(outcome)) => Json(PlusApiResult::success(outcome)).into_response(),
+        Ok(Some(outcome)) => Json(success_envelope(outcome)).into_response(),
         Ok(None) => not_found_response("routing channel was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
@@ -1159,15 +1159,15 @@ fn request_id_error(error: RequestIdError) -> RoutingChannelCommandBuildError {
 }
 
 fn bad_request(message: String) -> Response {
-    PlusApiResult::error("4001", message)).into_response()
+    problem_from_wire_code("4001", message).into_response()
 }
 
 fn not_found_response(message: &'static str) -> Response {
-    PlusApiResult::error("4040", message)).into_response()
+    problem_from_wire_code("4040", message).into_response()
 }
 
 fn conflict_response(error: DomainError) -> Response {
-    PlusApiResult::error("4090", error.to_string())).into_response()
+    problem_from_wire_code("4090", error.to_string()).into_response()
 }
 
 fn command_build_error_response(error: RoutingChannelCommandBuildError) -> Response {
@@ -1181,7 +1181,7 @@ fn command_build_error_response(error: RoutingChannelCommandBuildError) -> Respo
 
 fn routing_channel_system_response(context: &str, error: DomainError) -> Response {
     tracing::error!(error = %error, context, "routing channel command API failed");
-    PlusApiResult::error("5000", context.to_owned())).into_response()
+    problem_from_wire_code("5000", context.to_owned()).into_response()
 }
 
 fn current_timestamp_string() -> String {

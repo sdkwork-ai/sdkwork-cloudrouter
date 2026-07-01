@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::{validate_payment_secret_ref, PaymentProviderRegistryError};
 use crate::domain::DomainError;
 use crate::ports::{
@@ -339,7 +339,7 @@ async fn create_payment_provider_account(
         Err(response) => return response,
     };
     match state.store.create_payment_provider_account(command).await {
-        Ok(item) => Json(PlusApiResult::success(TransactionCenterResourceResponse {
+        Ok(item) => Json(success_envelope(TransactionCenterResourceResponse {
             item,
         }))
         .into_response(),
@@ -375,7 +375,7 @@ async fn update_payment_provider_account(
         Err(response) => return response,
     };
     match state.store.update_payment_provider_account(command).await {
-        Ok(item) => Json(PlusApiResult::success(TransactionCenterResourceResponse {
+        Ok(item) => Json(success_envelope(TransactionCenterResourceResponse {
             item,
         }))
         .into_response(),
@@ -416,7 +416,7 @@ async fn update_payment_provider_account_status(
         .update_payment_provider_account_status(command)
         .await
     {
-        Ok(item) => Json(PlusApiResult::success(TransactionCenterResourceResponse {
+        Ok(item) => Json(success_envelope(TransactionCenterResourceResponse {
             item,
         }))
         .into_response(),
@@ -442,7 +442,7 @@ async fn delete_payment_provider_account(
             Err(response) => return response,
         };
     match state.store.delete_payment_provider_account(command).await {
-        Ok(deleted) => Json(PlusApiResult::success(TransactionCenterDeleteResponse {
+        Ok(deleted) => Json(success_envelope(TransactionCenterDeleteResponse {
             deleted,
         }))
         .into_response(),
@@ -629,7 +629,7 @@ where
         Err(response) => return response,
     };
     match load(LoadAdminTransactionRecordQuery { subject, record_id }).await {
-        Ok(Some(item)) => Json(PlusApiResult::success(TransactionCenterResourceResponse {
+        Ok(Some(item)) => Json(success_envelope(TransactionCenterResourceResponse {
             item,
         }))
         .into_response(),
@@ -641,7 +641,7 @@ where
 }
 
 fn collection_response(collection: AdminTransactionCollection) -> Response {
-    Json(PlusApiResult::success(
+    Json(success_envelope(
         TransactionCenterCollectionResponse {
             items: collection.items,
             total: collection.total,
@@ -1088,19 +1088,19 @@ fn normalize_optional_ascii_code(
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4001", message.into())).into_response()
+    problem_from_wire_code("4001", message.into()).into_response()
 }
 
 fn not_found_response(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4040", message.into())).into_response()
+    problem_from_wire_code("4040", message.into()).into_response()
 }
 
 fn conflict_response(error: DomainError) -> Response {
-    PlusApiResult::error("4090", error.to_string())).into_response()
+    problem_from_wire_code("4090", error.to_string()).into_response()
 }
 
 fn transaction_center_system_response(context: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }
 
 fn current_timestamp_string() -> String {

@@ -14,6 +14,8 @@ except ImportError as exc:  # pragma: no cover
 else:
     _YAML_IMPORT_ERROR = None
 
+from tools.relay_retired_admin_surfaces import is_relay_retired_admin_operation_route
+
 TARGETS = (
     {
         "surface": "app",
@@ -99,7 +101,10 @@ def bootstrap_contract(root: Path) -> dict[str, Any]:
                 continue
             if not route.get("path") or not route.get("method"):
                 continue
-            operations.append(_build_operation(route, target))
+            entry = _build_operation(route, target)
+            if target["route_scope"] == "admin" and is_relay_retired_admin_operation_route(entry["route"]):
+                continue
+            operations.append(entry)
     operations.sort(key=lambda item: (item["api_surface"], item["api_path"], item["api_method"], item["operation_id"]))
     return {
         "schema": {
@@ -109,6 +114,12 @@ def bootstrap_contract(root: Path) -> dict[str, Any]:
         },
         "frontend_operations": operations,
     }
+
+
+def _bootstrap_compare_entry(entry: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(entry)
+    normalized.pop("openapi_exposed", None)
+    return normalized
 
 
 def main() -> int:
@@ -126,6 +137,11 @@ def main() -> int:
         help="Output snapshot path (default: docs/schema-registry/frontend-field-contracts.yaml)",
     )
     parser.add_argument("--check", action="store_true")
+    parser.add_argument(
+        "--merge-portal-routes",
+        action="store_true",
+        help="Preserve or refresh docs/schema-registry frontend route entries from portal App.tsx",
+    )
     args = parser.parse_args()
 
     root = args.root.resolve()
@@ -135,18 +151,50 @@ def main() -> int:
         else root / "docs" / "schema-registry" / "frontend-field-contracts.yaml"
     )
     payload = bootstrap_contract(root)
-    rendered = yaml.safe_dump(payload, sort_keys=False, allow_unicode=True)
+    if output.is_file():
+        existing = yaml.safe_load(output.read_text(encoding="utf-8"))
+        if isinstance(existing, dict):
+            if isinstance(existing.get("routes"), list) and not args.merge_portal_routes:
+                payload["routes"] = existing["routes"]
+            if isinstance(existing.get("frontend_models"), list):
+                payload["frontend_models"] = existing["frontend_models"]
+            if isinstance(existing.get("x_response_entities"), dict):
+                payload["x_response_entities"] = existing["x_response_entities"]
+    if args.merge_portal_routes:
+        from tools.bootstrap_frontend_route_classification import bootstrap_contract_routes
+
+        payload["routes"] = bootstrap_contract_routes(root)
 
     if args.check:
         if not output.is_file():
             print(f"missing frontend field contract snapshot: {output}")
             return 1
         current = yaml.safe_load(output.read_text(encoding="utf-8"))
-        if current != payload:
-            print(f"frontend field contract snapshot is stale: {output}")
+        if not isinstance(current, dict):
+            print(f"frontend field contract snapshot must be a mapping: {output}")
+            return 1
+        if current.get("schema") != payload["schema"]:
+            print(f"frontend field contract schema is stale: {output}")
+            return 1
+        current_bootstrap_ops = [
+            _bootstrap_compare_entry(entry)
+            for entry in current.get("frontend_operations", [])
+            if isinstance(entry, dict)
+            and entry.get("source") == "tools/bootstrap_frontend_contract_from_route_manifest.py"
+        ]
+        expected_bootstrap_ops = [
+            _bootstrap_compare_entry(entry)
+            for entry in payload["frontend_operations"]
+            if isinstance(entry, dict)
+            and entry.get("source") == "tools/bootstrap_frontend_contract_from_route_manifest.py"
+        ]
+        if current_bootstrap_ops != expected_bootstrap_ops:
+            print(f"frontend field contract bootstrap frontend_operations are stale: {output}")
             return 1
         print(f"frontend field contract snapshot is current: {output}")
         return 0
+
+    rendered = yaml.safe_dump(payload, sort_keys=False, allow_unicode=True)
 
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(rendered, encoding="utf-8", newline="\n")

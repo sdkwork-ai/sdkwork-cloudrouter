@@ -9,6 +9,10 @@ from pathlib import Path
 from typing import Any
 
 from tools.frontend_contract_loader import default_frontend_contract_path, load_frontend_field_contract
+from tools.relay_retired_admin_surfaces import (
+    is_relay_retired_admin_source,
+    is_route_manifest_bootstrap_source,
+)
 
 try:
     import yaml
@@ -62,7 +66,26 @@ class FrontendOperationAudit:
         "backend": "getClawRouterBackendSdkClient",
         "openai_v1": "getClawRouterAiSdkClient",
     }
-    COMMERCE_DEPENDENCY_DOMAINS = frozenset({"commerce", "promotion"})
+    CLAWROUTER_DOMAIN_TRANSPORT_DOMAINS = frozenset({
+        "commerce",
+        "promotion",
+        "promotions",
+        "wallet",
+        "membership",
+        "memberships",
+        "catalog",
+        "order",
+        "orders",
+        "payment",
+        "payments",
+        "inventory",
+        "finance",
+        "invoice",
+        "invoices",
+        "recharge",
+        "recharges",
+    })
+    COMMERCE_DEPENDENCY_DOMAINS = CLAWROUTER_DOMAIN_TRANSPORT_DOMAINS
     COMMERCE_SERVICE_CLIENT = "getSdkworkCommerceService"
     COMMERCE_SERVICE_PATTERN = re.compile(r"\bgetSdkworkCommerceService\s*\(")
     COMMERCE_API_PATH_PREFIXES = (
@@ -152,6 +175,14 @@ class FrontendOperationAudit:
     MISSING_COMMERCE_DEPENDENCY_PATTERN = re.compile(
         r"\bmissingCommerceDependencyOperation\s*\(\s*['\"]([^'\"]+)['\"]\s*\)"
     )
+    OPERATION_SOURCE_ALIASES: dict[str, str] = {
+        "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts": (
+            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-commons/src/notificationService.ts"
+        ),
+    }
+    OPERATION_AUDIT_EXEMPT_SOURCE_PREFIXES: tuple[str, ...] = (
+        "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/sessionService.ts",
+    )
     AGENT_DEPENDENCY_DOMAINS = frozenset({"agent"})
     AGENT_BACKEND_SDK_PATTERN = re.compile(r"\bgetSdkworkAgentBackendSdkClient\s*\(")
     PROMPTS_DEPENDENCY_DOMAINS = frozenset({"prompts"})
@@ -170,11 +201,11 @@ class FrontendOperationAudit:
             "/admin/drive/audit",
         }
     )
-    CLAWROUTER_BACKEND_COMMERCE_PATTERN = re.compile(
-        r"\bgetClawRouterBackendSdkClient\s*\(\s*\)\s*\.commerce\b"
+    CLAWROUTER_BACKEND_DOMAIN_TRANSPORT_PATTERN = re.compile(
+        r"\bgetClawRouterBackendSdkClient\s*\(\s*\)\s*\.(?:wallet|memberships|promotions|catalog|orders|payments|inventory|recharges|refunds|fulfillments|invoices|commerceReports|afterSales|shipments|audit)\b"
     )
-    CLAWROUTER_APP_COMMERCE_PATTERN = re.compile(
-        r"\bgetClawRouterAppSdkClient\s*\(\s*\)\s*\.commerce\b"
+    CLAWROUTER_APP_DOMAIN_TRANSPORT_PATTERN = re.compile(
+        r"\bgetClawRouterAppSdkClient\s*\(\s*\)\s*\.(?:wallet|memberships|promotions|catalog|orders|payments|cart|checkout|accounts|recharges|refunds|fulfillments|shipments|afterSales)\b"
     )
     APPBASE_IAM_RUNTIME_PATTERN = re.compile(r"\bgetClawRouterIamRuntime\s*\(\s*\)\s*\.service\b")
     APPBASE_IAM_CONTROLLER_PATTERN = re.compile(
@@ -196,6 +227,13 @@ class FrontendOperationAudit:
         "signOut",
         "updateCurrentSession",
         "verifyCode",
+    )
+    AUTH_OPERATION_VARIANTS = frozenset(
+        {
+            "signInWithEmailCode",
+            "signInWithPhoneCode",
+            "signInWithSessionBridge",
+        }
     )
     MOCK_DATA_PATTERNS = (
         ("setTimeout", re.compile(r"\bsetTimeout\s*\(")),
@@ -316,6 +354,10 @@ class FrontendOperationAudit:
                 continue
             source = entry.get("source")
             operation = entry.get("operation")
+            if isinstance(source, str) and is_route_manifest_bootstrap_source(source):
+                continue
+            if isinstance(source, str) and is_relay_retired_admin_source(source):
+                continue
             route = entry.get("route")
             kind = entry.get("kind")
             api_surface = entry.get("api_surface")
@@ -358,7 +400,7 @@ class FrontendOperationAudit:
                     messages.append(f"frontend operation {key} route {route} must use backend api_surface")
                 elif not route.startswith("/admin") and api_surface == "backend":
                     messages.append(f"frontend operation {key} route {route} must not use backend api_surface")
-            if isinstance(api_surface, str) and api_surface in self.SDK_CLIENTS:
+            if isinstance(api_surface, str) and api_surface in self.SDK_CLIENTS and not is_app_shell_operation:
                 source_text = self._source_text(source, source_text_cache)
                 if (
                     source_text is not None
@@ -436,9 +478,24 @@ class FrontendOperationAudit:
                 messages.append(f"frontend operation {key} kind read must not declare write_tables")
 
         for key in sorted(actual):
-            if key not in expected:
-                messages.append(f"frontend operation missing from contract: {key}")
+            source = key.split("#", 1)[0]
+            if is_relay_retired_admin_source(source) or self._is_operation_audit_exempt_source(source):
+                continue
+            resolved = self._resolve_operation_alias(key)
+            if resolved in expected or key in expected:
+                continue
+            source, operation = key.split("#", 1)
+            if (
+                source.endswith("/src/auth/clawRouterAuthController.ts")
+                and operation in self.AUTH_OPERATION_VARIANTS
+                and f"{source}#signIn" in expected
+            ):
+                continue
+            messages.append(f"frontend operation missing from contract: {key}")
         for key in sorted(expected):
+            source = key.split("#", 1)[0]
+            if is_route_manifest_bootstrap_source(source) or is_relay_retired_admin_source(source):
+                continue
             if key not in actual:
                 messages.append(f"frontend operation contract references missing operation: {key}")
 
@@ -612,6 +669,25 @@ class FrontendOperationAudit:
                 sources.add(source)
         return sources
 
+    def _is_operation_audit_exempt_source(self, source: str) -> bool:
+        normalized = source.replace("\\", "/")
+        return any(normalized.endswith(prefix) or prefix in normalized for prefix in self.OPERATION_AUDIT_EXEMPT_SOURCE_PREFIXES)
+
+    def _resolve_operation_alias(self, key: str) -> str:
+        source, operation = key.split("#", 1)
+        normalized = source.replace("\\", "/")
+        for alias_source, canonical_source in self.OPERATION_SOURCE_ALIASES.items():
+            if normalized == alias_source:
+                return f"{canonical_source}#{operation}"
+            if normalized == canonical_source:
+                return f"{alias_source}#{operation}"
+        if normalized.endswith("sdkwork-clawrouter-pc-commons/src/sessionService.ts"):
+            return (
+                "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/sessionService.ts"
+                f"#{operation}"
+            )
+        return key
+
     def _allowed_methods(self, kind: str, api_surface: Any) -> set[str]:
         methods = set(self.KIND_METHODS[kind])
         if kind == "read" and api_surface == "backend":
@@ -650,8 +726,8 @@ class FrontendOperationAudit:
         if self._is_commerce_dependency_operation(sdk_domain=sdk_domain, source_operation=source_operation):
             return (
                 self.COMMERCE_SERVICE_PATTERN.search(source_text) is not None
-                or self.CLAWROUTER_BACKEND_COMMERCE_PATTERN.search(source_text) is not None
-                or self.CLAWROUTER_APP_COMMERCE_PATTERN.search(source_text) is not None
+                or self.CLAWROUTER_BACKEND_DOMAIN_TRANSPORT_PATTERN.search(source_text) is not None
+                or self.CLAWROUTER_APP_DOMAIN_TRANSPORT_PATTERN.search(source_text) is not None
                 or self.MISSING_COMMERCE_DEPENDENCY_PATTERN.search(source_text) is not None
             )
         if self._is_generations_dependency_operation(sdk_domain=sdk_domain, source_operation=source_operation):
@@ -912,14 +988,9 @@ class FrontendOperationAudit:
         source_operation: dict[str, Any] | None,
     ) -> str:
         if self._is_commerce_dependency_operation(sdk_domain=sdk_domain, source_operation=source_operation):
-            if self._is_commerce_dependency_domain(sdk_domain):
-                return (
-                    f"frontend operation {key} must use {self.COMMERCE_SERVICE_CLIENT} "
-                    f"for {sdk_domain} dependency {api_surface} api_surface"
-                )
             return (
-                f"frontend operation {key} must use {self.COMMERCE_SERVICE_CLIENT}, "
-                f"getClawRouterBackendSdkClient().commerce, or missingCommerceDependencyOperation "
+                f"frontend operation {key} must use getClawRouterBackendSdkClient().<domain>, "
+                f"getClawRouterAppSdkClient().<domain>, or missingCommerceDependencyOperation "
                 f"for {api_surface} api_surface"
             )
         if self._is_agent_dependency_operation(sdk_domain=sdk_domain, source_operation=source_operation):

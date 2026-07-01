@@ -12,7 +12,7 @@ use crate::api::app_sql_subject::{
     map_optional_app_sql_subject, map_required_app_sql_subject, RequiredAppSqlScopedSubject,
     ResolvedAppSqlScopedSubject,
 };
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::infrastructure::OsApiKeySecretGenerator;
@@ -122,7 +122,7 @@ async fn fetch_routing_strategy(
     };
 
     match state.store.load_routing_strategy(subject).await {
-        Ok(snapshot) => Json(PlusApiResult::success(snapshot)).into_response(),
+        Ok(snapshot) => Json(success_envelope(snapshot)).into_response(),
         Err(error) => {
             routing_strategy_system_response("routing strategy read model is unavailable", error)
         }
@@ -148,7 +148,7 @@ async fn update_routing_strategy(
     };
 
     match state.store.update_routing_strategy(command).await {
-        Ok(outcome) => Json(PlusApiResult::success(outcome)).into_response(),
+        Ok(outcome) => Json(success_envelope(outcome)).into_response(),
         Err(error) => {
             routing_strategy_system_response("routing strategy command store is unavailable", error)
         }
@@ -247,12 +247,12 @@ fn build_update_routing_strategy_command(
 }
 
 fn bad_request(message: String) -> Response {
-    PlusApiResult::error("4001", message)).into_response()
+    problem_from_wire_code("4001", message).into_response()
 }
 
 fn routing_strategy_system_response(context: &str, error: DomainError) -> Response {
     tracing::error!(error = %error, context, "routing strategy API failed");
-    PlusApiResult::error("5000", context.to_owned())).into_response()
+    problem_from_wire_code("5000", context.to_owned()).into_response()
 }
 
 fn current_timestamp_string() -> String {

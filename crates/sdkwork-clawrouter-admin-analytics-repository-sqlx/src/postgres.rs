@@ -30,8 +30,8 @@ LEFT JOIN (
       AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
       AND NULLIF(request_id, '') IS NOT NULL
       AND started_at IS NOT NULL
-      AND ($3::text IS NULL OR started_at >= ($3::timestamp AT TIME ZONE 'UTC'))
-      AND ($4::text IS NULL OR started_at <= ($4::timestamp AT TIME ZONE 'UTC'))
+      AND ($3::text IS NULL OR started_at >= $3::timestamptz)
+      AND ($4::text IS NULL OR started_at <= $4::timestamptz)
       AND ((http_status IS NOT NULL AND http_status >= 400)
         OR error_type IS NOT NULL
         OR NULLIF(provider_error_code, '') IS NOT NULL)
@@ -42,8 +42,8 @@ LEFT JOIN (
 WHERE usage.status = 1
   AND usage.tenant_id = $1
   AND (usage.organization_id = $2 OR usage.organization_id = 0 OR usage.organization_id IS NULL)
-  AND ($3::text IS NULL OR usage.occurred_at >= ($3::timestamp AT TIME ZONE 'UTC'))
-  AND ($4::text IS NULL OR usage.occurred_at <= ($4::timestamp AT TIME ZONE 'UTC'))
+  AND ($3::text IS NULL OR usage.occurred_at >= $3::timestamptz)
+  AND ($4::text IS NULL OR usage.occurred_at <= $4::timestamptz)
 "#;
 
 const USER_POINTS_ORDER: &str = "points_sort DESC, request_count DESC, user_name ASC";
@@ -65,8 +65,8 @@ FROM ai_usage_fact
 WHERE status = 1
   AND tenant_id = $1
   AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
-  AND ($3::text IS NULL OR occurred_at >= ($3::timestamp AT TIME ZONE 'UTC'))
-  AND ($4::text IS NULL OR occurred_at <= ($4::timestamp AT TIME ZONE 'UTC'))
+  AND ($3::text IS NULL OR occurred_at >= $3::timestamptz)
+  AND ($4::text IS NULL OR occurred_at <= $4::timestamptz)
 GROUP BY COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown'), COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), 'unknown')
 HAVING COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) > 0
 ORDER BY user_id ASC, COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) DESC, name ASC
@@ -80,8 +80,8 @@ FROM ai_usage_fact
 WHERE status = 1
   AND tenant_id = $1
   AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
-  AND ($3::text IS NULL OR occurred_at >= ($3::timestamp AT TIME ZONE 'UTC'))
-  AND ($4::text IS NULL OR occurred_at <= ($4::timestamp AT TIME ZONE 'UTC'))
+  AND ($3::text IS NULL OR occurred_at >= $3::timestamptz)
+  AND ($4::text IS NULL OR occurred_at <= $4::timestamptz)
 GROUP BY COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), 'unknown')
 HAVING COALESCE(SUM(COALESCE(request_count, 1)), 0) > 0
 ORDER BY COALESCE(SUM(COALESCE(request_count, 1)), 0) DESC, name ASC
@@ -95,8 +95,8 @@ FROM ai_usage_fact
 WHERE status = 1
   AND tenant_id = $1
   AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
-  AND ($3::text IS NULL OR occurred_at >= ($3::timestamp AT TIME ZONE 'UTC'))
-  AND ($4::text IS NULL OR occurred_at <= ($4::timestamp AT TIME ZONE 'UTC'))
+  AND ($3::text IS NULL OR occurred_at >= $3::timestamptz)
+  AND ($4::text IS NULL OR occurred_at <= $4::timestamptz)
 GROUP BY COALESCE(modality, 0)
 HAVING COALESCE(SUM(COALESCE(request_count, 1)), 0) > 0
 ORDER BY COALESCE(SUM(COALESCE(request_count, 1)), 0) DESC, modality ASC
@@ -286,8 +286,8 @@ async fn load_trend(
           AND tenant_id = $1
           AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
           AND occurred_at IS NOT NULL
-          AND ($3::text IS NULL OR occurred_at >= ($3::timestamp AT TIME ZONE 'UTC'))
-          AND ($4::text IS NULL OR occurred_at <= ($4::timestamp AT TIME ZONE 'UTC'))
+          AND ($3::text IS NULL OR occurred_at >= $3::timestamptz)
+          AND ($4::text IS NULL OR occurred_at <= $4::timestamptz)
         GROUP BY time_bucket
         ORDER BY time_bucket ASC
         LIMIT 30
@@ -349,8 +349,8 @@ async fn load_user_rankings(
         WHERE status = 1
           AND tenant_id = $1
           AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
-          AND ($3::text IS NULL OR occurred_at >= ($3::timestamp AT TIME ZONE 'UTC'))
-          AND ($4::text IS NULL OR occurred_at <= ($4::timestamp AT TIME ZONE 'UTC'))
+          AND ($3::text IS NULL OR occurred_at >= $3::timestamptz)
+          AND ($4::text IS NULL OR occurred_at <= $4::timestamptz)
         GROUP BY COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown'), COALESCE(NULLIF(owner_name_snapshot, ''), CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), 'unknown')
         ORDER BY {order_by}
         LIMIT $5
@@ -411,8 +411,8 @@ async fn load_model_rankings(
               AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
               AND NULLIF(request_id, '') IS NOT NULL
               AND started_at IS NOT NULL
-              AND ($3::text IS NULL OR started_at >= ($3::timestamp AT TIME ZONE 'UTC'))
-              AND ($4::text IS NULL OR started_at <= ($4::timestamp AT TIME ZONE 'UTC'))
+              AND ($3::text IS NULL OR started_at >= $3::timestamptz)
+              AND ($4::text IS NULL OR started_at <= $4::timestamptz)
               AND ((http_status IS NOT NULL AND http_status >= 400)
                 OR error_type IS NOT NULL
                 OR NULLIF(provider_error_code, '') IS NOT NULL)
@@ -423,8 +423,8 @@ async fn load_model_rankings(
         WHERE usage.status = 1
           AND usage.tenant_id = $1
           AND (usage.organization_id = $2 OR usage.organization_id = 0 OR usage.organization_id IS NULL)
-          AND ($3::text IS NULL OR usage.occurred_at >= ($3::timestamp AT TIME ZONE 'UTC'))
-          AND ($4::text IS NULL OR usage.occurred_at <= ($4::timestamp AT TIME ZONE 'UTC'))
+          AND ($3::text IS NULL OR usage.occurred_at >= $3::timestamptz)
+          AND ($4::text IS NULL OR usage.occurred_at <= $4::timestamptz)
         GROUP BY
             COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), 'unknown'),
             COALESCE(NULLIF(catalog_key, ''), NULLIF(model, ''), 'unknown'),

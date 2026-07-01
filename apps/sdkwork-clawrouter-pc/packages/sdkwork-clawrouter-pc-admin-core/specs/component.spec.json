@@ -73,16 +73,45 @@
     "sdkClients": [],
     "sdkDependencies": [
       {
-        "workspace": "clawrouter-backend-sdk",
-        "packageName": "@sdkwork/clawrouter-backend-sdk",
-        "surface": "backend-admin",
-        "providedBy": "@sdkwork/clawroutes-pc-commons/runtime"
+        "workspace": "clawrouter-backend-domain-transport-generated-typescript",
+        "surface": "backend-api",
+        "credentialMode": "authenticated-backend-admin"
       },
-      "sdkwork-iam-backend-sdk",
-      "sdkwork-commerce-backend-sdk",
-      "sdkwork-models-backend-sdk",
-      "sdkwork-agent-backend-sdk",
-      "sdkwork-prompts-backend-sdk"
+      {
+        "workspace": "clawrouter-backend-sdk",
+        "surface": "backend-api",
+        "credentialMode": "authenticated-backend-admin"
+      },
+      {
+        "workspace": "sdkwork-agents-backend-sdk",
+        "surface": "backend-api",
+        "credentialMode": "authenticated-backend-admin"
+      },
+      {
+        "workspace": "sdkwork-clawrouter-backend-sdk",
+        "surface": "backend-api",
+        "credentialMode": "authenticated-backend-admin"
+      },
+      {
+        "workspace": "sdkwork-drive-backend-sdk",
+        "surface": "backend-api",
+        "credentialMode": "authenticated-backend-admin"
+      },
+      {
+        "workspace": "sdkwork-iam-backend-sdk",
+        "surface": "backend-api",
+        "credentialMode": "authenticated-backend-admin"
+      },
+      {
+        "workspace": "sdkwork-models-backend-sdk",
+        "surface": "backend-api",
+        "credentialMode": "authenticated-backend-admin"
+      },
+      {
+        "workspace": "sdkwork-prompts-backend-sdk",
+        "surface": "backend-api",
+        "credentialMode": "authenticated-backend-admin"
+      }
     ],
     "dependencyApiExports": [],
     "dependencyApiSurfaces": [],

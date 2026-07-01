@@ -69,14 +69,37 @@ export class UsageService {
     ensureSdkworkApiSuccess(result, 'console.usage.errors.fetchFallback');
 
     const data = readApiRecord(result);
-    const logs = readRequiredApiItems(result, 'console.usage.errors.fetchFallback', ['logs', 'items', 'records', 'list'])
+    const logs = readRequiredApiItems(data, 'console.usage.errors.fetchFallback', ['logs', 'items', 'records', 'list'])
       .map(normalizeUsageLog);
 
     return {
       logs,
-      total: readRequiredNonNegativeNumber(data, 'total', 'Usage log total is required'),
+      total: readUsageLogPageTotal(data),
     };
   }
+}
+
+function readUsageLogPageTotal(data: ApiRecord): number {
+  if (data.total !== undefined && data.total !== null && data.total !== '') {
+    return readRequiredNonNegativeNumber(data, 'total', 'Usage log total is required');
+  }
+
+  const pageInfo = data.pageInfo;
+  if (isRecord(pageInfo)) {
+    for (const key of ['totalItems', 'total_items'] as const) {
+      const value = pageInfo[key];
+      if (value === undefined || value === null || value === '') {
+        continue;
+      }
+      const parsed = typeof value === 'number' ? value : Number(String(value).trim());
+      if (Number.isFinite(parsed) && parsed >= 0) {
+        return parsed;
+      }
+      throw new Error('Usage log total must be a non-negative number');
+    }
+  }
+
+  throw new Error('Usage log total is required');
 }
 
 function toUsageLogQueryParams(params: Record<string, unknown> = {}): {

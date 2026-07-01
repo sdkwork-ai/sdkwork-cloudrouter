@@ -123,11 +123,11 @@ class FrontendContractGuardian:
     )
     COMMERCE_HOST_MOUNT_COMPONENTS = frozenset(
         {
-            "ClawRouterConsoleCommerceHostRoutes",
-            "SdkworkCommerceHostRoutes",
+            "ClawRouterConsoleBusinessHostRoutes",
+            "SdkworkWalletPage",
         }
     )
-    COMMERCE_HOST_MOUNT_RELATIVE = "apps/sdkwork-clawrouter-pc/src/commerce/commerceHostMount.tsx"
+    COMMERCE_HOST_MOUNT_RELATIVE = "apps/sdkwork-clawrouter-pc/src/console-business/consoleBusinessHostMount.tsx"
     COMMERCE_HOST_CATALOG_RELATIVES = (
         # REMOVED: sdkwork-commerce reference
     )
@@ -137,10 +137,10 @@ class FrontendContractGuardian:
     COMMERCE_HOST_CATALOG_SEGMENT_PATTERN = re.compile(r"segment:\s*['\"]([^'\"]+)['\"]")
     COMMERCE_HOST_LOGICAL_ROUTE_PATTERN = re.compile(r"['\"](/console/[^'\"]+)['\"]")
     COMMERCE_HOST_ROUTE_PACKAGES = {
-        "wallet": "@sdkwork/commerce-pc-wallet",
-        "memberships": "@sdkwork/commerce-pc-membership",
-        "checkout": "@sdkwork/commerce-pc-checkout",
-        "payment": "@sdkwork/commerce-pc-payment",
+        "wallet": "@sdkwork/account-pc-wallet",
+        "memberships": "@sdkwork/membership-pc-membership",
+        "checkout": "@sdkwork/payment-pc-payment",
+        "payment": "@sdkwork/payment-pc-payment",
     }
     BROWSER_SOURCE_EXTENSIONS = frozenset({".ts", ".tsx", ".js", ".jsx"})
     BROWSER_SOURCE_EXCLUDED_DIRECTORIES = frozenset(

@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::infrastructure::sql::installer::{DatabaseInstallError, DatabaseInstaller};
 
 #[derive(Clone)]
@@ -55,7 +55,7 @@ async fn fetch_installation_status(State(state): State<AdminSystemState>) -> Res
     let now = Instant::now();
     if let Some(cached) = state.installation_status_cache.read().await.as_ref() {
         if cached.expires_at > now {
-            return Json(PlusApiResult::success(cached.response.clone())).into_response();
+            return Json(success_envelope(cached.response.clone())).into_response();
         }
     }
 
@@ -77,7 +77,7 @@ async fn fetch_installation_status(State(state): State<AdminSystemState>) -> Res
                 expires_at: Instant::now() + INSTALLATION_STATUS_CACHE_TTL,
                 response: response.clone(),
             });
-            Json(PlusApiResult::success(response)).into_response()
+            Json(success_envelope(response)).into_response()
         }
         Err(error) => installation_status_error_response(error),
     }
@@ -101,5 +101,5 @@ fn installation_status_code(
 }
 
 fn installation_status_error_response(error: DatabaseInstallError) -> Response {
-    PlusApiResult::error("5000", error.to_string())).into_response()
+    problem_from_wire_code("5000", error.to_string()).into_response()
 }

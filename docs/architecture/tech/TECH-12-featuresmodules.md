@@ -1060,9 +1060,9 @@ API：
 | 前端产品面 | API 前缀 | 说明 |
 | --- | --- | --- |
 | Public 内容和公开模型目录 | `/app/v3/api` 或静态构建产物 | 用户面标准，不增加产品命名空间 |
-| Console 用户自助 | `/app/v3/api` | 返回 `PlusApiResult<T>` |
-| Admin 后台管理 | `/backend/v3/api` | 返回 `PlusApiResult<T>` |
-| OpenAI 兼容调用 | `/v1/*` | 不包装 `PlusApiResult<T>` |
+| Console 用户自助 | `/app/v3/api` | 返回 `SdkWorkApiResponse`（`code: 0`, `data`, `traceId`） |
+| Admin 后台管理 | `/backend/v3/api` | 返回 `SdkWorkApiResponse`（`code: 0`, `data`, `traceId`） |
+| OpenAI 兼容调用 | `/v1/*` | 不包装 `SdkWorkApiResponse`（外部协议豁免） |
 
 数据库表不能为了前端路由增加 `console_`、`admin_`、`portal_`、产品名或部署名前缀。前端模块只是使用者，不是表名前缀来源。
 

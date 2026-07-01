@@ -1,16 +1,21 @@
 import { useEffect, useMemo } from 'react';
-import { Route, useSearchParams } from 'react-router-dom';
-import { SdkworkWalletPage } from '@sdkwork/account-pc-wallet';
-import { SdkworkMembershipPage } from '@sdkwork/membership-pc-membership';
+import { useTranslation } from 'react-i18next';
 import { SdkworkSubscriptionPage } from '@sdkwork/membership-pc-subscription';
 import { SdkworkCouponPage } from '@sdkwork/promotion-pc-coupon';
 import {
   createSdkworkPaymentController,
   SdkworkPaymentPage,
+  useSdkworkPaymentControllerState,
 } from '@sdkwork/payment-pc-payment';
+import { Route, useSearchParams } from 'react-router-dom';
 
-import { useConsoleBusinessNavigation } from './consoleBusinessNavigation.ts';
+import {
+  resolveConsoleCouponLocale,
+  resolveConsoleSubscriptionLocale,
+} from './consoleCommerceLocale.ts';
 import type { ClawRouterConsoleBusinessHostConfig } from './consoleBusinessConfig.ts';
+import { ClawRouterWalletPage } from './ClawRouterWalletPage.tsx';
+import { ClawRouterMembershipPage } from './ClawRouterMembershipPage.tsx';
 
 export const CLAWROUTER_CONSOLE_BUSINESS_ROUTE_PREFIX = '/console';
 
@@ -27,39 +32,25 @@ export function ClawRouterConsoleBusinessHostRoutes() {
 }
 
 function ConsoleBusinessWalletPage() {
-  const { checkoutPath, onNavigate } = useConsoleBusinessNavigation({
-    routePrefix: CLAWROUTER_CONSOLE_BUSINESS_ROUTE_PREFIX,
-  });
-
-  return (
-    <SdkworkWalletPage
-      checkoutBasePath={checkoutPath}
-      onNavigate={onNavigate}
-      rechargeFlow="direct"
-    />
-  );
+  return <ClawRouterWalletPage />;
 }
 
 function ConsoleBusinessCouponsPage() {
-  return <SdkworkCouponPage />;
+  const { i18n } = useTranslation();
+  const locale = resolveConsoleCouponLocale(i18n.resolvedLanguage ?? i18n.language);
+
+  return <SdkworkCouponPage locale={locale} />;
 }
 
 function ConsoleBusinessMembershipPage() {
-  const { checkoutPath, onNavigate } = useConsoleBusinessNavigation({
-    routePrefix: CLAWROUTER_CONSOLE_BUSINESS_ROUTE_PREFIX,
-  });
-
-  return (
-    <SdkworkMembershipPage
-      checkoutBasePath={checkoutPath}
-      onNavigate={onNavigate}
-      purchaseFlow="checkout"
-    />
-  );
+  return <ClawRouterMembershipPage />;
 }
 
 function ConsoleBusinessCheckoutPage() {
-  return <SdkworkSubscriptionPage />;
+  const { i18n } = useTranslation();
+  const locale = resolveConsoleSubscriptionLocale(i18n.resolvedLanguage ?? i18n.language);
+
+  return <SdkworkSubscriptionPage locale={locale} />;
 }
 
 function ConsoleBusinessPaymentPage() {
@@ -75,22 +66,15 @@ function ConsoleBusinessPaymentPageContent({
   paymentId?: string;
 }) {
   const controller = useMemo(() => createSdkworkPaymentController(), []);
+  const state = useSdkworkPaymentControllerState(controller);
 
   useEffect(() => {
-    let cancelled = false;
+    if (!paymentId || !state.isBootstrapped || state.isLoading || state.lastError) {
+      return;
+    }
 
-    void controller.bootstrap().then(() => {
-      if (cancelled || !paymentId) {
-        return;
-      }
-
-      void controller.openDetail(paymentId);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [controller, paymentId]);
+    void controller.openDetail(paymentId).catch(() => undefined);
+  }, [controller, paymentId, state.isBootstrapped, state.isLoading, state.lastError]);
 
   return <SdkworkPaymentPage controller={controller} />;
 }

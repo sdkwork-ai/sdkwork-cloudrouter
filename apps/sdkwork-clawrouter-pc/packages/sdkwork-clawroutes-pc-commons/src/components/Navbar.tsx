@@ -27,6 +27,21 @@ interface NavbarProps {
   toggleTheme: () => void;
 }
 
+const NAVBAR_HEADER_ACTION_CLASS =
+  'text-slate-600 transition-colors hover:text-lobster-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lobster-500 dark:text-slate-300 dark:hover:text-white';
+
+function resolveNavbarLanguageCode(raw: string | undefined): string {
+  const normalized = raw?.toLowerCase() ?? '';
+  if (normalized.startsWith('zh')) return 'zh';
+  if (normalized.startsWith('en')) return 'en';
+  if (normalized.startsWith('de')) return 'de';
+  if (normalized.startsWith('fr')) return 'fr';
+  if (normalized.startsWith('ja')) return 'ja';
+  if (normalized.startsWith('ko')) return 'ko';
+  if (normalized.startsWith('ru')) return 'ru';
+  return 'en';
+}
+
 export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: NavbarProps) {
   const { t, i18n } = useTranslation();
   const siteBranding = useSiteBranding();
@@ -81,9 +96,11 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
     navigate(buildPortalAuthLoginRedirect(location));
   };
 
+  const activeLanguageCode = resolveNavbarLanguageCode(i18n.resolvedLanguage ?? i18n.language);
+
   const languages = [
     { code: 'en', name: 'English' },
-    { code: 'zh', name: t('commons.navbar.language.zh', '中文') },
+    { code: 'zh', name: '中文' },
   ];
 
   const navLinks = [
@@ -157,7 +174,7 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
           <div className="relative" ref={langMenuRef}>
             <button
               onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-              className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-slate-600 transition-colors hover:bg-slate-100 hover:text-lobster-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white"
+              className={`flex items-center gap-1.5 rounded-md ${NAVBAR_HEADER_ACTION_CLASS}`}
               type="button"
               aria-label={t('navbar.language.toggle', 'Toggle language menu')}
               aria-expanded={isLangMenuOpen}
@@ -165,7 +182,7 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
               aria-controls="navbar-language-menu"
             >
               <Globe className="h-4 w-4" aria-hidden="true" />
-              <span className="text-sm font-medium uppercase">{i18n.resolvedLanguage || 'EN'}</span>
+              <span className="text-sm font-medium uppercase">{activeLanguageCode}</span>
               <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isLangMenuOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
             </button>
             <AnimatePresence>
@@ -175,7 +192,7 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 z-50 mt-2 w-32 overflow-hidden bg-white py-1 shadow-lg ring-1 ring-black/5 dark:bg-[#1a1a1a] dark:ring-white/10"
+                  className="absolute right-0 z-50 mt-2 w-32 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700/60 dark:bg-[#1a1a1a]"
                   id="navbar-language-menu"
                   role="menu"
                   aria-label={t('navbar.language.label', 'Language')}
@@ -184,14 +201,14 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
                     <button
                       key={lang.code}
                       onClick={() => changeLanguage(lang.code)}
-                      className="flex w-full items-center justify-between px-4 py-2 text-left text-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background dark:hover:bg-white/5"
+                      className="flex w-full items-center justify-between px-4 py-2 text-left text-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lobster-500 dark:hover:bg-white/5"
                       type="button"
                       role="menuitem"
                     >
-                      <span className={i18n.resolvedLanguage === lang.code ? 'font-medium text-lobster-500' : 'text-slate-700 dark:text-slate-300'}>
+                      <span className={activeLanguageCode === lang.code ? 'font-medium text-lobster-500' : 'text-slate-700 dark:text-slate-300'}>
                         {lang.name}
                       </span>
-                      {i18n.resolvedLanguage === lang.code ? <Check className="h-4 w-4 text-lobster-500" aria-hidden="true" /> : null}
+                      {activeLanguageCode === lang.code ? <Check className="h-4 w-4 text-lobster-500" aria-hidden="true" /> : null}
                     </button>
                   ))}
                 </motion.div>
@@ -201,7 +218,7 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
 
           <button
             onClick={toggleTheme}
-            className="text-slate-600 transition-colors hover:text-lobster-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background dark:text-slate-300 dark:hover:text-white"
+            className={`rounded-md ${NAVBAR_HEADER_ACTION_CLASS}`}
             type="button"
             aria-label={isDark ? t('navbar.theme.switchToLight', 'Switch to light theme') : t('navbar.theme.switchToDark', 'Switch to dark theme')}
             aria-pressed={isDark}
@@ -213,7 +230,7 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
             <>
               <button
                 onClick={handleSignIn}
-                className="text-sm font-medium text-slate-600 transition-colors hover:text-lobster-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background dark:text-slate-300 dark:hover:text-white"
+                className={`rounded-md text-sm font-medium ${NAVBAR_HEADER_ACTION_CLASS}`}
                 type="button"
               >
                 {t('nav.signin')}
@@ -241,7 +258,7 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
         <div className="flex items-center gap-4 md:hidden">
           <button
             onClick={toggleTheme}
-            className="text-slate-600 transition-colors hover:text-lobster-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background dark:text-slate-300 dark:hover:text-white"
+            className={`rounded-md ${NAVBAR_HEADER_ACTION_CLASS}`}
             type="button"
             aria-label={isDark ? t('navbar.theme.switchToLight', 'Switch to light theme') : t('navbar.theme.switchToDark', 'Switch to dark theme')}
             aria-pressed={isDark}
@@ -249,7 +266,7 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
             {isDark ? <Sun className="h-5 w-5" aria-hidden="true" /> : <Moon className="h-5 w-5" aria-hidden="true" />}
           </button>
           <button
-            className="text-slate-600 transition-colors hover:text-lobster-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background dark:text-slate-300 dark:hover:text-white"
+            className={`rounded-md ${NAVBAR_HEADER_ACTION_CLASS}`}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             type="button"
             aria-label={t('navbar.menu.toggle', 'Toggle navigation menu')}
@@ -304,13 +321,13 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
                   changeLanguage(lang.code);
                   setMobileMenuOpen(false);
                 }}
-                className="flex items-center justify-between text-left text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background"
+                className="flex items-center justify-between rounded-md text-left text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lobster-500"
                 type="button"
               >
-                <span className={i18n.resolvedLanguage === lang.code ? 'text-lobster-500' : 'text-slate-600 dark:text-slate-300'}>
+                <span className={activeLanguageCode === lang.code ? 'text-lobster-500' : 'text-slate-600 dark:text-slate-300'}>
                   {lang.name}
                 </span>
-                {i18n.resolvedLanguage === lang.code ? <Check className="h-4 w-4 text-lobster-500" aria-hidden="true" /> : null}
+                {activeLanguageCode === lang.code ? <Check className="h-4 w-4 text-lobster-500" aria-hidden="true" /> : null}
               </button>
             ))}
           </div>

@@ -24,7 +24,7 @@ MODELS_CATALOG_BASELINE_PATH = (
     / "ddl"
     / "baseline"
     / "postgres"
-    / "0001_sdkwork_models_catalog_baseline.sql"
+    / "0001_sdkwork-models_baseline.sql"
 )
 MODELS_CATALOG_SERVICE_API_DIR = (
     SDKWORK_MODELS_ROOT / "crates" / "sdkwork-models-catalog-service" / "src" / "api"

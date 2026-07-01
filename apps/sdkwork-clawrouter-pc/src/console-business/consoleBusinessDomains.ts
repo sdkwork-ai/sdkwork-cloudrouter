@@ -1,5 +1,5 @@
 /**
- * Console business surface ownership (sdkwork-commerce is deprecated for these flows).
+ * Console business surface ownership (Claw Router domain transport SDK clients).
  *
  * | User-facing capability | Domain workspace   | PC package                      | Console route        |
  * |------------------------|--------------------|---------------------------------|----------------------|

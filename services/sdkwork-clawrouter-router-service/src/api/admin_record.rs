@@ -10,7 +10,7 @@ use serde::Deserialize;
 use crate::api::admin_sql_subject::{
     map_required_admin_sql_subject, RequiredAdminSqlScopedSubject,
 };
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::domain::DomainError;
 use crate::ports::{AdminRecordStore, ListAdminRecordLogsQuery};
 
@@ -52,7 +52,7 @@ async fn fetch_logs(
     };
 
     match state.store.list_logs(query).await {
-        Ok(page) => Json(PlusApiResult::success(page)).into_response(),
+        Ok(page) => Json(success_envelope(page)).into_response(),
         Err(error) => record_system_response("admin record read model is unavailable", error),
     }
 }
@@ -99,9 +99,9 @@ fn normalize_filter(value: Option<String>, field: &str) -> Result<Option<String>
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4001", message.into())).into_response()
+    problem_from_wire_code("4001", message.into()).into_response()
 }
 
 fn record_system_response(context: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }

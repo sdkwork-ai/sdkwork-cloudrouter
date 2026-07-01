@@ -214,7 +214,7 @@ test('root package exposes pnpm application entrypoints', () => {
   );
   assert.equal(
     rootPackage.scripts.check,
-    'pnpm check:application-env && pnpm check:gateway-request-identity && pnpm check:dependency-composition && node scripts/run-claw-router-application.mjs check',
+    'pnpm check:application-env && pnpm check:gateway-request-identity && pnpm check:app-composition && node scripts/run-claw-router-application.mjs check',
   );
   assert.equal(
     rootPackage.scripts['check:application-env'],
@@ -2372,7 +2372,7 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
       refreshStep.env.SDKWORK_MODELS_CATALOG_ROOT,
       path.join(workspaceRoot, 'data', 'sdkwork-models'),
     );
-    assert.equal(plan.steps.some((step) => step.name === 'sdkwork-api-cloud-gateway'), false);
+    assert.equal(plan.steps.some((step) => step.name === 'sdkwork-api-cloud-gateway'), true);
     assert.deepEqual(portalStep.args, [
       '--dir',
       'apps/sdkwork-clawrouter-pc',
@@ -2394,10 +2394,10 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
     assert.equal(portalStep.env.SDKWORK_CLAW_BROWSER_DEV_PROXY_BACKEND_API_ORIGIN, 'http://127.0.0.1:3900');
     assert.equal(portalStep.env.SDKWORK_CLAW_BROWSER_DEV_PROXY_APP_API_ORIGIN, 'http://127.0.0.1:3900');
     assert.equal(portalStep.env.VITE_CLAWROUTER_APP_API_BASE_URL, '/app/v3/api');
-    assert.equal(portalStep.env.VITE_SDKWORK_APPBASE_APP_API_BASE_URL, '/app/v3/api');
-    assert.equal(portalStep.env.VITE_SDKWORK_APPBASE_APP_API_BASE_URL, portalStep.env.VITE_CLAWROUTER_APP_API_BASE_URL);
-    assert.equal(portalStep.env.VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL, 'http://127.0.0.1:3900/backend/v3/api');
-    assert.equal(portalStep.env.VITE_SDKWORK_DRIVE_APP_API_BASE_URL, 'http://127.0.0.1:3900/app/v3/api');
+    assert.equal(portalStep.env.VITE_SDKWORK_APPBASE_APP_API_BASE_URL, 'http://127.0.0.1:3902/app/v3/api');
+    assert.notEqual(portalStep.env.VITE_SDKWORK_APPBASE_APP_API_BASE_URL, portalStep.env.VITE_CLAWROUTER_APP_API_BASE_URL);
+    assert.equal(portalStep.env.VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL, 'http://127.0.0.1:3902/backend/v3/api');
+    assert.equal(portalStep.env.VITE_SDKWORK_DRIVE_APP_API_BASE_URL, 'http://127.0.0.1:3902/app/v3/api');
     assert.deepEqual(serverStep.args, [
       'run',
       '-p',
@@ -2432,6 +2432,7 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
       module.workspaceBindTargets(settings).map((target) => `${target.name} ${target.bind}`),
       [
         'server 0.0.0.0:3900',
+        'sdkwork-api-cloud-gateway 127.0.0.1:3902',
         'portal 127.0.0.1:3901',
       ],
     );
@@ -2566,13 +2567,16 @@ test('claw router workspace reports occupied service ports before startup', asyn
 
   assert.deepEqual(
     unavailable.map((target) => `${target.name} ${target.bind}`),
-    ['server 0.0.0.0:3900'],
+    [
+      'server 0.0.0.0:3900',
+      'sdkwork-api-cloud-gateway 127.0.0.1:3902',
+    ],
   );
   await assert.rejects(
     () => module.assertWorkspaceBindsAvailable(settings, async (target) =>
       !['18082', '3900', '3902'].includes(target.port),
     ),
-    /workspace ports are already in use: server 0\.0\.0\.0:3900/u,
+    /workspace ports are already in use: server 0\.0\.0\.0:3900, sdkwork-api-cloud-gateway 127\.0\.0\.1:3902/u,
   );
 });
 

@@ -35,7 +35,7 @@ pub use contract_routes::{
     BACKEND_OPENAPI_PATH, CLOUD_SERVICES_OPENAPI_PATH, GATEWAY_OPENAPI_PATH,
     OPENAPI_SCHEMA_TABS_PATH, PAAS_OPENAPI_PATH, PAYMENT_AGGREGATE_OPENAPI_PATH,
 };
-pub use error::{NotImplementedData, PlusErrorEnvelope};
+pub use error::{not_implemented_response, NotImplementedData};
 pub use headers::{default_security_headers, redact_http_header};
 pub use metrics::{metrics, metrics_middleware, record_readiness_check};
 pub use readiness::{combine_readiness_checks, ReadinessCheckFn};
@@ -62,7 +62,9 @@ pub use web_bridge::{
 };
 pub use web_framework_compat::{
     apply_app_subject_boundary_if_legacy, apply_optional_app_subject_boundary_if_legacy,
-    claw_web_framework_enabled_from_env, merge_federated_app_capability_router,
+    claw_web_framework_enabled_from_env, ensure_production_web_framework_security_policy,
+    merge_federated_app_capability_router,
+    merge_federated_app_capability_router_with_optional_auth,
     merge_web_framework_scoped_app_read_router,
     merge_web_framework_scoped_app_router,
     project_trusted_subject_from_web_request_context,

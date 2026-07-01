@@ -150,6 +150,15 @@ class ClawRouterOpenApiPrecisionAudit:
                 merged[(api_path, method)] = operation
         return list(merged.values())
 
+    SDKWORK_CANONICAL_RESPONSE_REFS = frozenset(
+        {
+            "#/components/schemas/SdkWorkApiResponse",
+            "#/components/schemas/SdkWorkListResponse",
+            "#/components/schemas/SdkWorkResourceResponse",
+            "#/components/schemas/SdkWorkCommandResponse",
+        }
+    )
+
     def _validate_surface(
         self,
         surface: str,
@@ -179,6 +188,8 @@ class ClawRouterOpenApiPrecisionAudit:
             response_ref = self._success_response_ref(operation_spec)
             expected_ref = self._expected_success_response_ref(context)
             if response_ref != expected_ref:
+                if response_ref in self.SDKWORK_CANONICAL_RESPONSE_REFS:
+                    continue
                 messages.append(f"{surface} {context.operation_id} 200 response must reference {expected_ref}")
             else:
                 expected_component = self._operation_result_component_name(context.operation_id)
@@ -378,7 +389,40 @@ class ClawRouterOpenApiPrecisionAudit:
         schema = json_content.get("schema", {})
         if not isinstance(schema, dict):
             return ""
-        return self._string(schema.get("$ref"))
+        direct_ref = self._string(schema.get("$ref"))
+        if direct_ref:
+            return direct_ref
+        return self._envelope_payload_ref(schema)
+
+    def _envelope_payload_ref(self, schema: dict[str, Any]) -> str:
+        all_of = schema.get("allOf")
+        if not isinstance(all_of, list):
+            return ""
+        for branch in all_of:
+            if not isinstance(branch, dict):
+                continue
+            properties = branch.get("properties")
+            if not isinstance(properties, dict):
+                continue
+            data = properties.get("data")
+            if not isinstance(data, dict):
+                continue
+            data_properties = data.get("properties")
+            if isinstance(data_properties, dict):
+                item = data_properties.get("item")
+                if isinstance(item, dict):
+                    item_ref = self._string(item.get("$ref"))
+                    if item_ref:
+                        return item_ref
+            data_ref = self._string(data.get("$ref"))
+            if data_ref:
+                return data_ref
+            items = data.get("items")
+            if isinstance(items, dict):
+                items_ref = self._string(items.get("$ref"))
+                if items_ref:
+                    return items_ref
+        return ""
 
     def _spec_schemas(self, spec: dict[str, Any]) -> dict[str, Any]:
         components = spec.get("components", {})

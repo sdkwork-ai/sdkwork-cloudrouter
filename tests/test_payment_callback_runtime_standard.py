@@ -74,9 +74,10 @@ class PaymentCallbackRuntimeStandardTest(unittest.TestCase):
         self.assertIn("DEFAULT_CALLBACK_BODY_MAX_BYTES", app_callback)
         self.assertIn("RequestLimitsConfig::DEFAULT_PAYMENT_CALLBACK_BODY_MAX_BYTES", app_callback)
         self.assertIn("PaymentWebhookConfig::ENV_PAYMENT_WEBHOOK_SECRET", app_callback)
-        self.assertIn('PlusApiResult::error("4001"', app_callback)
-        self.assertIn('PlusApiResult::error("4090"', app_callback)
-        self.assertIn('PlusApiResult::error("5000"', app_callback)
+        self.assertIn('problem_from_wire_code("4001"', app_callback)
+        self.assertIn('problem_from_wire_code("4090"', app_callback)
+        self.assertIn('problem_from_wire_code("5000"', app_callback)
+        self.assertNotIn("PlusApiResult", app_callback)
 
     def test_payment_callback_security_defaults_require_configured_signature(self) -> None:
         app_callback = (

@@ -9,7 +9,7 @@ use axum::routing::{get, put};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::api::subject::admin_operator_fields;
 use crate::ports::{
     AdminServiceNodeItem, AdminServiceNodeStore, AdminServiceNodeSubject,
@@ -102,7 +102,7 @@ async fn list_service_nodes(
         Err(response) => return response,
     };
     match state.store.list_service_nodes(query).await {
-        Ok(items) => Json(PlusApiResult::success(AdminServiceNodeListResponse {
+        Ok(items) => Json(success_envelope(AdminServiceNodeListResponse {
             items,
         }))
         .into_response(),
@@ -121,7 +121,7 @@ async fn create_service_node(
         Err(response) => return response,
     };
     match state.store.create_service_node(command).await {
-        Ok(item) => Json(PlusApiResult::success(AdminServiceNodeMutationResponse {
+        Ok(item) => Json(success_envelope(AdminServiceNodeMutationResponse {
             item,
         }))
         .into_response(),
@@ -141,7 +141,7 @@ async fn update_service_node(
         Err(response) => return response,
     };
     match state.store.update_service_node(command).await {
-        Ok(item) => Json(PlusApiResult::success(AdminServiceNodeMutationResponse {
+        Ok(item) => Json(success_envelope(AdminServiceNodeMutationResponse {
             item,
         }))
         .into_response(),
@@ -161,7 +161,7 @@ async fn update_service_node_status(
         Err(response) => return response,
     };
     match state.store.update_service_node_status(command).await {
-        Ok(item) => Json(PlusApiResult::success(AdminServiceNodeMutationResponse {
+        Ok(item) => Json(success_envelope(AdminServiceNodeMutationResponse {
             item,
         }))
         .into_response(),
@@ -184,7 +184,7 @@ async fn delete_service_node(
         .delete_service_node(DeleteAdminServiceNodeCommand { subject, node_id })
         .await
     {
-        Ok(outcome) => Json(PlusApiResult::success(outcome)).into_response(),
+        Ok(outcome) => Json(success_envelope(outcome)).into_response(),
         Err(error) => system_error("service node delete failed", error),
     }
 }
@@ -375,9 +375,9 @@ fn required_visible_text(
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4000", message.into())).into_response()
+    problem_from_wire_code("4000", message.into()).into_response()
 }
 
 fn system_error(context: &str, error: crate::domain::DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }

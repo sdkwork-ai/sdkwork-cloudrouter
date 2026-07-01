@@ -41,7 +41,7 @@ async fn admin_announcement_route_creates_lists_updates_and_soft_deletes_items()
 
     assert_eq!(StatusCode::OK, create_response.status());
     let create_payload = json_payload(create_response).await;
-    assert_eq!("2000", create_payload["code"]);
+    assert_eq!(0, create_payload["code"].as_i64().unwrap());
     assert_eq!(
         "Gateway maintenance",
         create_payload["data"]["item"]["title"]
@@ -94,7 +94,7 @@ async fn admin_announcement_route_creates_lists_updates_and_soft_deletes_items()
 
     assert_eq!(StatusCode::OK, list_response.status());
     let list_payload = json_payload(list_response).await;
-    assert_eq!("2000", list_payload["code"]);
+    assert_eq!(0, list_payload["code"].as_i64().unwrap());
     assert_eq!(1, list_payload["data"]["items"].as_array().unwrap().len());
     assert_eq!("1", list_payload["data"]["items"][0]["id"]);
     assert_eq!("published", list_payload["data"]["items"][0]["status"]);
@@ -153,8 +153,8 @@ async fn admin_announcement_route_rejects_missing_trusted_subject_for_store_back
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains(missing_internal_tenant_header_message()));
@@ -185,8 +185,8 @@ async fn admin_announcement_route_rejects_invalid_payload_without_calling_store(
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("announcement title is required"));

@@ -1,7 +1,7 @@
 const GENERATED_POSTGRES_SCHEMA: &str =
     include_str!("../../../generated/schema/postgres/schema.sql");
 const MODELS_CATALOG_FOUNDATION_SQL: &str = include_str!(
-    "../../../data/sdkwork-models/database/ddl/baseline/postgres/0001_sdkwork_models_catalog_baseline.sql"
+    "../../../data/sdkwork-models/database/ddl/baseline/postgres/0001_sdkwork-models_baseline.sql"
 );
 const SCHEMA_MANIFEST: &str =
     include_str!("../../../generated/schema/manifest/schema-manifest.json");
@@ -191,7 +191,7 @@ fn schema_manifest_preserves_model_ranking_semantic_contracts_for_release_audit(
     let job_execution = manifest_table(&manifest, "ops_job_execution");
     let refresh_contract = &job_execution["semantic_contracts"]["model_ranking_refresh"];
     assert_eq!("model_ranking_refresh", refresh_contract["job_name"]);
-    assert_eq!(20, refresh_contract["job_type"]["code"]);
+    assert_eq!(20, refresh_contract["job_type"]["code"].as_i64().unwrap());
     assert_eq!(1, refresh_contract["trigger_types"]["scheduled"]);
     assert_eq!(2, refresh_contract["trigger_types"]["manual"]);
     assert_eq!(2, refresh_contract["execution_status"]["succeeded"]);

@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::ports::{
@@ -82,7 +82,7 @@ async fn fetch_runtime_region_settings(
 ) -> Response {
     let subject = scoped.into();
     match load_settings_with_cache(&state, subject).await {
-        Ok(settings) => Json(PlusApiResult::success(to_response(settings))).into_response(),
+        Ok(settings) => Json(success_envelope(to_response(settings))).into_response(),
         Err(error) => runtime_region_system_response(
             "runtime region settings read model is unavailable",
             error,
@@ -126,7 +126,7 @@ async fn update_runtime_region_settings(
         Ok(settings) => {
             let settings = settings.normalized();
             replace_cache(&state, subject, settings.clone()).await;
-            Json(PlusApiResult::success(to_response(settings))).into_response()
+            Json(success_envelope(to_response(settings))).into_response()
         }
         Err(error) => runtime_region_system_response(
             "runtime region settings command store is unavailable",
@@ -274,7 +274,7 @@ fn to_response(settings: RuntimeRegionSettings) -> RuntimeRegionSettingsResponse
 }
 
 fn bad_request(message: String) -> Response {
-    PlusApiResult::error("4001", message)).into_response()
+    problem_from_wire_code("4001", message).into_response()
 }
 
 fn command_build_error_response(error: RuntimeRegionSettingsCommandBuildError) -> Response {
@@ -287,7 +287,7 @@ fn command_build_error_response(error: RuntimeRegionSettingsCommandBuildError) -
 }
 
 fn runtime_region_system_response(context: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }
 
 fn current_timestamp_string() -> String {

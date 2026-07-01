@@ -1,52 +1,49 @@
 import { Crown, TicketPercent } from 'lucide-react';
-import { SdkworkWalletHeaderEntry } from '@sdkwork/account-pc-wallet';
+import { useTranslation } from 'react-i18next';
 
+import { ClawRouterNavbarWalletEntry } from './ClawRouterNavbarWalletEntry.tsx';
+import { CLAW_ROUTER_COMMERCE_ACTION_CLASS } from './consoleCommerceTheme.ts';
 import { useConsoleBusinessNavigation } from './consoleBusinessNavigation.ts';
 import type { ClawRouterConsoleBusinessHostConfig } from './consoleBusinessConfig.ts';
 
 export interface ClawRouterConsoleBusinessNavbarActionsProps
-  extends ClawRouterConsoleBusinessHostConfig {}
+  extends ClawRouterConsoleBusinessHostConfig {
+  isDark: boolean;
+}
 
 export function ClawRouterConsoleBusinessNavbarActions({
+  isDark,
   routePrefix,
 }: ClawRouterConsoleBusinessNavbarActionsProps) {
+  const { t } = useTranslation();
   const {
-    checkoutPath,
     couponsPath,
     membershipsPath,
     onNavigate,
-    walletPath,
   } = useConsoleBusinessNavigation({ routePrefix });
 
   return (
     <>
-      <SdkworkWalletHeaderEntry
-        checkoutBasePath={checkoutPath}
-        onNavigate={onNavigate}
-        onOpenPage={() => {
-          onNavigate(walletPath);
-        }}
-        rechargeFlow="direct"
-      />
+      <ClawRouterNavbarWalletEntry isDark={isDark} routePrefix={routePrefix} />
       <button
-        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5"
+        className={CLAW_ROUTER_COMMERCE_ACTION_CLASS}
         onClick={() => {
           onNavigate(couponsPath);
         }}
         type="button"
       >
-        <TicketPercent className="h-4 w-4" />
-        <span>Coupons</span>
+        <TicketPercent className="h-4 w-4" aria-hidden="true" />
+        <span>{t('console.navbar.coupons', 'Coupons')}</span>
       </button>
       <button
-        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5"
+        className={CLAW_ROUTER_COMMERCE_ACTION_CLASS}
         onClick={() => {
           onNavigate(membershipsPath);
         }}
         type="button"
       >
-        <Crown className="h-4 w-4" />
-        <span>Membership</span>
+        <Crown className="h-4 w-4" aria-hidden="true" />
+        <span>{t('console.navbar.membership', 'Membership')}</span>
       </button>
     </>
   );

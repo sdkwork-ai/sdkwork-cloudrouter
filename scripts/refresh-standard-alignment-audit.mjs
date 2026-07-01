@@ -399,7 +399,7 @@ function collectTableConsistencyFacts() {
   // The 90-table effective registry and 154-table catalog include sibling
   // module tables (iam, commerce, etc.) and are NOT drift �??they are a
   // scope difference. The claw-router-owned count must be consistent.
-  const ddlPath = "database/ddl/baseline/postgres/0001_clawrouter_legacy_baseline.sql";
+  const ddlPath = "database/ddl/baseline/postgres/0001_clawrouter_baseline.sql";
   const registryPath = "database/contract/table-registry.json";
   const schemaYamlPath = "database/contract/schema.yaml";
 
@@ -436,7 +436,7 @@ function collectTableConsistencyFacts() {
 
 function collectTablePartitionFacts() {
   // High-traffic tables that must be range-partitioned by created_at.
-  const ddlPath = "database/ddl/baseline/postgres/0001_clawrouter_legacy_baseline.sql";
+  const ddlPath = "database/ddl/baseline/postgres/0001_clawrouter_baseline.sql";
   const requiredTables = [
     "ai_request_trace",
     "ai_routing_decision_log",

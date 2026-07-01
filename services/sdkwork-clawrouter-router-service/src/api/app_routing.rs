@@ -7,7 +7,7 @@ use axum::routing::get;
 use axum::{Json, Router};
 
 use crate::api::app_sql_subject::{map_optional_app_sql_subject, ResolvedAppSqlScopedSubject};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::ports::{
     AppRoutingApiKeyItem, AppRoutingChannelItem, AppRoutingItems, AppRoutingReadFuture,
     AppRoutingReadStore, AppRoutingRequestTraceItem, AppRoutingSubject, AppRoutingUsageSnapshot,
@@ -97,7 +97,7 @@ async fn fetch_routing_channels(
     };
 
     match state.read_store.load_routing_channels(subject).await {
-        Ok(items) => Json(PlusApiResult::success(AppRoutingItems::new(items))).into_response(),
+        Ok(items) => Json(success_envelope(AppRoutingItems::new(items))).into_response(),
         Err(error) => app_routing_read_model_error(error),
     }
 }
@@ -114,7 +114,7 @@ async fn fetch_routing_api_keys(
     };
 
     match state.read_store.load_routing_api_keys(subject).await {
-        Ok(items) => Json(PlusApiResult::success(AppRoutingItems::new(items))).into_response(),
+        Ok(items) => Json(success_envelope(AppRoutingItems::new(items))).into_response(),
         Err(error) => app_routing_read_model_error(error),
     }
 }
@@ -131,7 +131,7 @@ async fn fetch_routing_request_traces(
     };
 
     match state.read_store.load_routing_request_traces(subject).await {
-        Ok(items) => Json(PlusApiResult::success(AppRoutingItems::new(items))).into_response(),
+        Ok(items) => Json(success_envelope(AppRoutingItems::new(items))).into_response(),
         Err(error) => app_routing_read_model_error(error),
     }
 }
@@ -148,14 +148,14 @@ async fn fetch_routing_usage(
     };
 
     match state.read_store.load_routing_usage(subject).await {
-        Ok(snapshot) => Json(PlusApiResult::success(snapshot)).into_response(),
+        Ok(snapshot) => Json(success_envelope(snapshot)).into_response(),
         Err(error) => app_routing_read_model_error(error),
     }
 }
 
 fn app_routing_read_model_error(error: impl std::fmt::Display) -> Response {
-    PlusApiResult::error(
+    problem_from_wire_code(
             "5000",
             format!("app routing read model is unavailable: {error}"),
-        )).into_response()
+        ).into_response()
 }

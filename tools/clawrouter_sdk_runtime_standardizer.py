@@ -154,7 +154,72 @@ SDK_DEPENDENCIES = {
                 "python": "sdkwork-iam-app-sdk",
             },
         },
-        # REMOVED: sdkwork-commerce-app-sdk (sdkwork-commerce repository dissolved)
+        {
+            "workspace": "clawrouter-app-wallet-capability",
+            "role": "wallet-app-capability",
+            "required": True,
+            "dependencyMode": "internal-capability",
+            "apiPrefix": "/app/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "clawrouter-app-domain-transport-generated-typescript",
+            },
+        },
+        {
+            "workspace": "clawrouter-app-membership-capability",
+            "role": "membership-app-capability",
+            "required": True,
+            "dependencyMode": "internal-capability",
+            "apiPrefix": "/app/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "clawrouter-app-domain-transport-generated-typescript",
+            },
+        },
+        {
+            "workspace": "clawrouter-app-promotion-capability",
+            "role": "promotion-app-capability",
+            "required": True,
+            "dependencyMode": "internal-capability",
+            "apiPrefix": "/app/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "clawrouter-app-domain-transport-generated-typescript",
+            },
+        },
+        {
+            "workspace": "clawrouter-app-order-capability",
+            "role": "order-app-capability",
+            "required": True,
+            "dependencyMode": "internal-capability",
+            "apiPrefix": "/app/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "clawrouter-app-domain-transport-generated-typescript",
+            },
+        },
+        {
+            "workspace": "clawrouter-app-payment-capability",
+            "role": "payment-app-capability",
+            "required": True,
+            "dependencyMode": "internal-capability",
+            "apiPrefix": "/app/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "clawrouter-app-domain-transport-generated-typescript",
+            },
+        },
+        {
+            "workspace": "clawrouter-app-catalog-capability",
+            "role": "catalog-app-capability",
+            "required": True,
+            "dependencyMode": "internal-capability",
+            "apiPrefix": "/app/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "clawrouter-app-domain-transport-generated-typescript",
+            },
+        },
     ],
     "clawrouter-backend-sdk": [
         {
@@ -176,7 +241,94 @@ SDK_DEPENDENCIES = {
                 "python": "sdkwork-iam-backend-sdk",
             },
         },
-        # REMOVED: sdkwork-commerce-backend-sdk (sdkwork-commerce repository dissolved)
+        {
+            "workspace": "clawrouter-backend-wallet-capability",
+            "role": "wallet-backend-capability",
+            "required": True,
+            "dependencyMode": "internal-capability",
+            "apiPrefix": "/backend/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "clawrouter-backend-domain-transport-generated-typescript",
+            },
+        },
+        {
+            "workspace": "clawrouter-backend-membership-capability",
+            "role": "membership-backend-capability",
+            "required": True,
+            "dependencyMode": "internal-capability",
+            "apiPrefix": "/backend/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "clawrouter-backend-domain-transport-generated-typescript",
+            },
+        },
+        {
+            "workspace": "clawrouter-backend-promotion-capability",
+            "role": "promotion-backend-capability",
+            "required": True,
+            "dependencyMode": "internal-capability",
+            "apiPrefix": "/backend/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "clawrouter-backend-domain-transport-generated-typescript",
+            },
+        },
+        {
+            "workspace": "clawrouter-backend-catalog-capability",
+            "role": "catalog-backend-capability",
+            "required": True,
+            "dependencyMode": "internal-capability",
+            "apiPrefix": "/backend/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "clawrouter-backend-domain-transport-generated-typescript",
+            },
+        },
+        {
+            "workspace": "clawrouter-backend-order-capability",
+            "role": "order-backend-capability",
+            "required": True,
+            "dependencyMode": "internal-capability",
+            "apiPrefix": "/backend/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "clawrouter-backend-domain-transport-generated-typescript",
+            },
+        },
+        {
+            "workspace": "clawrouter-backend-payment-capability",
+            "role": "payment-backend-capability",
+            "required": True,
+            "dependencyMode": "internal-capability",
+            "apiPrefix": "/backend/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "clawrouter-backend-domain-transport-generated-typescript",
+            },
+        },
+        {
+            "workspace": "clawrouter-backend-inventory-capability",
+            "role": "inventory-backend-capability",
+            "required": True,
+            "dependencyMode": "internal-capability",
+            "apiPrefix": "/backend/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "clawrouter-backend-domain-transport-generated-typescript",
+            },
+        },
+        {
+            "workspace": "clawrouter-backend-finance-capability",
+            "role": "finance-backend-capability",
+            "required": True,
+            "dependencyMode": "internal-capability",
+            "apiPrefix": "/backend/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "clawrouter-backend-domain-transport-generated-typescript",
+            },
+        },
     ],
 }
 SDK_DEPENDENCY_OPERATION_KEY_OVERRIDES = {
@@ -185,6 +337,9 @@ SDK_DEPENDENCY_OPERATION_KEY_OVERRIDES = {
         "POST auth/verification_codes/verify",
     },
 }
+CLAWROUTER_APP_SDK_IAM_OWNER_OPERATION_PREFIXES = (
+    "apiKeys.",
+)
 GENERATED_TEXT_FILE_EXTENSIONS = {
     ".bat",
     ".cmd",
@@ -623,6 +778,20 @@ class SdkRuntimeStandardizer:
 
     def _dependency_authority_path(self, workspace: str) -> Path:
         iam_root = self._dependency_root("sdkwork-iam")
+        commerce_app_authority = (
+            self.root
+            / "sdks"
+            / "clawrouter-app-sdk"
+            / "openapi"
+            / "clawrouter-app-domain-transport.openapi.json"
+        )
+        commerce_backend_authority = (
+            self.root
+            / "sdks"
+            / "clawrouter-backend-sdk"
+            / "openapi"
+            / "clawrouter-backend-domain-transport.openapi.json"
+        )
         mapping = {
             "sdkwork-iam-app-sdk": iam_root
             / "sdks"
@@ -634,6 +803,20 @@ class SdkRuntimeStandardizer:
             / "sdkwork-iam-backend-sdk"
             / "openapi"
             / "sdkwork-iam-backend-api.openapi.yaml",
+            "clawrouter-app-wallet-capability": commerce_app_authority,
+            "clawrouter-app-membership-capability": commerce_app_authority,
+            "clawrouter-app-promotion-capability": commerce_app_authority,
+            "clawrouter-app-order-capability": commerce_app_authority,
+            "clawrouter-app-payment-capability": commerce_app_authority,
+            "clawrouter-app-catalog-capability": commerce_app_authority,
+            "clawrouter-backend-wallet-capability": commerce_backend_authority,
+            "clawrouter-backend-membership-capability": commerce_backend_authority,
+            "clawrouter-backend-promotion-capability": commerce_backend_authority,
+            "clawrouter-backend-catalog-capability": commerce_backend_authority,
+            "clawrouter-backend-order-capability": commerce_backend_authority,
+            "clawrouter-backend-payment-capability": commerce_backend_authority,
+            "clawrouter-backend-inventory-capability": commerce_backend_authority,
+            "clawrouter-backend-finance-capability": commerce_backend_authority,
         }
         return mapping.get(
             workspace,
@@ -700,6 +883,9 @@ class SdkRuntimeStandardizer:
         workspace = str(dependency.get("workspace") or "")
         if workspace.startswith("sdkwork-iam-"):
             return "iam"
+        if workspace.startswith("clawrouter-") and workspace.endswith("-capability"):
+            if "wallet" in workspace or "membership" in workspace or "promotion" in workspace or "order" in workspace or "payment" in workspace or "catalog" in workspace or "inventory" in workspace or "finance" in workspace:
+                return workspace.replace("clawrouter-app-", "").replace("clawrouter-backend-", "").replace("-capability", "")
         return None
 
     def _remove_dependency_domain_operations(
@@ -729,6 +915,12 @@ class SdkRuntimeStandardizer:
                     continue
                 domain = operation.get("x-sdkwork-domain") or operation.get("x-sdk-domain")
                 if domain != dependency_domain:
+                    continue
+                operation_id = str(operation.get("operationId") or "")
+                if (
+                    dependency_domain == "iam"
+                    and any(operation_id.startswith(prefix) for prefix in CLAWROUTER_APP_SDK_IAM_OWNER_OPERATION_PREFIXES)
+                ):
                     continue
                 del path_item[method]
                 removed.append(f"{normalized_method.upper()} {route}")
@@ -1153,8 +1345,11 @@ class SdkRuntimeStandardizer:
         lines.extend(["", "Package names:", ""])
         for dependency in dependencies:
             lines.append(f"- `{dependency['workspace']}`")
+            package_by_language = dependency.get("packageByLanguage") or {}
             for language in OFFICIAL_SDK_LANGUAGES:
-                package_name = dependency["packageByLanguage"][language]
+                package_name = package_by_language.get(language)
+                if package_name is None:
+                    continue
                 lines.append(f"- `{language}`: `{package_name}`")
         lines.append("")
         return "\n".join(lines) + "\n"

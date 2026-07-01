@@ -11,7 +11,7 @@
       "source": "sdks/clawrouter-open-sdk/openapi/clawrouter-open-sdk.openapi.json",
       "apiAuthority": "sdkwork-clawrouter-open-api",
       "sdkFamily": "clawrouter-open-sdk",
-      "sha256": "944210490a7d9ec72c170d34f4c99426c45c3754377d45d251e3a3d5d04f6a72"
+      "sha256": "6d68501b7cc098c6e67335490be3b0919c56ce604e0b728568d93310bb387ff1"
     },
     {
       "surface": "app-api",
@@ -20,7 +20,7 @@
       "source": "generated/openapi/clawrouter-app-openapi.json",
       "apiAuthority": "sdkwork-clawrouter-app-api",
       "sdkFamily": "clawrouter-app-sdk",
-      "sha256": "56728d29409c236c974ebf4ece4efb52464f393e06bcafb347b65aff4d269af6"
+      "sha256": "17977173a69e0740b8607bcd27ee2c9a1d4e939d324a6170ab45e0c6719005af"
     },
     {
       "surface": "backend-api",
@@ -29,7 +29,7 @@
       "source": "generated/openapi/clawrouter-backend-openapi.json",
       "apiAuthority": "sdkwork-clawrouter-backend-api",
       "sdkFamily": "clawrouter-backend-sdk",
-      "sha256": "013d514d9a4340133c2112aa96ff1965df254e2f5d64e24e50124286e0a4c3bf"
+      "sha256": "5f1519c85ba39ffa5019229aaba0ef6ec30a93ab93130fd878273207e529e530"
     }
   ],
   "materializeScript": "scripts/materialize-apis-contracts.mjs",

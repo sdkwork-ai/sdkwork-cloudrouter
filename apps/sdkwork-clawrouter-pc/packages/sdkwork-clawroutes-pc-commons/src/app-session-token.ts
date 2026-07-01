@@ -5,6 +5,8 @@ import type { PortalIamBridgeSession, PortalSessionAppContext } from './portal-s
 
 const APP_SESSION_STORAGE_KEY = 'sdkwork.clawRouter.appSession.v1';
 const EXPIRY_SKEW_SECONDS = 30;
+const REFRESH_THRESHOLD_SECONDS = 300;
+const STORAGE_EVENT_KEY = APP_SESSION_STORAGE_KEY;
 
 export interface StoredAppSessionToken {
   accessToken: string;
@@ -175,6 +177,22 @@ function isExpired(token: StoredAppSessionToken, now: number): boolean {
     return false;
   }
   return token.expiresAt <= now + EXPIRY_SKEW_SECONDS;
+}
+
+export function shouldRefreshStoredAppSession(now = currentUnixSeconds()): boolean {
+  const token = loadStoredAppSessionToken();
+  if (!token || typeof token.expiresAt !== 'number') {
+    return false;
+  }
+  if (token.expiresAt <= now + EXPIRY_SKEW_SECONDS) {
+    return false;
+  }
+  return token.expiresAt <= now + REFRESH_THRESHOLD_SECONDS;
+}
+
+export function getStoredAppSessionExpiry(): number | undefined {
+  const token = loadStoredAppSessionToken();
+  return token?.expiresAt;
 }
 
 function isStoredAppSessionToken(value: unknown): value is StoredAppSessionToken {
@@ -357,31 +375,32 @@ function notifyStoredAppSessionChange(): void {
 }
 
 function readBrowserStorage(): string | null {
-  const sessionRaw = readSessionStorage();
-  if (sessionRaw) {
-    return sessionRaw;
+  const localRaw = readLocalStorage();
+  if (localRaw) {
+    return localRaw;
   }
 
-  const legacyLocalRaw = readLocalStorage();
-  if (!legacyLocalRaw) {
+  // Legacy sessionStorage payloads (pre-cross-tab builds) are migrated to localStorage.
+  const legacySessionRaw = readSessionStorage();
+  if (!legacySessionRaw) {
     return null;
   }
 
   try {
-    const parsed = JSON.parse(legacyLocalRaw) as unknown;
+    const parsed = JSON.parse(legacySessionRaw) as unknown;
     if (isStoredAppSessionToken(parsed)) {
-      writeSessionStorage(parsed);
+      writeLocalStorage(parsed);
     }
   } catch {
-    // Legacy localStorage payloads are cleared below.
+    // Legacy sessionStorage payloads are cleared below.
   }
-  removeLocalStorage();
-  return readSessionStorage();
+  removeSessionStorage();
+  return readLocalStorage();
 }
 
 function writeBrowserStorage(token: StoredAppSessionToken): void {
-  writeSessionStorage(token);
-  removeLocalStorage();
+  writeLocalStorage(token);
+  removeSessionStorage();
 }
 
 function removeBrowserStorage(): void {
@@ -394,6 +413,14 @@ function readLocalStorage(): string | null {
     return globalThis.localStorage?.getItem(APP_SESSION_STORAGE_KEY) ?? null;
   } catch {
     return null;
+  }
+}
+
+function writeLocalStorage(token: StoredAppSessionToken): void {
+  try {
+    globalThis.localStorage?.setItem(APP_SESSION_STORAGE_KEY, JSON.stringify(token));
+  } catch {
+    // Memory storage remains available for restrictive browser contexts.
   }
 }
 
@@ -413,18 +440,26 @@ function readSessionStorage(): string | null {
   }
 }
 
-function writeSessionStorage(token: StoredAppSessionToken): void {
-  try {
-    globalThis.sessionStorage?.setItem(APP_SESSION_STORAGE_KEY, JSON.stringify(token));
-  } catch {
-    // Memory storage remains available for restrictive browser contexts.
-  }
-}
-
 function removeSessionStorage(): void {
   try {
     globalThis.sessionStorage?.removeItem(APP_SESSION_STORAGE_KEY);
   } catch {
     // Nothing to clear when storage is unavailable.
   }
+}
+
+// Cross-tab synchronization: when another tab writes/removes the session token,
+// invalidate the in-memory cache and notify subscribers so SDK clients and UI
+// re-read from localStorage. The storage event fires only in *other* tabs.
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('storage', (event: StorageEvent) => {
+    if (event.key !== STORAGE_EVENT_KEY) {
+      return;
+    }
+    memoryToken = null;
+    storageLoaded = false;
+    loadStoredAppSessionToken();
+    dispatchPortalSessionChange();
+    notifyStoredAppSessionChange();
+  });
 }

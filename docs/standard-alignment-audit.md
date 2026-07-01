@@ -1,175 +1,137 @@
-# SDKWork Claw Router �?�??对齐审计
+# SDKWork Claw Router 标准对齐审计
 
-�??�?�?��?��?2026-06-27
+最后更新：2026-06-30
 
-审计�?�令�?
+审计命令：
+
 ```bash
 pnpm check:alignment:audit
 pnpm check:alignment
 python tools/sdkwork_standard_alignment_guardian.py --strict
+PYTHONPATH=. python -B tools/bootstrap_frontend_route_classification.py --root . --merge-contract-routes
+PYTHONPATH=. python -B tools/bootstrap_frontend_contract_from_route_manifest.py --root . --merge-portal-routes
+PYTHONPATH=. python -B tools/hydrate_frontend_contract_relay_surfaces.py --root .
+python -B -m tools.frontend_field_audit --check
+python -B -m tools.frontend_operation_audit --check
 ```
 
-> �?�审计�??�?�?来源�?��?�?源码�?�?�置�?�身�??`scripts/refresh-standard-alignment-audit.mjs`
-> �?`sdkwork.app.config.json`�?�`sdkwork.workflow.json`�?�`Cargo.toml`�??> `database/migrations/`�?�`deployments/kubernetes/`�??> `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-i18n/src/index.ts`
-> �?路�?�?��?�读�?�?禁止�??工填�??�?论�??�?�??�?��?�? P0/P1 项�?��?�?须�??�?步�?��?��?��??�?> �??`scripts/refresh-standard-alignment-audit.mjs`�?让 CI �?卫保�?��?�?可信源�??
-## �?��?�?论
+> 机器可读事实来源：`scripts/refresh-standard-alignment-audit.mjs` → `generated/audit/standard-alignment-facts.json`  
+> 禁止手工编造 P0/P1 结论；变更后运行 refresh 脚本保持 CI 可信。  
+> 本文 §1–§3 为摘要；细节以 `generated/audit/standard-alignment-facts.json` 与 canonical spec 为准。
 
-| 维度 | �?��??| 说�?? |
+## 总览结论
+
+| 维度 | 状态 | 说明 |
 | --- | --- | --- |
-| sdkwork-specs �?�?��?�?��?�?�??| 已对�?| `AGENTS.md`�?��?�??根�?��?�?�`apis/`�?�`sdks/`�?�`deployments/`�?�`specs/topology.spec.json` 已就�?|
-| �?�署�?�??�??| 已对�?| `sdkwork.workflow.json` + �??GitHub workflow + �?平�?24 package �?�?�?��?� + `container-config-bundle` |
-| �?�端 SDK �?��?� | 已对�?| Portal �??�? `@sdkwork/clawrouter-app-sdk` / backend SDK �?费�?�?卫禁�?raw HTTP |
-| API �?约�??�?��?| 已对�?| OpenAPI 已补�??`x-sdkwork-request-context` / `x-sdkwork-api-surface`�?`sdks/_route-manifests/` 已�??�??|
-| sdkwork-database | 已对齐�?迁移中�? | PoolBuilder 已�?�?�?�?�??`*_store.rs` �??manifest �??�?�迁移 repository-sqlx |
-| sdkwork-web-framework | 已对�?| �?认 `WebFrameworkLayer`�?app-api �?backend-api �?��?�使�?� `TenantAppContext` �??`SqlScopedSubject` / `SqlScopedAdminSubject` |
-| sdkwork-discovery | 不�??�?� | �?�?��??gRPC/RPC �?��?��?�?续�?�??RPC �?��?��??|
-| Rust �?��?��?�名 | 治�?�?�? | �?�?? crate 已�?��?`specs/naming-migration.manifest.json`�?026-12-31 �?�止�?|
-| 治�?�?社�?��??�?| 已对�?| `SECURITY.md`�?�`CONTRIBUTING.md`�?�`CODE_OF_CONDUCT.md`�?�`.github/CODEOWNERS`�?�`.github/ISSUE_TEMPLATE/*`�?�`.github/PULL_REQUEST_TEMPLATE.md`�?�`.github/dependabot.yml` 已就�?|
-| Rust 工�?��??| 已对�?| `rust-toolchain.toml` pin �??`1.79.0` + `rustfmt` + `clippy` + `rust-src` + 7 个交�?�?�?target |
-| �??档索�? | 已对�?| `docs/INDEX.yaml` entries �?domains 已填�??�?`docs/README.md` �?�复段已�?�?�?`docs/runbooks/README.md` 已建�?�??�?runbook 索�? |
-| vendor 工�?�?�治�?| 迁移�?| �?commerce �??`vendor/sdkwork-*` gitlink 已�?索�?移�?��?�?保�?? `vendor/README.md` + `../sdkwork-商���/**`�?`pnpm check:vendor-workspace` �?卫 |
-| commerce �?渡�?��?� | 迁移�?| PC Portal 仍�?�??`../sdkwork-商���` �?�?��??console-era `@sdkwork/commerce-pc-*`�?`pnpm check:commerce-debt:strict` �?踪�?�?��?度 |
-| �?��?�签名�?�置 | 已对齐�?�?�置�?| `sdkwork.app.config.json` `signatureRequired=true` �?`sdkwork.workflow.json` `signingRequired=true` 已�?�?|
-| �?��?�签名�?�?� | 已对�?| `sdkwork.workflow.json` �??`sign` 步骤已�?�换为�??�?跨平台签名�?cosign�?SBOM/checksums�? signtool�?Windows MSI�? codesign+notarytool�?macOS pkg�?�??�?�据�??�? secrets 注�?� |
-| CI �?�?��?�描 | 已对�?| `.github/workflows/verify.yml` `security-scan` job �??�?运�? `cargo audit --deny warnings` + `cargo deny check advisories bans licenses sources` + Trivy�?HIGH/CRITICAL fail-fast�? gitleaks + `pnpm audit --audit-level=high`�?`verify` job �?postgres:16 service + `pnpm test:postgres:required` + browser/edge smoke opt-in |
-| SBOM cargo �?�?? | 已对�?| `scripts/generate-release-sbom.mjs` �??�? `cargo metadata` �??�?��?�?� cargo SBOM + 依�? edges |
-| SBOM npm �?�?? | 已对�?| `scripts/generate-release-sbom.mjs` �??�? `collectPnpmPackages()` 解�?� root + PC app 两�? `pnpm-lock.yaml` �??packages 段�?�?transitive deps�?`collectDirectDeps()` 解�?� importers 段�??�??SPDX DEPENDS_ON edges�?�?��??SHA-256 checksum 已�??�??|
-| �?�据�?迁移�?��?postgres�?| 已对�?| `database/migrations/postgres/0001_initial_schema.{up,down}.sql` 已�??�?��?�?��? baseline-plus-migrations �?�?� |
-| �?�据�?迁移�?��?sqlite�?| 已对�?| `database/migrations/sqlite/0001_initial_schema.{up,down}.sql` 已�??�?��?�?��? baseline-plus-migrations �?�?��?�?�??`database/ddl/baseline/sqlite/0001-0004` |
-| 表�?��?��?�?��?�?��??| 已对�?| claw-router-owned 表�?� DDL(69) / table-registry.json(69) / schema.yaml(69) �?�?��?�?��?effective registry(90) �?catalog(154) 含�??�?模�?表�?�?�??�?�差�?�?drift |
-| �?流�?�表�??�?� | 已对�?| `ai_request_trace` / `ai_routing_decision_log` / `ai_usage_fact` / `ai_usage_service_provider_edge` �?8 张表�?`PARTITION BY RANGE (created_at)` + `_default PARTITION OF ... DEFAULT` |
-| �??�?��?��?�??| 已对�?| `services/sdkwork-clawrouter-router-service/src/application/invocation/circuit_breaker.rs`�?45 �?�?�?�?��?��?��?��?Closed/Open/HalfOpen�? Redis �??�?�?HA store + channel-id �?度 |
-| �?�?�?��?�??| 已对�?| `services/sdkwork-clawrouter-router-service/src/application/invocation/idempotency.rs`�?68 �?�?�?��?� + Redis SETEX �?�? + 流式�?��?�??�?� + SyntheticLocalResponse �?��?� |
-| Provider adapter 流式�?��? | 已对�?| `crates/sdkwork-clawrouter-cloud-gateway/src/invocation_dispatcher.rs`�?18-133 �?�?�?��? content-type �?��? SSE �?`Body::new(stream)` �?�传�?`provider_passthrough_transport.rs`�?20-233 �?�?`Incoming` �?��?��?�传 |
-| �?�?�?�签名�?�??| 已对�?| `sdkwork-claw-http/src/auth.rs` �?��? `sign_app_session_token_with_claims_and_store` �?`verify_app_session_token_claims_with_resolver` async �?��?��?�?��?��?��??IAM `TenantSigningKeyStore`�?Postgres/SQLite �?�据�?�?��??+ `LegacyGlobalTenantSigningKeyStore` �??�??�?�?? tenant_id 解�?� active key�?并�??claims 中�?�??`kid` �?��?��?�?�轮换�?口�?�?� per-tenant key �?��??�??�?��?��?`AppSessionConfig` HMAC secret 保�?��?�?�?�容�??`SECURITY.md` 已修正为�??�?�?��??|
-| 企�?级�?对称签名 | �??**�?��? (P0)** | `crates/sdkwork-claw-security/src/asymmetric_signing.rs` �?�?�企�?级�?对称签名系�?�?�?��??**HS256**�?对称�?�容�?�??*RS256**�?RSA-SHA256 企�?�?�??�?�??*ES256**�?ECDSA-P256 �?��?��?�??�?�??*EdDSA**�?Ed25519 �?�代�?�?�?��?�??私�?�使�??AES-256-GCM �?��?�?�?��?�?��?��?�?�轮换�?? `kid` �?�?��??`crates/sdkwork-claw-http/src/signing_service.rs` 提�?�?级签名�?��?��?�象�?�?��??per-tenant �?�?�管�?�??�?�?�?�容�??|
-| 可�?�?�?��??�?| 已对�?| `crates/sdkwork-claw-http/src/metrics.rs` 使�?� `IntCounterVec{method,status}` + `HistogramVec{method}`�?�?�??Prometheus 延�?�?5ms�??0s�?via axum middleware�?�?��??p50/p95/p99 计�? |
-| OTLP 可�?�?�??+ SLO/SLI | �??**�?��? (P0)** | `crates/sdkwork-claw-observability/src/otlp.rs` �?�?��?�?� OTLP 可�?�?�?��?�?��?�??�?��?OTLP �?�置�?Sampling rate, endpoint, TLS�?�?�Prometheus metrics 端�?��?�置�??*SLO/SLI �?�?**�?可�?��??99.9%�?�p95 < 50ms�?�p99 < 100ms�?�RPS > 1000�?�?��?�?口 Burn Rate �??警�?h/6h/3d�?�?�SloMetricsCollector �?�?�?��??�?��??`deployments/grafana/claw-router-slo-dashboard.json` 提�?�?置 Grafana 仪表�??�?Availability/Latency/Throughput/Error Budget�?�?`deployments/prometheus/claw-router-alerts.yaml` 提�?�?级�??Prometheus �??警�?�??�??|
-| �?�端 i18n �?语�? | 已对�?| `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-i18n/src/index.ts` `supportedLngs = ['en','zh','de','fr','ja','ko','ru']` 满足 PRD 7 语�?要�? |
-| TypeScript 严格模式 | 已对�?| `apps/sdkwork-clawrouter-pc/tsconfig.json` `strict: true` + `noUncheckedIndexedAccess: true` + `noImplicitAny: true`�?`turbo.json` �?`test` 任�?� |
-| K8s �?�署�?�?��??| 已对�?| `deployments/kubernetes/` �?8 �?manifest�?gateway / app-api / admin-api / edge / redis / ingress / network-policy / migration-job |
-| Redis HA | 已对�?| `deployments/kubernetes/claw-router-redis.yaml` 3-pod Sentinel �??�??�? primary + 2 replicas + 3 sentinels�?�?含认�?Secret�?�AOF+RDB �?��?�??�?�PodDisruptionBudget minAvailable:2�?�podAntiAffinity 跨�??�?��??�?|
-| Provider �??�?�?��?� | 已对�?| `crates/provider-adapters/alicloud` 已�?�??ACS V3 HMAC-SHA256 签名�?`common/signer_v3.rs`�? Bailian text generation 端�?��??�?��?��?`text_generation/mod.rs`�?�?`Cargo.toml` �?hex/hmac/hyper/sha2 HTTP 客�?�端依�?�?`crates/sdkwork-claw-paas-plugin` �??`BaiduPaasProviderPlugin` �?override `invoke()` �?�?? OCR �?�?��?��?�?provider_code + provider_request_id + raw_provider_response �?�?��?记�?�?�?��?计费�?�??�?trace �?��?�?�??�?HTTP relay �??cloud-gateway passthrough transport �?�?��?Alibaba/Tencent plugin 保�?� metadata-only �?�?? `ProviderNotConfigured` �?��?� native adapter �?��?� |
-| 主�?��??�??�?| 已对�?| `docs/architecture/tech/TECH_ARCHITECTURE.md` 已补�?�为�?�?��?��??�?��?�?�??�?��?表�?�模�?边�??�?��?��?�据�??�??�?表�?�API/SDK 边�??�?��?��?�署�??�??�?��?��?�?�边�??�?��?�ADR 索�?�?��?证�?��??|
+| sdkwork-specs 与仓库契约 | 已对齐 | `AGENTS.md`、`apis/`、`sdks/`、`deployments/`、`specs/topology.spec.json` |
+| 前端 SDK 集成 | 已对齐 | Portal 消费 `@sdkwork/clawrouter-app-sdk` / `@sdkwork/clawrouter-backend-sdk`；domain transport 经 `clawrouter-*-domain-transport-generated-typescript` 挂载；禁止 raw HTTP |
+| commerce 过渡层 | **已完成** | 已移除 commerce-service / sdkwork-commerce SDK；`check:commerce-debt` 零发现 |
+| vendor 工作区 | 已对齐 | `pnpm check:vendor-workspace`；tracked vendor 索引干净 |
+| SBOM | 已对齐 | `pnpm sbom:release` 自 `Cargo.lock` + 根 `pnpm-lock.yaml` 生成 |
+| 制品签名配置 | 已对齐 | `sdkwork.app.config.json` `signatureRequired=true` 与 `sdkwork.workflow.json` `signingRequired=true` 一致 |
+| 制品签名流水线 | 已对齐 | `sdkwork.workflow.json` `sign` 步骤已替换为跨平台签名（cosign / SBOM / checksums / signtool / codesign+notarytool） |
+| CI 安全扫描 | 已对齐 | `.github/workflows/verify.yml`：`cargo audit`、`cargo deny`、Trivy、gitleaks、`pnpm audit`；postgres service + browser/edge smoke opt-in |
+| SBOM cargo 覆盖 | 已对齐 | `scripts/generate-release-sbom.mjs` 通过 `cargo metadata` 生成 cargo SBOM 与依赖边 |
+| SBOM npm 覆盖 | 已对齐 | `collectPnpmPackages()` 解析根 lockfile 与 transitive deps；`collectDirectDeps()` 生成 SPDX DEPENDS_ON |
+| 数据库迁移链（postgres） | 已对齐 | `database/migrations/postgres/0001_initial_schema.{up,down}.sql` baseline-plus-migrations |
+| 数据库迁移链（sqlite） | 已对齐 | `database/migrations/sqlite/0001_initial_schema.{up,down}.sql` baseline-plus-migrations |
+| 表计数三方一致 | 已对齐 | claw-router-owned 表：DDL(69) / table-registry.json(69) / schema.yaml(69) 一致 |
+| 高流量表分区 | 已对齐 | `ai_request_trace` 等 4 张表 `PARTITION BY RANGE (created_at)` + default partition |
+| 熔断器实现 | 已对齐 | router-service `circuit_breaker.rs`：Closed/Open/HalfOpen + Redis HA store |
+| 幂等实现 | 已对齐 | router-service `idempotency.rs`：Redis SETEX + 流式排除 + SyntheticLocalResponse |
+| Provider adapter 流式 | 已对齐 | cloud-gateway `invocation_dispatcher.rs` SSE passthrough；provider passthrough transport |
+| App session 签名链路 | 已对齐 | per-tenant signing key store；async verify；`SECURITY.md` 与实现一致 |
+| 企业级非对称签名 | **已完成 (P0)** | RS256 / ES256 / EdDSA；`kid` 轮换；`signing_service.rs` per-tenant 管理 |
+| 可观测性指标 | 已对齐 | Prometheus `IntCounterVec` + `HistogramVec`；axum middleware |
+| OTLP 可观测 + SLO/SLI | **已完成 (P0)** | OTLP 配置、SLO/SLI 定义、Grafana 仪表盘、Prometheus 告警 |
+| HTTP handler 响应辅助 | **已对齐** | 禁止 `PlusApiResult`；使用 `success_envelope` + `problem_from_wire_code` / `platform_problem` |
+| 集成测试 envelope 断言 | **已对齐** | router-service 测试断言 numeric `code: 0` 与 platform error codes（`40001`/`40101`/`40401`） |
+| 生产 IAM 安全策略 | **已对齐** | `ensure_production_web_framework_security_policy` 禁止 production-like 环境禁用 web-framework |
+| Frontend field contract | **已对齐** | `frontend_operations` 已剔除退役 commerce/平台 admin 路由；relay 保留 `/admin/ai/*`、`/admin/system/*` |
+| Schema 路由登记 | **已对齐** | `PYTHONPATH=. python -B tools/bootstrap_frontend_route_classification.py --root . --check` |
+| Schema 操作登记 | **已对齐** | `PYTHONPATH=. python -B tools/bootstrap_frontend_contract_from_route_manifest.py --root . --check` |
+| Relay 退役面守卫 | **已对齐** | `PYTHONPATH=. python -B -m unittest tests.test_relay_retired_admin_surfaces_standard` |
+| Relay 路由契约回填 | **已对齐** | `PYTHONPATH=. python -B tools/hydrate_frontend_contract_relay_surfaces.py --root .` 负责 auth、notification、admin-model 的 richer schema 回填 |
+| TypeScript 严格模式 | 已对齐 | `strict: true` + `noUncheckedIndexedAccess` + `noImplicitAny` |
+| K8s 部署清单 | 已对齐 | `deployments/kubernetes/` 8 manifest（gateway / app-api / admin-api / edge / redis / ingress / network-policy / migration-job） |
+| Redis HA | 已对齐 | 3-pod Sentinel；PDB；podAntiAffinity；auth Secret |
+| Provider 插件实现 | 已对齐 | AliCloud ACS V3 签名；Baidu PaaS native invoke；metadata-only 插件显式 `ProviderNotConfigured` |
+| 主文档 TECH_ARCHITECTURE | 已对齐 | `docs/architecture/tech/TECH_ARCHITECTURE.md` 覆盖表模型、API/SDK、部署边界与 ADR 索引 |
 
-**�?�?� blocking �?�?��?0 �?P0 �?修�?*�??已对齐�?**32** 项�?含�?�轮�?��?2 �?P0�?�??�?�?� SQL store 迁移 repository-sqlx 为�?�续治�?项�??
-## 1. sdkwork-web-framework�?HTTP 认证�?�?�?�??�?
-### �?�??�?�路�?�??产�?认�?
+**当前 blocking P0：0。** 已对齐 P0 共 **11** 项（见 `standard-alignment-facts.json` → `p0Status`）。后续 P1 以 repository-sqlx 迁移与 PaaS metadata-only 插件补全为主。
+
+## 1. sdkwork-web-framework / HTTP 认证链路（摘要）
+
+生产默认路径：
 
 ```
 IAM JWT (Authorization + Access-Token)
-  �??sdkwork-web-framework (WebFrameworkLayer)
-  �??IamWebRequestContextResolver�?�?��?Postgres pool + database_config�?  �??WebRequestContext + WebRequestPrincipal�?String snowflake IDs�?  �??DomainContextInjector�?IamAppContext�?  �??App-api handler�?TenantAppContext �??SqlScopedSubject�?�?��? i64 转换�?��?
-  �??SQL repository�?BIGINT �??�?
+  → sdkwork-web-framework (WebFrameworkLayer)
+  → IamWebRequestContextResolver (Postgres pool + database_config)
+  → WebRequestContext + WebRequestPrincipal (String snowflake IDs)
+  → DomainContextInjector / IamAppContext
+  → App-api handler: TenantAppContext → SqlScopedSubject
+  → SQL repository (BIGINT scope)
 ```
 
-### App-api�?已�?��?�对齐 `WEB_FRAMEWORK_SPEC`�?
-�??�??app-api SQL/command handler 已迁移�?**不�?�**依�? route �?`TrustedRequestSubject` �??影 middleware�?
-| �?�?? | Handler 模�? |
-| --- | --- |
-| Dashboard / usage / gateway / generations / settlements | `app_dashboard`, `app_usage_logs`, `app_gateway`, `app_generation_history`, `app_settlements` |
-| �??�?� / 设置 / providers | `app_notification`, `app_settings`, `app_providers` |
-| Routing / chat | `app_routing`, `app_routing_strategy`, `app_routing_channel_command`, `app_chat` |
-| Runtime / �?��? / API Keys | `app_runtime`, `payment_aggregate`, `app_api_keys` |
+- **App-api**：SQL/command handler 已迁移，不依赖 route 层 `TrustedRequestSubject` 阴影 middleware。入口：`api/app_sql_subject.rs`；路由合并：`sdkwork_claw_http::merge_web_framework_scoped_app_router`。
+- **Backend-api**：同上模式；入口：`api/admin_sql_subject.rs`（`SqlScopedAdminSubject`）；边界：`layer_with_admin_subject_boundary` / `admin_web_framework_access_boundary`。
+- **Legacy 模式**：`SDKWORK_CLAW_WEB_FRAMEWORK_LEGACY=true` 时保留 claw app-session token 与 `TrustedRequestSubject` 桥接；新 handler 不得再依赖 legacy 路径。
 
-�?�?��?`api/app_sql_subject.rs`�?`ResolvedAppSqlScopedSubject` / `RequiredAppSqlScopedSubject`�?
-路�?��?并�?`sdkwork_claw_http::merge_web_framework_scoped_app_router`
+权威：`WEB_FRAMEWORK_SPEC.md`、`IAM_SPEC.md`、`SECURITY.md`。
 
-### Backend-api�?已�?��?�对齐 `WEB_FRAMEWORK_SPEC`�?
-�??�??backend-api SQL/command handler 已迁移�?**不�?�**依�? route �?`TrustedRequestSubject` �??影 middleware�?
-| �?�?? | Handler 模�? |
-| --- | --- |
-| 系�?�??�?� / �??�?� / 仪表�??| `admin_monitor`, `admin_analytics`, `admin_dashboard` |
-| �?��?� / �?�?� / 设置 | `admin_user`, `admin_site`, `admin_auth_settings`, `admin_runtime_region_settings`, `site_settings` |
-| AI �?源 / 渠�? / �?�?� | `admin_channel`, `admin_channel_group`, `admin_provider_secret`, `admin_mcp` |
-| �?�流 / �?�火�?| `admin_ip_rate_limit`, `admin_api_key_rate_limit`, `admin_model_rate_limit`, `admin_firewall_rule` |
-| �??�?� / �?�? / �?息 | `admin_catalog`, `admin_finance`, `admin_marketing`, `admin_inventory`, `admin_messaging`, `admin_transaction_center` |
-| �?��?��??�?� / 提�?�??/ �?�?� | `admin_service_node`, `admin_service_provider`, `admin_storage` |
-| 运营 / �?�? / �?��?运�?�??| `admin_announcement`, `admin_cache`, `admin_payment_runtime`, `admin_record` |
+## 2. sdkwork-database（摘要）
 
-�?�?��?`api/admin_sql_subject.rs`�?`SqlScopedAdminSubject` / `RequiredAdminSqlScopedSubject` + 端口 `From` �?��?�?
-路�?�边�??�?`layer_with_admin_subject_boundary` �??web-framework 模式使�?� `admin_web_framework_access_boundary`�?`TenantAppContext` �??SQL scope + `has_admin_access`�?�?legacy 模式保�?? `admin_request_subject_boundary`�??
-### �?�?�落�?�
+- Workspace 已声明 `sdkwork-database-config`、`sdkwork-database-sqlx`、`sdkwork-database-repository`。
+- Gateway / router-service 使用 `PoolBuilder` 建连。
+- 存量 `*_store.rs` 按 `specs/database-store-migration.manifest.json` 迁移至 repository-sqlx（P1 进行中）。
+- Postgres / SQLite 均已提供 `0001_initial_schema.{up,down}.sql`。
 
-| 模�? | �?责 |
-| --- | --- |
-| `crates/sdkwork-claw-http/src/claw_web_resolver.rs` | �?�? IAM resolver 工�??�?�? claw `DatabaseConfig` �?��?? IAM env |
-| `crates/sdkwork-routes-{app,backend}-api/src/web_bootstrap.rs` | `WebFrameworkLayer::new` + route manifest + `ClawRouter*DomainInjector` |
-| `services/.../api/app_sql_subject.rs` | App `TenantAppContext` �??`SqlScopedSubject` |
-| `services/.../api/admin_sql_subject.rs` | Backend `TenantAppContext` �??`SqlScopedAdminSubject` |
-| `crates/sdkwork-claw-http/src/web_bridge.rs` | **Legacy only**�?�?�迁移 handler �??`TrustedRequestSubject` 桥�?� |
-| `crates/sdkwork-claw-http/src/web_framework_compat.rs` | Legacy 模式 subject boundary�?`merge_web_framework_scoped_app_router` |
-| `crates/sdkwork-clawrouter-cloud-gateway/src/runtime.rs` | `finalize_all_in_one_route_surfaces` 传�?� `database_config` �?�?��?`postgres_pool` |
+## 3. 部署与 API 拓扑（摘要）
 
-### 类�??�?�系
+- 拓扑：`configs/topology/*.env` + `pnpm topology:validate`。
+- 契约权威：`apis/` → OpenAPI → `sdks/` 生成物。
+- PC 门户：`apps/sdkwork-clawrouter-pc`；产品 SDK：`@sdkwork/clawrouter-app-sdk`、`@sdkwork/clawrouter-backend-sdk`；域 API 经 domain transport 包挂载至 `getClawRouter*SdkClient().<domain>`。
+- K8s：`deployments/kubernetes/`（8 manifest）；Redis HA + ingress + network-policy + migration-job。
 
-| 类�?? | �?�?� | �?�?? |
-| --- | --- | --- |
-| `WebRequestContext` | HTTP 边�??�?威�?�?�??| `WEB_FRAMEWORK_SPEC.md` |
-| `TenantAppContext` | Service �?String ID �?�?� | `WEB_FRAMEWORK_SPEC.md` |
-| `IamAppContext` | IAM �??�??�?| `IAM_SPEC.md` |
-| `SqlScopedSubject` | Claw SQL BIGINT �?�?��??�?repository 边�??�?| 产�?��??�?��?�?� `TenantAppContext` �?次�?��? |
-| `SqlScopedAdminSubject` | Backend SQL BIGINT �?��?�??�?�?��?? | �??`TenantAppContext` �?次�?��? |
-| `TrustedRequestSubject` | **Legacy**�?�?�?�??�?? / `SDKWORK_CLAW_WEB_FRAMEWORK_LEGACY=true` | 不�?�?为�??handler �??认证源 |
+## 4. vendor 与 commerce 对齐
 
-### Legacy 模式�?�?�?�? / �?�式�??�??�?
-设置 `SDKWORK_CLAW_WEB_FRAMEWORK_LEGACY=true` �?��?
+- **vendor 策略**：`.gitignore` 忽略 `vendor/`；`pnpm check:vendor-workspace` 确保 Git 跟踪的 vendor 条目合法。
+- **治理命令**：
+  - `pnpm check:vendor-workspace` — vendor 工作区完整性
+  - `pnpm check:commerce-debt` — commerce 技术债扫描（报告模式）
+  - `pnpm check:commerce-debt:strict` — 禁止 console-era commerce PC 包、legacy commerce service facades、broad commerce tailwind glob 等
+- **Rust 依赖**：`Cargo.toml` 通过 sibling T1 capability crate 引用，不再依赖 monolithic commerce crate。
+- **PC 前端**：`apps/sdkwork-clawrouter-pc` 通过 per-domain Claw Router SDK（`getClawRouterBackendSdkClient().<domain>`）与 T1 `@sdkwork/<capability>-*` 包集成；commerce 过渡层已移除。
+- **commerce 债务状态**：domain transport 位于 `clawrouter-*-domain-transport-typescript`；Vite dev 经 alias + `isSdkworkWorkspaceDependency` 排除 workspace resolver 误解析 `dist/`；admin 域包已对齐独立 domain/capability 规格；会员等级删除通过 `plans.update(status: inactive)`（OpenAPI 无 DELETE）。
 
-- �?��?� web-framework �?认路�?
-- 使�?� claw app-session token �?`app_request_subject_boundary`
-- �??�?��?�? `database_config_router.rs` �?��?�启�?�
-- SQL �?handler 仍可�??�? `TrustedRequestSubject::resolve_optional` �??�??解�?�
+## 5. 待治理项
 
-设置 `SDKWORK_CLAW_WEB_FRAMEWORK_ENABLED=false` 可�?�?��?��??web-framework �??裹�??
-### App session token 签名�?�? GA �?��?�?
-�?�?� 0.3.x�?`AppSessionConfig` 使�?��?�?�?�享 HMAC secret�?`SDKWORK_CLAW_APP_SESSION_SECRET`�?�??�?32 �?符�?�?�??`sdkwork-claw-http::sign_app_session_token_with_claims_and_secret` 签�?�?�?证�??�?�??�?��?�??�?beta�?�?**不�?� per-tenant** �??�?�??secret �?�?��?�??�??�?�?��?? token �?�可被伪�?��??
-GA �?��?须迁移�?� per-tenant �?对称签名�?
-
-- �?�据�?表 `iam_tenant_signing_key`�?key_id / tenant_id / algorithm / public_key_pem / private_key_encrypted / rotated_at / retired_at�?- `AppSessionConfig` �?�?�?`AppSessionKeyResolver`�?�?? `tenant_id` 解�?��?�?� active key�?- �?�?�?RS256�?�?认�?/ ES256�?�?��?��?�??�? EdDSA�?�??�?�?�?��?
-- 90 天�?��?�轮�?+ key_id �??token header 中�?�式声�??�?�?��?��?��?� key �?�叠�??
-## 2. sdkwork-database
-
-- `Cargo.toml` 已声�??`sdkwork-database-config`�?�`sdkwork-database-sqlx`�?�`sdkwork-database-repository`
-- Gateway / router-service 建�?已�?�?�?`PoolBuilder`
-- �?�?� SQL store �??`specs/database-store-migration.manifest.json` �??�?�迁移
-- 迁移�?��?postgres �?sqlite �?已�??�?� `0001_initial_schema.{up,down}.sql`�?�?��?baseline-plus-migrations �?�?�
-
-## 3. �?�署�?�API �?�?��?
-- �??�??�?`configs/topology/*.env` + `pnpm topology:validate`
-- �?约�?威�?`apis/` �??`generated/openapi` / SDK
-- PC �?�?��?`apps/sdkwork-clawrouter-pc`�?SDK�?`@sdkwork/clawrouter-app-sdk`�?�`@sdkwork/clawrouter-backend-sdk`
-- K8s�?`deployments/kubernetes/` 8 manifest �?��?�?gateway / app-api / admin-api / edge / redis / ingress / network-policy / migration-job�?�?�?PodDisruptionBudget + HorizontalPodAutoscaler
-
-## 4. vendor ? commerce ????
-
-- **vendor ??**?????????`.gitignore` ?? `vendor/`?`pnpm check:vendor-workspace` ?? Git ??? **?** ? `vendor/` ??
-- **????**?
-  - `pnpm check:vendor-workspace` ? ????????? `vendor/` ???`pnpm check` ????
-  - `pnpm check:commerce-debt` ? ? workspace ???????? fail?
-  - `pnpm check:commerce-debt:strict` ? ? Claw Router ??? forbidden console-era commerce PC ??mall ??? peer `@sdkwork/commerce-service`?? PC `index.css` ?? broad commerce tailwind glob ? fail
-- **Rust ????**?? `Cargo.toml` ?? sibling `../sdkwork-商���/crates/*` ?? T1 capability ???? commerce ??/?? crate
-- **PC ????**?`apps/sdkwork-clawrouter-pc` ? monorepo package graph?tsconfig path alias?Vite/Tailwind ??? `../sdkwork-商���` ? transitional commerce PC ???? T1 capability ??? `@sdkwork/<capability>-*` SDK ?????? `../../sdkwork-specs/MIGRATION_SPEC.md` �8?
-- **commerce ??????**?mall ???? transitional commerce ??T1 SDK/??????`check:commerce-debt:strict` ???composed commerce SDK ? per-T1 SDK ??
-
-## 5. �?�??治�?�?
-| �?�??�?| �?| �?��??| 说�?? |
+| 优先级 | 项 | 状态 | 说明 |
 | --- | --- | --- | --- |
-| ~~P0~~ | ~~Per-tenant �?对称签名~~ | �??**已�?�??* | �?级�?RS256/ES256/EdDSA �?��?� |
-| ~~P0~~ | ~~OTLP 可�?�?�??+ SLO/SLI~~ | �??**已�?�??* | Grafana 仪表�??+ Prometheus �??警 |
-| P1 | Alibaba/Tencent PaaS native adapter | �?�?�?| `AlibabaPaasProviderPlugin` / `TencentPaasProviderPlugin` 仍为 metadata-only |
-| P1 | database repository �?�?�迁移 | �?�?�?| 42% �?�?��??�?�?迁�?11 个�?�?�??�?store |
-| P1 | commerce �?渡�?��?��?�?� | �?�?�?| Portal 仍依�?`../sdkwork-商���`�?�?? `check:commerce-debt:strict` �?MIGRATION_SPEC §8 迁移 |
-| P1 | vendor 索�?卫�?? | 已对�?| `pnpm check:vendor-workspace` �??�?�?索�?�? 1244 �?commerce 快�?�路�? |
-| P1 | Rust �?��?��?��?��?| �?�?�?| �??`specs/naming-migration.manifest.json` �??2026-12-31 �?��?�??|
+| ~~P0~~ | ~~Per-tenant 非对称签名~~ | **已完成** | 支持 RS256/ES256/EdDSA |
+| ~~P0~~ | ~~OTLP 可观测 + SLO/SLI~~ | **已完成** | Grafana 仪表盘 + Prometheus 告警 |
+| P1 | Alibaba/Tencent PaaS native adapter | 进行中 | `AlibabaPaasProviderPlugin` / `TencentPaasProviderPlugin` 仍为 metadata-only |
+| P1 | database repository 层迁移 | 进行中 | 按 manifest 迁移 `*_store.rs` 至 repository-sqlx |
+| ~~P1~~ | ~~commerce 过渡层清理~~ | **已完成** | Portal 已移除 commerce-service / sdkwork-commerce SDK；`check:commerce-debt` 零发现 |
+| P1 | vendor 索引卫生 | 已对齐 | `pnpm check:vendor-workspace` |
+| P1 | Rust 命名迁移 | 进行中 | `specs/naming-migration.manifest.json` 截止 2026-12-31 |
 
-## 6. �?证�?�令
+## 6. 验证命令
 
 ```bash
 pnpm check:vendor-workspace
 pnpm check:commerce-debt
 pnpm check:commerce-debt:strict
+pnpm sbom:release
 pnpm check:alignment:audit
 python tools/sdkwork_standard_alignment_guardian.py --strict
+PYTHONPATH=. python -B tools/bootstrap_frontend_route_classification.py --root . --merge-contract-routes
+PYTHONPATH=. python -B tools/bootstrap_frontend_contract_from_route_manifest.py --root . --merge-portal-routes
+PYTHONPATH=. python -B tools/hydrate_frontend_contract_relay_surfaces.py --root .
+PYTHONPATH=. python -B -m unittest tests.test_relay_retired_admin_surfaces_standard
+python -B -m tools.frontend_field_audit --check
+python -B -m tools.frontend_operation_audit --check
 cargo test -p sdkwork-claw-http --test auth
 cargo test -p sdkwork-claw-http --test web_framework_compat
 cargo test -p sdkwork-clawrouter-router-service app_sql_subject
@@ -182,4 +144,6 @@ pnpm verify
 pnpm test:postgres:required
 CLAWROUTER_BROWSER_SMOKE_REQUIRED=1 pnpm verify
 CLAWROUTER_EDGE_DEV_SMOKE_REQUIRED=1 pnpm verify -- --with-edge-dev-smoke
+cd apps/sdkwork-clawrouter-pc
+node --test commerce-debt-runtime.test.ts sdk-composition-standard.test.mjs commerce-business-runtime.test.ts
 ```

@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { HealthCheckCreateResult, PageInfo, SiteCreateResult, SiteUpdateResult, TestConnectionCreateResult } from '../types';
+import type { HealthCheckCreateResult, SdkWorkCommandData, SdkWorkPageData, SiteCreateResult, SiteUpdateResult, TestConnectionCreateResult } from '../types';
 
 
 export class SitesTestConnectionApi {
@@ -41,8 +41,8 @@ export class SitesSiteChannelsApi {
 
 
 /** List */
-  async list(siteId: string): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}/channels`));
+  async list(siteId: string): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}/channels`));
   }
 }
 
@@ -55,8 +55,8 @@ export class SitesSiteCatalogApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/sites`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/sites`));
   }
 }
 
@@ -82,8 +82,8 @@ export class SitesApi {
   }
 
 /** Delete */
-  async delete(siteId: string): Promise<Record<string, unknown>> {
-    return this.client.delete<Record<string, unknown>>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}`));
+  async delete(siteId: string): Promise<SdkWorkCommandData> {
+    return this.client.delete<SdkWorkCommandData>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}`));
   }
 
 /** Update */

@@ -8,10 +8,8 @@ ROOT = Path(__file__).resolve().parents[1]
 class AdminDestructiveActionStandardTest(unittest.TestCase):
     def test_admin_destructive_actions_use_shared_confirm_dialog_instead_of_window_confirm(self) -> None:
         package_roots = [
-            "sdkwork-clawrouter-pc-admin-announcement",
             "sdkwork-clawrouter-pc-admin-channel",
             "sdkwork-clawrouter-pc-admin-group",
-            "sdkwork-clawrouter-pc-admin-marketing",
             "sdkwork-clawrouter-pc-admin-relay-site",
             "sdkwork-clawrouter-pc-admin-ratelimit",
         ]

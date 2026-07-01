@@ -12,7 +12,7 @@ use serde_json::{Map, Value};
 
 use crate::api::app_sql_subject::{map_required_app_sql_subject, RequiredAppSqlScopedSubject};
 
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::infrastructure::OsApiKeySecretGenerator;
@@ -222,7 +222,7 @@ async fn list_conversations(
         .list_conversations(subject, page, page_size)
         .await
     {
-        Ok(list) => Json(PlusApiResult::success(list)).into_response(),
+        Ok(list) => Json(success_envelope(list)).into_response(),
         Err(error) => app_chat_system_response("app chat conversations are unavailable", error),
     }
 }
@@ -239,7 +239,7 @@ async fn get_conversation(
         Err(message) => return bad_request(message),
     };
     match state.store.get_conversation(subject, conversation_id).await {
-        Ok(Some(item)) => Json(PlusApiResult::success(item)).into_response(),
+        Ok(Some(item)) => Json(success_envelope(item)).into_response(),
         Ok(None) => not_found("chat conversation was not found"),
         Err(error) => app_chat_system_response("app chat conversation is unavailable", error),
     }
@@ -261,11 +261,9 @@ async fn create_conversation(
     };
     match state.store.create_conversation(command).await {
         Ok(item) => {
-            Json(PlusApiResult::success(AppChatConversationEnvelope { item })).into_response()
+            Json(success_envelope(AppChatConversationEnvelope { item })).into_response()
         }
-        Err(error) if error.is_conflict() => PlusApiResult::error("4090", error.to_string())),
-        )
-            .into_response(),
+        Err(error) if error.is_conflict() => problem_from_wire_code("4090", error.to_string()).into_response(),
         Err(error) => app_chat_system_response("app chat conversation is unavailable", error),
     }
 }
@@ -282,8 +280,9 @@ async fn list_messages(
         Err(message) => return bad_request(message),
     };
     match state.store.list_messages(subject, conversation_id).await {
-        Ok(items) => Json(PlusApiResult::success(
-            serde_json::json!({ "items": items }).into_response(),
+        Ok(items) => Json(success_envelope(
+            serde_json::json!({ "items": items }),
+        )).into_response(),
         Err(error) => app_chat_system_response("app chat messages are unavailable", error),
     }
 }
@@ -304,7 +303,7 @@ async fn create_turn(
         }
     };
     match state.store.create_turn(command).await {
-        Ok(outcome) => Json(PlusApiResult::success(outcome)).into_response(),
+        Ok(outcome) => Json(success_envelope(outcome)).into_response(),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) => app_chat_system_response("app chat turn is unavailable", error),
     }
@@ -332,9 +331,9 @@ async fn complete_turn_response(
         }
     };
     match state.store.complete_turn_response(command).await {
-        Ok(outcome) => Json(PlusApiResult::success(outcome)).into_response(),
+        Ok(outcome) => Json(success_envelope(outcome)).into_response(),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
-        Err(error) if error.is_conflict() => PlusApiResult::error("4090", error.to_string())).into_response(),
+        Err(error) if error.is_conflict() => problem_from_wire_code("4090", error.to_string()).into_response(),
         Err(error) => app_chat_system_response("app chat turn response is unavailable", error),
     }
 }
@@ -592,15 +591,15 @@ fn generate_entity_uuid(state: &AppChatState) -> Result<String, AppChatBuildErro
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4001", message.into())).into_response()
+    problem_from_wire_code("4001", message.into()).into_response()
 }
 
 fn not_found(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4040", message.into())).into_response()
+    problem_from_wire_code("4040", message.into()).into_response()
 }
 
 fn app_chat_system_response(context: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }
 
 #[derive(Debug)]

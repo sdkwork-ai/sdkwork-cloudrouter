@@ -6,17 +6,27 @@ import { BusinessStatePanel } from '@sdkwork/clawrouter-pc-commons/components/Bu
 import {
   SdkworkWalletBalancePanel,
   SdkworkWalletIntlProvider,
-  SdkworkWalletSummaryCards,
+  SdkworkWalletRechargeDialog,
+  SdkworkWalletTransactionList,
+  SdkworkWalletWithdrawDialog,
   useSdkworkWalletController,
   useSdkworkWalletControllerState,
   useSdkworkWalletIntl,
 } from '@sdkwork/account-pc-wallet';
 
+import { ConsoleAccountQuickActions } from './ConsoleAccountQuickActions.tsx';
+import { resolveConsoleWalletLocale } from './consoleCommerceLocale.ts';
+import { CLAW_ROUTER_COMMERCE_LINK_CLASS } from './consoleCommerceTheme.ts';
 import { useConsoleBusinessNavigation } from './consoleBusinessNavigation.ts';
 
+const RECENT_TRANSACTION_LIMIT = 5;
+
 export function ConsoleAccountView() {
+  const { i18n } = useTranslation();
+  const walletLocale = resolveConsoleWalletLocale(i18n.resolvedLanguage ?? i18n.language);
+
   return (
-    <SdkworkWalletIntlProvider>
+    <SdkworkWalletIntlProvider locale={walletLocale}>
       <ConsoleAccountViewContent />
     </SdkworkWalletIntlProvider>
   );
@@ -27,13 +37,13 @@ function ConsoleAccountViewContent() {
   const state = useSdkworkWalletControllerState(controller);
   const { copy } = useSdkworkWalletIntl();
   const { t } = useTranslation();
-  const { couponsPath, walletPath } = useConsoleBusinessNavigation();
+  const { checkoutPath, onNavigate, walletPath } = useConsoleBusinessNavigation();
 
   useEffect(() => {
-    if (!state.isBootstrapped && !state.isLoading) {
-      void controller.bootstrap();
+    if (!state.isBootstrapped && !state.isLoading && !state.lastError) {
+      void controller.bootstrap().catch(() => undefined);
     }
-  }, [controller, state.isBootstrapped, state.isLoading]);
+  }, [controller, state.isBootstrapped, state.isLoading, state.lastError]);
 
   if (state.isLoading && !state.isBootstrapped) {
     return <BusinessStatePanel kind="loading" title={copy.page.loading} />;
@@ -45,38 +55,60 @@ function ConsoleAccountViewContent() {
     );
   }
 
+  const recentTransactions = state.overview.transactions.slice(0, RECENT_TRANSACTION_LIMIT);
+
   return (
-    <div className="relative h-full overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
-      <div className="mx-auto flex max-w-[96rem] flex-col gap-5">
-        <SdkworkWalletBalancePanel
-          onOpenRecharge={() => {
-            controller.openRecharge();
-          }}
-          onOpenWithdraw={() => {
-            controller.openWithdraw();
-          }}
-          overview={state.overview}
-        />
+    <div className="h-full overflow-y-auto">
+      <div className="px-4 py-4 sm:px-5 sm:py-5">
+        <div className="mx-auto flex max-w-5xl flex-col gap-4">
+          <SdkworkWalletBalancePanel
+            onOpenRecharge={() => {
+              controller.openRecharge();
+            }}
+            onOpenWithdraw={() => {
+              controller.openWithdraw();
+            }}
+            overview={state.overview}
+          />
 
-        <SdkworkWalletSummaryCards overview={state.overview} />
+          <ConsoleAccountQuickActions />
 
-        <div className="flex flex-wrap justify-end gap-3">
-          <Link
-            className="inline-flex items-center gap-2 rounded-lg border border-[var(--sdk-color-border-default)] px-4 py-2 text-sm font-medium text-[var(--sdk-color-text-primary)] transition-colors hover:bg-[var(--sdk-color-surface-panel-muted)]"
-            to={couponsPath}
-          >
-            {t('console.account.linkToCoupons', 'Coupons and redeem codes')}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-          <Link
-            className="inline-flex items-center gap-2 rounded-lg border border-[var(--sdk-color-border-default)] px-4 py-2 text-sm font-medium text-[var(--sdk-color-text-primary)] transition-colors hover:bg-[var(--sdk-color-surface-panel-muted)]"
-            to={walletPath}
-          >
-            {t('console.account.linkToWallet', 'Open recharge center')}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+          <div className="space-y-3">
+            <SdkworkWalletTransactionList transactions={recentTransactions} />
+
+            {state.overview.transactions.length > RECENT_TRANSACTION_LIMIT ? (
+              <div className="flex justify-end">
+                <Link className={CLAW_ROUTER_COMMERCE_LINK_CLASS} to={walletPath}>
+                  {t('console.account.viewAllActivity', 'View all activity')}
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
+
+      <SdkworkWalletRechargeDialog
+        checkoutBasePath={checkoutPath}
+        controller={controller}
+        onNavigate={onNavigate}
+        onOpenChange={(open) => {
+          if (!open) {
+            controller.closeRecharge();
+          }
+        }}
+        open={state.isRechargeOpen}
+        rechargeFlow="direct"
+      />
+      <SdkworkWalletWithdrawDialog
+        controller={controller}
+        onOpenChange={(open) => {
+          if (!open) {
+            controller.closeWithdraw();
+          }
+        }}
+        open={state.isWithdrawOpen}
+      />
     </div>
   );
 }

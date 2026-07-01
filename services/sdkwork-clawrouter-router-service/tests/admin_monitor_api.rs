@@ -27,7 +27,7 @@ async fn admin_monitor_route_returns_nodes_alerts_and_performance() {
         .unwrap();
     assert_eq!(StatusCode::OK, nodes_response.status());
     let nodes_payload = json_payload(nodes_response).await;
-    assert_eq!("2000", nodes_payload["code"]);
+    assert_eq!(0, nodes_payload["code"].as_i64().unwrap());
     assert_eq!("gw-shanghai-01", nodes_payload["data"]["items"][0]["name"]);
     assert_eq!("cn-shanghai", nodes_payload["data"]["items"][0]["region"]);
     assert_eq!("warning", nodes_payload["data"]["items"][0]["status"]);
@@ -83,7 +83,7 @@ async fn admin_monitor_route_rejects_missing_trusted_subject() {
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 fn signed_request(method: &str, path: &str) -> Request<Body> {

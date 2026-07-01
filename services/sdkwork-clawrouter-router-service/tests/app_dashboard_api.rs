@@ -33,7 +33,8 @@ async fn app_dashboard_overview_normalizes_valid_utc_timestamps_before_read_stor
         .await
         .unwrap();
     let payload: Value = serde_json::from_slice(&body).unwrap();
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
+    assert!(payload["data"]["item"].is_object());
 
     let captured_query = read_store.captured_query.lock().unwrap().clone().unwrap();
     let captured_subject = read_store.captured_subject.lock().unwrap().unwrap();
@@ -74,7 +75,8 @@ async fn app_dashboard_overview_resolves_subject_from_web_request_context_withou
         .await
         .unwrap();
     let payload: Value = serde_json::from_slice(&body).unwrap();
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
+    assert!(payload["data"]["item"].is_object());
 
     let captured_subject = read_store.captured_subject.lock().unwrap().unwrap();
     assert_eq!(100_001, captured_subject.tenant_id);
@@ -104,7 +106,7 @@ async fn app_dashboard_overview_returns_mapping_error_for_non_numeric_web_princi
         .await
         .unwrap();
     let payload: Value = serde_json::from_slice(&body).unwrap();
-    assert_eq!("4220", payload["code"]);
+    assert_eq!(42201, payload["code"].as_i64().unwrap());
     assert!(read_store.captured_subject.lock().unwrap().is_none());
 }
 

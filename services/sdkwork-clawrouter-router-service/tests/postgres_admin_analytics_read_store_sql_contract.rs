@@ -21,11 +21,11 @@ fn postgres_admin_analytics_read_store_uses_usage_fact_aligned_failed_request_wi
         "COUNT(DISTINCT CASE WHEN failed_request.request_id IS NULL THEN NULL ELSE usage.request_id END) AS failed_requests",
         "AND NULLIF(request_id, '') IS NOT NULL",
         "AND started_at IS NOT NULL",
-        "AND ($3::text IS NULL OR started_at >= ($3::timestamp AT TIME ZONE 'UTC'))",
-        "AND ($4::text IS NULL OR started_at <= ($4::timestamp AT TIME ZONE 'UTC'))",
+        "AND ($3::text IS NULL OR started_at >= $3::timestamptz)",
+        "AND ($4::text IS NULL OR started_at <= $4::timestamptz)",
         "AND failed_request.request_id = usage.request_id",
-        "AND ($3::text IS NULL OR usage.occurred_at >= ($3::timestamp AT TIME ZONE 'UTC'))",
-        "AND ($4::text IS NULL OR usage.occurred_at <= ($4::timestamp AT TIME ZONE 'UTC'))",
+        "AND ($3::text IS NULL OR usage.occurred_at >= $3::timestamptz)",
+        "AND ($4::text IS NULL OR usage.occurred_at <= $4::timestamptz)",
     ] {
         assert_sql_contains(POSTGRES_ADMIN_ANALYTICS_READ_STORE, expected);
     }

@@ -2,7 +2,7 @@
 
 Status: active
 Owner: SDKWork maintainers
-Updated: 2026-06-27
+Updated: 2026-06-29
 Specs: ARCHITECTURE_DECISION_SPEC.md, DOCUMENTATION_SPEC.md
 
 This document is the **single entry point** for the Claw Router technical
@@ -133,7 +133,7 @@ SDK clients in TypeScript).
 │  ┌──────────────────────────────────────────────────────┐    │
 │  │  Provider adapters (hyper-rustls upstream clients)  │    │
 │  │  OpenAI / Anthropic / Google / Volcengine / Tencent │    │
-│  │  Alicloud (stub) / Suno / ElevenLabs / Midjourney    │    │
+│  │  Alicloud / Suno / ElevenLabs / Midjourney    │    │
 │  └──────────────────────────────────────────────────────┘    │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -145,7 +145,7 @@ SDK clients in TypeScript).
 | HTTP entry + auth | `crates/sdkwork-claw-http` | TLS termination, app session token, API key auth, contract fallback | router-service internals |
 | Gateway assembly | `crates/sdkwork-clawrouter-cloud-gateway` | Edge server, invocation router wiring, OpenAI passthrough path table, provider-native passthrough | sqlx stores directly |
 | Service layer | `services/sdkwork-clawrouter-router-service` | 13-interceptor invocation pipeline, OpenAI handlers, billing, pricing, settlement, payment adapters | axum router assembly |
-| App API | `services/sdkwork-clawrouter-standalone-gateway` | Consumer portal HTTP handlers (`/app/v3/api/*`) | gateway internals |
+| App API | `services/sdkwork-clawrouter-standalone-gateway` + `crates/sdkwork-clawrouter-standalone-gateway-lib` | Consumer portal HTTP handlers (`/app/v3/api/*`) + edge env resolution | gateway internals |
 | Backend API | `services/sdkwork-clawrouter-admin-gateway` | Operator console HTTP handlers (`/backend/v3/api/*`) | gateway internals |
 | Provider adapters | `crates/provider-adapters/*` | Per-provider HTTP + signing + credential loading | router-service |
 | Config | `crates/sdkwork-claw-config` | Runtime TOML + env + secret file resolution; database/redis/deployment/runtime/app_session/api_key sections | any service crate |
@@ -171,7 +171,7 @@ SDK clients in TypeScript).
 sdkwork-clawrouter/
 ├── AGENTS.md                  # repository agent entrypoint
 ├── Cargo.toml                 # Rust workspace (52 members)
-├── package.json               # pnpm lifecycle scripts
+├── package.json               # package lifecycle scripts (pnpm; see PNPM_SCRIPT_SPEC.md)
 ├── sdkwork.app.config.json    # app identity + release metadata
 ├── sdkwork.workflow.json      # GitHub packaging/release workflow manifest
 ├── apis/                      # authored API contracts (app/backend/open)
@@ -184,10 +184,11 @@ sdkwork-clawrouter/
 │   ├── provider-adapters/     # per-provider HTTP+signing
 │   ├── sdkwork-claw-{config,http,core,security,contract,...}
 │   ├── sdkwork-clawrouter-cloud-gateway/   # gateway assembly
+│   ├── sdkwork-clawrouter-standalone-gateway-lib/  # standalone edge + app API wiring
 │   └── sdkwork-routes-{llm,iaas,paas}-open-api/  # route manifests
 ├── services/                 # runnable Rust binaries
 │   ├── sdkwork-clawrouter-router-service/  # core service layer
-│   ├── sdkwork-clawrouter-standalone-gateway/  # /app/v3/api/*
+│   ├── sdkwork-clawrouter-standalone-gateway/  # /app/v3/api/* binary entrypoint
 │   ├── sdkwork-clawrouter-admin-gateway/# /backend/v3/api/*
 │   ├── sdkwork-claw-provider-adapter/      # provider HTTP relay
 │   └── sdkwork-claw-installer/             # clawrouterctl CLI
@@ -470,8 +471,10 @@ Deep-dive TECH shards (linked by topic, not required reading for orientation):
 - [TECH-2026-05-20-appbase-commerce-platform-design.md](TECH-2026-05-20-appbase-commerce-platform-design.md)
 - [TECH-2026-05-21-appbase-commerce-standard-design.md](TECH-2026-05-21-appbase-commerce-standard-design.md)
 - [TECH-2026-05-21-appbase-commerce-standard-phase1.md](TECH-2026-05-21-appbase-commerce-standard-phase1.md)
-- [TECH-2026-05-22-admin-product-center-design.md](TECH-2026-05-22-admin-product-center-design.md)
-- [TECH-2026-05-22-admin-product-center.md](TECH-2026-05-22-admin-product-center.md)
+- [TECH-2026-05-22-admin-product-center-design.md](TECH-2026-05-22-admin-product-center-design.md) (archive)
+- [TECH-2026-05-22-admin-product-center.md](TECH-2026-05-22-admin-product-center.md) (archive)
+- [TECH-2026-06-10-admin-product-center-commercial-design.md](TECH-2026-06-10-admin-product-center-commercial-design.md) (live)
+- [TECH-2026-06-10-admin-product-center-commercial.md](TECH-2026-06-10-admin-product-center-commercial.md) (live)
 - [TECH-2026-05-22-provider-adapter-invocation-design.md](TECH-2026-05-22-provider-adapter-invocation-design.md)
 - [TECH-2026-05-22-provider-adapter-invocation.md](TECH-2026-05-22-provider-adapter-invocation.md)
 - [TECH-2026-05-23-admin-membership-center-completeness-design.md](TECH-2026-05-23-admin-membership-center-completeness-design.md)

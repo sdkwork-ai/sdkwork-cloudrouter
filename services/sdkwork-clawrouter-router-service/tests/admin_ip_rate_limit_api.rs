@@ -40,7 +40,7 @@ async fn admin_ip_rate_limit_route_creates_and_lists_ip_rules() {
 
     assert_eq!(StatusCode::OK, create_response.status());
     let create_payload = json_payload(create_response).await;
-    assert_eq!("2000", create_payload["code"]);
+    assert_eq!(0, create_payload["code"].as_i64().unwrap());
     assert_eq!(
         expected_name,
         create_payload["data"]["item"]["ruleName"].as_str().unwrap()
@@ -98,8 +98,8 @@ async fn admin_ip_rate_limit_route_rejects_invalid_ip_without_calling_store() {
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("targetIp must be an IP address or CIDR block"));
@@ -126,7 +126,7 @@ async fn admin_ip_rate_limit_route_rejects_missing_trusted_subject() {
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 async fn json_payload(response: axum::response::Response) -> Value {

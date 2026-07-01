@@ -1,12 +1,15 @@
 use std::sync::Arc;
 
-use axum::extract::{Query, State};
-use axum::http::StatusCode;
+use axum::extract::{Extension, Query, State};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
-use axum::{Json, Router};
+use axum::Router;
 use crate::api::app_sql_subject::{map_optional_app_sql_subject, ResolvedAppSqlScopedSubject};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{
+    json_success_list_response, offset_page_info, problem_from_wire_code_for_context,
+    validation_problem_for_context,
+};
+use sdkwork_web_core::WebRequestContext;
 use serde::Deserialize;
 use crate::ports::{
     UsageLogsPage, UsageLogsQuery, UsageLogsReadFuture, UsageLogsReadStore, UsageLogsStatus,
@@ -114,8 +117,10 @@ fn app_usage_logs_router_with_state(
 async fn fetch_usage_logs(
     State(state): State<AppUsageLogsState>,
     ResolvedAppSqlScopedSubject(subject): ResolvedAppSqlScopedSubject,
+    request_context: Option<Extension<WebRequestContext>>,
     Query(query): Query<AppUsageLogsQuery>,
 ) -> Response {
+    let ctx = request_context.map(|context| context.0);
     let subject = match map_optional_app_sql_subject(subject, state.require_subject, |scoped| {
         scoped.into()
     }) {
@@ -126,7 +131,7 @@ async fn fetch_usage_logs(
     let validated_query = match validate_usage_logs_query(query) {
         Ok(validated_query) => validated_query,
         Err(error) => {
-            return PlusApiResult::error("4001", error.message)).into_response();
+            return validation_problem_for_context(ctx.as_ref(), error.message).into_response();
         }
     };
 
@@ -135,11 +140,17 @@ async fn fetch_usage_logs(
         .load_usage_logs(validated_query.query, subject)
         .await
     {
-        Ok(page) => Json(PlusApiResult::success(page)).into_response(),
-        Err(error) => PlusApiResult::error(
-                "5000",
-                format!("usage logs read model is unavailable: {error}"),
-            )).into_response(),
+        Ok(page) => json_success_list_response(
+            ctx.as_ref(),
+            page.logs,
+            offset_page_info(page.page_no, page.page_size, page.total),
+        ),
+        Err(error) => problem_from_wire_code_for_context(
+            ctx.as_ref(),
+            "5000",
+            format!("usage logs read model is unavailable: {error}"),
+        )
+        .into_response(),
     }
 }
 

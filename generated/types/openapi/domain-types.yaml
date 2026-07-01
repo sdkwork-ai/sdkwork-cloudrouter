@@ -20,6 +20,8 @@ components:
         - suno
         - tencent
         - zhipu
+        - stepfun
+        - xiaomi
         - custom
         - unknown
     IntegrationProviderType:

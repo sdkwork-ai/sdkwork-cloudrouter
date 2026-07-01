@@ -106,11 +106,12 @@ Security details store `sessionKeyHash`, not the raw `sessionKey`. Scanner ident
 
 ## Implementation Map
 
-Claw Router side:
+Claw Router side (relay admin — auth settings only; OAuth workspace UI removed from portal):
 
-- `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-oauth/src/oauthAdminService.ts`
-- `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-oauth/src/index.tsx`
-- `apps/sdkwork-clawrouter-pc/admin-oauth-runtime.test.ts`
+- `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-site/src/ClawRouterAuthSettingsPage.tsx`
+- `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-site/src/AuthSettingsService.ts`
+
+OAuth workspace administration (`/admin/oauth/*`) is owned by `sdkwork-manager` / IAM admin surfaces, not Claw Router Admin.
 
 Appbase side:
 

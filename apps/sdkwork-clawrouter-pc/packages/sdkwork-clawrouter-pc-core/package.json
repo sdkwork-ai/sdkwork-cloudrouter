@@ -47,8 +47,8 @@
     "vite": "^6.2.0"
   },
   "dependencies": {
-    "sdkwork-commerce-app-sdk-generated-typescript": "workspace:*",
-    "sdkwork-commerce-backend-sdk-generated-typescript": "workspace:*",
+    "clawrouter-app-domain-transport-generated-typescript": "workspace:*",
+    "clawrouter-backend-domain-transport-generated-typescript": "workspace:*",
     "sdkwork-drive-backend-sdk-generated-typescript": "workspace:*",
     "sdkwork-generations-app-sdk-generated-typescript": "workspace:*"
   }

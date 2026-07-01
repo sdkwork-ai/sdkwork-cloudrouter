@@ -33,7 +33,7 @@ async fn app_settlements_dashboard_billing_route_matches_app_sdk_contract() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = response_json(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("2026-04-29", payload["data"]["chartData"][0]["day"]);
 
     let captured_query = read_store.captured_query.lock().unwrap().clone().unwrap();

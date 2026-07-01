@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::{ApiKeySecretGenerator, ApiKeySecretHasher};
 use crate::domain::{DecimalValue, DomainError, GatewayApiKey};
 use crate::ports::{
@@ -184,7 +184,7 @@ async fn fetch_users(
         })
         .await
     {
-        Ok(items) => Json(PlusApiResult::success(AdminUserListResponse { items })).into_response(),
+        Ok(items) => Json(success_envelope(AdminUserListResponse { items })).into_response(),
         Err(error) => admin_user_system_response("admin user read model is unavailable", error),
     }
 }
@@ -201,7 +201,7 @@ async fn fetch_api_keys_map(
         .list_api_keys(ListAdminUserApiKeysQuery { subject })
         .await
     {
-        Ok(items) => Json(PlusApiResult::success(api_key_map(items))).into_response(),
+        Ok(items) => Json(success_envelope(api_key_map(items))).into_response(),
         Err(error) => admin_user_system_response("admin api key read model is unavailable", error),
     }
 }
@@ -249,7 +249,7 @@ async fn create_user(
     };
 
     match state.store.create_user(command).await {
-        Ok(item) => Json(PlusApiResult::success(AdminUserItemEnvelope { item })).into_response(),
+        Ok(item) => Json(success_envelope(AdminUserItemEnvelope { item })).into_response(),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => admin_user_system_response("admin user command store is unavailable", error),
     }
@@ -317,7 +317,7 @@ async fn update_user_with_request(
 
     match state.store.update_user(command).await {
         Ok(Some(item)) => {
-            Json(PlusApiResult::success(AdminUserItemEnvelope { item })).into_response()
+            Json(success_envelope(AdminUserItemEnvelope { item })).into_response()
         }
         Ok(None) => not_found_response("user was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
@@ -384,7 +384,7 @@ async fn adjust_balance(
 
     match state.store.adjust_balance(command).await {
         Ok(Some(item)) => {
-            Json(PlusApiResult::success(AdminUserItemEnvelope { item })).into_response()
+            Json(success_envelope(AdminUserItemEnvelope { item })).into_response()
         }
         Ok(None) => not_found_response("user was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
@@ -447,7 +447,7 @@ async fn create_api_key(
     };
 
     match state.store.create_api_key(command).await {
-        Ok(key) => Json(PlusApiResult::success(AdminUserApiKeyCreateResponse {
+        Ok(key) => Json(success_envelope(AdminUserApiKeyCreateResponse {
             key,
             raw_key,
         }))
@@ -490,7 +490,7 @@ async fn delete_api_key(
     };
 
     match state.store.delete_api_key(command).await {
-        Ok(true) => Json(PlusApiResult::success(AdminUserApiKeyDeleteResponse {
+        Ok(true) => Json(success_envelope(AdminUserApiKeyDeleteResponse {
             deleted: true,
         }))
         .into_response(),
@@ -581,7 +581,7 @@ async fn create_backend_api_key(
     };
 
     match state.command_store.create_gateway_api_key(command).await {
-        Ok(created) => Json(PlusApiResult::success(AdminUserApiKeyCreateResponse {
+        Ok(created) => Json(success_envelope(AdminUserApiKeyCreateResponse {
             key: admin_api_key_item_from_gateway(created.api_key),
             raw_key,
         }))
@@ -630,7 +630,7 @@ async fn delete_backend_api_key(
         .delete_gateway_api_key_for_organization(command)
         .await
     {
-        Ok(true) => Json(PlusApiResult::success(AdminUserApiKeyDeleteResponse {
+        Ok(true) => Json(success_envelope(AdminUserApiKeyDeleteResponse {
             deleted: true,
         }))
         .into_response(),
@@ -970,21 +970,21 @@ fn civil_from_days(days: i64) -> (i64, i64, i64) {
 }
 
 fn bad_request(message: String) -> Response {
-    PlusApiResult::error("4001", message)).into_response()
+    problem_from_wire_code("4001", message).into_response()
 }
 
 fn not_found_response(message: &str) -> Response {
-    PlusApiResult::error("4004", message)).into_response()
+    problem_from_wire_code("4040", message).into_response()
 }
 
 fn conflict_response(error: DomainError) -> Response {
-    PlusApiResult::error("4090", error.to_string())).into_response()
+    problem_from_wire_code("4090", error.to_string()).into_response()
 }
 
 fn command_build_error_response(error: DomainError) -> Response {
-    PlusApiResult::error("5000", error.to_string())).into_response()
+    problem_from_wire_code("5000", error.to_string()).into_response()
 }
 
 fn admin_user_system_response(context: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }

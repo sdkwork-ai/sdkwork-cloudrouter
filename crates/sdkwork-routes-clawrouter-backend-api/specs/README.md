@@ -17,6 +17,8 @@ Externally served routers must be finalized exactly once through `web_bootstrap`
 | `maybe_wrap_router_with_web_framework_and_iam_pool` | All-in-one gateway — shared Postgres pool + `database_config` |
 | `finalize_served_router` | Thin alias for single wrap |
 
+IAM backend-api (`/backend/v3/api/iam/*`) is **not** merged on the product admin router. All-in-one runtime mounts IAM through `sdkwork-clawrouter-cloud-gateway/src/iam_embedded.rs` and `sdkwork-api-cloud-gateway` embedded dependency surfaces.
+
 `ClawRouterBackendDomainInjector` projects `IamAppContext` from canonical `WebRequestContext`.
 
 Migrated backend routes resolve `SqlScopedAdminSubject` via `admin_sql_subject` and use `layer_with_admin_subject_boundary` (`admin_web_framework_access_boundary` when web-framework mode is active, legacy `admin_request_subject_boundary` otherwise).

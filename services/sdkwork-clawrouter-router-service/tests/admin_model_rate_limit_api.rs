@@ -39,7 +39,7 @@ async fn admin_model_rate_limit_route_creates_and_lists_model_limits() {
 
     assert_eq!(StatusCode::OK, create_response.status());
     let create_payload = json_payload(create_response).await;
-    assert_eq!("2000", create_payload["code"]);
+    assert_eq!(0, create_payload["code"].as_i64().unwrap());
     assert_eq!(
         "openai/gpt-4o-mini",
         create_payload["data"]["item"]["model"]
@@ -104,8 +104,8 @@ async fn admin_model_rate_limit_route_rejects_invalid_model_without_calling_stor
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"].as_str().unwrap().contains("model"));
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"].as_str().unwrap().contains("model"));
     assert!(store.commands.lock().unwrap().is_empty());
 }
 
@@ -134,8 +134,8 @@ async fn admin_model_rate_limit_route_rejects_invalid_limit_without_calling_stor
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"].as_str().unwrap().contains("rpm"));
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"].as_str().unwrap().contains("rpm"));
     assert!(store.commands.lock().unwrap().is_empty());
 }
 
@@ -159,7 +159,7 @@ async fn admin_model_rate_limit_route_rejects_missing_trusted_subject() {
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 #[tokio::test]

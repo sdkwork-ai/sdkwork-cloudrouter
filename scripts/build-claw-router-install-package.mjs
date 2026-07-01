@@ -1269,7 +1269,7 @@ function createRuntimeConfigTemplate(packageItem) {
     `trusted_subject_secret_file = "${secretRoot}/trusted-subject.secret"`,
     'trusted_subject_max_clock_skew_seconds = 300',
     `app_session_secret_file = "${secretRoot}/app-session.secret"`,
-    'app_session_ttl_seconds = 86400',
+    'app_session_ttl_seconds = 2592000',
     'app_session_max_clock_skew_seconds = 300',
     `payment_webhook_secret_file = "${secretRoot}/payment-webhook.secret"`,
     'payment_webhook_max_clock_skew_seconds = 600',

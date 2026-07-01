@@ -11,7 +11,7 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::ports::{
@@ -105,7 +105,7 @@ async fn fetch_model_rate_limits(
         .list_model_rate_limits(ListAdminModelRateLimitsQuery { subject })
         .await
     {
-        Ok(items) => Json(PlusApiResult::success(AdminModelRateLimitListResponse {
+        Ok(items) => Json(success_envelope(AdminModelRateLimitListResponse {
             items: items.into_iter().map(to_item_response).collect(),
         }))
         .into_response(),
@@ -137,7 +137,7 @@ async fn create_model_rate_limit(
     };
 
     match state.store.create_model_rate_limit(command).await {
-        Ok(item) => Json(PlusApiResult::success(AdminModelRateLimitItemEnvelope {
+        Ok(item) => Json(success_envelope(AdminModelRateLimitItemEnvelope {
             item: to_item_response(item),
         }))
         .into_response(),
@@ -279,11 +279,11 @@ fn entity_code(prefix: &str, uuid: &str) -> String {
 }
 
 fn bad_request(message: String) -> Response {
-    PlusApiResult::error("4001", message)).into_response()
+    problem_from_wire_code("4001", message).into_response()
 }
 
 fn conflict_response(error: DomainError) -> Response {
-    PlusApiResult::error("4090", error.to_string())).into_response()
+    problem_from_wire_code("4090", error.to_string()).into_response()
 }
 
 fn command_build_error_response(error: ModelRateLimitCommandBuildError) -> Response {
@@ -296,7 +296,7 @@ fn command_build_error_response(error: ModelRateLimitCommandBuildError) -> Respo
 }
 
 fn model_rate_limit_system_response(context: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }
 
 fn current_timestamp_string() -> String {

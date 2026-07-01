@@ -11,7 +11,7 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::ports::{
@@ -286,7 +286,7 @@ async fn fetch_channel_group_channel_bindings(
         .list_channel_bindings(ListAdminChannelGroupChannelBindingsQuery { subject, group_id })
         .await
     {
-        Ok(items) => Json(PlusApiResult::success(
+        Ok(items) => Json(success_envelope(
             AdminChannelGroupChannelBindingListResponse {
                 items: items
                     .into_iter()
@@ -337,7 +337,7 @@ async fn replace_channel_group_channel_bindings(
     };
 
     match state.store.replace_channel_bindings(command).await {
-        Ok(items) => Json(PlusApiResult::success(
+        Ok(items) => Json(success_envelope(
             AdminChannelGroupChannelBindingListResponse {
                 items: items
                     .into_iter()
@@ -386,7 +386,7 @@ async fn fetch_channel_group_route_explain(
         .list_channel_bindings(ListAdminChannelGroupChannelBindingsQuery { subject, group_id })
         .await
     {
-        Ok(bindings) => Json(PlusApiResult::success(build_channel_group_route_explain(
+        Ok(bindings) => Json(success_envelope(build_channel_group_route_explain(
             &group, &bindings,
         )))
         .into_response(),
@@ -409,7 +409,7 @@ async fn fetch_channel_groups(
         .list_channel_groups(ListAdminChannelGroupsQuery { subject })
         .await
     {
-        Ok(items) => Json(PlusApiResult::success(AdminChannelGroupListResponse {
+        Ok(items) => Json(success_envelope(AdminChannelGroupListResponse {
             items: items.into_iter().map(to_item_response).collect(),
         }))
         .into_response(),
@@ -440,7 +440,7 @@ async fn create_channel_group(
     };
 
     match state.store.create_channel_group(command).await {
-        Ok(item) => Json(PlusApiResult::success(AdminChannelGroupItemEnvelope {
+        Ok(item) => Json(success_envelope(AdminChannelGroupItemEnvelope {
             item: to_item_response(item),
         }))
         .into_response(),
@@ -477,7 +477,7 @@ async fn update_channel_group(
     };
 
     match state.store.update_channel_group(command).await {
-        Ok(Some(item)) => Json(PlusApiResult::success(AdminChannelGroupItemEnvelope {
+        Ok(Some(item)) => Json(success_envelope(AdminChannelGroupItemEnvelope {
             item: to_item_response(item),
         }))
         .into_response(),
@@ -506,7 +506,7 @@ async fn delete_channel_group(
     };
 
     match state.store.delete_channel_group(command).await {
-        Ok(true) => Json(PlusApiResult::success(AdminChannelGroupDeleteResponse {
+        Ok(true) => Json(success_envelope(AdminChannelGroupDeleteResponse {
             deleted: true,
         }))
         .into_response(),
@@ -1292,15 +1292,15 @@ fn to_channel_binding_item_response(
 }
 
 fn bad_request(message: String) -> Response {
-    PlusApiResult::error("4001", message)).into_response()
+    problem_from_wire_code("4001", message).into_response()
 }
 
 fn not_found_response(message: &'static str) -> Response {
-    PlusApiResult::error("4040", message)).into_response()
+    problem_from_wire_code("4040", message).into_response()
 }
 
 fn conflict_response(error: DomainError) -> Response {
-    PlusApiResult::error("4090", error.to_string())).into_response()
+    problem_from_wire_code("4090", error.to_string()).into_response()
 }
 
 fn command_build_error_response(error: ChannelGroupCommandBuildError) -> Response {
@@ -1313,7 +1313,7 @@ fn command_build_error_response(error: ChannelGroupCommandBuildError) -> Respons
 }
 
 fn channel_group_system_response(context: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }
 
 fn current_timestamp_string() -> String {

@@ -3,9 +3,14 @@ import { existsSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const portalRoot = new URL('./', import.meta.url);
+const repoRoot = new URL('../../', import.meta.url);
 
 function source(path) {
   return readFileSync(new URL(path, portalRoot), 'utf8');
+}
+
+function repoSource(path) {
+  return readFileSync(new URL(path, repoRoot), 'utf8');
 }
 
 function json(path) {
@@ -15,7 +20,7 @@ function json(path) {
 test('portal workspace declares appbase app and backend generated SDK packages', () => {
   const packageJson = json('package.json');
   const commonsPackageJson = json('packages/sdkwork-clawroutes-pc-commons/package.json');
-  const workspaceSource = source('pnpm-workspace.yaml');
+  const workspaceSource = repoSource('pnpm-workspace.yaml');
   const tsconfigSource = source('tsconfig.json');
   const typecheckSource = source('tsconfig.typecheck.json');
   const viteConfigSource = source('vite.config.ts');
@@ -25,12 +30,18 @@ test('portal workspace declares appbase app and backend generated SDK packages',
   assert.equal(commonsPackageJson.dependencies['@sdkwork/iam-app-sdk'], 'workspace:*');
   assert.equal(commonsPackageJson.dependencies['@sdkwork/iam-backend-sdk'], 'workspace:*');
 
-  for (const workspacePattern of [
-    '../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/*-typescript/generated/server-openapi',
-    '../../../sdkwork-iam/sdks/sdkwork-iam-backend-sdk/*-typescript/generated/server-openapi',
+  for (const [appPattern, rootPattern] of [
+    [
+      '../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/*-typescript/generated/server-openapi',
+      '../sdkwork-iam/sdks/sdkwork-iam-app-sdk/*-typescript/generated/server-openapi',
+    ],
+    [
+      '../../../sdkwork-iam/sdks/sdkwork-iam-backend-sdk/*-typescript/generated/server-openapi',
+      '../sdkwork-iam/sdks/sdkwork-iam-backend-sdk/*-typescript/generated/server-openapi',
+    ],
   ]) {
-    assert.ok(packageJson.workspaces.includes(workspacePattern), `package workspaces must include ${workspacePattern}`);
-    assert.ok(workspaceSource.includes(workspacePattern), `pnpm workspace must include ${workspacePattern}`);
+    assert.ok(packageJson.workspaces.includes(appPattern), `package workspaces must include ${appPattern}`);
+    assert.ok(workspaceSource.includes(rootPattern), `pnpm workspace must include ${rootPattern}`);
   }
 
   for (const [packageName, sdkFamily] of [
@@ -52,54 +63,73 @@ test('portal workspace declares appbase app and backend generated SDK packages',
   );
 });
 
-test('portal workspace declares Commerce app and backend generated SDK packages', () => {
+test('portal workspace composes commerce capabilities through clawrouter SDK clients only', () => {
   const packageJson = json('package.json');
   const commonsPackageJson = json('packages/sdkwork-clawroutes-pc-commons/package.json');
-  const workspaceSource = source('pnpm-workspace.yaml');
+  const pcCorePackageJson = json('packages/sdkwork-clawrouter-pc-core/package.json');
+  const workspaceSource = repoSource('pnpm-workspace.yaml');
   const tsconfigSource = source('tsconfig.json');
   const typecheckSource = source('tsconfig.typecheck.json');
   const viteConfigSource = source('vite.config.ts');
+  const sdkClientsSource = source('packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts');
 
-  assert.equal(packageJson.dependencies['sdkwork-commerce-app-sdk-generated-typescript'], 'workspace:*');
-  assert.equal(packageJson.dependencies['sdkwork-commerce-backend-sdk-generated-typescript'], 'workspace:*');
-  assert.equal(commonsPackageJson.dependencies['@sdkwork/commerce-service'], 'workspace:*');
+  assert.equal(packageJson.dependencies['sdkwork-commerce-app-sdk-generated-typescript'], undefined);
+  assert.equal(packageJson.dependencies['sdkwork-commerce-backend-sdk-generated-typescript'], undefined);
+  assert.equal(packageJson.dependencies['@sdkwork/commerce-service'], undefined);
+  assert.equal(commonsPackageJson.dependencies['@sdkwork/commerce-service'], undefined);
   assert.equal(commonsPackageJson.dependencies['@sdkwork/clawrouter-pc-core'], 'workspace:*');
+  assert.equal(pcCorePackageJson.dependencies['sdkwork-commerce-app-sdk-generated-typescript'], undefined);
+  assert.equal(pcCorePackageJson.dependencies['sdkwork-commerce-backend-sdk-generated-typescript'], undefined);
+  assert.equal(pcCorePackageJson.dependencies['clawrouter-app-domain-transport-generated-typescript'], 'workspace:*');
+  assert.equal(pcCorePackageJson.dependencies['clawrouter-backend-domain-transport-generated-typescript'], 'workspace:*');
 
-  for (const workspacePattern of [
-    '../../sdks/sdkwork-commerce-app-sdk/sdkwork-commerce-app-sdk-typescript/generated/server-openapi',
-    '../../sdks/sdkwork-commerce-backend-sdk/sdkwork-commerce-backend-sdk-typescript/generated/server-openapi',
-  ]) {
-    assert.ok(packageJson.workspaces.includes(workspacePattern), `package workspaces must include ${workspacePattern}`);
-    assert.ok(workspaceSource.includes(workspacePattern), `pnpm workspace must include ${workspacePattern}`);
-  }
+  assert.doesNotMatch(workspaceSource, /packages\/common\/commerce/);
+  assert.doesNotMatch(workspaceSource, /sdks\/sdkwork-commerce-app-sdk/);
+  assert.doesNotMatch(workspaceSource, /sdks\/sdkwork-commerce-backend-sdk/);
 
-  for (const [packageName, sdkFamily] of [
-    ['sdkwork-commerce-app-sdk-generated-typescript', 'sdkwork-commerce-app-sdk'],
-    ['sdkwork-commerce-backend-sdk-generated-typescript', 'sdkwork-commerce-backend-sdk'],
-  ]) {
-    const generatedPath = `../../sdks/${sdkFamily}/${sdkFamily}-typescript/generated/server-openapi/src/index.ts`;
-    assert.ok(tsconfigSource.includes(`"${packageName}"`), `${packageName} must be present in tsconfig paths`);
-    assert.ok(typecheckSource.includes(`"${packageName}"`), `${packageName} must be present in typecheck paths`);
-    assert.ok(tsconfigSource.includes(generatedPath), `${packageName} tsconfig path must point at generated server-openapi`);
-    assert.ok(viteConfigSource.includes(`find: '${packageName}'`), `${packageName} must be present in Vite aliases`);
-    assert.ok(viteConfigSource.includes(`sdks/${sdkFamily}/${sdkFamily}-typescript/generated/server-openapi/src/index.ts`));
-  }
+  assert.doesNotMatch(tsconfigSource, /sdkwork-commerce-app-sdk-generated-typescript/);
+  assert.doesNotMatch(typecheckSource, /sdkwork-commerce-app-sdk-generated-typescript/);
+  assert.doesNotMatch(viteConfigSource, /sdkwork-commerce-app-sdk-generated-typescript/);
+  assert.doesNotMatch(viteConfigSource, /sdkwork-commerce-backend-sdk-generated-typescript/);
+  assert.match(viteConfigSource, /clawrouter-app-domain-transport-generated-typescript/);
+  assert.match(viteConfigSource, /clawrouter-backend-domain-transport-generated-typescript/);
+  assert.match(
+    viteConfigSource,
+    /source\.startsWith\('clawrouter-'\) && source\.endsWith\('-generated-typescript'\)/,
+  );
+  assert.doesNotMatch(sdkClientsSource, /readonly commerce:/);
+  assert.match(sdkClientsSource, /getClawRouterAppDomainTransportSdkClient/);
+  assert.match(sdkClientsSource, /getClawRouterBackendDomainTransportSdkClient/);
+  assert.doesNotMatch(sdkClientsSource, /@sdkwork\/commerce-service/);
 });
 
-test('clawrouter SDK families declare Commerce dependencies and exclude Commerce-owned generated transport', () => {
+test('clawrouter SDK families declare domain capabilities and exclude domain transport from product SDK', () => {
   const appAssembly = json('../../sdks/clawrouter-app-sdk/.sdkwork-assembly.json');
   const backendAssembly = json('../../sdks/clawrouter-backend-sdk/.sdkwork-assembly.json');
   const appOpenapi = json('../../sdks/clawrouter-app-sdk/openapi/clawrouter-app-sdk.openapi.json');
   const backendOpenapi = json('../../sdks/clawrouter-backend-sdk/openapi/clawrouter-backend-sdk.openapi.json');
 
-  assert.ok(
-    appAssembly.sdkDependencies.some((dependency) => dependency.workspace === 'sdkwork-commerce-app-sdk'),
-    'ClawRouter app SDK must declare Commerce app SDK as a dependency instead of regenerating Commerce app paths',
-  );
-  assert.ok(
-    backendAssembly.sdkDependencies.some((dependency) => dependency.workspace === 'sdkwork-commerce-backend-sdk'),
-    'ClawRouter backend SDK must declare Commerce backend SDK as a dependency instead of regenerating Commerce backend paths',
-  );
+  for (const workspace of [
+    'clawrouter-app-wallet-capability',
+    'clawrouter-app-membership-capability',
+    'clawrouter-app-promotion-capability',
+  ]) {
+    assert.ok(
+      appAssembly.sdkDependencies.some((dependency) => dependency.workspace === workspace),
+      `ClawRouter app SDK must declare ${workspace}`,
+    );
+  }
+
+  for (const workspace of [
+    'clawrouter-backend-wallet-capability',
+    'clawrouter-backend-membership-capability',
+    'clawrouter-backend-promotion-capability',
+  ]) {
+    assert.ok(
+      backendAssembly.sdkDependencies.some((dependency) => dependency.workspace === workspace),
+      `ClawRouter backend SDK must declare ${workspace}`,
+    );
+  }
 
   for (const path of [
     '/app/v3/api/catalog/products',
@@ -161,20 +191,32 @@ test('commons SDK client bootstrap composes appbase, product and open SDKs throu
   assert.doesNotMatch(sdkClientsSource, /createSessionKey/);
 });
 
-test('commons SDK client bootstrap composes Commerce dependency SDKs through the Commerce service provider', () => {
+test('commons SDK client bootstrap composes clawrouter capability SDKs through pc-core wiring', () => {
   const sdkClientsSource = source('packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts');
 
-  assert.match(sdkClientsSource, /from '@sdkwork\/commerce-service'/);
   assert.match(sdkClientsSource, /from '@sdkwork\/clawrouter-pc-core\/sdk'/);
-  assert.match(sdkClientsSource, /SdkworkCommerceAppSdkClient/);
-  assert.match(sdkClientsSource, /SdkworkCommerceBackendSdkClient/);
-  assert.match(sdkClientsSource, /__SDKWORK_COMMERCE_APP_SDK_CLIENT__/);
-  assert.match(sdkClientsSource, /__SDKWORK_COMMERCE_BACKEND_SDK_CLIENT__/);
-  assert.match(sdkClientsSource, /VITE_SDKWORK_COMMERCE_APP_API_BASE_URL/);
-  assert.match(sdkClientsSource, /VITE_SDKWORK_COMMERCE_BACKEND_API_BASE_URL/);
+  assert.match(sdkClientsSource, /ClawRouterAppDomainTransportSdkClient/);
+  assert.match(sdkClientsSource, /ClawRouterBackendDomainTransportSdkClient/);
+  assert.match(sdkClientsSource, /__SDKWORK_CLAWROUTER_APP_DOMAIN_TRANSPORT_SDK_CLIENT__/);
+  assert.match(sdkClientsSource, /__SDKWORK_CLAWROUTER_BACKEND_DOMAIN_TRANSPORT_SDK_CLIENT__/);
+  assert.match(
+    sdkClientsSource,
+    /readInjectedAppDomainTransportSdkClient[\s\S]*?__SDKWORK_CLAWROUTER_APP_DOMAIN_TRANSPORT_SDK_CLIENT__/,
+  );
+  assert.match(
+    sdkClientsSource,
+    /readInjectedBackendDomainTransportSdkClient[\s\S]*?__SDKWORK_CLAWROUTER_BACKEND_DOMAIN_TRANSPORT_SDK_CLIENT__/,
+  );
+  assert.doesNotMatch(sdkClientsSource, /__SDKWORK_CLAWROUTER_APP_CAPABILITY_SDK_CLIENT__/);
+  assert.doesNotMatch(sdkClientsSource, /__SDKWORK_CLAWROUTER_BACKEND_CAPABILITY_SDK_CLIENT__/);
+  assert.match(sdkClientsSource, /VITE_CLAWROUTER_APP_API_BASE_URL/);
+  assert.match(sdkClientsSource, /VITE_CLAWROUTER_BACKEND_API_BASE_URL/);
   assert.match(sdkClientsSource, /tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
-  assert.match(sdkClientsSource, /wrapCommerceAppSdkClient/);
-  assert.match(sdkClientsSource, /wrapCommerceBackendSdkClient/);
+  assert.doesNotMatch(sdkClientsSource, /attachReadOnlyProperty\(client, 'commerce'/);
+  assert.match(sdkClientsSource, /createAppDomainCanonicalFacade/);
+  assert.match(sdkClientsSource, /createBackendDomainCanonicalFacade/);
+  assert.doesNotMatch(sdkClientsSource, /@sdkwork\/commerce-service/);
+  assert.doesNotMatch(sdkClientsSource, /getSdkworkCommerceService/);
 });
 
 test('IAM runtime uses the high-level appbase auth runtime while binding app SDK clients to the shared token manager', () => {
@@ -230,20 +272,21 @@ test('appbase-owned app capabilities no longer call the product clawrouter app S
   assert.match(userServiceSource, /\.iam\.users\.current\.retrieve\(\)/);
 });
 
-test('dependency composition manifest declares SDK inventory and permission inheritance', () => {
-  const manifest = json('specs/dependency.composition.json');
+test('app surface component spec declares permission inheritance and core SDK inventory', () => {
+  const appSpec = json('specs/component.spec.json');
+  const coreSpec = json('packages/sdkwork-clawrouter-pc-core/specs/component.spec.json');
   const coreInventorySource = source('packages/sdkwork-clawrouter-pc-core/src/composition/sdk-inventory.ts');
   const iamModuleManifest = json('specs/iam.module.manifest.json');
 
-  assert.equal(manifest.kind, 'sdkwork.dependency.composition');
-  assert.ok(manifest.permissionComposition?.moduleCatalogRefs?.length > 0);
-  assert.equal(manifest.permissionComposition?.consumerPolicy?.forbidLocalPermissionCatalogForDependencyDomains, true);
+  assert.equal(appSpec.kind, 'sdkwork.component.spec');
+  assert.ok(appSpec.contracts?.permissionComposition?.moduleCatalogRefs?.length > 0);
+  assert.equal(appSpec.contracts?.permissionComposition?.consumerPolicy?.forbidLocalPermissionCatalogForDependencyDomains, true);
 
-  const appSurface = manifest.surfaces.find((entry) => entry.surface === 'app');
-  assert.ok(appSurface?.sdkClients?.length >= 5, 'app surface must declare dependency SDK inventory');
-  assert.ok(appSurface?.dependencyApiSurfaces?.includes('../../specs/dependency-api-surfaces.json'));
-
-  assert.match(coreInventorySource, /from '\.\.\/\.\.\/\.\.\/\.\.\/specs\/dependency\.composition\.json'/);
+  assert.ok(coreSpec.contracts?.sdkDependencies?.length >= 4, 'app core must declare dependency SDK inventory');
+  assert.doesNotMatch(JSON.stringify(appSpec.contracts?.sdkInventory ?? []), /clawrouter-app-sdk\.commerce/);
+  assert.doesNotMatch(JSON.stringify(appSpec.contracts?.sdkInventory ?? []), /clawrouter-backend-sdk\.commerce/);
+  assert.doesNotMatch(JSON.stringify(appSpec.contracts?.sdkInventory ?? []), /clawrouter-app-capability/);
+  assert.doesNotMatch(coreInventorySource, /dependency\.composition\.json/);
   assert.equal(iamModuleManifest.moduleId, 'clawrouter');
   assert.ok(iamModuleManifest.permissions.catalog.some((entry) => entry.code === 'clawrouter.console.access'));
 });

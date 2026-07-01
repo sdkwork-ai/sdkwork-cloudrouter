@@ -285,8 +285,13 @@ async function processTarget(target, mode) {
   const openApiJson = `${JSON.stringify(document, null, 2)}\n`;
   const manifestSha = createHash("sha256").update(manifestJson).digest("hex");
 
+  const stampedOpenApiPaths =
+    target.surface === "open-api"
+      ? target.openApiPaths.filter((relativePath) => relativePath.startsWith("apis/"))
+      : target.openApiPaths;
+
   const outputs = [
-    ...target.openApiPaths.map((relativePath) => ({
+    ...stampedOpenApiPaths.map((relativePath) => ({
       relativePath,
       content: openApiJson,
     })),

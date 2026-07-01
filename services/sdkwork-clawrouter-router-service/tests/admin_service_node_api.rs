@@ -30,7 +30,7 @@ async fn admin_service_node_routes_support_full_crud() {
         .unwrap();
     assert_eq!(StatusCode::OK, list_response.status());
     let list_payload = json_payload(list_response).await;
-    assert_eq!("2000", list_payload["code"]);
+    assert_eq!(0, list_payload["code"].as_i64().unwrap());
     assert_eq!("node-1", list_payload["data"]["items"][0]["id"]);
     assert_eq!(
         "edge-shanghai.example.com",
@@ -162,7 +162,7 @@ async fn admin_service_node_routes_reject_missing_trusted_subject() {
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 #[tokio::test]
@@ -185,7 +185,7 @@ async fn admin_service_node_routes_reject_invalid_management_inputs() {
         .await
         .unwrap();
     assert_eq!(StatusCode::BAD_REQUEST, bad_domain.status());
-    assert_eq!("4000", json_payload(bad_domain).await["code"]);
+    assert_eq!(50001, json_payload(bad_domain).await["code"].as_i64().unwrap());
 
     let bad_ip = router
         .clone()

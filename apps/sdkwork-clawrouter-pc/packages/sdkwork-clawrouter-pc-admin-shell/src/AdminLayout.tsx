@@ -18,19 +18,6 @@ import {
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 
 const ADMIN_SIDEBAR_GROUPS_DEFAULT_OPEN = true;
-const ADMIN_BUSINESS_ROUTE_PREFIXES = [
-  '/admin/catalog',
-  '/admin/inventory',
-  '/admin/orders',
-  '/admin/payments',
-  '/admin/memberships',
-  '/admin/wallet',
-  '/admin/finance',
-] as const;
-
-function isAdminBusinessRoute(pathname: string): boolean {
-  return ADMIN_BUSINESS_ROUTE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
-}
 
 function sidebarItemClassName(isActive: boolean): string {
   return `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -140,11 +127,9 @@ export function AdminLayout({ isDark, toggleTheme }: { isDark: boolean; toggleTh
     () => getFilteredAdminModuleMenu(activeModule, permissionScope),
     [activeModule, permissionScope],
   );
-  const businessRouteActive = isAdminBusinessRoute(location.pathname);
 
   return (
     <div
-      data-admin-business-route={businessRouteActive ? 'active' : undefined}
       className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-slate-50 dark:bg-black font-sans text-slate-900 dark:text-white"
     >
       <AdminHeader

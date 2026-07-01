@@ -122,7 +122,7 @@ For PostgreSQL HA, see the [PostgreSQL HA failover runbook](../../runbooks/postg
 - Hop-by-hop headers declared through HTTP `Connection` are dropped on request and response proxy paths.
 - Admin account reset: `pnpm.cmd admin:reset:release` (release mode).
 - SBOM generation: `pnpm.cmd sbom:release`.
-- Supply chain checks: `pnpm.cmd check:dependency-composition`, `pnpm.cmd check:vendor-workspace`.
+- Supply chain checks: `pnpm.cmd check:app-composition`, `pnpm.cmd check:vendor-workspace`.
 
 ## 7. Nginx Configuration
 

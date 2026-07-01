@@ -8,7 +8,7 @@ use axum::routing::get;
 use axum::{Json, Router};
 use serde::Serialize;
 
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::ports::{AdminMonitorQuery, AdminMonitorReadStore};
 
 #[derive(Clone)]
@@ -86,9 +86,9 @@ fn monitor_success<T>(items: Vec<T>) -> Response
 where
     T: Serialize,
 {
-    Json(PlusApiResult::success(AdminMonitorListResponse { items })).into_response()
+    Json(success_envelope(AdminMonitorListResponse { items })).into_response()
 }
 
 fn monitor_system_response(context: &str, error: crate::domain::DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }

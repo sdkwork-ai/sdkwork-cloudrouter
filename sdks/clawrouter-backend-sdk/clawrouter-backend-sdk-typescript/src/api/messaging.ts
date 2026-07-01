@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { DiagnosticsRouteSimulationCreateResult, DiagnosticsTestSendsCreateResult, PageInfo, ProviderAccountsCreateResult, RouteRulesCreateResult, SenderIdentitiesCreateResult, SuppressionsCreateResult, TemplatesCreateResult, TemplateSendsCreateResult, TemplatesVersionsPublishResult, VerificationPoliciesUpdateResult } from '../types';
+import type { DiagnosticsRouteSimulationCreateResult, DiagnosticsTestSendsCreateResult, ProviderAccountsCreateResult, RouteRulesCreateResult, SdkWorkPageData, SenderIdentitiesCreateResult, SuppressionsCreateResult, TemplatesCreateResult, TemplateSendsCreateResult, TemplatesVersionsPublishResult, VerificationPoliciesUpdateResult } from '../types';
 
 
 export class MessagingVerificationPoliciesApi {
@@ -13,8 +13,8 @@ export class MessagingVerificationPoliciesApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/messaging/verification_policies`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/messaging/verification_policies`));
   }
 
 /** Update */
@@ -48,8 +48,8 @@ export class MessagingTemplatesApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/messaging/templates`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/messaging/templates`));
   }
 
 /** Create */
@@ -81,8 +81,8 @@ export class MessagingSuppressionsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/messaging/suppressions`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/messaging/suppressions`));
   }
 
 /** Create */
@@ -100,8 +100,8 @@ export class MessagingSenderIdentitiesApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/messaging/sender_identities`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/messaging/sender_identities`));
   }
 
 /** Create */
@@ -119,8 +119,8 @@ export class MessagingSendRequestsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/messaging/send_requests`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/messaging/send_requests`));
   }
 }
 
@@ -133,8 +133,8 @@ export class MessagingRouteRulesApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/messaging/route_rules`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/messaging/route_rules`));
   }
 
 /** Create */
@@ -152,8 +152,8 @@ export class MessagingRateLimitBucketsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/messaging/rate_limit_buckets`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/messaging/rate_limit_buckets`));
   }
 }
 
@@ -166,8 +166,8 @@ export class MessagingProviderAccountsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/messaging/provider_accounts`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/messaging/provider_accounts`));
   }
 
 /** Create */

@@ -33,7 +33,7 @@ async fn call(method: Method, uri: &str) -> (StatusCode, Value) {
 }
 
 #[tokio::test]
-async fn default_router_does_not_mount_appbase_app_api_key_routes_locally() {
+async fn default_router_returns_contract_fallback_for_product_api_keys_without_database_runtime() {
     let cases = [
         (Method::GET, "/app/v3/api/iam/api_keys"),
         (Method::POST, "/app/v3/api/iam/api_keys"),
@@ -42,10 +42,20 @@ async fn default_router_does_not_mount_appbase_app_api_key_routes_locally() {
     ];
 
     for (method, path) in cases {
-        let (status, payload) = call(method, path).await;
+        let method_for_call = method.clone();
+        let (status, payload) = call(method_for_call, path).await;
 
-        assert_eq!(StatusCode::NOT_FOUND, status, "{path}");
-        assert_eq!(Value::Null, payload, "{path}");
+        assert_eq!(
+            StatusCode::NOT_IMPLEMENTED,
+            status,
+            "{method} {path} should use contract fallback without database-backed handlers"
+        );
+        assert_ne!(Value::Null, payload, "{path}");
+        assert_eq!(
+            payload.get("status").and_then(Value::as_u64),
+            Some(501),
+            "{path}"
+        );
     }
 }
 

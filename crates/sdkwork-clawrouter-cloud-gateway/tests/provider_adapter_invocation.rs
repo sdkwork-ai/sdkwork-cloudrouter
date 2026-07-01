@@ -10,8 +10,10 @@ use sdkwork_claw_provider_adapter_contract::{
     AdapterInvocationResponse, AdapterInvocationShape, AdapterKind, AdapterProviderContext,
     AdapterRouteStatus, AdapterSecret, AdapterSubject,
 };
-use sdkwork_claw_provider_adapter_registry::ProviderAdapterRouteConfig;
 use serde_json::json;
+
+use sdkwork_claw_provider_adapter_http::AdapterInvokeResult;
+use sdkwork_claw_provider_adapter_registry::ProviderAdapterRouteConfig;
 
 #[derive(Debug, Clone)]
 struct CapturedAdapterCall {
@@ -39,6 +41,9 @@ async fn gateway_adapter_transport_posts_stable_envelope_to_internal_adapter() {
         .await
         .expect("adapter invocation should succeed");
 
+    let AdapterInvokeResult::Buffered(response) = response else {
+        panic!("expected buffered adapter response");
+    };
     assert_eq!(200, response.status_code);
     assert_eq!("native-task-1", response.provider.task_id.unwrap());
     let calls = fake.calls.lock().unwrap();

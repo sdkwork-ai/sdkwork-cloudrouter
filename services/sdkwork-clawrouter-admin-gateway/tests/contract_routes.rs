@@ -22,31 +22,39 @@ async fn call(method: Method, uri: &str) -> (StatusCode, Value) {
     (status, payload)
 }
 
+fn read_not_implemented_data(payload: &Value) -> Value {
+    let detail = payload["detail"]
+        .as_str()
+        .expect("problem detail payload must include detail");
+    serde_json::from_str(detail).expect("not implemented detail must be structured JSON")
+}
+
 #[tokio::test]
 async fn backend_contract_routes_return_standard_not_implemented_envelope() {
     let cases = [
-        (Method::GET, "/backend/v3/api/ai/models", "fetchModels"),
+        (Method::GET, "/backend/v3/api/ai/models", "list"),
         (
             Method::POST,
             "/backend/v3/api/ai/models/refresh",
-            "syncVendorsAndModels",
+            "refresh",
         ),
         (
             Method::PATCH,
             "/backend/v3/api/content/announcements/notice-001",
-            "updateAnnouncement",
+            "update",
         ),
     ];
 
     for (method, path, operation) in cases {
         let (status, payload) = call(method, path).await;
+        let data = read_not_implemented_data(&payload);
 
         assert_eq!(StatusCode::NOT_IMPLEMENTED, status, "{path}");
-        assert_eq!("5010", payload["code"], "{path}");
-        assert_eq!("Not implemented", payload["msg"], "{path}");
-        assert_eq!(operation, payload["data"]["operation"], "{path}");
-        assert_eq!("backend", payload["data"]["apiSurface"], "{path}");
-        assert_eq!(path, payload["data"]["apiPath"], "{path}");
+        assert_eq!(501, payload["status"].as_u64().unwrap(), "{path}");
+        assert_eq!(50001, payload["code"].as_i64().unwrap(), "{path}");
+        assert_eq!(operation, data["operation"], "{path}");
+        assert_eq!("backend", data["apiSurface"], "{path}");
+        assert_eq!(path, data["apiPath"], "{path}");
     }
 }
 

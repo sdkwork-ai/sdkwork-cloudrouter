@@ -15,8 +15,15 @@ class ConsoleUserBackendRuntimeStandardTest(unittest.TestCase):
         routes = (
             ROOT / "crates" / "sdkwork-routes-clawrouter-app-api" / "src" / "routes.rs"
         ).read_text(encoding="utf-8")
-        iam_runtime = (
-            ROOT / "crates" / "sdkwork-routes-clawrouter-app-api" / "src" / "iam_runtime.rs"
+        iam_embedded = (
+            ROOT
+            / "crates"
+            / "sdkwork-clawrouter-cloud-gateway"
+            / "src"
+            / "iam_embedded.rs"
+        ).read_text(encoding="utf-8")
+        runtime = (
+            ROOT / "crates" / "sdkwork-clawrouter-cloud-gateway" / "src" / "runtime.rs"
         ).read_text(encoding="utf-8")
 
         self.assertNotIn("mod app_user_profile;", product_api_mod)
@@ -24,9 +31,10 @@ class ConsoleUserBackendRuntimeStandardTest(unittest.TestCase):
         self.assertNotIn("app_user_profile_router_with_read_store", product_api_mod)
         self.assertNotIn("app_user_profile_router", routes)
         self.assertNotIn("AppUserProfileReadStore", routes)
-        self.assertIn("merge_federated_iam_routers", routes)
-        self.assertIn("wire_iam_routers", iam_runtime)
-        self.assertIn("bootstrap_iam_database_from_env", iam_runtime)
+        self.assertNotIn("merge_federated_iam_routers", routes)
+        self.assertIn("build_claw_embedded_iam_app_api_router", iam_embedded)
+        self.assertIn("bootstrap_iam_database_from_env", iam_embedded)
+        self.assertIn("claw_router_product_iam_api_keys_dependency_surface", runtime)
 
     def test_console_user_contract_response_schema_is_precise(self) -> None:
         contract_text = (

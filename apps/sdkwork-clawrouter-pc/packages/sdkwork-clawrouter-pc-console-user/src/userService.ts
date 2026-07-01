@@ -1,9 +1,10 @@
 import {
   ensureSdkworkApiSuccess,
   getSdkworkAppbaseAppSdkClient,
-  readApiRecord,
-  readRequiredMediaResource,
-  readRequiredString,
+  readBoolean,
+  readMediaResource,
+  readRequiredApiItem,
+  readString,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 
@@ -43,54 +44,24 @@ export class UserService {
   static async fetchCurrentUser(): Promise<UserProfile> {
     const result = await getSdkworkAppbaseAppSdkClient().iam.users.current.retrieve();
     ensureSdkworkApiSuccess(result, 'console.user.states.loadErrorFallback');
-    return normalizeUserProfile(readApiRecord(result));
+    return normalizeUserProfile(readRequiredApiItem(result, 'console.user.states.loadErrorFallback'));
   }
 }
 
 function normalizeUserProfile(data: ApiRecord): UserProfile {
   return {
-    name: readRequiredString(data, 'displayName', 'User profile display name is required'),
-    email: readRequiredString(data, 'email', 'User profile response missing data'),
-    phone: readRequiredStringAllowEmpty(data, 'phone', 'User profile phone is required'),
-    language: readRequiredString(data, 'language', 'User profile language is required'),
-    avatar: readRequiredMediaResource(data.avatar, 'User profile avatar is required'),
-    isVerified: readRequiredBoolean(data, 'isVerified', 'User profile verification status is required'),
-    status: readRequiredString(data, 'status', 'User profile status is required'),
-    registeredAt: readRequiredString(data, 'registeredAt', 'User profile registration time is required'),
-    lastLogin: readRequiredString(data, 'lastLogin', 'User profile last login time is required'),
-    lastLoginIp: readRequiredStringAllowEmpty(data, 'lastLoginIp', 'User profile last login IP is required'),
-    passwordLastChanged: readRequiredStringAllowEmpty(data, 'passwordLastChanged', 'User profile password change time is required'),
-    twoFactorEnabled: readRequiredBoolean(data, 'twoFactorEnabled', 'User profile two-factor status is required'),
-    thirdPartyBound: readRequiredStringAllowEmpty(data, 'thirdPartyBound', 'User profile third-party binding summary is required'),
+    name: readString(data, 'displayName'),
+    email: readString(data, 'email'),
+    phone: readString(data, 'phone') || readString(data, 'mobile') || readString(data, 'phoneNumber'),
+    language: readString(data, 'language'),
+    avatar: readMediaResource(data.avatar),
+    isVerified: readBoolean(data, 'isVerified'),
+    status: readString(data, 'status'),
+    registeredAt: readString(data, 'registeredAt'),
+    lastLogin: readString(data, 'lastLogin'),
+    lastLoginIp: readString(data, 'lastLoginIp'),
+    passwordLastChanged: readString(data, 'passwordLastChanged'),
+    twoFactorEnabled: readBoolean(data, 'twoFactorEnabled'),
+    thirdPartyBound: readString(data, 'thirdPartyBound'),
   };
-}
-
-function readRequiredStringAllowEmpty(record: ApiRecord, key: string, message: string): string {
-  const value = record[key];
-  if (value === undefined || value === null) {
-    throw new Error(message);
-  }
-  if (typeof value === 'string') {
-    return value;
-  }
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return String(value);
-  }
-  throw new Error(message);
-}
-
-function readRequiredBoolean(record: ApiRecord, key: string, message: string): boolean {
-  const value = record[key];
-  if (typeof value === 'boolean') {
-    return value;
-  }
-  if (typeof value === 'string') {
-    if (value.toLowerCase() === 'true') {
-      return true;
-    }
-    if (value.toLowerCase() === 'false') {
-      return false;
-    }
-  }
-  throw new Error(message);
 }

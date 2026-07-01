@@ -54,9 +54,7 @@ const client = new SdkworkBackendClient({
 
 ## API Modules
 
-- `client.system` - system API
 - `client.ai` - ai API
-- `client.commerce` - commerce API
 - `client.content` - content API
 - `client.integration` - integration API
 - `client.mcp` - mcp API
@@ -64,28 +62,15 @@ const client = new SdkworkBackendClient({
 - `client.serviceProviders` - service_providers API
 - `client.sites` - sites API
 - `client.storage` - storage API
+- `client.system` - system API
 
 ## Usage Examples
-
-### system
-
-```typescript
-// List
-const result = await client.system.afterSales.management.list();
-```
 
 ### ai
 
 ```typescript
 // List
 const result = await client.ai.channelGroups.list();
-```
-
-### commerce
-
-```typescript
-// List
-const result = await client.commerce.audit.commerceEvents.list();
 ```
 
 ### content
@@ -135,6 +120,13 @@ const result = await client.sites.siteCatalog.list();
 ```typescript
 // List
 const result = await client.storage.oss.buckets.list();
+```
+
+### system
+
+```typescript
+// Retrieve
+const result = await client.system.analytics.admin.overview.retrieve();
 ```
 
 ## Error Handling

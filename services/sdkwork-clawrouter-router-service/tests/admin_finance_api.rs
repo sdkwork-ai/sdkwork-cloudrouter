@@ -22,7 +22,7 @@ async fn admin_finance_route_lists_transactions_and_billing_records() {
         signed_request("GET", "/backend/v3/api/billing/finance/ledger"),
     )
     .await;
-    assert_eq!("2000", transactions["code"]);
+    assert_eq!(0, transactions["code"].as_i64().unwrap());
     assert_eq!("ledger-100", transactions["data"]["items"][0]["id"]);
     assert_eq!(
         "2026-04-29 09:10:00",
@@ -43,7 +43,7 @@ async fn admin_finance_route_lists_transactions_and_billing_records() {
         signed_request("GET", "/backend/v3/api/billing/finance/usage_statements"),
     )
     .await;
-    assert_eq!("2000", billing["code"]);
+    assert_eq!(0, billing["code"].as_i64().unwrap());
     assert_eq!("stmt-202604", billing["data"]["items"][0]["id"]);
     assert_eq!("30", billing["data"]["items"][0]["userId"]);
     assert_eq!("2026-04", billing["data"]["items"][0]["period"]);
@@ -75,7 +75,7 @@ async fn admin_finance_route_rejects_missing_trusted_subject() {
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 fn signed_request(method: &str, path: &str) -> Request<Body> {

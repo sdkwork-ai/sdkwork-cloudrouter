@@ -58,7 +58,7 @@ async fn admin_cache_route_returns_overview_and_supports_refresh_and_delete() {
         .unwrap();
     assert_eq!(StatusCode::OK, overview_response.status());
     let overview_payload = json_payload(overview_response).await;
-    assert_eq!("2000", overview_payload["code"]);
+    assert_eq!(0, overview_payload["code"].as_i64().unwrap());
     assert_eq!(1, overview_payload["data"]["summary"]["totalInstances"]);
     assert_eq!(1, overview_payload["data"]["summary"]["totalNamespaces"]);
     assert_eq!(2, overview_payload["data"]["summary"]["totalEntries"]);
@@ -97,7 +97,7 @@ async fn admin_cache_route_returns_overview_and_supports_refresh_and_delete() {
         .unwrap();
     assert_eq!(StatusCode::OK, keys_response.status());
     let keys_payload = json_payload(keys_response).await;
-    assert_eq!("2000", keys_payload["code"]);
+    assert_eq!(0, keys_payload["code"].as_i64().unwrap());
     assert_eq!("auth.qr.challenge", keys_payload["data"]["namespace"]);
     assert_eq!("local-default", keys_payload["data"]["instanceName"]);
     assert_eq!(2, keys_payload["data"]["scannedItems"]);
@@ -312,7 +312,7 @@ async fn admin_cache_route_rejects_missing_trusted_subject() {
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 #[tokio::test]
@@ -347,7 +347,7 @@ async fn admin_cache_route_reports_unknown_management_targets_as_not_found() {
         .unwrap();
     assert_eq!(StatusCode::NOT_FOUND, missing_instance_response.status());
     let missing_instance_payload = json_payload(missing_instance_response).await;
-    assert_eq!("4040", missing_instance_payload["code"]);
+    assert_eq!(40401, missing_instance_payload["code"].as_i64().unwrap());
 
     let missing_instance_delete_response = router
         .clone()
@@ -362,7 +362,7 @@ async fn admin_cache_route_reports_unknown_management_targets_as_not_found() {
         missing_instance_delete_response.status()
     );
     let missing_instance_delete_payload = json_payload(missing_instance_delete_response).await;
-    assert_eq!("4040", missing_instance_delete_payload["code"]);
+    assert_eq!(40401, missing_instance_delete_payload["code"].as_i64().unwrap());
 
     let missing_namespace_response = router
         .clone()
@@ -374,7 +374,7 @@ async fn admin_cache_route_reports_unknown_management_targets_as_not_found() {
         .unwrap();
     assert_eq!(StatusCode::NOT_FOUND, missing_namespace_response.status());
     let missing_namespace_payload = json_payload(missing_namespace_response).await;
-    assert_eq!("4040", missing_namespace_payload["code"]);
+    assert_eq!(40401, missing_namespace_payload["code"].as_i64().unwrap());
 
     let missing_namespace_refresh_response = router
         .clone()
@@ -389,7 +389,7 @@ async fn admin_cache_route_reports_unknown_management_targets_as_not_found() {
         missing_namespace_refresh_response.status()
     );
     let missing_namespace_refresh_payload = json_payload(missing_namespace_refresh_response).await;
-    assert_eq!("4040", missing_namespace_refresh_payload["code"]);
+    assert_eq!(40401, missing_namespace_refresh_payload["code"].as_i64().unwrap());
 
     let missing_namespace_keys_response = router
         .clone()
@@ -404,7 +404,7 @@ async fn admin_cache_route_reports_unknown_management_targets_as_not_found() {
         missing_namespace_keys_response.status()
     );
     let missing_namespace_keys_payload = json_payload(missing_namespace_keys_response).await;
-    assert_eq!("4040", missing_namespace_keys_payload["code"]);
+    assert_eq!(40401, missing_namespace_keys_payload["code"].as_i64().unwrap());
 
     let invalid_limit_response = router
         .clone()
@@ -416,7 +416,7 @@ async fn admin_cache_route_reports_unknown_management_targets_as_not_found() {
         .unwrap();
     assert_eq!(StatusCode::CONFLICT, invalid_limit_response.status());
     let invalid_limit_payload = json_payload(invalid_limit_response).await;
-    assert_eq!("4090", invalid_limit_payload["code"]);
+    assert_eq!(40901, invalid_limit_payload["code"].as_i64().unwrap());
 
     let oversized_cursor = "a".repeat(2_049);
     let invalid_cursor_response = router
@@ -430,8 +430,8 @@ async fn admin_cache_route_reports_unknown_management_targets_as_not_found() {
         .unwrap();
     assert_eq!(StatusCode::CONFLICT, invalid_cursor_response.status());
     let invalid_cursor_payload = json_payload(invalid_cursor_response).await;
-    assert_eq!("4090", invalid_cursor_payload["code"]);
-    assert!(invalid_cursor_payload["msg"]
+    assert_eq!(40901, invalid_cursor_payload["code"].as_i64().unwrap());
+    assert!(invalid_cursor_payload["detail"]
         .as_str()
         .unwrap()
         .contains("cache key list cursor must not exceed 2048 characters"));
@@ -473,7 +473,7 @@ async fn admin_cache_route_reports_disabled_management_operations_as_conflict() 
         .unwrap();
     assert_eq!(StatusCode::CONFLICT, refresh_response.status());
     let refresh_payload = json_payload(refresh_response).await;
-    assert_eq!("4090", refresh_payload["code"]);
+    assert_eq!(40901, refresh_payload["code"].as_i64().unwrap());
 
     let delete_response = router
         .clone()
@@ -485,7 +485,7 @@ async fn admin_cache_route_reports_disabled_management_operations_as_conflict() 
         .unwrap();
     assert_eq!(StatusCode::CONFLICT, delete_response.status());
     let delete_payload = json_payload(delete_response).await;
-    assert_eq!("4090", delete_payload["code"]);
+    assert_eq!(40901, delete_payload["code"].as_i64().unwrap());
 
     let delete_instance_response = router
         .clone()
@@ -497,7 +497,7 @@ async fn admin_cache_route_reports_disabled_management_operations_as_conflict() 
         .unwrap();
     assert_eq!(StatusCode::CONFLICT, delete_instance_response.status());
     let delete_instance_payload = json_payload(delete_instance_response).await;
-    assert_eq!("4090", delete_instance_payload["code"]);
+    assert_eq!(40901, delete_instance_payload["code"].as_i64().unwrap());
 
     let namespace_refresh_response = router
         .clone()
@@ -509,7 +509,7 @@ async fn admin_cache_route_reports_disabled_management_operations_as_conflict() 
         .unwrap();
     assert_eq!(StatusCode::CONFLICT, namespace_refresh_response.status());
     let namespace_refresh_payload = json_payload(namespace_refresh_response).await;
-    assert_eq!("4090", namespace_refresh_payload["code"]);
+    assert_eq!(40901, namespace_refresh_payload["code"].as_i64().unwrap());
 
     let inspect_response = router
         .oneshot(signed_request(
@@ -520,7 +520,7 @@ async fn admin_cache_route_reports_disabled_management_operations_as_conflict() 
         .unwrap();
     assert_eq!(StatusCode::CONFLICT, inspect_response.status());
     let inspect_payload = json_payload(inspect_response).await;
-    assert_eq!("4090", inspect_payload["code"]);
+    assert_eq!(40901, inspect_payload["code"].as_i64().unwrap());
 }
 
 fn signed_request(method: &str, path: &str) -> Request<Body> {

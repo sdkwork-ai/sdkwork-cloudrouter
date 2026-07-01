@@ -19335,9 +19335,7 @@
   "info": {
     "description": "Claw Router Open API exposes OpenAI-compatible /v1 APIs and provider-specific APIs for OpenAI, Google Gemini, Anthropic Claude, Volcengine Ark, Suno, Midjourney, Kling, Vidu, and Nano Banana compatible media providers.",
     "title": "Claw Router Open API",
-    "version": "1.0.0",
-    "x-sdkwork-wire-protocol": "external",
-    "x-sdkwork-external-protocol-id": "clawrouter-vendor-gateway"
+    "version": "1.0.0"
   },
   "openapi": "3.0.3",
   "paths": {
@@ -19448,13 +19446,7 @@
           "Files/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Uploads an Anthropic file using the configured Anthropic provider account.",
@@ -19543,13 +19535,7 @@
           "Files/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/anthropic/v1/files/{file_id}": {
@@ -19639,13 +19625,7 @@
           "Files/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves an Anthropic file using the configured Anthropic provider account.",
@@ -19733,13 +19713,7 @@
           "Files/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/anthropic/v1/files/{file_id}/content": {
@@ -19830,13 +19804,7 @@
           "Files/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/anthropic/v1/messages": {
@@ -19927,13 +19895,7 @@
           "Chat/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/anthropic/v1/messages/batches": {
@@ -20043,13 +20005,7 @@
           "Batches/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates an Anthropic message batch using the configured Anthropic provider account.",
@@ -20138,13 +20094,7 @@
           "Batches/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/anthropic/v1/messages/batches/{batch_id}": {
@@ -20234,13 +20184,7 @@
           "Batches/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/anthropic/v1/messages/batches/{batch_id}/cancel": {
@@ -20330,13 +20274,7 @@
           "Batches/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/anthropic/v1/messages/count_tokens": {
@@ -20427,13 +20365,7 @@
           "Chat/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/google/v1beta/cachedContents": {
@@ -20534,13 +20466,7 @@
           "Responses/google"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates Google Gemini cached content using the configured Google provider account.",
@@ -20629,13 +20555,7 @@
           "Responses/google"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/google/v1beta/cachedContents/{cached_content_id}": {
@@ -20725,13 +20645,7 @@
           "Responses/google"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves Google Gemini cached content using the configured Google provider account.",
@@ -20819,13 +20733,7 @@
           "Responses/google"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/google/v1beta/files": {
@@ -20926,13 +20834,7 @@
           "Files/google"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Uploads a Google Gemini file using the configured Google provider account.",
@@ -21021,13 +20923,7 @@
           "Files/google"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/google/v1beta/files/{file_id}": {
@@ -21117,13 +21013,7 @@
           "Files/google"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves Google Gemini file metadata using the configured Google provider account.",
@@ -21211,13 +21101,7 @@
           "Files/google"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/google/v1beta/models/{model}:batchEmbedContents": {
@@ -21318,13 +21202,7 @@
           "Embeddings/google"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/google/v1beta/models/{model}:countTokens": {
@@ -21425,13 +21303,7 @@
           "Chat/google"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/google/v1beta/models/{model}:embedContent": {
@@ -21532,13 +21404,7 @@
           "Embeddings/google"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/google/v1beta/models/{model}:generateContent": {
@@ -21639,13 +21505,7 @@
           "Chat/google"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/google/v1beta/models/{model}:streamGenerateContent": {
@@ -21746,13 +21606,7 @@
           "Chat/google"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/kling/v1/videos/generations": {
@@ -21843,13 +21697,7 @@
           "Videos/kling"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "kling-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/kling/v1/videos/generations/{task_id}": {
@@ -21939,13 +21787,7 @@
           "Videos/kling"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "kling-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/midjourney/v1/images/generations": {
@@ -22036,13 +21878,7 @@
           "Images/midjourney"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "midjourney-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/midjourney/v1/images/generations/{task_id}": {
@@ -22132,13 +21968,7 @@
           "Images/midjourney"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "midjourney-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/nano-banana/v1/images/generations": {
@@ -22229,13 +22059,7 @@
           "Images/nano-banana"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "nano-banana-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/nano-banana/v1/images/generations/{task_id}": {
@@ -22325,13 +22149,7 @@
           "Images/nano-banana"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "nano-banana-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/suno/v1/music/generations": {
@@ -22422,13 +22240,7 @@
           "Audio/suno"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "suno-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/suno/v1/music/generations/{task_id}": {
@@ -22518,13 +22330,7 @@
           "Audio/suno"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "suno-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/assistants": {
@@ -22647,13 +22453,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates an assistant.",
@@ -22742,13 +22542,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/assistants/{assistant_id}": {
@@ -22838,13 +22632,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves an assistant.",
@@ -22932,13 +22720,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Modifies an assistant.",
@@ -23037,13 +22819,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/audio/speech": {
@@ -23135,13 +22911,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/audio/transcriptions": {
@@ -23237,13 +23007,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/audio/translations": {
@@ -23339,13 +23103,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/audio/voice_consents": {
@@ -23468,13 +23226,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates a voice consent record when supported by the selected upstream.",
@@ -23568,13 +23320,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/audio/voice_consents/{consent_id}": {
@@ -23664,13 +23410,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves a voice consent record when supported by the selected upstream.",
@@ -23758,13 +23498,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Updates a voice consent record when supported by the selected upstream.",
@@ -23863,13 +23597,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/audio/voices": {
@@ -23992,13 +23720,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates a voice when supported by the selected upstream.",
@@ -24092,13 +23814,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/audio/voices/{voice_id}": {
@@ -24188,13 +23904,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/batches": {
@@ -24317,13 +24027,7 @@
           "Batches"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates a batch job.",
@@ -24412,13 +24116,7 @@
           "Batches"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/batches/{batch_id}": {
@@ -24508,13 +24206,7 @@
           "Batches"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/batches/{batch_id}/cancel": {
@@ -24604,13 +24296,7 @@
           "Batches"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/chat/completions": {
@@ -24751,13 +24437,7 @@
           "Chat"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates a chat completion through an OpenAI-compatible chat request.",
@@ -24846,13 +24526,7 @@
           "Chat"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/chat/completions/{completion_id}": {
@@ -24942,13 +24616,7 @@
           "Chat"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves a stored chat completion when the selected upstream supports retrieval.",
@@ -25036,13 +24704,7 @@
           "Chat"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Modifies stored chat completion metadata when supported by the selected upstream.",
@@ -25141,13 +24803,7 @@
           "Chat"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/chat/completions/{completion_id}/messages": {
@@ -25279,13 +24935,7 @@
           "Chat"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/completions": {
@@ -25376,13 +25026,7 @@
           "Completions"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/containers": {
@@ -25505,13 +25149,7 @@
           "Containers"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates a container for tool-backed execution.",
@@ -25600,13 +25238,7 @@
           "Containers"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/containers/{container_id}": {
@@ -25696,13 +25328,7 @@
           "Containers"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves a container.",
@@ -25790,13 +25416,7 @@
           "Containers"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/containers/{container_id}/files": {
@@ -25928,13 +25548,7 @@
           "Containers"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates or uploads a container file.",
@@ -26033,13 +25647,7 @@
           "Containers"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/containers/{container_id}/files/{file_id}": {
@@ -26138,13 +25746,7 @@
           "Containers"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves container file metadata.",
@@ -26241,13 +25843,7 @@
           "Containers"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/containers/{container_id}/files/{file_id}/content": {
@@ -26347,13 +25943,7 @@
           "Containers"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/conversations": {
@@ -26476,13 +26066,7 @@
           "Conversations"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates a conversation.",
@@ -26571,13 +26155,7 @@
           "Conversations"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/conversations/{conversation_id}": {
@@ -26667,13 +26245,7 @@
           "Conversations"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves a conversation.",
@@ -26761,13 +26333,7 @@
           "Conversations"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Modifies a conversation.",
@@ -26866,13 +26432,7 @@
           "Conversations"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/conversations/{conversation_id}/items": {
@@ -27004,13 +26564,7 @@
           "Conversations"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates an item in a conversation.",
@@ -27109,13 +26663,7 @@
           "Conversations"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/conversations/{conversation_id}/items/{item_id}": {
@@ -27214,13 +26762,7 @@
           "Conversations"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves a conversation item.",
@@ -27317,13 +26859,7 @@
           "Conversations"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/embeddings": {
@@ -27414,13 +26950,7 @@
           "Embeddings"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/evals": {
@@ -27543,13 +27073,7 @@
           "Evals"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates an eval definition.",
@@ -27638,13 +27162,7 @@
           "Evals"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/evals/{eval_id}": {
@@ -27734,13 +27252,7 @@
           "Evals"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves an eval definition.",
@@ -27828,13 +27340,7 @@
           "Evals"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Modifies an eval definition.",
@@ -27933,13 +27439,7 @@
           "Evals"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/evals/{eval_id}/runs": {
@@ -28071,13 +27571,7 @@
           "Evals"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates an eval run.",
@@ -28176,13 +27670,7 @@
           "Evals"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/evals/{eval_id}/runs/{run_id}": {
@@ -28281,13 +27769,7 @@
           "Evals"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves an eval run.",
@@ -28384,13 +27866,7 @@
           "Evals"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Cancels an eval run.",
@@ -28487,13 +27963,7 @@
           "Evals"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/evals/{eval_id}/runs/{run_id}/output_items": {
@@ -28634,13 +28104,7 @@
           "Evals"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/evals/{eval_id}/runs/{run_id}/output_items/{output_item_id}": {
@@ -28748,13 +28212,7 @@
           "Evals"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/files": {
@@ -28877,13 +28335,7 @@
           "Files"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Uploads a file for OpenAI-compatible file-backed APIs.",
@@ -28972,13 +28424,7 @@
           "Files"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/files/{file_id}": {
@@ -29068,13 +28514,7 @@
           "Files"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves file metadata.",
@@ -29162,13 +28602,7 @@
           "Files"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/files/{file_id}/content": {
@@ -29259,13 +28693,7 @@
           "Files"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/fine_tuning/alpha/graders/run": {
@@ -29356,13 +28784,7 @@
           "Fine Tuning"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/fine_tuning/alpha/graders/validate": {
@@ -29453,13 +28875,7 @@
           "Fine Tuning"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/fine_tuning/checkpoints/{fine_tuned_model_checkpoint}/permissions": {
@@ -29600,13 +29016,7 @@
           "Fine Tuning"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates a permission for a fine-tuning checkpoint.",
@@ -29705,13 +29115,7 @@
           "Fine Tuning"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/fine_tuning/checkpoints/{fine_tuned_model_checkpoint}/permissions/{permission_id}": {
@@ -29810,13 +29214,7 @@
           "Fine Tuning"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/fine_tuning/jobs": {
@@ -29939,13 +29337,7 @@
           "Fine Tuning"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates a fine-tuning job.",
@@ -30034,13 +29426,7 @@
           "Fine Tuning"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/fine_tuning/jobs/{fine_tuning_job_id}": {
@@ -30130,13 +29516,7 @@
           "Fine Tuning"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/fine_tuning/jobs/{fine_tuning_job_id}/cancel": {
@@ -30226,13 +29606,7 @@
           "Fine Tuning"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/fine_tuning/jobs/{fine_tuning_job_id}/checkpoints": {
@@ -30364,13 +29738,7 @@
           "Fine Tuning"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/fine_tuning/jobs/{fine_tuning_job_id}/events": {
@@ -30502,13 +29870,7 @@
           "Fine Tuning"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/fine_tuning/jobs/{fine_tuning_job_id}/pause": {
@@ -30598,13 +29960,7 @@
           "Fine Tuning"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/fine_tuning/jobs/{fine_tuning_job_id}/resume": {
@@ -30694,13 +30050,7 @@
           "Fine Tuning"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/images/edits": {
@@ -30796,13 +30146,7 @@
           "Images"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/images/generations": {
@@ -30893,13 +30237,7 @@
           "Images"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/images/variations": {
@@ -30995,13 +30333,7 @@
           "Images"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/models": {
@@ -31081,13 +30413,7 @@
           "Models"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/models/{model}": {
@@ -31177,13 +30503,7 @@
           "Models"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves one model from the Claw Router catalog.",
@@ -31271,13 +30591,7 @@
           "Models"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/moderations": {
@@ -31368,13 +30682,7 @@
           "Moderations"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/admin_api_keys": {
@@ -31497,13 +30805,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates an organization admin API key.",
@@ -31592,13 +30894,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/admin_api_keys/{key_id}": {
@@ -31688,13 +30984,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves an organization admin API key.",
@@ -31782,13 +31072,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/audit_logs": {
@@ -31978,13 +31262,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/certificates": {
@@ -32107,13 +31385,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Uploads an organization certificate.",
@@ -32202,13 +31474,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/certificates/activate": {
@@ -32299,13 +31565,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/certificates/deactivate": {
@@ -32396,13 +31656,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/certificates/{certificate_id}": {
@@ -32492,13 +31746,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves an organization certificate.",
@@ -32586,13 +31834,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/costs": {
@@ -32781,13 +32023,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/groups": {
@@ -32910,13 +32146,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates an organization group.",
@@ -33005,13 +32235,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/groups/{group_id}": {
@@ -33101,13 +32325,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves an organization group.",
@@ -33195,13 +32413,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Modifies an organization group.",
@@ -33300,13 +32512,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/groups/{group_id}/roles": {
@@ -33438,13 +32644,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Assigns a role to an organization group.",
@@ -33543,13 +32743,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/groups/{group_id}/roles/{role_id}": {
@@ -33648,13 +32842,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/groups/{group_id}/users": {
@@ -33786,13 +32974,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Adds a user to an organization group.",
@@ -33891,13 +33073,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/groups/{group_id}/users/{user_id}": {
@@ -33996,13 +33172,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/invites": {
@@ -34125,13 +33295,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates an organization invite.",
@@ -34220,13 +33384,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/invites/{invite_id}": {
@@ -34316,13 +33474,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves an organization invite.",
@@ -34410,13 +33562,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/projects": {
@@ -34539,13 +33685,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates an organization project.",
@@ -34634,13 +33774,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/projects/{project_id}": {
@@ -34730,13 +33864,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Modifies an organization project.",
@@ -34835,13 +33963,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/projects/{project_id}/api_keys": {
@@ -34973,13 +34095,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/projects/{project_id}/api_keys/{key_id}": {
@@ -35078,13 +34194,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves a project API key.",
@@ -35181,13 +34291,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/projects/{project_id}/archive": {
@@ -35277,13 +34381,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/projects/{project_id}/certificates": {
@@ -35415,13 +34513,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/projects/{project_id}/certificates/activate": {
@@ -35522,13 +34614,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/projects/{project_id}/certificates/deactivate": {
@@ -35629,13 +34715,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/projects/{project_id}/groups": {
@@ -35767,13 +34847,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Adds a group to a project.",
@@ -35872,13 +34946,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/projects/{project_id}/groups/{group_id}": {
@@ -35977,13 +35045,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/projects/{project_id}/rate_limits": {
@@ -36115,13 +35177,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/projects/{project_id}/rate_limits/{rate_limit_id}": {
@@ -36231,13 +35287,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/projects/{project_id}/service_accounts": {
@@ -36369,13 +35419,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates a project service account.",
@@ -36474,13 +35518,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/projects/{project_id}/service_accounts/{service_account_id}": {
@@ -36579,13 +35617,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves a project service account.",
@@ -36682,13 +35714,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/projects/{project_id}/users": {
@@ -36820,13 +35846,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Adds a user to a project.",
@@ -36925,13 +35945,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/projects/{project_id}/users/{user_id}": {
@@ -37030,13 +36044,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves a project user.",
@@ -37133,13 +36141,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Modifies a project user.",
@@ -37247,13 +36249,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/roles": {
@@ -37376,13 +36372,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates an organization role.",
@@ -37471,13 +36461,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/roles/{role_id}": {
@@ -37567,13 +36551,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves an organization role.",
@@ -37661,13 +36639,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Modifies an organization role.",
@@ -37766,13 +36738,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/usage/audio_speeches": {
@@ -37961,13 +36927,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/usage/audio_transcriptions": {
@@ -38156,13 +37116,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/usage/code_interpreter_sessions": {
@@ -38351,13 +37305,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/usage/completions": {
@@ -38546,13 +37494,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/usage/embeddings": {
@@ -38741,13 +37683,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/usage/images": {
@@ -38936,13 +37872,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/usage/moderations": {
@@ -39131,13 +38061,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/usage/vector_stores": {
@@ -39326,13 +38250,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/users": {
@@ -39455,13 +38373,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/users/{user_id}": {
@@ -39551,13 +38463,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves an organization user.",
@@ -39645,13 +38551,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Modifies organization user attributes or role.",
@@ -39750,13 +38650,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/users/{user_id}/roles": {
@@ -39888,13 +38782,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Assigns a role to an organization user.",
@@ -39993,13 +38881,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/organization/users/{user_id}/roles/{role_id}": {
@@ -40098,13 +38980,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/projects/{project_id}/groups/{group_id}/roles": {
@@ -40245,13 +39121,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Assigns a role to a project group.",
@@ -40359,13 +39229,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/projects/{project_id}/groups/{group_id}/roles/{role_id}": {
@@ -40473,13 +39337,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/projects/{project_id}/roles": {
@@ -40611,13 +39469,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates a project role.",
@@ -40716,13 +39568,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/projects/{project_id}/roles/{role_id}": {
@@ -40821,13 +39667,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves a project role.",
@@ -40924,13 +39764,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Modifies a project role.",
@@ -41038,13 +39872,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/projects/{project_id}/users/{user_id}/roles": {
@@ -41185,13 +40013,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Assigns a role to a project user.",
@@ -41299,13 +40121,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/projects/{project_id}/users/{user_id}/roles/{role_id}": {
@@ -41413,13 +40229,7 @@
           "Administration"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/realtime/calls": {
@@ -41515,13 +40325,7 @@
           "Realtime"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/realtime/calls/{call_id}/accept": {
@@ -41622,13 +40426,7 @@
           "Realtime"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/realtime/calls/{call_id}/hangup": {
@@ -41729,13 +40527,7 @@
           "Realtime"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/realtime/calls/{call_id}/refer": {
@@ -41836,13 +40628,7 @@
           "Realtime"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/realtime/calls/{call_id}/reject": {
@@ -41943,13 +40729,7 @@
           "Realtime"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/realtime/client_secrets": {
@@ -42040,13 +40820,7 @@
           "Realtime"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/realtime/sessions": {
@@ -42137,13 +40911,7 @@
           "Realtime"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/realtime/transcription_sessions": {
@@ -42234,13 +41002,7 @@
           "Realtime"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/realtime/translations": {
@@ -42331,13 +41093,7 @@
           "Realtime"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/responses": {
@@ -42428,13 +41184,7 @@
           "Responses"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/responses/compact": {
@@ -42525,13 +41275,7 @@
           "Responses"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/responses/input_tokens": {
@@ -42622,13 +41366,7 @@
           "Responses"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/responses/{response_id}": {
@@ -42718,13 +41456,7 @@
           "Responses"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves a stored response when the selected upstream supports response retrieval.",
@@ -42824,13 +41556,7 @@
           "Responses"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/responses/{response_id}/cancel": {
@@ -42920,13 +41646,7 @@
           "Responses"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/responses/{response_id}/input_items": {
@@ -43070,13 +41790,7 @@
           "Responses"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/skills": {
@@ -43199,13 +41913,7 @@
           "Skills"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates a skill when supported by the selected upstream.",
@@ -43294,13 +42002,7 @@
           "Skills"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/skills/{skill_id}": {
@@ -43390,13 +42092,7 @@
           "Skills"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves a skill.",
@@ -43484,13 +42180,7 @@
           "Skills"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Modifies a skill.",
@@ -43589,13 +42279,7 @@
           "Skills"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/skills/{skill_id}/content": {
@@ -43686,13 +42370,7 @@
           "Skills"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/skills/{skill_id}/versions": {
@@ -43824,13 +42502,7 @@
           "Skills"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates a skill version.",
@@ -43929,13 +42601,7 @@
           "Skills"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/skills/{skill_id}/versions/{version}": {
@@ -44034,13 +42700,7 @@
           "Skills"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves a skill version.",
@@ -44137,13 +42797,7 @@
           "Skills"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/skills/{skill_id}/versions/{version}/content": {
@@ -44243,13 +42897,7 @@
           "Skills"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/threads": {
@@ -44340,13 +42988,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/threads/runs": {
@@ -44437,13 +43079,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/threads/{thread_id}": {
@@ -44533,13 +43169,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves a thread.",
@@ -44627,13 +43257,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Modifies a thread.",
@@ -44732,13 +43356,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/threads/{thread_id}/messages": {
@@ -44870,13 +43488,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates a message in a thread.",
@@ -44975,13 +43587,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/threads/{thread_id}/messages/{message_id}": {
@@ -45080,13 +43686,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves a thread message.",
@@ -45183,13 +43783,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Modifies a thread message.",
@@ -45297,13 +43891,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/threads/{thread_id}/runs": {
@@ -45435,13 +44023,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates a run for a thread.",
@@ -45540,13 +44122,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/threads/{thread_id}/runs/{run_id}": {
@@ -45645,13 +44221,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Modifies a thread run.",
@@ -45759,13 +44329,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/threads/{thread_id}/runs/{run_id}/cancel": {
@@ -45864,13 +44428,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/threads/{thread_id}/runs/{run_id}/steps": {
@@ -46011,13 +44569,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/threads/{thread_id}/runs/{run_id}/steps/{step_id}": {
@@ -46125,13 +44677,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/threads/{thread_id}/runs/{run_id}/submit_tool_outputs": {
@@ -46241,13 +44787,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/uploads": {
@@ -46338,13 +44878,7 @@
           "Uploads"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/uploads/{upload_id}/cancel": {
@@ -46434,13 +44968,7 @@
           "Uploads"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/uploads/{upload_id}/complete": {
@@ -46541,13 +45069,7 @@
           "Uploads"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/uploads/{upload_id}/parts": {
@@ -46648,13 +45170,7 @@
           "Uploads"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/vector_stores": {
@@ -46777,13 +45293,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates a vector store.",
@@ -46872,13 +45382,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/vector_stores/{vector_store_id}": {
@@ -46968,13 +45472,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves a vector store.",
@@ -47062,13 +45560,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Modifies a vector store.",
@@ -47167,13 +45659,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/vector_stores/{vector_store_id}/file_batches": {
@@ -47274,13 +45760,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}": {
@@ -47379,13 +45859,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/cancel": {
@@ -47484,13 +45958,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/files": {
@@ -47631,13 +46099,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/vector_stores/{vector_store_id}/files": {
@@ -47769,13 +46231,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Adds a file to a vector store.",
@@ -47874,13 +46330,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/vector_stores/{vector_store_id}/files/{file_id}": {
@@ -47979,13 +46429,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves a vector store file.",
@@ -48082,13 +46526,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Modifies vector store file attributes when supported by the selected upstream.",
@@ -48196,13 +46634,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/vector_stores/{vector_store_id}/search": {
@@ -48303,13 +46735,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/videos": {
@@ -48432,13 +46858,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "post": {
         "description": "Creates a video generation task through an OpenAI-compatible video request.",
@@ -48527,13 +46947,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/videos/characters": {
@@ -48629,13 +47043,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/videos/characters/{character_id}": {
@@ -48725,13 +47133,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/videos/edits": {
@@ -48822,13 +47224,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/videos/extensions": {
@@ -48919,13 +47315,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/videos/{video_id}": {
@@ -49015,13 +47405,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       },
       "get": {
         "description": "Retrieves video metadata.",
@@ -49109,13 +47493,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/videos/{video_id}/content": {
@@ -49206,13 +47584,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/v1/videos/{video_id}/remix": {
@@ -49313,13 +47685,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/vidu/ent/v2/img2video": {
@@ -49410,13 +47776,7 @@
           "Videos/vidu"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "vidu-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/vidu/ent/v2/reference2image": {
@@ -49507,13 +47867,7 @@
           "Images/vidu"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "vidu-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/vidu/ent/v2/reference2video": {
@@ -49604,13 +47958,7 @@
           "Videos/vidu"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "vidu-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/vidu/ent/v2/start-end2video": {
@@ -49701,13 +48049,7 @@
           "Videos/vidu"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "vidu-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/vidu/ent/v2/tasks/{task_id}/creations": {
@@ -49797,13 +48139,7 @@
           "Videos/vidu"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "vidu-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/vidu/ent/v2/text2video": {
@@ -49894,13 +48230,7 @@
           "Videos/vidu"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "vidu-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/volcengine/api/v3/contents/generations/tasks": {
@@ -49991,13 +48321,7 @@
           "Videos/volcengine"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "volcengine-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     },
     "/volcengine/api/v3/contents/generations/tasks/{task_id}": {
@@ -50087,13 +48411,7 @@
           "Videos/volcengine"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-open-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "open-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-open-api",
-        "x-sdkwork-required-surface": "organizationMember",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "volcengine-v1"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.ai"
       }
     }
   },

@@ -12,7 +12,7 @@ use crate::api::app_sql_subject::{
     map_optional_app_sql_subject, map_required_app_sql_subject, RequiredAppSqlScopedSubject,
     ResolvedAppSqlScopedSubject,
 };
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::infrastructure::OsApiKeySecretGenerator;
@@ -116,7 +116,7 @@ async fn fetch_settings(
     };
 
     match state.store.load_settings(subject).await {
-        Ok(settings) => Json(PlusApiResult::success(settings)).into_response(),
+        Ok(settings) => Json(success_envelope(settings)).into_response(),
         Err(error) => settings_system_response("settings read model is unavailable", error),
     }
 }
@@ -131,18 +131,18 @@ async fn update_settings(
     let settings = match validate_update_settings_request(request) {
         Ok(settings) => settings,
         Err(message) => {
-            return PlusApiResult::error("4001", message)).into_response();
+            return problem_from_wire_code("4001", message).into_response();
         }
     };
     let command = match build_update_settings_command(state.clone(), subject, settings) {
         Ok(command) => command,
         Err(error) => {
-            return PlusApiResult::error("5000", error.to_string())).into_response();
+            return problem_from_wire_code("5000", error.to_string()).into_response();
         }
     };
 
     match state.store.update_settings(command).await {
-        Ok(outcome) => Json(PlusApiResult::success(outcome)).into_response(),
+        Ok(outcome) => Json(success_envelope(outcome)).into_response(),
         Err(error) => settings_system_response("settings command store is unavailable", error),
     }
 }
@@ -255,7 +255,7 @@ fn build_update_settings_command(
 }
 
 fn settings_system_response(context: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }
 
 fn current_timestamp_string() -> String {

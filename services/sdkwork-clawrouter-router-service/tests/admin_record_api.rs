@@ -26,7 +26,7 @@ async fn admin_record_route_lists_logs_and_normalizes_filters() {
     )
     .await;
 
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!(7, payload["data"]["total"]);
     assert_eq!(2, payload["data"]["page"]);
     assert_eq!(50, payload["data"]["pageSize"]);
@@ -107,7 +107,7 @@ async fn admin_record_route_rejects_missing_trusted_subject() {
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 #[tokio::test]
@@ -126,8 +126,8 @@ async fn admin_record_route_rejects_invalid_filter_without_calling_store() {
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("model must be visible ASCII"));

@@ -25,7 +25,7 @@ import {
   getClawRouterGlobalTokenManager,
   getSdkworkAppbaseAppSdkClient,
   prepareClawRouterCredentialEntryTokens,
-  getSdkworkCommerceAppSdkClient,
+  getClawRouterAppDomainTransportSdkClient,
   getSdkworkDriveAppSdkClient,
   getSdkworkGenerationsAppSdkClient,
   getSdkworkMemoryAppSdkClient,
@@ -72,7 +72,7 @@ export function createClawRouterIamRuntimeComposition(): SdkworkAppbasePcAuthRun
       getSdkworkDriveAppSdkClient(),
       getSdkworkGenerationsAppSdkClient(),
       getSdkworkMemoryAppSdkClient(),
-      getSdkworkCommerceAppSdkClient(),
+      getClawRouterAppDomainTransportSdkClient(),
     ] as SdkworkAppbasePcAuthRuntimeSdkClient[],
     sessionBridge: {
       clearSession: clearClawRouterIamRuntimeSession,

@@ -15,11 +15,11 @@ export function ensureSdkworkApiSuccess(result: unknown, message: string): void 
   const record = result;
   const code = isApiEnvelope(record) ? readString(record, 'code') : '';
   if (code && !isSuccessCode(record.code)) {
-    throw new Error(readString(record, 'msg') || readString(record, 'message') || `${message}: ${code}`);
+    throw new Error(readString(record, 'detail') || readString(record, 'msg') || readString(record, 'message') || `${message}: ${code}`);
   }
   const knownCode = code || (isKnownApiCode(record.code) ? readString(record, 'code') : '');
   if (knownCode && !isSuccessCode(record.code)) {
-    throw new Error(readString(record, 'msg') || readString(record, 'message') || `${message}: ${knownCode}`);
+    throw new Error(readString(record, 'detail') || readString(record, 'msg') || readString(record, 'message') || `${message}: ${knownCode}`);
   }
   if (code) {
     return;
@@ -132,13 +132,13 @@ function isNonEntityResultRecord(record: ApiRecord): boolean {
 }
 
 function isApiEnvelope(record: ApiRecord): boolean {
-  return isKnownApiCode(record.code) && ('data' in record || 'msg' in record);
+  return isKnownApiCode(record.code) && ('data' in record || 'detail' in record || 'msg' in record);
 }
 
 function isKnownApiCode(value: unknown): boolean {
   return isSuccessCode(value)
-    || (typeof value === 'number' && Number.isInteger(value) && value >= 1000 && value <= 5999)
-    || (typeof value === 'string' && /^[1-5]\d{3}$/u.test(value));
+    || (typeof value === 'number' && Number.isInteger(value) && value >= 1000 && value <= 59999)
+    || (typeof value === 'string' && /^[1-5]\d{3,4}$/u.test(value));
 }
 
 function isSuccessCode(value: unknown): boolean {

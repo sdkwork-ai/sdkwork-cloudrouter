@@ -11,7 +11,7 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::ports::{
@@ -131,7 +131,7 @@ async fn fetch_announcements(
         .list_announcements(ListAdminAnnouncementsQuery { subject })
         .await
     {
-        Ok(items) => Json(PlusApiResult::success(AdminAnnouncementListResponse {
+        Ok(items) => Json(success_envelope(AdminAnnouncementListResponse {
             items: items.into_iter().map(to_item_response).collect(),
         }))
         .into_response(),
@@ -160,7 +160,7 @@ async fn create_announcement(
     };
 
     match state.store.create_announcement(command).await {
-        Ok(item) => Json(PlusApiResult::success(AdminAnnouncementItemEnvelope {
+        Ok(item) => Json(success_envelope(AdminAnnouncementItemEnvelope {
             item: to_item_response(item),
         }))
         .into_response(),
@@ -198,7 +198,7 @@ async fn update_announcement(
         };
 
     match state.store.update_announcement(command).await {
-        Ok(Some(item)) => Json(PlusApiResult::success(AdminAnnouncementItemEnvelope {
+        Ok(Some(item)) => Json(success_envelope(AdminAnnouncementItemEnvelope {
             item: to_item_response(item),
         }))
         .into_response(),
@@ -227,7 +227,7 @@ async fn delete_announcement(
     };
 
     match state.store.delete_announcement(command).await {
-        Ok(true) => Json(PlusApiResult::success(AdminAnnouncementDeleteResponse {
+        Ok(true) => Json(success_envelope(AdminAnnouncementDeleteResponse {
             deleted: true,
         }))
         .into_response(),
@@ -443,15 +443,15 @@ fn to_item_response(item: AdminAnnouncementItem) -> AdminAnnouncementItemRespons
 }
 
 fn bad_request(message: String) -> Response {
-    PlusApiResult::error("4001", message)).into_response()
+    problem_from_wire_code("4001", message).into_response()
 }
 
 fn not_found_response(message: &'static str) -> Response {
-    PlusApiResult::error("4040", message)).into_response()
+    problem_from_wire_code("4040", message).into_response()
 }
 
 fn conflict_response(error: DomainError) -> Response {
-    PlusApiResult::error("4090", error.to_string())).into_response()
+    problem_from_wire_code("4090", error.to_string()).into_response()
 }
 
 fn command_build_error_response(error: AnnouncementCommandBuildError) -> Response {
@@ -464,7 +464,7 @@ fn command_build_error_response(error: AnnouncementCommandBuildError) -> Respons
 }
 
 fn announcement_system_response(context: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }
 
 fn current_timestamp_string() -> String {

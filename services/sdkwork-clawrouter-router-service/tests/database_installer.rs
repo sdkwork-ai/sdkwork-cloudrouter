@@ -97,9 +97,15 @@ async fn sqlite_installer_installs_clawrouter_schema_once() {
         "ai_runtime_usage_link",
         "ai_runtime_artifact",
         "ai_mcp_server",
-        "ops_notification_message",
     ] {
         assert_table_absent(&pool, removed_kernel_table).await;
+    }
+    for runtime_projection_table in [
+        "ops_notification_message",
+        "ops_notification_recipient",
+        "ops_notification_delivery",
+    ] {
+        assert_table_exists(&pool, runtime_projection_table).await;
     }
     for table in [
         "iam_tenant",

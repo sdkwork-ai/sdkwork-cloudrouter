@@ -36,7 +36,7 @@ async fn admin_marketing_route_lists_all_marketing_read_models() {
         signed_request("GET", "/backend/v3/api/promotions/offers", ""),
     )
     .await;
-    assert_eq!("2000", offers["code"]);
+    assert_eq!(0, offers["code"].as_i64().unwrap());
     assert_eq!("Welcome credit", offers["data"]["items"][0]["name"]);
     assert_eq!("coupon", offers["data"]["items"][0]["offer_type"]);
     assert_eq!("offer-1", offers["data"]["items"][0]["offer_no"]);
@@ -508,7 +508,7 @@ async fn admin_marketing_route_rejects_missing_trusted_subject() {
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 #[tokio::test]
@@ -530,8 +530,8 @@ async fn admin_marketing_route_rejects_invalid_stock_quantity_without_calling_st
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("total_quantity must be between"));
@@ -557,8 +557,8 @@ async fn admin_marketing_route_rejects_inactive_exchange_rules_without_calling_s
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("exchange rule status only supports active"));

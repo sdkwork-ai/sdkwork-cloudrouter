@@ -9,7 +9,7 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::domain::DomainError;
 use crate::ports::{
     AdminMcpStore, AdminMcpSubject, CreateAdminMcpBindingCommand, CreateAdminMcpServerCommand,
@@ -321,7 +321,7 @@ async fn discover_tools(
         Err(response) => return response,
     };
     match state.store.discover_tools(command).await {
-        Ok(item) => Json(PlusApiResult::success(item)).into_response(),
+        Ok(item) => Json(success_envelope(item)).into_response(),
         Err(error) => mcp_error_response("mcp tool discovery is unavailable", error),
     }
 }
@@ -337,7 +337,7 @@ async fn check_health(
         Err(response) => return response,
     };
     match state.store.check_health(command).await {
-        Ok(item) => Json(PlusApiResult::success(item)).into_response(),
+        Ok(item) => Json(success_envelope(item)).into_response(),
         Err(error) => mcp_error_response("mcp health check is unavailable", error),
     }
 }
@@ -941,23 +941,23 @@ fn json_string_array_or_default(value: Option<Value>, field_name: &str) -> Resul
 }
 
 fn list_response<T: Serialize>(items: Vec<T>) -> Response {
-    Json(PlusApiResult::success(AdminMcpListResponse { items })).into_response()
+    Json(success_envelope(AdminMcpListResponse { items })).into_response()
 }
 
 fn item_response<T: Serialize>(item: T) -> Response {
-    Json(PlusApiResult::success(AdminMcpItemEnvelope { item })).into_response()
+    Json(success_envelope(AdminMcpItemEnvelope { item })).into_response()
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4001", message.into())).into_response()
+    problem_from_wire_code("4001", message.into()).into_response()
 }
 
 fn not_found_response(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4004", message.into())).into_response()
+    problem_from_wire_code("4040", message.into()).into_response()
 }
 
 fn conflict_response(error: DomainError) -> Response {
-    PlusApiResult::error("4090", error.to_string())).into_response()
+    problem_from_wire_code("4090", error.to_string()).into_response()
 }
 
 fn mcp_error_response(context: &str, error: DomainError) -> Response {
@@ -967,5 +967,5 @@ fn mcp_error_response(context: &str, error: DomainError) -> Response {
     if error.is_conflict() {
         return conflict_response(error);
     }
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }

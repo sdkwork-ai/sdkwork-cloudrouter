@@ -218,12 +218,9 @@ pub fn router() -> Router {
     router_with_database_status(None, None)
 }
 
-async fn finalize_admin_router_with_federated_iam(
+async fn finalize_admin_router_with_federated_capabilities(
     router: Router,
 ) -> Result<Router, ProductCatalogRouterError> {
-    let router = crate::iam_runtime::merge_federated_iam_backend_router(router)
-        .await
-        .map_err(ProductCatalogRouterError::Config)?;
     crate::invoice_runtime::merge_federated_invoice_backend_router(router)
         .await
         .map_err(ProductCatalogRouterError::Config)
@@ -1273,7 +1270,7 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_optional_p
             let model_ranking_refresh_store: ModelRankingRefreshRuntimeStore =
                 Arc::new(SqliteModelRankingRefreshStore::new(pool.clone()));
             let admin_access_checker = AdminAccessChecker::Sqlite(pool.clone());
-            finalize_admin_router_with_federated_iam(router_with_product_catalog_and_runtime(
+            finalize_admin_router_with_federated_capabilities(router_with_product_catalog_and_runtime(
                 Arc::new(snapshot),
                 AdminRouterRuntime {
                     database_config: Some(&config),
@@ -1417,7 +1414,7 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_optional_p
             let model_ranking_refresh_store: ModelRankingRefreshRuntimeStore =
                 Arc::new(PostgresModelRankingRefreshStore::new(pool.clone()));
             let admin_access_checker = AdminAccessChecker::Postgres(pool.clone());
-            finalize_admin_router_with_federated_iam(router_with_product_catalog_and_runtime(
+            finalize_admin_router_with_federated_capabilities(router_with_product_catalog_and_runtime(
                 Arc::new(snapshot),
                 AdminRouterRuntime {
                     database_config: Some(&config),
@@ -1522,7 +1519,7 @@ pub async fn router_from_env() -> Result<Router, ProductCatalogRouterError> {
             .await?;
             return Ok(
                 crate::web_bootstrap::maybe_wrap_router_with_web_framework_and_database_config(
-                    finalize_admin_router_with_federated_iam(built).await?,
+                    finalize_admin_router_with_federated_capabilities(built).await?,
                     &config,
                 )
                 .await,

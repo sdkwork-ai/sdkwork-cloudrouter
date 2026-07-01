@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { DashboardOverviewRetrieveResult, PageInfo } from '../types';
+import type { DashboardOverviewRetrieveResult, SdkWorkPageData } from '../types';
 
 
 export class AiUsageLogsApi {
@@ -13,8 +13,8 @@ export class AiUsageLogsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/ai/usage/logs`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/ai/usage/logs`));
   }
 }
 
@@ -38,8 +38,8 @@ export class AiRoutingUsageApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/ai/routing/usage`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/ai/routing/usage`));
   }
 }
 
@@ -52,8 +52,8 @@ export class AiRoutingRequestTracesApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/ai/routing/request_traces`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/ai/routing/request_traces`));
   }
 }
 
@@ -66,8 +66,8 @@ export class AiRoutingChannelsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/ai/routing/channels`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/ai/routing/channels`));
   }
 }
 
@@ -80,8 +80,8 @@ export class AiRoutingApiKeysApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/ai/routing/api_keys`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/ai/routing/api_keys`));
   }
 }
 
@@ -111,8 +111,8 @@ export class AiModelsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/ai/models`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/ai/models`));
   }
 }
 
@@ -125,8 +125,8 @@ export class AiModelVendorsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/ai/model_vendors`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/ai/model_vendors`));
   }
 }
 
@@ -139,8 +139,8 @@ export class AiModelRankingsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/ai/model_rankings`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/ai/model_rankings`));
   }
 }
 
@@ -153,8 +153,8 @@ export class AiGatewayTracesApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/ai/gateway/traces`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/ai/gateway/traces`));
   }
 }
 
@@ -203,8 +203,8 @@ export class AiChannelGroupsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/ai/channel_groups`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(appApiPath(`/ai/channel_groups`));
   }
 }
 

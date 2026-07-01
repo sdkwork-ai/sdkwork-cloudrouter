@@ -46,7 +46,7 @@ async fn admin_channel_route_creates_lists_updates_and_soft_deletes_items() {
 
     assert_eq!(StatusCode::OK, create_response.status());
     let create_payload = json_payload(create_response).await;
-    assert_eq!("2000", create_payload["code"]);
+    assert_eq!(0, create_payload["code"].as_i64().unwrap());
     assert_eq!("OpenAI primary", create_payload["data"]["item"]["name"]);
     assert_eq!("101", create_payload["data"]["item"]["channelId"]);
     assert_eq!("OpenAI", create_payload["data"]["item"]["vendor"]);
@@ -142,7 +142,7 @@ async fn admin_channel_route_creates_lists_updates_and_soft_deletes_items() {
 
     assert_eq!(StatusCode::OK, list_response.status());
     let list_payload = json_payload(list_response).await;
-    assert_eq!("2000", list_payload["code"]);
+    assert_eq!(0, list_payload["code"].as_i64().unwrap());
     assert_eq!(1, list_payload["data"]["items"].as_array().unwrap().len());
     assert_eq!("1", list_payload["data"]["items"][0]["id"]);
     assert_eq!("101", list_payload["data"]["items"][0]["channelId"]);
@@ -182,7 +182,7 @@ async fn admin_channel_route_creates_lists_updates_and_soft_deletes_items() {
 
     assert_eq!(StatusCode::OK, test_response.status());
     let test_payload = json_payload(test_response).await;
-    assert_eq!("2000", test_payload["code"]);
+    assert_eq!(0, test_payload["code"].as_i64().unwrap());
     assert_eq!("1", test_payload["data"]["channelId"]);
     assert_eq!(true, test_payload["data"]["success"]);
     assert_eq!("active", test_payload["data"]["status"]);
@@ -344,7 +344,7 @@ async fn admin_channel_route_masks_api_key_in_create_response() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("OpenAI primary", payload["data"]["item"]["name"]);
     assert!(
         payload["data"]["item"]["credentials"][0]["apiKey"].is_null()
@@ -385,8 +385,8 @@ async fn admin_channel_route_rejects_missing_trusted_subject_for_store_backed_ro
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
-    let message = payload["msg"].as_str().unwrap();
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
+    let message = payload["detail"].as_str().unwrap();
     assert!(
         message.contains(missing_internal_tenant_header_message())
             || message.contains("trusted request subject is required"),
@@ -419,8 +419,8 @@ async fn admin_channel_route_rejects_invalid_payload_without_calling_store() {
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("channel name is required"));
@@ -452,7 +452,7 @@ async fn admin_channel_route_creates_channel_with_multiple_upstream_credentials_
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!(
         "weighted_round_robin",
         payload["data"]["item"]["credentialRotation"]
@@ -517,8 +517,8 @@ async fn admin_channel_route_rejects_create_without_upstream_credentials() {
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("credentials must include at least one upstream credential"));
@@ -550,8 +550,8 @@ async fn admin_channel_route_rejects_invalid_channel_type_without_calling_store(
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("channelType must be one of official, relay"));
@@ -583,8 +583,8 @@ async fn admin_channel_route_rejects_plaintext_auth_key_without_calling_store() 
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("apiKey is the supported plaintext credential input"));
@@ -616,13 +616,13 @@ async fn admin_channel_route_rejects_invalid_base_url_without_calling_store() {
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
     assert!(
-        payload["msg"]
+        payload["detail"]
             .as_str()
             .unwrap()
             .contains("channel baseUrl must be an absolute http or https URL")
-            || payload["msg"]
+            || payload["detail"]
                 .as_str()
                 .unwrap()
                 .contains("credential baseUrl must be an absolute http or https URL")
@@ -656,8 +656,8 @@ async fn admin_channel_route_rejects_unsafe_secret_ref_without_calling_store() {
 
     assert_eq!(StatusCode::BAD_REQUEST, empty_locator_response.status());
     let empty_locator_payload = json_payload(empty_locator_response).await;
-    assert_eq!("4001", empty_locator_payload["code"]);
-    assert!(empty_locator_payload["msg"]
+    assert_eq!(40001, empty_locator_payload["code"].as_i64().unwrap());
+    assert!(empty_locator_payload["detail"]
         .as_str()
         .unwrap()
         .contains("secretRef must include a non-empty locator"));
@@ -679,8 +679,8 @@ async fn admin_channel_route_rejects_unsafe_secret_ref_without_calling_store() {
 
     assert_eq!(StatusCode::BAD_REQUEST, plaintext_alias_response.status());
     let plaintext_alias_payload = json_payload(plaintext_alias_response).await;
-    assert_eq!("4001", plaintext_alias_payload["code"]);
-    assert!(plaintext_alias_payload["msg"]
+    assert_eq!(40001, plaintext_alias_payload["code"].as_i64().unwrap());
+    assert!(plaintext_alias_payload["detail"]
         .as_str()
         .unwrap()
         .contains("apiKey is the supported plaintext credential input"));
@@ -712,8 +712,8 @@ async fn admin_channel_route_rejects_invalid_retry_policy_without_calling_store(
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("retryPolicy.maxAttempts must be between 1 and 5"));
@@ -745,8 +745,8 @@ async fn admin_channel_route_rejects_invalid_circuit_breaker_policy_without_call
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .unwrap()
         .contains("circuitBreakerPolicy.failureThreshold must be between 1 and 100"));
@@ -779,8 +779,8 @@ async fn admin_channel_route_rejects_null_create_runtime_policy_fields_without_c
 
     assert_eq!(StatusCode::BAD_REQUEST, null_timeout_response.status());
     let null_timeout_payload = json_payload(null_timeout_response).await;
-    assert_eq!("4001", null_timeout_payload["code"]);
-    assert!(null_timeout_payload["msg"]
+    assert_eq!(40001, null_timeout_payload["code"].as_i64().unwrap());
+    assert!(null_timeout_payload["detail"]
         .as_str()
         .unwrap()
         .contains("timeoutMs must be an integer"));
@@ -803,8 +803,8 @@ async fn admin_channel_route_rejects_null_create_runtime_policy_fields_without_c
 
     assert_eq!(StatusCode::BAD_REQUEST, null_retry_policy_response.status());
     let null_retry_policy_payload = json_payload(null_retry_policy_response).await;
-    assert_eq!("4001", null_retry_policy_payload["code"]);
-    assert!(null_retry_policy_payload["msg"]
+    assert_eq!(40001, null_retry_policy_payload["code"].as_i64().unwrap());
+    assert!(null_retry_policy_payload["detail"]
         .as_str()
         .unwrap()
         .contains("retryPolicy must be a JSON object"));
@@ -830,8 +830,8 @@ async fn admin_channel_route_rejects_null_create_runtime_policy_fields_without_c
     );
     let null_circuit_breaker_policy_payload =
         json_payload(null_circuit_breaker_policy_response).await;
-    assert_eq!("4001", null_circuit_breaker_policy_payload["code"]);
-    assert!(null_circuit_breaker_policy_payload["msg"]
+    assert_eq!(40001, null_circuit_breaker_policy_payload["code"].as_i64().unwrap());
+    assert!(null_circuit_breaker_policy_payload["detail"]
         .as_str()
         .unwrap()
         .contains("circuitBreakerPolicy must be a JSON object"));
@@ -881,7 +881,7 @@ async fn admin_channel_create_accepts_accounts_without_model_allowlist() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert!(payload.pointer("/data/item/models").is_none());
     assert!(payload.pointer("/item/models").is_none());
 }

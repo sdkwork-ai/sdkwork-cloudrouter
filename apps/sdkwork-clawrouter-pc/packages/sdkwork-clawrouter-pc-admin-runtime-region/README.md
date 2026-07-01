@@ -1,40 +1,20 @@
 # sdkwork-clawrouter-pc-admin-runtime-region
 
-Domain: platform
-Capability: im
-Package type: node-package
-Status: standardizing
+Domain: platform  
+Capability: router  
+Status: ready
 
-This README is the SDKWork module entrypoint for `sdkwork-clawrouter-pc-admin-runtime-region`. The machine-readable component contract is `specs/component.spec.json`; canonical standards are under `../../../../../sdkwork-specs/`.
+Backend-admin runtime region configuration for Claw Router under `/admin/runtime-region`.
 
-## Public API
+## Integration
 
-- `src/index.tsx`
-
-## Required SDK Surface
-
-- None declared in `specs/component.spec.json`.
-
-## Configuration
-
-Configuration keys, runtime entrypoints, and integration contracts are declared in `specs/component.spec.json`. Shared modules must receive configuration through typed bootstrap or service boundaries rather than reading host-local environment state directly.
-
-## SaaS/Private/Local Behavior
-
-This component follows the deployment and runtime rules referenced by its `canonicalSpecs` entries. SaaS, private, and local behavior must stay compatible with the relevant SDKWork specs before implementation changes are made.
-
-## Security
-
-Do not add secrets, live tokens, manual auth headers, or app-local credential handling to this module. Protected API and SDK access must use the generated SDK or approved service boundary declared in the component contract.
-
-## Extension Points
-
-Extension points are limited to public exports, runtime entrypoints, SDK clients, events, and config keys declared in `specs/component.spec.json`.
+- **Admin routes:** mounted from `apps/sdkwork-clawrouter-pc/src/App.tsx`.
+- **Admin navigation:** registered under the platform module in `sdkwork-clawrouter-pc-admin-shell`.
+- **Backend SDK:** `runtimeRegionService.ts` calls `getClawRouterBackendSdkClient().system.runtimeRegion.settings.*`.
+- **Permissions:** `/admin/runtime-region` requires platform runtime region read permission.
 
 ## Verification
 
-- `pnpm --filter sdkwork-clawrouter-pc-admin-runtime-region typecheck`
+- `pnpm test:commerce` (portal root)
 
-## Owner And Status
-
-Owner and lifecycle status are tracked in `specs/component.spec.json`. Update that contract before changing public integration behavior.
+Contract: `specs/component.spec.json`. Standards: `../../../../../sdkwork-specs/`.

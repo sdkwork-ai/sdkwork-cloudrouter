@@ -27,7 +27,7 @@ async fn admin_service_provider_route_exposes_commercial_provider_center() {
         trusted_request("GET", "/backend/v3/api/service_providers/dashboard"),
     )
     .await;
-    assert_eq!("2000", dashboard["code"]);
+    assert_eq!(0, dashboard["code"].as_i64().unwrap());
     assert_eq!("sp-dashboard", dashboard["data"]["item"]["id"]);
     assert_eq!("118.75", dashboard["data"]["item"]["incomeAmount"]);
     assert_eq!("42.10", dashboard["data"]["item"]["expenseAmount"]);
@@ -71,7 +71,7 @@ async fn admin_service_provider_route_exposes_commercial_provider_center() {
         ("/backend/v3/api/service_providers/audit/events", "audit-1"),
     ] {
         let payload = request_json(router.clone(), trusted_request("GET", path)).await;
-        assert_eq!("2000", payload["code"], "{path}");
+        assert_eq!(0, payload["code"], "{path}");
         assert_eq!(expected_id, payload["data"]["items"][0]["id"], "{path}");
         assert_eq!(1, payload["data"]["total"], "{path}");
         assert!(payload["data"]["pageSize"].as_i64().unwrap() >= 1, "{path}");
@@ -86,7 +86,7 @@ async fn admin_service_provider_route_exposes_commercial_provider_center() {
         ),
     )
     .await;
-    assert_eq!("2000", simulation["code"]);
+    assert_eq!(0, simulation["code"].as_i64().unwrap());
     assert_eq!("simulation-1", simulation["data"]["item"]["id"]);
     assert_eq!("12.340000", simulation["data"]["item"]["chargeAmount"]);
     assert_eq!("901", simulation["data"]["item"]["matchedRuleId"]);
@@ -111,7 +111,7 @@ async fn admin_service_provider_route_rejects_missing_trusted_subject() {
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 #[tokio::test]
@@ -131,8 +131,8 @@ async fn admin_service_provider_price_simulation_rejects_invalid_quantity_before
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .expect("error message should be text")
         .contains("quantity"),);
@@ -153,7 +153,7 @@ async fn admin_service_provider_list_routes_accept_chain_filters() {
     )
     .await;
 
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("usage-1", payload["data"]["items"][0]["id"]);
 }
 
@@ -172,7 +172,7 @@ async fn admin_service_provider_write_routes_expose_downstream_and_pricing_maint
         ),
     )
     .await;
-    assert_eq!("2000", downstream["code"]);
+    assert_eq!(0, downstream["code"].as_i64().unwrap());
     assert_eq!("downstream-created", downstream["data"]["item"]["id"]);
     assert_eq!("sp-new-child", downstream["data"]["item"]["providerNo"]);
     assert_eq!("edge-created", downstream["data"]["item"]["edgeId"]);
@@ -187,7 +187,7 @@ async fn admin_service_provider_write_routes_expose_downstream_and_pricing_maint
         ),
     )
     .await;
-    assert_eq!("2000", pricing_rule["code"]);
+    assert_eq!(0, pricing_rule["code"].as_i64().unwrap());
     assert_eq!("price-rule-created", pricing_rule["data"]["item"]["id"]);
     assert_eq!(
         "llm_output_token",
@@ -204,7 +204,7 @@ async fn admin_service_provider_write_routes_expose_downstream_and_pricing_maint
         ),
     )
     .await;
-    assert_eq!("2000", updated_rule["code"]);
+    assert_eq!(0, updated_rule["code"].as_i64().unwrap());
     assert_eq!("9001", updated_rule["data"]["item"]["id"]);
     assert_eq!("0.0200", updated_rule["data"]["item"]["unitPrice"]);
     assert_eq!(30, updated_rule["data"]["item"]["priority"]);
@@ -227,8 +227,8 @@ async fn admin_service_provider_write_routes_require_idempotency_key() {
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = json_payload(response).await;
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"]
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"]
         .as_str()
         .expect("error message should be text")
         .contains("Idempotency-Key"));

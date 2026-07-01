@@ -9,7 +9,7 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::domain::{DecimalValue, DomainError};
 use crate::ports::{
     AdminServiceProviderCollection, AdminServiceProviderDashboardItem,
@@ -224,7 +224,7 @@ async fn fetch_dashboard(
         Err(response) => return response,
     };
     match state.store.retrieve_dashboard(query).await {
-        Ok(item) => Json(PlusApiResult::success(ServiceProviderDashboardResponse {
+        Ok(item) => Json(success_envelope(ServiceProviderDashboardResponse {
             item,
         }))
         .into_response(),
@@ -272,7 +272,7 @@ async fn create_downstream(
         Err(response) => return response,
     };
     match state.store.create_downstream(command).await {
-        Ok(item) => Json(PlusApiResult::success(
+        Ok(item) => Json(success_envelope(
             ServiceProviderDownstreamMutationResponse { item },
         ))
         .into_response(),
@@ -333,7 +333,7 @@ async fn create_pricing_rule(
         Err(response) => return response,
     };
     match state.store.create_pricing_rule(command).await {
-        Ok(item) => Json(PlusApiResult::success(
+        Ok(item) => Json(success_envelope(
             ServiceProviderPricingRuleMutationResponse { item },
         ))
         .into_response(),
@@ -356,7 +356,7 @@ async fn update_pricing_rule(
         Err(response) => return response,
     };
     match state.store.update_pricing_rule(command).await {
-        Ok(item) => Json(PlusApiResult::success(
+        Ok(item) => Json(success_envelope(
             ServiceProviderPricingRuleMutationResponse { item },
         ))
         .into_response(),
@@ -378,7 +378,7 @@ async fn simulate_price(
         Err(response) => return response,
     };
     match state.store.simulate_price(command).await {
-        Ok(item) => Json(PlusApiResult::success(
+        Ok(item) => Json(success_envelope(
             ServiceProviderPriceSimulationResponse { item },
         ))
         .into_response(),
@@ -484,7 +484,7 @@ where
 }
 
 fn collection_response(collection: AdminServiceProviderCollection) -> Response {
-    Json(PlusApiResult::success(ServiceProviderCollectionResponse {
+    Json(success_envelope(ServiceProviderCollectionResponse {
         items: collection.items,
         total: collection.total,
         page: collection.page_no,
@@ -823,15 +823,15 @@ fn normalize_optional_text(
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4001", message.into())).into_response()
+    problem_from_wire_code("4001", message.into()).into_response()
 }
 
 fn not_found_response(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4004", message.into())).into_response()
+    problem_from_wire_code("4040", message.into()).into_response()
 }
 
 fn conflict_response(error: DomainError) -> Response {
-    PlusApiResult::error("4090", error.to_string())).into_response()
+    problem_from_wire_code("4090", error.to_string()).into_response()
 }
 
 fn service_provider_error_response(context: &str, error: DomainError) -> Response {
@@ -845,5 +845,5 @@ fn service_provider_error_response(context: &str, error: DomainError) -> Respons
 }
 
 fn service_provider_system_response(context: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }

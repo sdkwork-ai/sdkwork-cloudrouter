@@ -439,16 +439,17 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         self.assertIn("dashboard overview end_time must be greater than or equal to start_time", app_dashboard)
         self.assertIn("dashboard overview time range must not exceed", app_dashboard)
         self.assertIn('StatusCode::BAD_REQUEST', app_dashboard)
-        self.assertIn('PlusApiResult::error("4001"', app_dashboard)
+        self.assertIn('problem_from_wire_code("4001"', app_dashboard)
+        self.assertNotIn("PlusApiResult", app_dashboard)
         self.assertIn("let validated_query = match validate_dashboard_overview_query(query)", app_dashboard)
         self.assertIn("ResolvedAppSqlScopedSubject", app_dashboard)
         self.assertIn("validated_query.query", app_dashboard)
         self.assertIn("start_time: parsed_start", app_dashboard)
         self.assertIn("end_time: parsed_end", app_dashboard)
         self.assertGreaterEqual(app_dashboard.count(".map(format_dashboard_timestamp_for_query)"), 2)
-        self.assertIn("AT TIME ZONE 'UTC'", postgres_store)
-        self.assertNotIn("$4::timestamptz", postgres_store)
-        self.assertNotIn("$5::timestamptz", postgres_store)
+        self.assertIn("$4::timestamptz", postgres_store)
+        self.assertIn("$5::timestamptz", postgres_store)
+        self.assertNotIn("AT TIME ZONE 'UTC'", postgres_store)
         dashboard_operation_marker = (
             "  - route: /console/dashboard\n"
             "    source: apps/sdkwork-clawrouter-pc/packages/"

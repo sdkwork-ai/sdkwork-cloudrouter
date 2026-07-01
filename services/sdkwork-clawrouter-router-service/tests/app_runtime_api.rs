@@ -74,7 +74,7 @@ async fn app_runtime_create_invocation_uses_product_runtime_namespace_and_store_
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = response_json(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("runtime-invocation-1", payload["data"]["item"]["id"]);
     assert_eq!("claude_code", payload["data"]["item"]["runtime"]);
     assert_eq!("runtime-request-id-1", payload["data"]["item"]["requestId"]);
@@ -137,7 +137,7 @@ async fn app_runtime_records_events_and_artifacts_under_invocation() {
         .unwrap();
     assert_eq!(StatusCode::OK, response.status());
     let payload = response_json(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("runtime-event-1", payload["data"]["item"]["id"]);
     assert_eq!(
         "runtime-invocation-1",
@@ -171,7 +171,7 @@ async fn app_runtime_records_events_and_artifacts_under_invocation() {
         .unwrap();
     assert_eq!(StatusCode::OK, response.status());
     let payload = response_json(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("runtime-artifact-1", payload["data"]["item"]["id"]);
     assert_eq!("summary.md", payload["data"]["item"]["name"]);
     assert_eq!(
@@ -226,7 +226,7 @@ async fn app_runtime_lists_invocations_events_and_artifacts_for_trusted_subject(
         .unwrap();
     assert_eq!(StatusCode::OK, response.status());
     let payload = response_json(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("runtime-invocation-1", payload["data"]["items"][0]["id"]);
 
     let response = router
@@ -1464,7 +1464,7 @@ async fn app_runtime_complete_invocation_updates_status_and_response_snapshot() 
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = response_json(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("completed", payload["data"]["item"]["status"]);
 
     let commands = store.complete_invocation_commands.lock().unwrap();

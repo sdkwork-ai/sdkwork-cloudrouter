@@ -6,7 +6,7 @@ use sdkwork_claw_contract::{matches_path_pattern, ApiSurface};
 use sdkwork_claw_paas_plugin::standard_paas_service_groups;
 use serde::Serialize;
 
-use crate::error::PlusErrorEnvelope;
+use crate::error::not_implemented_response;
 use crate::router::ServiceState;
 
 pub const GATEWAY_OPENAPI_PATH: &str = "/openapi.json";
@@ -169,11 +169,7 @@ pub async fn contract_fallback(State(state): State<ServiceState>, request: Reque
         return StatusCode::NOT_FOUND.into_response();
     };
 
-    (
-        StatusCode::NOT_IMPLEMENTED,
-        Json(PlusErrorEnvelope::not_implemented(operation, surface, path)),
-    )
-        .into_response()
+    not_implemented_response(operation, surface, path)
 }
 
 fn openapi_json_headers() -> [(header::HeaderName, &'static str); 2] {

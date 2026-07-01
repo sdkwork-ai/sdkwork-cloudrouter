@@ -6,7 +6,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 use crate::api::app_sql_subject::{map_optional_app_sql_subject, ResolvedAppSqlScopedSubject};
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::ports::{
     AppGenerationHistoryItem, AppGenerationHistoryItems, AppGenerationHistoryReadFuture,
     AppGenerationHistoryReadStore, AppGenerationHistorySubject,
@@ -63,7 +63,7 @@ async fn fetch_history(
     };
 
     match state.read_store.load_generation_history(subject).await {
-        Ok(items) => Json(PlusApiResult::success(AppGenerationHistoryItems::new(
+        Ok(items) => Json(success_envelope(AppGenerationHistoryItems::new(
             items,
         )))
         .into_response(),
@@ -72,8 +72,8 @@ async fn fetch_history(
 }
 
 fn app_generation_history_read_model_error(error: impl std::fmt::Display) -> Response {
-    PlusApiResult::error(
+    problem_from_wire_code(
             "5000",
             format!("app generation history read model is unavailable: {error}"),
-        )).into_response()
+        ).into_response()
 }

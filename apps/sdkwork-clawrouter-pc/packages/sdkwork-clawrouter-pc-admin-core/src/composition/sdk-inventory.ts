@@ -1,11 +1,14 @@
+export interface SdkworkSdkInventoryEntry {
+  workspace: string;
+  surface: string;
+  credentialMode: string;
+}
 
-export type SdkworkDependencyCompositionManifest = typeof compositionManifest;
-
-export type SdkworkDependencyCompositionSdkClient =
-  SdkworkDependencyCompositionManifest['surfaces'][number]['sdkClients'][number];
-
-const ADMIN_SURFACE = compositionManifest.surfaces.find((entry) => entry.surface === 'backend-admin');
-
-export function listSdkworkAdminCoreSdkInventory(): readonly SdkworkDependencyCompositionSdkClient[] {
-  return ADMIN_SURFACE?.sdkClients ?? [];
+export function listSdkworkAdminCoreSdkInventory(): readonly SdkworkSdkInventoryEntry[] {
+  return [
+    { workspace: 'clawrouter-backend-sdk', surface: 'backend-api', credentialMode: 'authenticated-backend-admin' },
+    { workspace: 'sdkwork-iam-backend-sdk', surface: 'backend-api', credentialMode: 'authenticated-backend-admin' },
+    { workspace: 'sdkwork-models-backend-sdk', surface: 'backend-api', credentialMode: 'authenticated-backend-admin' },
+    { workspace: 'clawrouter-backend-domain-transport-generated-typescript', surface: 'backend-api', credentialMode: 'authenticated-backend-admin' },
+  ] as const;
 }

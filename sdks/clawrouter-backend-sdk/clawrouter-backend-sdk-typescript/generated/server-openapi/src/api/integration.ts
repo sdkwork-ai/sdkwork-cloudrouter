@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { ChannelsCreateResult, ChannelsUpdateResult, ChannelsVerifyResult, PageInfo, ProviderSecretsCreateResult, ProviderSecretsUpdateResult } from '../types';
+import type { ChannelsCreateResult, ChannelsUpdateResult, ChannelsVerifyResult, ProviderSecretsCreateResult, ProviderSecretsUpdateResult, SdkWorkCommandData, SdkWorkPageData } from '../types';
 
 
 export class IntegrationProviderSecretsApi {
@@ -13,8 +13,8 @@ export class IntegrationProviderSecretsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/integration/provider_secrets`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/integration/provider_secrets`));
   }
 
 /** Create */
@@ -28,8 +28,8 @@ export class IntegrationProviderSecretsApi {
   }
 
 /** Delete */
-  async delete(secretId: string): Promise<Record<string, unknown>> {
-    return this.client.delete<Record<string, unknown>>(backendApiPath(`/integration/provider_secrets/${serializePathParameter(secretId, { name: 'secretId', style: 'simple', explode: false })}`));
+  async delete(secretId: string): Promise<SdkWorkCommandData> {
+    return this.client.delete<SdkWorkCommandData>(backendApiPath(`/integration/provider_secrets/${serializePathParameter(secretId, { name: 'secretId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -42,8 +42,8 @@ export class IntegrationChannelsApi {
 
 
 /** List */
-  async list(): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(backendApiPath(`/integration/channels`));
+  async list(): Promise<SdkWorkPageData> {
+    return this.client.get<SdkWorkPageData>(backendApiPath(`/integration/channels`));
   }
 
 /** Create */
@@ -57,8 +57,8 @@ export class IntegrationChannelsApi {
   }
 
 /** Delete */
-  async delete(channelId: string): Promise<Record<string, unknown>> {
-    return this.client.delete<Record<string, unknown>>(backendApiPath(`/integration/channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}`));
+  async delete(channelId: string): Promise<SdkWorkCommandData> {
+    return this.client.delete<SdkWorkCommandData>(backendApiPath(`/integration/channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}`));
   }
 
 /** Verify */

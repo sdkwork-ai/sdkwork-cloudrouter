@@ -97,6 +97,7 @@ pub fn web_framework_enabled_from_env() -> bool {
 
 /// Applies the sdkwork-web-framework layer once on any externally served backend-api router.
 pub async fn finalize_served_router(router: Router) -> Router {
+    sdkwork_claw_http::ensure_production_web_framework_security_policy();
     maybe_wrap_router_with_web_framework(router).await
 }
 

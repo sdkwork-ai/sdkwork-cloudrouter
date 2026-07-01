@@ -59,7 +59,7 @@
 
 - [ ] Add `catalog.categorySeeds.initialize` to `backend-commerce-catalog.yaml`.
 - [ ] Regenerate manifest/OpenAPI/backend TypeScript SDK with the repository SDK generation commands.
-- [ ] Verify the portal service uses only `getClawRouterBackendSdkClient().commerce.catalog.categorySeeds.initialize`.
+- [ ] Verify the portal service uses only `getClawRouterBackendSdkClient().catalog.categorySeeds.initialize`.
 
 ### Task 5: Admin UI
 

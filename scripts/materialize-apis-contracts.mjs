@@ -38,6 +38,33 @@ function sha256(path) {
   return createHash('sha256').update(readFileSync(path)).digest('hex');
 }
 
+function stripSdkWorkExtensionFields(value) {
+  if (Array.isArray(value)) {
+    return value.map(stripSdkWorkExtensionFields);
+  }
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+  const next = {};
+  for (const [key, item] of Object.entries(value)) {
+    if (key.startsWith('x-sdkwork-')) {
+      continue;
+    }
+    next[key] = stripSdkWorkExtensionFields(item);
+  }
+  return next;
+}
+
+function contractBodyHash(contract, filePath) {
+  if (contract.surface !== 'open-api') {
+    return sha256(filePath);
+  }
+  const text = readFileSync(filePath, 'utf8');
+  const payload = stripSdkWorkExtensionFields(JSON.parse(text));
+  const normalized = `${JSON.stringify(payload, null, 2)}\n`;
+  return createHash('sha256').update(normalized).digest('hex');
+}
+
 function ensureParent(path) {
   mkdirSync(dirname(path), { recursive: true });
 }
@@ -78,7 +105,7 @@ function main() {
       continue;
     }
 
-    const sourceHash = sha256(sourcePath);
+    const sourceHash = contractBodyHash(contract, sourcePath);
     manifestEntries.push({
       surface: contract.surface,
       domain: contract.domain,
@@ -100,7 +127,7 @@ function main() {
       continue;
     }
 
-    const targetHash = sha256(targetPath);
+    const targetHash = contractBodyHash(contract, targetPath);
     if (targetHash !== sourceHash) {
       if (check) {
         messages.push(`apis contract stale: ${contract.target} (run pnpm api:materialize:write)`);

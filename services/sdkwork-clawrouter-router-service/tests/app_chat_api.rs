@@ -46,8 +46,8 @@ async fn app_chat_create_conversation_uses_product_chat_namespace_and_store_cont
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = response_json(response).await;
-    assert_eq!("2000", payload["code"]);
-    assert_eq!("SUCCESS", payload["msg"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
+    
     assert_eq!(None, payload.get("message"));
     assert_eq!("chat-conversation-1", payload["data"]["item"]["id"]);
     assert_eq!("Router design", payload["data"]["item"]["title"]);
@@ -88,7 +88,7 @@ async fn app_chat_list_conversations_uses_trusted_subject_and_returns_items() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = response_json(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!(1, payload["data"]["items"].as_array().unwrap().len());
     assert_eq!("chat-conversation-1", payload["data"]["items"][0]["id"]);
 
@@ -142,7 +142,7 @@ async fn app_chat_create_turn_carries_message_agent_and_model_context() {
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = response_json(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("chat-turn-1", payload["data"]["turn"]["id"]);
     assert_eq!("running", payload["data"]["turn"]["status"]);
     assert_eq!("chat-message-user-1", payload["data"]["messages"][0]["id"]);
@@ -211,7 +211,7 @@ async fn app_chat_complete_turn_response_carries_runtime_usage_and_assistant_out
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = response_json(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("completed", payload["data"]["turn"]["status"]);
     assert_eq!("assistant", payload["data"]["messages"][0]["role"]);
     assert_eq!("output", payload["data"]["messages"][0]["direction"]);
@@ -303,7 +303,7 @@ async fn app_chat_complete_turn_response_preserves_markdown_response_whitespace(
 
     assert_eq!(StatusCode::OK, response.status());
     let payload = response_json(response).await;
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
 
     let commands = store.complete_turn_commands.lock().unwrap();
     assert_eq!(1, commands.len());
@@ -345,10 +345,10 @@ async fn app_chat_complete_turn_response_rejects_non_numeric_usage_fact_id() {
 
     assert_eq!(StatusCode::BAD_REQUEST, response.status());
     let payload = response_json(response).await;
-    assert_eq!("4001", payload["code"]);
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
     assert_eq!(
         "usageFactId must be a positive integer string",
-        payload["msg"]
+        payload["detail"]
     );
     assert_eq!(None, payload.get("message"));
     assert!(store.complete_turn_commands.lock().unwrap().is_empty());

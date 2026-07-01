@@ -21,7 +21,7 @@ use serde_json::{Map, Value};
 use tokio::time::sleep;
 
 use crate::api::openai_runtime::resolve_openai_provider_route_plan;
-use crate::api::response::PlusApiResult;
+use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::{
     AuthenticatedApiKeyContext, EntityUuidGenerator, InMemoryRuntimeStreamBus,
     ProviderRouteSelector, RuntimeStreamBus, SelectProviderRouteQuery,
@@ -591,7 +591,7 @@ async fn list_invocations(
         Err(message) => return bad_request(message),
     };
     match state.store.list_invocations(subject, query).await {
-        Ok(list) => Json(PlusApiResult::success(list)).into_response(),
+        Ok(list) => Json(success_envelope(list)).into_response(),
         Err(error) => app_runtime_system_response("app runtime invocations are unavailable", error),
     }
 }
@@ -608,7 +608,7 @@ async fn get_invocation(
         Err(message) => return bad_request(message),
     };
     match state.store.get_invocation(subject, invocation_id).await {
-        Ok(Some(item)) => Json(PlusApiResult::success(item)).into_response(),
+        Ok(Some(item)) => Json(success_envelope(item)).into_response(),
         Ok(None) => not_found("runtime invocation was not found"),
         Err(error) => app_runtime_system_response("app runtime invocation is unavailable", error),
     }
@@ -629,7 +629,7 @@ async fn create_invocation(
         }
     };
     match state.store.create_invocation(command).await {
-        Ok(item) => Json(PlusApiResult::success(AppRuntimeInvocationEnvelope {
+        Ok(item) => Json(success_envelope(AppRuntimeInvocationEnvelope {
             item,
         }))
         .into_response(),
@@ -690,7 +690,7 @@ async fn complete_invocation(
                 .await
                 {
                     Ok(item) => {
-                        return Json(PlusApiResult::success(AppRuntimeInvocationEnvelope {
+                        return Json(success_envelope(AppRuntimeInvocationEnvelope {
                             item,
                         }))
                         .into_response();
@@ -708,7 +708,7 @@ async fn complete_invocation(
         }
     }
     match state.store.complete_invocation(command).await {
-        Ok(item) => Json(PlusApiResult::success(AppRuntimeInvocationEnvelope {
+        Ok(item) => Json(success_envelope(AppRuntimeInvocationEnvelope {
             item,
         }))
         .into_response(),
@@ -764,7 +764,7 @@ async fn list_events(
         .list_events(subject, invocation_id, page, page_size)
         .await
     {
-        Ok(list) => Json(PlusApiResult::success(list)).into_response(),
+        Ok(list) => Json(success_envelope(list)).into_response(),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) => app_runtime_system_response("app runtime events are unavailable", error),
     }
@@ -929,7 +929,7 @@ async fn create_event(
         }
     };
     match state.store.create_event(command).await {
-        Ok(item) => Json(PlusApiResult::success(AppRuntimeEventEnvelope { item })).into_response(),
+        Ok(item) => Json(success_envelope(AppRuntimeEventEnvelope { item })).into_response(),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) if error.is_conflict() => conflict(error.to_string()),
         Err(error) => app_runtime_system_response("app runtime event is unavailable", error),
@@ -954,7 +954,7 @@ async fn list_artifacts(
         .list_artifacts(subject, invocation_id, page, page_size)
         .await
     {
-        Ok(list) => Json(PlusApiResult::success(list)).into_response(),
+        Ok(list) => Json(success_envelope(list)).into_response(),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) => app_runtime_system_response("app runtime artifacts are unavailable", error),
     }
@@ -977,7 +977,7 @@ async fn create_artifact(
     };
     match state.store.create_artifact(command).await {
         Ok(item) => {
-            Json(PlusApiResult::success(AppRuntimeArtifactEnvelope { item })).into_response()
+            Json(success_envelope(AppRuntimeArtifactEnvelope { item })).into_response()
         }
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) if error.is_conflict() => conflict(error.to_string()),
@@ -5667,19 +5667,19 @@ fn generate_entity_uuid(state: &AppRuntimeState) -> Result<String, AppRuntimeBui
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4001", message.into())).into_response()
+    problem_from_wire_code("4001", message.into()).into_response()
 }
 
 fn not_found(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4040", message.into())).into_response()
+    problem_from_wire_code("4040", message.into()).into_response()
 }
 
 fn conflict(message: impl Into<String>) -> Response {
-    PlusApiResult::error("4090", message.into())).into_response()
+    problem_from_wire_code("4090", message.into()).into_response()
 }
 
 fn app_runtime_system_response(context: &str, error: DomainError) -> Response {
-    PlusApiResult::error("5000", format!("{context}: {error}"))).into_response()
+    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }
 
 #[derive(Debug)]
