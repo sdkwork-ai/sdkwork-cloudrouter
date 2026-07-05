@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "license": "SEE LICENSE IN ../../../../LICENSE",
   "type": "module",
-  "main": "src/index.tsx",
+  "main": "./src/index.tsx",
   "scripts": {
     "test": "vitest run src/cacheService.test.ts --config ../../vite.config.ts --configLoader native --pool vmThreads",
     "typecheck": "tsc --noEmit"
@@ -17,5 +17,13 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
+  },
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./src/index.tsx",
+      "import": "./src/index.tsx",
+      "default": "./src/index.tsx"
+    }
   }
 }

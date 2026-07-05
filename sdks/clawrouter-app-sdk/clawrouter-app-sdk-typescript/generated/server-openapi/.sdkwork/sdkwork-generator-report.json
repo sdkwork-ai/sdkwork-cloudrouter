@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "5e4575375782efdf697b5d795149112a6d6134716c34ad58f39ab15ba6142e04",
+  "changeFingerprint": "fcc98f92a6e00999e296439503d5a48a50134781255cf61a45a524d387919da8",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -151,7 +151,11 @@
           "src/types/turn-responses-create-response.ts",
           "src/types/turn-responses-create-result.ts",
           "src/types/turns-create-response.ts",
-          "src/types/turns-create-result.ts"
+          "src/types/turns-create-result.ts",
+          "src/types/users-settings-retrieve-response.ts",
+          "src/types/users-settings-retrieve-result.ts",
+          "src/types/users-settings-update-response.ts",
+          "src/types/users-settings-update-result.ts"
         ]
       },
       {
@@ -319,10 +323,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 135,
-    "models": 106,
+    "totalFiles": 139,
+    "models": 110,
     "apis": 6,
-    "types": 108
+    "types": 112
   },
   "warnings": [
     {
@@ -519,6 +523,14 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/users-settings-retrieve-result.ts"
+    },
+    {
+      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/users-settings-update-result.ts"
+    },
+    {
+      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/index.ts"
     },
     {
@@ -545,12 +557,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 134,
+    "writtenFiles": 138,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "5e4575375782efdf697b5d795149112a6d6134716c34ad58f39ab15ba6142e04",
+    "changeFingerprint": "fcc98f92a6e00999e296439503d5a48a50134781255cf61a45a524d387919da8",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -684,6 +696,10 @@
         "src/types/turn-responses-create-result.ts",
         "src/types/turns-create-response.ts",
         "src/types/turns-create-result.ts",
+        "src/types/users-settings-retrieve-response.ts",
+        "src/types/users-settings-retrieve-result.ts",
+        "src/types/users-settings-update-response.ts",
+        "src/types/users-settings-update-result.ts",
         "tsconfig.json"
       ],
       "updatedGeneratedFiles": [],
@@ -834,7 +850,11 @@
             "src/types/turn-responses-create-response.ts",
             "src/types/turn-responses-create-result.ts",
             "src/types/turns-create-response.ts",
-            "src/types/turns-create-result.ts"
+            "src/types/turns-create-result.ts",
+            "src/types/users-settings-retrieve-response.ts",
+            "src/types/users-settings-retrieve-result.ts",
+            "src/types/users-settings-update-response.ts",
+            "src/types/users-settings-update-result.ts"
           ]
         },
         {

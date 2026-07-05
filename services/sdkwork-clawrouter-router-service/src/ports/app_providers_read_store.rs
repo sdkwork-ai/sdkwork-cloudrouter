@@ -2,7 +2,8 @@ use std::future::Future;
 use std::pin::Pin;
 
 pub use sdkwork_clawrouter_app_providers_repository_sqlx::{
-    AppProviderItem, AppProvidersItems, AppProvidersSubject,
+    AppProviderItem, AppProvidersItems, AppProvidersListPage, AppProvidersListQuery,
+    AppProvidersSubject,
 };
 
 use crate::domain::DomainResult;
@@ -13,5 +14,6 @@ pub trait AppProvidersReadStore {
     fn load_providers<'a>(
         &'a self,
         subject: Option<AppProvidersSubject>,
-    ) -> AppProvidersReadFuture<'a, Vec<AppProviderItem>>;
+        query: AppProvidersListQuery,
+    ) -> AppProvidersReadFuture<'a, AppProvidersListPage>;
 }

@@ -1,7 +1,0 @@
-{
-  "language": "typescript",
-  "sdkType": "app",
-  "name": "clawrouter-app-domain-transport",
-  "packageName": "clawrouter-app-domain-transport-generated-typescript",
-  "version": "0.1.0"
-}

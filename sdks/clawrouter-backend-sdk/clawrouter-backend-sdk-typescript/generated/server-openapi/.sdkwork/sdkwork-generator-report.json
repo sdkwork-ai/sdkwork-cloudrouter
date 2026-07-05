@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "7ae2317465fbe0f839ea1037616902b97d9aad4c892b059bcf8ce1fa391b4564",
+  "changeFingerprint": "d6d7f9333e96041d350e566cfb5b2b9f9069771d995a56b7809d0f523d58317f",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -31,15 +31,10 @@
         "paths": [
           "src/api/ai.ts",
           "src/api/base.ts",
-          "src/api/content.ts",
           "src/api/index.ts",
           "src/api/integration.ts",
-          "src/api/mcp.ts",
-          "src/api/messaging.ts",
           "src/api/paths.ts",
-          "src/api/service-providers.ts",
           "src/api/sites.ts",
-          "src/api/storage.ts",
           "src/api/system.ts",
           "src/http/client.ts",
           "src/sdk.ts"
@@ -48,17 +43,6 @@
       {
         "area": "models",
         "paths": [
-          "src/types/admin-auth-settings-response.ts",
-          "src/types/admin-auth-settings-update-request.ts",
-          "src/types/admin-auth-verification-policy.ts",
-          "src/types/admin-auth-wechat-mini.ts",
-          "src/types/admin-auth-wechat-official.ts",
-          "src/types/admin-auth-wechat-settings-update.ts",
-          "src/types/admin-auth-wechat-settings.ts",
-          "src/types/admin-runtime-region-settings-response.ts",
-          "src/types/admin-runtime-region-settings-update-request.ts",
-          "src/types/admin-site-settings-response.ts",
-          "src/types/admin-site-settings-update-request.ts",
           "src/types/after-sales-reviews-create-response.ts",
           "src/types/after-sales-reviews-create-result.ts",
           "src/types/ai-resource-groups-create-response.ts",
@@ -71,10 +55,6 @@
           "src/types/ai-resources-update-result.ts",
           "src/types/analytics-admin-overview-retrieve-response.ts",
           "src/types/analytics-admin-overview-retrieve-result.ts",
-          "src/types/announcements-create-response.ts",
-          "src/types/announcements-create-result.ts",
-          "src/types/announcements-update-response.ts",
-          "src/types/announcements-update-result.ts",
           "src/types/auth-settings-retrieve-response.ts",
           "src/types/auth-settings-retrieve-result.ts",
           "src/types/auth-settings-update-response.ts",
@@ -104,27 +84,14 @@
           "src/types/common.ts",
           "src/types/dashboard-admin-overview-retrieve-response.ts",
           "src/types/dashboard-admin-overview-retrieve-result.ts",
-          "src/types/dashboard-retrieve-response.ts",
-          "src/types/dashboard-retrieve-result.ts",
-          "src/types/default-buckets-update-response.ts",
-          "src/types/default-buckets-update-result.ts",
-          "src/types/diagnostics-route-simulation-create-response.ts",
-          "src/types/diagnostics-route-simulation-create-result.ts",
-          "src/types/diagnostics-test-sends-create-response.ts",
-          "src/types/diagnostics-test-sends-create-result.ts",
-          "src/types/downstreams-create-response.ts",
-          "src/types/downstreams-create-result.ts",
           "src/types/field-error.ts",
           "src/types/firewalls-rules-create-response.ts",
           "src/types/firewalls-rules-create-result.ts",
-          "src/types/gc-jobs-create-response.ts",
-          "src/types/gc-jobs-create-result.ts",
           "src/types/health-check-create-response.ts",
           "src/types/health-check-create-result.ts",
           "src/types/index.ts",
           "src/types/installation-status-retrieve-response.ts",
           "src/types/installation-status-retrieve-result.ts",
-          "src/types/media-resource.ts",
           "src/types/model-mappings-create-response.ts",
           "src/types/model-mappings-create-result.ts",
           "src/types/model-mappings-replace-response.ts",
@@ -145,46 +112,20 @@
           "src/types/models-refresh-result.ts",
           "src/types/models-update-response.ts",
           "src/types/models-update-result.ts",
-          "src/types/oss-buckets-create-response.ts",
-          "src/types/oss-buckets-create-result.ts",
-          "src/types/oss-buckets-update-response.ts",
-          "src/types/oss-buckets-update-result.ts",
-          "src/types/oss-providers-create-response.ts",
-          "src/types/oss-providers-create-result.ts",
-          "src/types/oss-providers-update-response.ts",
-          "src/types/oss-providers-update-result.ts",
-          "src/types/oss-quotas-create-response.ts",
-          "src/types/oss-quotas-create-result.ts",
-          "src/types/oss-storage-reconciliation-runs-create-response.ts",
-          "src/types/oss-storage-reconciliation-runs-create-result.ts",
           "src/types/page-info.ts",
-          "src/types/price-simulation-create-response.ts",
-          "src/types/price-simulation-create-result.ts",
-          "src/types/pricing-rules-create-response.ts",
-          "src/types/pricing-rules-create-result.ts",
-          "src/types/pricing-rules-update-response.ts",
-          "src/types/pricing-rules-update-result.ts",
           "src/types/problem-detail.ts",
-          "src/types/provider-accounts-create-response.ts",
-          "src/types/provider-accounts-create-result.ts",
           "src/types/provider-secrets-create-response.ts",
           "src/types/provider-secrets-create-result.ts",
           "src/types/provider-secrets-update-response.ts",
           "src/types/provider-secrets-update-result.ts",
-          "src/types/providers-health-check-create-response.ts",
-          "src/types/providers-health-check-create-result.ts",
           "src/types/rate-limits-api-keys-create-response.ts",
           "src/types/rate-limits-api-keys-create-result.ts",
           "src/types/rate-limits-ip-create-response.ts",
           "src/types/rate-limits-ip-create-result.ts",
           "src/types/rate-limits-models-create-response.ts",
           "src/types/rate-limits-models-create-result.ts",
-          "src/types/revisions-publish-response.ts",
-          "src/types/revisions-publish-result.ts",
           "src/types/route-explain-create-response.ts",
           "src/types/route-explain-create-result.ts",
-          "src/types/route-rules-create-response.ts",
-          "src/types/route-rules-create-result.ts",
           "src/types/runtime-region-settings-retrieve-response.ts",
           "src/types/runtime-region-settings-retrieve-result.ts",
           "src/types/runtime-region-settings-update-response.ts",
@@ -195,24 +136,6 @@
           "src/types/sdk-work-list-response.ts",
           "src/types/sdk-work-page-data.ts",
           "src/types/sdk-work-platform-error-code.ts",
-          "src/types/sender-identities-create-response.ts",
-          "src/types/sender-identities-create-result.ts",
-          "src/types/servers-bindings-create-response.ts",
-          "src/types/servers-bindings-create-result.ts",
-          "src/types/servers-bindings-update-response.ts",
-          "src/types/servers-bindings-update-result.ts",
-          "src/types/servers-create-response.ts",
-          "src/types/servers-create-result.ts",
-          "src/types/servers-health-checks-create-response.ts",
-          "src/types/servers-health-checks-create-result.ts",
-          "src/types/servers-retrieve-response.ts",
-          "src/types/servers-retrieve-result.ts",
-          "src/types/servers-revisions-create-response.ts",
-          "src/types/servers-revisions-create-result.ts",
-          "src/types/servers-tools-refresh-response.ts",
-          "src/types/servers-tools-refresh-result.ts",
-          "src/types/servers-update-response.ts",
-          "src/types/servers-update-result.ts",
           "src/types/service-nodes-create-response.ts",
           "src/types/service-nodes-create-result.ts",
           "src/types/service-nodes-status-update-response.ts",
@@ -287,20 +210,8 @@
           "src/types/site-settings-update-result.ts",
           "src/types/site-update-response.ts",
           "src/types/site-update-result.ts",
-          "src/types/suppressions-create-response.ts",
-          "src/types/suppressions-create-result.ts",
-          "src/types/template-sends-create-response.ts",
-          "src/types/template-sends-create-result.ts",
-          "src/types/templates-create-response.ts",
-          "src/types/templates-create-result.ts",
-          "src/types/templates-versions-publish-response.ts",
-          "src/types/templates-versions-publish-result.ts",
           "src/types/test-connection-create-response.ts",
-          "src/types/test-connection-create-result.ts",
-          "src/types/tools-update-response.ts",
-          "src/types/tools-update-result.ts",
-          "src/types/verification-policies-update-response.ts",
-          "src/types/verification-policies-update-result.ts"
+          "src/types/test-connection-create-result.ts"
         ]
       },
       {
@@ -468,10 +379,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 284,
-    "models": 252,
-    "apis": 9,
-    "types": 254
+    "totalFiles": 195,
+    "models": 168,
+    "apis": 4,
+    "types": 170
   },
   "warnings": [
     {
@@ -500,11 +411,11 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/announcements-create-result.ts"
+      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/auth-settings-retrieve-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/announcements-update-result.ts"
+      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/auth-settings-update-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -556,31 +467,7 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/dashboard-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/default-buckets-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/diagnostics-route-simulation-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/diagnostics-test-sends-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/downstreams-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/firewalls-rules-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/gc-jobs-create-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -632,55 +519,11 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/oss-buckets-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/oss-buckets-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/oss-providers-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/oss-providers-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/oss-quotas-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/oss-storage-reconciliation-runs-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/price-simulation-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/pricing-rules-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/pricing-rules-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/provider-accounts-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/provider-secrets-create-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/provider-secrets-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/providers-health-check-create-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -696,51 +539,15 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/revisions-publish-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/route-explain-create-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/route-rules-create-result.ts"
+      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/runtime-region-settings-retrieve-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/sender-identities-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/servers-bindings-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/servers-bindings-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/servers-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/servers-health-checks-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/servers-retrieve-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/servers-revisions-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/servers-tools-refresh-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/servers-update-result.ts"
+      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/runtime-region-settings-update-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -880,35 +687,19 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/site-settings-retrieve-result.ts"
+    },
+    {
+      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/site-settings-update-result.ts"
+    },
+    {
+      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/site-update-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/suppressions-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/template-sends-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/templates-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/templates-versions-publish-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/test-connection-create-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/tools-update-result.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/verification-policies-update-result.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -938,12 +729,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 283,
+    "writtenFiles": 194,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "7ae2317465fbe0f839ea1037616902b97d9aad4c892b059bcf8ce1fa391b4564",
+    "changeFingerprint": "d6d7f9333e96041d350e566cfb5b2b9f9069771d995a56b7809d0f523d58317f",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -958,32 +749,16 @@
         "sdkwork-sdk.json",
         "src/api/ai.ts",
         "src/api/base.ts",
-        "src/api/content.ts",
         "src/api/index.ts",
         "src/api/integration.ts",
-        "src/api/mcp.ts",
-        "src/api/messaging.ts",
         "src/api/paths.ts",
-        "src/api/service-providers.ts",
         "src/api/sites.ts",
-        "src/api/storage.ts",
         "src/api/system.ts",
         "src/auth/index.ts",
         "src/http/client.ts",
         "src/http/index.ts",
         "src/index.ts",
         "src/sdk.ts",
-        "src/types/admin-auth-settings-response.ts",
-        "src/types/admin-auth-settings-update-request.ts",
-        "src/types/admin-auth-verification-policy.ts",
-        "src/types/admin-auth-wechat-mini.ts",
-        "src/types/admin-auth-wechat-official.ts",
-        "src/types/admin-auth-wechat-settings-update.ts",
-        "src/types/admin-auth-wechat-settings.ts",
-        "src/types/admin-runtime-region-settings-response.ts",
-        "src/types/admin-runtime-region-settings-update-request.ts",
-        "src/types/admin-site-settings-response.ts",
-        "src/types/admin-site-settings-update-request.ts",
         "src/types/after-sales-reviews-create-response.ts",
         "src/types/after-sales-reviews-create-result.ts",
         "src/types/ai-resource-groups-create-response.ts",
@@ -996,10 +771,6 @@
         "src/types/ai-resources-update-result.ts",
         "src/types/analytics-admin-overview-retrieve-response.ts",
         "src/types/analytics-admin-overview-retrieve-result.ts",
-        "src/types/announcements-create-response.ts",
-        "src/types/announcements-create-result.ts",
-        "src/types/announcements-update-response.ts",
-        "src/types/announcements-update-result.ts",
         "src/types/auth-settings-retrieve-response.ts",
         "src/types/auth-settings-retrieve-result.ts",
         "src/types/auth-settings-update-response.ts",
@@ -1029,27 +800,14 @@
         "src/types/common.ts",
         "src/types/dashboard-admin-overview-retrieve-response.ts",
         "src/types/dashboard-admin-overview-retrieve-result.ts",
-        "src/types/dashboard-retrieve-response.ts",
-        "src/types/dashboard-retrieve-result.ts",
-        "src/types/default-buckets-update-response.ts",
-        "src/types/default-buckets-update-result.ts",
-        "src/types/diagnostics-route-simulation-create-response.ts",
-        "src/types/diagnostics-route-simulation-create-result.ts",
-        "src/types/diagnostics-test-sends-create-response.ts",
-        "src/types/diagnostics-test-sends-create-result.ts",
-        "src/types/downstreams-create-response.ts",
-        "src/types/downstreams-create-result.ts",
         "src/types/field-error.ts",
         "src/types/firewalls-rules-create-response.ts",
         "src/types/firewalls-rules-create-result.ts",
-        "src/types/gc-jobs-create-response.ts",
-        "src/types/gc-jobs-create-result.ts",
         "src/types/health-check-create-response.ts",
         "src/types/health-check-create-result.ts",
         "src/types/index.ts",
         "src/types/installation-status-retrieve-response.ts",
         "src/types/installation-status-retrieve-result.ts",
-        "src/types/media-resource.ts",
         "src/types/model-mappings-create-response.ts",
         "src/types/model-mappings-create-result.ts",
         "src/types/model-mappings-replace-response.ts",
@@ -1070,46 +828,20 @@
         "src/types/models-refresh-result.ts",
         "src/types/models-update-response.ts",
         "src/types/models-update-result.ts",
-        "src/types/oss-buckets-create-response.ts",
-        "src/types/oss-buckets-create-result.ts",
-        "src/types/oss-buckets-update-response.ts",
-        "src/types/oss-buckets-update-result.ts",
-        "src/types/oss-providers-create-response.ts",
-        "src/types/oss-providers-create-result.ts",
-        "src/types/oss-providers-update-response.ts",
-        "src/types/oss-providers-update-result.ts",
-        "src/types/oss-quotas-create-response.ts",
-        "src/types/oss-quotas-create-result.ts",
-        "src/types/oss-storage-reconciliation-runs-create-response.ts",
-        "src/types/oss-storage-reconciliation-runs-create-result.ts",
         "src/types/page-info.ts",
-        "src/types/price-simulation-create-response.ts",
-        "src/types/price-simulation-create-result.ts",
-        "src/types/pricing-rules-create-response.ts",
-        "src/types/pricing-rules-create-result.ts",
-        "src/types/pricing-rules-update-response.ts",
-        "src/types/pricing-rules-update-result.ts",
         "src/types/problem-detail.ts",
-        "src/types/provider-accounts-create-response.ts",
-        "src/types/provider-accounts-create-result.ts",
         "src/types/provider-secrets-create-response.ts",
         "src/types/provider-secrets-create-result.ts",
         "src/types/provider-secrets-update-response.ts",
         "src/types/provider-secrets-update-result.ts",
-        "src/types/providers-health-check-create-response.ts",
-        "src/types/providers-health-check-create-result.ts",
         "src/types/rate-limits-api-keys-create-response.ts",
         "src/types/rate-limits-api-keys-create-result.ts",
         "src/types/rate-limits-ip-create-response.ts",
         "src/types/rate-limits-ip-create-result.ts",
         "src/types/rate-limits-models-create-response.ts",
         "src/types/rate-limits-models-create-result.ts",
-        "src/types/revisions-publish-response.ts",
-        "src/types/revisions-publish-result.ts",
         "src/types/route-explain-create-response.ts",
         "src/types/route-explain-create-result.ts",
-        "src/types/route-rules-create-response.ts",
-        "src/types/route-rules-create-result.ts",
         "src/types/runtime-region-settings-retrieve-response.ts",
         "src/types/runtime-region-settings-retrieve-result.ts",
         "src/types/runtime-region-settings-update-response.ts",
@@ -1120,24 +852,6 @@
         "src/types/sdk-work-list-response.ts",
         "src/types/sdk-work-page-data.ts",
         "src/types/sdk-work-platform-error-code.ts",
-        "src/types/sender-identities-create-response.ts",
-        "src/types/sender-identities-create-result.ts",
-        "src/types/servers-bindings-create-response.ts",
-        "src/types/servers-bindings-create-result.ts",
-        "src/types/servers-bindings-update-response.ts",
-        "src/types/servers-bindings-update-result.ts",
-        "src/types/servers-create-response.ts",
-        "src/types/servers-create-result.ts",
-        "src/types/servers-health-checks-create-response.ts",
-        "src/types/servers-health-checks-create-result.ts",
-        "src/types/servers-retrieve-response.ts",
-        "src/types/servers-retrieve-result.ts",
-        "src/types/servers-revisions-create-response.ts",
-        "src/types/servers-revisions-create-result.ts",
-        "src/types/servers-tools-refresh-response.ts",
-        "src/types/servers-tools-refresh-result.ts",
-        "src/types/servers-update-response.ts",
-        "src/types/servers-update-result.ts",
         "src/types/service-nodes-create-response.ts",
         "src/types/service-nodes-create-result.ts",
         "src/types/service-nodes-status-update-response.ts",
@@ -1212,20 +926,8 @@
         "src/types/site-settings-update-result.ts",
         "src/types/site-update-response.ts",
         "src/types/site-update-result.ts",
-        "src/types/suppressions-create-response.ts",
-        "src/types/suppressions-create-result.ts",
-        "src/types/template-sends-create-response.ts",
-        "src/types/template-sends-create-result.ts",
-        "src/types/templates-create-response.ts",
-        "src/types/templates-create-result.ts",
-        "src/types/templates-versions-publish-response.ts",
-        "src/types/templates-versions-publish-result.ts",
         "src/types/test-connection-create-response.ts",
         "src/types/test-connection-create-result.ts",
-        "src/types/tools-update-response.ts",
-        "src/types/tools-update-result.ts",
-        "src/types/verification-policies-update-response.ts",
-        "src/types/verification-policies-update-result.ts",
         "tsconfig.json"
       ],
       "updatedGeneratedFiles": [],
@@ -1256,15 +958,10 @@
           "paths": [
             "src/api/ai.ts",
             "src/api/base.ts",
-            "src/api/content.ts",
             "src/api/index.ts",
             "src/api/integration.ts",
-            "src/api/mcp.ts",
-            "src/api/messaging.ts",
             "src/api/paths.ts",
-            "src/api/service-providers.ts",
             "src/api/sites.ts",
-            "src/api/storage.ts",
             "src/api/system.ts",
             "src/http/client.ts",
             "src/sdk.ts"
@@ -1273,17 +970,6 @@
         {
           "area": "models",
           "paths": [
-            "src/types/admin-auth-settings-response.ts",
-            "src/types/admin-auth-settings-update-request.ts",
-            "src/types/admin-auth-verification-policy.ts",
-            "src/types/admin-auth-wechat-mini.ts",
-            "src/types/admin-auth-wechat-official.ts",
-            "src/types/admin-auth-wechat-settings-update.ts",
-            "src/types/admin-auth-wechat-settings.ts",
-            "src/types/admin-runtime-region-settings-response.ts",
-            "src/types/admin-runtime-region-settings-update-request.ts",
-            "src/types/admin-site-settings-response.ts",
-            "src/types/admin-site-settings-update-request.ts",
             "src/types/after-sales-reviews-create-response.ts",
             "src/types/after-sales-reviews-create-result.ts",
             "src/types/ai-resource-groups-create-response.ts",
@@ -1296,10 +982,6 @@
             "src/types/ai-resources-update-result.ts",
             "src/types/analytics-admin-overview-retrieve-response.ts",
             "src/types/analytics-admin-overview-retrieve-result.ts",
-            "src/types/announcements-create-response.ts",
-            "src/types/announcements-create-result.ts",
-            "src/types/announcements-update-response.ts",
-            "src/types/announcements-update-result.ts",
             "src/types/auth-settings-retrieve-response.ts",
             "src/types/auth-settings-retrieve-result.ts",
             "src/types/auth-settings-update-response.ts",
@@ -1329,27 +1011,14 @@
             "src/types/common.ts",
             "src/types/dashboard-admin-overview-retrieve-response.ts",
             "src/types/dashboard-admin-overview-retrieve-result.ts",
-            "src/types/dashboard-retrieve-response.ts",
-            "src/types/dashboard-retrieve-result.ts",
-            "src/types/default-buckets-update-response.ts",
-            "src/types/default-buckets-update-result.ts",
-            "src/types/diagnostics-route-simulation-create-response.ts",
-            "src/types/diagnostics-route-simulation-create-result.ts",
-            "src/types/diagnostics-test-sends-create-response.ts",
-            "src/types/diagnostics-test-sends-create-result.ts",
-            "src/types/downstreams-create-response.ts",
-            "src/types/downstreams-create-result.ts",
             "src/types/field-error.ts",
             "src/types/firewalls-rules-create-response.ts",
             "src/types/firewalls-rules-create-result.ts",
-            "src/types/gc-jobs-create-response.ts",
-            "src/types/gc-jobs-create-result.ts",
             "src/types/health-check-create-response.ts",
             "src/types/health-check-create-result.ts",
             "src/types/index.ts",
             "src/types/installation-status-retrieve-response.ts",
             "src/types/installation-status-retrieve-result.ts",
-            "src/types/media-resource.ts",
             "src/types/model-mappings-create-response.ts",
             "src/types/model-mappings-create-result.ts",
             "src/types/model-mappings-replace-response.ts",
@@ -1370,46 +1039,20 @@
             "src/types/models-refresh-result.ts",
             "src/types/models-update-response.ts",
             "src/types/models-update-result.ts",
-            "src/types/oss-buckets-create-response.ts",
-            "src/types/oss-buckets-create-result.ts",
-            "src/types/oss-buckets-update-response.ts",
-            "src/types/oss-buckets-update-result.ts",
-            "src/types/oss-providers-create-response.ts",
-            "src/types/oss-providers-create-result.ts",
-            "src/types/oss-providers-update-response.ts",
-            "src/types/oss-providers-update-result.ts",
-            "src/types/oss-quotas-create-response.ts",
-            "src/types/oss-quotas-create-result.ts",
-            "src/types/oss-storage-reconciliation-runs-create-response.ts",
-            "src/types/oss-storage-reconciliation-runs-create-result.ts",
             "src/types/page-info.ts",
-            "src/types/price-simulation-create-response.ts",
-            "src/types/price-simulation-create-result.ts",
-            "src/types/pricing-rules-create-response.ts",
-            "src/types/pricing-rules-create-result.ts",
-            "src/types/pricing-rules-update-response.ts",
-            "src/types/pricing-rules-update-result.ts",
             "src/types/problem-detail.ts",
-            "src/types/provider-accounts-create-response.ts",
-            "src/types/provider-accounts-create-result.ts",
             "src/types/provider-secrets-create-response.ts",
             "src/types/provider-secrets-create-result.ts",
             "src/types/provider-secrets-update-response.ts",
             "src/types/provider-secrets-update-result.ts",
-            "src/types/providers-health-check-create-response.ts",
-            "src/types/providers-health-check-create-result.ts",
             "src/types/rate-limits-api-keys-create-response.ts",
             "src/types/rate-limits-api-keys-create-result.ts",
             "src/types/rate-limits-ip-create-response.ts",
             "src/types/rate-limits-ip-create-result.ts",
             "src/types/rate-limits-models-create-response.ts",
             "src/types/rate-limits-models-create-result.ts",
-            "src/types/revisions-publish-response.ts",
-            "src/types/revisions-publish-result.ts",
             "src/types/route-explain-create-response.ts",
             "src/types/route-explain-create-result.ts",
-            "src/types/route-rules-create-response.ts",
-            "src/types/route-rules-create-result.ts",
             "src/types/runtime-region-settings-retrieve-response.ts",
             "src/types/runtime-region-settings-retrieve-result.ts",
             "src/types/runtime-region-settings-update-response.ts",
@@ -1420,24 +1063,6 @@
             "src/types/sdk-work-list-response.ts",
             "src/types/sdk-work-page-data.ts",
             "src/types/sdk-work-platform-error-code.ts",
-            "src/types/sender-identities-create-response.ts",
-            "src/types/sender-identities-create-result.ts",
-            "src/types/servers-bindings-create-response.ts",
-            "src/types/servers-bindings-create-result.ts",
-            "src/types/servers-bindings-update-response.ts",
-            "src/types/servers-bindings-update-result.ts",
-            "src/types/servers-create-response.ts",
-            "src/types/servers-create-result.ts",
-            "src/types/servers-health-checks-create-response.ts",
-            "src/types/servers-health-checks-create-result.ts",
-            "src/types/servers-retrieve-response.ts",
-            "src/types/servers-retrieve-result.ts",
-            "src/types/servers-revisions-create-response.ts",
-            "src/types/servers-revisions-create-result.ts",
-            "src/types/servers-tools-refresh-response.ts",
-            "src/types/servers-tools-refresh-result.ts",
-            "src/types/servers-update-response.ts",
-            "src/types/servers-update-result.ts",
             "src/types/service-nodes-create-response.ts",
             "src/types/service-nodes-create-result.ts",
             "src/types/service-nodes-status-update-response.ts",
@@ -1512,20 +1137,8 @@
             "src/types/site-settings-update-result.ts",
             "src/types/site-update-response.ts",
             "src/types/site-update-result.ts",
-            "src/types/suppressions-create-response.ts",
-            "src/types/suppressions-create-result.ts",
-            "src/types/template-sends-create-response.ts",
-            "src/types/template-sends-create-result.ts",
-            "src/types/templates-create-response.ts",
-            "src/types/templates-create-result.ts",
-            "src/types/templates-versions-publish-response.ts",
-            "src/types/templates-versions-publish-result.ts",
             "src/types/test-connection-create-response.ts",
-            "src/types/test-connection-create-result.ts",
-            "src/types/tools-update-response.ts",
-            "src/types/tools-update-result.ts",
-            "src/types/verification-policies-update-response.ts",
-            "src/types/verification-policies-update-result.ts"
+            "src/types/test-connection-create-result.ts"
           ]
         },
         {

@@ -21,9 +21,239 @@ GENERATIONS_WORKSPACE_ROOT = (
     / "packages"
     / "sdkwork-generations-pc-workspace"
 )
+GENERATIONS_PLAYGROUND_ROOT = (
+    ROOT.parent
+    / "sdkwork-generations"
+    / "apps"
+    / "sdkwork-generations-pc"
+    / "packages"
+    / "sdkwork-generations-pc-playground"
+    / "src"
+)
+PLAYGROUND_UI_ROOT = GENERATIONS_PLAYGROUND_ROOT
+PLAYGROUND_PAGE = PLAYGROUND_UI_ROOT / "pages" / "PlaygroundPage.tsx"
+PLAYGROUND_ADAPTER = PLAYGROUND_ROOT / "pages" / "Playground.tsx"
+GENERATIONS_PANEL_ROOT = GENERATIONS_WORKSPACE_ROOT / "src" / "generation-panel"
+GENERATIONS_PLAYGROUND_LAYOUT_ROOT = (
+    GENERATIONS_WORKSPACE_ROOT / "src" / "generation-playground"
+)
+GENERATIONS_STUDIO_ROOT = (
+    ROOT.parent
+    / "sdkwork-generations"
+    / "apps"
+    / "sdkwork-generations-pc"
+    / "packages"
+    / "sdkwork-generations-pc-studio"
+    / "src"
+)
+IMAGE_GENERATION_ROOT = (
+    ROOT.parent
+    / "sdkwork-image"
+    / "apps"
+    / "sdkwork-image-pc"
+    / "packages"
+    / "sdkwork-image-pc-generation"
+    / "src"
+)
+VIDEO_GENERATION_ROOT = (
+    ROOT.parent
+    / "sdkwork-video"
+    / "apps"
+    / "sdkwork-video-pc"
+    / "packages"
+    / "sdkwork-video-pc-generation"
+    / "src"
+)
+MUSIC_GENERATION_ROOT = (
+    ROOT.parent
+    / "sdkwork-music"
+    / "apps"
+    / "sdkwork-music-pc"
+    / "packages"
+    / "sdkwork-music-pc-generation"
+    / "src"
+)
+AUDIO_GENERATION_ROOT = (
+    ROOT.parent
+    / "sdkwork-audio"
+    / "apps"
+    / "sdkwork-audio-pc"
+    / "packages"
+    / "sdkwork-audio-pc-generation"
+    / "src"
+)
+IMAGE_PANEL_SOURCE = IMAGE_GENERATION_ROOT / "components" / "ImageGenerationPanel.tsx"
+MUSIC_PANEL_SOURCE = MUSIC_GENERATION_ROOT / "components" / "MusicGenerationPanel.tsx"
+VIDEO_PANEL_SOURCE = VIDEO_GENERATION_ROOT / "components" / "VideoGenerationPanel.tsx"
+AUDIO_PANEL_SOURCE = AUDIO_GENERATION_ROOT / "components" / "AudioGenerationPanel.tsx"
+SFX_PANEL_SOURCE = AUDIO_GENERATION_ROOT / "components" / "SfxGenerationPanel.tsx"
+ALL_DOMAIN_PANEL_SOURCES = [
+    IMAGE_PANEL_SOURCE,
+    MUSIC_PANEL_SOURCE,
+    VIDEO_PANEL_SOURCE,
+    AUDIO_PANEL_SOURCE,
+    SFX_PANEL_SOURCE,
+]
+MODELS_PICKER_ROOT = (
+    ROOT.parent
+    / "sdkwork-models"
+    / "apps"
+    / "sdkwork-models-pc"
+    / "packages"
+    / "sdkwork-models-pc-picker"
+    / "src"
+)
 
 
 class PlaygroundRuntimeStandardTest(unittest.TestCase):
+    def test_playground_ui_shell_is_owned_by_generations_pc_playground(self) -> None:
+        adapter_source = PLAYGROUND_ADAPTER.read_text(encoding="utf-8")
+        page_source = PLAYGROUND_PAGE.read_text(encoding="utf-8")
+        package_source = (
+            ROOT
+            / "apps"
+            / "sdkwork-clawrouter-pc"
+            / "packages"
+            / "sdkwork-clawrouter-pc-playground"
+            / "package.json"
+        ).read_text(encoding="utf-8")
+        generations_package_source = (
+            ROOT.parent
+            / "sdkwork-generations"
+            / "apps"
+            / "sdkwork-generations-pc"
+            / "packages"
+            / "sdkwork-generations-pc-playground"
+            / "package.json"
+        ).read_text(encoding="utf-8")
+        portal_workspace_source = (ROOT / "pnpm-workspace.yaml").read_text(encoding="utf-8")
+
+        self.assertIn('"@sdkwork/generations-pc-playground": "workspace:*"', package_source)
+        self.assertIn(
+            "../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground",
+            portal_workspace_source,
+        )
+        self.assertIn('"name": "@sdkwork/generations-pc-playground"', generations_package_source)
+        self.assertIn("PlaygroundPage", adapter_source)
+        self.assertIn("@sdkwork/generations-pc-playground/react", adapter_source)
+        self.assertIn("PlaygroundHostPort", adapter_source)
+        self.assertIn("PlaygroundService", adapter_source)
+        self.assertLessEqual(adapter_source.count("\n"), 30)
+        self.assertNotIn("@sdkwork/clawroutes-pc-commons", generations_package_source)
+        self.assertNotIn("clawrouter", generations_package_source.lower())
+
+        for relative in [
+            "pages/PlaygroundPage.tsx",
+            "components/GenerationChatInput.tsx",
+            "components/IconSidebarItem.tsx",
+            "components/views/AgentView.tsx",
+            "components/views/ImageView.tsx",
+            "components/views/VideoView.tsx",
+            "components/views/MusicView.tsx",
+            "components/views/AudioView.tsx",
+            "components/views/SfxView.tsx",
+            "components/views/SharedHistoryView.tsx",
+            "components/views/AssetView.tsx",
+            "playground-types.ts",
+            "playground-host.ts",
+        ]:
+            with self.subTest(relative=relative):
+                self.assertTrue((PLAYGROUND_UI_ROOT / relative).exists())
+
+        for removed in [
+            PLAYGROUND_ROOT / "components" / "GenerationChatInput.tsx",
+            PLAYGROUND_ROOT / "components" / "IconSidebarItem.tsx",
+            PLAYGROUND_ROOT / "components" / "views" / "ImageView.tsx",
+        ]:
+            with self.subTest(removed=removed.relative_to(ROOT).as_posix()):
+                self.assertFalse(removed.exists())
+
+        self.assertIn("export function PlaygroundPage", page_source)
+        self.assertIn("usePlaygroundHost", page_source)
+        self.assertIn("flex h-full min-h-0 w-full flex-1 flex-row overflow-hidden", page_source)
+        self.assertNotIn("pt-[58px]", page_source)
+        self.assertNotIn("h-[100dvh]", page_source)
+        self.assertNotIn("PlaygroundService", page_source)
+        self.assertIn("sdkwork-playground-rail", page_source)
+
+        agent_view_source = (PLAYGROUND_UI_ROOT / "components" / "views" / "AgentView.tsx").read_text(encoding="utf-8")
+        self.assertIn("sdkwork-playground-workspace-sidebar", agent_view_source)
+        self.assertIn("sdkwork-generation-workspace-view", agent_view_source)
+        self.assertNotIn("bg-[#121216]", agent_view_source)
+        self.assertNotIn("bg-[#151515]", agent_view_source)
+
+        sidebar_source = (PLAYGROUND_UI_ROOT / "components" / "IconSidebarItem.tsx").read_text(encoding="utf-8")
+        self.assertIn("sdkwork-playground-rail-item", sidebar_source)
+        self.assertIn("activeIcon", sidebar_source)
+        self.assertIn("aria-label={label}", sidebar_source)
+
+        rail_icons_source = (PLAYGROUND_UI_ROOT / "components" / "playgroundRailIcons.tsx").read_text(encoding="utf-8")
+        self.assertIn("PlaygroundImageOutlineIcon", rail_icons_source)
+        self.assertIn("PlaygroundImageFilledIcon", rail_icons_source)
+        self.assertNotIn("rounded-r-full", sidebar_source)
+        self.assertNotIn("bg-slate-100", sidebar_source)
+        self.assertNotIn("text-slate-900", sidebar_source)
+
+        self.assertIn("sdkwork-playground-page", page_source)
+        self.assertIn("sdkwork-playground-main", page_source)
+        self.assertIn("sdkwork-playground-filter-option", page_source)
+        self.assertIn("sdkwork-playground-preview-action", page_source)
+        self.assertNotIn("bg-[#151515]", page_source)
+        self.assertNotIn("bg-[#0a0a0a]", page_source)
+        self.assertNotIn("bg-[#1a1a1a]", page_source)
+        self.assertNotIn("bg-[#2a2a2a]", page_source)
+        self.assertNotIn("@sdkwork/clawroutes-pc-commons", page_source)
+
+        chat_code_source = (
+            PLAYGROUND_UI_ROOT / "components" / "markdown" / "ChatCodeBlock.tsx"
+        ).read_text(encoding="utf-8")
+        self.assertIn("sdkwork-playground-chat-code-block", chat_code_source)
+        self.assertIn("sdkwork-playground-chat-code-block__copy", chat_code_source)
+        self.assertIn("sdkwork-playground-chat-code-token--string", chat_code_source)
+        self.assertNotIn("text-emerald-300", chat_code_source)
+        self.assertNotIn("bg-[#0d1117]", chat_code_source)
+        self.assertNotIn("bg-[#0f1117]", chat_code_source)
+
+        chat_markdown_source = (
+            PLAYGROUND_UI_ROOT / "components" / "markdown" / "ChatMarkdownMessage.tsx"
+        ).read_text(encoding="utf-8")
+        self.assertIn("sdkwork-playground-chat-markdown", chat_markdown_source)
+        self.assertIn("sdkwork-playground-chat-markdown__inline-code", chat_markdown_source)
+        self.assertNotIn("text-slate-100", chat_markdown_source)
+        self.assertNotIn("text-red-100", chat_markdown_source)
+
+        agent_input_source = (
+            PLAYGROUND_UI_ROOT / "components" / "GenerationChatInput.tsx"
+        ).read_text(encoding="utf-8")
+        self.assertIn("sdkwork-playground-chat-input__submit", agent_input_source)
+        self.assertIn("sdkwork-playground-chat-input__textarea", agent_input_source)
+        self.assertNotIn("text-slate-400", agent_input_source)
+
+        clawrouter_chat_bubble = (
+            ROOT / "apps" / "sdkwork-clawrouter-pc" / "packages" / "sdkwork-clawrouter-pc-playground"
+            / "src" / "components" / "chat" / "ChatMessageBubble.tsx"
+        ).read_text(encoding="utf-8")
+        self.assertIn("sdkwork-playground-chat-error-panel", clawrouter_chat_bubble)
+        self.assertNotIn("text-red-100", clawrouter_chat_bubble)
+
+        self.assertIn("sdkwork-playground-preview-text-header", page_source)
+        self.assertIn("sdkwork-playground-preview-text-body", page_source)
+        self.assertIn("sdkwork-playground-filter-search", page_source)
+        self.assertNotIn("border-white/10", page_source)
+        self.assertNotIn("text-slate-500", page_source)
+
+        playground_host_source = PLAYGROUND_ADAPTER.read_text(encoding="utf-8")
+        self.assertIn("sdkwork-playground-host", playground_host_source)
+        self.assertNotIn("dark:bg-[#0a0a0a]", playground_host_source)
+
+        portal_package_source = (
+            ROOT / "apps" / "sdkwork-clawrouter-pc" / "package.json"
+        ).read_text(encoding="utf-8")
+        self.assertIn('"@sdkwork/generations-pc-playground": "workspace:*"', portal_package_source)
+        self.assertNotIn('"rehype-sanitize"', portal_package_source)
+        self.assertIn('"hast-util-sanitize"', generations_package_source)
+        self.assertIn('"react-markdown"', generations_package_source)
+
     def test_playground_history_field_contract_targets_shared_type_source(self) -> None:
         contract_path = ROOT / "docs" / "schema-registry" / "frontend-field-contracts.yaml"
         contract = yaml.safe_load(contract_path.read_text(encoding="utf-8"))
@@ -213,10 +443,14 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
                 self.assertEqual("app_shell", service_contracts[operation].get("operation_scope"))
 
     def test_playground_history_and_preview_components_use_shared_types(self) -> None:
-        type_source = (PLAYGROUND_ROOT / "playgroundTypes.ts").read_text(encoding="utf-8")
+        type_source = (GENERATIONS_PLAYGROUND_ROOT / "playground-types.ts").read_text(encoding="utf-8")
         service_source = (PLAYGROUND_ROOT / "playgroundService.ts").read_text(encoding="utf-8")
-        page_source = (PLAYGROUND_ROOT / "pages" / "Playground.tsx").read_text(encoding="utf-8")
-        input_source = (PLAYGROUND_ROOT / "components" / "GenerationChatInput.tsx").read_text(encoding="utf-8")
+        page_source = (GENERATIONS_PLAYGROUND_ROOT / "pages" / "PlaygroundPage.tsx").read_text(encoding="utf-8")
+        input_source = (GENERATIONS_PLAYGROUND_ROOT / "components" / "GenerationChatInput.tsx").read_text(encoding="utf-8")
+        adapter_source = (PLAYGROUND_ROOT / "pages" / "Playground.tsx").read_text(encoding="utf-8")
+
+        self.assertIn("@sdkwork/generations-pc-playground/react", adapter_source)
+        self.assertIn("PlaygroundPage", adapter_source)
 
         self.assertIn("SdkworkGenerationHistoryItem", type_source)
         self.assertIn("export type PlaygroundHistoryItem = SdkworkGenerationHistoryItem", type_source)
@@ -225,7 +459,7 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
         self.assertIn("export interface PlaygroundAssetViewProps", type_source)
         self.assertNotIn("export interface PlaygroundHistoryItem", type_source)
         self.assertIn("export type { PlaygroundHistoryItem, PlaygroundMedia", service_source)
-        self.assertIn("from '../playgroundTypes'", page_source)
+        self.assertIn("from '../playground-types.ts'", page_source)
         for shared_type in [
             "PlaygroundHistoryItem",
             "PlaygroundModelBucket",
@@ -278,9 +512,14 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
             GENERATIONS_WORKSPACE_ROOT / "src" / "generation-service.ts"
         ).read_text(encoding="utf-8")
 
+        self.assertIn('"@sdkwork/generations-pc-playground": "workspace:*"', playground_package_source)
+        self.assertIn(
+            "../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground",
+            portal_workspace_source,
+        )
         self.assertIn('"@sdkwork/generations-pc-workspace": "workspace:*"', playground_package_source)
         self.assertIn(
-            "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-workspace",
+            "../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-workspace",
             portal_workspace_source,
         )
         self.assertIn('"@sdkwork/generations-pc-workspace": "workspace:*"', portal_package_source)
@@ -348,15 +587,13 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
             self.assertNotIn(table_name, required_tables)
 
         checked_sources = [
-            PLAYGROUND_ROOT / "components" / "ChatHistoryItem.tsx",
-            PLAYGROUND_ROOT / "components" / "MessageItems.tsx",
-            PLAYGROUND_ROOT / "components" / "views" / "AgentView.tsx",
-            PLAYGROUND_ROOT / "components" / "views" / "SharedHistoryView.tsx",
-            PLAYGROUND_ROOT / "components" / "views" / "ImageView.tsx",
-            PLAYGROUND_ROOT / "components" / "views" / "VideoView.tsx",
-            PLAYGROUND_ROOT / "components" / "views" / "MusicView.tsx",
-            PLAYGROUND_ROOT / "components" / "views" / "AudioView.tsx",
-            PLAYGROUND_ROOT / "components" / "views" / "SfxView.tsx",
+            PLAYGROUND_UI_ROOT / "components" / "views" / "AgentView.tsx",
+            PLAYGROUND_UI_ROOT / "components" / "views" / "SharedHistoryView.tsx",
+            PLAYGROUND_UI_ROOT / "components" / "views" / "ImageView.tsx",
+            PLAYGROUND_UI_ROOT / "components" / "views" / "VideoView.tsx",
+            PLAYGROUND_UI_ROOT / "components" / "views" / "MusicView.tsx",
+            PLAYGROUND_UI_ROOT / "components" / "views" / "AudioView.tsx",
+            PLAYGROUND_UI_ROOT / "components" / "views" / "SfxView.tsx",
         ]
 
         for source_path in checked_sources:
@@ -420,19 +657,29 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
 
     def test_playground_generation_controls_are_product_ready_not_read_only_placeholders(self) -> None:
         checked_sources = [
-            PLAYGROUND_ROOT / "pages" / "Playground.tsx",
-            PLAYGROUND_ROOT / "components" / "GenerationChatInput.tsx",
-            PLAYGROUND_ROOT / "components" / "AssetGenerationPanel.tsx",
-            PLAYGROUND_ROOT / "components" / "views" / "ImageView.tsx",
-            PLAYGROUND_ROOT / "components" / "views" / "VideoView.tsx",
-            PLAYGROUND_ROOT / "components" / "views" / "MusicView.tsx",
-            PLAYGROUND_ROOT / "components" / "views" / "AudioView.tsx",
-            PLAYGROUND_ROOT / "components" / "views" / "SfxView.tsx",
+            PLAYGROUND_PAGE,
+            PLAYGROUND_UI_ROOT / "components" / "GenerationChatInput.tsx",
+            GENERATIONS_PANEL_ROOT / "AssetGenerationPanel.tsx",
+            IMAGE_PANEL_SOURCE,
+            MUSIC_PANEL_SOURCE,
+            VIDEO_PANEL_SOURCE,
+            AUDIO_PANEL_SOURCE,
+            SFX_PANEL_SOURCE,
+            PLAYGROUND_UI_ROOT / "components" / "views" / "ImageView.tsx",
+            PLAYGROUND_UI_ROOT / "components" / "views" / "VideoView.tsx",
+            PLAYGROUND_UI_ROOT / "components" / "views" / "MusicView.tsx",
+            PLAYGROUND_UI_ROOT / "components" / "views" / "AudioView.tsx",
+            PLAYGROUND_UI_ROOT / "components" / "views" / "SfxView.tsx",
         ]
         combined_source = "\n".join(source.read_text(encoding="utf-8") for source in checked_sources)
-        page_source = (PLAYGROUND_ROOT / "pages" / "Playground.tsx").read_text(encoding="utf-8")
-        panel_source = (PLAYGROUND_ROOT / "components" / "AssetGenerationPanel.tsx").read_text(encoding="utf-8")
-        generation_input_source = (PLAYGROUND_ROOT / "components" / "GenerationChatInput.tsx").read_text(encoding="utf-8")
+        page_source = PLAYGROUND_PAGE.read_text(encoding="utf-8")
+        panel_source = (GENERATIONS_PANEL_ROOT / "AssetGenerationPanel.tsx").read_text(encoding="utf-8")
+        domain_panels_combined = "\n".join(
+            path.read_text(encoding="utf-8") for path in ALL_DOMAIN_PANEL_SOURCES
+        )
+        generation_input_source = (
+            PLAYGROUND_UI_ROOT / "components" / "GenerationChatInput.tsx"
+        ).read_text(encoding="utf-8")
         i18n_source = (
             ROOT
             / "apps"
@@ -453,10 +700,10 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
                 self.assertNotIn(forbidden, combined_source)
                 self.assertNotIn(forbidden, i18n_source)
 
-        self.assertNotIn("ReadOnlyPlaygroundControl", "\n".join(str(path) for path in PLAYGROUND_ROOT.rglob("*.tsx")))
+        self.assertNotIn("ReadOnlyPlaygroundControl", "\n".join(str(path) for path in PLAYGROUND_UI_ROOT.rglob("*.tsx")))
         self.assertIn("export function AssetGenerationPanel", panel_source)
-        self.assertIn("onSubmitGeneration({", panel_source)
-        self.assertIn("selectedModality: modality", panel_source)
+        self.assertIn("onSubmitGeneration", domain_panels_combined)
+        self.assertIn("selectedModality:", domain_panels_combined)
         self.assertIn("setAgentHistory((current) => [result.item", page_source)
         self.assertIn("void downloadPreviewAsset();", page_source)
         self.assertIn("void sharePreviewAsset();", page_source)
@@ -466,11 +713,11 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
 
     def test_generation_input_uses_modality_names_without_mojibake(self) -> None:
         checked_sources = [
-            PLAYGROUND_ROOT / "pages" / "Playground.tsx",
-            PLAYGROUND_ROOT / "components" / "GenerationChatInput.tsx",
-            PLAYGROUND_ROOT / "components" / "ImageGenerationModePopup.tsx",
-            PLAYGROUND_ROOT / "components" / "VideoGenerationModePopup.tsx",
-            PLAYGROUND_ROOT / "components" / "views" / "AgentView.tsx",
+            PLAYGROUND_PAGE,
+            PLAYGROUND_UI_ROOT / "components" / "GenerationChatInput.tsx",
+            IMAGE_GENERATION_ROOT / "components" / "ImageGenerationModePopup.tsx",
+            VIDEO_GENERATION_ROOT / "components" / "VideoGenerationModePopup.tsx",
+            PLAYGROUND_UI_ROOT / "components" / "views" / "AgentView.tsx",
         ]
 
         combined_source = "\n".join(source.read_text(encoding="utf-8") for source in checked_sources)
@@ -508,32 +755,32 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
                 self.assertNotIn(mojibake_token, combined_source)
 
         generation_input_source = (
-            PLAYGROUND_ROOT / "components" / "GenerationChatInput.tsx"
+            PLAYGROUND_UI_ROOT / "components" / "GenerationChatInput.tsx"
         ).read_text(encoding="utf-8")
         agent_view_source = (
-            PLAYGROUND_ROOT / "components" / "views" / "AgentView.tsx"
+            PLAYGROUND_UI_ROOT / "components" / "views" / "AgentView.tsx"
         ).read_text(encoding="utf-8")
         input_layout_source = generation_input_source + "\n" + agent_view_source
 
         self.assertIn('className="w-full max-w-[1280px] relative"', generation_input_source)
         self.assertIn("<GenerationChatInput", agent_view_source)
-        self.assertIn("w-[450px]", agent_view_source)
+        self.assertIn("sdkwork-playground-workspace-sidebar--agent", agent_view_source)
         for forbidden_width in ["w-[800px]", "max-w-[800px]", "w-[960px]", "max-w-[960px]"]:
             with self.subTest(forbidden_width=forbidden_width):
                 self.assertNotIn(forbidden_width, input_layout_source)
 
     def test_generation_input_reuses_shared_model_picker_and_keeps_toolbar_compact(self) -> None:
         generation_input_source = (
-            PLAYGROUND_ROOT / "components" / "GenerationChatInput.tsx"
+            PLAYGROUND_UI_ROOT / "components" / "GenerationChatInput.tsx"
         ).read_text(encoding="utf-8")
         model_picker_source = (
-            PLAYGROUND_ROOT / "components" / "PlaygroundModelPicker.tsx"
+            MODELS_PICKER_ROOT / "ModelPicker.tsx"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("PlaygroundModelPicker", generation_input_source)
+        self.assertIn("ModelPicker", generation_input_source)
         self.assertIn("createFallbackModel", generation_input_source)
         self.assertIn("bucket={selectedBucket}", generation_input_source)
-        self.assertIn("menuPlacement=\"top\"", generation_input_source)
+        self.assertNotIn("menuPlacement=\"top\"", generation_input_source)
         self.assertIn("variant=\"flat\"", generation_input_source)
         self.assertIn("compact", generation_input_source)
         self.assertIn("min-h-[112px]", generation_input_source)
@@ -545,9 +792,22 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
         self.assertIn("variant?: 'default' | 'flat';", model_picker_source)
         self.assertNotIn("onMouseEnter", model_picker_source)
         self.assertIn("onClick={() => setActiveVendorCode(group.vendor.code)}", model_picker_source)
+        self.assertIn("theme-aware-dark-surface sdkwork-model-picker-menu", model_picker_source)
+        self.assertIn("gridTemplateColumns", model_picker_source)
+        self.assertIn("useModelPickerMenuLayout", model_picker_source)
+        self.assertIn("menuPlacement = 'auto'", model_picker_source)
+        self.assertIn("sdkwork-model-picker-vendors", model_picker_source)
+        self.assertIn("sdkwork-model-picker-models", model_picker_source)
+        self.assertIn("sdkwork-model-picker-vendor-button", model_picker_source)
+        self.assertIn("sdkwork-model-picker-model-button", model_picker_source)
+        self.assertIn("data-active={isActive ? 'true' : 'false'}", model_picker_source)
 
     def test_playground_chat_is_independent_module_under_agent(self) -> None:
-        page_source = (PLAYGROUND_ROOT / "pages" / "Playground.tsx").read_text(encoding="utf-8")
+        page_source = PLAYGROUND_PAGE.read_text(encoding="utf-8")
+        adapter_source = PLAYGROUND_ADAPTER.read_text(encoding="utf-8")
+        modality_source = (
+            PLAYGROUND_UI_ROOT / "playground-modality.ts"
+        ).read_text(encoding="utf-8")
         chat_page_source = (
             PLAYGROUND_ROOT / "components" / "chat" / "ChatPage.tsx"
         ).read_text(encoding="utf-8")
@@ -564,12 +824,12 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
             PLAYGROUND_ROOT / "components" / "chat" / "chatTypes.ts"
         ).read_text(encoding="utf-8")
         generation_input_source = (
-            PLAYGROUND_ROOT / "components" / "GenerationChatInput.tsx"
+            PLAYGROUND_UI_ROOT / "components" / "GenerationChatInput.tsx"
         ).read_text(encoding="utf-8")
 
         self.assertIn("MessageSquare", page_source)
-        self.assertIn("import { ChatPage } from '../components/chat/ChatPage';", page_source)
-        self.assertIn("export type Modality = 'agent' | 'chat'", page_source)
+        self.assertIn("import { ChatPage }", adapter_source)
+        self.assertIn("export type Modality = 'agent' | 'chat'", modality_source)
         self.assertIn("setModality('chat')", page_source)
         self.assertIn("label={t('playground.modality.chat')}", page_source)
         self.assertLess(
@@ -592,7 +852,7 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
         self.assertIn("import { SimpleChatInput } from './SimpleChatInput';", chat_page_source)
         self.assertIn("export function SimpleChatInput", simple_chat_input_source)
         self.assertIn("bucket=\"llms\"", simple_chat_input_source)
-        self.assertIn("PlaygroundModelPicker", simple_chat_input_source)
+        self.assertIn("ModelPicker", simple_chat_input_source)
         self.assertIn("w-fit min-w-0 max-w-full flex-[0_1_auto]", simple_chat_input_source)
         self.assertNotIn("w-full max-w-[136px]", simple_chat_input_source)
         self.assertNotIn("max-w-[168px]", simple_chat_input_source)
@@ -626,11 +886,20 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
         self.assertFalse((PLAYGROUND_ROOT / "components" / "chat" / "ChatApiKeySwitcher.tsx").exists())
 
         model_picker_source = (
-            PLAYGROUND_ROOT / "components" / "PlaygroundModelPicker.tsx"
+            MODELS_PICKER_ROOT / "ModelPicker.tsx"
         ).read_text(encoding="utf-8")
         self.assertIn("variant?: 'default' | 'flat';", model_picker_source)
         self.assertNotIn("onMouseEnter", model_picker_source)
         self.assertIn("onClick={() => setActiveVendorCode(group.vendor.code)}", model_picker_source)
+        self.assertIn("theme-aware-dark-surface sdkwork-model-picker-menu", model_picker_source)
+        self.assertIn("gridTemplateColumns", model_picker_source)
+        self.assertIn("useModelPickerMenuLayout", model_picker_source)
+        self.assertIn("menuPlacement = 'auto'", model_picker_source)
+        self.assertIn("sdkwork-model-picker-vendors", model_picker_source)
+        self.assertIn("sdkwork-model-picker-models", model_picker_source)
+        self.assertIn("sdkwork-model-picker-vendor-button", model_picker_source)
+        self.assertIn("sdkwork-model-picker-model-button", model_picker_source)
+        self.assertIn("data-active={isActive ? 'true' : 'false'}", model_picker_source)
 
         self.assertNotIn("createLocalAssistantMessage", chat_page_source)
         self.assertNotIn("3<span", generation_input_source)
@@ -640,12 +909,18 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
 
     def test_playground_media_generation_uses_fixed_bottom_credit_action_bar(self) -> None:
         panel_source = (
-            PLAYGROUND_ROOT / "components" / "AssetGenerationPanel.tsx"
+            GENERATIONS_PANEL_ROOT / "AssetGenerationPanel.tsx"
         ).read_text(encoding="utf-8")
+        image_panel_source = IMAGE_PANEL_SOURCE.read_text(encoding="utf-8")
+        video_panel_source = VIDEO_PANEL_SOURCE.read_text(encoding="utf-8")
+        domain_panels_combined = "\n".join(
+            path.read_text(encoding="utf-8") for path in ALL_DOMAIN_PANEL_SOURCES
+        )
         page_source = (
-            PLAYGROUND_ROOT / "pages" / "Playground.tsx"
+            GENERATIONS_PLAYGROUND_ROOT / "pages" / "PlaygroundPage.tsx"
         ).read_text(encoding="utf-8")
-        type_source = (PLAYGROUND_ROOT / "playgroundTypes.ts").read_text(encoding="utf-8")
+        type_source = (GENERATIONS_PLAYGROUND_ROOT / "playground-types.ts").read_text(encoding="utf-8")
+        clawrouter_type_source = (PLAYGROUND_ROOT / "playgroundTypes.ts").read_text(encoding="utf-8")
         service_source = (PLAYGROUND_ROOT / "playgroundService.ts").read_text(encoding="utf-8")
         generation_service_source = (
             PLAYGROUND_ROOT / "playgroundGenerationService.ts"
@@ -665,65 +940,102 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
             for path in playground_i18n_root.glob("*.ts")
         )
         image_mode_popup_source = (
-            PLAYGROUND_ROOT / "components" / "ImageGenerationModePopup.tsx"
+            IMAGE_GENERATION_ROOT / "components" / "ImageGenerationModePopup.tsx"
         ).read_text(encoding="utf-8")
         video_mode_popup_source = (
-            PLAYGROUND_ROOT / "components" / "VideoGenerationModePopup.tsx"
+            VIDEO_GENERATION_ROOT / "components" / "VideoGenerationModePopup.tsx"
         ).read_text(encoding="utf-8")
         mode_popup_base_source = (
-            PLAYGROUND_ROOT / "components" / "GenerationModePopupBase.tsx"
+            GENERATIONS_STUDIO_ROOT / "GenerationModePopupBase.tsx"
         ).read_text(encoding="utf-8")
+        music_panel_source = MUSIC_PANEL_SOURCE.read_text(encoding="utf-8")
+        audio_panel_source = AUDIO_PANEL_SOURCE.read_text(encoding="utf-8")
+        sfx_panel_source = SFX_PANEL_SOURCE.read_text(encoding="utf-8")
+        studio_bottom_bar_source = (
+            GENERATIONS_STUDIO_ROOT / "SdkworkStudioGenerationBottomBar.tsx"
+        ).read_text(encoding="utf-8")
+        generation_ui_combined = (
+            domain_panels_combined + "\n" + studio_bottom_bar_source
+        )
         mode_popup_sources = image_mode_popup_source + "\n" + video_mode_popup_source + "\n" + mode_popup_base_source
 
+        # AssetGenerationPanel is a lightweight delegation component
         self.assertIn("export function AssetGenerationPanel", panel_source)
-        self.assertIn("function GenerationBottomActionBar", panel_source)
-        self.assertIn("function GenerationSubmitButton", panel_source)
+        self.assertIn("@sdkwork/image-pc-generation/react", panel_source)
+        self.assertIn("@sdkwork/music-pc-generation/react", panel_source)
+        self.assertIn("@sdkwork/video-pc-generation/react", panel_source)
+        self.assertIn("@sdkwork/audio-pc-generation/react", panel_source)
         self.assertNotIn("sticky bottom-0", panel_source)
-        self.assertIn("playground.generationCost.unavailable", panel_source)
-        self.assertIn("playground.generationCost.points", panel_source)
-        self.assertIn("estimateSdkworkGenerationCredits", panel_source)
-        self.assertIn("findFirstSdkworkGenerationModelForModality", panel_source)
-        self.assertIn("findSdkworkGenerationModelById", panel_source)
-        self.assertIn("getSdkworkGenerationDurationOptions", panel_source)
         self.assertNotIn("function estimatePlaygroundGenerationCredits", panel_source)
         self.assertNotIn("function selectReferencePrice", panel_source)
         self.assertNotIn("function estimateMeterQuantity", panel_source)
         self.assertNotIn("function metersForModality", panel_source)
         self.assertNotIn("function GenerationActionBar", panel_source)
-        self.assertIn("function ReferenceImageUploader", panel_source)
-        self.assertIn("ImageGenerationModePopup", panel_source)
-        self.assertIn("VideoGenerationModePopup", panel_source)
-        self.assertIn("GenerationModePopupBase", mode_popup_base_source)
-        self.assertIn('accept="image/*"', panel_source)
-        self.assertIn("referenceImageUrl", panel_source)
-        self.assertIn("referenceImage.metadata.name", panel_source)
-        self.assertIn("readReferenceImageDataUrl", panel_source)
-        self.assertIn("createUploadedReferenceMediaResource(referenceImageDataUrl", panel_source)
-        self.assertIn("URL.createObjectURL", panel_source)
-        self.assertIn("URL.revokeObjectURL", panel_source)
-        self.assertIn("aspectRatio", mode_popup_sources)
-        self.assertIn("playground.referenceAssets", panel_source)
-        self.assertIn("valueKey: 'aspectRatio'", image_mode_popup_source)
-        self.assertIn("playground.generationOutput.images", panel_source)
-        self.assertIn("ImageGenerationModePopup", panel_source)
-        self.assertIn("config={config}", panel_source)
-        self.assertIn("const outputLabel = generationOutputLabel", panel_source)
-        self.assertIn("playground.generationOutput.images", panel_source)
-        self.assertIn("playground.generationOutput.items", panel_source)
-        self.assertIn("h-[64px]", panel_source)
+        self.assertNotIn("function createGenerationConfig", panel_source)
         self.assertNotIn("-mb-4", panel_source)
         self.assertNotIn("min-h-4 flex-1", panel_source)
-        self.assertIn("whitespace-nowrap", panel_source)
-        self.assertIn("playground.generate", panel_source)
-        self.assertIn("costLabel", panel_source)
-        self.assertIn("outputLabel", panel_source)
         self.assertNotIn("t('playground.generationCost.estimated')", panel_source)
         self.assertNotIn("mb-3 flex min-w-0 items-start", panel_source)
-        self.assertIn("findSdkworkGenerationModelById(modelGroups, selectedModelId)", panel_source)
-        self.assertIn("generationConfig: serializeSdkworkGenerationAssetConfig(config, modality)", panel_source)
-        self.assertNotIn("function createGenerationConfig", panel_source)
-        self.assertIn("referenceImages:", panel_source)
-        self.assertIn("referenceAssets:", panel_source)
+
+        # Domain panels contain the implementation details
+        self.assertIn("estimateSdkworkGenerationCredits", domain_panels_combined)
+        self.assertIn("findFirstSdkworkGenerationModelForModality", domain_panels_combined)
+        self.assertIn("findSdkworkGenerationModelById", domain_panels_combined)
+        self.assertIn("getSdkworkGenerationDurationOptions", domain_panels_combined)
+        self.assertIn("playground.generationCost.unavailable", generation_ui_combined)
+        self.assertIn("playground.generationCost.points", generation_ui_combined)
+        self.assertIn("URL.createObjectURL", domain_panels_combined)
+        self.assertIn("URL.revokeObjectURL", domain_panels_combined)
+        self.assertIn("playground.referenceAssets", domain_panels_combined)
+        self.assertIn("playground.generationOutput.items", generation_ui_combined)
+        self.assertIn("h-[64px]", generation_ui_combined)
+        self.assertIn("whitespace-nowrap", generation_ui_combined)
+        self.assertIn("playground.generate", generation_ui_combined)
+        self.assertIn("costLabel", studio_bottom_bar_source)
+        self.assertIn("outputLabel", studio_bottom_bar_source)
+        self.assertIn("findSdkworkGenerationModelById(modelGroups, selectedModelId)", domain_panels_combined)
+        self.assertIn("generationConfig: serializeSdkworkGenerationAssetConfig(config,", domain_panels_combined)
+        self.assertIn("referenceImages:", domain_panels_combined)
+        self.assertIn("referenceAssets:", domain_panels_combined)
+        self.assertNotIn("function estimatePlaygroundGenerationCredits", domain_panels_combined)
+        self.assertNotIn("function selectReferencePrice", domain_panels_combined)
+        self.assertNotIn("function estimateMeterQuantity", domain_panels_combined)
+        self.assertNotIn("function metersForModality", domain_panels_combined)
+        self.assertNotIn("function GenerationActionBar", domain_panels_combined)
+        self.assertNotIn("function createGenerationConfig", domain_panels_combined)
+
+        # Image panel has reference image uploader and mode popup
+        self.assertIn("function ImageReferenceUploader", image_panel_source)
+        self.assertIn("ImageGenerationModePopup", image_panel_source)
+        self.assertIn('accept="image/*"', image_panel_source)
+        self.assertIn("referenceImage.metadata.name", image_panel_source)
+        self.assertIn("readReferenceImageDataUrl", image_panel_source)
+        self.assertIn("createUploadedReferenceMediaResource", image_panel_source)
+
+        # Video panel has video reference uploader and mode popup
+        self.assertIn("VideoGenerationModePopup", video_panel_source)
+        self.assertIn("VideoReferenceAssetUploader", video_panel_source)
+
+        # Mode popup base and aspect ratio
+        self.assertIn("SdkworkGenerationModePopupBase", mode_popup_base_source)
+        self.assertIn("sdkwork-generation-mode-bar", mode_popup_base_source)
+        self.assertIn("sdkwork-generation-mode-popup", mode_popup_base_source)
+        self.assertNotIn("dark:bg-[#151515]", mode_popup_base_source)
+        self.assertNotIn("dark:bg-[#1a1a1a]", mode_popup_base_source)
+        self.assertNotIn("dark:bg-[#252525]", mode_popup_base_source)
+        self.assertNotIn("text-slate-", mode_popup_base_source)
+        self.assertNotIn("bg-slate-", mode_popup_base_source)
+        self.assertIn("sdkwork-studio-generate-btn--disabled", mode_popup_base_source)
+        self.assertIn("sdkwork-generation-mode-bar-toggle", mode_popup_base_source)
+        self.assertIn("sdkwork-studio-generate-btn--disabled", studio_bottom_bar_source)
+        self.assertNotIn("text-slate-", studio_bottom_bar_source)
+        self.assertIn("@sdkwork/generations-pc-studio/react", music_panel_source)
+        self.assertIn("@sdkwork/generations-pc-studio/react", audio_panel_source)
+        self.assertIn("@sdkwork/generations-pc-studio/react", sfx_panel_source)
+        self.assertIn("@sdkwork/generations-pc-studio/react", video_mode_popup_source)
+        self.assertIn("@sdkwork/generations-pc-studio/react", image_mode_popup_source)
+        self.assertIn("aspectRatio", mode_popup_sources)
+        self.assertIn("valueKey: 'aspectRatio'", image_mode_popup_source)
         self.assertIn("const targetType = inputModality === 'agent' ? undefined : inputModality;", page_source)
         self.assertIn("targetType === undefined ? 'llms' : toModelBucket(targetType)", page_source)
         self.assertIn("const isText = previewItem?.type === 'text'", page_source)
@@ -741,12 +1053,12 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
         self.assertIn("generationConfig: input.generationConfig", generation_service_source)
         self.assertIn("referenceImages: input.referenceImages", generation_service_source)
         self.assertIn("referenceAssets: input.referenceAssets", generation_service_source)
-        self.assertIn("PlaygroundService.runGeneration", page_source)
+        self.assertIn("host.runGeneration", page_source)
         self.assertIn("generationConfig?: PlaygroundGenerationConfig", type_source)
         self.assertIn("referenceImages?: PlaygroundReferenceImageInput[]", type_source)
         self.assertIn("referenceAssets?: PlaygroundReferenceAssetInput[]", type_source)
-        self.assertIn("resource: ClawRouterMediaResource", type_source)
-        self.assertIn("ClawRouterMediaResource", type_source)
+        self.assertIn("resource: ClawRouterMediaResource", clawrouter_type_source)
+        self.assertIn("ClawRouterMediaResource", clawrouter_type_source)
         self.assertIn("export type PlaygroundHistoryItem = SdkworkGenerationHistoryItem", type_source)
         self.assertIn("SdkworkGenerationHistoryType", (
             GENERATIONS_WORKSPACE_ROOT / "src" / "generation-history.ts"
@@ -779,19 +1091,46 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
                     f"{key} must be translated in both locales",
                 )
 
-        for relative in [
-            "components/views/ImageView.tsx",
-            "components/views/VideoView.tsx",
-            "components/views/MusicView.tsx",
-            "components/views/AudioView.tsx",
-            "components/views/SfxView.tsx",
-        ]:
-            source = (PLAYGROUND_ROOT / relative).read_text(encoding="utf-8")
+        domain_workspace_sidebar_source = (
+            GENERATIONS_PLAYGROUND_LAYOUT_ROOT / "DomainGenerationWorkspaceSidebar.tsx"
+        ).read_text(encoding="utf-8")
+        migrated_views = {
+            "components/views/ImageView.tsx": (
+                "@sdkwork/image-pc-generation/react",
+                "ImageGenerationPanel",
+            ),
+            "components/views/VideoView.tsx": (
+                "@sdkwork/video-pc-generation/react",
+                "VideoGenerationPanel",
+            ),
+            "components/views/MusicView.tsx": (
+                "@sdkwork/music-pc-generation/react",
+                "MusicGenerationPanel",
+            ),
+            "components/views/AudioView.tsx": (
+                "@sdkwork/audio-pc-generation/react",
+                "AudioGenerationPanel",
+            ),
+            "components/views/SfxView.tsx": (
+                "@sdkwork/audio-pc-generation/react",
+                "SfxGenerationPanel",
+            ),
+        }
+        for relative, (package_import, panel_component) in migrated_views.items():
+            source = (GENERATIONS_PLAYGROUND_ROOT / relative).read_text(encoding="utf-8")
             with self.subTest(source=relative):
-                self.assertIn("<AssetGenerationPanel", source)
+                self.assertIn(package_import, source)
+                self.assertIn(panel_component, source)
+                self.assertIn("@sdkwork/models-pc-picker", domain_workspace_sidebar_source)
+                self.assertIn("<ModelPicker", domain_workspace_sidebar_source)
+                self.assertIn("sdkwork-playground-workspace-sidebar--image", domain_workspace_sidebar_source)
+                self.assertIn("sdkwork-playground-workspace-sidebar--video", domain_workspace_sidebar_source)
+                self.assertIn("sdkwork-playground-workspace-sidebar--music", domain_workspace_sidebar_source)
+                self.assertNotIn("bg-[#151515]", domain_workspace_sidebar_source)
                 self.assertIn("modelGroups={modelGroups}", source)
-                self.assertIn("overflow-hidden", source)
-                self.assertIn("shrink-0", source)
+                self.assertNotIn("<AssetGenerationPanel", source)
+                self.assertNotIn("<ModelPicker", source)
+                self.assertNotIn("SharedHistoryView", source)
                 self.assertNotIn("bg-gradient-to-r from-emerald-500 to-green-500 px-6 py-2", source)
 
     def test_playground_generation_request_contract_preserves_explicit_media_config(self) -> None:
@@ -937,9 +1276,7 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
                 self.assertNotIn("/app/v3/api/ai/generation/agents/runs", source)
 
     def test_playground_agent_history_time_filter_is_applied(self) -> None:
-        page_source = (
-            PLAYGROUND_ROOT / "pages" / "Playground.tsx"
-        ).read_text(encoding="utf-8")
+        page_source = PLAYGROUND_PAGE.read_text(encoding="utf-8")
 
         self.assertIn("function isWithinTimeFilter", page_source)
         self.assertIn("result = result.filter((item) => isWithinTimeFilter(item, timeFilter))", page_source)
@@ -1132,13 +1469,11 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
             PLAYGROUND_ROOT / "components" / "chat" / "SimpleChatInput.tsx"
         ).read_text(encoding="utf-8")
         model_picker_source = (
-            PLAYGROUND_ROOT / "components" / "PlaygroundModelPicker.tsx"
+            MODELS_PICKER_ROOT / "ModelPicker.tsx"
         ).read_text(encoding="utf-8")
-        page_source = (
-            PLAYGROUND_ROOT / "pages" / "Playground.tsx"
-        ).read_text(encoding="utf-8")
+        page_source = PLAYGROUND_PAGE.read_text(encoding="utf-8")
         agent_view_source = (
-            PLAYGROUND_ROOT / "components" / "views" / "AgentView.tsx"
+            PLAYGROUND_UI_ROOT / "components" / "views" / "AgentView.tsx"
         ).read_text(encoding="utf-8")
         api_key_service_source = (
             ROOT
@@ -1172,18 +1507,101 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
         self.assertIn("usePopoverDismiss", model_picker_source)
         self.assertIn("disabled?: boolean", model_picker_source)
         self.assertNotIn("onMouseEnter", model_picker_source)
-        self.assertIn("w-[392px]", model_picker_source)
-        self.assertNotIn("w-[520px]", model_picker_source)
+        self.assertIn("resolveModelPickerMenuWidth", model_picker_source)
+        self.assertIn("modelPickerVendorLayout", model_picker_source)
+        self.assertIn("useModelPickerMenuLayout", model_picker_source)
+        self.assertIn("sdkwork-model-picker-trigger", model_picker_source)
+        self.assertNotIn("bg-[#202024]", model_picker_source)
+        self.assertNotIn("text-slate-100", model_picker_source)
+        self.assertIn("sdkwork-playground-chat-composer__submit", simple_chat_input_source)
+        self.assertNotIn("shadow-[0_8px", simple_chat_input_source)
 
         self.assertIn("useEffect(() => {", page_source)
         self.assertIn("setShowModelMenu(false);", page_source)
         self.assertIn("}, [modality]);", page_source)
-        self.assertIn("w-[450px]", agent_view_source)
+        self.assertIn("sdkwork-playground-workspace-sidebar--agent", agent_view_source)
+        self.assertIn("sdkwork-playground-agent-error", agent_view_source)
 
         self.assertNotIn("SdkAppApiKeyListResponse['groups']", api_key_service_source)
         self.assertNotIn("readRequiredApiItems(result, 'console.apiKeys.errors.loadGroupsFallback', ['groups'])", api_key_service_source)
         self.assertIn("readApiKeyDisplayName(id, name)", api_key_service_source)
         self.assertNotIn("isSecretLikeApiKeyName", api_key_service_source)
+
+    def test_shared_model_picker_migration_is_complete(self) -> None:
+        picker_index_source = (
+            MODELS_PICKER_ROOT / "index.ts"
+        ).read_text(encoding="utf-8")
+        picker_source = (
+            MODELS_PICKER_ROOT / "ModelPicker.tsx"
+        ).read_text(encoding="utf-8")
+        picker_types_source = (
+            MODELS_PICKER_ROOT / "model-picker-types.ts"
+        ).read_text(encoding="utf-8")
+        popover_dismiss_source = (
+            MODELS_PICKER_ROOT / "usePopoverDismiss.ts"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("export * from './ModelPicker'", picker_index_source)
+        self.assertIn("export * from './model-picker-types'", picker_index_source)
+        self.assertIn("export * from './usePopoverDismiss'", picker_index_source)
+        self.assertIn("export function ModelPicker", picker_source)
+        self.assertIn("export function createFallbackModel", picker_source)
+        self.assertIn("export interface ModelPickerProps", picker_source)
+        self.assertIn("export type ModelsPickerBucket", picker_types_source)
+        self.assertIn("export function usePopoverDismiss", popover_dismiss_source)
+
+        legacy_paths = [
+            PLAYGROUND_ROOT / "components" / "PlaygroundModelPicker.tsx",
+            PLAYGROUND_ROOT / "components" / "usePopoverDismiss.ts",
+            IMAGE_GENERATION_ROOT / "components" / "ImageGenerationModelPicker.tsx",
+            IMAGE_GENERATION_ROOT / "hooks" / "usePopoverDismiss.ts",
+        ]
+        for legacy_path in legacy_paths:
+            with self.subTest(legacy_path=legacy_path.as_posix()):
+                self.assertFalse(legacy_path.exists())
+
+        consumers = {
+            "GenerationChatInput.tsx": PLAYGROUND_UI_ROOT / "components" / "GenerationChatInput.tsx",
+            "SimpleChatInput.tsx": PLAYGROUND_ROOT / "components" / "chat" / "SimpleChatInput.tsx",
+            "DomainGenerationWorkspaceSidebar.tsx": GENERATIONS_PLAYGROUND_LAYOUT_ROOT / "DomainGenerationWorkspaceSidebar.tsx",
+        }
+        for label, path in consumers.items():
+            source = path.read_text(encoding="utf-8")
+            with self.subTest(consumer=label):
+                self.assertIn("@sdkwork/models-pc-picker", source)
+                self.assertIn("ModelPicker", source)
+                self.assertNotIn("PlaygroundModelPicker", source)
+                self.assertNotIn("ImageGenerationModelPicker", source)
+                self.assertNotIn("export function ModelPicker", source)
+                self.assertNotIn("activeVendorCode", source)
+
+        bucket_assertions = {
+            "DomainGenerationWorkspaceSidebar.tsx": "bucket={bucket}",
+            "SimpleChatInput.tsx": 'bucket="llms"',
+            "GenerationChatInput.tsx": "bucket={selectedBucket}",
+        }
+        playground_view_sources = {
+            "image": GENERATIONS_PLAYGROUND_ROOT / "components" / "views" / "ImageView.tsx",
+            "video": GENERATIONS_PLAYGROUND_ROOT / "components" / "views" / "VideoView.tsx",
+            "music": GENERATIONS_PLAYGROUND_ROOT / "components" / "views" / "MusicView.tsx",
+            "audio": GENERATIONS_PLAYGROUND_ROOT / "components" / "views" / "AudioView.tsx",
+            "sfx": GENERATIONS_PLAYGROUND_ROOT / "components" / "views" / "SfxView.tsx",
+        }
+        for label, bucket_token in {
+            "image": 'bucket="images"',
+            "video": 'bucket="videos"',
+            "music": 'bucket="music"',
+            "audio": 'bucket="audios"',
+            "sfx": 'bucket="sfx"',
+        }.items():
+            source = playground_view_sources[label].read_text(encoding="utf-8")
+            with self.subTest(domain_bucket=label):
+                self.assertIn(bucket_token, source)
+
+        for label, bucket_token in bucket_assertions.items():
+            source = consumers[label].read_text(encoding="utf-8")
+            with self.subTest(bucket=label):
+                self.assertIn(bucket_token, source)
 
     def test_playground_history_rust_read_models_fail_closed_for_invalid_database_rows(self) -> None:
         for relative in [

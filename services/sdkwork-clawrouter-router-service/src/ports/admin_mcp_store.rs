@@ -187,10 +187,21 @@ pub struct UpdateAdminMcpServerCommand {
     pub tags: Option<Vec<String>>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminMcpListPage<T> {
+    pub items: Vec<T>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ListAdminMcpServerRevisionsQuery {
     pub subject: AdminMcpSubject,
     pub server_id: i64,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -231,6 +242,9 @@ pub struct TestAdminMcpServerHealthCommand {
 pub struct ListAdminMcpToolsQuery {
     pub subject: AdminMcpSubject,
     pub server_id: i64,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -253,6 +267,9 @@ pub struct UpdateAdminMcpToolCommand {
 pub struct ListAdminMcpBindingsQuery {
     pub subject: AdminMcpSubject,
     pub server_id: i64,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -291,7 +308,7 @@ pub trait AdminMcpStore {
     fn list_servers<'a>(
         &'a self,
         query: ListAdminMcpServersQuery,
-    ) -> AdminMcpCommandFuture<'a, Vec<AdminMcpServerItem>>;
+    ) -> AdminMcpCommandFuture<'a, AdminMcpListPage<AdminMcpServerItem>>;
 
     fn get_server<'a>(
         &'a self,
@@ -311,7 +328,7 @@ pub trait AdminMcpStore {
     fn list_revisions<'a>(
         &'a self,
         query: ListAdminMcpServerRevisionsQuery,
-    ) -> AdminMcpCommandFuture<'a, Vec<AdminMcpServerRevisionItem>>;
+    ) -> AdminMcpCommandFuture<'a, AdminMcpListPage<AdminMcpServerRevisionItem>>;
 
     fn create_revision<'a>(
         &'a self,
@@ -336,7 +353,7 @@ pub trait AdminMcpStore {
     fn list_tools<'a>(
         &'a self,
         query: ListAdminMcpToolsQuery,
-    ) -> AdminMcpCommandFuture<'a, Vec<AdminMcpToolItem>>;
+    ) -> AdminMcpCommandFuture<'a, AdminMcpListPage<AdminMcpToolItem>>;
 
     fn update_tool<'a>(
         &'a self,
@@ -346,7 +363,7 @@ pub trait AdminMcpStore {
     fn list_bindings<'a>(
         &'a self,
         query: ListAdminMcpBindingsQuery,
-    ) -> AdminMcpCommandFuture<'a, Vec<AdminMcpBindingItem>>;
+    ) -> AdminMcpCommandFuture<'a, AdminMcpListPage<AdminMcpBindingItem>>;
 
     fn create_binding<'a>(
         &'a self,

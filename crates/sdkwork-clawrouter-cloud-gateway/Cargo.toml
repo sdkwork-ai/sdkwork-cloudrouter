@@ -49,6 +49,6 @@ tracing.workspace = true
 [dev-dependencies]
 futures-core.workspace = true
 serde_json.workspace = true
-sdkwork-api-cloud-gateway-registry = { path = "../../../sdkwork-api-cloud-gateway/crates/sdkwork-api-cloud-gateway-registry" }
+sdkwork-api-cloud-gateway-registry = { workspace = true }
 sdkwork-claw-test-support.workspace = true
 sdkwork-web-core.workspace = true

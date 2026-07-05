@@ -1522,6 +1522,60 @@
         ],
         "type": "object",
         "x-operation-id": "turns.create"
+      },
+      "UsersSettingsRetrieveResult": {
+        "additionalProperties": false,
+        "description": "Users settings retrieve result schema exposed by Claw Router.",
+        "properties": {
+          "code": {
+            "description": "Business response code.",
+            "type": "string"
+          },
+          "data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NoData"
+              }
+            ],
+            "description": "No business data returned by this operation."
+          },
+          "msg": {
+            "description": "Human-readable response message.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "type": "object",
+        "x-operation-id": "users.settings.retrieve"
+      },
+      "UsersSettingsUpdateResult": {
+        "additionalProperties": false,
+        "description": "Users settings update result schema exposed by Claw Router.",
+        "properties": {
+          "code": {
+            "description": "Business response code.",
+            "type": "string"
+          },
+          "data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NoData"
+              }
+            ],
+            "description": "No business data returned by this operation."
+          },
+          "msg": {
+            "description": "Human-readable response message.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "type": "object",
+        "x-operation-id": "users.settings.update"
       }
     },
     "securitySchemes": {
@@ -2252,12 +2306,7 @@
             "description": "Error response."
           }
         },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
+        "security": [],
         "summary": "List",
         "tags": [
           "ai"
@@ -2335,12 +2384,7 @@
             "description": "Error response."
           }
         },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
+        "security": [],
         "summary": "List",
         "tags": [
           "ai"
@@ -2418,12 +2462,7 @@
             "description": "Error response."
           }
         },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
+        "security": [],
         "summary": "List",
         "tags": [
           "ai"
@@ -3879,6 +3918,216 @@
         "x-sdk-domain": "iam",
         "x-sdkwork-domain": "iam",
         "x-sdkwork-resource": "apiKeys",
+        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-write-tables": [
+          "ops_audit_log"
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+      }
+    },
+    "/app/v3/api/iam/users/settings": {
+      "get": {
+        "description": "Retrieve. Reads iam. Writes none. File targets none.",
+        "operationId": "users.settings.retrieve",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "properties": {
+                            "item": {
+                              "$ref": "#/components/schemas/UsersSettingsRetrieveResult"
+                            }
+                          },
+                          "required": [
+                            "item"
+                          ],
+                          "type": "object"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Retrieve",
+        "tags": [
+          "iam"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "iam"
+        ],
+        "x-route-scope": "console",
+        "x-sdk-domain": "iam",
+        "x-sdkwork-domain": "iam",
+        "x-sdkwork-resource": "users.settings",
+        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+      },
+      "put": {
+        "description": "Update. Reads iam. Writes ops_audit_log. File targets none.",
+        "operationId": "users.settings.update",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "properties": {
+                            "item": {
+                              "$ref": "#/components/schemas/UsersSettingsUpdateResult"
+                            }
+                          },
+                          "required": [
+                            "item"
+                          ],
+                          "type": "object"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Update",
+        "tags": [
+          "iam"
+        ],
+        "x-contract-kind": "update",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "iam"
+        ],
+        "x-route-scope": "console",
+        "x-sdk-domain": "iam",
+        "x-sdkwork-domain": "iam",
+        "x-sdkwork-resource": "users.settings",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
@@ -10356,9 +10605,7 @@
         "GET iam/position_assignments",
         "GET iam/positions",
         "GET iam/role_bindings",
-        "GET iam/users/current",
-        "GET iam/users/settings",
-        "PUT iam/users/settings"
+        "GET iam/users/current"
       ],
       "clawrouter-app-wallet-capability": [
         "DELETE addresses/{}",

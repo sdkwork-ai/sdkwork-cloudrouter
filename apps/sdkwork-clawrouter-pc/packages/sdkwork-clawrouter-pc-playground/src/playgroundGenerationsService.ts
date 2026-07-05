@@ -135,6 +135,9 @@ function resolveGenerationOperationType(
   targetType: PlaygroundGenerationTargetType,
 ): SdkworkGenerationOperationType {
   if (targetType === 'image') {
+    if (input.referenceMode === 'image_to_image' || input.referenceMode === 'multi_reference') {
+      return 'image_edit';
+    }
     return hasReferences(input.referenceImages, input.referenceAssets) ? 'image_edit' : 'text_to_image';
   }
   if (targetType === 'video') {

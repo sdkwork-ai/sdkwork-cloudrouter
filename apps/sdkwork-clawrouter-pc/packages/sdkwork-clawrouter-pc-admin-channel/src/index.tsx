@@ -66,9 +66,10 @@ import {
   deriveChannelTargetVendorCodes,
   isAiResourceGroupVisibleForChannelVendorScope,
   isAiResourceVisibleForChannelVendorScope,
+  isVendorResourceCode,
   reconcileChannelVendorSelection,
 } from './channelVendorSelection.ts';
-import { AdminTableShell, AiResourceSelectorModal, BusinessStateTableRow, ConfirmDialog } from '@sdkwork/clawroutes-pc-commons';
+import { AdminTableShell, BusinessStateTableRow, ConfirmDialog } from '@sdkwork/clawroutes-pc-commons';
 import { copyTextToClipboard } from '@sdkwork/clawroutes-pc-commons/clipboard';
 
 type ToastState = { message: string; type: 'success' | 'info' | 'error' } | null;
@@ -148,6 +149,12 @@ const credentialRotationOptions = [
   { id: 'weighted_round_robin', labelKey: 'admin.channel.rotation.weightedRoundRobin', descKey: 'admin.channel.rotation.weightedRoundRobinDesc' },
   { id: 'random', labelKey: 'admin.channel.rotation.random', descKey: 'admin.channel.rotation.randomDesc' },
 ] as const;
+
+const RESOURCE_GROUP_PICKER_PAGE_SIZE = 20;
+const RESOURCE_PICKER_PAGE_SIZE = 20;
+const MODEL_CATALOG_PICKER_PAGE_SIZE = 20;
+type ResourceSelectorSelectionMode = 'single' | 'multiple';
+type TranslationFunction = ReturnType<typeof useTranslation>['t'];
 
 const credentialFieldSets: Record<string, CredentialFieldConfig[]> = {
   'claude-code': [
@@ -290,19 +297,9 @@ function compareChannelBindableAiResources(left: AiResource, right: AiResource):
   return left.resourceCode.localeCompare(right.resourceCode);
 }
 
-function findAiResourceByCode(resources: readonly AiResource[], resourceCode: string): AiResource | undefined {
-  const normalizedCode = normalizeAiResourceCode(resourceCode);
-  return resources.find((resource) => normalizeAiResourceCode(resource.resourceCode) === normalizedCode);
-}
-
-function findAiResourceGroupByCode(groups: readonly AiResourceGroup[], groupCode: string): AiResourceGroup | undefined {
-  const normalizedCode = normalizeAiResourceCode(groupCode);
-  return groups.find((group) => normalizeAiResourceCode(group.groupCode) === normalizedCode);
-}
-
 function splitResourceAssociationCodes(
   resourceCodes: readonly string[],
-  groups: readonly AiResourceGroup[],
+  groups: readonly Pick<AiResourceGroup, 'groupCode'>[],
 ): { resourceGroupCodes: string[]; resourceCodes: string[] } {
   const groupCodeSet = new Set(groups.map((group) => normalizeAiResourceCode(group.groupCode)));
   const resourceGroupCodes: string[] = [];
@@ -322,6 +319,68 @@ function splitResourceAssociationCodes(
     resourceGroupCodes: Array.from(new Set(resourceGroupCodes)),
     resourceCodes: Array.from(new Set(concreteResourceCodes)),
   };
+}
+
+async function resolveInitialResourceAssociationCodes(resourceCodes: readonly string[]): Promise<{
+  resourceGroupCodes: string[];
+  resourceCodes: string[];
+  resourceGroups: AiResourceGroup[];
+  resources: AiResource[];
+}> {
+  const resourceGroupCodes: string[] = [];
+  const concreteResourceCodes: string[] = [];
+  const resourceGroups: AiResourceGroup[] = [];
+  const resources: AiResource[] = [];
+
+  for (const code of resourceCodes) {
+    const normalizedCode = normalizeAiResourceCode(code);
+    if (!normalizedCode) {
+      continue;
+    }
+    if (isVendorResourceCode(normalizedCode)) {
+      concreteResourceCodes.push(normalizedCode);
+      continue;
+    }
+    const groupPage = await ChannelAiResourceService.fetchAiResourceGroupsPage({
+      page: 1,
+      pageSize: 5,
+      q: normalizedCode,
+    });
+    const exactGroup = groupPage.resourceGroups.find(
+      (group) => normalizeAiResourceCode(group.groupCode) === normalizedCode,
+    );
+    if (exactGroup) {
+      resourceGroupCodes.push(normalizedCode);
+      resourceGroups.push(exactGroup);
+      continue;
+    }
+    concreteResourceCodes.push(normalizedCode);
+  }
+
+  return {
+    resourceGroupCodes: Array.from(new Set(resourceGroupCodes)),
+    resourceCodes: Array.from(new Set(concreteResourceCodes)),
+    resourceGroups,
+    resources,
+  };
+}
+
+function toggleSelectionCode(
+  selectedCodes: string[],
+  code: string,
+  selectionMode: ResourceSelectorSelectionMode,
+): string[] {
+  const normalized = normalizeAiResourceCode(code);
+  if (!normalized) {
+    return selectedCodes;
+  }
+  const selected = new Set(selectedCodes);
+  if (selectionMode === 'single') {
+    return selected.has(normalized) ? [] : [normalized];
+  }
+  return selected.has(normalized)
+    ? selectedCodes.filter((item) => item !== normalized)
+    : [...selectedCodes, normalized];
 }
 
 function modelVendorIdForCode(vendorCode: string): string {
@@ -652,37 +711,18 @@ function areStringArraysEqual(left: readonly string[], right: readonly string[])
 function AddAccountDrawer({
   mode,
   initialValues,
-  availableModels,
-  aiResources,
-  aiResourceGroups,
-  modelCatalogLoading,
-  modelCatalogError,
-  aiResourcesLoading,
-  aiResourcesError,
-  aiResourceGroupsLoading,
-  aiResourceGroupsError,
   isSaving,
   onClose,
   onSubmit,
 }: {
   mode: AccountDrawerMode;
   initialValues?: ChannelFormValues | null;
-  availableModels: ChannelModelCatalogItem[];
-  aiResources: AiResource[];
-  aiResourceGroups: AiResourceGroup[];
-  modelCatalogLoading: boolean;
-  modelCatalogError: string | null;
-  aiResourcesLoading: boolean;
-  aiResourcesError: string | null;
-  aiResourceGroupsLoading: boolean;
-  aiResourceGroupsError: string | null;
   isSaving: boolean;
   onClose: () => void;
   onSubmit: (channel: ChannelFormValues) => Promise<void>;
 }) {
   const { t } = useTranslation();
   const initialResourceCodes = initialValues?.resourceCodes?.map(normalizeAiResourceCode).filter(Boolean) ?? [];
-  const initialResourceAssociationCodes = splitResourceAssociationCodes(initialResourceCodes, aiResourceGroups);
   const [channelType, setChannelType] = useState<ChannelType>(resolveChannelType(initialValues?.channelType));
   const [activeAuthType, setActiveAuthType] = useState(resolveAuthTypeFormValue(initialValues?.accessType, authTypesList));
   const [modelVendor, setModelVendor] = useState(resolveChannelSelectFormValue(initialValues?.vendor, knownModelVendors, 'OpenAI'));
@@ -695,12 +735,30 @@ function AddAccountDrawer({
   const [activeAccountDrawerTab, setActiveAccountDrawerTab] = useState<AccountDrawerContentTab>('models');
   const [activeModelRouteTab, setActiveModelRouteTab] = useState<ModelRouteTab>('targetModels');
   const [activeResourceAssociationTab, setActiveResourceAssociationTab] = useState<ResourceAssociationTab>('groups');
-  const [selectedResourceCodes, setSelectedResourceCodes] = useState<string[]>(
-    initialResourceAssociationCodes.resourceCodes,
-  );
-  const [selectedResourceGroupCodes, setSelectedResourceGroupCodes] = useState<string[]>(
-    initialResourceAssociationCodes.resourceGroupCodes,
-  );
+  const [selectedResourceCodes, setSelectedResourceCodes] = useState<string[]>([]);
+  const [selectedResourceGroupCodes, setSelectedResourceGroupCodes] = useState<string[]>([]);
+  const [initialAssociationLoading, setInitialAssociationLoading] = useState(initialResourceCodes.length > 0);
+  const [initialAssociationError, setInitialAssociationError] = useState<string | null>(null);
+  const [resourceGroupOptionByCode, setResourceGroupOptionByCode] = useState<Record<string, AiResourceGroup>>({});
+  const [resourceOptionByCode, setResourceOptionByCode] = useState<Record<string, AiResource>>({});
+  const [modelCatalogOptionByKey, setModelCatalogOptionByKey] = useState<Record<string, ChannelModelCatalogItem>>({});
+  const [resourceAccessError, setResourceAccessError] = useState<string | null>(null);
+  const [resourceGroupPickerSearch, setResourceGroupPickerSearch] = useState('');
+  const [resourceGroupPickerPage, setResourceGroupPickerPage] = useState(1);
+  const [resourceGroupPickerOptions, setResourceGroupPickerOptions] = useState<AiResourceGroup[]>([]);
+  const [resourceGroupPickerTotal, setResourceGroupPickerTotal] = useState(0);
+  const [resourceGroupPickerLoading, setResourceGroupPickerLoading] = useState(false);
+  const [resourcePickerSearch, setResourcePickerSearch] = useState('');
+  const [resourcePickerPage, setResourcePickerPage] = useState(1);
+  const [resourcePickerOptions, setResourcePickerOptions] = useState<AiResource[]>([]);
+  const [resourcePickerTotal, setResourcePickerTotal] = useState(0);
+  const [resourcePickerLoading, setResourcePickerLoading] = useState(false);
+  const [modelPickerSearch, setModelPickerSearch] = useState('');
+  const [modelPickerPage, setModelPickerPage] = useState(1);
+  const [modelPickerOptions, setModelPickerOptions] = useState<ChannelModelCatalogItem[]>([]);
+  const [modelPickerTotal, setModelPickerTotal] = useState(0);
+  const [modelPickerLoading, setModelPickerLoading] = useState(false);
+  const [modelPickerError, setModelPickerError] = useState<string | null>(null);
   const [selectedVendorCodes, setSelectedVendorCodes] = useState<string[]>(() => deriveChannelTargetVendorCodes({
     channelType: initialValues?.channelType,
     accountVendor: resolveChannelSelectFormValue(initialValues?.vendor, knownModelVendors, 'OpenAI'),
@@ -750,48 +808,41 @@ function AddAccountDrawer({
 
   const isEdit = mode === 'edit';
   const accountVendorCode = providerCodeForVendor(modelVendor);
+  const knownResourceGroupCodes = useMemo(
+    () => Object.values(resourceGroupOptionByCode),
+    [resourceGroupOptionByCode],
+  );
   const availableResourceCodes = useMemo(
     () => [
-      ...aiResources
-      .filter((resource) => resource.status === 'active')
-      .map((resource) => normalizeAiResourceCode(resource.resourceCode)),
-      ...aiResourceGroups
+      ...Object.values(resourceOptionByCode)
+        .filter((resource) => resource.status === 'active')
+        .map((resource) => normalizeAiResourceCode(resource.resourceCode)),
+      ...knownResourceGroupCodes
         .filter((group) => group.status === 'active')
         .map((group) => normalizeAiResourceCode(group.groupCode)),
+      ...selectedResourceCodes,
+      ...selectedResourceGroupCodes,
     ],
-    [aiResourceGroups, aiResources],
+    [knownResourceGroupCodes, resourceOptionByCode, selectedResourceCodes, selectedResourceGroupCodes],
   );
   const selectedDirectResourceCodes = useMemo(
     () => selectedResourceCodes.filter((resourceCode) => {
-      const resource = findAiResourceByCode(aiResources, resourceCode);
+      const resource = resourceOptionByCode[resourceCode];
       return resource
         ? isAiResourceVisibleForChannelVendorScope(resource, selectedVendorCodes, capabilities)
-        : false;
+        : true;
     }),
-    [aiResources, capabilities, selectedResourceCodes, selectedVendorCodes],
+    [capabilities, resourceOptionByCode, selectedResourceCodes, selectedVendorCodes],
   );
-  const visibleAiResources = useMemo(
-    () => aiResources
-      .filter((resource) => resource.status === 'active')
-      .filter((resource) => isAiResourceVisibleForChannelVendorScope(resource, selectedVendorCodes, capabilities))
-      .sort(compareChannelBindableAiResources),
-    [aiResources, capabilities, selectedVendorCodes],
+  const selectedVisibleResourceGroupCodes = useMemo(
+    () => selectedResourceGroupCodes.filter((groupCode) => {
+      const group = resourceGroupOptionByCode[groupCode];
+      return group
+        ? isAiResourceGroupVisibleForChannelVendorScope(group, selectedVendorCodes, capabilities)
+        : true;
+    }),
+    [capabilities, resourceGroupOptionByCode, selectedResourceGroupCodes, selectedVendorCodes],
   );
-  const visibleAiResourceGroups = useMemo(
-    () => aiResourceGroups
-      .filter((group) => group.status === 'active')
-      .filter((group) => isAiResourceGroupVisibleForChannelVendorScope(group, selectedVendorCodes, capabilities))
-      .sort((left, right) => {
-        const leftOrder = left.sortOrder ?? Number.MAX_SAFE_INTEGER;
-        const rightOrder = right.sortOrder ?? Number.MAX_SAFE_INTEGER;
-        return leftOrder === rightOrder ? left.groupCode.localeCompare(right.groupCode) : leftOrder - rightOrder;
-      }),
-    [aiResourceGroups, capabilities, selectedVendorCodes],
-  );
-  const selectedVisibleResourceGroupCodes = useMemo(() => {
-    const visibleGroupCodes = new Set(visibleAiResourceGroups.map((group) => normalizeAiResourceCode(group.groupCode)));
-    return selectedResourceGroupCodes.filter((groupCode) => visibleGroupCodes.has(normalizeAiResourceCode(groupCode)));
-  }, [selectedResourceGroupCodes, visibleAiResourceGroups]);
   const mappingRuleRows = useMemo(
     () => flattenModelMappings(modelMappingsByVendor),
     [modelMappingsByVendor],
@@ -802,30 +853,36 @@ function AddAccountDrawer({
   );
   const submittedModelCount = targetModelRows.length;
   const mappingRuleCount = mappingRuleRows.length;
-  const availableTargetModels = useMemo(
-    () => availableModels.filter((model) => selectedVendorCodes.includes(providerCodeForVendor(model.vendorCode))),
-    [availableModels, selectedVendorCodes],
-  );
   const selectedResourceAssociationCount = selectedVisibleResourceGroupCodes.length + selectedDirectResourceCodes.length;
   const selectedVendorSummaries = useMemo(
     () => vendorSummariesForCodes(selectedVendorCodes, t),
     [selectedVendorCodes, t],
   );
-  const resourceSelectorOptions = useMemo(() => visibleAiResources.map((resource) => ({
-    id: resource.id,
-    resourceCode: normalizeAiResourceCode(resource.resourceCode),
-    displayName: resource.displayName,
-    resourceType: displayAiResourceCategory(resource, t),
-    vendorCode: resource.vendorCode ?? null,
-    modalityCode: resource.modalityCode ?? null,
-    apiEndpointCode: resource.apiEndpointCode ?? null,
-    catalogKey: resource.catalogKey ?? null,
-    model: resource.model ?? null,
-    providerNativeModel: resource.providerNativeModel ?? null,
-    capability: resource.capability ?? null,
-    capabilities: channelAiResourceCapabilityCodes(resource),
-    status: resource.status,
-  })), [t, visibleAiResources]);
+  const resourceGroupPickerTotalPages = Math.max(1, Math.ceil(resourceGroupPickerTotal / RESOURCE_GROUP_PICKER_PAGE_SIZE));
+  const resourcePickerTotalPages = Math.max(1, Math.ceil(resourcePickerTotal / RESOURCE_PICKER_PAGE_SIZE));
+  const modelPickerTotalPages = Math.max(1, Math.ceil(modelPickerTotal / MODEL_CATALOG_PICKER_PAGE_SIZE));
+  const visibleResourcePickerOptions = useMemo(
+    () => resourcePickerOptions
+      .filter((resource) => resource.status === 'active')
+      .filter((resource) => isAiResourceVisibleForChannelVendorScope(resource, selectedVendorCodes, capabilities))
+      .sort(compareChannelBindableAiResources),
+    [capabilities, resourcePickerOptions, selectedVendorCodes],
+  );
+  const visibleResourceGroupPickerOptions = useMemo(
+    () => resourceGroupPickerOptions
+      .filter((group) => group.status === 'active')
+      .filter((group) => isAiResourceGroupVisibleForChannelVendorScope(group, selectedVendorCodes, capabilities))
+      .sort((left, right) => {
+        const leftOrder = left.sortOrder ?? Number.MAX_SAFE_INTEGER;
+        const rightOrder = right.sortOrder ?? Number.MAX_SAFE_INTEGER;
+        return leftOrder === rightOrder ? left.groupCode.localeCompare(right.groupCode) : leftOrder - rightOrder;
+      }),
+    [capabilities, resourceGroupPickerOptions, selectedVendorCodes],
+  );
+  const visibleModelPickerOptions = useMemo(
+    () => modelPickerOptions.filter((model) => selectedVendorCodes.includes(providerCodeForVendor(model.vendorCode))),
+    [modelPickerOptions, selectedVendorCodes],
+  );
   const activeCredential = useMemo(
     () => credentials.find((credential) => credential.localId === activeCredentialId) ?? credentials[0],
     [activeCredentialId, credentials],
@@ -834,6 +891,195 @@ function AddAccountDrawer({
     ? credentials.findIndex((credential) => credential.localId === activeCredential.localId)
     : -1;
   const activeCredentialNumber = activeCredentialIndex >= 0 ? activeCredentialIndex + 1 : 1;
+
+  const mergeResourceGroupOptions = (options: AiResourceGroup[]) => {
+    setResourceGroupOptionByCode((current) => {
+      const next = { ...current };
+      for (const option of options) {
+        next[normalizeAiResourceCode(option.groupCode)] = option;
+      }
+      return next;
+    });
+  };
+
+  const mergeResourceOptions = (options: AiResource[]) => {
+    setResourceOptionByCode((current) => {
+      const next = { ...current };
+      for (const option of options) {
+        next[normalizeAiResourceCode(option.resourceCode)] = option;
+      }
+      return next;
+    });
+  };
+
+  const mergeModelCatalogOptions = (options: ChannelModelCatalogItem[]) => {
+    setModelCatalogOptionByKey((current) => {
+      const next = { ...current };
+      for (const option of options) {
+        next[option.catalogKey] = option;
+      }
+      return next;
+    });
+  };
+
+  const loadResourceGroupPicker = async () => {
+    setResourceGroupPickerLoading(true);
+    setResourceAccessError(null);
+    try {
+      const data = await ChannelAiResourceService.fetchAiResourceGroupsPage({
+        page: resourceGroupPickerPage,
+        pageSize: RESOURCE_GROUP_PICKER_PAGE_SIZE,
+        q: resourceGroupPickerSearch.trim() || undefined,
+      });
+      setResourceGroupPickerOptions(data.resourceGroups);
+      setResourceGroupPickerTotal(data.total);
+      mergeResourceGroupOptions(data.resourceGroups);
+    } catch (error) {
+      setResourceAccessError(getLoadErrorMessage(error, t('admin.channel.aiResourceGroups.loadError')));
+    } finally {
+      setResourceGroupPickerLoading(false);
+    }
+  };
+
+  const loadResourcePicker = async () => {
+    setResourcePickerLoading(true);
+    setResourceAccessError(null);
+    try {
+      const data = await ChannelAiResourceService.fetchAiResourcesPage({
+        page: resourcePickerPage,
+        pageSize: RESOURCE_PICKER_PAGE_SIZE,
+        q: resourcePickerSearch.trim() || undefined,
+      });
+      setResourcePickerOptions(data.resources);
+      setResourcePickerTotal(data.total);
+      mergeResourceOptions(data.resources);
+    } catch (error) {
+      setResourceAccessError(getLoadErrorMessage(error, t('admin.channel.aiResources.loadError')));
+    } finally {
+      setResourcePickerLoading(false);
+    }
+  };
+
+  const loadModelPicker = async () => {
+    setModelPickerLoading(true);
+    setModelPickerError(null);
+    try {
+      const data = await ChannelModelCatalogService.fetchModelsPage({
+        page: modelPickerPage,
+        pageSize: MODEL_CATALOG_PICKER_PAGE_SIZE,
+        q: modelPickerSearch.trim() || undefined,
+      });
+      setModelPickerOptions(data.models);
+      setModelPickerTotal(data.total);
+      mergeModelCatalogOptions(data.models);
+    } catch (error) {
+      setModelPickerError(getLoadErrorMessage(error, t('admin.channel.models.loadError')));
+    } finally {
+      setModelPickerLoading(false);
+    }
+  };
+
+  const openResourceGroupSelector = () => {
+    setResourceGroupPickerSearch('');
+    setResourceGroupPickerPage(1);
+    setResourceGroupSelectorOpen(true);
+  };
+
+  const closeResourceGroupSelector = () => {
+    setResourceGroupSelectorOpen(false);
+    setResourceGroupPickerSearch('');
+    setResourceGroupPickerPage(1);
+  };
+
+  const openResourceSelector = () => {
+    setResourcePickerSearch('');
+    setResourcePickerPage(1);
+    setResourceSelectorOpen(true);
+  };
+
+  const closeResourceSelector = () => {
+    setResourceSelectorOpen(false);
+    setResourcePickerSearch('');
+    setResourcePickerPage(1);
+  };
+
+  const openTargetModelSelector = () => {
+    setModelPickerSearch('');
+    setModelPickerPage(1);
+    setTargetModelSelectorOpen(true);
+  };
+
+  const closeTargetModelSelector = () => {
+    setTargetModelSelectorOpen(false);
+    setModelPickerSearch('');
+    setModelPickerPage(1);
+  };
+
+  useEffect(() => {
+    if (initialResourceCodes.length === 0) {
+      return;
+    }
+    let active = true;
+    setInitialAssociationLoading(true);
+    setInitialAssociationError(null);
+    void resolveInitialResourceAssociationCodes(initialResourceCodes)
+      .then((resolved) => {
+        if (!active) {
+          return;
+        }
+        setSelectedResourceGroupCodes(resolved.resourceGroupCodes);
+        setSelectedResourceCodes(resolved.resourceCodes);
+        mergeResourceGroupOptions(resolved.resourceGroups);
+        mergeResourceOptions(resolved.resources);
+      })
+      .catch((error) => {
+        if (!active) {
+          return;
+        }
+        setInitialAssociationError(getLoadErrorMessage(error, t('admin.channel.aiResources.loadError')));
+      })
+      .finally(() => {
+        if (active) {
+          setInitialAssociationLoading(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [initialResourceCodes, t]);
+
+  useEffect(() => {
+    if (!resourceGroupSelectorOpen) {
+      return;
+    }
+    void loadResourceGroupPicker();
+  }, [resourceGroupSelectorOpen, resourceGroupPickerPage, resourceGroupPickerSearch]);
+
+  useEffect(() => {
+    if (!resourceSelectorOpen) {
+      return;
+    }
+    void loadResourcePicker();
+  }, [resourceSelectorOpen, resourcePickerPage, resourcePickerSearch]);
+
+  useEffect(() => {
+    if (!targetModelSelectorOpen) {
+      return;
+    }
+    void loadModelPicker();
+  }, [targetModelSelectorOpen, modelPickerPage, modelPickerSearch]);
+
+  useEffect(() => {
+    setResourceGroupPickerPage((current) => Math.min(Math.max(current, 1), resourceGroupPickerTotalPages));
+  }, [resourceGroupPickerTotalPages]);
+
+  useEffect(() => {
+    setResourcePickerPage((current) => Math.min(Math.max(current, 1), resourcePickerTotalPages));
+  }, [resourcePickerTotalPages]);
+
+  useEffect(() => {
+    setModelPickerPage((current) => Math.min(Math.max(current, 1), modelPickerTotalPages));
+  }, [modelPickerTotalPages]);
 
   useEffect(() => {
     setTargetModelsByVendor((current) => ensureTargetModelVendors(current, selectedVendorCodes));
@@ -851,14 +1097,14 @@ function AddAccountDrawer({
     if (!areStringArraysEqual(selectedVendorCodes, reconciled.selectedVendorCodes)) {
       setSelectedVendorCodes(reconciled.selectedVendorCodes);
     }
-    const nextAssociationCodes = splitResourceAssociationCodes(reconciled.selectedResourceCodes, aiResourceGroups);
+    const nextAssociationCodes = splitResourceAssociationCodes(reconciled.selectedResourceCodes, knownResourceGroupCodes);
     if (!areStringArraysEqual(selectedResourceGroupCodes, nextAssociationCodes.resourceGroupCodes)) {
       setSelectedResourceGroupCodes(nextAssociationCodes.resourceGroupCodes);
     }
     if (!areStringArraysEqual(selectedResourceCodes, nextAssociationCodes.resourceCodes)) {
       setSelectedResourceCodes(nextAssociationCodes.resourceCodes);
     }
-  }, [aiResourceGroups, availableResourceCodes, channelType, modelVendor, selectedResourceCodes, selectedResourceGroupCodes, selectedVendorCodes]);
+  }, [availableResourceCodes, channelType, knownResourceGroupCodes, modelVendor, selectedResourceCodes, selectedResourceGroupCodes, selectedVendorCodes]);
 
   useEffect(() => {
     if (!credentials.some((credential) => credential.localId === activeCredentialId)) {
@@ -923,7 +1169,7 @@ function AddAccountDrawer({
       availableResourceCodes,
     });
     setSelectedResourceGroupCodes([]);
-    setSelectedResourceCodes(splitResourceAssociationCodes(reconciled.selectedResourceCodes, aiResourceGroups).resourceCodes);
+    setSelectedResourceCodes(splitResourceAssociationCodes(reconciled.selectedResourceCodes, knownResourceGroupCodes).resourceCodes);
   };
 
   const updateCredential = (
@@ -1593,7 +1839,7 @@ function AddAccountDrawer({
                         <button
                           type="button"
                           data-admin-channel-select-target-model
-                          onClick={() => setTargetModelSelectorOpen(true)}
+                          onClick={openTargetModelSelector}
                           disabled={selectedVendorCodes.length === 0}
                           className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm shadow-emerald-500/20 transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
@@ -1653,14 +1899,7 @@ function AddAccountDrawer({
                   </div>
 
                   <div className="min-h-0 flex-1 overflow-hidden border-x border-b border-slate-200 dark:border-white/10">
-                    {modelCatalogLoading ? (
-                      <div className="flex min-h-56 items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        {t('admin.channel.models.loading')}
-                      </div>
-                    ) : modelCatalogError ? (
-                      <div className="flex min-h-56 items-center justify-center px-6 text-center text-sm text-amber-700 dark:text-amber-300">{modelCatalogError}</div>
-                    ) : activeModelRouteTab === 'targetModels' ? (
+                    {activeModelRouteTab === 'targetModels' ? (
                       <div className="min-h-0 flex-1 overflow-auto custom-scrollbar">
                         <table className="w-full min-w-[680px] text-left text-xs text-slate-600 dark:text-slate-400" data-admin-channel-target-models-table>
                           <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase text-slate-500 dark:border-white/10 dark:bg-[#121212] dark:text-slate-400">
@@ -1674,7 +1913,7 @@ function AddAccountDrawer({
                           <tbody className="divide-y divide-slate-200 dark:divide-white/5">
                             {targetModelRows.map((row) => {
                               const vendorCode = catalogModelVendorCode(row.targetModel, accountVendorCode);
-                              const catalogModel = availableModels.find((model) => model.catalogKey === row.targetModel);
+                              const catalogModel = modelCatalogOptionByKey[row.targetModel];
                               return (
                                 <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
                                   <td className="px-4 py-3">
@@ -1782,7 +2021,7 @@ function AddAccountDrawer({
                     <div className="flex shrink-0 flex-wrap justify-end gap-2">
                       <button
                         type="button"
-                        onClick={() => setResourceGroupSelectorOpen(true)}
+                        onClick={openResourceGroupSelector}
                         className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:border-emerald-300 hover:bg-emerald-50 dark:border-white/10 dark:bg-[#121212] dark:text-slate-300 dark:hover:border-emerald-500/40 dark:hover:bg-emerald-500/10"
                       >
                         <Boxes className="h-3.5 w-3.5" />
@@ -1790,7 +2029,7 @@ function AddAccountDrawer({
                       </button>
                       <button
                         type="button"
-                        onClick={() => setResourceSelectorOpen(true)}
+                        onClick={openResourceSelector}
                         className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:border-emerald-300 hover:bg-emerald-50 dark:border-white/10 dark:bg-[#121212] dark:text-slate-300 dark:hover:border-emerald-500/40 dark:hover:bg-emerald-500/10"
                       >
                         <Network className="h-3.5 w-3.5" />
@@ -1806,14 +2045,14 @@ function AddAccountDrawer({
                       </button>
                     </div>
                   </div>
-                  {(aiResourcesLoading || aiResourceGroupsLoading) ? (
+                  {(initialAssociationLoading) ? (
                     <div className="flex items-center gap-2 py-3 text-xs text-slate-500">
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       {t('admin.channel.aiResources.loading')}
                     </div>
-                  ) : (aiResourcesError || aiResourceGroupsError) ? (
+                  ) : (initialAssociationError || resourceAccessError) ? (
                     <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
-                      {aiResourceGroupsError ?? aiResourcesError}
+                      {initialAssociationError ?? resourceAccessError}
                     </div>
                   ) : (
                     <div className="mt-4 flex min-h-0 flex-1 flex-col gap-4" data-admin-channel-resource-association-body>
@@ -1847,7 +2086,7 @@ function AddAccountDrawer({
                       {activeResourceAssociationTab === 'groups' && (
                         <div className="grid min-h-0 flex-1 content-start gap-2 overflow-y-auto pr-1 custom-scrollbar" data-admin-channel-selected-resource-groups-list>
                           {selectedVisibleResourceGroupCodes.map((groupCode) => {
-                            const group = findAiResourceGroupByCode(aiResourceGroups, groupCode);
+                            const group = resourceGroupOptionByCode[groupCode];
                             return (
                               <div key={groupCode} className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-500/20 dark:bg-blue-500/10">
                                 <div className="flex items-start justify-between gap-3">
@@ -1884,7 +2123,7 @@ function AddAccountDrawer({
                       {activeResourceAssociationTab === 'resources' && (
                         <div className="grid min-h-0 flex-1 content-start gap-2 overflow-y-auto pr-1 custom-scrollbar" data-admin-channel-selected-resources-list>
                           {selectedDirectResourceCodes.map((resourceCode) => {
-                            const resource = findAiResourceByCode(aiResources, resourceCode);
+                            const resource = resourceOptionByCode[resourceCode];
                             return (
                               <div key={resourceCode} className="rounded-lg border border-emerald-300 bg-emerald-50 p-3 dark:border-emerald-500/30 dark:bg-emerald-500/10">
                                 <div className="flex items-start justify-between gap-3">
@@ -1956,51 +2195,67 @@ function AddAccountDrawer({
         )}
         {resourceGroupSelectorOpen && (
           <AiResourceGroupSelectorModal
-            groups={visibleAiResourceGroups}
-            selectedCodes={selectedVisibleResourceGroupCodes}
-            loading={aiResourceGroupsLoading}
+            loading={resourceGroupPickerLoading}
             onChange={setSelectedResourceGroupCodes}
-            onClose={() => setResourceGroupSelectorOpen(false)}
+            onClose={closeResourceGroupSelector}
+            onPageChange={setResourceGroupPickerPage}
+            onSearchChange={(value) => {
+              setResourceGroupPickerSearch(value);
+              setResourceGroupPickerPage(1);
+            }}
+            options={visibleResourceGroupPickerOptions}
+            page={resourceGroupPickerPage}
+            searchQuery={resourceGroupPickerSearch}
+            selectedCodes={selectedResourceGroupCodes}
+            selectionMode="multiple"
+            total={resourceGroupPickerTotal}
+            totalPages={resourceGroupPickerTotalPages}
+            t={t}
           />
         )}
         {resourceSelectorOpen && (
           <div data-admin-channel-resource-selector-modal>
-            <AiResourceSelectorModal
-              loading={aiResourcesLoading}
-              onChange={(codes) => setSelectedResourceCodes(codes)}
-              onClose={() => setResourceSelectorOpen(false)}
-              options={resourceSelectorOptions}
-              selectedCodes={selectedDirectResourceCodes}
-              selectionMode="multiple"
-              searchDataAttribute="data-admin-channel-resource-selector-search"
-              labels={{
-                title: t('admin.channel.aiResources.actions.addResource'),
-                searchPlaceholder: t('admin.channel.aiResources.searchPlaceholder'),
-                loading: t('admin.channel.aiResources.loading'),
-                empty: t('admin.channel.aiResources.empty'),
-                emptySearch: t('admin.channel.aiResources.emptySearchDescription'),
-                selectedCount: count => t('admin.channel.aiResources.selectedCount', { count }),
-                done: t('common.actions.done'),
-                close: t('common.actions.close'),
-                columns: {
-                  resource: t('admin.channel.aiResources.table.resource'),
-                  kind: t('admin.channel.aiResources.table.kind'),
-                  vendor: t('admin.channel.aiResources.table.vendor'),
-                  status: t('admin.channel.aiResources.table.status'),
-                },
+            <ChannelPaginatedAiResourceSelectorModal
+              loading={resourcePickerLoading}
+              onChange={setSelectedResourceCodes}
+              onClose={closeResourceSelector}
+              onPageChange={setResourcePickerPage}
+              onSearchChange={(value) => {
+                setResourcePickerSearch(value);
+                setResourcePickerPage(1);
               }}
+              options={visibleResourcePickerOptions}
+              page={resourcePickerPage}
+              searchQuery={resourcePickerSearch}
+              selectedCodes={selectedResourceCodes}
+              selectionMode="multiple"
+              total={resourcePickerTotal}
+              totalPages={resourcePickerTotalPages}
+              t={t}
             />
           </div>
         )}
         {targetModelSelectorOpen && (
           <ChannelTargetModelSelectorModal
-            availableModels={availableTargetModels}
-            selectedTargetModels={targetModelRows.map((row) => row.targetModel)}
-            loading={modelCatalogLoading}
-            error={modelCatalogError}
-            onAdd={addTargetModel}
+            loading={modelPickerLoading}
+            error={modelPickerError}
+            models={visibleModelPickerOptions}
+            onAdd={(model) => {
+              mergeModelCatalogOptions([model]);
+              addTargetModel(model);
+            }}
             onRemove={removeTargetModel}
-            onClose={() => setTargetModelSelectorOpen(false)}
+            onClose={closeTargetModelSelector}
+            onPageChange={setModelPickerPage}
+            onSearchChange={(value) => {
+              setModelPickerSearch(value);
+              setModelPickerPage(1);
+            }}
+            page={modelPickerPage}
+            searchQuery={modelPickerSearch}
+            selectedTargetModels={targetModelRows.map((row) => row.targetModel)}
+            total={modelPickerTotal}
+            totalPages={modelPickerTotalPages}
           />
         )}
         {mappingRuleModalOpen && (
@@ -2164,38 +2419,41 @@ function ChannelVendorPickerModal({
 }
 
 function ChannelTargetModelSelectorModal({
-  availableModels,
+  models,
   selectedTargetModels,
   loading,
   error,
   onAdd,
   onRemove,
   onClose,
+  onPageChange,
+  onSearchChange,
+  page,
+  searchQuery,
+  total,
+  totalPages,
 }: {
-  availableModels: ChannelModelCatalogItem[];
+  models: ChannelModelCatalogItem[];
   selectedTargetModels: string[];
   loading: boolean;
   error: string | null;
   onAdd: (model: ChannelModelCatalogItem) => void;
   onRemove: (targetModel: string) => void;
   onClose: () => void;
+  onPageChange: (page: number) => void;
+  onSearchChange: (value: string) => void;
+  page: number;
+  searchQuery: string;
+  total: number;
+  totalPages: number;
 }) {
   const { t } = useTranslation();
-  const [modelSearchQuery, setModelSearchQuery] = useState('');
   const selectedTargetSet = useMemo(
     () => new Set(selectedTargetModels.map((model) => model.trim().toLowerCase())),
     [selectedTargetModels],
   );
-  const filteredModels = availableModels.filter((model) => {
-    const keyword = modelSearchQuery.trim().toLowerCase();
-    if (!keyword) {
-      return true;
-    }
-    return [model.displayName, model.model, model.catalogKey, model.vendorCode, model.regionCode]
-      .join(' ')
-      .toLowerCase()
-      .includes(keyword);
-  });
+  const startIndex = total === 0 ? 0 : (page - 1) * MODEL_CATALOG_PICKER_PAGE_SIZE + 1;
+  const endIndex = Math.min(total, page * MODEL_CATALOG_PICKER_PAGE_SIZE);
   const toggleModel = (model: ChannelModelCatalogItem) => {
     if (selectedTargetSet.has(model.catalogKey.toLowerCase())) {
       onRemove(model.catalogKey);
@@ -2218,8 +2476,8 @@ function ChannelTargetModelSelectorModal({
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type="search"
-              value={modelSearchQuery}
-              onChange={(event) => setModelSearchQuery(event.currentTarget.value)}
+              value={searchQuery}
+              onChange={(event) => onSearchChange(event.currentTarget.value)}
               placeholder={t('admin.channel.models.targetModelSearchPlaceholder')}
               className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white dark:border-white/10 dark:bg-[#121212] dark:text-white dark:focus:border-emerald-500"
             />
@@ -2233,9 +2491,11 @@ function ChannelTargetModelSelectorModal({
             </div>
           ) : error ? (
             <div className="flex min-h-56 items-center justify-center px-6 text-center text-sm text-amber-700 dark:text-amber-300">{error}</div>
-          ) : availableModels.length === 0 ? (
-            <div className="flex min-h-56 items-center justify-center px-6 text-center text-sm text-slate-500 dark:text-slate-400">{t('admin.channel.models.emptyForVendor')}</div>
-          ) : filteredModels.length === 0 ? (
+          ) : total === 0 ? (
+            <div className="flex min-h-56 items-center justify-center px-6 text-center text-sm text-slate-500 dark:text-slate-400">
+              {searchQuery.trim().length > 0 ? t('admin.channel.models.emptySearch') : t('admin.channel.models.emptyForVendor')}
+            </div>
+          ) : models.length === 0 ? (
             <div className="flex min-h-56 items-center justify-center px-6 text-center text-sm text-slate-500 dark:text-slate-400">{t('admin.channel.models.emptySearch')}</div>
           ) : (
             <table className="w-full min-w-[760px] text-left text-sm text-slate-600 dark:text-slate-400" data-admin-channel-target-model-selector-table>
@@ -2248,7 +2508,7 @@ function ChannelTargetModelSelectorModal({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-white/5">
-                {filteredModels.map((model) => {
+                {models.map((model) => {
                   const isSelected = selectedTargetSet.has(model.catalogKey.toLowerCase());
                   return (
                     <tr key={model.catalogKey} className="cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5" onClick={() => toggleModel(model)}>
@@ -2279,7 +2539,16 @@ function ChannelTargetModelSelectorModal({
             </table>
           )}
         </div>
-        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-slate-200 p-5 dark:border-white/10">
+        <div className="flex shrink-0 flex-col gap-3 border-t border-slate-200 p-5 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
+          <ChannelSelectorPagination
+            endIndex={endIndex}
+            loading={loading}
+            onPageChange={onPageChange}
+            page={page}
+            startIndex={startIndex}
+            total={total}
+            totalPages={totalPages}
+          />
           <div className="min-w-0 text-sm text-slate-500 dark:text-slate-400">
             {t('admin.channel.models.selectedTargetCount', { count: selectedTargetModels.length })}
           </div>
@@ -2421,46 +2690,40 @@ function ChannelMappingRuleModal({
 }
 
 function AiResourceGroupSelectorModal({
-  groups,
-  selectedCodes,
   loading,
   onChange,
   onClose,
+  onPageChange,
+  onSearchChange,
+  options,
+  page,
+  searchQuery,
+  selectedCodes,
+  selectionMode = 'multiple',
+  total,
+  totalPages,
+  t,
 }: {
-  groups: AiResourceGroup[];
-  selectedCodes: string[];
   loading: boolean;
   onChange: (codes: string[]) => void;
   onClose: () => void;
+  onPageChange: (page: number) => void;
+  onSearchChange: (value: string) => void;
+  options: AiResourceGroup[];
+  page: number;
+  searchQuery: string;
+  selectedCodes: string[];
+  selectionMode?: ResourceSelectorSelectionMode;
+  total: number;
+  totalPages: number;
+  t: TranslationFunction;
 }) {
-  const { t } = useTranslation();
-  const [resourceGroupSearchQuery, setResourceGroupSearchQuery] = useState('');
-  const selected = new Set(selectedCodes);
-  const filteredGroups = groups.filter((group) => {
-    const keyword = resourceGroupSearchQuery.trim().toLowerCase();
-    if (!keyword) {
-      return true;
-    }
-    return [
-      group.groupName,
-      group.groupCode,
-      group.groupType,
-      group.selectionMode,
-      group.status,
-      group.capability,
-      group.capabilities.join(' '),
-      group.vendorCodes.join(' '),
-    ]
-      .join(' ')
-      .toLowerCase()
-      .includes(keyword);
-  });
+  const selected = new Set(selectedCodes.map(normalizeAiResourceCode));
   const toggleGroupCode = (groupCode: string) => {
-    const normalizedCode = normalizeAiResourceCode(groupCode);
-    onChange(selected.has(normalizedCode)
-      ? selectedCodes.filter((code) => code !== normalizedCode)
-      : [...selectedCodes, normalizedCode]);
+    onChange(toggleSelectionCode(selectedCodes, groupCode, selectionMode));
   };
+  const startIndex = total === 0 ? 0 : (page - 1) * RESOURCE_GROUP_PICKER_PAGE_SIZE + 1;
+  const endIndex = Math.min(total, page * RESOURCE_GROUP_PICKER_PAGE_SIZE);
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm" data-admin-channel-resource-group-selector-modal>
@@ -2475,9 +2738,10 @@ function AiResourceGroupSelectorModal({
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
+              data-admin-channel-resource-group-selector-search="true"
               type="search"
-              value={resourceGroupSearchQuery}
-              onChange={(event) => setResourceGroupSearchQuery(event.currentTarget.value)}
+              value={searchQuery}
+              onChange={(event) => onSearchChange(event.currentTarget.value)}
               placeholder={t('admin.channel.aiResourceGroups.searchPlaceholder')}
               className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white dark:border-white/10 dark:bg-[#121212] dark:text-white dark:focus:border-emerald-500"
             />
@@ -2486,9 +2750,11 @@ function AiResourceGroupSelectorModal({
         <div className="min-h-0 flex-1 overflow-auto">
           {loading ? (
             <div className="flex min-h-[240px] items-center justify-center px-6 text-center text-sm text-slate-500 dark:text-slate-400">{t('admin.channel.aiResourceGroups.loading')}</div>
-          ) : groups.length === 0 ? (
-            <div className="flex min-h-[240px] items-center justify-center px-6 text-center text-sm text-slate-500 dark:text-slate-400">{t('admin.channel.aiResourceGroups.empty')}</div>
-          ) : filteredGroups.length === 0 ? (
+          ) : total === 0 ? (
+            <div className="flex min-h-[240px] items-center justify-center px-6 text-center text-sm text-slate-500 dark:text-slate-400">
+              {searchQuery.trim().length > 0 ? t('admin.channel.aiResourceGroups.emptySearchDescription') : t('admin.channel.aiResourceGroups.empty')}
+            </div>
+          ) : options.length === 0 ? (
             <div className="flex min-h-[240px] items-center justify-center px-6 text-center text-sm text-slate-500 dark:text-slate-400">{t('admin.channel.aiResourceGroups.emptySearchDescription')}</div>
           ) : (
             <table className="w-full min-w-[760px] text-left text-sm text-slate-600 dark:text-slate-400">
@@ -2502,13 +2768,13 @@ function AiResourceGroupSelectorModal({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-white/5">
-                {filteredGroups.map((group) => {
+                {options.map((group) => {
                   const groupCode = normalizeAiResourceCode(group.groupCode);
                   return (
                     <tr key={group.groupCode} className="hover:bg-slate-50 dark:hover:bg-white/5">
                       <td className="px-5 py-3">
                         <input
-                          type="checkbox"
+                          type={selectionMode === 'multiple' ? 'checkbox' : 'radio'}
                           checked={selected.has(groupCode)}
                           onChange={() => toggleGroupCode(group.groupCode)}
                           className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
@@ -2542,7 +2808,16 @@ function AiResourceGroupSelectorModal({
             </table>
           )}
         </div>
-        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-slate-200 p-5 dark:border-white/10">
+        <div className="flex shrink-0 flex-col gap-3 border-t border-slate-200 p-5 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
+          <ChannelSelectorPagination
+            endIndex={endIndex}
+            loading={loading}
+            onPageChange={onPageChange}
+            page={page}
+            startIndex={startIndex}
+            total={total}
+            totalPages={totalPages}
+          />
           <div className="min-w-0 text-sm text-slate-500 dark:text-slate-400">
             {t('admin.channel.aiResourceGroups.selectedCount', { count: selectedCodes.length })}
           </div>
@@ -2550,6 +2825,186 @@ function AiResourceGroupSelectorModal({
             {t('common.actions.done')}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ChannelPaginatedAiResourceSelectorModal({
+  loading,
+  onChange,
+  onClose,
+  onPageChange,
+  onSearchChange,
+  options,
+  page,
+  searchQuery,
+  selectedCodes,
+  selectionMode = 'multiple',
+  total,
+  totalPages,
+  t,
+}: {
+  loading: boolean;
+  onChange: (codes: string[]) => void;
+  onClose: () => void;
+  onPageChange: (page: number) => void;
+  onSearchChange: (value: string) => void;
+  options: AiResource[];
+  page: number;
+  searchQuery: string;
+  selectedCodes: string[];
+  selectionMode?: ResourceSelectorSelectionMode;
+  total: number;
+  totalPages: number;
+  t: TranslationFunction;
+}) {
+  const selected = new Set(selectedCodes.map(normalizeAiResourceCode));
+  const toggleCode = (resourceCode: string) => {
+    onChange(toggleSelectionCode(selectedCodes, resourceCode, selectionMode));
+  };
+  const startIndex = total === 0 ? 0 : (page - 1) * RESOURCE_PICKER_PAGE_SIZE + 1;
+  const endIndex = Math.min(total, page * RESOURCE_PICKER_PAGE_SIZE);
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+      <div className="flex h-[76vh] max-h-[76vh] w-[88vw] max-w-6xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#1a1a1a]">
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-200 p-5 dark:border-white/10">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('admin.channel.aiResources.actions.addResource')}</h3>
+          <button type="button" onClick={onClose} className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/10 dark:hover:text-slate-200">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="shrink-0 border-b border-slate-200 px-5 py-4 dark:border-white/10">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              data-admin-channel-resource-selector-search="true"
+              type="search"
+              value={searchQuery}
+              onChange={(event) => onSearchChange(event.currentTarget.value)}
+              placeholder={t('admin.channel.aiResources.searchPlaceholder')}
+              className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white dark:border-white/10 dark:bg-[#121212] dark:text-white dark:focus:border-emerald-500"
+            />
+          </div>
+        </div>
+        <div className="min-h-0 flex-1 overflow-auto">
+          {loading ? (
+            <div className="flex min-h-[240px] items-center justify-center px-6 text-center text-sm text-slate-500 dark:text-slate-400">{t('admin.channel.aiResources.loading')}</div>
+          ) : total === 0 ? (
+            <div className="flex min-h-[240px] items-center justify-center px-6 text-center text-sm text-slate-500 dark:text-slate-400">
+              {searchQuery.trim().length > 0 ? t('admin.channel.aiResources.emptySearchDescription') : t('admin.channel.aiResources.empty')}
+            </div>
+          ) : options.length === 0 ? (
+            <div className="flex min-h-[240px] items-center justify-center px-6 text-center text-sm text-slate-500 dark:text-slate-400">{t('admin.channel.aiResources.emptySearchDescription')}</div>
+          ) : (
+            <table className="w-full min-w-[860px] text-left text-sm text-slate-600 dark:text-slate-400">
+              <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 dark:border-white/10 dark:bg-[#121212] dark:text-slate-400">
+                <tr>
+                  <th className="w-12 px-5 py-3"></th>
+                  <th className="px-5 py-3">{t('admin.channel.aiResources.table.resource')}</th>
+                  <th className="px-5 py-3">{t('admin.channel.aiResources.table.kind')}</th>
+                  <th className="px-5 py-3">{t('admin.channel.aiResources.table.vendor')}</th>
+                  <th className="px-5 py-3">{t('admin.channel.aiResources.table.status')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 dark:divide-white/5">
+                {options.map((resource) => {
+                  const resourceCode = normalizeAiResourceCode(resource.resourceCode);
+                  return (
+                    <tr key={resource.resourceCode} className="hover:bg-slate-50 dark:hover:bg-white/5">
+                      <td className="px-5 py-3">
+                        <input
+                          type={selectionMode === 'multiple' ? 'checkbox' : 'radio'}
+                          checked={selected.has(resourceCode)}
+                          onChange={() => toggleCode(resource.resourceCode)}
+                          className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="font-medium text-slate-900 dark:text-white">{resource.displayName}</div>
+                        <div className="font-mono text-xs text-slate-500">{resource.resourceCode}</div>
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className="rounded bg-emerald-50 px-1.5 py-0.5 font-mono text-[10px] text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+                          {displayAiResourceCategory(resource, t)}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3">{resource.vendorCode ?? '-'}</td>
+                      <td className="px-5 py-3">{resource.status}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+        <div className="flex shrink-0 flex-col gap-3 border-t border-slate-200 p-5 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
+          <ChannelSelectorPagination
+            endIndex={endIndex}
+            loading={loading}
+            onPageChange={onPageChange}
+            page={page}
+            startIndex={startIndex}
+            total={total}
+            totalPages={totalPages}
+          />
+          <div className="min-w-0 text-sm text-slate-500 dark:text-slate-400">
+            {t('admin.channel.aiResources.selectedCount', { count: selectedCodes.length })}
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg border border-slate-200 bg-slate-50 px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-white/10 dark:bg-[#1a1a1a] dark:text-slate-300 dark:hover:bg-white/5">
+            {t('common.actions.done')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChannelSelectorPagination({
+  endIndex,
+  loading,
+  onPageChange,
+  page,
+  startIndex,
+  total,
+  totalPages,
+}: {
+  endIndex: number;
+  loading: boolean;
+  onPageChange: (page: number) => void;
+  page: number;
+  startIndex: number;
+  total: number;
+  totalPages: number;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <div data-admin-channel-selector-pagination className="flex flex-col gap-2 text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center">
+      <span>{`${startIndex}-${endIndex} / ${total}`}</span>
+      <div className="inline-flex items-center overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-white/10 dark:bg-[#202020]">
+        <button
+          type="button"
+          aria-label={t('common.actions.previousPage')}
+          onClick={() => onPageChange(Math.max(1, page - 1))}
+          disabled={page <= 1 || loading}
+          className="inline-flex h-8 w-8 items-center justify-center text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <span className="border-x border-slate-200 px-3 text-xs font-medium text-slate-700 dark:border-white/10 dark:text-slate-200">
+          {page} / {totalPages}
+        </span>
+        <button
+          type="button"
+          aria-label={t('common.actions.nextPage')}
+          onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+          disabled={page >= totalPages || loading}
+          className="inline-flex h-8 w-8 items-center justify-center text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
       </div>
     </div>
   );
@@ -2849,16 +3304,8 @@ export function ChannelAdmin() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [providerSecretLoadError, setProviderSecretLoadError] = useState<string | null>(null);
   const [channels, setChannels] = useState<ChannelItem[]>([]);
+  const [totalChannels, setTotalChannels] = useState(0);
   const [providerSecrets, setProviderSecrets] = useState<ProviderSecretItem[]>([]);
-  const [modelCatalog, setModelCatalog] = useState<ChannelModelCatalogItem[]>([]);
-  const [aiResources, setAiResources] = useState<AiResource[]>([]);
-  const [aiResourceGroups, setAiResourceGroups] = useState<AiResourceGroup[]>([]);
-  const [modelCatalogLoading, setModelCatalogLoading] = useState(true);
-  const [modelCatalogError, setModelCatalogError] = useState<string | null>(null);
-  const [aiResourcesLoading, setAiResourcesLoading] = useState(true);
-  const [aiResourcesError, setAiResourcesError] = useState<string | null>(null);
-  const [aiResourceGroupsLoading, setAiResourceGroupsLoading] = useState(true);
-  const [aiResourceGroupsError, setAiResourceGroupsError] = useState<string | null>(null);
   const pageSize = 8;
 
   const showToast = useCallback((message: string, type: 'success' | 'info' | 'error' = 'success') => {
@@ -2884,9 +3331,14 @@ export function ChannelAdmin() {
     setLoading(true);
     setLoadError(null);
     try {
-      const channelData = await ChannelService.fetchChannels();
+      const channelData = await ChannelService.fetchChannels({
+        page: currentPage,
+        pageSize,
+        q: search.trim() || undefined,
+      });
       if (isActive()) {
-        setChannels(channelData);
+        setChannels(channelData.channels);
+        setTotalChannels(channelData.total);
       }
     } catch (err) {
       if (isActive()) {
@@ -2897,7 +3349,7 @@ export function ChannelAdmin() {
         setLoading(false);
       }
     }
-  }, [t]);
+  }, [currentPage, pageSize, search, t]);
 
   const loadProviderSecrets = useCallback(async (isActive: () => boolean = () => true) => {
     setProviderSecretLoading(true);
@@ -2918,72 +3370,9 @@ export function ChannelAdmin() {
     }
   }, [t]);
 
-  const loadModelCatalog = useCallback(async (isActive: () => boolean = () => true) => {
-    setModelCatalogLoading(true);
-    setModelCatalogError(null);
-    try {
-      const models = await ChannelModelCatalogService.fetchModels();
-      if (isActive()) {
-        setModelCatalog(models);
-      }
-    } catch (err) {
-      if (isActive()) {
-        setModelCatalogError(getLoadErrorMessage(err, t('admin.channel.models.loadError')));
-      }
-    } finally {
-      if (isActive()) {
-        setModelCatalogLoading(false);
-      }
-    }
-  }, [t]);
-
-  const loadAiResources = useCallback(async (isActive: () => boolean = () => true) => {
-    setAiResourcesLoading(true);
-    setAiResourcesError(null);
-    try {
-      const resources = await ChannelAiResourceService.fetchAiResources();
-      if (isActive()) {
-        setAiResources(resources);
-      }
-    } catch (err) {
-      if (isActive()) {
-        setAiResourcesError(getLoadErrorMessage(err, t('admin.channel.aiResources.loadError')));
-      }
-    } finally {
-      if (isActive()) {
-        setAiResourcesLoading(false);
-      }
-    }
-  }, [t]);
-
-  const loadAiResourceGroups = useCallback(async (isActive: () => boolean = () => true) => {
-    setAiResourceGroupsLoading(true);
-    setAiResourceGroupsError(null);
-    try {
-      const groups = await ChannelAiResourceService.fetchAiResourceGroups();
-      if (isActive()) {
-        setAiResourceGroups(groups);
-      }
-    } catch (err) {
-      if (isActive()) {
-        setAiResourceGroupsError(getLoadErrorMessage(err, t('admin.channel.aiResourceGroups.loadError')));
-      }
-    } finally {
-      if (isActive()) {
-        setAiResourceGroupsLoading(false);
-      }
-    }
-  }, [t]);
-
   const loadData = useCallback(async (isActive: () => boolean = () => true) => {
-    await Promise.all([
-      loadChannels(isActive),
-      loadProviderSecrets(isActive),
-      loadModelCatalog(isActive),
-      loadAiResources(isActive),
-      loadAiResourceGroups(isActive),
-    ]);
-  }, [loadAiResourceGroups, loadAiResources, loadChannels, loadModelCatalog, loadProviderSecrets]);
+    await loadProviderSecrets(isActive);
+  }, [loadProviderSecrets]);
 
   useEffect(() => {
     let active = true;
@@ -2994,28 +3383,23 @@ export function ChannelAdmin() {
   }, [loadData]);
 
   useEffect(() => {
+    let active = true;
+    void loadChannels(() => active);
+    return () => {
+      active = false;
+    };
+  }, [loadChannels]);
+
+  useEffect(() => {
     setCurrentPage(1);
   }, [search, activeTab]);
 
   const filteredChannels = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
-    return channels.filter((channel) => {
-      const matchesTab = activeTab === 'all' || channel.vendor === activeTab;
-      const searchable = [
-        channel.name,
-        channel.vendor,
-        channel.accessType,
-        channel.channelType,
-        ...channel.capabilities,
-        ...channel.resourceCodes,
-      ].join(' ').toLowerCase();
-      return matchesTab && (!keyword || searchable.includes(keyword));
-    });
-  }, [activeTab, channels, search]);
+    return channels.filter((channel) => activeTab === 'all' || channel.vendor === activeTab);
+  }, [activeTab, channels]);
 
-  const totalItems = filteredChannels.length;
+  const totalItems = totalChannels;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const paginatedChannels = filteredChannels.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const openCreateModal = () => {
     setEditingChannel(null);
     setChannelFormDraft(null);
@@ -3292,7 +3676,7 @@ export function ChannelAdmin() {
                   description={loadError}
                   onRetry={() => void loadChannels()}
                 />
-              ) : paginatedChannels.length === 0 ? (
+              ) : filteredChannels.length === 0 ? (
                 <BusinessStateTableRow
                   colSpan={8}
                   kind="empty"
@@ -3305,7 +3689,7 @@ export function ChannelAdmin() {
                   action={channels.length === 0 ? { label: t('common.actions.addChannel'), onClick: openCreateModal } : undefined}
                 />
               ) : (
-                paginatedChannels.map((channel) => (
+                filteredChannels.map((channel) => (
                   <tr key={channel.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
                     <td className="px-6 py-4 align-top max-w-[14rem]">
                       <div className="flex min-w-0 items-center gap-2 whitespace-nowrap">
@@ -3454,15 +3838,6 @@ export function ChannelAdmin() {
         <AddAccountDrawer
           mode={modalMode}
           initialValues={channelFormDraft}
-          availableModels={modelCatalog}
-          aiResources={aiResources}
-          aiResourceGroups={aiResourceGroups}
-          modelCatalogLoading={modelCatalogLoading}
-          modelCatalogError={modelCatalogError}
-          aiResourcesLoading={aiResourcesLoading}
-          aiResourcesError={aiResourcesError}
-          aiResourceGroupsLoading={aiResourceGroupsLoading}
-          aiResourceGroupsError={aiResourceGroupsError}
           isSaving={saving}
           onClose={closeModal}
           onSubmit={handleSubmitChannel}

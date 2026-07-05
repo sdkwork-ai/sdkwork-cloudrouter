@@ -29,9 +29,21 @@ pub struct AdminAnnouncementItem {
     pub deleted_at: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListAdminAnnouncementsQuery {
     pub subject: AdminAnnouncementSubject,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+    pub q: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminAnnouncementListPage {
+    pub items: Vec<AdminAnnouncementItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -75,7 +87,7 @@ pub trait AdminAnnouncementStore {
     fn list_announcements<'a>(
         &'a self,
         query: ListAdminAnnouncementsQuery,
-    ) -> AdminAnnouncementCommandFuture<'a, Vec<AdminAnnouncementItem>>;
+    ) -> AdminAnnouncementCommandFuture<'a, AdminAnnouncementListPage>;
 
     fn create_announcement<'a>(
         &'a self,

@@ -29,9 +29,21 @@ pub struct AdminApiKeyRateLimitItem {
     pub deleted_at: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListAdminApiKeyRateLimitsQuery {
     pub subject: AdminApiKeyRateLimitSubject,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+    pub q: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminApiKeyRateLimitListPage {
+    pub items: Vec<AdminApiKeyRateLimitItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -55,7 +67,7 @@ pub trait AdminApiKeyRateLimitStore {
     fn list_api_key_rate_limits<'a>(
         &'a self,
         query: ListAdminApiKeyRateLimitsQuery,
-    ) -> AdminApiKeyRateLimitCommandFuture<'a, Vec<AdminApiKeyRateLimitItem>>;
+    ) -> AdminApiKeyRateLimitCommandFuture<'a, AdminApiKeyRateLimitListPage>;
 
     fn create_api_key_rate_limit<'a>(
         &'a self,

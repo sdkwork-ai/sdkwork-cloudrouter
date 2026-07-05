@@ -1100,7 +1100,7 @@ test("navbar delegates popup queue and persisted acknowledgement state to the ap
 });
 
 test("app SDK message contract exposes popup display flag", () => {
-  const messageTypeSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/types/notification-item.ts");
+  const messageTypeSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts/types/notification-item.ts");
 
   assert.match(messageTypeSource, /showAsPopup\??: boolean;/);
 });

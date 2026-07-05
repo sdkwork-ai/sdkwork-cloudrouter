@@ -3,7 +3,7 @@ use sqlx::{PgPool, Row};
 use crate::domain::{DecimalValue, DomainError};
 use crate::infrastructure::sql::model_modality;
 use crate::ports::{
-    AdminRecordLogItem, AdminRecordLogsPage, AdminRecordReadFuture, AdminRecordStore,
+    AdminRecordLogItem, AdminRecordListPage, AdminRecordReadFuture, AdminRecordStore,
     ListAdminRecordLogsQuery,
 };
 
@@ -114,7 +114,8 @@ SELECT
     COALESCE(NULLIF(t.request_path, ''), NULLIF(t.endpoint, ''), '-') AS request_path,
     COALESCE(NULLIF(t.reasoning_effort, ''), '-') AS reasoning_effort,
     COALESCE(NULLIF(t.client_ip_masked, ''), '-') AS client_ip_masked,
-    COALESCE(NULLIF(t.metadata->>'userAgent', ''), '') AS user_agent
+    COALESCE(NULLIF(t.metadata->>'userAgent', ''), '') AS user_agent,
+    COUNT(*) OVER() AS total
 FROM selected_trace t
 LEFT JOIN usage_by_request u
   ON u.tenant_id = t.tenant_id
@@ -158,85 +159,6 @@ ORDER BY t.started_at DESC NULLS LAST, t.id DESC
 LIMIT $6 OFFSET $7
 "#;
 
-const LIST_ADMIN_RECORD_LOGS_TOTAL: &str = r#"
-WITH selected_trace AS (
-    SELECT *
-    FROM (
-        SELECT
-            t.*,
-            ROW_NUMBER() OVER (
-                PARTITION BY COALESCE(NULLIF(t.request_id, ''), CAST(t.id AS TEXT))
-                ORDER BY t.started_at DESC NULLS LAST, t.id DESC
-            ) AS trace_rank
-        FROM ai_request_trace t
-        WHERE t.status = 1
-          AND t.tenant_id = $1
-          AND t.organization_id = $2
-          AND t.started_at IS NOT NULL
-    )
-    WHERE trace_rank = 1
-),
-usage_by_request AS (
-    SELECT
-        tenant_id,
-        organization_id,
-        request_id,
-        MAX(owner_name_snapshot) AS owner_name_snapshot,
-        MAX(api_key_name_snapshot) AS api_key_name_snapshot,
-        MAX(channel_group_snapshot) AS channel_group_snapshot,
-        MAX(catalog_key) AS catalog_key,
-        MAX(requested_model_catalog_key) AS requested_model_catalog_key,
-        MAX(model) AS model,
-        MAX(provider_native_model) AS provider_native_model
-    FROM ai_usage
-    WHERE status = 1
-      AND tenant_id = $1
-      AND organization_id = $2
-      AND NULLIF(request_id, '') IS NOT NULL
-    GROUP BY tenant_id, organization_id, request_id
-)
-SELECT CAST(COUNT(1) AS TEXT) AS total
-FROM selected_trace t
-LEFT JOIN usage_by_request u
-  ON u.tenant_id = t.tenant_id
- AND u.organization_id = t.organization_id
- AND u.request_id = t.request_id
-LEFT JOIN iam_user iu
-  ON iu.tenant_id = CAST(t.tenant_id AS TEXT)
- AND iu.id = CAST(t.user_id AS TEXT)
-LEFT JOIN ai_routing_decision_log d
-  ON d.status = 1
- AND d.tenant_id = t.tenant_id
- AND d.organization_id = t.organization_id
- AND d.request_id = t.request_id
-WHERE (
-    $3::text IS NULL
-    OR lower(COALESCE(t.owner_name_snapshot, '')) LIKE $3
-    OR lower(COALESCE(u.owner_name_snapshot, '')) LIKE $3
-    OR lower(COALESCE(iu.display_name, '')) LIKE $3
-    OR lower(COALESCE(iu.email, '')) LIKE $3
-    OR lower(COALESCE(iu.username, '')) LIKE $3
-    OR lower(COALESCE(CAST(t.user_id AS TEXT), '')) LIKE $3
-)
-AND (
-    $4::text IS NULL
-    OR lower(COALESCE(t.request_id, '')) LIKE $4
-    OR lower(COALESCE(t.api_key_name_snapshot, '')) LIKE $4
-    OR lower(COALESCE(t.channel_group_snapshot, '')) LIKE $4
-    OR lower(COALESCE(u.api_key_name_snapshot, '')) LIKE $4
-    OR lower(COALESCE(u.channel_group_snapshot, '')) LIKE $4
-)
-AND (
-    $5::text IS NULL
-    OR lower(COALESCE(t.requested_model, '')) LIKE $5
-    OR lower(COALESCE(t.provider_model, '')) LIKE $5
-    OR lower(COALESCE(u.catalog_key, '')) LIKE $5
-    OR lower(COALESCE(u.model, '')) LIKE $5
-    OR lower(COALESCE(d.requested_model, '')) LIKE $5
-    OR lower(COALESCE(d.resolved_model, '')) LIKE $5
-)
-"#;
-
 #[derive(Debug, Clone)]
 pub struct PostgresAdminRecordStore {
     pool: PgPool,
@@ -252,9 +174,8 @@ impl AdminRecordStore for PostgresAdminRecordStore {
     fn list_logs<'a>(
         &'a self,
         query: ListAdminRecordLogsQuery,
-    ) -> AdminRecordReadFuture<'a, AdminRecordLogsPage> {
+    ) -> AdminRecordReadFuture<'a, AdminRecordListPage> {
         Box::pin(async move {
-            let total = load_total(&self.pool, &query).await?;
             let rows = sqlx::query(LIST_ADMIN_RECORD_LOGS)
                 .bind(query.subject.tenant_id)
                 .bind(query.subject.organization_id)
@@ -267,8 +188,12 @@ impl AdminRecordStore for PostgresAdminRecordStore {
                 .await
                 .map_err(sql_error)?;
 
-            Ok(AdminRecordLogsPage {
-                logs: rows
+            let total = rows
+                .first()
+                .map(|row| integer_cell(row, "total"))
+                .unwrap_or(0);
+            Ok(AdminRecordListPage {
+                items: rows
                     .into_iter()
                     .map(row_to_log)
                     .collect::<Result<Vec<_>, DomainError>>()?,
@@ -278,19 +203,6 @@ impl AdminRecordStore for PostgresAdminRecordStore {
             })
         })
     }
-}
-
-async fn load_total(pool: &PgPool, query: &ListAdminRecordLogsQuery) -> Result<i64, DomainError> {
-    let row = sqlx::query(LIST_ADMIN_RECORD_LOGS_TOTAL)
-        .bind(query.subject.tenant_id)
-        .bind(query.subject.organization_id)
-        .bind(like_filter(query.user.as_deref()))
-        .bind(like_filter(query.token.as_deref()))
-        .bind(like_filter(query.model.as_deref()))
-        .fetch_one(pool)
-        .await
-        .map_err(sql_error)?;
-    Ok(integer_cell(&row, "total"))
 }
 
 fn row_to_log(row: sqlx::postgres::PgRow) -> Result<AdminRecordLogItem, DomainError> {
@@ -506,11 +418,9 @@ mod tests {
 
     #[test]
     fn list_logs_user_filter_searches_iam_user_identity_fields() {
-        for sql in [LIST_ADMIN_RECORD_LOGS, LIST_ADMIN_RECORD_LOGS_TOTAL] {
-            assert!(sql.contains("lower(COALESCE(iu.display_name, '')) LIKE $3"));
-            assert!(sql.contains("lower(COALESCE(iu.email, '')) LIKE $3"));
-            assert!(sql.contains("lower(COALESCE(iu.username, '')) LIKE $3"));
-        }
+        assert!(LIST_ADMIN_RECORD_LOGS.contains("lower(COALESCE(iu.display_name, '')) LIKE $3"));
+        assert!(LIST_ADMIN_RECORD_LOGS.contains("lower(COALESCE(iu.email, '')) LIKE $3"));
+        assert!(LIST_ADMIN_RECORD_LOGS.contains("lower(COALESCE(iu.username, '')) LIKE $3"));
     }
 
     #[test]

@@ -180,43 +180,73 @@ async fn list_categories(
     pool: &PgPool,
     query: ListAdminCatalogRecordsQuery,
 ) -> DomainResult<AdminCatalogCollection> {
-    let rows = fetch_category_rows(pool, query.subject).await?;
-    let rows_by_id = category_rows_by_id(&rows);
-    let search = query
+    let search_pattern = query
         .query_text
         .as_ref()
-        .map(|value| value.to_ascii_lowercase());
-    let mut filtered = rows
+        .map(|value| format!("%{}%", value.to_ascii_lowercase()));
+
+    let rows = sqlx::query(
+        r#"
+        SELECT
+            id,
+            category_no,
+            parent_category_id,
+            name,
+            status,
+            sort_weight,
+            created_at,
+            updated_at,
+            COUNT(*) OVER() AS total
+        FROM commerce_product_category
+        WHERE tenant_id = $1::text
+          AND (organization_id = $2::text OR organization_id IS NULL)
+          AND ($3 IS NULL OR parent_category_id = $3)
+          AND ($4 IS NULL OR status = $4)
+          AND (
+              $5 IS NULL
+              OR LOWER(category_no) LIKE $6
+              OR LOWER(name) LIKE $7
+          )
+        ORDER BY sort_weight ASC, category_no ASC
+        LIMIT $8 OFFSET $9
+        "#,
+    )
+    .bind(query.subject.tenant_id)
+    .bind(query.subject.organization_id)
+    .bind(query.parent_id.as_deref())
+    .bind(query.status.as_deref())
+    .bind(search_pattern.as_deref())
+    .bind(search_pattern.as_deref())
+    .bind(search_pattern.as_deref())
+    .bind(query.page_size)
+    .bind(query.offset)
+    .fetch_all(pool)
+    .await
+    .map_err(store_error)?;
+
+    let total = rows
+        .first()
+        .map(|row| integer_cell(row, "total"))
+        .transpose()?
+        .unwrap_or(0);
+
+    let page_rows = rows
         .iter()
-        .filter(|row| {
-            query
-                .parent_id
-                .as_deref()
-                .is_none_or(|parent_id| row.parent_id.as_deref() == Some(parent_id))
-        })
-        .filter(|row| {
-            query
-                .status
-                .as_deref()
-                .is_none_or(|status| row.status == status)
-        })
-        .filter(|row| {
-            search.as_deref().is_none_or(|search| {
-                row.category_no.to_ascii_lowercase().contains(search)
-                    || row.name.to_ascii_lowercase().contains(search)
-            })
-        })
+        .map(category_row_from_query)
+        .collect::<DomainResult<Vec<_>>>()?;
+
+    let seed_ids = page_rows
+        .iter()
+        .map(|row| row.id.clone())
         .collect::<Vec<_>>();
-    filtered.sort_by(|left, right| {
-        left.sort_order
-            .cmp(&right.sort_order)
-            .then_with(|| left.category_no.cmp(&right.category_no))
-    });
-    let total = filtered.len() as i64;
-    let items = filtered
-        .into_iter()
-        .skip(query.offset.max(0) as usize)
-        .take(query.page_size.max(0) as usize)
+    let ancestor_rows = fetch_category_ancestor_rows(pool, query.subject, &seed_ids).await?;
+    let mut rows_by_id = category_rows_by_id(&ancestor_rows);
+    for row in &page_rows {
+        rows_by_id.insert(row.id.clone(), row.clone());
+    }
+
+    let items = page_rows
+        .iter()
         .map(|row| category_record(row, &rows_by_id))
         .collect::<DomainResult<Vec<_>>>()?;
     Ok(collection(items, total, &query))
@@ -232,6 +262,81 @@ struct CategoryListRow {
     sort_order: i64,
     created_at: String,
     updated_at: String,
+}
+
+fn category_row_from_query(row: &sqlx::postgres::PgRow) -> DomainResult<CategoryListRow> {
+    Ok(CategoryListRow {
+        id: string_cell(row, "id")?,
+        category_no: string_cell(row, "category_no")?,
+        parent_id: optional_string_cell(row, "parent_category_id")?,
+        name: string_cell(row, "name")?,
+        status: string_cell(row, "status")?,
+        sort_order: integer_cell(row, "sort_weight")?,
+        created_at: string_cell(row, "created_at")?,
+        updated_at: string_cell(row, "updated_at")?,
+    })
+}
+
+async fn fetch_category_ancestor_rows(
+    pool: &PgPool,
+    subject: AdminCatalogSubject,
+    seed_ids: &[String],
+) -> DomainResult<Vec<CategoryListRow>> {
+    if seed_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let rows = sqlx::query(
+        r#"
+        WITH RECURSIVE ancestors AS (
+            SELECT
+                id,
+                category_no,
+                parent_category_id,
+                name,
+                status,
+                sort_weight,
+                created_at,
+                updated_at
+            FROM commerce_product_category
+            WHERE tenant_id = $1::text
+              AND (organization_id = $2::text OR organization_id IS NULL)
+              AND id = ANY($3::text[])
+            UNION
+            SELECT
+                c.id,
+                c.category_no,
+                c.parent_category_id,
+                c.name,
+                c.status,
+                c.sort_weight,
+                c.created_at,
+                c.updated_at
+            FROM commerce_product_category c
+            INNER JOIN ancestors a ON c.id = a.parent_category_id
+            WHERE c.tenant_id = $1::text
+              AND (c.organization_id = $2::text OR c.organization_id IS NULL)
+        )
+        SELECT DISTINCT
+            id,
+            category_no,
+            parent_category_id,
+            name,
+            status,
+            sort_weight,
+            created_at,
+            updated_at
+        FROM ancestors
+        "#,
+    )
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(seed_ids)
+    .fetch_all(pool)
+    .await
+    .map_err(store_error)?;
+
+    rows.iter().map(category_row_from_query).collect()
 }
 
 async fn fetch_category_rows(
@@ -260,20 +365,7 @@ async fn fetch_category_rows(
     .await
     .map_err(store_error)?;
 
-    rows.iter()
-        .map(|row| {
-            Ok(CategoryListRow {
-                id: string_cell(row, "id")?,
-                category_no: string_cell(row, "category_no")?,
-                parent_id: optional_string_cell(row, "parent_category_id")?,
-                name: string_cell(row, "name")?,
-                status: string_cell(row, "status")?,
-                sort_order: integer_cell(row, "sort_weight")?,
-                created_at: string_cell(row, "created_at")?,
-                updated_at: string_cell(row, "updated_at")?,
-            })
-        })
-        .collect()
+    rows.iter().map(category_row_from_query).collect()
 }
 
 fn category_rows_by_id(rows: &[CategoryListRow]) -> BTreeMap<String, CategoryListRow> {

@@ -112,7 +112,7 @@ function installSsrRequireHooks() {
   const shims = new Map([
     ['motion/react', createMotionShim()],
     ['recharts', createRechartsShim()],
-    ['sdkwork-clawrouter-pc-commons', createCommonsShim()],
+    ['sdkwork-clawroutes-pc-commons', createCommonsShim()],
   ]);
 
   Module._load = function loadForSsrSmoke(request, parent, isMain) {

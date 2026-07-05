@@ -1,14 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { RateLimitService } from './ratelimitService';
+import {
+  RATE_LIMIT_DASHBOARD_SAMPLE_PAGE_SIZE,
+  RateLimitService,
+  type RateLimitListFilters,
+} from './ratelimitService';
 
 export const rateLimitQueryKeys = {
   all: ['admin', 'ratelimit'] as const,
-  ipLimits: () => [...rateLimitQueryKeys.all, 'ip-limits'] as const,
-  tokenLimits: () => [...rateLimitQueryKeys.all, 'token-limits'] as const,
-  modelLimits: () => [...rateLimitQueryKeys.all, 'model-limits'] as const,
-  firewalls: () => [...rateLimitQueryKeys.all, 'firewalls'] as const,
+  ipLimits: (filters: RateLimitListFilters = {}) => [...rateLimitQueryKeys.all, 'ip-limits', filters] as const,
+  tokenLimits: (filters: RateLimitListFilters = {}) => [...rateLimitQueryKeys.all, 'token-limits', filters] as const,
+  modelLimits: (filters: RateLimitListFilters = {}) => [...rateLimitQueryKeys.all, 'model-limits', filters] as const,
+  firewalls: (filters: RateLimitListFilters = {}) => [...rateLimitQueryKeys.all, 'firewalls', filters] as const,
   dashboard: () => [...rateLimitQueryKeys.all, 'dashboard'] as const,
+};
+
+const dashboardSampleFilters: RateLimitListFilters = {
+  page: 1,
+  pageSize: RATE_LIMIT_DASHBOARD_SAMPLE_PAGE_SIZE,
 };
 
 export function useRateLimitDashboardQuery() {
@@ -16,40 +25,49 @@ export function useRateLimitDashboardQuery() {
     queryKey: rateLimitQueryKeys.dashboard(),
     queryFn: async () => {
       const [ipLimits, tokenLimits, modelLimits, firewallRules] = await Promise.all([
-        RateLimitService.fetchIpLimits(),
-        RateLimitService.fetchTokenLimits(),
-        RateLimitService.fetchModelLimits(),
-        RateLimitService.fetchFirewalls(),
+        RateLimitService.fetchIpLimits(dashboardSampleFilters),
+        RateLimitService.fetchTokenLimits(dashboardSampleFilters),
+        RateLimitService.fetchModelLimits(dashboardSampleFilters),
+        RateLimitService.fetchFirewalls(dashboardSampleFilters),
       ]);
-      return { ipLimits, tokenLimits, modelLimits, firewallRules };
+      return {
+        ipLimits: ipLimits.items,
+        ipLimitsTotal: ipLimits.total,
+        tokenLimits: tokenLimits.items,
+        tokenLimitsTotal: tokenLimits.total,
+        modelLimits: modelLimits.items,
+        modelLimitsTotal: modelLimits.total,
+        firewallRules: firewallRules.items,
+        firewallRulesTotal: firewallRules.total,
+      };
     },
   });
 }
 
-export function useIpRateLimitsQuery() {
+export function useIpRateLimitsQuery(filters: RateLimitListFilters = {}) {
   return useQuery({
-    queryKey: rateLimitQueryKeys.ipLimits(),
-    queryFn: () => RateLimitService.fetchIpLimits(),
+    queryKey: rateLimitQueryKeys.ipLimits(filters),
+    queryFn: () => RateLimitService.fetchIpLimits(filters),
   });
 }
 
-export function useTokenRateLimitsQuery() {
+export function useTokenRateLimitsQuery(filters: RateLimitListFilters = {}) {
   return useQuery({
-    queryKey: rateLimitQueryKeys.tokenLimits(),
-    queryFn: () => RateLimitService.fetchTokenLimits(),
+    queryKey: rateLimitQueryKeys.tokenLimits(filters),
+    queryFn: () => RateLimitService.fetchTokenLimits(filters),
   });
 }
 
-export function useModelRateLimitsQuery() {
+export function useModelRateLimitsQuery(filters: RateLimitListFilters = {}) {
   return useQuery({
-    queryKey: rateLimitQueryKeys.modelLimits(),
-    queryFn: () => RateLimitService.fetchModelLimits(),
+    queryKey: rateLimitQueryKeys.modelLimits(filters),
+    queryFn: () => RateLimitService.fetchModelLimits(filters),
   });
 }
 
-export function useFirewallRulesQuery() {
+export function useFirewallRulesQuery(filters: RateLimitListFilters = {}) {
   return useQuery({
-    queryKey: rateLimitQueryKeys.firewalls(),
-    queryFn: () => RateLimitService.fetchFirewalls(),
+    queryKey: rateLimitQueryKeys.firewalls(filters),
+    queryFn: () => RateLimitService.fetchFirewalls(filters),
   });
 }

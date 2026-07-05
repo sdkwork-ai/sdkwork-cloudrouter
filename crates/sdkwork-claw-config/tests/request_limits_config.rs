@@ -12,6 +12,10 @@ fn request_limits_config_uses_production_defaults_when_absent() {
     assert_eq!(128 * 1024, config.admin_app_json_body_max_bytes());
     assert_eq!(64 * 1024, config.admin_skill_json_body_max_bytes());
     assert_eq!(64 * 1024, config.payment_callback_body_max_bytes());
+    assert_eq!(
+        1024 * 1024,
+        config.gateway_invocation_body_max_bytes()
+    );
 }
 
 #[test]
@@ -28,6 +32,7 @@ fn request_limits_config_reads_runtime_toml_and_env_overrides() {
 admin_app_json_body_max_bytes = 262144
 admin_skill_json_body_max_bytes = 98304
 payment_callback_body_max_bytes = 32768
+gateway_invocation_body_max_bytes = 2097152
 "#,
     )
     .unwrap();
@@ -38,6 +43,7 @@ payment_callback_body_max_bytes = 32768
     assert_eq!(262144, config.admin_app_json_body_max_bytes());
     assert_eq!(98304, config.admin_skill_json_body_max_bytes());
     assert_eq!(131072, config.payment_callback_body_max_bytes());
+    assert_eq!(2097152, config.gateway_invocation_body_max_bytes());
 }
 
 #[test]
@@ -62,6 +68,7 @@ fn clear_request_limit_env() {
         RequestLimitsConfig::ENV_ADMIN_APP_JSON_BODY_MAX_BYTES,
         RequestLimitsConfig::ENV_ADMIN_SKILL_JSON_BODY_MAX_BYTES,
         RequestLimitsConfig::ENV_PAYMENT_CALLBACK_BODY_MAX_BYTES,
+        RequestLimitsConfig::ENV_GATEWAY_INVOCATION_BODY_MAX_BYTES,
     ] {
         std::env::remove_var(name);
     }

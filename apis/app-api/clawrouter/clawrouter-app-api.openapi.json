@@ -3387,11 +3387,6 @@
             "type": "array"
           },
           "instance": {
-            "description": "Request endpoint occurrence in the form `{METHOD} {routeTemplate}`.",
-            "type": "string"
-          },
-          "operationId": {
-            "description": "OpenAPI operation id for the failing request when resolved by the web framework.",
             "type": "string"
           },
           "status": {
@@ -3421,6 +3416,26 @@
         ],
         "type": "object"
       },
+      "PromotionsCodesRedemptionsCreateRequest": {
+        "additionalProperties": false,
+        "description": "Promotions codes redemptions create request schema exposed by Claw Router.",
+        "properties": {
+          "channel": {
+            "description": "Channel field on promotions codes redemptions create request.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "code": {
+            "description": "Code field on promotions codes redemptions create request.",
+            "maxLength": 128,
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "type": "object"
+      },
       "PromotionsCodesRedemptionsCreateResult": {
         "additionalProperties": false,
         "description": "Promotions codes redemptions create result schema exposed by Claw Router.",
@@ -3432,10 +3447,10 @@
           "data": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/NoData"
+                "$ref": "#/components/schemas/PromotionsCodesRedemptionsCreateResult"
               }
             ],
-            "description": "No business data returned by this operation."
+            "description": "Data field on promotions codes redemptions create result."
           },
           "msg": {
             "description": "Human-readable response message.",
@@ -5805,6 +5820,33 @@
         "type": "object",
         "x-operation-id": "users.settings.update"
       },
+      "WalletAccountsCashRetrieveResult": {
+        "additionalProperties": false,
+        "description": "Wallet accounts cash retrieve result schema exposed by Claw Router.",
+        "properties": {
+          "code": {
+            "description": "Business response code.",
+            "type": "string"
+          },
+          "data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NoData"
+              }
+            ],
+            "description": "No business data returned by this operation."
+          },
+          "msg": {
+            "description": "Human-readable response message.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "type": "object",
+        "x-operation-id": "wallet.accounts.cash.retrieve"
+      },
       "WalletAccountsListResult": {
         "additionalProperties": false,
         "description": "Wallet accounts list result schema exposed by Claw Router.",
@@ -6047,6 +6089,33 @@
         ],
         "type": "object",
         "x-operation-id": "wallet.holds.create"
+      },
+      "WalletHoldsListResult": {
+        "additionalProperties": false,
+        "description": "Wallet holds list result schema exposed by Claw Router.",
+        "properties": {
+          "code": {
+            "description": "Business response code.",
+            "type": "string"
+          },
+          "data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NoData"
+              }
+            ],
+            "description": "No business data returned by this operation."
+          },
+          "msg": {
+            "description": "Human-readable response message.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "type": "object",
+        "x-operation-id": "wallet.holds.list"
       },
       "WalletHoldsReleasesCreateResult": {
         "additionalProperties": false,
@@ -6504,7 +6573,7 @@
   "paths": {
     "/app/v3/api/accounts/current/summary": {
       "get": {
-        "description": "Retrieve. Reads accounts. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "accounts.current.summary.retrieve",
         "parameters": [],
         "responses": {
@@ -6590,12 +6659,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "accounts"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "accounts"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -6607,7 +6676,7 @@
     },
     "/app/v3/api/addresses": {
       "get": {
-        "description": "List. Reads addresses. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "addresses.list",
         "parameters": [],
         "responses": {
@@ -6670,12 +6739,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "addresses"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "addresses"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -6685,7 +6754,7 @@
         "x-write-tables": []
       },
       "post": {
-        "description": "Create. Reads addresses. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "addresses.create",
         "parameters": [],
         "responses": {
@@ -6771,12 +6840,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "addresses"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "addresses"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -6790,7 +6859,7 @@
     },
     "/app/v3/api/addresses/{addressId}": {
       "delete": {
-        "description": "Delete. Reads addresses. Writes ops_audit_log. File targets none.",
+        "description": "Delete. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "addresses.delete",
         "parameters": [
           {
@@ -6863,12 +6932,12 @@
         ],
         "summary": "Delete",
         "tags": [
-          "commerce"
+          "addresses"
         ],
         "x-contract-kind": "delete",
         "x-file-targets": [],
         "x-read-sources": [
-          "addresses"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -6880,7 +6949,7 @@
         ]
       },
       "patch": {
-        "description": "Update. Reads addresses. Writes ops_audit_log. File targets none.",
+        "description": "Update. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "addresses.update",
         "parameters": [
           {
@@ -6976,12 +7045,12 @@
         ],
         "summary": "Update",
         "tags": [
-          "commerce"
+          "addresses"
         ],
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "addresses"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -6995,7 +7064,7 @@
     },
     "/app/v3/api/addresses/{addressId}/default_selection": {
       "post": {
-        "description": "Create. Reads addresses. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "addresses.defaultSelection.create",
         "parameters": [
           {
@@ -7091,12 +7160,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "addresses"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "addresses"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -7110,7 +7179,7 @@
     },
     "/app/v3/api/after_sales/requests": {
       "get": {
-        "description": "List. Reads aftersales. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "afterSales.requests.list",
         "parameters": [],
         "responses": {
@@ -7178,7 +7247,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "aftersales"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -7190,7 +7259,7 @@
     },
     "/app/v3/api/after_sales/requests/{afterSalesRequestId}": {
       "get": {
-        "description": "Retrieve. Reads aftersales. Writes none. File targets none.",
+        "description": "Retrieve. Reads system. Writes none. File targets none.",
         "operationId": "afterSales.requests.retrieve",
         "parameters": [
           {
@@ -7291,7 +7360,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "aftersales"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -7303,7 +7372,7 @@
     },
     "/app/v3/api/after_sales/requests/{afterSalesRequestId}/events": {
       "get": {
-        "description": "List. Reads aftersales. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "afterSales.events.list",
         "parameters": [
           {
@@ -7381,7 +7450,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "aftersales"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -7393,7 +7462,7 @@
     },
     "/app/v3/api/after_sales/requests/{afterSalesRequestId}/return_shipments": {
       "get": {
-        "description": "List. Reads aftersales. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "afterSales.returnShipments.list",
         "parameters": [
           {
@@ -7471,7 +7540,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "aftersales"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -7801,12 +7870,7 @@
             "description": "Error response."
           }
         },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
+        "security": [],
         "summary": "List",
         "tags": [
           "ai"
@@ -7884,12 +7948,7 @@
             "description": "Error response."
           }
         },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
+        "security": [],
         "summary": "List",
         "tags": [
           "ai"
@@ -7967,12 +8026,7 @@
             "description": "Error response."
           }
         },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
+        "security": [],
         "summary": "List",
         "tags": [
           "ai"
@@ -8395,7 +8449,7 @@
     },
     "/app/v3/api/billing/history": {
       "get": {
-        "description": "List. Reads billing. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "billing.history.list",
         "parameters": [],
         "responses": {
@@ -8458,12 +8512,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "billing"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "billing"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -8475,7 +8529,7 @@
     },
     "/app/v3/api/cart/current": {
       "get": {
-        "description": "Retrieve. Reads cart. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "cart.current.retrieve",
         "parameters": [],
         "responses": {
@@ -8561,12 +8615,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "cart"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "cart"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -8578,7 +8632,7 @@
     },
     "/app/v3/api/cart/items": {
       "post": {
-        "description": "Create. Reads cart. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "cart.items.create",
         "parameters": [],
         "responses": {
@@ -8664,12 +8718,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "cart"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "cart"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -8683,7 +8737,7 @@
     },
     "/app/v3/api/cart/items/{cartItemId}": {
       "delete": {
-        "description": "Delete. Reads cart. Writes ops_audit_log. File targets none.",
+        "description": "Delete. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "cart.items.delete",
         "parameters": [
           {
@@ -8756,12 +8810,12 @@
         ],
         "summary": "Delete",
         "tags": [
-          "commerce"
+          "cart"
         ],
         "x-contract-kind": "delete",
         "x-file-targets": [],
         "x-read-sources": [
-          "cart"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -8773,7 +8827,7 @@
         ]
       },
       "patch": {
-        "description": "Update. Reads cart. Writes ops_audit_log. File targets none.",
+        "description": "Update. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "cart.items.update",
         "parameters": [
           {
@@ -8869,12 +8923,12 @@
         ],
         "summary": "Update",
         "tags": [
-          "commerce"
+          "cart"
         ],
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "cart"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -8888,7 +8942,7 @@
     },
     "/app/v3/api/catalog/attributes": {
       "get": {
-        "description": "List. Reads catalog. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "catalog.attributes.list",
         "parameters": [],
         "responses": {
@@ -8951,12 +9005,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "catalog"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "catalog"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -8968,7 +9022,7 @@
     },
     "/app/v3/api/catalog/categories": {
       "get": {
-        "description": "List. Reads catalog. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "catalog.categories.list",
         "parameters": [],
         "responses": {
@@ -9031,12 +9085,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "catalog"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "catalog"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -9048,7 +9102,7 @@
     },
     "/app/v3/api/catalog/categories/{categoryId}": {
       "get": {
-        "description": "Retrieve. Reads catalog. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "catalog.categories.retrieve",
         "parameters": [
           {
@@ -9144,12 +9198,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "catalog"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "catalog"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -9161,7 +9215,7 @@
     },
     "/app/v3/api/catalog/products": {
       "get": {
-        "description": "List. Reads catalog. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "catalog.products.list",
         "parameters": [],
         "responses": {
@@ -9224,12 +9278,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "catalog"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "catalog"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -9241,7 +9295,7 @@
     },
     "/app/v3/api/catalog/products/{productId}": {
       "get": {
-        "description": "Retrieve. Reads catalog. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "catalog.products.retrieve",
         "parameters": [
           {
@@ -9337,12 +9391,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "catalog"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "catalog"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -9354,7 +9408,7 @@
     },
     "/app/v3/api/catalog/skus/{skuId}": {
       "get": {
-        "description": "Retrieve. Reads catalog. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "catalog.skus.retrieve",
         "parameters": [
           {
@@ -9450,12 +9504,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "catalog"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "catalog"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -9467,7 +9521,7 @@
     },
     "/app/v3/api/catalog/skus/{skuId}/prices": {
       "get": {
-        "description": "Retrieve. Reads catalog. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "catalog.skus.prices.retrieve",
         "parameters": [
           {
@@ -9563,12 +9617,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "catalog"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "catalog"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -9580,7 +9634,7 @@
     },
     "/app/v3/api/catalog/spus": {
       "get": {
-        "description": "List. Reads catalog. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "catalog.spus.list",
         "parameters": [],
         "responses": {
@@ -9643,12 +9697,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "catalog"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "catalog"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -9660,7 +9714,7 @@
     },
     "/app/v3/api/catalog/spus/{spuId}": {
       "get": {
-        "description": "Retrieve. Reads catalog. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "catalog.spus.retrieve",
         "parameters": [
           {
@@ -9756,12 +9810,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "catalog"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "catalog"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -10398,7 +10452,7 @@
     },
     "/app/v3/api/checkout/sessions": {
       "post": {
-        "description": "Create. Reads checkout. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "checkout.sessions.create",
         "parameters": [],
         "responses": {
@@ -10484,12 +10538,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "checkout"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "checkout"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -10503,7 +10557,7 @@
     },
     "/app/v3/api/checkout/sessions/{checkoutSessionId}": {
       "get": {
-        "description": "Retrieve. Reads checkout. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "checkout.sessions.retrieve",
         "parameters": [
           {
@@ -10599,12 +10653,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "checkout"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "checkout"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -10616,7 +10670,7 @@
     },
     "/app/v3/api/checkout/sessions/{checkoutSessionId}/orders": {
       "post": {
-        "description": "Create. Reads checkout. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "checkout.sessions.orders.create",
         "parameters": [
           {
@@ -10712,12 +10766,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "checkout"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "checkout"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -10731,7 +10785,7 @@
     },
     "/app/v3/api/checkout/sessions/{checkoutSessionId}/quotes": {
       "post": {
-        "description": "Create. Reads checkout. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "checkout.sessions.quotes.create",
         "parameters": [
           {
@@ -10827,12 +10881,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "checkout"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "checkout"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -10846,7 +10900,7 @@
     },
     "/app/v3/api/fulfillments": {
       "get": {
-        "description": "List. Reads fulfillments. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "fulfillments.list",
         "parameters": [],
         "responses": {
@@ -10909,12 +10963,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "fulfillments"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "fulfillments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -10926,7 +10980,7 @@
     },
     "/app/v3/api/fulfillments/{fulfillmentId}": {
       "get": {
-        "description": "Retrieve. Reads fulfillments. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "fulfillments.retrieve",
         "parameters": [
           {
@@ -11022,12 +11076,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "fulfillments"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "fulfillments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -12502,7 +12556,7 @@
     },
     "/app/v3/api/invoices": {
       "get": {
-        "description": "List. Reads invoices. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "invoices.list",
         "parameters": [],
         "responses": {
@@ -12565,12 +12619,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "invoices"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "invoices"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -12580,7 +12634,7 @@
         "x-write-tables": []
       },
       "post": {
-        "description": "Create. Reads invoices. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "invoices.create",
         "parameters": [],
         "responses": {
@@ -12666,12 +12720,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "invoices"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "invoices"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -12685,7 +12739,7 @@
     },
     "/app/v3/api/invoices/current": {
       "get": {
-        "description": "List. Reads invoices. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "invoices.mine.list",
         "parameters": [],
         "responses": {
@@ -12748,12 +12802,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "invoices"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "invoices"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -12765,7 +12819,7 @@
     },
     "/app/v3/api/invoices/statistics": {
       "get": {
-        "description": "Retrieve. Reads invoices. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "invoices.statistics.retrieve",
         "parameters": [],
         "responses": {
@@ -12851,12 +12905,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "invoices"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "invoices"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -12868,7 +12922,7 @@
     },
     "/app/v3/api/invoices/{invoiceId}": {
       "get": {
-        "description": "Retrieve. Reads invoices. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "invoices.retrieve",
         "parameters": [
           {
@@ -12964,12 +13018,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "invoices"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "invoices"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -12979,7 +13033,7 @@
         "x-write-tables": []
       },
       "patch": {
-        "description": "Update. Reads invoices. Writes ops_audit_log. File targets none.",
+        "description": "Update. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "invoices.update",
         "parameters": [
           {
@@ -13075,12 +13129,12 @@
         ],
         "summary": "Update",
         "tags": [
-          "commerce"
+          "invoices"
         ],
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "invoices"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -13094,7 +13148,7 @@
     },
     "/app/v3/api/invoices/{invoiceId}/cancellations": {
       "post": {
-        "description": "Create. Reads invoices. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "invoices.cancellations.create",
         "parameters": [
           {
@@ -13190,12 +13244,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "invoices"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "invoices"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -13209,7 +13263,7 @@
     },
     "/app/v3/api/invoices/{invoiceId}/items": {
       "get": {
-        "description": "List. Reads invoices. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "invoices.items.list",
         "parameters": [
           {
@@ -13282,12 +13336,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "invoices"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "invoices"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -13299,7 +13353,7 @@
     },
     "/app/v3/api/invoices/{invoiceId}/submissions": {
       "post": {
-        "description": "Create. Reads invoices. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "invoices.submissions.create",
         "parameters": [
           {
@@ -13395,12 +13449,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "invoices"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "invoices"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -13414,7 +13468,7 @@
     },
     "/app/v3/api/memberships/benefits": {
       "get": {
-        "description": "List. Reads memberships. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "memberships.benefits.list",
         "parameters": [],
         "responses": {
@@ -13477,12 +13531,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "memberships"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "memberships"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -13494,7 +13548,7 @@
     },
     "/app/v3/api/memberships/current": {
       "get": {
-        "description": "Retrieve. Reads memberships. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "memberships.current.retrieve",
         "parameters": [],
         "responses": {
@@ -13580,12 +13634,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "memberships"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "memberships"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -13597,7 +13651,7 @@
     },
     "/app/v3/api/memberships/current/status": {
       "get": {
-        "description": "Retrieve. Reads memberships. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "memberships.current.status.retrieve",
         "parameters": [],
         "responses": {
@@ -13683,12 +13737,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "memberships"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "memberships"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -13700,7 +13754,7 @@
     },
     "/app/v3/api/memberships/package_groups": {
       "get": {
-        "description": "List. Reads memberships. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "memberships.packageGroups.list",
         "parameters": [],
         "responses": {
@@ -13763,12 +13817,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "memberships"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "memberships"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -13780,7 +13834,7 @@
     },
     "/app/v3/api/memberships/package_groups/{packageGroupId}": {
       "get": {
-        "description": "Retrieve. Reads memberships. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "memberships.packageGroups.retrieve",
         "parameters": [
           {
@@ -13876,12 +13930,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "memberships"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "memberships"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -13893,7 +13947,7 @@
     },
     "/app/v3/api/memberships/package_groups/{packageGroupId}/packages": {
       "get": {
-        "description": "List. Reads memberships. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "memberships.packageGroups.packages.list",
         "parameters": [
           {
@@ -13966,12 +14020,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "memberships"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "memberships"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -13983,7 +14037,7 @@
     },
     "/app/v3/api/memberships/packages": {
       "get": {
-        "description": "List. Reads memberships. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "memberships.packages.list",
         "parameters": [],
         "responses": {
@@ -14046,12 +14100,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "memberships"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "memberships"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -14063,7 +14117,7 @@
     },
     "/app/v3/api/memberships/packages/{packageId}": {
       "get": {
-        "description": "Retrieve. Reads memberships. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "memberships.packages.retrieve",
         "parameters": [
           {
@@ -14159,12 +14213,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "memberships"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "memberships"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -14176,7 +14230,7 @@
     },
     "/app/v3/api/memberships/plans": {
       "get": {
-        "description": "List. Reads memberships. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "memberships.plans.list",
         "parameters": [],
         "responses": {
@@ -14239,12 +14293,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "memberships"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "memberships"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -14256,7 +14310,7 @@
     },
     "/app/v3/api/memberships/points/balance": {
       "get": {
-        "description": "Retrieve. Reads memberships. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "memberships.points.balance.retrieve",
         "parameters": [],
         "responses": {
@@ -14342,12 +14396,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "memberships"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "memberships"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -14359,7 +14413,7 @@
     },
     "/app/v3/api/memberships/points/daily_rewards": {
       "post": {
-        "description": "Create. Reads memberships. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "memberships.points.dailyRewards.create",
         "parameters": [],
         "responses": {
@@ -14445,12 +14499,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "memberships"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "memberships"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -14464,7 +14518,7 @@
     },
     "/app/v3/api/memberships/points/daily_rewards/status": {
       "get": {
-        "description": "Retrieve. Reads memberships. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "memberships.points.dailyRewards.status.retrieve",
         "parameters": [],
         "responses": {
@@ -14550,12 +14604,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "memberships"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "memberships"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -14567,7 +14621,7 @@
     },
     "/app/v3/api/memberships/points/history": {
       "get": {
-        "description": "List. Reads memberships. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "memberships.points.history.list",
         "parameters": [],
         "responses": {
@@ -14630,12 +14684,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "memberships"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "memberships"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -14647,7 +14701,7 @@
     },
     "/app/v3/api/memberships/privileges/speed_ups": {
       "post": {
-        "description": "Create. Reads memberships. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "memberships.privileges.speedUps.create",
         "parameters": [],
         "responses": {
@@ -14733,12 +14787,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "memberships"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "memberships"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -14752,7 +14806,7 @@
     },
     "/app/v3/api/memberships/privileges/usage": {
       "get": {
-        "description": "Retrieve. Reads memberships. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "memberships.privileges.usage.retrieve",
         "parameters": [],
         "responses": {
@@ -14838,12 +14892,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "memberships"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "memberships"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -14855,7 +14909,7 @@
     },
     "/app/v3/api/memberships/purchases": {
       "post": {
-        "description": "Create. Reads memberships. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "memberships.purchases.create",
         "parameters": [],
         "responses": {
@@ -14941,12 +14995,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "memberships"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "memberships"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -14960,7 +15014,7 @@
     },
     "/app/v3/api/memberships/purchases/renew": {
       "post": {
-        "description": "Renew. Reads memberships. Writes ops_audit_log. File targets none.",
+        "description": "Renew. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "memberships.purchases.renew",
         "parameters": [],
         "responses": {
@@ -15046,12 +15100,12 @@
         ],
         "summary": "Renew",
         "tags": [
-          "commerce"
+          "memberships"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "memberships"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -15065,7 +15119,7 @@
     },
     "/app/v3/api/memberships/purchases/upgrade": {
       "post": {
-        "description": "Upgrade. Reads memberships. Writes ops_audit_log. File targets none.",
+        "description": "Upgrade. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "memberships.purchases.upgrade",
         "parameters": [],
         "responses": {
@@ -15151,12 +15205,12 @@
         ],
         "summary": "Upgrade",
         "tags": [
-          "commerce"
+          "memberships"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "memberships"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -15480,7 +15534,7 @@
     },
     "/app/v3/api/orders": {
       "get": {
-        "description": "List. Reads orders. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "orders.list",
         "parameters": [],
         "responses": {
@@ -15543,12 +15597,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "orders"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "orders"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -15558,7 +15612,7 @@
         "x-write-tables": []
       },
       "post": {
-        "description": "Create. Reads orders. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "orders.create",
         "parameters": [],
         "responses": {
@@ -15644,12 +15698,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "orders"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "orders"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -15663,7 +15717,7 @@
     },
     "/app/v3/api/orders/statistics": {
       "get": {
-        "description": "Retrieve. Reads orders. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "orders.statistics.retrieve",
         "parameters": [],
         "responses": {
@@ -15749,12 +15803,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "orders"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "orders"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -15766,7 +15820,7 @@
     },
     "/app/v3/api/orders/{orderId}": {
       "get": {
-        "description": "Retrieve. Reads orders. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "orders.retrieve",
         "parameters": [
           {
@@ -15862,12 +15916,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "orders"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "orders"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -15879,7 +15933,7 @@
     },
     "/app/v3/api/orders/{orderId}/cancel": {
       "post": {
-        "description": "Cancel. Reads orders. Writes ops_audit_log. File targets none.",
+        "description": "Cancel. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "orders.cancel",
         "parameters": [
           {
@@ -15975,12 +16029,12 @@
         ],
         "summary": "Cancel",
         "tags": [
-          "commerce"
+          "orders"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "orders"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -15994,7 +16048,7 @@
     },
     "/app/v3/api/orders/{orderId}/cancellations": {
       "post": {
-        "description": "Create. Reads orders. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "orders.cancellations.create",
         "parameters": [
           {
@@ -16090,12 +16144,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "orders"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "orders"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -16109,7 +16163,7 @@
     },
     "/app/v3/api/orders/{orderId}/events": {
       "get": {
-        "description": "List. Reads orders. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "orders.events.list",
         "parameters": [
           {
@@ -16182,12 +16236,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "orders"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "orders"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -16199,7 +16253,7 @@
     },
     "/app/v3/api/orders/{orderId}/payment_success": {
       "get": {
-        "description": "Retrieve. Reads orders. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "orders.paymentSuccess.retrieve",
         "parameters": [
           {
@@ -16295,12 +16349,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "orders"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "orders"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -16312,7 +16366,7 @@
     },
     "/app/v3/api/orders/{orderId}/payments": {
       "get": {
-        "description": "List. Reads payments. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "payments.orderPayments.list",
         "parameters": [
           {
@@ -16385,12 +16439,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "orders"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "payments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -16400,7 +16454,7 @@
         "x-write-tables": []
       },
       "post": {
-        "description": "Pay. Reads orders. Writes ops_audit_log. File targets none.",
+        "description": "Pay. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "orders.pay",
         "parameters": [
           {
@@ -16496,12 +16550,12 @@
         ],
         "summary": "Pay",
         "tags": [
-          "commerce"
+          "orders"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "orders"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -16515,7 +16569,7 @@
     },
     "/app/v3/api/orders/{orderId}/status": {
       "get": {
-        "description": "Retrieve. Reads orders. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "orders.status.retrieve",
         "parameters": [
           {
@@ -16611,12 +16665,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "orders"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "orders"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -16628,7 +16682,7 @@
     },
     "/app/v3/api/payments": {
       "post": {
-        "description": "Create. Reads payments. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "payments.create",
         "parameters": [],
         "responses": {
@@ -16714,12 +16768,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "payments"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "payments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -16733,7 +16787,7 @@
     },
     "/app/v3/api/payments/attempts/{paymentAttemptId}": {
       "get": {
-        "description": "Retrieve. Reads payments. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "payments.attempts.retrieve",
         "parameters": [
           {
@@ -16829,12 +16883,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "payments"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "payments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -16846,7 +16900,7 @@
     },
     "/app/v3/api/payments/checkout/{paymentId}": {
       "get": {
-        "description": "Retrieve. Reads payments. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "payments.checkout.retrieve",
         "parameters": [
           {
@@ -16942,12 +16996,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "payments"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "payments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -16959,7 +17013,7 @@
     },
     "/app/v3/api/payments/intents": {
       "post": {
-        "description": "Create. Reads payments. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "payments.intents.create",
         "parameters": [],
         "responses": {
@@ -17045,12 +17099,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "payments"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "payments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -17064,7 +17118,7 @@
     },
     "/app/v3/api/payments/intents/{paymentIntentId}": {
       "get": {
-        "description": "Retrieve. Reads payments. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "payments.intents.retrieve",
         "parameters": [
           {
@@ -17160,12 +17214,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "payments"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "payments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -17177,7 +17231,7 @@
     },
     "/app/v3/api/payments/intents/{paymentIntentId}/attempts": {
       "post": {
-        "description": "Create. Reads payments. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "payments.intents.attempts.create",
         "parameters": [
           {
@@ -17273,12 +17327,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "payments"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "payments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -17292,7 +17346,7 @@
     },
     "/app/v3/api/payments/intents/{paymentIntentId}/cancel": {
       "post": {
-        "description": "Cancel. Reads payments. Writes ops_audit_log. File targets none.",
+        "description": "Cancel. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "payments.intents.cancel",
         "parameters": [
           {
@@ -17388,12 +17442,12 @@
         ],
         "summary": "Cancel",
         "tags": [
-          "commerce"
+          "payments"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "payments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -17407,7 +17461,7 @@
     },
     "/app/v3/api/payments/methods": {
       "get": {
-        "description": "List. Reads payments. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "payments.methods.list",
         "parameters": [],
         "responses": {
@@ -17470,12 +17524,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "payments"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "payments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -17487,7 +17541,7 @@
     },
     "/app/v3/api/payments/reconciliations": {
       "post": {
-        "description": "Reconcile. Reads payments. Writes ops_audit_log. File targets none.",
+        "description": "Reconcile. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "payments.reconcile",
         "parameters": [],
         "responses": {
@@ -17573,12 +17627,12 @@
         ],
         "summary": "Reconcile",
         "tags": [
-          "commerce"
+          "payments"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "payments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -17592,7 +17646,7 @@
     },
     "/app/v3/api/payments/records": {
       "get": {
-        "description": "List. Reads payments. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "payments.records.list",
         "parameters": [],
         "responses": {
@@ -17655,12 +17709,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "payments"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "payments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -17672,7 +17726,7 @@
     },
     "/app/v3/api/payments/records/{paymentId}": {
       "get": {
-        "description": "Retrieve. Reads payments. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "payments.records.retrieve",
         "parameters": [
           {
@@ -17768,12 +17822,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "payments"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "payments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -17785,7 +17839,7 @@
     },
     "/app/v3/api/payments/statistics": {
       "get": {
-        "description": "Retrieve. Reads payments. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "payments.statistics.retrieve",
         "parameters": [],
         "responses": {
@@ -17871,12 +17925,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "payments"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "payments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -17888,7 +17942,7 @@
     },
     "/app/v3/api/payments/status/out_trade_no/{outTradeNo}": {
       "get": {
-        "description": "Retrieve by out trade no. Reads payments. Writes none. File targets none.",
+        "description": "Retrieve by out trade no. Reads commerce. Writes none. File targets none.",
         "operationId": "payments.status.retrieveByOutTradeNo",
         "parameters": [
           {
@@ -17984,12 +18038,12 @@
         ],
         "summary": "Retrieve by out trade no",
         "tags": [
-          "commerce"
+          "payments"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "payments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -18001,7 +18055,7 @@
     },
     "/app/v3/api/payments/status/{paymentId}": {
       "get": {
-        "description": "Retrieve. Reads payments. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "payments.status.retrieve",
         "parameters": [
           {
@@ -18097,12 +18151,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "payments"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "payments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -18114,7 +18168,7 @@
     },
     "/app/v3/api/payments/{paymentId}/close": {
       "post": {
-        "description": "Close. Reads payments. Writes ops_audit_log. File targets none.",
+        "description": "Close. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "payments.close",
         "parameters": [
           {
@@ -18210,12 +18264,12 @@
         ],
         "summary": "Close",
         "tags": [
-          "commerce"
+          "payments"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "payments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -18229,9 +18283,20 @@
     },
     "/app/v3/api/promotions/codes/redemptions": {
       "post": {
-        "description": "Create. Reads promotions. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "promotions.codes.redemptions.create",
         "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromotionsCodesRedemptionsCreateRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for create.",
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
@@ -18315,16 +18380,16 @@
         ],
         "summary": "Create",
         "tags": [
-          "system"
+          "promotions"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "promotions"
+          "system"
         ],
         "x-route-scope": "console",
-        "x-sdk-domain": "system",
-        "x-sdkwork-domain": "system",
+        "x-sdk-domain": "promotion",
+        "x-sdkwork-domain": "promotion",
         "x-sdkwork-resource": "promotions.codes.redemptions",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
@@ -18334,7 +18399,7 @@
     },
     "/app/v3/api/promotions/discount_applications": {
       "post": {
-        "description": "Create. Reads promotions. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "promotions.discountApplications.create",
         "parameters": [],
         "responses": {
@@ -18420,16 +18485,16 @@
         ],
         "summary": "Create",
         "tags": [
-          "system"
+          "promotions"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "promotions"
+          "system"
         ],
         "x-route-scope": "console",
-        "x-sdk-domain": "system",
-        "x-sdkwork-domain": "system",
+        "x-sdk-domain": "promotion",
+        "x-sdkwork-domain": "promotion",
         "x-sdkwork-resource": "promotions.discountApplications",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
@@ -18439,7 +18504,7 @@
     },
     "/app/v3/api/promotions/discount_applications/reversals": {
       "post": {
-        "description": "Create. Reads promotions. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "promotions.discountApplications.reversals.create",
         "parameters": [],
         "responses": {
@@ -18525,16 +18590,16 @@
         ],
         "summary": "Create",
         "tags": [
-          "system"
+          "promotions"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "promotions"
+          "system"
         ],
         "x-route-scope": "console",
-        "x-sdk-domain": "system",
-        "x-sdkwork-domain": "system",
+        "x-sdk-domain": "promotion",
+        "x-sdkwork-domain": "promotion",
         "x-sdkwork-resource": "promotions.discountApplications.reversals",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
@@ -18544,7 +18609,7 @@
     },
     "/app/v3/api/promotions/discount_applications/{applicationId}/releases": {
       "post": {
-        "description": "Release. Reads promotions. Writes ops_audit_log. File targets none.",
+        "description": "Release. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "promotions.discountApplications.release",
         "parameters": [
           {
@@ -18640,16 +18705,16 @@
         ],
         "summary": "Release",
         "tags": [
-          "system"
+          "promotions"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "promotions"
+          "system"
         ],
         "x-route-scope": "console",
-        "x-sdk-domain": "system",
-        "x-sdkwork-domain": "system",
+        "x-sdk-domain": "promotion",
+        "x-sdkwork-domain": "promotion",
         "x-sdkwork-resource": "promotions.discountApplications",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
@@ -18659,7 +18724,7 @@
     },
     "/app/v3/api/promotions/discount_applications/{applicationId}/rollback": {
       "post": {
-        "description": "Rollback. Reads promotions. Writes ops_audit_log. File targets none.",
+        "description": "Rollback. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "promotions.discountApplications.rollback",
         "parameters": [
           {
@@ -18755,16 +18820,16 @@
         ],
         "summary": "Rollback",
         "tags": [
-          "system"
+          "promotions"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "promotions"
+          "system"
         ],
         "x-route-scope": "console",
-        "x-sdk-domain": "system",
-        "x-sdkwork-domain": "system",
+        "x-sdk-domain": "promotion",
+        "x-sdkwork-domain": "promotion",
         "x-sdkwork-resource": "promotions.discountApplications",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
@@ -18774,7 +18839,7 @@
     },
     "/app/v3/api/promotions/discount_applications/{applicationId}/settlements": {
       "post": {
-        "description": "Settle. Reads promotions. Writes ops_audit_log. File targets none.",
+        "description": "Settle. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "promotions.discountApplications.settle",
         "parameters": [
           {
@@ -18870,16 +18935,16 @@
         ],
         "summary": "Settle",
         "tags": [
-          "system"
+          "promotions"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "promotions"
+          "system"
         ],
         "x-route-scope": "console",
-        "x-sdk-domain": "system",
-        "x-sdkwork-domain": "system",
+        "x-sdk-domain": "promotion",
+        "x-sdkwork-domain": "promotion",
         "x-sdkwork-resource": "promotions.discountApplications",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
@@ -18889,7 +18954,7 @@
     },
     "/app/v3/api/promotions/offers": {
       "get": {
-        "description": "List. Reads promotions. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "promotions.offers.list",
         "parameters": [],
         "responses": {
@@ -18952,16 +19017,16 @@
         ],
         "summary": "List",
         "tags": [
-          "system"
+          "promotions"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "promotions"
+          "system"
         ],
         "x-route-scope": "console",
-        "x-sdk-domain": "system",
-        "x-sdkwork-domain": "system",
+        "x-sdk-domain": "promotion",
+        "x-sdkwork-domain": "promotion",
         "x-sdkwork-resource": "promotions.offers",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": []
@@ -18969,7 +19034,7 @@
     },
     "/app/v3/api/promotions/offers/{offerId}": {
       "get": {
-        "description": "Retrieve. Reads promotions. Writes none. File targets none.",
+        "description": "Retrieve. Reads system. Writes none. File targets none.",
         "operationId": "promotions.offers.retrieve",
         "parameters": [
           {
@@ -19065,16 +19130,16 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "system"
+          "promotions"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "promotions"
+          "system"
         ],
         "x-route-scope": "console",
-        "x-sdk-domain": "system",
-        "x-sdkwork-domain": "system",
+        "x-sdk-domain": "promotion",
+        "x-sdkwork-domain": "promotion",
         "x-sdkwork-resource": "promotions.offers",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": []
@@ -19082,7 +19147,7 @@
     },
     "/app/v3/api/promotions/user_coupon_claims": {
       "post": {
-        "description": "Create. Reads promotions. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "promotions.userCoupons.claims.create",
         "parameters": [],
         "responses": {
@@ -19168,16 +19233,16 @@
         ],
         "summary": "Create",
         "tags": [
-          "system"
+          "promotions"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "promotions"
+          "system"
         ],
         "x-route-scope": "console",
-        "x-sdk-domain": "system",
-        "x-sdkwork-domain": "system",
+        "x-sdk-domain": "promotion",
+        "x-sdkwork-domain": "promotion",
         "x-sdkwork-resource": "promotions.userCoupons.claims",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
@@ -19187,7 +19252,7 @@
     },
     "/app/v3/api/promotions/user_coupons": {
       "get": {
-        "description": "List. Reads promotions. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "promotions.userCoupons.list",
         "parameters": [],
         "responses": {
@@ -19250,16 +19315,16 @@
         ],
         "summary": "List",
         "tags": [
-          "system"
+          "promotions"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "promotions"
+          "system"
         ],
         "x-route-scope": "console",
-        "x-sdk-domain": "system",
-        "x-sdkwork-domain": "system",
+        "x-sdk-domain": "promotion",
+        "x-sdkwork-domain": "promotion",
         "x-sdkwork-resource": "promotions.userCoupons",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": []
@@ -19267,7 +19332,7 @@
     },
     "/app/v3/api/promotions/user_coupons/wallet": {
       "get": {
-        "description": "List. Reads promotions. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "promotions.userCoupons.wallet.list",
         "parameters": [],
         "responses": {
@@ -19330,16 +19395,16 @@
         ],
         "summary": "List",
         "tags": [
-          "system"
+          "promotions"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "promotions"
+          "system"
         ],
         "x-route-scope": "console",
-        "x-sdk-domain": "system",
-        "x-sdkwork-domain": "system",
+        "x-sdk-domain": "promotion",
+        "x-sdkwork-domain": "promotion",
         "x-sdkwork-resource": "promotions.userCoupons.wallet",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": []
@@ -19347,7 +19412,7 @@
     },
     "/app/v3/api/promotions/user_coupons/wallet/{userCouponId}": {
       "get": {
-        "description": "Retrieve. Reads promotions. Writes none. File targets none.",
+        "description": "Retrieve. Reads system. Writes none. File targets none.",
         "operationId": "promotions.userCoupons.wallet.retrieve",
         "parameters": [
           {
@@ -19443,16 +19508,16 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "system"
+          "promotions"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "promotions"
+          "system"
         ],
         "x-route-scope": "console",
-        "x-sdk-domain": "system",
-        "x-sdkwork-domain": "system",
+        "x-sdk-domain": "promotion",
+        "x-sdkwork-domain": "promotion",
         "x-sdkwork-resource": "promotions.userCoupons.wallet",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": []
@@ -19460,7 +19525,7 @@
     },
     "/app/v3/api/promotions/user_coupons/{userCouponId}": {
       "get": {
-        "description": "Retrieve. Reads promotions. Writes none. File targets none.",
+        "description": "Retrieve. Reads system. Writes none. File targets none.",
         "operationId": "promotions.userCoupons.retrieve",
         "parameters": [
           {
@@ -19556,16 +19621,16 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "system"
+          "promotions"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "promotions"
+          "system"
         ],
         "x-route-scope": "console",
-        "x-sdk-domain": "system",
-        "x-sdkwork-domain": "system",
+        "x-sdk-domain": "promotion",
+        "x-sdkwork-domain": "promotion",
         "x-sdkwork-resource": "promotions.userCoupons",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": []
@@ -19573,7 +19638,7 @@
     },
     "/app/v3/api/recharges/orders": {
       "post": {
-        "description": "Create. Reads recharges. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "recharges.orders.create",
         "parameters": [],
         "responses": {
@@ -19659,12 +19724,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "recharges"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "recharges"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -19678,7 +19743,7 @@
     },
     "/app/v3/api/recharges/orders/{orderId}": {
       "get": {
-        "description": "Retrieve. Reads recharges. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "recharges.orders.retrieve",
         "parameters": [
           {
@@ -19774,12 +19839,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "recharges"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "recharges"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -19791,7 +19856,7 @@
     },
     "/app/v3/api/recharges/orders/{orderId}/cancellations": {
       "post": {
-        "description": "Cancel. Reads recharges. Writes ops_audit_log. File targets none.",
+        "description": "Cancel. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "recharges.orders.cancel",
         "parameters": [
           {
@@ -19887,12 +19952,12 @@
         ],
         "summary": "Cancel",
         "tags": [
-          "commerce"
+          "recharges"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "recharges"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -19906,7 +19971,7 @@
     },
     "/app/v3/api/recharges/packages": {
       "get": {
-        "description": "List. Reads recharges. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "recharges.packages.list",
         "parameters": [],
         "responses": {
@@ -19961,14 +20026,20 @@
             "description": "Error response."
           }
         },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "recharges"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "recharges"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -19980,7 +20051,7 @@
     },
     "/app/v3/api/recharges/settings": {
       "get": {
-        "description": "Retrieve. Reads recharges. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "recharges.settings.retrieve",
         "parameters": [],
         "responses": {
@@ -20066,12 +20137,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "recharges"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "recharges"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -20083,7 +20154,7 @@
     },
     "/app/v3/api/refunds": {
       "get": {
-        "description": "List. Reads refunds. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "refunds.list",
         "parameters": [],
         "responses": {
@@ -20146,12 +20217,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "refunds"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "refunds"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -20161,7 +20232,7 @@
         "x-write-tables": []
       },
       "post": {
-        "description": "Create. Reads refunds. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "refunds.create",
         "parameters": [],
         "responses": {
@@ -20247,12 +20318,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "refunds"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "refunds"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -20266,7 +20337,7 @@
     },
     "/app/v3/api/refunds/{refundId}": {
       "get": {
-        "description": "Retrieve. Reads refunds. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "refunds.retrieve",
         "parameters": [
           {
@@ -20362,12 +20433,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "refunds"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "refunds"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -21286,7 +21357,7 @@
     },
     "/app/v3/api/shipments/{shipmentId}": {
       "get": {
-        "description": "Retrieve. Reads shipments. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "shipments.retrieve",
         "parameters": [
           {
@@ -21382,12 +21453,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "shipments"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shipments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -21399,7 +21470,7 @@
     },
     "/app/v3/api/shipments/{shipmentId}/packages": {
       "get": {
-        "description": "List. Reads shipments. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "shipments.packages.list",
         "parameters": [
           {
@@ -21472,12 +21543,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "shipments"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shipments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -21489,7 +21560,7 @@
     },
     "/app/v3/api/shipments/{shipmentId}/tracking_events": {
       "get": {
-        "description": "List. Reads shipments. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "shipments.trackingEvents.list",
         "parameters": [
           {
@@ -21562,12 +21633,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "shipments"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shipments"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -21579,7 +21650,7 @@
     },
     "/app/v3/api/shops": {
       "get": {
-        "description": "List. Reads shops. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "shops.list",
         "parameters": [],
         "responses": {
@@ -21647,7 +21718,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -21659,7 +21730,7 @@
     },
     "/app/v3/api/shops/current": {
       "get": {
-        "description": "Retrieve. Reads shops. Writes none. File targets none.",
+        "description": "Retrieve. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.retrieve",
         "parameters": [],
         "responses": {
@@ -21750,7 +21821,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -21762,7 +21833,7 @@
     },
     "/app/v3/api/shops/current/applications": {
       "get": {
-        "description": "List. Reads shops. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.applications.list",
         "parameters": [],
         "responses": {
@@ -21830,7 +21901,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -21842,7 +21913,7 @@
     },
     "/app/v3/api/shops/current/brand_authorizations": {
       "get": {
-        "description": "List. Reads shops. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.brandAuthorizations.list",
         "parameters": [],
         "responses": {
@@ -21910,7 +21981,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -21922,7 +21993,7 @@
     },
     "/app/v3/api/shops/current/business_hours": {
       "get": {
-        "description": "Retrieve. Reads shops. Writes none. File targets none.",
+        "description": "Retrieve. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.businessHours.retrieve",
         "parameters": [],
         "responses": {
@@ -22013,7 +22084,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -22025,7 +22096,7 @@
     },
     "/app/v3/api/shops/current/category_bindings": {
       "get": {
-        "description": "List. Reads shops. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.categoryBindings.list",
         "parameters": [],
         "responses": {
@@ -22093,7 +22164,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -22105,7 +22176,7 @@
     },
     "/app/v3/api/shops/current/channels": {
       "get": {
-        "description": "List. Reads shops. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.channels.list",
         "parameters": [],
         "responses": {
@@ -22173,7 +22244,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -22185,7 +22256,7 @@
     },
     "/app/v3/api/shops/current/customer_services": {
       "get": {
-        "description": "List. Reads shops. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.customerServices.list",
         "parameters": [],
         "responses": {
@@ -22253,7 +22324,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -22265,7 +22336,7 @@
     },
     "/app/v3/api/shops/current/dashboard": {
       "get": {
-        "description": "Retrieve. Reads shops. Writes none. File targets none.",
+        "description": "Retrieve. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.dashboard.retrieve",
         "parameters": [],
         "responses": {
@@ -22356,7 +22427,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -22368,7 +22439,7 @@
     },
     "/app/v3/api/shops/current/deposit_account": {
       "get": {
-        "description": "Retrieve. Reads shops. Writes none. File targets none.",
+        "description": "Retrieve. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.depositAccount.retrieve",
         "parameters": [],
         "responses": {
@@ -22459,7 +22530,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -22471,7 +22542,7 @@
     },
     "/app/v3/api/shops/current/fulfillment_profile": {
       "get": {
-        "description": "Retrieve. Reads shops. Writes none. File targets none.",
+        "description": "Retrieve. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.fulfillmentProfile.retrieve",
         "parameters": [],
         "responses": {
@@ -22562,7 +22633,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -22574,7 +22645,7 @@
     },
     "/app/v3/api/shops/current/inventory/stocks": {
       "get": {
-        "description": "List. Reads shops. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.inventory.stocks.list",
         "parameters": [],
         "responses": {
@@ -22642,7 +22713,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -22654,7 +22725,7 @@
     },
     "/app/v3/api/shops/current/orders": {
       "get": {
-        "description": "List. Reads shops. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.orders.list",
         "parameters": [],
         "responses": {
@@ -22722,7 +22793,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -22734,7 +22805,7 @@
     },
     "/app/v3/api/shops/current/orders/{orderId}": {
       "get": {
-        "description": "Retrieve. Reads shops. Writes none. File targets none.",
+        "description": "Retrieve. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.orders.retrieve",
         "parameters": [
           {
@@ -22835,7 +22906,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -22847,7 +22918,7 @@
     },
     "/app/v3/api/shops/current/policies": {
       "get": {
-        "description": "List. Reads shops. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.policies.list",
         "parameters": [],
         "responses": {
@@ -22915,7 +22986,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -22927,7 +22998,7 @@
     },
     "/app/v3/api/shops/current/products": {
       "get": {
-        "description": "List. Reads shops. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.products.list",
         "parameters": [],
         "responses": {
@@ -22995,7 +23066,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -23007,7 +23078,7 @@
     },
     "/app/v3/api/shops/current/qualifications": {
       "get": {
-        "description": "List. Reads shops. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.qualifications.list",
         "parameters": [],
         "responses": {
@@ -23075,7 +23146,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -23087,7 +23158,7 @@
     },
     "/app/v3/api/shops/current/readiness": {
       "get": {
-        "description": "Retrieve. Reads shops. Writes none. File targets none.",
+        "description": "Retrieve. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.readiness.retrieve",
         "parameters": [],
         "responses": {
@@ -23178,7 +23249,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -23190,7 +23261,7 @@
     },
     "/app/v3/api/shops/current/return_addresses": {
       "get": {
-        "description": "List. Reads shops. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.returnAddresses.list",
         "parameters": [],
         "responses": {
@@ -23258,7 +23329,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -23270,7 +23341,7 @@
     },
     "/app/v3/api/shops/current/risk_signals": {
       "get": {
-        "description": "List. Reads shops. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.riskSignals.list",
         "parameters": [],
         "responses": {
@@ -23338,7 +23409,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -23350,7 +23421,7 @@
     },
     "/app/v3/api/shops/current/service_areas": {
       "get": {
-        "description": "List. Reads shops. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.serviceAreas.list",
         "parameters": [],
         "responses": {
@@ -23418,7 +23489,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -23430,7 +23501,7 @@
     },
     "/app/v3/api/shops/current/settlement_profile": {
       "get": {
-        "description": "Retrieve. Reads shops. Writes none. File targets none.",
+        "description": "Retrieve. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.settlementProfile.retrieve",
         "parameters": [],
         "responses": {
@@ -23521,7 +23592,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -23533,7 +23604,7 @@
     },
     "/app/v3/api/shops/current/settlements": {
       "get": {
-        "description": "List. Reads shops. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.settlements.list",
         "parameters": [],
         "responses": {
@@ -23601,7 +23672,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -23613,7 +23684,7 @@
     },
     "/app/v3/api/shops/current/shipping_templates": {
       "get": {
-        "description": "List. Reads shops. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.shippingTemplates.list",
         "parameters": [],
         "responses": {
@@ -23681,7 +23752,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -23693,7 +23764,7 @@
     },
     "/app/v3/api/shops/current/status_events": {
       "get": {
-        "description": "List. Reads shops. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.statusEvents.list",
         "parameters": [],
         "responses": {
@@ -23761,7 +23832,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -23773,7 +23844,7 @@
     },
     "/app/v3/api/shops/current/verifications": {
       "get": {
-        "description": "List. Reads shops. Writes none. File targets none.",
+        "description": "List. Reads system. Writes none. File targets none.",
         "operationId": "shops.current.verifications.list",
         "parameters": [],
         "responses": {
@@ -23841,7 +23912,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -23853,7 +23924,7 @@
     },
     "/app/v3/api/shops/{shopId}": {
       "get": {
-        "description": "Retrieve. Reads shops. Writes none. File targets none.",
+        "description": "Retrieve. Reads system. Writes none. File targets none.",
         "operationId": "shops.retrieve",
         "parameters": [
           {
@@ -23954,7 +24025,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -23966,7 +24037,7 @@
     },
     "/app/v3/api/system/after_sales/requests": {
       "post": {
-        "description": "Create. Reads aftersales. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "afterSales.requests.create",
         "parameters": [],
         "responses": {
@@ -24057,7 +24128,7 @@
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "aftersales"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -24071,7 +24142,7 @@
     },
     "/app/v3/api/system/after_sales/requests/{afterSalesRequestId}": {
       "patch": {
-        "description": "Update. Reads aftersales. Writes ops_audit_log. File targets none.",
+        "description": "Update. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "afterSales.requests.update",
         "parameters": [
           {
@@ -24172,7 +24243,7 @@
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "aftersales"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -24186,7 +24257,7 @@
     },
     "/app/v3/api/system/after_sales/requests/{afterSalesRequestId}/return_shipments": {
       "post": {
-        "description": "Create. Reads aftersales. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "afterSales.returnShipments.create",
         "parameters": [
           {
@@ -24287,7 +24358,7 @@
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "aftersales"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -24301,7 +24372,7 @@
     },
     "/app/v3/api/system/shops/current/applications": {
       "post": {
-        "description": "Create. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.applications.create",
         "parameters": [],
         "responses": {
@@ -24392,7 +24463,7 @@
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -24406,7 +24477,7 @@
     },
     "/app/v3/api/system/shops/current/brand_authorizations": {
       "put": {
-        "description": "Upsert. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Upsert. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.brandAuthorizations.upsert",
         "parameters": [],
         "responses": {
@@ -24497,7 +24568,7 @@
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -24511,7 +24582,7 @@
     },
     "/app/v3/api/system/shops/current/business_hours": {
       "patch": {
-        "description": "Update. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Update. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.businessHours.update",
         "parameters": [],
         "responses": {
@@ -24602,7 +24673,7 @@
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -24616,7 +24687,7 @@
     },
     "/app/v3/api/system/shops/current/category_bindings": {
       "put": {
-        "description": "Upsert. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Upsert. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.categoryBindings.upsert",
         "parameters": [],
         "responses": {
@@ -24707,7 +24778,7 @@
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -24721,7 +24792,7 @@
     },
     "/app/v3/api/system/shops/current/channels/{channelId}": {
       "patch": {
-        "description": "Update. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Update. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.channels.update",
         "parameters": [
           {
@@ -24822,7 +24893,7 @@
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -24836,7 +24907,7 @@
     },
     "/app/v3/api/system/shops/current/customer_services": {
       "put": {
-        "description": "Upsert. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Upsert. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.customerServices.upsert",
         "parameters": [],
         "responses": {
@@ -24927,7 +24998,7 @@
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -24941,7 +25012,7 @@
     },
     "/app/v3/api/system/shops/current/fulfillment_profile": {
       "patch": {
-        "description": "Update. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Update. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.fulfillmentProfile.update",
         "parameters": [],
         "responses": {
@@ -25032,7 +25103,7 @@
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -25046,7 +25117,7 @@
     },
     "/app/v3/api/system/shops/current/inventory/stocks/{stockId}/adjustments": {
       "post": {
-        "description": "Create. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.inventory.stocks.adjustments.create",
         "parameters": [
           {
@@ -25147,7 +25218,7 @@
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -25161,7 +25232,7 @@
     },
     "/app/v3/api/system/shops/current/orders/{orderId}/fulfillments": {
       "post": {
-        "description": "Create. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.orders.fulfillments.create",
         "parameters": [
           {
@@ -25262,7 +25333,7 @@
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -25276,7 +25347,7 @@
     },
     "/app/v3/api/system/shops/current/policies/{policyId}": {
       "patch": {
-        "description": "Update. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Update. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.policies.update",
         "parameters": [
           {
@@ -25377,7 +25448,7 @@
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -25391,7 +25462,7 @@
     },
     "/app/v3/api/system/shops/current/products": {
       "post": {
-        "description": "Create. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.products.create",
         "parameters": [],
         "responses": {
@@ -25482,7 +25553,7 @@
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -25496,7 +25567,7 @@
     },
     "/app/v3/api/system/shops/current/products/{productId}": {
       "patch": {
-        "description": "Update. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Update. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.products.update",
         "parameters": [
           {
@@ -25597,7 +25668,7 @@
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -25611,7 +25682,7 @@
     },
     "/app/v3/api/system/shops/current/products/{productId}/publish": {
       "post": {
-        "description": "Publish. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Publish. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.products.publish",
         "parameters": [
           {
@@ -25712,7 +25783,7 @@
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -25726,7 +25797,7 @@
     },
     "/app/v3/api/system/shops/current/products/{productId}/unpublish": {
       "post": {
-        "description": "Unpublish. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Unpublish. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.products.unpublish",
         "parameters": [
           {
@@ -25827,7 +25898,7 @@
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -25841,7 +25912,7 @@
     },
     "/app/v3/api/system/shops/current/qualifications": {
       "put": {
-        "description": "Upsert. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Upsert. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.qualifications.upsert",
         "parameters": [],
         "responses": {
@@ -25932,7 +26003,7 @@
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -25946,7 +26017,7 @@
     },
     "/app/v3/api/system/shops/current/return_addresses": {
       "put": {
-        "description": "Upsert. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Upsert. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.returnAddresses.upsert",
         "parameters": [],
         "responses": {
@@ -26037,7 +26108,7 @@
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -26051,7 +26122,7 @@
     },
     "/app/v3/api/system/shops/current/service_areas": {
       "post": {
-        "description": "Create. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.serviceAreas.create",
         "parameters": [],
         "responses": {
@@ -26142,7 +26213,7 @@
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -26156,7 +26227,7 @@
     },
     "/app/v3/api/system/shops/current/service_areas/{serviceAreaId}": {
       "patch": {
-        "description": "Update. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Update. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.serviceAreas.update",
         "parameters": [
           {
@@ -26257,7 +26328,7 @@
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -26271,7 +26342,7 @@
     },
     "/app/v3/api/system/shops/current/settlement_profile": {
       "patch": {
-        "description": "Update. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Update. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.settlementProfile.update",
         "parameters": [],
         "responses": {
@@ -26362,7 +26433,7 @@
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -26376,7 +26447,7 @@
     },
     "/app/v3/api/system/shops/current/shipping_templates": {
       "put": {
-        "description": "Upsert. Reads shops. Writes ops_audit_log. File targets none.",
+        "description": "Upsert. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "shops.current.shippingTemplates.upsert",
         "parameters": [],
         "responses": {
@@ -26467,7 +26538,7 @@
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "shops"
+          "system"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "system",
@@ -26584,7 +26655,7 @@
     },
     "/app/v3/api/wallet/accounts": {
       "get": {
-        "description": "List. Reads wallet. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "wallet.accounts.list",
         "parameters": [],
         "responses": {
@@ -26647,12 +26718,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -26662,9 +26733,112 @@
         "x-write-tables": []
       }
     },
+    "/app/v3/api/wallet/accounts/cash": {
+      "get": {
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
+        "operationId": "wallet.accounts.cash.retrieve",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "properties": {
+                            "item": {
+                              "$ref": "#/components/schemas/WalletAccountsCashRetrieveResult"
+                            }
+                          },
+                          "required": [
+                            "item"
+                          ],
+                          "type": "object"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Retrieve",
+        "tags": [
+          "wallet"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "commerce"
+        ],
+        "x-route-scope": "console",
+        "x-sdk-domain": "commerce",
+        "x-sdkwork-domain": "commerce",
+        "x-sdkwork-resource": "wallet.accounts.cash",
+        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-write-tables": []
+      }
+    },
     "/app/v3/api/wallet/accounts/overview": {
       "get": {
-        "description": "Retrieve. Reads wallet. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "wallet.accounts.overview.retrieve",
         "parameters": [],
         "responses": {
@@ -26750,12 +26924,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -26767,7 +26941,7 @@
     },
     "/app/v3/api/wallet/accounts/points": {
       "get": {
-        "description": "Retrieve. Reads wallet. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "wallet.accounts.points.retrieve",
         "parameters": [],
         "responses": {
@@ -26853,12 +27027,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -26870,7 +27044,7 @@
     },
     "/app/v3/api/wallet/accounts/tokens": {
       "get": {
-        "description": "Retrieve. Reads wallet. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "wallet.accounts.tokens.retrieve",
         "parameters": [],
         "responses": {
@@ -26956,12 +27130,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -26973,7 +27147,7 @@
     },
     "/app/v3/api/wallet/accounts/{accountId}": {
       "get": {
-        "description": "Retrieve. Reads wallet. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "wallet.accounts.retrieve",
         "parameters": [
           {
@@ -27069,12 +27243,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -27086,7 +27260,7 @@
     },
     "/app/v3/api/wallet/adjustments": {
       "post": {
-        "description": "Create. Reads wallet. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "wallet.adjustments.create",
         "parameters": [],
         "responses": {
@@ -27172,12 +27346,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -27191,7 +27365,7 @@
     },
     "/app/v3/api/wallet/exchange_rate": {
       "get": {
-        "description": "Retrieve. Reads wallet. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "wallet.exchangeRate.retrieve",
         "parameters": [],
         "responses": {
@@ -27277,12 +27451,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -27294,7 +27468,7 @@
     },
     "/app/v3/api/wallet/exchange_rules": {
       "get": {
-        "description": "List. Reads wallet. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "wallet.exchangeRules.list",
         "parameters": [],
         "responses": {
@@ -27357,12 +27531,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -27373,8 +27547,86 @@
       }
     },
     "/app/v3/api/wallet/holds": {
+      "get": {
+        "description": "List. Reads commerce. Writes none. File targets none.",
+        "operationId": "wallet.holds.list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SdkWorkListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List",
+        "tags": [
+          "wallet"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "commerce"
+        ],
+        "x-route-scope": "console",
+        "x-sdk-domain": "commerce",
+        "x-sdkwork-domain": "commerce",
+        "x-sdkwork-resource": "wallet.holds",
+        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-write-tables": []
+      },
       "post": {
-        "description": "Create. Reads wallet. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "wallet.holds.create",
         "parameters": [],
         "responses": {
@@ -27460,12 +27712,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -27479,7 +27731,7 @@
     },
     "/app/v3/api/wallet/holds/releases": {
       "post": {
-        "description": "Create. Reads wallet. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "wallet.holds.releases.create",
         "parameters": [],
         "responses": {
@@ -27565,12 +27817,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -27584,7 +27836,7 @@
     },
     "/app/v3/api/wallet/holds/settlements": {
       "post": {
-        "description": "Create. Reads wallet. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "wallet.holds.settlements.create",
         "parameters": [],
         "responses": {
@@ -27670,12 +27922,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -27689,7 +27941,7 @@
     },
     "/app/v3/api/wallet/ledger_entries": {
       "get": {
-        "description": "List. Reads wallet. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "wallet.ledgerEntries.list",
         "parameters": [],
         "responses": {
@@ -27752,12 +28004,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -27769,7 +28021,7 @@
     },
     "/app/v3/api/wallet/ledger_entries/points": {
       "get": {
-        "description": "List. Reads wallet. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "wallet.ledgerEntries.points.list",
         "parameters": [],
         "responses": {
@@ -27832,12 +28084,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -27849,7 +28101,7 @@
     },
     "/app/v3/api/wallet/ledger_entries/{ledgerEntryId}": {
       "get": {
-        "description": "Retrieve. Reads wallet. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "wallet.ledgerEntries.retrieve",
         "parameters": [
           {
@@ -27945,12 +28197,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -27962,7 +28214,7 @@
     },
     "/app/v3/api/wallet/overview": {
       "get": {
-        "description": "Retrieve. Reads wallet. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "wallet.overview.retrieve",
         "parameters": [],
         "responses": {
@@ -28048,12 +28300,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -28065,7 +28317,7 @@
     },
     "/app/v3/api/wallet/point_exchanges": {
       "post": {
-        "description": "Create. Reads wallet. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "wallet.pointExchanges.create",
         "parameters": [],
         "responses": {
@@ -28151,12 +28403,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -28170,7 +28422,7 @@
     },
     "/app/v3/api/wallet/point_exchanges/{exchangeNo}": {
       "get": {
-        "description": "Retrieve. Reads wallet. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "wallet.pointExchanges.retrieve",
         "parameters": [
           {
@@ -28266,12 +28518,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -28283,7 +28535,7 @@
     },
     "/app/v3/api/wallet/point_transfers": {
       "post": {
-        "description": "Create. Reads wallet. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "wallet.pointTransfers.create",
         "parameters": [],
         "responses": {
@@ -28369,12 +28621,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -28388,7 +28640,7 @@
     },
     "/app/v3/api/wallet/points/exchanges/rules": {
       "get": {
-        "description": "List. Reads wallet. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "wallet.points.exchangeRules.list",
         "parameters": [],
         "responses": {
@@ -28451,12 +28703,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -28468,7 +28720,7 @@
     },
     "/app/v3/api/wallet/requests/{requestNo}": {
       "get": {
-        "description": "Retrieve. Reads wallet. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "wallet.requests.retrieve",
         "parameters": [
           {
@@ -28564,12 +28816,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -28581,7 +28833,7 @@
     },
     "/app/v3/api/wallet/tokens": {
       "get": {
-        "description": "Retrieve. Reads wallet. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "wallet.tokens.retrieve",
         "parameters": [],
         "responses": {
@@ -28667,12 +28919,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -28684,7 +28936,7 @@
     },
     "/app/v3/api/wallet/topup_transfers": {
       "post": {
-        "description": "Create. Reads wallet. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "wallet.topupTransfers.create",
         "parameters": [],
         "responses": {
@@ -28770,12 +29022,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -28789,7 +29041,7 @@
     },
     "/app/v3/api/wallet/transactions": {
       "get": {
-        "description": "List. Reads wallet. Writes none. File targets none.",
+        "description": "List. Reads commerce. Writes none. File targets none.",
         "operationId": "wallet.transactions.list",
         "parameters": [],
         "responses": {
@@ -28852,12 +29104,12 @@
         ],
         "summary": "List",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -28869,7 +29121,7 @@
     },
     "/app/v3/api/wallet/transactions/{transactionId}": {
       "get": {
-        "description": "Retrieve. Reads wallet. Writes none. File targets none.",
+        "description": "Retrieve. Reads commerce. Writes none. File targets none.",
         "operationId": "wallet.transactions.retrieve",
         "parameters": [
           {
@@ -28965,12 +29217,12 @@
         ],
         "summary": "Retrieve",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -28982,7 +29234,7 @@
     },
     "/app/v3/api/wallet/withdrawal_transfers": {
       "post": {
-        "description": "Create. Reads wallet. Writes ops_audit_log. File targets none.",
+        "description": "Create. Reads commerce. Writes ops_audit_log. File targets none.",
         "operationId": "wallet.withdrawalTransfers.create",
         "parameters": [],
         "responses": {
@@ -29068,12 +29320,12 @@
         ],
         "summary": "Create",
         "tags": [
-          "commerce"
+          "wallet"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "wallet"
+          "commerce"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
@@ -29100,32 +29352,92 @@
   ],
   "tags": [
     {
+      "description": "accounts operations exposed by Claw Router.",
+      "name": "accounts"
+    },
+    {
+      "description": "addresses operations exposed by Claw Router.",
+      "name": "addresses"
+    },
+    {
       "description": "ai operations exposed by Claw Router.",
       "name": "ai"
+    },
+    {
+      "description": "billing operations exposed by Claw Router.",
+      "name": "billing"
+    },
+    {
+      "description": "cart operations exposed by Claw Router.",
+      "name": "cart"
+    },
+    {
+      "description": "catalog operations exposed by Claw Router.",
+      "name": "catalog"
     },
     {
       "description": "chat operations exposed by Claw Router.",
       "name": "chat"
     },
     {
-      "description": "commerce operations exposed by Claw Router.",
-      "name": "commerce"
+      "description": "checkout operations exposed by Claw Router.",
+      "name": "checkout"
+    },
+    {
+      "description": "fulfillments operations exposed by Claw Router.",
+      "name": "fulfillments"
     },
     {
       "description": "iam operations exposed by Claw Router.",
       "name": "iam"
     },
     {
+      "description": "invoices operations exposed by Claw Router.",
+      "name": "invoices"
+    },
+    {
+      "description": "memberships operations exposed by Claw Router.",
+      "name": "memberships"
+    },
+    {
       "description": "notification operations exposed by Claw Router.",
       "name": "notification"
+    },
+    {
+      "description": "orders operations exposed by Claw Router.",
+      "name": "orders"
+    },
+    {
+      "description": "payments operations exposed by Claw Router.",
+      "name": "payments"
+    },
+    {
+      "description": "promotions operations exposed by Claw Router.",
+      "name": "promotions"
+    },
+    {
+      "description": "recharges operations exposed by Claw Router.",
+      "name": "recharges"
+    },
+    {
+      "description": "refunds operations exposed by Claw Router.",
+      "name": "refunds"
     },
     {
       "description": "runtime operations exposed by Claw Router.",
       "name": "runtime"
     },
     {
+      "description": "shipments operations exposed by Claw Router.",
+      "name": "shipments"
+    },
+    {
       "description": "system operations exposed by Claw Router.",
       "name": "system"
+    },
+    {
+      "description": "wallet operations exposed by Claw Router.",
+      "name": "wallet"
     }
   ],
   "x-api-prefix": "/app/v3/api",

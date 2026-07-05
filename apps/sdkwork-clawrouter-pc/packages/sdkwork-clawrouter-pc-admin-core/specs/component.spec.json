@@ -73,7 +73,7 @@
     "sdkClients": [],
     "sdkDependencies": [
       {
-        "workspace": "clawrouter-backend-domain-transport-generated-typescript",
+        "workspace": "@sdkwork/clawrouter-backend-sdk/domains",
         "surface": "backend-api",
         "credentialMode": "authenticated-backend-admin"
       },

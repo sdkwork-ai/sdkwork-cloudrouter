@@ -139,6 +139,7 @@ pub struct RequestLimitsSectionConfig {
     pub admin_app_json_body_max_bytes: Option<u64>,
     pub admin_skill_json_body_max_bytes: Option<u64>,
     pub payment_callback_body_max_bytes: Option<u64>,
+    pub gateway_invocation_body_max_bytes: Option<u64>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]

@@ -74,9 +74,21 @@ pub struct AdminChannelItem {
     pub deleted_at: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListAdminChannelsQuery {
     pub subject: AdminChannelSubject,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+    pub q: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminChannelListPage {
+    pub items: Vec<AdminChannelItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -165,7 +177,7 @@ pub trait AdminChannelStore {
     fn list_channels<'a>(
         &'a self,
         query: ListAdminChannelsQuery,
-    ) -> AdminChannelCommandFuture<'a, Vec<AdminChannelItem>>;
+    ) -> AdminChannelCommandFuture<'a, AdminChannelListPage>;
 
     fn create_channel<'a>(
         &'a self,

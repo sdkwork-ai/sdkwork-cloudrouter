@@ -8,8 +8,8 @@ use crate::infrastructure::sql::routing_config_change::{
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    AdminApiKeyRateLimitCommandFuture, AdminApiKeyRateLimitItem, AdminApiKeyRateLimitStore,
-    CreateAdminApiKeyRateLimitCommand, ListAdminApiKeyRateLimitsQuery,
+    AdminApiKeyRateLimitCommandFuture, AdminApiKeyRateLimitItem, AdminApiKeyRateLimitListPage,
+    AdminApiKeyRateLimitStore, CreateAdminApiKeyRateLimitCommand, ListAdminApiKeyRateLimitsQuery,
 };
 
 const API_KEY_RATE_LIMIT_TARGET_TYPE: i32 = 44;
@@ -42,7 +42,7 @@ impl AdminApiKeyRateLimitStore for PostgresAdminApiKeyRateLimitStore {
     fn list_api_key_rate_limits<'a>(
         &'a self,
         query: ListAdminApiKeyRateLimitsQuery,
-    ) -> AdminApiKeyRateLimitCommandFuture<'a, Vec<AdminApiKeyRateLimitItem>> {
+    ) -> AdminApiKeyRateLimitCommandFuture<'a, AdminApiKeyRateLimitListPage> {
         Box::pin(async move { list_api_key_rate_limits(&self.pool, query).await })
     }
 
@@ -134,7 +134,11 @@ impl AdminApiKeyRateLimitStore for PostgresAdminApiKeyRateLimitStore {
 async fn list_api_key_rate_limits(
     pool: &PgPool,
     query: ListAdminApiKeyRateLimitsQuery,
-) -> DomainResult<Vec<AdminApiKeyRateLimitItem>> {
+) -> DomainResult<AdminApiKeyRateLimitListPage> {
+    let search = query
+        .q
+        .as_ref()
+        .map(|value| format!("%{}%", value.to_lowercase()));
     let sql = api_key_rate_limit_select_sql(
         r#"
         WHERE q.tenant_id = $1
@@ -142,19 +146,37 @@ async fn list_api_key_rate_limits(
           AND q.subject_type = $3
           AND q.policy_code LIKE 'akrl-%'
           AND q.deleted_at IS NULL
+          AND (
+              $4 IS NULL
+              OR LOWER(COALESCE(k.key_prefix, q.subject_ref_masked, '')) LIKE $4
+              OR LOWER(COALESCE(k.user_id::text, '')) LIKE $4
+          )
         ORDER BY q.updated_at DESC NULLS LAST, q.id DESC
-        LIMIT 200
+        LIMIT $5 OFFSET $6
         "#,
     );
     let rows = sqlx::query(&sql)
         .bind(query.subject.tenant_id)
         .bind(query.subject.organization_id)
         .bind(API_KEY_SUBJECT_TYPE)
+        .bind(search.as_deref())
+        .bind(query.page_size)
+        .bind(query.offset)
         .fetch_all(pool)
         .await
         .map_err(|error| store_error("failed to list api key rate limits", error))?;
 
-    rows.into_iter().map(item_from_row).collect()
+    let total = rows
+        .first()
+        .and_then(|row| row.try_get::<i64, _>("total").ok())
+        .unwrap_or(0);
+    let items = rows.into_iter().map(item_from_row).collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminApiKeyRateLimitListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn find_api_key(
@@ -487,7 +509,8 @@ fn api_key_rate_limit_select_sql(predicate: &str) -> String {
             q.burst_limit::text AS burst,
             q.status,
             q.exhausted_at::text AS exhausted_at,
-            q.deleted_at::text AS deleted_at
+            q.deleted_at::text AS deleted_at,
+            COUNT(*) OVER() AS total
         FROM ai_quota_policy q
         LEFT JOIN iam_gateway_api_key k
           ON q.subject_type = {API_KEY_SUBJECT_TYPE}

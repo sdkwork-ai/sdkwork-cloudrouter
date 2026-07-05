@@ -173,6 +173,7 @@ pub use openai_runtime::{OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig}
 pub use openai_usage::OpenAiUsageRecorder;
 pub use payment_aggregate::{
     payment_aggregate_router, payment_aggregate_router_with_runtime_store,
+    payment_aggregate_router_with_runtime_store_and_registry,
 };
 pub use sdkwork_models_catalog_service::admin_ai_resource_router_with_store;
 pub use sdkwork_models_catalog_service::{

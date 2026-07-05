@@ -22,7 +22,7 @@ test("sdk reference generation calls generated app SDK routes", () => {
     "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-sdk-reference/src/sdkReferenceGenerationService.ts",
   );
   const appSdkSource = readWorkspaceFile(
-    "../sdkwork-documents/sdks/sdkwork-documents-app-sdk/sdkwork-documents-app-sdk-typescript/generated/server-openapi/src/api/sdk-reference.ts",
+    "../sdkwork-documents/sdks/sdkwork-documents-app-sdk/sdkwork-documents-app-sdk-typescript/src/index.ts/api/sdk-reference.ts",
   );
 
   for (const source of [pageSource, serviceSource]) {

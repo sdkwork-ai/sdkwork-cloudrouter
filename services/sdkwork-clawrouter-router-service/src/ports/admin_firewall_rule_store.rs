@@ -27,9 +27,21 @@ pub struct AdminFirewallRuleItem {
     pub deleted_at: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListAdminFirewallRulesQuery {
     pub subject: AdminFirewallRuleSubject,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+    pub q: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminFirewallRuleListPage {
+    pub items: Vec<AdminFirewallRuleItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -66,7 +78,7 @@ pub trait AdminFirewallRuleStore {
     fn list_firewall_rules<'a>(
         &'a self,
         query: ListAdminFirewallRulesQuery,
-    ) -> AdminFirewallRuleCommandFuture<'a, Vec<AdminFirewallRuleItem>>;
+    ) -> AdminFirewallRuleCommandFuture<'a, AdminFirewallRuleListPage>;
 
     fn create_firewall_rule<'a>(
         &'a self,

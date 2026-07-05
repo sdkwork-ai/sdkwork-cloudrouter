@@ -223,7 +223,7 @@
         }
       },
       {
-        "sdkFamily": "clawrouter-app-domain-transport",
+        "sdkFamily": "clawrouter-app-sdk",
         "packageName": "@sdkwork/clawrouter-pc-core",
         "surface": "app-api",
         "apiPrefix": "/app/v3/api",
@@ -240,7 +240,7 @@
         }
       },
       {
-        "sdkFamily": "clawrouter-backend-domain-transport",
+        "sdkFamily": "clawrouter-backend-sdk",
         "packageName": "@sdkwork/clawrouter-pc-core",
         "surface": "backend-api",
         "apiPrefix": "/backend/v3/api",
@@ -311,7 +311,7 @@
       },
       {
         "sdkFamily": "sdkwork-drive-backend-sdk",
-        "packageName": "sdkwork-drive-backend-sdk-generated-typescript",
+        "packageName": "@sdkwork/drive-backend-sdk",
         "surface": "backend-api",
         "apiPrefix": "/backend/v3/api",
         "sourceExport": "./sdk-clients",
@@ -329,7 +329,7 @@
       },
       {
         "sdkFamily": "sdkwork-generations-app-sdk",
-        "packageName": "sdkwork-generations-app-sdk-generated-typescript",
+        "packageName": "@sdkwork/generations-app-sdk",
         "surface": "app-api",
         "apiPrefix": "/app/v3/api",
         "sourceExport": "./sdk-clients",

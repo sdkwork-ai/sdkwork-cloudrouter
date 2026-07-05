@@ -364,11 +364,19 @@ async fn sqlite_admin_channel_group_store_creates_and_updates_direct_resource_ac
 
     let listed = store
         .list_channel_groups(
-            sdkwork_clawrouter_router_service::ports::ListAdminChannelGroupsQuery { subject },
+            sdkwork_clawrouter_router_service::ports::ListAdminChannelGroupsQuery {
+                subject,
+                page_no: 1,
+                page_size: 100,
+                offset: 0,
+                q: None,
+                group_id: None,
+            },
         )
         .await
         .unwrap();
     let listed_group = listed
+        .items
         .iter()
         .find(|item| item.id == created.id)
         .expect("updated resource access group should be listed");

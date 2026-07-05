@@ -17,29 +17,52 @@ pub struct AdminMarketingSubject {
     pub operator_type: i32,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminMarketingListPage<T> {
+    pub items: Vec<T>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ListPromotionOffersQuery {
     pub subject: AdminMarketingSubject,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ListPromotionCouponStocksQuery {
     pub subject: AdminMarketingSubject,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ListPromotionCodesQuery {
     pub subject: AdminMarketingSubject,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ListPromotionCodeRedemptionsQuery {
     pub subject: AdminMarketingSubject,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ListAdminRechargeRecordsQuery {
     pub subject: AdminMarketingSubject,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -52,6 +75,9 @@ pub struct LoadAdminRechargeRecordQuery {
 pub struct ListAdminRechargePackagesQuery {
     pub subject: AdminMarketingSubject,
     pub status: Option<AdminRechargePackageStatus>,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -60,6 +86,9 @@ pub struct ListAdminExchangeRulesQuery {
     pub source_asset_type: Option<String>,
     pub target_asset_type: Option<String>,
     pub status: Option<String>,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -88,11 +117,17 @@ pub struct RechargeSettingsUpdateCommand {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ListAdminPaymentAttemptsQuery {
     pub subject: AdminMarketingSubject,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ListAdminReferralStatsQuery {
     pub subject: AdminMarketingSubject,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -322,7 +357,7 @@ pub trait AdminMarketingStore {
     fn list_promotion_offers<'a>(
         &'a self,
         query: ListPromotionOffersQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<PromotionOfferItem>>;
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<PromotionOfferItem>>;
 
     fn create_promotion_offer<'a>(
         &'a self,
@@ -342,7 +377,7 @@ pub trait AdminMarketingStore {
     fn list_promotion_coupon_stocks<'a>(
         &'a self,
         query: ListPromotionCouponStocksQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<PromotionCouponStockItem>>;
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<PromotionCouponStockItem>>;
 
     fn generate_promotion_coupon_stock<'a>(
         &'a self,
@@ -352,7 +387,7 @@ pub trait AdminMarketingStore {
     fn list_promotion_codes<'a>(
         &'a self,
         query: ListPromotionCodesQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<PromotionCodeItem>>;
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<PromotionCodeItem>>;
 
     fn update_promotion_code_status<'a>(
         &'a self,
@@ -362,12 +397,12 @@ pub trait AdminMarketingStore {
     fn list_promotion_code_redemptions<'a>(
         &'a self,
         query: ListPromotionCodeRedemptionsQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<PromotionCodeRedemptionItem>>;
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<PromotionCodeRedemptionItem>>;
 
     fn list_recharge_records<'a>(
         &'a self,
         query: ListAdminRechargeRecordsQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<AdminRechargeRecordItem>>;
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<AdminRechargeRecordItem>>;
 
     fn load_recharge_record<'a>(
         &'a self,
@@ -377,12 +412,12 @@ pub trait AdminMarketingStore {
     fn list_recharge_packages<'a>(
         &'a self,
         query: ListAdminRechargePackagesQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<AdminRechargePackageItem>>;
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<AdminRechargePackageItem>>;
 
     fn list_exchange_rules<'a>(
         &'a self,
         query: ListAdminExchangeRulesQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<AdminExchangeRuleItem>>;
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<AdminExchangeRuleItem>>;
 
     fn load_recharge_settings<'a>(
         &'a self,
@@ -417,10 +452,10 @@ pub trait AdminMarketingStore {
     fn list_payment_attempts<'a>(
         &'a self,
         query: ListAdminPaymentAttemptsQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<AdminPaymentAttemptItem>>;
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<AdminPaymentAttemptItem>>;
 
     fn list_referral_stats<'a>(
         &'a self,
         query: ListAdminReferralStatsQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<AdminReferralStatItem>>;
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<AdminReferralStatItem>>;
 }

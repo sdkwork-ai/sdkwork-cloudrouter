@@ -29,21 +29,14 @@ impl ProviderAdapter for AliCloudProviderAdapter {
     }
 
     fn endpoints(&self) -> Vec<ProviderAdapterEndpoint> {
+        // Catalog mapping only; upstream HTTP is handled by cloud-gateway passthrough relay.
         vec![text_generation::endpoint_manifest()]
     }
 
     fn resolve_endpoint(
         &self,
-        request: &sdkwork_claw_provider_adapter_contract::AdapterInvocationRequest,
+        _request: &sdkwork_claw_provider_adapter_contract::AdapterInvocationRequest,
     ) -> Option<Arc<dyn EndpointAdapter>> {
-        if request.invocation.endpoint_key == text_generation::ENDPOINT_KEY
-            && request.invocation.method.eq_ignore_ascii_case("POST")
-            && request.invocation.standard_path == text_generation::STANDARD_PATH
-        {
-            return Some(Arc::new(
-                text_generation::AliCloudBailianTextGenerationAdapter,
-            ));
-        }
         None
     }
 }

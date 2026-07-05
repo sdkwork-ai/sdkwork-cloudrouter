@@ -29,7 +29,9 @@ impl AppRuntimeStore for PostgresAppRuntimeStore {
         query: AppRuntimeInvocationQuery,
     ) -> AppRuntimeFuture<'a, AppRuntimeInvocationList> {
         Box::pin(async move {
-            let offset = (query.page.max(1) - 1) * query.page_size.max(1);
+            let page = query.page.max(1);
+            let page_size = query.page_size.max(1);
+            let offset = (page - 1) * page_size;
             let sql = invocation_select_sql(
                 r#"
                   AND ($4 IS NULL OR conversation_id = $4)
@@ -40,6 +42,7 @@ impl AppRuntimeStore for PostgresAppRuntimeStore {
                 ORDER BY created_at DESC NULLS LAST, id DESC
                 LIMIT $9 OFFSET $10
                 "#,
+                true,
             );
             let rows = sqlx::query(&sql)
                 .bind(subject.tenant_id)
@@ -50,15 +53,25 @@ impl AppRuntimeStore for PostgresAppRuntimeStore {
                 .bind(&query.agent_session_id)
                 .bind(&query.runtime)
                 .bind(&query.status)
-                .bind(query.page_size.max(1))
+                .bind(page_size)
                 .bind(offset)
                 .fetch_all(&self.pool)
                 .await
                 .map_err(sql_error)?;
-            rows.into_iter()
+            let total = rows
+                .first()
+                .and_then(|row| row.try_get::<i64, _>("total").ok())
+                .unwrap_or(0);
+            let items = rows
+                .into_iter()
                 .map(row_to_invocation)
-                .collect::<DomainResult<Vec<_>>>()
-                .map(|items| AppRuntimeInvocationList { items })
+                .collect::<DomainResult<Vec<_>>>()?;
+            Ok(AppRuntimeInvocationList {
+                items,
+                total,
+                page_no: page,
+                page_size,
+            })
         })
     }
 
@@ -248,7 +261,9 @@ impl AppRuntimeStore for PostgresAppRuntimeStore {
         page_size: i64,
     ) -> AppRuntimeFuture<'a, AppRuntimeEventList> {
         Box::pin(async move {
-            let offset = (page.max(1) - 1) * page_size.max(1);
+            let page = page.max(1);
+            let page_size = page_size.max(1);
+            let offset = (page - 1) * page_size;
             let invocation = load_invocation_row_by_uuid(&self.pool, subject, &invocation_id)
                 .await?
                 .ok_or_else(|| DomainError::not_found("runtime invocation was not found"))?;
@@ -257,7 +272,8 @@ impl AppRuntimeStore for PostgresAppRuntimeStore {
                 SELECT
                     e.*,
                     i.uuid AS invocation_uuid,
-                    CAST(e.created_at AS TEXT) AS created_at_text
+                    CAST(e.created_at AS TEXT) AS created_at_text,
+                    COUNT(*) OVER() AS total
                 FROM ai_runtime_invocation_event e
                 INNER JOIN ai_runtime_invocation i
                   ON i.id = e.invocation_id
@@ -275,15 +291,25 @@ impl AppRuntimeStore for PostgresAppRuntimeStore {
             .bind(subject.organization_id)
             .bind(integer_cell(&invocation, "id"))
             .bind(subject.user_id)
-            .bind(page_size.max(1))
+            .bind(page_size)
             .bind(offset)
             .fetch_all(&self.pool)
             .await
             .map_err(sql_error)?;
-            rows.into_iter()
+            let total = rows
+                .first()
+                .and_then(|row| row.try_get::<i64, _>("total").ok())
+                .unwrap_or(0);
+            let items = rows
+                .into_iter()
                 .map(row_to_event)
-                .collect::<DomainResult<Vec<_>>>()
-                .map(|items| AppRuntimeEventList { items })
+                .collect::<DomainResult<Vec<_>>>()?;
+            Ok(AppRuntimeEventList {
+                items,
+                total,
+                page_no: page,
+                page_size,
+            })
         })
     }
 
@@ -330,7 +356,15 @@ impl AppRuntimeStore for PostgresAppRuntimeStore {
             rows.into_iter()
                 .map(row_to_event)
                 .collect::<DomainResult<Vec<_>>>()
-                .map(|items| AppRuntimeEventList { items })
+                .map(|items| {
+                    let total = items.len() as i64;
+                    AppRuntimeEventList {
+                        items,
+                        total,
+                        page_no: 1,
+                        page_size: limit.max(1),
+                    }
+                })
         })
     }
 
@@ -418,13 +452,15 @@ impl AppRuntimeStore for PostgresAppRuntimeStore {
         page_size: i64,
     ) -> AppRuntimeFuture<'a, AppRuntimeArtifactList> {
         Box::pin(async move {
-            let offset = (page.max(1) - 1) * page_size.max(1);
+            let page = page.max(1);
+            let page_size = page_size.max(1);
+            let offset = (page - 1) * page_size;
             load_invocation_row_by_uuid(&self.pool, subject, &invocation_id)
                 .await?
                 .ok_or_else(|| DomainError::not_found("runtime invocation was not found"))?;
             let rows = sqlx::query(
                 r#"
-                SELECT *, CAST(created_at AS TEXT) AS created_at_text
+                SELECT *, CAST(created_at AS TEXT) AS created_at_text, COUNT(*) OVER() AS total
                 FROM ai_runtime_artifact
                 WHERE tenant_id = $1
                   AND organization_id = $2
@@ -438,15 +474,25 @@ impl AppRuntimeStore for PostgresAppRuntimeStore {
             .bind(subject.organization_id)
             .bind(subject.user_id)
             .bind(&invocation_id)
-            .bind(page_size.max(1))
+            .bind(page_size)
             .bind(offset)
             .fetch_all(&self.pool)
             .await
             .map_err(sql_error)?;
-            rows.into_iter()
+            let total = rows
+                .first()
+                .and_then(|row| row.try_get::<i64, _>("total").ok())
+                .unwrap_or(0);
+            let items = rows
+                .into_iter()
                 .map(row_to_artifact)
-                .collect::<DomainResult<Vec<_>>>()
-                .map(|items| AppRuntimeArtifactList { items })
+                .collect::<DomainResult<Vec<_>>>()?;
+            Ok(AppRuntimeArtifactList {
+                items,
+                total,
+                page_no: page,
+                page_size,
+            })
         })
     }
 
@@ -740,7 +786,7 @@ async fn load_invocation_row_by_uuid(
     subject: AppRuntimeSubject,
     invocation_id: &str,
 ) -> DomainResult<Option<sqlx::postgres::PgRow>> {
-    let sql = invocation_select_sql("AND uuid = $4 LIMIT 1");
+    let sql = invocation_select_sql("AND uuid = $4 LIMIT 1", false);
     sqlx::query(&sql)
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
@@ -756,7 +802,7 @@ async fn load_invocation_row_by_uuid_for_update_in_tx(
     subject: AppRuntimeSubject,
     invocation_id: &str,
 ) -> DomainResult<Option<sqlx::postgres::PgRow>> {
-    let sql = invocation_select_sql("AND uuid = $4 LIMIT 1 FOR UPDATE");
+    let sql = invocation_select_sql("AND uuid = $4 LIMIT 1 FOR UPDATE", false);
     sqlx::query(&sql)
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
@@ -1034,7 +1080,12 @@ async fn validate_context_agent_step(
         .ok_or_else(|| DomainError::not_found("agent run step was not found"))
 }
 
-fn invocation_select_sql(extra: &str) -> String {
+fn invocation_select_sql(extra: &str, include_total: bool) -> String {
+    let total_expr = if include_total {
+        ", COUNT(*) OVER() AS total"
+    } else {
+        ""
+    };
     format!(
         r#"
         SELECT
@@ -1079,6 +1130,7 @@ fn invocation_select_sql(extra: &str) -> String {
             request_json::text AS request_json,
             metadata::text AS metadata,
             CAST(created_at AS TEXT) AS created_at
+            {total_expr}
         FROM ai_runtime_invocation
         WHERE tenant_id = $1
           AND organization_id = $2

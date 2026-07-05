@@ -4,7 +4,7 @@ use sqlx::{PgPool, Postgres, Row, Transaction};
 use crate::domain::{DomainError, DomainResult};
 use crate::ports::{
     AppChatConversationItem, AppChatConversationList, AppChatFuture, AppChatMessageItem,
-    AppChatStore, AppChatSubject, AppChatTurnItem, AppChatTurnOutcome, AppChatUsageSnapshot,
+    AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnItem, AppChatTurnOutcome, AppChatUsageSnapshot,
     CompleteAppChatTurnCommand, CreateAppChatConversationCommand, CreateAppChatTurnCommand,
 };
 
@@ -27,7 +27,9 @@ impl AppChatStore for PostgresAppChatStore {
         page_size: i64,
     ) -> AppChatFuture<'a, AppChatConversationList> {
         Box::pin(async move {
-            let offset = (page.max(1) - 1) * page_size.max(1);
+            let page = page.max(1);
+            let page_size = page_size.max(1);
+            let offset = (page - 1) * page_size;
             let sql = conversation_select_sql(
                 r#"
                   AND c.status <> 'deleted'
@@ -35,20 +37,31 @@ impl AppChatStore for PostgresAppChatStore {
                 ORDER BY c.updated_at DESC NULLS LAST, c.id DESC
                 LIMIT $4 OFFSET $5
                 "#,
+                true,
             );
             let rows = sqlx::query(&sql)
                 .bind(subject.tenant_id)
                 .bind(subject.organization_id)
                 .bind(subject.user_id)
-                .bind(page_size.max(1))
+                .bind(page_size)
                 .bind(offset)
                 .fetch_all(&self.pool)
                 .await
                 .map_err(sql_error)?;
-            rows.into_iter()
+            let total = rows
+                .first()
+                .and_then(|row| row.try_get::<i64, _>("total").ok())
+                .unwrap_or(0);
+            let items = rows
+                .into_iter()
                 .map(row_to_conversation)
-                .collect::<DomainResult<Vec<_>>>()
-                .map(|items| AppChatConversationList { items })
+                .collect::<DomainResult<Vec<_>>>()?;
+            Ok(AppChatConversationList {
+                items,
+                total,
+                page_no: page,
+                page_size,
+            })
         })
     }
 
@@ -65,6 +78,7 @@ impl AppChatStore for PostgresAppChatStore {
                   AND c.deleted_at IS NULL
                 LIMIT 1
                 "#,
+                false,
             );
             let row = sqlx::query(&sql)
                 .bind(subject.tenant_id)
@@ -146,8 +160,13 @@ impl AppChatStore for PostgresAppChatStore {
         &'a self,
         subject: AppChatSubject,
         conversation_id: String,
-    ) -> AppChatFuture<'a, Vec<AppChatMessageItem>> {
+        page: i64,
+        page_size: i64,
+    ) -> AppChatFuture<'a, AppChatMessageList> {
         Box::pin(async move {
+            let page = page.max(1);
+            let page_size = page_size.max(1);
+            let offset = (page - 1) * page_size;
             let rows = sqlx::query(
                 r#"
                 SELECT
@@ -171,7 +190,8 @@ impl AppChatStore for PostgresAppChatStore {
                     u.total_tokens AS usage_total_tokens,
                     CAST(u.cost_amount AS TEXT) AS usage_cost_amount,
                     u.currency AS usage_currency,
-                    CAST(m.created_at AS TEXT) AS created_at
+                    CAST(m.created_at AS TEXT) AS created_at,
+                    COUNT(*) OVER() AS total
                 FROM ai_chat_message m
                 INNER JOIN ai_chat_conversation c
                   ON c.id = m.conversation_id
@@ -193,16 +213,32 @@ impl AppChatStore for PostgresAppChatStore {
                   AND c.conversation_code = $4
                   AND m.status <> 'deleted'
                 ORDER BY m.message_no ASC, m.id ASC
+                LIMIT $5 OFFSET $6
                 "#,
             )
             .bind(subject.tenant_id)
             .bind(subject.organization_id)
             .bind(subject.user_id)
             .bind(conversation_id)
+            .bind(page_size)
+            .bind(offset)
             .fetch_all(&self.pool)
             .await
             .map_err(sql_error)?;
-            rows.into_iter().map(row_to_message).collect()
+            let total = rows
+                .first()
+                .and_then(|row| row.try_get::<i64, _>("total").ok())
+                .unwrap_or(0);
+            let items = rows
+                .into_iter()
+                .map(row_to_message)
+                .collect::<DomainResult<Vec<_>>>()?;
+            Ok(AppChatMessageList {
+                items,
+                total,
+                page_no: page,
+                page_size,
+            })
         })
     }
 
@@ -1779,7 +1815,12 @@ async fn insert_item(
     .map_err(sql_error)
 }
 
-fn conversation_select_sql(extra: &str) -> String {
+fn conversation_select_sql(extra: &str, include_total: bool) -> String {
+    let total_expr = if include_total {
+        ", COUNT(*) OVER() AS total"
+    } else {
+        ""
+    };
     format!(
         r#"
         SELECT
@@ -1797,6 +1838,7 @@ fn conversation_select_sql(extra: &str) -> String {
             c.turn_count,
             CAST(c.created_at AS TEXT) AS created_at,
             CAST(c.updated_at AS TEXT) AS updated_at
+            {total_expr}
         FROM ai_chat_conversation c
         WHERE c.tenant_id = $1
           AND c.organization_id = $2

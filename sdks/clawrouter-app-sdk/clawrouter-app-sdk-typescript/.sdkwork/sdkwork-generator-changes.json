@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "@sdkwork/clawrouter-app-sdk"
   },
-  "changeFingerprint": "5e4575375782efdf697b5d795149112a6d6134716c34ad58f39ab15ba6142e04",
+  "changeFingerprint": "fcc98f92a6e00999e296439503d5a48a50134781255cf61a45a524d387919da8",
   "changes": {
     "createdGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -143,6 +143,10 @@
       "src/types/turn-responses-create-result.ts",
       "src/types/turns-create-response.ts",
       "src/types/turns-create-result.ts",
+      "src/types/users-settings-retrieve-response.ts",
+      "src/types/users-settings-retrieve-result.ts",
+      "src/types/users-settings-update-response.ts",
+      "src/types/users-settings-update-result.ts",
       "tsconfig.json"
     ],
     "updatedGeneratedFiles": [],
@@ -293,7 +297,11 @@
           "src/types/turn-responses-create-response.ts",
           "src/types/turn-responses-create-result.ts",
           "src/types/turns-create-response.ts",
-          "src/types/turns-create-result.ts"
+          "src/types/turns-create-result.ts",
+          "src/types/users-settings-retrieve-response.ts",
+          "src/types/users-settings-retrieve-result.ts",
+          "src/types/users-settings-update-response.ts",
+          "src/types/users-settings-update-result.ts"
         ]
       },
       {

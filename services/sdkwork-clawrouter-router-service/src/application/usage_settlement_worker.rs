@@ -40,13 +40,47 @@ impl UsageSettlementWorkerConfig {
 impl Default for UsageSettlementWorkerConfig {
     fn default() -> Self {
         Self {
-            enabled: true,
+            enabled: false,
             tenant_id: 0,
             organization_id: 0,
             batch_size: DEFAULT_BATCH_SIZE,
             interval_millis: DEFAULT_INTERVAL_MILLIS,
         }
     }
+}
+
+impl UsageSettlementWorkerConfig {
+    pub fn validate_for_deployment(&self) -> Result<(), String> {
+        let config = self.normalized();
+        if !config.enabled {
+            return Ok(());
+        }
+
+        if config.tenant_id > 0 {
+            return Ok(());
+        }
+
+        if platform_settlement_scope_allowed() {
+            return Ok(());
+        }
+
+        Err(
+            "usage settlement worker requires SDKWORK_CLAW_USAGE_SETTLEMENT_TENANT_ID > 0 or explicit SDKWORK_CLAW_USAGE_SETTLEMENT_PLATFORM_SCOPE=true when enabled"
+                .to_owned(),
+        )
+    }
+}
+
+fn platform_settlement_scope_allowed() -> bool {
+    std::env::var("SDKWORK_CLAW_USAGE_SETTLEMENT_PLATFORM_SCOPE")
+        .ok()
+        .map(|value| {
+            matches!(
+                value.trim().to_ascii_lowercase().as_str(),
+                "1" | "true" | "yes" | "on"
+            )
+        })
+        .unwrap_or(false)
 }
 
 #[derive(Clone)]

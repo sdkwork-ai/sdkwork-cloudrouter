@@ -114,6 +114,27 @@ function assertPortalCommandShims() {
   }
 }
 
+function assertTsconfigDoesNotAliasWorkspacePackages() {
+  const tsconfig = readJson('tsconfig.json');
+  const offenders = Object.keys(tsconfig.compilerOptions?.paths ?? {}).filter(
+    (entry) => entry.startsWith('@sdkwork/') || entry.endsWith('-generated-typescript'),
+  );
+
+  if (offenders.length > 0) {
+    throw new Error(`Portal tsconfig.json must not map workspace packages through paths: ${offenders.join(', ')}`);
+  }
+}
+
+function assertViteConfigDoesNotAliasWorkspacePackages() {
+  const viteConfig = readFileSync(path.join(portalRoot, 'vite.config.ts'), 'utf8');
+  const workspaceAliasPattern = /find:\s*['"`](@sdkwork\/[^'"`]+|[^'"`]*-generated-typescript)['"`]/gu;
+  const offenders = [...viteConfig.matchAll(workspaceAliasPattern)].map((match) => match[1]);
+
+  if (offenders.length > 0) {
+    throw new Error(`Portal Vite config must not alias workspace packages: ${offenders.join(', ')}`);
+  }
+}
+
 function assertViteConfigDoesNotAliasRuntimeDependencies() {
   const viteConfig = readFileSync(path.join(portalRoot, 'vite.config.ts'), 'utf8');
   const forbidden = forbiddenAliasTokens.filter((dependency) => {
@@ -138,6 +159,8 @@ try {
   assertDirectDependencies();
   assertRuntimePackagesResolve();
   assertPortalCommandShims();
+  assertTsconfigDoesNotAliasWorkspacePackages();
+  assertViteConfigDoesNotAliasWorkspacePackages();
   assertViteConfigDoesNotAliasRuntimeDependencies();
   await assertMotionReactExports();
   console.log('Portal dependency preflight passed.');

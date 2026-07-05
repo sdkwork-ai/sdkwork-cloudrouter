@@ -151,7 +151,7 @@ frontend route classification is not in portal App.tsx: /admin/oauth/secrets
 frontend route classification is not in portal App.tsx: /admin/oauth/surfaces
 frontend route classification is not in portal App.tsx: /admin/oauth/tenant-bindings
 frontend route classification is not in portal App.tsx: /admin/oauth/webhooks
-schema content route / curated seed static source manifest schema table plus_app is not in provenance_tables
+schema content route / curated seed static source manifest schema table appstore_app is not in provenance_tables
 sdk-backed route /admin/catalog must use getClawRouterBackendSdkClient
 sdk-backed route /admin/catalog/categories must use getClawRouterBackendSdkClient
 sdk-backed route /admin/catalog/products must use getClawRouterBackendSdkClient

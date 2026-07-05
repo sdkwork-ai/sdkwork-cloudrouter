@@ -109,6 +109,7 @@ version = "0.3.0"
 license-file = "LICENSE"
 
 [workspace.dependencies]
+sdkwork-api-cloud-gateway-registry = { path = "../sdkwork-api-cloud-gateway/crates/sdkwork-api-cloud-gateway-registry" }
 anyhow = "1.0"
 axum = { version = "0.8", features = ["multipart"] }
 base64 = "0.22.1"
@@ -164,8 +165,6 @@ sdkwork-clawrouter-standalone-gateway = { path = "services/sdkwork-clawrouter-st
 sdkwork-clawrouter-admin-gateway = { path = "services/sdkwork-clawrouter-admin-gateway" }
 sdkwork-routes-clawrouter-app-api = { path = "crates/sdkwork-routes-clawrouter-app-api" }
 sdkwork-routes-clawrouter-backend-api = { path = "crates/sdkwork-routes-clawrouter-backend-api" }
-sdkwork_routes_clawrouter_app_api = { package = "sdkwork-routes-clawrouter-app-api", path = "crates/sdkwork-routes-clawrouter-app-api" }
-sdkwork_routes_clawrouter_backend_api = { package = "sdkwork-routes-clawrouter-backend-api", path = "crates/sdkwork-routes-clawrouter-backend-api" }
 sdkwork-claw-installer = { path = "services/sdkwork-claw-installer" }
 sdkwork-clawrouter-cloud-gateway = { path = "crates/sdkwork-clawrouter-cloud-gateway" }
 sdkwork-api-cloud-gateway = { path = "../sdkwork-api-cloud-gateway/crates/sdkwork-api-cloud-gateway" }
@@ -187,7 +186,6 @@ sdkwork_routes_models_catalog_backend_api = { package = "sdkwork-routes-models-c
 sdkwork-id-core = { path = "../sdkwork-id/crates/sdkwork-id-core" }
 sdkwork_iam_context_service = { package = "sdkwork-iam-context-service", path = "../sdkwork-iam/crates/sdkwork-iam-context-service" }
 sdkwork_iam_directory_repository_sqlx = { package = "sdkwork-iam-directory-repository-sqlx", path = "../sdkwork-iam/crates/sdkwork-iam-directory-repository-sqlx" }
-sdkwork_rpc_core = { package = "sdkwork-rpc-core-rust", path = "../sdkwork-appbase/crates/sdkwork-rpc-core-rust" }
 sdkwork-rpc-core = { path = "../sdkwork-rpc-framework/crates/sdkwork-rpc-core" }
 sdkwork-rpc-discovery = { path = "../sdkwork-rpc-framework/crates/sdkwork-rpc-discovery" }
 sdkwork-rpc-server = { path = "../sdkwork-rpc-framework/crates/sdkwork-rpc-server" }
@@ -276,10 +274,6 @@ sdkwork-database-spi = { path = "../sdkwork-database/crates/sdkwork-database-spi
 sdkwork-database-sqlx = { path = "../sdkwork-database/crates/sdkwork-database-sqlx" }
 sdkwork-database-repository = { path = "../sdkwork-database/crates/sdkwork-database-repository" }
 sdkwork-database-id = { path = "../sdkwork-database/crates/sdkwork-database-id" }
-sdkwork_database_config = { path = "../sdkwork-database/crates/sdkwork-database-config", package = "sdkwork-database-config" }
-sdkwork_database_lifecycle = { path = "../sdkwork-database/crates/sdkwork-database-lifecycle", package = "sdkwork-database-lifecycle" }
-sdkwork_database_spi = { path = "../sdkwork-database/crates/sdkwork-database-spi", package = "sdkwork-database-spi" }
-sdkwork_database_sqlx = { path = "../sdkwork-database/crates/sdkwork-database-sqlx", package = "sdkwork-database-sqlx" }
 sdkwork-clawrouter-database-host = { path = "crates/sdkwork-clawrouter-database-host" }
 sdkwork-utils-rust = { path = "../sdkwork-utils/packages/sdkwork-utils-rust" }
 

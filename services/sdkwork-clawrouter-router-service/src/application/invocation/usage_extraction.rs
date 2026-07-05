@@ -149,7 +149,7 @@ fn extract_streaming_usage(invocation: &mut Invocation) -> Result<(), Invocation
     extract_composite_usage_from_body(invocation, &body)
 }
 
-const SSE_USAGE_BODY_LIMIT_BYTES: usize = 16 * 1024 * 1024;
+const SSE_USAGE_BODY_LIMIT_BYTES: usize = 4 * 1024 * 1024;
 
 async fn extract_streaming_usage_async(invocation: &mut Invocation) -> Result<(), InvocationError> {
     // Take the stream body from the dispatch response (via Mutex)

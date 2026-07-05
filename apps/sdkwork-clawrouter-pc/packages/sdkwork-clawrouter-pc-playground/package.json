@@ -18,11 +18,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@sdkwork/generations-pc-playground": "workspace:*",
     "@sdkwork/generations-pc-workspace": "workspace:*",
-    "@sdkwork/image-pc-generation": "workspace:*",
-    "react-markdown": "10.1.0",
-    "rehype-sanitize": "6.0.0",
-    "remark-gfm": "4.0.1",
+    "@sdkwork/models-pc-picker": "workspace:*",
     "@sdkwork/clawrouter-pc-console-api-keys": "workspace:*",
     "@sdkwork/clawroutes-pc-commons": "workspace:*"
   },

@@ -1,11 +1,113 @@
 {
-  "generatedAt": "2026-06-29T14:25:52.469Z",
+  "generatedAt": "2026-07-03T00:00:00Z",
   "generator": "scripts/generate-release-sbom.mjs@2.0.0",
-  "artifacts": [],
+  "artifacts": [
+    {
+      "name": "clawrouter-web-universal-cloud-browser-zip-0.3.0.zip",
+      "packageId": "web-universal-cloud-browser-zip",
+      "path": "dist/install-packages/clawrouter-web-universal-cloud-browser-zip-0.3.0.zip",
+      "url": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter/STABLE/0.3.0/web.zip",
+      "size": null,
+      "sha256": "",
+      "algorithm": "SHA-256",
+      "reproducible": false,
+      "checksumPendingBuild": true,
+      "signature": null,
+      "certificate": null,
+      "chain": null,
+      "generatedAt": "2026-07-03T00:00:00Z",
+      "generator": "scripts/generate-release-sbom.mjs@2.0.0"
+    },
+    {
+      "name": "clawrouter-web-universal-standalone-browser-zip-0.3.0.zip",
+      "packageId": "web-universal-standalone-browser-zip",
+      "path": "dist/install-packages/clawrouter-web-universal-standalone-browser-zip-0.3.0.zip",
+      "url": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter/STABLE/0.3.0/standalone/web.zip",
+      "size": null,
+      "sha256": "",
+      "algorithm": "SHA-256",
+      "reproducible": false,
+      "checksumPendingBuild": true,
+      "signature": null,
+      "certificate": null,
+      "chain": null,
+      "generatedAt": "2026-07-03T00:00:00Z",
+      "generator": "scripts/generate-release-sbom.mjs@2.0.0"
+    },
+    {
+      "name": "clawrouter-windows-x64-standalone-desktop-zip-0.3.0.zip",
+      "packageId": "windows-x64-standalone-desktop-zip",
+      "path": "dist/install-packages/clawrouter-windows-x64-standalone-desktop-zip-0.3.0.zip",
+      "url": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter/STABLE/0.3.0/windows/x64/app.zip",
+      "size": null,
+      "sha256": "",
+      "algorithm": "SHA-256",
+      "reproducible": false,
+      "checksumPendingBuild": true,
+      "signature": null,
+      "certificate": null,
+      "chain": null,
+      "generatedAt": "2026-07-03T00:00:00Z",
+      "generator": "scripts/generate-release-sbom.mjs@2.0.0"
+    },
+    {
+      "name": "clawrouter-macos-universal-standalone-desktop-dmg-0.3.0.dmg",
+      "packageId": "macos-universal-standalone-desktop-dmg",
+      "path": "dist/install-packages/clawrouter-macos-universal-standalone-desktop-dmg-0.3.0.dmg",
+      "url": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter/STABLE/0.3.0/macos/universal/app.dmg",
+      "size": null,
+      "sha256": "",
+      "algorithm": "SHA-256",
+      "reproducible": false,
+      "checksumPendingBuild": true,
+      "signature": null,
+      "certificate": null,
+      "chain": null,
+      "generatedAt": "2026-07-03T00:00:00Z",
+      "generator": "scripts/generate-release-sbom.mjs@2.0.0"
+    },
+    {
+      "name": "clawrouter-linux-x64-standalone-desktop-appimage-0.3.0.AppImage",
+      "packageId": "linux-x64-standalone-desktop-appimage",
+      "path": "dist/install-packages/clawrouter-linux-x64-standalone-desktop-appimage-0.3.0.AppImage",
+      "url": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter/STABLE/0.3.0/linux/generic/x64/app.AppImage",
+      "size": null,
+      "sha256": "",
+      "algorithm": "SHA-256",
+      "reproducible": false,
+      "checksumPendingBuild": true,
+      "signature": null,
+      "certificate": null,
+      "chain": null,
+      "generatedAt": "2026-07-03T00:00:00Z",
+      "generator": "scripts/generate-release-sbom.mjs@2.0.0"
+    }
+  ],
   "provenance": {
     "_type": "https://in-toto.io/Statement/v0.1",
     "predicateType": "https://slsa.dev/provenance/v0.2",
-    "subject": [],
+    "subject": [
+      {
+        "name": "clawrouter-web-universal-cloud-browser-zip-0.3.0.zip",
+        "digest": { "sha256": "" }
+      },
+      {
+        "name": "clawrouter-web-universal-standalone-browser-zip-0.3.0.zip",
+        "digest": { "sha256": "" }
+      },
+      {
+        "name": "clawrouter-windows-x64-standalone-desktop-zip-0.3.0.zip",
+        "digest": { "sha256": "" }
+      },
+      {
+        "name": "clawrouter-macos-universal-standalone-desktop-dmg-0.3.0.dmg",
+        "digest": { "sha256": "" }
+      },
+      {
+        "name": "clawrouter-linux-x64-standalone-desktop-appimage-0.3.0.AppImage",
+        "digest": { "sha256": "" }
+      }
+    ],
     "predicate": {
       "builder": {
         "id": "scripts/generate-release-sbom.mjs@2.0.0"
@@ -15,8 +117,9 @@
         "configSource": {
           "uri": "git+https://github.com/Sdkwork-Cloud/sdkwork-clawrouter",
           "digest": {
-            "cargoLock": "27343161ab9633247e41804e895c7b04e47d9f95bec720c17b78de511bca4d5e",
-            "rootPnpmLock": "5414f5a6cd69b80532e519bc01680a31579a792f326105a4b720266256b7a510"
+            "cargoLock": "f89969c688303c898b0a0a1b88c0b467e8ce8b38be6fa99523f2921aa74c50fa",
+            "rootPnpmLock": "7aa4f89afe24192c0cee74ab38ccf9a1fcbc6f5bc07ad2c6a2ca796a1e2f6664",
+            "pcPnpmLock": "7aa4f89afe24192c0cee74ab38ccf9a1fcbc6f5bc07ad2c6a2ca796a1e2f6664"
           }
         },
         "parameters": {
@@ -25,26 +128,33 @@
         }
       },
       "metadata": {
-        "buildStartedOn": "2026-06-29T14:25:52.469Z",
-        "buildFinishedOn": "2026-06-29T14:25:52.469Z",
+        "buildStartedOn": "2026-07-03T00:00:00Z",
+        "buildFinishedOn": "2026-07-03T00:00:00Z",
         "completeness": {
           "parameters": true,
           "environment": true,
           "materials": true
         },
-        "reproducible": false
+        "reproducible": false,
+        "reproducibilityNote": "Build inputs are pinned (Cargo.lock, pnpm-lock.yaml, pinned dependency refs in sdkwork.workflow.json, declared toolchains node/pnpm/rust/wix), but native binaries and installers (MSI/DMG/AppImage/zip) embed build timestamps and exhibit linker/host variance; bit-for-bit reproducibility is not guaranteed. Release integrity is enforced via SHA-256 checksums plus cosign/signtool/codesign signing in sdkwork.workflow.json lifecycle.sign."
       },
       "materials": [
         {
           "uri": "pkg:cargo/sdkwork-clawrouter@Cargo.lock",
           "digest": {
-            "sha256": "27343161ab9633247e41804e895c7b04e47d9f95bec720c17b78de511bca4d5e"
+            "sha256": "f89969c688303c898b0a0a1b88c0b467e8ce8b38be6fa99523f2921aa74c50fa"
           }
         },
         {
           "uri": "pkg:npm/sdkwork-clawrouter@pnpm-lock.yaml",
           "digest": {
-            "sha256": "5414f5a6cd69b80532e519bc01680a31579a792f326105a4b720266256b7a510"
+            "sha256": "7aa4f89afe24192c0cee74ab38ccf9a1fcbc6f5bc07ad2c6a2ca796a1e2f6664"
+          }
+        },
+        {
+          "uri": "pkg:npm/sdkwork-clawrouter-pc@pnpm-lock.yaml",
+          "digest": {
+            "sha256": "7aa4f89afe24192c0cee74ab38ccf9a1fcbc6f5bc07ad2c6a2ca796a1e2f6664"
           }
         }
       ]

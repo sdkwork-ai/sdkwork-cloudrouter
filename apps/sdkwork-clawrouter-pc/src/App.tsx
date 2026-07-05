@@ -32,6 +32,7 @@ const ApiReference = lazyRoute(() => import('@sdkwork/documents-pc-api-reference
 const ProductDocs = lazyRoute(() => import('@sdkwork/documents-pc-api-reference'), 'ProductDocs');
 const SdkReference = lazyRoute(() => import('@sdkwork/documents-pc-sdk-reference'), 'SdkReference');
 const Playground = lazyRoute(() => import('@sdkwork/clawrouter-pc-playground'), 'Playground');
+const ClawRouterTokenPlanPage = lazyRoute(() => import('./token-plan/ClawRouterTokenPlanPage'), 'ClawRouterTokenPlanPage');
 const ClawRouterAuthRoutes = lazyRoute(() => import('./auth/ClawRouterAuthRoutes'), 'ClawRouterAuthRoutes');
 const ClawRouterAuthSettingsPage = lazyRoute(() => import('@sdkwork/clawrouter-pc-admin-site'), 'ClawRouterAuthSettingsPage');
 
@@ -85,6 +86,7 @@ function MainLayout({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () 
       ProductDocs={ProductDocs}
       SdkReference={SdkReference}
       Playground={Playground}
+      TokenPlan={ClawRouterTokenPlanPage}
     />
   );
 }

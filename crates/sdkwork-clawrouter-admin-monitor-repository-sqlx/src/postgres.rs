@@ -2,8 +2,8 @@ use sqlx::{PgPool, Row};
 
 use crate::error::{row_error, store_error, RepositoryError, RepositoryResult};
 use crate::types::{
-    AdminMonitorAlert, AdminMonitorNode, AdminMonitorPerformanceDatum, AdminMonitorQuery,
-    AdminMonitorReadFuture, AdminMonitorReadStore,
+    AdminMonitorAlert, AdminMonitorCollection, AdminMonitorNode, AdminMonitorPerformanceDatum,
+    AdminMonitorQuery, AdminMonitorReadFuture, AdminMonitorReadStore,
 };
 
 #[derive(Debug, Clone)]
@@ -21,21 +21,21 @@ impl AdminMonitorReadStore for PostgresAdminMonitorReadStore {
     fn list_monitor_nodes<'a>(
         &'a self,
         query: AdminMonitorQuery,
-    ) -> AdminMonitorReadFuture<'a, Vec<AdminMonitorNode>> {
+    ) -> AdminMonitorReadFuture<'a, AdminMonitorCollection<AdminMonitorNode>> {
         Box::pin(async move { list_monitor_nodes(&self.pool, query).await })
     }
 
     fn list_monitor_alerts<'a>(
         &'a self,
         query: AdminMonitorQuery,
-    ) -> AdminMonitorReadFuture<'a, Vec<AdminMonitorAlert>> {
+    ) -> AdminMonitorReadFuture<'a, AdminMonitorCollection<AdminMonitorAlert>> {
         Box::pin(async move { list_monitor_alerts(&self.pool, query).await })
     }
 
     fn list_monitor_performance<'a>(
         &'a self,
         query: AdminMonitorQuery,
-    ) -> AdminMonitorReadFuture<'a, Vec<AdminMonitorPerformanceDatum>> {
+    ) -> AdminMonitorReadFuture<'a, AdminMonitorCollection<AdminMonitorPerformanceDatum>> {
         Box::pin(async move { list_monitor_performance(&self.pool, query).await })
     }
 }
@@ -43,105 +43,187 @@ impl AdminMonitorReadStore for PostgresAdminMonitorReadStore {
 async fn list_monitor_nodes(
     pool: &PgPool,
     query: AdminMonitorQuery,
-) -> RepositoryResult<Vec<AdminMonitorNode>> {
+) -> RepositoryResult<AdminMonitorCollection<AdminMonitorNode>> {
+    let search_pattern = query
+        .q
+        .as_ref()
+        .map(|value| format!("%{}%", value.to_ascii_lowercase()));
     let rows = sqlx::query(
         r#"
-        SELECT
-            i.id,
-            COALESCE(NULLIF(i.node_name, ''), NULLIF(i.host_name, ''), NULLIF(i.instance_code, ''), i.uuid) AS name,
-            COALESCE(i.region, '') AS region,
-            i.health_status AS health_status,
-            h.cpu_percent::text AS cpu,
-            h.memory_percent::text AS memory,
-            h.uptime_seconds,
-            COALESCE(i.ip_address_masked, '') AS ip
-        FROM ops_gateway_instance i
-        LEFT JOIN LATERAL (
-            SELECT latest.id, latest.cpu_percent, latest.memory_percent, latest.uptime_seconds
-            FROM ops_gateway_heartbeat latest
-            WHERE latest.instance_id = i.id
-              AND latest.status = 1
-            ORDER BY latest.heartbeat_at DESC NULLS LAST, latest.id DESC
-            LIMIT 1
-        ) h ON true
-        WHERE (i.tenant_id = $1 OR i.tenant_id = 0 OR i.tenant_id IS NULL)
-          AND (i.organization_id = $2 OR i.organization_id = 0 OR i.organization_id IS NULL)
-          AND i.status = 1
-          AND i.deleted_at IS NULL
-        ORDER BY i.last_heartbeat_at DESC NULLS LAST, i.updated_at DESC NULLS LAST, i.id DESC
-        LIMIT 200
+        WITH filtered_nodes AS (
+            SELECT
+                i.id,
+                COALESCE(NULLIF(i.node_name, ''), NULLIF(i.host_name, ''), NULLIF(i.instance_code, ''), i.uuid) AS name,
+                COALESCE(i.region, '') AS region,
+                i.health_status AS health_status,
+                h.cpu_percent::text AS cpu,
+                h.memory_percent::text AS memory,
+                h.uptime_seconds,
+                COALESCE(i.ip_address_masked, '') AS ip
+            FROM ops_gateway_instance i
+            LEFT JOIN LATERAL (
+                SELECT latest.id, latest.cpu_percent, latest.memory_percent, latest.uptime_seconds
+                FROM ops_gateway_heartbeat latest
+                WHERE latest.instance_id = i.id
+                  AND latest.status = 1
+                ORDER BY latest.heartbeat_at DESC NULLS LAST, latest.id DESC
+                LIMIT 1
+            ) h ON true
+            WHERE (i.tenant_id = $1 OR i.tenant_id = 0 OR i.tenant_id IS NULL)
+              AND (i.organization_id = $2 OR i.organization_id = 0 OR i.organization_id IS NULL)
+              AND i.status = 1
+              AND i.deleted_at IS NULL
+              AND (
+                  $3::text IS NULL
+                  OR LOWER(COALESCE(NULLIF(i.node_name, ''), NULLIF(i.host_name, ''), NULLIF(i.instance_code, ''), i.uuid)) LIKE $4
+                  OR LOWER(COALESCE(i.region, '')) LIKE $5
+                  OR LOWER(COALESCE(i.ip_address_masked, '')) LIKE $6
+              )
+        )
+        SELECT *, COUNT(*) OVER() AS total
+        FROM filtered_nodes
+        ORDER BY id DESC
+        LIMIT $7 OFFSET $8
         "#,
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
+    .bind(search_pattern.as_deref())
+    .bind(search_pattern.as_deref())
+    .bind(search_pattern.as_deref())
+    .bind(search_pattern.as_deref())
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list monitor nodes", error))?;
 
-    rows.into_iter().map(node_from_row).collect()
+    let total = rows
+        .first()
+        .map(|row| required_integer_cell(row, "total"))
+        .transpose()?
+        .unwrap_or(0);
+    let items = rows.into_iter().map(node_from_row).collect::<RepositoryResult<Vec<_>>>()?;
+    Ok(AdminMonitorCollection {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn list_monitor_alerts(
     pool: &PgPool,
     query: AdminMonitorQuery,
-) -> RepositoryResult<Vec<AdminMonitorAlert>> {
+) -> RepositoryResult<AdminMonitorCollection<AdminMonitorAlert>> {
+    let search_pattern = query
+        .q
+        .as_ref()
+        .map(|value| format!("%{}%", value.to_ascii_lowercase()));
     let rows = sqlx::query(
         r#"
-        SELECT
-            COALESCE(alert_no, id::text) AS id,
-            severity,
-            COALESCE(title, '') AS title,
-            COALESCE(message, '') AS message,
-            COALESCE(last_seen_at, first_seen_at, created_at)::text AS alert_time,
-            alert_status,
-            resolved_at::text AS resolved_at,
-            COALESCE(source, '') AS source
-        FROM ops_alert_event
-        WHERE (tenant_id = $1 OR tenant_id = 0 OR tenant_id IS NULL)
-          AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
-          AND status = 1
-        ORDER BY COALESCE(last_seen_at, first_seen_at, created_at) DESC NULLS LAST, id DESC
-        LIMIT 100
+        WITH filtered_alerts AS (
+            SELECT
+                COALESCE(alert_no, id::text) AS id,
+                severity,
+                COALESCE(title, '') AS title,
+                COALESCE(message, '') AS message,
+                COALESCE(last_seen_at, first_seen_at, created_at)::text AS alert_time,
+                alert_status,
+                resolved_at::text AS resolved_at,
+                COALESCE(source, '') AS source
+            FROM ops_alert_event
+            WHERE (tenant_id = $1 OR tenant_id = 0 OR tenant_id IS NULL)
+              AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
+              AND status = 1
+              AND (
+                  $3::text IS NULL
+                  OR LOWER(COALESCE(title, '')) LIKE $4
+                  OR LOWER(COALESCE(message, '')) LIKE $5
+                  OR LOWER(COALESCE(source, '')) LIKE $6
+              )
+        )
+        SELECT *, COUNT(*) OVER() AS total
+        FROM filtered_alerts
+        ORDER BY alert_time DESC NULLS LAST, id DESC
+        LIMIT $7 OFFSET $8
         "#,
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
+    .bind(search_pattern.as_deref())
+    .bind(search_pattern.as_deref())
+    .bind(search_pattern.as_deref())
+    .bind(search_pattern.as_deref())
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list monitor alerts", error))?;
 
-    rows.into_iter().map(alert_from_row).collect()
+    let total = rows
+        .first()
+        .map(|row| required_integer_cell(row, "total"))
+        .transpose()?
+        .unwrap_or(0);
+    let items = rows.into_iter().map(alert_from_row).collect::<RepositoryResult<Vec<_>>>()?;
+    Ok(AdminMonitorCollection {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn list_monitor_performance(
     pool: &PgPool,
     query: AdminMonitorQuery,
-) -> RepositoryResult<Vec<AdminMonitorPerformanceDatum>> {
+) -> RepositoryResult<AdminMonitorCollection<AdminMonitorPerformanceDatum>> {
     let rows = sqlx::query(
         r#"
-        SELECT
-            period_start::text AS period_start,
-            MAX(CASE WHEN metric_name IN ('cpu', 'cpu_percent', 'system.cpu') THEN metric_value END)::text AS cpu,
-            MAX(CASE WHEN metric_name IN ('memory', 'memory_percent', 'system.memory') THEN metric_value END)::text AS memory,
-            MAX(CASE WHEN metric_name IN ('network', 'network_mbps', 'network_traffic', 'system.network') THEN metric_value END)::text AS network
-        FROM ops_metric_snapshot
-        WHERE (tenant_id = $1 OR tenant_id = 0 OR tenant_id IS NULL)
-          AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
-          AND status = 1
-          AND metric_name IN ('cpu', 'cpu_percent', 'system.cpu', 'memory', 'memory_percent', 'system.memory', 'network', 'network_mbps', 'network_traffic', 'system.network')
-          AND period_start IS NOT NULL
-        GROUP BY period_start
+        WITH filtered_performance AS (
+            SELECT
+                period_start::text AS period_start,
+                MAX(CASE WHEN metric_name IN ('cpu', 'cpu_percent', 'system.cpu') THEN metric_value END)::text AS cpu,
+                MAX(CASE WHEN metric_name IN ('memory', 'memory_percent', 'system.memory') THEN metric_value END)::text AS memory,
+                MAX(CASE WHEN metric_name IN ('network', 'network_mbps', 'network_traffic', 'system.network') THEN metric_value END)::text AS network
+            FROM ops_metric_snapshot
+            WHERE (tenant_id = $1 OR tenant_id = 0 OR tenant_id IS NULL)
+              AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
+              AND status = 1
+              AND metric_name IN ('cpu', 'cpu_percent', 'system.cpu', 'memory', 'memory_percent', 'system.memory', 'network', 'network_mbps', 'network_traffic', 'system.network')
+              AND period_start IS NOT NULL
+            GROUP BY period_start
+        )
+        SELECT *, COUNT(*) OVER() AS total
+        FROM filtered_performance
         ORDER BY period_start ASC
-        LIMIT 288
+        LIMIT $3 OFFSET $4
         "#,
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list monitor performance", error))?;
 
-    rows.into_iter().map(performance_from_row).collect()
+    let total = rows
+        .first()
+        .map(|row| required_integer_cell(row, "total"))
+        .transpose()?
+        .unwrap_or(0);
+    let items = rows
+        .into_iter()
+        .map(performance_from_row)
+        .collect::<RepositoryResult<Vec<_>>>()?;
+    Ok(AdminMonitorCollection {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 fn node_from_row(row: sqlx::postgres::PgRow) -> RepositoryResult<AdminMonitorNode> {

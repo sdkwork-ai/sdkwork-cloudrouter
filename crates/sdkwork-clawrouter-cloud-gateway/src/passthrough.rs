@@ -18,10 +18,10 @@ use axum::http::{StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, MethodRouter};
 use axum::{Json, Router};
-use http_body_util::BodyExt;
+use http_body_util::{BodyExt, Limited};
 use sdkwork_claw_config::{
     ProviderAdapterConfig, ProviderPassthroughAuth, ProviderPassthroughAuthType,
-    ProviderRelayConfig,
+    ProviderRelayConfig, RequestLimitsConfig,
 };
 use sdkwork_claw_provider_adapter_contract::{
     AdapterInvocationMetadata, AdapterInvocationRequest, AdapterInvocationResponse,
@@ -55,6 +55,11 @@ type UsageRecorder = Arc<dyn GatewayUsageRecorder + Send + Sync>;
 const ADAPTER_USAGE_TYPE_BASE: i64 = 10_000;
 const TOKEN_BILLING_UNIT_SIZE_DECIMAL: &str = "1000000";
 const USAGE_AMOUNT_DECIMAL_DIGITS: u32 = 12;
+/// Maximum bytes to buffer when collecting a streaming adapter response
+/// into memory for JSON parsing. 4 MiB is generous for structured JSON
+/// adapter responses (including base64-encoded payloads) while preventing
+/// a single response from consuming excessive server memory.
+const ADAPTER_STREAMING_RESPONSE_MAX_BYTES: usize = 4 * 1024 * 1024;
 const MODALITY_TEXT: i64 = 1;
 const MODALITY_IMAGE: i64 = 2;
 const MODALITY_AUDIO: i64 = 3;
@@ -68,6 +73,7 @@ struct ProviderPassthroughRuntime {
     client: PassthroughClient,
     providers: Arc<Vec<ProviderPassthroughTarget>>,
     adapter: Option<ProviderNativeAdapterRuntime>,
+    body_max_bytes: usize,
 }
 
 #[derive(Clone)]
@@ -426,7 +432,23 @@ impl ProviderPassthroughRuntime {
                     registry: Arc::new(ProviderAdapterRegistry::new(config.routes().to_vec())),
                     client: ProviderAdapterHttpClient::new(config.gateway_token().to_owned()),
                 }),
+            body_max_bytes: RequestLimitsConfig::from_env_or_runtime_toml(None)
+                .map(|config| config.gateway_invocation_body_max_bytes())
+                .unwrap_or(RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES),
         }
+    }
+
+    async fn read_request_body(&self, body: Body) -> Result<bytes::Bytes, String> {
+        Limited::new(body, self.body_max_bytes)
+            .collect()
+            .await
+            .map_err(|error| {
+                format!(
+                    "provider passthrough request body exceeds {} bytes: {error}",
+                    self.body_max_bytes
+                )
+            })
+            .map(|collected| collected.to_bytes())
     }
 
     async fn forward(
@@ -540,11 +562,7 @@ impl ProviderPassthroughRuntime {
         upstream_uri: Uri,
     ) -> Result<Response, String> {
         let (parts, body) = request.into_parts();
-        let body = body
-            .collect()
-            .await
-            .map_err(|error| format!("failed to read provider passthrough body: {error}"))?
-            .to_bytes();
+        let body = self.read_request_body(body).await?;
         forward_provider_passthrough_to_target(&self.client, parts, body, target, upstream_uri)
             .await
     }
@@ -571,11 +589,7 @@ impl ProviderPassthroughRuntime {
         let (parts, body) = request.into_parts();
         let user_agent = request_header_value(&parts.headers, USER_AGENT.as_str())
             .and_then(|value| normalize_user_agent_header(value.as_str()));
-        let body = body
-            .collect()
-            .await
-            .map_err(|error| format!("failed to read provider adapter body: {error}"))?
-            .to_bytes();
+        let body = self.read_request_body(body).await?;
         let request_body = provider_adapter_request_body(&body)?;
         let invocation = build_provider_native_adapter_invocation(
             &parts,
@@ -600,7 +614,7 @@ impl ProviderPassthroughRuntime {
                 content_type,
                 stream_body,
             } => {
-                let bytes = axum::body::to_bytes(stream_body, 16 * 1024 * 1024)
+                let bytes = axum::body::to_bytes(stream_body, ADAPTER_STREAMING_RESPONSE_MAX_BYTES)
                     .await
                     .map_err(|e| format!("failed to read streaming adapter response: {e}"))?;
                 let body =

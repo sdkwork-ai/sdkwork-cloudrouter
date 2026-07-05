@@ -15,7 +15,7 @@ import {
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 import type { UsageLogsResponse as SdkUsageLogsResponse } from '@sdkwork/clawrouter-app-sdk';
 
-const MAX_USAGE_LOG_PAGE_SIZE = 100;
+const MAX_USAGE_LOG_PAGE_SIZE = 200;
 const MAX_USAGE_LOG_QUERY_TEXT_LENGTH = 128;
 const MAX_USAGE_LOG_TIMESTAMP_LENGTH = 64;
 const SPEND_DECIMAL_DIGITS = 9;

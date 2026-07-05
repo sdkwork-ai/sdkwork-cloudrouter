@@ -1,9 +1,10 @@
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 
 use crate::error::store_error;
 use crate::mapping::{require_subject, row_to_provider};
 use crate::types::{
-    AppProviderItem, AppProvidersReadFuture, AppProvidersReadStore, AppProvidersSubject,
+    AppProviderItem, AppProvidersListPage, AppProvidersListQuery, AppProvidersReadFuture,
+    AppProvidersReadStore, AppProvidersSubject,
 };
 
 const LOAD_PROVIDERS: &str = r#"
@@ -109,7 +110,8 @@ SELECT
     rc.proxy_status AS proxy_status,
     rc.proxy_health_status AS proxy_health_status,
     COALESCE(rc.model_count, 0) AS model_count,
-    CAST(lc.latest_config_at AS TEXT) AS latest_config_at
+    CAST(lc.latest_config_at AS TEXT) AS latest_config_at,
+    COUNT(*) OVER() AS total
 FROM ai_provider p
 LEFT JOIN ranked_channel rc
   ON rc.channel_rank = 1
@@ -123,8 +125,9 @@ LEFT JOIN latest_config lc
 WHERE p.deleted_at IS NULL
   AND (p.tenant_id IS NULL OR p.tenant_id = 0 OR p.tenant_id = $1)
   AND (p.organization_id IS NULL OR p.organization_id = 0 OR p.organization_id = $2)
+  AND ($3::text IS NULL OR lower(COALESCE(p.display_name, p.provider_code, p.description, '')) LIKE lower($3))
 ORDER BY COALESCE(p.sort_order, 999999) ASC NULLS LAST, p.id ASC
-LIMIT 200
+LIMIT $4 OFFSET $5
 "#;
 
 #[derive(Debug, Clone)]
@@ -142,17 +145,35 @@ impl AppProvidersReadStore for PostgresAppProvidersReadStore {
     fn load_providers<'a>(
         &'a self,
         subject: Option<AppProvidersSubject>,
-    ) -> AppProvidersReadFuture<'a, Vec<AppProviderItem>> {
+        query: AppProvidersListQuery,
+    ) -> AppProvidersReadFuture<'a, AppProvidersListPage> {
         Box::pin(async move {
             let subject = require_subject(subject)?;
             let _request_user_id = subject.user_id;
+            let search = query.q.as_deref().map(|value| format!("%{value}%"));
             let rows = sqlx::query(LOAD_PROVIDERS)
                 .bind(subject.tenant_id)
                 .bind(subject.organization_id)
+                .bind(search)
+                .bind(query.page_size.max(1))
+                .bind(query.offset.max(0))
                 .fetch_all(&self.pool)
                 .await
                 .map_err(|error| store_error("app providers query", error))?;
-            rows.into_iter().map(|row| row_to_provider(&row)).collect()
+            let total = rows
+                .first()
+                .and_then(|row| row.try_get::<i64, _>("total").ok())
+                .unwrap_or(0);
+            let items = rows
+                .into_iter()
+                .map(|row| row_to_provider(&row))
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(AppProvidersListPage {
+                items,
+                total,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
         })
     }
 }

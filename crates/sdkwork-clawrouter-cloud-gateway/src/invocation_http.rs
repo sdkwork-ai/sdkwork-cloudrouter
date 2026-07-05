@@ -18,8 +18,6 @@ use crate::gateway_api_key_auth::authenticate_gateway_api_key;
 use crate::invocation_router::InvocationRouterState;
 use crate::request_identity::generate_server_request_id;
 
-const INVOCATION_BODY_LIMIT_BYTES: usize = 16 * 1024 * 1024;
-
 pub(crate) async fn handle_invocation<C>(
     state: InvocationRouterState<C>,
     request: Request<Body>,
@@ -56,7 +54,8 @@ where
         return response_from_policy_violation(&violation);
     }
 
-    let body = match invocation_body_from_http(&parts.headers, body).await {
+    let body_limit = state.body_limit_bytes;
+    let body = match invocation_body_from_http(&parts.headers, body, body_limit).await {
         Ok(body) => body,
         Err(error) => return response_from_invocation_error(&error),
     };
@@ -97,8 +96,18 @@ where
 async fn invocation_body_from_http(
     headers: &HeaderMap,
     body: Body,
+    limit: usize,
 ) -> Result<InvocationBody, InvocationError> {
-    let bytes = to_bytes(body, INVOCATION_BODY_LIMIT_BYTES)
+    // Pre-check Content-Length before buffering any bytes so oversized
+    // requests are rejected immediately without allocating memory.
+    if let Some(content_length) = content_length_from_headers(headers) {
+        if content_length > limit {
+            return Err(invalid_request(format!(
+                "request body exceeds the maximum allowed size of {limit} bytes"
+            )));
+        }
+    }
+    let bytes = to_bytes(body, limit)
         .await
         .map_err(|error| invalid_request(format!("request body is invalid: {error}")))?;
     if bytes.is_empty() {
@@ -514,6 +523,18 @@ fn header_text(headers: &HeaderMap, name: &str) -> Option<String> {
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .map(str::to_owned)
+}
+
+/// Parse the `Content-Length` header into a byte count.
+///
+/// Returns `None` when the header is absent or not a valid non-negative
+/// integer. A malformed `Content-Length` is treated as unknown rather than
+/// an error so the downstream `to_bytes` limit still applies as a safety net.
+fn content_length_from_headers(headers: &HeaderMap) -> Option<usize> {
+    headers
+        .get(header::CONTENT_LENGTH)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.trim().parse::<usize>().ok())
 }
 
 fn invalid_request(message: impl Into<String>) -> InvocationError {

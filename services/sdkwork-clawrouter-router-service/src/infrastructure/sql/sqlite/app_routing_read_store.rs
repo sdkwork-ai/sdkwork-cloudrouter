@@ -5,9 +5,10 @@ use sqlx::{Row, SqlitePool};
 use crate::application::ApiKeySecretCodec;
 use crate::domain::{DomainError, DomainResult};
 use crate::ports::{
-    AppRoutingApiKeyItem, AppRoutingChannelItem, AppRoutingModelStats, AppRoutingReadFuture,
-    AppRoutingReadStore, AppRoutingRequestTraceItem, AppRoutingRetryPolicyItem, AppRoutingSubject,
-    AppRoutingUsageData, AppRoutingUsageSnapshot,
+    AppRoutingApiKeyItem, AppRoutingApiKeyListPage, AppRoutingChannelItem,
+    AppRoutingChannelListPage, AppRoutingListQuery, AppRoutingModelStats, AppRoutingReadFuture,
+    AppRoutingReadStore, AppRoutingRequestTraceItem, AppRoutingRequestTraceListPage,
+    AppRoutingRetryPolicyItem, AppRoutingSubject, AppRoutingUsageData, AppRoutingUsageSnapshot,
 };
 
 const LOAD_ROUTING_CHANNELS: &str = r#"
@@ -101,7 +102,8 @@ SELECT
     COALESCE(c.rpm_limit, 0) AS rpm_limit,
     CAST(c.upstream_balance_amount AS TEXT) AS balance_amount,
     COALESCE(c.upstream_balance_currency, '') AS balance_currency,
-    COALESCE(c.consecutive_error_count, 0) AS errors
+    COALESCE(c.consecutive_error_count, 0) AS errors,
+    COUNT(*) OVER() AS total
 FROM ai_channel c
 LEFT JOIN ai_channel_credential cc
   ON cc.id = (
@@ -118,8 +120,9 @@ LEFT JOIN ai_channel_credential cc
 WHERE c.tenant_id = ?1
   AND c.organization_id = ?2
   AND c.deleted_at IS NULL
+  AND (?3 IS NULL OR lower(COALESCE(c.channel_name, c.channel_code, c.provider_code, '')) LIKE lower(?3))
 ORDER BY c.priority ASC, c.weight DESC, c.id DESC
-LIMIT 500
+LIMIT ?4 OFFSET ?5
 "#;
 
 const LOAD_ROUTING_API_KEYS: &str = r#"
@@ -130,7 +133,8 @@ SELECT
     json_extract(COALESCE(k.metadata, '{}'), '$.copyableKeyCiphertext') AS copyable_key_ciphertext,
     k.status AS api_key_status,
     CAST(k.created_at AS TEXT) AS created_at,
-    CAST(COALESCE(SUM(COALESCE(u.request_count, 0)), 0) AS TEXT) AS total_usage
+    CAST(COALESCE(SUM(COALESCE(u.request_count, 0)), 0) AS TEXT) AS total_usage,
+    COUNT(*) OVER() AS total
 FROM iam_gateway_api_key k
 LEFT JOIN ai_usage u
   ON u.tenant_id = k.tenant_id
@@ -142,9 +146,10 @@ WHERE k.tenant_id = ?1
   AND k.organization_id = ?2
   AND k.user_id = ?3
   AND k.deleted_at IS NULL
+  AND (?4 IS NULL OR lower(COALESCE(k.name, k.key_prefix, k.key_display_masked, '')) LIKE lower(?4))
 GROUP BY k.id, k.name, k.key_prefix, k.key_display_masked, k.metadata, k.status, k.created_at
 ORDER BY k.updated_at DESC, k.id DESC
-LIMIT 500
+LIMIT ?5 OFFSET ?6
 "#;
 
 const LOAD_ROUTING_REQUEST_TRACES: &str = r#"
@@ -252,7 +257,8 @@ SELECT
     COALESCE(CAST(t.ended_at AS TEXT), '') AS ended_at,
     COALESCE(t.streaming, 0) AS streaming,
     t.latency_ms AS latency_ms,
-    COALESCE(u.total_tokens, t.total_tokens, 0) AS total_tokens
+    COALESCE(u.total_tokens, t.total_tokens, 0) AS total_tokens,
+    COUNT(*) OVER() AS total
 FROM selected_trace t
 LEFT JOIN ai_routing_decision_log d
   ON d.status = 1
@@ -264,7 +270,7 @@ LEFT JOIN usage_by_request u
  AND u.organization_id = t.organization_id
  AND u.request_id = t.request_id
 ORDER BY t.started_at DESC, t.id DESC
-LIMIT 100
+LIMIT ?4 OFFSET ?5
 "#;
 
 const LOAD_ROUTING_USAGE_CHART: &str = r#"
@@ -383,52 +389,97 @@ impl AppRoutingReadStore for SqliteAppRoutingReadStore {
     fn load_routing_channels<'a>(
         &'a self,
         subject: Option<AppRoutingSubject>,
-    ) -> AppRoutingReadFuture<'a, Vec<AppRoutingChannelItem>> {
+        query: AppRoutingListQuery,
+    ) -> AppRoutingReadFuture<'a, AppRoutingChannelListPage> {
         Box::pin(async move {
             let subject = require_subject(subject)?;
+            let search = query.q.as_deref().map(|value| format!("%{value}%"));
             let rows = sqlx::query(LOAD_ROUTING_CHANNELS)
                 .bind(subject.tenant_id)
                 .bind(subject.organization_id)
-                .bind(subject.user_id)
+                .bind(search)
+                .bind(query.page_size.max(1))
+                .bind(query.offset.max(0))
                 .fetch_all(&self.pool)
                 .await
                 .map_err(sql_error)?;
-            rows.into_iter().map(row_to_channel).collect()
+            let total = rows
+                .first()
+                .and_then(|row| row.try_get::<i64, _>("total").ok())
+                .unwrap_or(0);
+            let items = rows.into_iter().map(row_to_channel).collect::<DomainResult<Vec<_>>>()?;
+            Ok(AppRoutingChannelListPage {
+                items,
+                total,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
         })
     }
 
     fn load_routing_api_keys<'a>(
         &'a self,
         subject: Option<AppRoutingSubject>,
-    ) -> AppRoutingReadFuture<'a, Vec<AppRoutingApiKeyItem>> {
+        query: AppRoutingListQuery,
+    ) -> AppRoutingReadFuture<'a, AppRoutingApiKeyListPage> {
         Box::pin(async move {
             let subject = require_subject(subject)?;
+            let search = query.q.as_deref().map(|value| format!("%{value}%"));
             let rows = sqlx::query(LOAD_ROUTING_API_KEYS)
                 .bind(subject.tenant_id)
                 .bind(subject.organization_id)
                 .bind(subject.user_id)
+                .bind(search)
+                .bind(query.page_size.max(1))
+                .bind(query.offset.max(0))
                 .fetch_all(&self.pool)
                 .await
                 .map_err(sql_error)?;
+            let total = rows
+                .first()
+                .and_then(|row| row.try_get::<i64, _>("total").ok())
+                .unwrap_or(0);
             let row_to_api_key = |row| row_to_api_key(row, self.api_key_secret_codec.as_deref());
-            rows.into_iter().map(row_to_api_key).collect()
+            let items = rows.into_iter().map(row_to_api_key).collect::<DomainResult<Vec<_>>>()?;
+            Ok(AppRoutingApiKeyListPage {
+                items,
+                total,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
         })
     }
 
     fn load_routing_request_traces<'a>(
         &'a self,
         subject: Option<AppRoutingSubject>,
-    ) -> AppRoutingReadFuture<'a, Vec<AppRoutingRequestTraceItem>> {
+        query: AppRoutingListQuery,
+    ) -> AppRoutingReadFuture<'a, AppRoutingRequestTraceListPage> {
         Box::pin(async move {
             let subject = require_subject(subject)?;
             let rows = sqlx::query(LOAD_ROUTING_REQUEST_TRACES)
                 .bind(subject.tenant_id)
                 .bind(subject.organization_id)
                 .bind(subject.user_id)
+                .bind(query.page_size.max(1))
+                .bind(query.offset.max(0))
                 .fetch_all(&self.pool)
                 .await
                 .map_err(sql_error)?;
-            rows.into_iter().map(row_to_request_trace).collect()
+            let total = rows
+                .first()
+                .and_then(|row| row.try_get::<i64, _>("total").ok())
+                .unwrap_or(0);
+            let items = rows
+                .into_iter()
+                .map(row_to_request_trace)
+                .collect::<DomainResult<Vec<_>>>()?;
+            Ok(AppRoutingRequestTraceListPage {
+                items,
+                total,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
         })
     }
 

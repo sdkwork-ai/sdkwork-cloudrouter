@@ -3,13 +3,19 @@ import { getClawRouterAppSdkClient } from '@sdkwork/clawroutes-pc-commons/sdk-cl
 import {
   ensureSdkworkApiSuccess,
   isRecord,
+  optionalBoundedPositiveInteger as optionalQueryPageSize,
+  optionalPositiveInteger as optionalQueryPage,
+  optionalText as optionalQueryText,
+  pruneUndefinedQueryParams,
   readBoolean,
   readRequiredApiItem,
   readApiRecord,
   readNullableString,
   readRequiredApiItems,
+  readRequiredNonNegativeNumber,
   readRequiredString,
   readString,
+  type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/api-result';
 import type {
   CreateApiKeyRequest,
@@ -65,13 +71,27 @@ export interface CreatedApiKey {
 type UpdateApiKeyInput = Partial<CreateApiKeyInput>;
 const UNRESTRICTED_MODALITIES: ApiKeyModality[] = ['text', 'image', 'video', 'audio', 'music'];
 
+const MAX_API_KEY_LIST_PAGE_SIZE = 200;
+const MAX_API_KEY_LIST_QUERY_TEXT_LENGTH = 128;
+
+type ApiKeyListFilters = Record<string, unknown>;
+
+type ApiKeyListPage = {
+  keys: ApiKey[];
+  total: number;
+};
+
 export class ApiKeyService {
-  static async fetchKeys(): Promise<ApiKey[]> {
+  static async fetchKeys(filters: ApiKeyListFilters = {}): Promise<ApiKeyListPage> {
     try {
-      const result = await getClawRouterAppSdkClient().iam.apiKeys.list();
+      const result = await getClawRouterAppSdkClient().iam.apiKeys.list(toApiKeyListQueryParams(filters));
       ensureSdkworkApiSuccess(result, 'console.apiKeys.errors.loadFallback');
+      const data = readApiRecord(result);
       const items = readRequiredApiItems(result, 'console.apiKeys.errors.loadFallback');
-      return items.map(normalizeApiKey);
+      return {
+        keys: items.map(normalizeApiKey),
+        total: readApiKeyListPageTotal(data),
+      };
     } catch (error) {
       throw new Error(readSdkErrorMessage(error, 'console.apiKeys.errors.loadFallback'));
     }
@@ -141,6 +161,50 @@ function readSdkErrorMessage(error: unknown, fallback: string): string {
     }
   }
   return fallback;
+}
+
+function toApiKeyListQueryParams(filters: ApiKeyListFilters = {}): {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+} {
+  const page = optionalQueryPage(filters.page, 'page');
+  const pageSize = optionalQueryPageSize(filters.pageSize, 'pageSize', MAX_API_KEY_LIST_PAGE_SIZE);
+  const q = optionalQueryText(filters.q ?? filters.searchQuery, 'q', MAX_API_KEY_LIST_QUERY_TEXT_LENGTH);
+
+  return pruneUndefinedQueryParams({
+    page,
+    pageSize,
+    q,
+  });
+}
+
+function readApiKeyListPageTotal(data: ApiRecord): number {
+  if (data.total !== undefined && data.total !== null && data.total !== '') {
+    return readRequiredNonNegativeNumber(data, 'total', 'API key list total is required');
+  }
+
+  const pageInfo = data.pageInfo;
+  if (isRecord(pageInfo)) {
+    for (const key of ['totalItems', 'total_items'] as const) {
+      const value = pageInfo[key];
+      if (value === undefined || value === null || value === '') {
+        continue;
+      }
+      const parsed = typeof value === 'number' ? value : Number(String(value).trim());
+      if (Number.isFinite(parsed) && parsed >= 0) {
+        return parsed;
+      }
+      throw new Error('API key list total must be a non-negative number');
+    }
+  }
+
+  const items = data.items;
+  if (Array.isArray(items)) {
+    return items.length;
+  }
+
+  throw new Error('API key list total is required');
 }
 
 function toCreateApiKeyRequest(input: CreateApiKeyInput): CreateApiKeyRequest {

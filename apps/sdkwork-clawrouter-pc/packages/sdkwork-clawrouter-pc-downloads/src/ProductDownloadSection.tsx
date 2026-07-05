@@ -14,7 +14,7 @@ function sectionClassName(
     ? "w-full"
     : variant === "compact"
       ? "w-full"
-      : "bg-white py-24 dark:bg-[#050505]";
+      : "bg-slate-50 py-24 border-t border-slate-200 dark:bg-[#050505] dark:border-white/5";
 
   return [variantClass, className].filter(Boolean).join(" ");
 }
@@ -58,7 +58,7 @@ export function SdkworkProductDownloadSection({
         {title || subtitle ? (
           <div className="mx-auto mb-16 max-w-3xl text-center">
             {title ? (
-              <h2 className="mb-6 text-4xl font-bold text-slate-900 dark:text-white">
+              <h2 className="mb-6 text-3xl md:text-5xl font-bold tracking-tight text-slate-900 dark:text-white">
                 {title}
               </h2>
             ) : null}

@@ -9,8 +9,8 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 const TARGETS = [
   'sdks/clawrouter-backend-sdk/openapi/clawrouter-backend-domain-transport.openapi.json',
   'sdks/clawrouter-app-sdk/openapi/clawrouter-app-domain-transport.openapi.json',
-  'sdks/clawrouter-backend-sdk/clawrouter-backend-domain-transport-typescript/generated/server-openapi/source-openapi.json',
-  'sdks/clawrouter-app-sdk/clawrouter-app-domain-transport-typescript/generated/server-openapi/source-openapi.json',
+  'sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/domains/server-openapi/source-openapi.json',
+  'sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/domains/server-openapi/source-openapi.json',
 ];
 
 const REPLACEMENTS = [

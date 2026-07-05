@@ -1507,12 +1507,19 @@ test("admin channel drawer binds resource groups and resources through selector 
   const messages = readAdminChannelI18nSource();
 
   assert.match(serviceSource, /type AiResourceGroup = Omit<AdminAiResourceGroupItem, 'resourceCount' \| 'sortOrder'>/);
-  assert.match(serviceSource, /ChannelAiResourceService[\s\S]*fetchAiResourceGroups/);
-  assert.match(serviceSource, /channelBackendClient\(\)\.ai\.aiResourceGroups\.list\(\)/);
+  assert.match(serviceSource, /ChannelAiResourceService[\s\S]*fetchAiResourceGroupsPage/);
+  assert.match(serviceSource, /modelsBackendClient\(\)\.ai\.aiResourceGroups\.list\(/);
+  assert.match(serviceSource, /ChannelAiResourceService[\s\S]*fetchAiResourcesPage/);
+  assert.match(serviceSource, /ChannelModelCatalogService[\s\S]*fetchModelsPage/);
+  assert.doesNotMatch(serviceSource, /fetchAiResources\(\)/);
+  assert.doesNotMatch(serviceSource, /fetchAiResourceGroups\(\)/);
+  assert.doesNotMatch(serviceSource, /fetchModels\(\)/);
   assert.match(source, /const \[resourceGroupSelectorOpen, setResourceGroupSelectorOpen\] = useState\(false\)/);
   assert.match(source, /const \[resourceSelectorOpen, setResourceSelectorOpen\] = useState\(false\)/);
-  assert.match(source, /<AiResourceSelectorModal/);
+  assert.match(source, /<ChannelPaginatedAiResourceSelectorModal/);
   assert.match(source, /<AiResourceGroupSelectorModal/);
+  assert.match(source, /resourceGroupOptionByCode/);
+  assert.match(source, /resourceOptionByCode/);
   assert.match(source, /data-admin-channel-resource-group-selector-modal/);
   assert.match(source, /data-admin-channel-resource-selector-modal/);
   assert.match(source, /resourceGroupCodes/);
@@ -1526,8 +1533,14 @@ test("admin channel drawer binds resource groups and resources through selector 
   assert.match(source, /data-admin-channel-resource-list-tab/);
   assert.match(source, /data-admin-channel-selected-resource-groups-list/);
   assert.match(source, /data-admin-channel-selected-resources-list/);
-  assert.match(source, /visibleAiResources/);
-  assert.match(source, /visibleAiResourceGroups/);
+  assert.match(source, /visibleResourcePickerOptions/);
+  assert.match(source, /visibleResourceGroupPickerOptions/);
+  assert.match(source, /fetchAiResourcesPage/);
+  assert.match(source, /fetchAiResourceGroupsPage/);
+  assert.match(source, /fetchModelsPage/);
+  assert.doesNotMatch(source, /loadModelCatalog/);
+  assert.doesNotMatch(source, /loadAiResources/);
+  assert.doesNotMatch(source, /loadAiResourceGroups/);
   assert.match(source, /selectedVisibleResourceGroupCodes/);
   assert.match(source, /selectedDirectResourceCodes/);
   assert.match(source, /isAiResourceVisibleForChannelVendorScope\(resource, selectedVendorCodes, capabilities\)/);
@@ -1730,6 +1743,19 @@ test("admin channel AI resources are not exposed as a standalone admin navigatio
   assert.doesNotMatch(appSource, /path="model\/capabilities"/);
 });
 
+test("admin channel list uses server pagination instead of client slice", () => {
+  const source = readFileSync(
+    new URL("./packages/sdkwork-clawrouter-pc-admin-channel/src/index.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /ChannelService\.fetchChannels\(\{/);
+  assert.match(source, /setTotalChannels\(channelData\.total\)/);
+  assert.doesNotMatch(source, /filteredChannels\.slice\(/);
+  assert.doesNotMatch(source, /paginatedChannels/);
+  assert.match(source, /filteredChannels\.map\(\(channel\) =>/);
+});
+
 test("admin channel endpoint management route is removed from navigation", () => {
   const registrySource = readFileSync(
     new URL("./src/adminModuleRegistry.ts", import.meta.url),
@@ -1756,7 +1782,8 @@ test("admin channel account modal supports account type and reusable AI resource
     "utf8",
   );
 
-  assert.match(source, /ChannelAiResourceService\.fetchAiResources\(\)/);
+  assert.match(source, /ChannelAiResourceService\.fetchAiResourcesPage/);
+  assert.doesNotMatch(source, /ChannelAiResourceService\.fetchAiResources\(\)/);
   assert.doesNotMatch(source, /sdkwork-clawrouter-pc-admin-model/);
   assert.doesNotMatch(packageManifest, /sdkwork-clawrouter-pc-admin-model/);
   assert.match(source, /channelType/);
@@ -1912,11 +1939,11 @@ test("admin channel AI resource service calls generated backend SDK path and nor
       throw new Error(`Unexpected ${method} ${url}`);
     },
     async (captured) => {
-      const resources = await ChannelAiResourceService.fetchAiResources();
+      const page = await ChannelAiResourceService.fetchAiResourcesPage({ page: 1, pageSize: 20 });
 
       assert.equal(captured.length, 1);
       assert.equal(captured[0].url, "/backend/v3/api/ai/resources");
-      assert.deepEqual(resources, [
+      assert.deepEqual(page.resources, [
         {
           id: "cap-1",
           resourceCode: "bundle.openrouter.openai.chat",
@@ -1944,6 +1971,7 @@ test("admin channel AI resource service calls generated backend SDK path and nor
           ],
         },
       ]);
+      assert.equal(page.total, 1);
     },
   );
 });
@@ -2092,8 +2120,9 @@ test("admin channel standalone AI resource admin page is removed while binding s
 
   assert.doesNotMatch(source, /export function AiResourceAdmin/);
   assert.doesNotMatch(source, /function AiResourceFormModal/);
-  assert.match(source, /<AiResourceSelectorModal/);
-  assert.match(source, /ChannelAiResourceService\.fetchAiResources/);
+  assert.match(source, /<ChannelPaginatedAiResourceSelectorModal/);
+  assert.match(source, /ChannelAiResourceService\.fetchAiResourcesPage/);
+  assert.doesNotMatch(source, /ChannelAiResourceService\.fetchAiResources/);
   assert.match(source, /admin\.channel\.aiResources\.actions\.addResource/);
   assert.match(source, /admin\.channel\.resourceAssociations\.title/);
   assert.doesNotMatch(source, /data-admin-channel-ai-resource-table-card/);
@@ -2118,9 +2147,10 @@ test("admin channel removes standalone AI resource authoring UI while keeping se
     "utf8",
   );
 
-  assert.match(source, /<AiResourceSelectorModal/);
-  assert.match(source, /resourceSelectorOptions/);
+  assert.match(source, /<ChannelPaginatedAiResourceSelectorModal/);
+  assert.match(source, /visibleResourcePickerOptions/);
   assert.match(source, /selectedDirectResourceCodes/);
+  assert.doesNotMatch(source, /resourceSelectorOptions/);
   assert.doesNotMatch(source, /function AiResourceFormModal/);
   assert.doesNotMatch(source, /function AiResourceModelSelector/);
   assert.doesNotMatch(source, /function AiResourceMemberSelector/);
@@ -2153,7 +2183,7 @@ test("admin channel AI resource service fails closed for malformed rows", async 
     },
     async () => {
       await assert.rejects(
-        () => ChannelAiResourceService.fetchAiResources(),
+        () => ChannelAiResourceService.fetchAiResourcesPage({ page: 1, pageSize: 20 }),
         /resourceCode must be an AI resource code/,
       );
     },
@@ -2209,9 +2239,9 @@ test("admin channel mapping catalog maps runtime ids instead of display aliases"
       throw new Error(`Unexpected SDK request ${method} ${url}`);
     },
     async () => {
-      const models = await ChannelModelCatalogService.fetchModels();
+      const page = await ChannelModelCatalogService.fetchModelsPage({ page: 1, pageSize: 20 });
 
-      assert.deepEqual(models, [
+      assert.deepEqual(page.models, [
         {
           catalogKey: "openai/gpt-4o-mini",
           model: "gpt-4o-mini",
@@ -2220,6 +2250,7 @@ test("admin channel mapping catalog maps runtime ids instead of display aliases"
           regionCode: "global",
         },
       ]);
+      assert.equal(page.total, 1);
     },
   );
 });
@@ -2273,11 +2304,11 @@ test("admin channel mapping catalog rejects regional catalog key debt", async ()
     },
     async (captured) => {
       await assert.rejects(
-        () => ChannelModelCatalogService.fetchModels(),
+        () => ChannelModelCatalogService.fetchModelsPage({ page: 1, pageSize: 20 }),
         /Model catalog key must use vendor\/model identity/,
       );
       await assert.rejects(
-        () => ChannelModelCatalogService.fetchModels(),
+        () => ChannelModelCatalogService.fetchModelsPage({ page: 1, pageSize: 20 }),
         /Model catalog key must use vendor\/model identity/,
       );
       assert.deepEqual(
@@ -2336,9 +2367,9 @@ test("admin channel mapping catalog rejects cloud region segments but accepts re
       throw new Error(`Unexpected SDK request ${method} ${url}`);
     },
     async () => {
-      const models = await ChannelModelCatalogService.fetchModels();
+      const page = await ChannelModelCatalogService.fetchModelsPage({ page: 1, pageSize: 20 });
 
-      assert.deepEqual(models.map((model) => model.catalogKey), ["openrouter/anthropic/claude-3-opus"]);
+      assert.deepEqual(page.models.map((model) => model.catalogKey), ["openrouter/anthropic/claude-3-opus"]);
     },
   );
 
@@ -2796,7 +2827,7 @@ test("admin channel service calls generated backend SDK paths and normalizes cha
       throw new Error(`Unexpected SDK request ${method} ${url}`);
     },
     async (captured) => {
-      const channels = await ChannelService.fetchChannels();
+      const { channels } = await ChannelService.fetchChannels();
       const created = await ChannelService.addChannel({
         name: " Anthropic Backup ",
         vendor: " Anthropic ",
@@ -3408,7 +3439,7 @@ test("admin channel list loads provider accounts without exposing direct model b
       throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);
     },
     async (captured) => {
-      const channels = await ChannelService.fetchChannels();
+      const { channels } = await ChannelService.fetchChannels();
 
       assert.deepEqual(channels.map((channel) => ({
         id: channel.id,
@@ -3722,6 +3753,6 @@ test("admin channel standalone resource and endpoint tables are removed", () => 
   assert.equal(source.includes("data-admin-channel-ai-resource-table-viewport"), false);
   assert.equal(source.includes("data-admin-channel-endpoint-table-card"), false);
   assert.equal(source.includes("data-admin-channel-endpoint-table-viewport"), false);
-  assert.match(source, /<AiResourceSelectorModal/);
+  assert.match(source, /<ChannelPaginatedAiResourceSelectorModal/);
   assert.match(source, /<AiResourceGroupSelectorModal/);
 });

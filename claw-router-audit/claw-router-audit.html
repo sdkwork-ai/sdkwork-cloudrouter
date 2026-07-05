@@ -753,7 +753,7 @@ graph TB
   <td>vite.config.ts 过度膨胀</td>
   <td><code>vite.config.ts</code></td>
   <td><span class="sev sev-p1">P1</span></td>
-  <td>单文件 1199 行，含 6 个自定义 Vite 插件和近 100 条 <code>resolve.alias</code>。<code>esbuild: false</code> + 自写 <code>ts.transpileModule</code> 转译绕过 Vite 默认 esbuild 管线，非常规操作。</td>
+  <td>单文件含自定义 Vite 插件与 <code>clawrouter-portal-pnpm-workspace-resolver</code>（经 consuming app <code>node_modules</code> + <code>package.json#exports</code> 解析 workspace 包；已移除全部 <code>@sdkwork/*</code> <code>resolve.alias</code>）。<code>esbuild: false</code> + 自写 <code>ts.transpileModule</code> 转译用于 TypeScript 源码直编。</td>
 </tr>
 <tr>
   <td>F-04</td>

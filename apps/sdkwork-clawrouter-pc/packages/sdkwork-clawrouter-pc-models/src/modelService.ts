@@ -1,11 +1,14 @@
 import {
   ensureSdkworkApiSuccess,
   getModelsAppSdkClient,
+  isRecord,
   readApiRecord,
   readNumber,
   readRecordArray,
   readRequiredApiItems,
+  readRequiredNonNegativeNumber,
   readString,
+  type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 import type { Model, ModelCategoryKey, ModelGroupKey } from './data/models';
 import {
@@ -18,7 +21,8 @@ import {
 export type { RuntimeModelCatalogItem };
 export { findModelByCatalogRouteId, mergeRuntimeModelCatalog, resolveRuntimeModelCatalog };
 
-const DEFAULT_MODEL_CATALOG_PAGE_SIZE = 200;
+const DEFAULT_MODEL_CATALOG_PAGE_SIZE = 20;
+const MAX_MODEL_CATALOG_PAGE_SIZE = 200;
 
 export interface ModelCatalogServiceFilters {
   billingMeter?: string;
@@ -38,9 +42,17 @@ export interface ModelCatalogGroup {
   modelCount: number;
 }
 
+export interface ModelCatalogPageInfo {
+  total: number;
+  offset: number;
+  limit: number;
+  hasMore: boolean;
+}
+
 export interface ModelCatalogResult {
   models: Model[];
   groups: ModelCatalogGroup[];
+  pageInfo: ModelCatalogPageInfo;
 }
 
 export class ModelService {
@@ -51,39 +63,101 @@ export class ModelService {
   static fetchModelCatalog(filters: ModelCatalogServiceFilters = {}): Promise<ModelCatalogResult> {
     return fetchModelCatalogResult(filters);
   }
+
+  static async fetchModelByCatalogRouteId(routeId: string): Promise<Model | null> {
+    const normalizedRouteId = routeId.trim();
+    if (normalizedRouteId.length === 0) {
+      return null;
+    }
+
+    const directMatch = findModelByCatalogRouteId(
+      (await fetchModelCatalogResult({
+        searchQuery: normalizedRouteId,
+        limit: MAX_MODEL_CATALOG_PAGE_SIZE,
+      })).models,
+      normalizedRouteId,
+    );
+    if (directMatch) {
+      return directMatch;
+    }
+
+    const slashIndex = normalizedRouteId.indexOf('/');
+    if (slashIndex <= 0) {
+      return null;
+    }
+
+    const vendorCode = normalizedRouteId.slice(0, slashIndex).trim();
+    const modelQuery = normalizedRouteId.slice(slashIndex + 1).trim();
+    if (vendorCode.length === 0 || modelQuery.length === 0) {
+      return null;
+    }
+
+    return findModelByCatalogRouteId(
+      (await fetchModelCatalogResult({
+        vendorCodes: [vendorCode],
+        searchQuery: modelQuery,
+        limit: MAX_MODEL_CATALOG_PAGE_SIZE,
+      })).models,
+      normalizedRouteId,
+    );
+  }
 }
 
 async function fetchModelCatalogResult(filters: ModelCatalogServiceFilters): Promise<ModelCatalogResult> {
-  const pageSize = Math.max(1, Math.min(filters.limit ?? DEFAULT_MODEL_CATALOG_PAGE_SIZE, 1000));
-  let offset = Math.max(filters.offset ?? 0, 0);
-  const models: Model[] = [];
-  let groups: ModelCatalogGroup[] = [];
+  const limit = Math.max(
+    1,
+    Math.min(filters.limit ?? DEFAULT_MODEL_CATALOG_PAGE_SIZE, MAX_MODEL_CATALOG_PAGE_SIZE),
+  );
+  const offset = Math.max(filters.offset ?? 0, 0);
+  const result = await getModelsAppSdkClient().ai.models.list(buildModelCatalogListParams(filters, limit, offset));
+  ensureSdkworkApiSuccess(result, 'Failed to fetch models');
+  const data = readApiRecord(result);
+  const models = resolveRuntimeModelCatalog(readRequiredApiItems(result, 'Failed to fetch models'));
+  const groups = resolveRuntimeModelCatalogGroups(readRecordArray(data, 'groups'));
+  const pageInfo = readModelCatalogPageInfo(data, { offset, limit, itemCount: models.length });
 
-  while (true) {
-    const result = await getModelsAppSdkClient().ai.models.list(buildModelCatalogListParams(filters, pageSize, offset));
-    ensureSdkworkApiSuccess(result, 'Failed to fetch models');
-    const data = readApiRecord(result);
-    const pageModels = resolveRuntimeModelCatalog(readRequiredApiItems(result, 'Failed to fetch models'));
-    if (groups.length === 0) {
-      groups = resolveRuntimeModelCatalogGroups(readRecordArray(data, 'groups'));
-    }
-    if (pageModels.length === 0) {
-      break;
-    }
-    models.push(...pageModels);
-    if (pageModels.length < pageSize) {
-      break;
-    }
-    offset += pageModels.length;
-    if (filters.limit !== undefined && models.length >= filters.limit) {
-      break;
+  return {
+    models,
+    groups,
+    pageInfo,
+  };
+}
+
+function readModelCatalogPageInfo(
+  data: ApiRecord,
+  page: { offset: number; limit: number; itemCount: number },
+): ModelCatalogPageInfo {
+  const total = readModelCatalogListTotal(data, page.itemCount);
+  const consumed = page.offset + page.itemCount;
+  return {
+    total,
+    offset: page.offset,
+    limit: page.limit,
+    hasMore: consumed < total,
+  };
+}
+
+function readModelCatalogListTotal(data: ApiRecord, fallback: number): number {
+  if (data.total !== undefined && data.total !== null && data.total !== '') {
+    return readRequiredNonNegativeNumber(data, 'total', 'Model catalog total is required');
+  }
+
+  const pageInfo = data.pageInfo;
+  if (isRecord(pageInfo)) {
+    for (const key of ['totalItems', 'total_items'] as const) {
+      const value = pageInfo[key];
+      if (value === undefined || value === null || value === '') {
+        continue;
+      }
+      const parsed = typeof value === 'number' ? value : Number(String(value).trim());
+      if (Number.isFinite(parsed) && parsed >= 0) {
+        return parsed;
+      }
+      throw new Error('Model catalog total must be a non-negative number');
     }
   }
 
-  return {
-    models: filters.limit === undefined ? models : models.slice(0, filters.limit),
-    groups,
-  };
+  return fallback;
 }
 
 function buildModelCatalogListParams(

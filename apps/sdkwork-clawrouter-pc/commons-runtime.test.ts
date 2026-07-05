@@ -329,13 +329,44 @@ test("portal shell offsets embedded documents routes below the fixed navbar", ()
 
   assert.match(shellSource, /navbarAuthenticatedActionsStart/);
   assert.match(shellSource, /authenticatedActionsStart=\{navbarAuthenticatedActionsStart\}/);
-  assert.match(shellSource, /DOCUMENTS_HOST_OFFSET_ROUTE_PATTERN/);
-  assert.match(shellSource, /product-docs\|docs\|api-reference/);
+  assert.match(shellSource, /PORTAL_HOST_OFFSET_ROUTE_PATTERN/);
+  assert.match(shellSource, /product-docs\|docs\|api-reference\|token-plan/);
   assert.match(shellSource, /sdkwork-clawrouter-documents-host-offset flex-1/);
   assert.match(indexCssSource, /\.sdkwork-clawrouter-documents-host-offset \{/);
   assert.match(indexCssSource, /padding-top: var\(--sdkwork-portal-navbar-height, 4rem\);/);
   assert.match(indexCssSource, /\.sdkwork-clawrouter-documents-host-offset \.sdkwork-documents-shell-page-root \{/);
   assert.match(indexCssSource, /\.sdkwork-documents-shell-sticky-sidebar \{/);
+});
+
+test("portal shell offsets playground routes below the fixed navbar", () => {
+  const shellSource = readPortalSource("./packages/sdkwork-clawrouter-pc-shell/src/AppShellLayout.tsx");
+  const pageSource = readFileSync(
+    new URL(
+      "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/pages/PlaygroundPage.tsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const indexCssSource = readPortalSource("./src/index.css");
+
+  assert.match(shellSource, /sdkwork-clawrouter-playground-host-offset flex-1/);
+  assert.match(shellSource, /isPlayground/);
+  assert.match(indexCssSource, /\.sdkwork-clawrouter-playground-host-offset \{/);
+  assert.match(indexCssSource, /position:\s*fixed;/);
+  assert.match(indexCssSource, /top:\s*var\(--sdkwork-portal-navbar-height, 4rem\);/);
+  assert.match(indexCssSource, /--sdkwork-playground-workspace-sidebar-width:/);
+  assert.match(indexCssSource, /--sdkwork-playground-chat-sidebar-width:/);
+  assert.match(indexCssSource, /--sdkwork-playground-rail-width:/);
+  assert.match(indexCssSource, /\.sdkwork-playground-workspace-sidebar \{/);
+  assert.match(indexCssSource, /\.sdkwork-playground-rail-item \{/);
+  assert.match(indexCssSource, /\.sdkwork-playground-chat-sidebar \{/);
+  assert.match(indexCssSource, /--sdkwork-studio-bg:/);
+  assert.match(indexCssSource, /--sdkwork-image-generation-bg: var\(--sdkwork-studio-bg\)/);
+  assert.match(indexCssSource, /\.sdkwork-playground-chat-composer__submit/);
+  assert.match(indexCssSource, /\.sdkwork-playground-chat-message-bubble--user/);
+  assert.match(pageSource, /flex h-full min-h-0 w-full flex-1 flex-row overflow-hidden/);
+  assert.doesNotMatch(pageSource, /pt-\[58px\]/);
+  assert.doesNotMatch(pageSource, /h-\[100dvh\]/);
 });
 
 test("portal index.css registers tailwind sources for all external workspace UI integrations", () => {
@@ -984,6 +1015,7 @@ test("console sidebar exposes memberships as the commerce upgrade entry point", 
 
   assert.match(consoleShellSource, /path: '\/console\/memberships'/);
   assert.match(consoleShellSource, /fallbackLabel: 'Memberships'/);
+  assert.match(navbarSource, /href: '\/token-plan'/u);
   assert.doesNotMatch(navbarSource, /href: '\/console\/memberships'/u);
   assert.doesNotMatch(navbarSource, /\/console\/billing\?vip/u);
 });

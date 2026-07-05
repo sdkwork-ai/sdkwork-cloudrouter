@@ -14,6 +14,6 @@ export function listSdkworkConsoleCoreSdkInventory(): readonly SdkworkSdkInvento
     { workspace: 'clawrouter-app-order-capability', surface: 'app-api', credentialMode: 'authenticated-app-api' },
     { workspace: 'clawrouter-app-payment-capability', surface: 'app-api', credentialMode: 'authenticated-app-api' },
     { workspace: 'clawrouter-app-catalog-capability', surface: 'app-api', credentialMode: 'authenticated-app-api' },
-    { workspace: 'clawrouter-app-domain-transport-generated-typescript', surface: 'app-api', credentialMode: 'authenticated-app-api' },
+    { workspace: 'clawrouter-app-sdk', surface: 'app-api', credentialMode: 'authenticated-app-api', exportSubpath: 'domains' },
   ] as const;
 }

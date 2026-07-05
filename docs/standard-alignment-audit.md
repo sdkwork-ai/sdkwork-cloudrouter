@@ -1,6 +1,6 @@
 # SDKWork Claw Router 标准对齐审计
 
-最后更新：2026-06-30
+最后更新：2026-07-03
 
 审计命令：
 
@@ -103,7 +103,7 @@ IAM JWT (Authorization + Access-Token)
   - `pnpm check:commerce-debt:strict` — 禁止 console-era commerce PC 包、legacy commerce service facades、broad commerce tailwind glob 等
 - **Rust 依赖**：`Cargo.toml` 通过 sibling T1 capability crate 引用，不再依赖 monolithic commerce crate。
 - **PC 前端**：`apps/sdkwork-clawrouter-pc` 通过 per-domain Claw Router SDK（`getClawRouterBackendSdkClient().<domain>`）与 T1 `@sdkwork/<capability>-*` 包集成；commerce 过渡层已移除。
-- **commerce 债务状态**：domain transport 位于 `clawrouter-*-domain-transport-typescript`；Vite dev 经 alias + `isSdkworkWorkspaceDependency` 排除 workspace resolver 误解析 `dist/`；admin 域包已对齐独立 domain/capability 规格；会员等级删除通过 `plans.update(status: inactive)`（OpenAPI 无 DELETE）。
+- **commerce 债务状态**：domain transport 位于 `clawrouter-*-domain-transport-typescript`；Vite dev 经 `clawrouter-portal-pnpm-workspace-resolver` 从 consuming app 的 `node_modules` + `package.json#exports` 解析 workspace 包（禁止 `@sdkwork/*` resolve.alias）；admin 域包已对齐独立 domain/capability 规格；会员等级删除通过 `plans.update(status: inactive)`（OpenAPI 无 DELETE）。
 
 ## 5. 待治理项
 

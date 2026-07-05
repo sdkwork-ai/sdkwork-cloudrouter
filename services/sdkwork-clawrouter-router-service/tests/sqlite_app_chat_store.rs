@@ -84,13 +84,13 @@ async fn sqlite_app_chat_store_creates_conversation_and_turn_timeline() {
     );
 
     let messages = store
-        .list_messages(subject, "conv-uuid-1".to_owned())
+        .list_messages(subject, "conv-uuid-1".to_owned(), 1, 100)
         .await
         .unwrap();
-    assert_eq!(1, messages.len());
-    assert_eq!("input-message-uuid-1", messages[0].id);
-    assert_eq!("conv-uuid-1", messages[0].conversation_id);
-    assert_eq!(Some("turn-uuid-1"), messages[0].turn_id.as_deref());
+    assert_eq!(1, messages.items.len());
+    assert_eq!("input-message-uuid-1", messages.items[0].id);
+    assert_eq!("conv-uuid-1", messages.items[0].conversation_id);
+    assert_eq!(Some("turn-uuid-1"), messages.items[0].turn_id.as_deref());
 
     let completed = store
         .complete_turn_response(CompleteAppChatTurnCommand {
@@ -149,30 +149,30 @@ async fn sqlite_app_chat_store_creates_conversation_and_turn_timeline() {
     );
 
     let messages = store
-        .list_messages(subject, "conv-uuid-1".to_owned())
+        .list_messages(subject, "conv-uuid-1".to_owned(), 1, 100)
         .await
         .unwrap();
-    assert_eq!(2, messages.len());
-    assert_eq!("input-message-uuid-1", messages[0].id);
-    assert_eq!("output-message-uuid-1", messages[1].id);
-    assert_eq!("conv-uuid-1", messages[1].conversation_id);
-    assert_eq!(Some("turn-uuid-1"), messages[1].turn_id.as_deref());
-    assert_eq!("assistant", messages[1].role);
-    assert_eq!("output", messages[1].direction);
+    assert_eq!(2, messages.items.len());
+    assert_eq!("input-message-uuid-1", messages.items[0].id);
+    assert_eq!("output-message-uuid-1", messages.items[1].id);
+    assert_eq!("conv-uuid-1", messages.items[1].conversation_id);
+    assert_eq!(Some("turn-uuid-1"), messages.items[1].turn_id.as_deref());
+    assert_eq!("assistant", messages.items[1].role);
+    assert_eq!("output", messages.items[1].direction);
     assert_eq!(
         "Use a dedicated ChatConversation and ChatMessage system.",
-        messages[1].content
+        messages.items[1].content
     );
-    assert_eq!("completed", messages[1].status);
-    assert_eq!("claude-sonnet-4-5", messages[1].model.as_deref().unwrap());
-    assert_eq!("anthropic", messages[1].provider.as_deref().unwrap());
-    assert_eq!("claude_code", messages[1].runtime.as_deref().unwrap());
+    assert_eq!("completed", messages.items[1].status);
+    assert_eq!("claude-sonnet-4-5", messages.items[1].model.as_deref().unwrap());
+    assert_eq!("anthropic", messages.items[1].provider.as_deref().unwrap());
+    assert_eq!("claude_code", messages.items[1].runtime.as_deref().unwrap());
     assert_eq!(
         "usage-link-uuid-1",
-        messages[1].usage_link_id.as_deref().unwrap()
+        messages.items[1].usage_link_id.as_deref().unwrap()
     );
-    assert_eq!(100, messages[1].usage.as_ref().unwrap().input_tokens);
-    assert_eq!(200, messages[1].usage.as_ref().unwrap().output_tokens);
+    assert_eq!(100, messages.items[1].usage.as_ref().unwrap().input_tokens);
+    assert_eq!(200, messages.items[1].usage.as_ref().unwrap().output_tokens);
 
     let replayed = store
         .complete_turn_response(CompleteAppChatTurnCommand {
@@ -394,11 +394,11 @@ async fn sqlite_app_chat_store_preserves_multiline_markdown_response_content() {
     assert_eq!(markdown, completed.messages[0].content);
 
     let messages = store
-        .list_messages(subject, "markdown-conv-1".to_owned())
+        .list_messages(subject, "markdown-conv-1".to_owned(), 1, 100)
         .await
         .unwrap();
-    assert_eq!(2, messages.len());
-    assert_eq!(markdown, messages[1].content);
+    assert_eq!(2, messages.items.len());
+    assert_eq!(markdown, messages.items[1].content);
 
     let stored_message = sqlx::query(
         "SELECT content_text FROM ai_chat_message WHERE uuid = 'markdown-output-message-1'",

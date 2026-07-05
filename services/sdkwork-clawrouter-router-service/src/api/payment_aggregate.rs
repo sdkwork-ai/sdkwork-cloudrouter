@@ -11,12 +11,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::{
-    default_payment_provider_registry, EntityUuidGenerator, InMemoryPaymentIntentRuntimeStore,
-    PaymentAggregateRuntimeStore, PaymentIntentRuntimeRecord, PaymentIntentRuntimeService,
+    EntityUuidGenerator, InMemoryPaymentIntentRuntimeStore, PaymentAggregateRuntimeStore,
+    PaymentIntentRuntimeRecord, PaymentIntentRuntimeService, PaymentProviderRegistry,
     PaymentRefundRuntimeRecord, PaymentRefundRuntimeService, RuntimeCancelPaymentIntentCommand,
     RuntimeCancelRefundCommand, RuntimeCapturePaymentIntentCommand,
     RuntimeConfirmPaymentIntentCommand, RuntimeCreatePaymentIntentCommand,
     RuntimeCreateRefundCommand, RuntimeCreateRefundItemCommand,
+    resolve_payment_provider_registry_for_deployment,
 };
 use crate::infrastructure::OsApiKeySecretGenerator;
 
@@ -26,6 +27,7 @@ const IDEMPOTENCY_KEY_HEADER: &str = "Idempotency-Key";
 struct PaymentAggregateState {
     store: Arc<dyn PaymentAggregateRuntimeStore>,
     entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
+    provider_registry: PaymentProviderRegistry,
 }
 
 #[derive(Debug, Deserialize)]
@@ -143,15 +145,28 @@ struct MoneyAmountResponse {
 }
 
 pub fn payment_aggregate_router() -> Router {
-    payment_aggregate_router_with_runtime_store(
+    payment_aggregate_router_with_runtime_store_and_registry(
         Arc::new(InMemoryPaymentIntentRuntimeStore::default()),
         Arc::new(OsApiKeySecretGenerator),
+        resolve_payment_provider_registry_for_deployment(),
     )
 }
 
 pub fn payment_aggregate_router_with_runtime_store(
     store: Arc<dyn PaymentAggregateRuntimeStore>,
     entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
+) -> Router {
+    payment_aggregate_router_with_runtime_store_and_registry(
+        store,
+        entity_uuid_generator,
+        resolve_payment_provider_registry_for_deployment(),
+    )
+}
+
+pub fn payment_aggregate_router_with_runtime_store_and_registry(
+    store: Arc<dyn PaymentAggregateRuntimeStore>,
+    entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
+    provider_registry: PaymentProviderRegistry,
 ) -> Router {
     Router::new()
         .route("/payments/v3/payment_intents", post(create_payment_intent))
@@ -175,6 +190,7 @@ pub fn payment_aggregate_router_with_runtime_store(
         .with_state(PaymentAggregateState {
             store,
             entity_uuid_generator,
+            provider_registry,
         })
 }
 
@@ -198,7 +214,7 @@ async fn cancel_refund(
     };
     let service = PaymentRefundRuntimeService::new(
         state.store.as_ref(),
-        default_payment_provider_registry(),
+        state.provider_registry.clone(),
         state.entity_uuid_generator.as_ref(),
     );
 
@@ -238,7 +254,7 @@ async fn create_refund(
     };
     let service = PaymentRefundRuntimeService::new(
         state.store.as_ref(),
-        default_payment_provider_registry(),
+        state.provider_registry.clone(),
         state.entity_uuid_generator.as_ref(),
     );
     let currency_code = request.amount.currency.clone();
@@ -287,7 +303,7 @@ async fn create_payment_intent(
     };
     let service = PaymentIntentRuntimeService::new(
         state.store.as_ref(),
-        default_payment_provider_registry(),
+        state.provider_registry.clone(),
         state.entity_uuid_generator.as_ref(),
     );
 
@@ -333,7 +349,7 @@ async fn confirm_payment_intent(
     }
     let service = PaymentIntentRuntimeService::new(
         state.store.as_ref(),
-        default_payment_provider_registry(),
+        state.provider_registry.clone(),
         state.entity_uuid_generator.as_ref(),
     );
 
@@ -374,7 +390,7 @@ async fn capture_payment_intent(
     };
     let service = PaymentIntentRuntimeService::new(
         state.store.as_ref(),
-        default_payment_provider_registry(),
+        state.provider_registry.clone(),
         state.entity_uuid_generator.as_ref(),
     );
 
@@ -417,7 +433,7 @@ async fn cancel_payment_intent(
     };
     let service = PaymentIntentRuntimeService::new(
         state.store.as_ref(),
-        default_payment_provider_registry(),
+        state.provider_registry.clone(),
         state.entity_uuid_generator.as_ref(),
     );
 

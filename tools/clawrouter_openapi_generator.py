@@ -512,7 +512,9 @@ class ClawRouterOpenApiGenerator:
         }
 
     def render_models_catalog_json(self, surface: str) -> str:
-        return json.dumps(self.generate_models_catalog(surface), ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+        payload = self.generate_models_catalog(surface)
+        payload = self._align_envelope_document(payload)
+        return json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
 
     def write(self) -> dict[str, Path]:
         self.output_dir.mkdir(parents=True, exist_ok=True)

@@ -19,6 +19,9 @@ pub struct AppChatSubject {
 #[serde(rename_all = "camelCase")]
 pub struct AppChatConversationList {
     pub items: Vec<AppChatConversationItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -64,6 +67,15 @@ pub struct AppChatUsageSnapshot {
     pub total_tokens: i64,
     pub cost_amount: Option<String>,
     pub currency: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct AppChatMessageList {
+    pub items: Vec<AppChatMessageItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -170,7 +182,9 @@ pub trait AppChatStore {
         &'a self,
         subject: AppChatSubject,
         conversation_id: String,
-    ) -> AppChatFuture<'a, Vec<AppChatMessageItem>>;
+        page: i64,
+        page_size: i64,
+    ) -> AppChatFuture<'a, AppChatMessageList>;
 
     fn create_turn<'a>(
         &'a self,

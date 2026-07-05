@@ -15,6 +15,22 @@ pub struct AppProvidersSubject {
     pub user_id: i64,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AppProvidersListQuery {
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+    pub q: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct AppProvidersListPage {
+    pub items: Vec<AppProviderItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
+}
+
 #[derive(Debug, Clone, Default, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AppProvidersItems<T> {
@@ -43,5 +59,6 @@ pub trait AppProvidersReadStore {
     fn load_providers<'a>(
         &'a self,
         subject: Option<AppProvidersSubject>,
-    ) -> AppProvidersReadFuture<'a, Vec<AppProviderItem>>;
+        query: AppProvidersListQuery,
+    ) -> AppProvidersReadFuture<'a, AppProvidersListPage>;
 }

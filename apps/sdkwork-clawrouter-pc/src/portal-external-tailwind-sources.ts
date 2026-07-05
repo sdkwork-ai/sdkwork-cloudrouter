@@ -23,6 +23,10 @@ export const PORTAL_EXTERNAL_TAILWIND_SOURCES = [
   '../../../../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-payment/src',
   '../../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-order/src',
   '../../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/*/src',
+  '../../../../sdkwork-assets/apps/sdkwork-assets-pc/packages/*/src',
   '../../../../sdkwork-image/apps/sdkwork-image-pc/packages/*/src',
+  '../../../../sdkwork-video/apps/sdkwork-video-pc/packages/*/src',
+  '../../../../sdkwork-music/apps/sdkwork-music-pc/packages/*/src',
+  '../../../../sdkwork-audio/apps/sdkwork-audio-pc/packages/*/src',
   '../../../../sdkwork-models/apps/sdkwork-models-pc/packages/*/src',
 ] as const;

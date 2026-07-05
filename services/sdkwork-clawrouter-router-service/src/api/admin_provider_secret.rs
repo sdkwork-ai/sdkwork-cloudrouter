@@ -12,7 +12,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, normalize_list_search_query, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, success_envelope,
+};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::ports::{
@@ -34,12 +37,19 @@ struct AdminProviderSecretState {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct NormalizedListRequest {
+    page_no: i64,
+    page_size: i64,
+    offset: i64,
     provider_code: Option<String>,
     status: Option<String>,
+    q: Option<String>,
 }
 
 #[derive(Debug, Default, Deserialize)]
 struct ProviderSecretListQuery {
+    page: Option<i64>,
+    page_size: Option<i64>,
+    q: Option<String>,
     provider_code: Option<String>,
     status: Option<String>,
 }
@@ -68,12 +78,6 @@ struct NormalizedUpdateRequest {
 enum ProviderSecretCommandBuildError {
     BadRequest(String),
     System(DomainError),
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct AdminProviderSecretListResponse {
-    items: Vec<AdminProviderSecretItemResponse>,
 }
 
 #[derive(Debug, Serialize)]
@@ -140,6 +144,7 @@ async fn fetch_provider_secrets(
     State(state): State<AdminProviderSecretState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
+    Query(query_params): Query<ProviderSecretListQuery>,
     body: Bytes,
 ) -> Response {
     let subject = scoped.into();
@@ -147,24 +152,21 @@ async fn fetch_provider_secrets(
         Ok(request) => request,
         Err(message) => return bad_request(message),
     };
-    let request = match normalize_list_request(request) {
+    let request = match normalize_list_request(request, query_params) {
         Ok(request) => request,
         Err(message) => return bad_request(message),
     };
+    let query = match build_list_query(subject, request) {
+        Ok(query) => query,
+        Err(message) => return bad_request(message),
+    };
 
-    match state
-        .store
-        .list_provider_secrets(ListAdminProviderSecretsQuery {
-            subject,
-            provider_code: request.provider_code,
-            status: request.status,
-        })
-        .await
-    {
-        Ok(items) => Json(success_envelope(AdminProviderSecretListResponse {
-            items: items.into_iter().map(to_item_response).collect(),
-        }))
-        .into_response(),
+    match state.store.list_provider_secrets(query).await {
+        Ok(page) => json_success_list_response(
+            None,
+            page.items.into_iter().map(to_item_response).collect(),
+            offset_page_info(page.page_no, page.page_size, page.total),
+        ),
         Err(error) => {
             provider_secret_system_response("provider secret read model is unavailable", error)
         }
@@ -182,20 +184,17 @@ async fn fetch_provider_secrets_from_query(
         Ok(request) => request,
         Err(message) => return bad_request(message),
     };
+    let query = match build_list_query(subject, request) {
+        Ok(query) => query,
+        Err(message) => return bad_request(message),
+    };
 
-    match state
-        .store
-        .list_provider_secrets(ListAdminProviderSecretsQuery {
-            subject,
-            provider_code: request.provider_code,
-            status: request.status,
-        })
-        .await
-    {
-        Ok(items) => Json(success_envelope(AdminProviderSecretListResponse {
-            items: items.into_iter().map(to_item_response).collect(),
-        }))
-        .into_response(),
+    match state.store.list_provider_secrets(query).await {
+        Ok(page) => json_success_list_response(
+            None,
+            page.items.into_iter().map(to_item_response).collect(),
+            offset_page_info(page.page_no, page.page_size, page.total),
+        ),
         Err(error) => {
             provider_secret_system_response("provider secret read model is unavailable", error)
         }
@@ -318,7 +317,10 @@ fn parse_json_object(
     }
 }
 
-fn normalize_list_request(request: Map<String, Value>) -> Result<NormalizedListRequest, String> {
+fn normalize_list_request(
+    request: Map<String, Value>,
+    query_params: ProviderSecretListQuery,
+) -> Result<NormalizedListRequest, String> {
     let provider_code = optional_any_text(
         &request,
         &["providerCode", "vendor"],
@@ -330,9 +332,41 @@ fn normalize_list_request(request: Map<String, Value>) -> Result<NormalizedListR
     let status = optional_text(&request, "status", "provider secret status", 32)?
         .map(|status| normalize_status(&status))
         .transpose()?;
+    let page = optional_integer(&request, "page")?
+        .or(query_params.page);
+    let page_size = optional_integer(&request, "pageSize")?
+        .or(optional_integer(&request, "page_size")?)
+        .or(query_params.page_size);
+    let q = optional_text(&request, "q", "q", 128)?
+        .or(query_params.q);
+    let provider_code = match provider_code {
+        Some(code) => Some(code),
+        None => query_params
+            .provider_code
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(normalize_provider_code)
+            .transpose()?,
+    };
+    let status = match status {
+        Some(status) => Some(status),
+        None => query_params
+            .status
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(normalize_status)
+            .transpose()?,
+    };
+    let pagination = parse_offset_list_query(page, page_size)?;
     Ok(NormalizedListRequest {
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
         provider_code,
         status,
+        q: normalize_list_search_query(q, "q")?,
     })
 }
 
@@ -351,9 +385,29 @@ fn normalize_list_query(query: ProviderSecretListQuery) -> Result<NormalizedList
         .filter(|value| !value.is_empty())
         .map(normalize_status)
         .transpose()?;
+    let pagination = parse_offset_list_query(query.page, query.page_size)?;
     Ok(NormalizedListRequest {
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
         provider_code,
         status,
+        q: normalize_list_search_query(query.q, "q")?,
+    })
+}
+
+fn build_list_query(
+    subject: AdminProviderSecretSubject,
+    request: NormalizedListRequest,
+) -> Result<ListAdminProviderSecretsQuery, String> {
+    Ok(ListAdminProviderSecretsQuery {
+        subject,
+        page_no: request.page_no,
+        page_size: request.page_size,
+        offset: request.offset,
+        provider_code: request.provider_code,
+        status: request.status,
+        q: request.q,
     })
 }
 
@@ -552,6 +606,30 @@ fn optional_text(
         }
         Value::Null => Ok(None),
         _ => Err(format!("{field_name} must be a string")),
+    }
+}
+
+fn optional_integer(request: &Map<String, Value>, key: &str) -> Result<Option<i64>, String> {
+    let Some(value) = request.get(key) else {
+        return Ok(None);
+    };
+    match value {
+        Value::Number(value) => value
+            .as_i64()
+            .ok_or_else(|| format!("{key} must be an integer"))
+            .map(Some),
+        Value::String(value) => {
+            let value = value.trim();
+            if value.is_empty() {
+                return Ok(None);
+            }
+            value
+                .parse::<i64>()
+                .map(Some)
+                .map_err(|_| format!("{key} must be an integer"))
+        }
+        Value::Null => Ok(None),
+        _ => Err(format!("{key} must be an integer")),
     }
 }
 

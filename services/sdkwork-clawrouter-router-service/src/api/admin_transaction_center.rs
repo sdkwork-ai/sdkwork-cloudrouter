@@ -12,7 +12,10 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, offset_page_info, parse_offset_list_query, problem_from_wire_code,
+    success_envelope,
+};
 use crate::application::{validate_payment_secret_ref, PaymentProviderRegistryError};
 use crate::domain::DomainError;
 use crate::ports::{
@@ -23,9 +26,6 @@ use crate::ports::{
     UpdateAdminPaymentProviderAccountCommand, UpdateAdminPaymentProviderAccountStatusCommand,
 };
 
-const DEFAULT_PAGE_NO: i64 = 1;
-const DEFAULT_PAGE_SIZE: i64 = 100;
-const MAX_PAGE_SIZE: i64 = 200;
 const MAX_QUERY_STATUS_LEN: usize = 32;
 const MAX_MUTATION_STATUS_LEN: usize = 64;
 const MAX_ID_LEN: usize = 128;
@@ -118,15 +118,6 @@ struct NormalizedPaymentProviderAccountMutation {
     client_request_no: Option<String>,
     note: Option<String>,
     status: String,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct TransactionCenterCollectionResponse {
-    items: Vec<AdminTransactionJsonRecord>,
-    total: i64,
-    page: i64,
-    page_size: i64,
 }
 
 #[derive(Debug, Serialize)]
@@ -580,14 +571,10 @@ where
         Ok(parent_id) => parent_id,
         Err(response) => return response,
     };
-    let page_no = query.page.unwrap_or(DEFAULT_PAGE_NO);
-    if page_no < 1 {
-        return bad_request("page must be greater than or equal to 1");
-    }
-    let page_size = query.page_size.unwrap_or(DEFAULT_PAGE_SIZE);
-    if !(1..=MAX_PAGE_SIZE).contains(&page_size) {
-        return bad_request(format!("page_size must be between 1 and {MAX_PAGE_SIZE}"));
-    }
+    let pagination = match parse_offset_list_query(query.page, query.page_size) {
+        Ok(pagination) => pagination,
+        Err(message) => return bad_request(message),
+    };
     let status = match normalize_optional_text(query.status, "status", MAX_QUERY_STATUS_LEN) {
         Ok(status) => status.map(|value| value.to_ascii_lowercase()),
         Err(response) => return response,
@@ -595,9 +582,9 @@ where
     match load(ListAdminTransactionChildRecordsQuery {
         subject,
         parent_id,
-        page_no,
-        page_size,
-        offset: (page_no - 1) * page_size,
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
         status,
     })
     .await
@@ -641,15 +628,11 @@ where
 }
 
 fn collection_response(collection: AdminTransactionCollection) -> Response {
-    Json(success_envelope(
-        TransactionCenterCollectionResponse {
-            items: collection.items,
-            total: collection.total,
-            page: collection.page_no,
-            page_size: collection.page_size,
-        },
-    ))
-    .into_response()
+    json_success_list_response(
+        None,
+        collection.items,
+        offset_page_info(collection.page_no, collection.page_size, collection.total),
+    )
 }
 
 fn validated_list_query(
@@ -657,21 +640,15 @@ fn validated_list_query(
     query: TransactionCenterListQueryRequest,
 ) -> Result<ListAdminTransactionRecordsQuery, Response> {
     let subject = scoped.into();
-    let page_no = query.page.unwrap_or(DEFAULT_PAGE_NO);
-    if page_no < 1 {
-        return Err(bad_request("page must be greater than or equal to 1"));
-    }
-    let page_size = query.page_size.unwrap_or(DEFAULT_PAGE_SIZE);
-    if !(1..=MAX_PAGE_SIZE).contains(&page_size) {
-        return Err(bad_request(format!(
-            "page_size must be between 1 and {MAX_PAGE_SIZE}"
-        )));
-    }
+    let pagination = match parse_offset_list_query(query.page, query.page_size) {
+        Ok(pagination) => pagination,
+        Err(message) => return Err(bad_request(message)),
+    };
     Ok(ListAdminTransactionRecordsQuery {
         subject,
-        page_no,
-        page_size,
-        offset: (page_no - 1) * page_size,
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
         status: normalize_optional_text(query.status, "status", MAX_QUERY_STATUS_LEN)?
             .map(|value| value.to_ascii_lowercase()),
         provider_code: normalize_optional_enum(

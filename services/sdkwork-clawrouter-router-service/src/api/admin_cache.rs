@@ -159,15 +159,18 @@ where
     Json(success_envelope(data)).into_response()
 }
 
+const DEFAULT_CACHE_KEY_LIST_LIMIT: usize = 200;
+
 fn normalize_key_list_limit(limit: Option<usize>) -> crate::domain::DomainResult<Option<usize>> {
     match limit {
+        None => Ok(Some(DEFAULT_CACHE_KEY_LIST_LIMIT)),
         Some(0) => Err(crate::domain::DomainError::conflict(
             "cache key list limit must be between 1 and 1000",
         )),
         Some(value) if value > 1_000 => Err(crate::domain::DomainError::conflict(
             "cache key list limit must be between 1 and 1000",
         )),
-        value => Ok(value),
+        Some(value) => Ok(Some(value)),
     }
 }
 

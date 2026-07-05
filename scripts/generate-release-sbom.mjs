@@ -133,8 +133,8 @@ try {
 }
 
 // ---------------------------------------------------------------------------
-// 2. npm packages from pnpm workspaces (root + PC app), with license resolved
-//    from each installed package's package.json (handles pnpm .pnpm layout).
+// 2. npm packages from package workspaces (root + PC app), with license resolved
+//    from each installed package's package.json (handles the virtual-store layout).
 // ---------------------------------------------------------------------------
 let rootNpmPackages = [];
 let pcNpmPackages = [];
@@ -142,12 +142,12 @@ const pcAppRoot = join(root, 'apps', 'sdkwork-clawrouter-pc');
 try {
   rootNpmPackages = collectPnpmPackages(root);
 } catch (error) {
-  console.warn(`[sbom] root pnpm packages omitted: ${error.message}`);
+  console.warn(`[sbom] root npm packages omitted: ${error.message}`);
 }
 try {
   pcNpmPackages = collectPnpmPackages(pcAppRoot);
 } catch (error) {
-  console.warn(`[sbom] PC app pnpm packages omitted: ${error.message}`);
+  console.warn(`[sbom] PC app npm packages omitted: ${error.message}`);
 }
 
 const allNpmPackages = [...rootNpmPackages, ...pcNpmPackages].map((pkg) => ({
@@ -262,7 +262,10 @@ const sbom = {
     inputHashes: {
       cargoLock: hashFile(join(root, 'Cargo.lock')),
       rootPnpmLock: hashFile(join(root, 'pnpm-lock.yaml')),
-      pcPnpmLock: hashFile(join(pcAppRoot, 'pnpm-lock.yaml')),
+      // The PC workspace is a member of the root package workspace and ships no
+      // separate pnpm-lock.yaml; fall back to the root lockfile hash so the PC
+      // npm dependency tree stays traceable instead of recording null.
+      pcPnpmLock: hashFile(join(pcAppRoot, 'pnpm-lock.yaml')) ?? hashFile(join(root, 'pnpm-lock.yaml')),
     },
   },
   packages: spdxPackages,
@@ -604,8 +607,8 @@ function parseLockPackageKey(key) {
   return { name, version };
 }
 
-// Resolve license from an installed package's package.json. Follows pnpm
-// .pnpm symlinks via Node resolution, with a .pnpm directory fallback for
+// Resolve license from an installed package's package.json. Follows virtual-store
+// symlinks via Node resolution, with a virtual-store fallback under node_modules for
 // transitive deps that are not hoisted to the top-level node_modules. Handles
 // "UNLICENSED", "SEE LICENSE IN LICENSE", "MIT OR Apache-2.0", and the
 // deprecated `licenses` array form. Returns null when unresolved.
@@ -625,7 +628,7 @@ function resolveNpmLicense(workspaceRoot, name) {
   return license;
 }
 
-// Lazily build a name -> license map by scanning the pnpm virtual store
+// Lazily build a name -> license map by scanning the npm virtual store
 // (node_modules/.pnpm). Each entry dir encodes <name>@<version>[_<peers>].
 // Scans every entry (even duplicate names with different peer sets) until a
 // license is found, so transitive deps installed under non-default peer
@@ -664,7 +667,7 @@ function getPnpmDirLicenseMap(workspaceRoot) {
   return map;
 }
 
-// Parse a pnpm .pnpm entry dir name into {name, version}.
+// Parse a virtual-store entry dir name into {name, version}.
 //   '@radix-ui+react-slot@1.2.4_@types+react@19.2.14_react@19.2.4' ->
 //     { name: '@radix-ui/react-slot', version: '1.2.4' }
 //   'react@19.2.4' -> { name: 'react', version: '19.2.4' }
@@ -686,7 +689,7 @@ function parsePnpmEntryName(entry) {
     name = entry.slice(0, at);
     version = entry.slice(at + 1);
   }
-  // Strip pnpm peer-descriptor suffixes: '_<peers>' or '(<peers>)'.
+  // Strip peer-descriptor suffixes: '_<peers>' or '(<peers>)'.
   const cleanVersion = version.split(/[_(]/)[0];
   if (!cleanVersion) return null;
   return { name, version: cleanVersion };

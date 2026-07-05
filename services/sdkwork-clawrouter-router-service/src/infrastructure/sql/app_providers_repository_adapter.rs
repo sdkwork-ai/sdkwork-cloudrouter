@@ -6,7 +6,8 @@ use sdkwork_clawrouter_app_providers_repository_sqlx::{
 
 use crate::domain::DomainError;
 use crate::ports::{
-    AppProviderItem, AppProvidersReadFuture, AppProvidersReadStore, AppProvidersSubject,
+    AppProvidersListPage, AppProvidersListQuery, AppProvidersReadFuture, AppProvidersReadStore,
+    AppProvidersSubject,
 };
 
 #[derive(Debug, Clone)]
@@ -22,9 +23,10 @@ impl AppProvidersReadStore for PostgresAppProvidersReadStore {
     fn load_providers<'a>(
         &'a self,
         subject: Option<AppProvidersSubject>,
-    ) -> AppProvidersReadFuture<'a, Vec<AppProviderItem>> {
+        query: AppProvidersListQuery,
+    ) -> AppProvidersReadFuture<'a, AppProvidersListPage> {
         Box::pin(async move {
-            RepositoryAppProvidersReadStore::load_providers(&self.0, subject)
+            RepositoryAppProvidersReadStore::load_providers(&self.0, subject, query)
                 .await
                 .map_err(|error| DomainError::new(error.to_string()))
         })
@@ -44,9 +46,10 @@ impl AppProvidersReadStore for SqliteAppProvidersReadStore {
     fn load_providers<'a>(
         &'a self,
         subject: Option<AppProvidersSubject>,
-    ) -> AppProvidersReadFuture<'a, Vec<AppProviderItem>> {
+        query: AppProvidersListQuery,
+    ) -> AppProvidersReadFuture<'a, AppProvidersListPage> {
         Box::pin(async move {
-            RepositoryAppProvidersReadStore::load_providers(&self.0, subject)
+            RepositoryAppProvidersReadStore::load_providers(&self.0, subject, query)
                 .await
                 .map_err(|error| DomainError::new(error.to_string()))
         })

@@ -3,13 +3,13 @@
   "compilerOptions": {
     "paths": {
       "@sdkwork/clawrouter-app-sdk": [
-        "../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/index.ts"
+        "../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts"
       ],
       "@sdkwork/clawrouter-backend-sdk": [
-        "../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/index.ts"
+        "../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts"
       ],
       "@sdkwork/clawrouter-open-sdk": [
-        "../../sdks/clawrouter-open-sdk/clawrouter-open-sdk-typescript/generated/server-openapi/src/index.ts"
+        "../../sdks/clawrouter-open-sdk/clawrouter-open-sdk-typescript/src/index.ts"
       ],
       "@sdkwork/clawroutes-pc-commons/api-result": [
         "./packages/sdkwork-clawroutes-pc-commons/src/api-result.ts"

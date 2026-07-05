@@ -484,7 +484,7 @@ test("console theme-aware primary surfaces do not hardcode blue accents", () => 
   assert.doesNotMatch(consoleLayoutSource, bluePrimaryPattern);
   assert.match(settingsSource, /focus:border-lobster-500/);
   assert.match(settingsSource, /bg-lobster-600 hover:bg-lobster-700/);
-  assert.match(consoleLayoutSource, /bg-lobster-50/);
+  assert.match(consoleLayoutSource, /sdkwork-portal-sidebar-item/);
 });
 
 test("portal applies persisted theme preferences before first React render", () => {
@@ -516,12 +516,12 @@ test("console auth unavailable copy stays product-focused without app-contract c
 
 test("playground unavailable states stay product-focused without implementation caveats", () => {
   const files = [
-    "./packages/sdkwork-clawrouter-pc-playground/src/components/views/AudioView.tsx",
-    "./packages/sdkwork-clawrouter-pc-playground/src/components/views/ImageView.tsx",
-    "./packages/sdkwork-clawrouter-pc-playground/src/components/views/MusicView.tsx",
-    "./packages/sdkwork-clawrouter-pc-playground/src/components/views/SfxView.tsx",
-    "./packages/sdkwork-clawrouter-pc-playground/src/components/views/VideoView.tsx",
-    "./packages/sdkwork-clawrouter-pc-playground/src/components/views/SharedHistoryView.tsx",
+    "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/views/AudioView.tsx",
+    "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/views/ImageView.tsx",
+    "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/views/MusicView.tsx",
+    "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/views/SfxView.tsx",
+    "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/views/VideoView.tsx",
+    "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/views/SharedHistoryView.tsx",
   ];
 
   for (const file of files) {

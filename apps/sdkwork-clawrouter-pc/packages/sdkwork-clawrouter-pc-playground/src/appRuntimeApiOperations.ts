@@ -31,6 +31,8 @@ interface PageParams {
   pageSize?: number;
 }
 
+const DEFAULT_PAGE_SIZE = 20;
+
 export interface ChatConversationCreateBody {
   agentId?: string;
   agentSessionId?: string;
@@ -166,7 +168,7 @@ export async function listModelCatalog(
 }
 
 export async function listChatConversations(
-  params: PageParams = { pageSize: 100 },
+  params: PageParams = { pageSize: DEFAULT_PAGE_SIZE },
   sdkClient?: ClawRouterAppSdkClient,
 ): Promise<unknown> {
   const client = appClient(sdkClient);
@@ -192,7 +194,7 @@ export async function retrieveChatConversation(
 
 export async function listChatMessages(
   conversationId: string,
-  params: { limit?: number; order?: 'asc' | 'desc' } = { limit: 100, order: 'asc' },
+  params: { limit?: number; order?: 'asc' | 'desc' } = { limit: DEFAULT_PAGE_SIZE, order: 'asc' },
   sdkClient?: ClawRouterAppSdkClient,
 ): Promise<unknown> {
   const client = appClient(sdkClient);
@@ -229,7 +231,7 @@ export async function completeChatTurnResponse(
 }
 
 export async function listMemorySpaces(
-  params: PageParams = { pageSize: 100 },
+  params: PageParams = { pageSize: DEFAULT_PAGE_SIZE },
   sdkClient?: SdkworkMemoryAppSdkClient,
 ): Promise<unknown> {
   const client = memoryClient(sdkClient);
@@ -258,7 +260,7 @@ export async function retrieveMemorySpace(
 
 export async function listMemoryEntries(
   spaceId: string,
-  params: PageParams = { pageSize: 100 },
+  params: PageParams = { pageSize: DEFAULT_PAGE_SIZE },
   sdkClient?: SdkworkMemoryAppSdkClient,
 ): Promise<unknown> {
   const client = memoryClient(sdkClient);
@@ -293,7 +295,7 @@ export async function listRuntimeInvocations(
     conversationId?: string;
     runtime?: string;
     status?: string;
-  } = { pageSize: 100 },
+  } = { pageSize: DEFAULT_PAGE_SIZE },
   sdkClient?: ClawRouterAppSdkClient,
 ): Promise<unknown> {
   const client = appClient(sdkClient);
@@ -333,7 +335,7 @@ export async function completeRuntimeInvocation(
 
 export async function listRuntimeEvents(
   invocationId: string,
-  params: PageParams = { pageSize: 100 },
+  params: PageParams = { pageSize: DEFAULT_PAGE_SIZE },
   sdkClient?: ClawRouterAppSdkClient,
 ): Promise<unknown> {
   const client = appClient(sdkClient);
@@ -365,7 +367,7 @@ export async function createRuntimeEvent(
 
 export async function listRuntimeArtifacts(
   invocationId: string,
-  params: PageParams = { pageSize: 100 },
+  params: PageParams = { pageSize: DEFAULT_PAGE_SIZE },
   sdkClient?: ClawRouterAppSdkClient,
 ): Promise<unknown> {
   const client = appClient(sdkClient);

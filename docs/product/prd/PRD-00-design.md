@@ -62,7 +62,7 @@
 | --- | --- |
 | [15-new-api-sub2api价格体系对比与ClawRouter定价设计.md](./15-new-api-sub2api价格体系对比与ClawRouter定价设计.md) | 对比 new-api/sub2api 的价格体系，定义官方价、供应商价、客户价、定价方案、规则、阶梯与统一计量模型 |
 | [16-前端代码契约复核与数据设计覆盖检查.md](./16-前端代码契约复核与数据设计覆盖检查.md) | 基于 portal 当前前端代码的路由、service/interface 和 mock data 反向复核数据库设计覆盖情况与本轮修正记录 |
-| [17-AppCenter-PlusApp-compatible-design.md](./17-AppCenter-PlusApp-compatible-design.md) | **已废弃** — 见 [30-platform-data-model-v4.md](./30-platform-data-model-v4.md)；历史 Java PlusApp/plus_app 兼容设计 |
+| [17-AppCenter-PlusApp-compatible-design.md](./17-AppCenter-PlusApp-compatible-design.md) | **已废弃** — 见 [30-platform-data-model-v4.md](./30-platform-data-model-v4.md)；历史 Java platform_app/appstore_app 兼容设计（归档文件名保留） |
 | [18-SkillsHub-AgentSkills-PlusCategory-compatible-design.md](./18-SkillsHub-AgentSkills-PlusCategory-compatible-design.md) | **已废弃** — 见 [30-platform-data-model-v4.md](./30-platform-data-model-v4.md)；历史 AgentSkills/PlusCategory 兼容设计 |
 | [19-Finance-Trade-Java-compatible-design.md](./19-Finance-Trade-Java-compatible-design.md) | 支付、订单、退款、发票、账户、优惠券、VIP 等金融交易域按 Java 既有 Entity 和 API 标准复用，避免重复建模 |
 | [20-schema-guardian-quality-gate.md](./20-schema-guardian-quality-gate.md) | 将 Java-first、L0 legacy、禁止同义表、SkillsHub 表替换等数据标准固化为可执行质量门禁 |

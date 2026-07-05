@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AlertCircle,
   Check,
@@ -53,6 +53,7 @@ function getApiKeyProductErrorMessage(error: unknown, fallback: string, t: Trans
 export function ApiKeysView() {
   const { t } = useTranslation();
   const [keysData, setKeysData] = useState<ApiKey[]>([]);
+  const [totalKeys, setTotalKeys] = useState(0);
   const [groups, setGroups] = useState<ChannelGroup[]>([]);
   const [groupsLoaded, setGroupsLoaded] = useState(false);
   const [groupsLoading, setGroupsLoading] = useState(false);
@@ -73,26 +74,41 @@ export function ApiKeysView() {
 
   const itemsPerPage = 10;
 
+  const loadKeys = async (isActive: () => boolean = () => true) => {
+    setLoading(true);
+    try {
+      const data = await ApiKeyService.fetchKeys({
+        page: currentPage,
+        pageSize: itemsPerPage,
+        q: searchQuery.trim() || undefined,
+      });
+      if (!isActive()) {
+        return;
+      }
+      setKeysData(data.keys);
+      setTotalKeys(data.total);
+      setError(null);
+    } catch (reason) {
+      if (!isActive()) {
+        return;
+      }
+      setKeysData([]);
+      setTotalKeys(0);
+      setError(getApiKeyProductErrorMessage(reason, t('console.apiKeys.errors.loadFallback', 'API Key 加载失败。'), t));
+    } finally {
+      if (isActive()) {
+        setLoading(false);
+      }
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
-    ApiKeyService.fetchKeys()
-      .then((keys) => {
-        if (!mounted) return;
-        setKeysData(keys);
-        setError(null);
-      })
-      .catch((reason) => {
-        if (!mounted) return;
-        setError(getApiKeyProductErrorMessage(reason, t('console.apiKeys.errors.loadFallback', 'API Key 加载失败。'), t));
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
+    void loadKeys(() => mounted);
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [currentPage, searchQuery, t]);
 
   const ensureGroupsLoaded = async () => {
     if (groupsLoaded || groupsLoading) {
@@ -128,27 +144,13 @@ export function ApiKeysView() {
     await ensureGroupsLoaded();
   };
 
-  const filteredKeys = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) {
-      return keysData;
-    }
-    return keysData.filter((key) => {
-      const groupName = displayChannelGroupName(key, groups).toLowerCase();
-      return (
-        key.displayName.toLowerCase().includes(query) ||
-        key.name.toLowerCase().includes(query) ||
-        key.maskedKey.toLowerCase().includes(query) ||
-        key.channelGroup.toLowerCase().includes(query) ||
-        groupName.includes(query)
-      );
-    });
-  }, [groups, keysData, searchQuery]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredKeys.length / itemsPerPage));
-  const paginatedKeys = filteredKeys.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  const visibleStart = paginatedKeys.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
-  const visibleEnd = paginatedKeys.length > 0 ? Math.min(currentPage * itemsPerPage, filteredKeys.length) : 0;
+  const totalPages = Math.max(1, Math.ceil(totalKeys / itemsPerPage));
+  const visibleStart = keysData.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
+  const visibleEnd = keysData.length > 0 ? Math.min(currentPage * itemsPerPage, totalKeys) : 0;
 
   const handleCreateSubmit = async (data: ApiKeyFormValues) => {
     setCreating(true);
@@ -340,7 +342,7 @@ export function ApiKeysView() {
               )}
 
               {!loading &&
-                paginatedKeys.map((key) => (
+                keysData.map((key) => (
                   <tr key={key.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group">
                     <td className="px-5 py-4">
                       <div className="flex flex-col gap-1.5">
@@ -513,7 +515,7 @@ export function ApiKeysView() {
                   </tr>
                 ))}
 
-              {!loading && paginatedKeys.length === 0 && (
+              {!loading && keysData.length === 0 && (
                 <tr>
                   <td colSpan={9} className="text-center py-20 text-slate-500">
                     {t('console.apiKeys.empty', '暂无 API Key')}
@@ -530,7 +532,7 @@ export function ApiKeysView() {
               defaultValue: 'Showing {{start}} - {{end}} of {{total}}',
               start: visibleStart,
               end: visibleEnd,
-              total: filteredKeys.length,
+              total: totalKeys,
             })}
           </div>
           <div className="flex items-center gap-2">

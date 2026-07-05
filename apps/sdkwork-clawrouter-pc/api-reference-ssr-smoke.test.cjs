@@ -92,7 +92,7 @@ function installSsrRequireHooks() {
   const shims = new Map([
     ['motion/react', createMotionShim()],
     ['react-i18next', createI18nShim()],
-    ['sdkwork-clawrouter-pc-commons', createCommonsShim()],
+    ['sdkwork-clawroutes-pc-commons', createCommonsShim()],
   ]);
 
   Module._load = function loadForApiReferenceSsrSmoke(request, parent, isMain) {

@@ -27,7 +27,7 @@ function sourceBetween(source: string, startToken: string, endToken: string): st
   const end = source.indexOf(endToken, start + startToken.length);
   assert.notEqual(start, -1, `missing source start token: ${startToken}`);
   assert.notEqual(end, -1, `missing source end token: ${endToken}`);
-  return source.slice(start, end);
+  return source.substring(start, end);
 }
 
 async function withBackendSdkFetch<T>(

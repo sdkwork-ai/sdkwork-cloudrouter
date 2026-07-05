@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "kind": "sdkwork.platform_app.seed",
   "ok": true,
-  "count": 31,
+  "count": 30,
   "errors": [],
   "source": {
     "rootAppKey": "sdkwork-clawrouter",
@@ -18,7 +18,7 @@
       "configPath": "claw-studio/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "Claw Studio",
         "description": "Claw Studio SDKWork application.",
         "version": "0.1.0",
@@ -281,7 +281,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for Claw Studio.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -319,7 +319,7 @@
       "configPath": "sdkwork-im/apps/sdkwork-chat-pc/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "Craw Chat SDKWork Chat PC",
         "description": "Craw Chat SDKWork Chat PC SDKWork application.",
         "version": "0.0.0",
@@ -582,7 +582,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for Craw Chat SDKWork Chat PC.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -620,7 +620,7 @@
       "configPath": "sdkwork-im/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "chat",
         "description": "SDKWork Chat application.",
         "version": "0.1.0",
@@ -876,7 +876,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Chat.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -914,7 +914,7 @@
       "configPath": "hub-installer/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "Hub Installer",
         "description": "Cross-platform software installer engine for Node.js and TypeScript.",
         "version": "0.1.0",
@@ -1170,7 +1170,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for Hub Installer.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -1208,7 +1208,7 @@
       "configPath": "magic-studio/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "Magic Studio",
         "description": "Magic Studio SDKWork application.",
         "version": "0.1.1",
@@ -1471,7 +1471,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for Magic Studio.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -1509,7 +1509,7 @@
       "configPath": "sdkwork-aiot/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Aiot",
         "description": "SDKWork Aiot SDKWork application.",
         "version": "0.1.0",
@@ -1765,7 +1765,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Aiot.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -1803,7 +1803,7 @@
       "configPath": "sdkwork-backend-react-web/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 30001,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Backend React Web",
         "description": "SDKWork Backend React Web - 基于 pnpm workspace 的模块化前端架构",
         "version": "1.0.0",
@@ -2066,7 +2066,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Backend React Web.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -2104,7 +2104,7 @@
       "configPath": "sdkwork-birdcoder/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Birdcoder",
         "description": "SDKWork Birdcoder SDKWork application.",
         "version": "0.1.0",
@@ -2367,7 +2367,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Birdcoder.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -2405,7 +2405,7 @@
       "configPath": "sdkwork-clawrouter/apps/sdkwork-clawrouter-pc/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork ClawRouter PC",
         "description": "SDKWork ClawRouter PC SDKWork application.",
         "version": "0.0.0",
@@ -2661,7 +2661,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork ClawRouter PC.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -2699,7 +2699,7 @@
       "configPath": "sdkwork-clawrouter/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Claw Router",
         "description": "SDKWork Claw Router SDKWork application.",
         "version": "0.1.0",
@@ -2962,7 +2962,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Claw Router.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -3000,7 +3000,7 @@
       "configPath": "sdkwork-cloud-portal/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Cloud Portal",
         "description": "SDKWork Cloud Portal SDKWork application.",
         "version": "1.0.0",
@@ -3263,7 +3263,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Cloud Portal.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -3301,7 +3301,7 @@
       "configPath": "sdkwork-codebox/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Codebox",
         "description": "All-in-One Assistant for Claude Code, Codex & Gemini CLI",
         "version": "3.12.1",
@@ -3564,7 +3564,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Codebox.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -3602,7 +3602,7 @@
       "configPath": "sdkwork-drive/apps/sdkwork-drive-pc/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Drive PC",
         "description": "PC browser and desktop application for SDKWork Drive file, transfer, storage, and sharing workflows.",
         "version": "0.1.0",
@@ -3830,7 +3830,7 @@
       "configPath": "sdkwork-drive/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Drive",
         "description": "SDKWork Drive SDKWork application.",
         "version": "0.1.0",
@@ -4093,7 +4093,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Drive.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -4131,7 +4131,7 @@
       "configPath": "sdkwork-generations/apps/sdkwork-generations-pc/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Generations PC",
         "description": "PC browser application for generation commands, history, results, and provenance.",
         "version": "0.1.0",
@@ -4359,7 +4359,7 @@
       "configPath": "sdkwork-github-workflow/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Github Workflow",
         "description": "Reusable GitHub Actions workflow framework for SDKWork application packaging and deployment.",
         "version": "0.1.0",
@@ -4615,7 +4615,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Github Workflow.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -4653,7 +4653,7 @@
       "configPath": "sdkwork-knowledgebase/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Knowledgebase",
         "description": "SDKWork Knowledgebase SDKWork application.",
         "version": "0.1.0",
@@ -4909,7 +4909,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Knowledgebase.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -4947,7 +4947,7 @@
       "configPath": "sdkwork-local-router/apps/sdkwork-modelkit-pc/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Local Router SDKWork Modelkit PC",
         "description": "SDKWork Local Router SDKWork Modelkit PC SDKWork application.",
         "version": "0.0.0",
@@ -5203,7 +5203,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Local Router SDKWork Modelkit PC.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -5241,7 +5241,7 @@
       "configPath": "sdkwork-local-router/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Local Router",
         "description": "SDKWork Local Router SDKWork application.",
         "version": "0.1.0",
@@ -5497,7 +5497,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Local Router.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -5535,7 +5535,7 @@
       "configPath": "sdkwork-models/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Models",
         "description": "SDKWork Models SDKWork application.",
         "version": "0.1.0",
@@ -5791,7 +5791,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Models.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -5829,7 +5829,7 @@
       "configPath": "sdkwork-notes/sdkwork-notes-pc-react/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Notes PC React",
         "description": "SDKWork Notes PC React SDKWork application.",
         "version": "0.1.0",
@@ -6092,7 +6092,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Notes PC React.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -6130,7 +6130,7 @@
       "configPath": "sdkwork-sdk-generator/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Sdk Generator",
         "description": "SDKWork SDK Generator - Professional SDK code generator for TypeScript, Dart, Python, Go, Java, Kotlin, Swift, C#, Flutter, Rust, PHP, and Ruby",
         "version": "1.0.9",
@@ -6386,7 +6386,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Sdk Generator.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -6424,7 +6424,7 @@
       "configPath": "sdkwork-skills-private/sdkwork-skills-ops-admin/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Skills Ops Admin",
         "description": "SDKWork Skills Ops Admin SDKWork application.",
         "version": "0.1.0",
@@ -6680,7 +6680,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Skills Ops Admin.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -6718,7 +6718,7 @@
       "configPath": "sdkwork-terminal/apps/desktop/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Terminal Desktop",
         "description": "SDKWork Terminal Desktop SDKWork application.",
         "version": "0.2.59",
@@ -6981,7 +6981,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Terminal Desktop.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -7019,7 +7019,7 @@
       "configPath": "sdkwork-terminal/apps/web/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Terminal Web",
         "description": "SDKWork Terminal Web SDKWork application.",
         "version": "0.2.59",
@@ -7275,7 +7275,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Terminal Web.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -7313,7 +7313,7 @@
       "configPath": "sdkwork-terminal/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Terminal",
         "description": "SDKWork Terminal SDKWork application.",
         "version": "0.2.59",
@@ -7576,7 +7576,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Terminal.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -7614,7 +7614,7 @@
       "configPath": "sdkwork-tts/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Tts",
         "description": "SDKWork Tts SDKWork application.",
         "version": "0.1.0",
@@ -7870,7 +7870,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Tts.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -7908,7 +7908,7 @@
       "configPath": "sdkwork-ui/sdkwork-ui-pc-react/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork UI PC React",
         "description": "SDKWORK shared PC React UI framework built on shadcn-style primitives and desktop application patterns.",
         "version": "0.1.0",
@@ -8171,7 +8171,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork UI PC React.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [
@@ -8209,7 +8209,7 @@
       "configPath": "sdkwork-video-cut/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Video Cut",
         "description": "SDKWork Video Cut SDKWork application.",
         "version": "0.1.8",
@@ -8702,7 +8702,7 @@
       "configPath": "sdkwork-video/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
-      "plusApp": {
+      "platformApp": {
         "name": "SDKWork Video",
         "description": "SDKWork Video SDKWork application.",
         "version": "0.1.0",
@@ -8958,7 +8958,7 @@
             "content": "Initial SDKWork App Standard v3 manifest for SDKWork Video.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
-              "PlusApp projection metadata standardized",
+              "platform_app projection metadata standardized",
               "Download package matrix normalized"
             ],
             "packageIds": [

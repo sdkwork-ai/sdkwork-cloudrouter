@@ -1,4 +1,4 @@
-import { Crown, TicketPercent } from 'lucide-react';
+import { TicketPercent } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { ClawRouterNavbarWalletEntry } from './ClawRouterNavbarWalletEntry.tsx';
@@ -18,7 +18,6 @@ export function ClawRouterConsoleBusinessNavbarActions({
   const { t } = useTranslation();
   const {
     couponsPath,
-    membershipsPath,
     onNavigate,
   } = useConsoleBusinessNavigation({ routePrefix });
 
@@ -34,16 +33,6 @@ export function ClawRouterConsoleBusinessNavbarActions({
       >
         <TicketPercent className="h-4 w-4" aria-hidden="true" />
         <span>{t('console.navbar.coupons', 'Coupons')}</span>
-      </button>
-      <button
-        className={CLAW_ROUTER_COMMERCE_ACTION_CLASS}
-        onClick={() => {
-          onNavigate(membershipsPath);
-        }}
-        type="button"
-      >
-        <Crown className="h-4 w-4" aria-hidden="true" />
-        <span>{t('console.navbar.membership', 'Membership')}</span>
       </button>
     </>
   );

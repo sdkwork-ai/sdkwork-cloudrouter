@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Activity, Server, AlertTriangle, Cpu, Globe,
   CheckCircle2, AlertCircle, Clock, Search
@@ -7,27 +7,47 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   Legend, LineChart, Line
 } from 'recharts';
-import { AdminTableShell, BusinessStatePanel } from '@sdkwork/clawroutes-pc-commons';
-import { MonitorService, SysNode, Alert, PerformanceDatum } from './monitorService';
+import { AdminTableShell, BottomPagination, BusinessStatePanel } from '@sdkwork/clawroutes-pc-commons';
+import {
+  MONITOR_OVERVIEW_SAMPLE_PAGE_SIZE,
+  MonitorService,
+  SysNode,
+  Alert,
+  PerformanceDatum,
+} from './monitorService';
 
 import { useTranslation } from 'react-i18next';
 function NodesTab() {
+  const { t } = useTranslation();
+  const [overviewNodes, setOverviewNodes] = useState<SysNode[]>([]);
   const [nodes, setNodes] = useState<SysNode[]>([]);
+  const [totalNodes, setTotalNodes] = useState(0);
   const [perfData, setPerfData] = useState<PerformanceDatum[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [nodeSearch, setNodeSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  const listFilters = useMemo(() => ({
+    page,
+    pageSize,
+    q: nodeSearch.trim() || undefined,
+  }), [page, pageSize, nodeSearch]);
 
   const loadNodes = async () => {
     setLoading(true);
     setLoadError(null);
     try {
-      const [nodesData, perf] = await Promise.all([
-        MonitorService.fetchNodes(),
-        MonitorService.fetchPerformanceData(),
+      const [overviewNodesData, perf, nodesPage] = await Promise.all([
+        MonitorService.fetchNodes({ page: 1, pageSize: MONITOR_OVERVIEW_SAMPLE_PAGE_SIZE }),
+        MonitorService.fetchPerformanceData({ page: 1, pageSize: MONITOR_OVERVIEW_SAMPLE_PAGE_SIZE }),
+        MonitorService.fetchNodes(listFilters),
       ]);
-      setNodes(nodesData);
-      setPerfData(perf);
+      setOverviewNodes(overviewNodesData.items);
+      setPerfData(perf.items);
+      setNodes(nodesPage.items);
+      setTotalNodes(nodesPage.total);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : 'Failed to load system metrics');
     } finally {
@@ -37,7 +57,16 @@ function NodesTab() {
 
   useEffect(() => {
     void loadNodes();
-  }, []);
+  }, [page, pageSize, nodeSearch]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [nodeSearch]);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(totalNodes / pageSize));
+    setPage(current => Math.min(Math.max(current, 1), totalPages));
+  }, [totalNodes, pageSize]);
 
   if (loading) {
     return <BusinessStatePanel kind="loading" title="Loading system metrics..." className="min-h-[420px]" />;
@@ -56,31 +85,19 @@ function NodesTab() {
     );
   }
 
-  const avgCpu = nodes.length === 0 ? 0 : nodes.reduce((sum, node) => sum + node.cpu, 0) / nodes.length;
-  const onlineNodes = nodes.filter((node) => node.status === 'online').length;
-  const healthRate = nodes.length === 0 ? 0 : (onlineNodes / nodes.length) * 100;
-  const activeIncidents = nodes.filter((node) => node.status !== 'online').length;
-  const regions = new Set(nodes.map((node) => node.region)).size;
-  const normalizedNodeSearch = nodeSearch.trim().toLowerCase();
-  const filteredNodes = nodes.filter((node) => {
-    if (!normalizedNodeSearch) {
-      return true;
-    }
-    return [
-      node.name,
-      node.ip,
-      node.region,
-      node.status,
-    ].some((value) => value.toLowerCase().includes(normalizedNodeSearch));
-  });
+  const avgCpu = overviewNodes.length === 0 ? 0 : overviewNodes.reduce((sum, node) => sum + node.cpu, 0) / overviewNodes.length;
+  const onlineNodes = overviewNodes.filter((node) => node.status === 'online').length;
+  const healthRate = overviewNodes.length === 0 ? 0 : (onlineNodes / overviewNodes.length) * 100;
+  const activeIncidents = overviewNodes.filter((node) => node.status !== 'online').length;
+  const regions = new Set(overviewNodes.map((node) => node.region)).size;
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col gap-4 overflow-hidden">
       {/* Overview Cards */}
       <div className="grid shrink-0 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { title: 'Total Nodes', value: String(nodes.length), desc: `Across ${regions} regions`, icon: Server, color: 'text-blue-500' },
-          { title: 'System Health', value: `${healthRate.toFixed(1)}%`, desc: `${onlineNodes}/${nodes.length} nodes online`, icon: Activity, color: 'text-green-500' },
+          { title: 'Total Nodes', value: String(totalNodes), desc: `Across ${regions} regions`, icon: Server, color: 'text-blue-500' },
+          { title: 'System Health', value: `${healthRate.toFixed(1)}%`, desc: `${onlineNodes}/${overviewNodes.length} nodes online`, icon: Activity, color: 'text-green-500' },
           { title: 'Avg CPU Load', value: `${avgCpu.toFixed(1)}%`, desc: 'Backend reported average', icon: Cpu, color: 'text-yellow-500' },
           { title: 'Active Incidents', value: String(activeIncidents), desc: 'Warning or offline nodes', icon: AlertTriangle, color: 'text-red-500' },
         ].map((stat, i) => (
@@ -167,6 +184,29 @@ function NodesTab() {
           </div>
         </div>
         )}
+        footer={(
+          <div data-admin-monitor-pagination>
+            <BottomPagination
+              page={page}
+              pageSize={pageSize}
+              itemCount={totalNodes}
+              hasNextPage={page * pageSize < totalNodes}
+              disabled={loading}
+              showingLabel={t('admin.group.pagination.showing')}
+              pageLabel={t('admin.group.pagination.page', { page })}
+              pageSizeLabel={t('admin.group.pagination.pageSize')}
+              previousLabel={t('common.actions.previousPage')}
+              nextLabel={t('common.actions.nextPage')}
+              pageSizeOptions={[10, 20, 50, 100]}
+              onPreviousPage={() => setPage(current => Math.max(1, current - 1))}
+              onNextPage={() => setPage(current => current + 1)}
+              onPageSizeChange={(nextPageSize) => {
+                setPageSize(nextPageSize);
+                setPage(1);
+              }}
+            />
+          </div>
+        )}
         viewportProps={{ 'data-admin-monitor-table-viewport': true }}
       >
         <div className="contents">
@@ -182,7 +222,7 @@ function NodesTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-white/5">
-              {filteredNodes.map((node) => (
+              {nodes.map((node) => (
                 <tr key={node.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
@@ -250,18 +290,28 @@ function NodesTab() {
 }
 
 function AlertsTab() {
+  const { t } = useTranslation();
+  const [overviewAlerts, setOverviewAlerts] = useState<Alert[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [totalAlerts, setTotalAlerts] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [severityFilter, setSeverityFilter] = useState<'all' | Alert['severity']>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | Alert['status']>('all');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const loadAlerts = async () => {
     setLoading(true);
     setLoadError(null);
     try {
-      const data = await MonitorService.fetchAlerts();
-      setAlerts(data);
+      const [overviewData, alertsPage] = await Promise.all([
+        MonitorService.fetchAlerts({ page: 1, pageSize: MONITOR_OVERVIEW_SAMPLE_PAGE_SIZE }),
+        MonitorService.fetchAlerts({ page, pageSize }),
+      ]);
+      setOverviewAlerts(overviewData.items);
+      setAlerts(alertsPage.items);
+      setTotalAlerts(alertsPage.total);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : 'Failed to load alerts');
     } finally {
@@ -271,7 +321,12 @@ function AlertsTab() {
 
   useEffect(() => {
     void loadAlerts();
-  }, []);
+  }, [page, pageSize]);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(totalAlerts / pageSize));
+    setPage(current => Math.min(Math.max(current, 1), totalPages));
+  }, [totalAlerts, pageSize]);
 
   if (loading) {
     return <BusinessStatePanel kind="loading" title="Loading alerts..." className="min-h-[420px]" />;
@@ -303,7 +358,7 @@ function AlertsTab() {
          <div className="bg-red-50 dark:bg-red-500/5 p-5 rounded-xl border border-red-100 dark:border-red-500/10 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-red-600 dark:text-red-400">Critical Alerts</p>
-              <p className="text-3xl font-bold text-red-700 dark:text-red-500 mt-1">{alerts.filter((alert) => alert.severity === 'critical' && alert.status === 'active').length}</p>
+              <p className="text-3xl font-bold text-red-700 dark:text-red-500 mt-1">{overviewAlerts.filter((alert) => alert.severity === 'critical' && alert.status === 'active').length}</p>
             </div>
             <div className="p-3 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-500 rounded-lg">
               <AlertTriangle className="w-6 h-6" />
@@ -312,7 +367,7 @@ function AlertsTab() {
          <div className="bg-yellow-50 dark:bg-yellow-500/5 p-5 rounded-xl border border-yellow-100 dark:border-yellow-500/10 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400">Warnings</p>
-              <p className="text-3xl font-bold text-yellow-700 dark:text-yellow-500 mt-1">{alerts.filter((alert) => alert.severity === 'warning' && alert.status === 'active').length}</p>
+              <p className="text-3xl font-bold text-yellow-700 dark:text-yellow-500 mt-1">{overviewAlerts.filter((alert) => alert.severity === 'warning' && alert.status === 'active').length}</p>
             </div>
             <div className="p-3 bg-yellow-100 dark:bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 rounded-lg">
               <AlertCircle className="w-6 h-6" />
@@ -321,7 +376,7 @@ function AlertsTab() {
          <div className="bg-blue-50 dark:bg-blue-500/5 p-5 rounded-xl border border-blue-100 dark:border-blue-500/10 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Resolved Today</p>
-              <p className="text-3xl font-bold text-blue-700 dark:text-blue-500 mt-1">{alerts.filter((alert) => alert.status === 'resolved').length}</p>
+              <p className="text-3xl font-bold text-blue-700 dark:text-blue-500 mt-1">{overviewAlerts.filter((alert) => alert.status === 'resolved').length}</p>
             </div>
             <div className="p-3 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-500 rounded-lg">
               <CheckCircle2 className="w-6 h-6" />
@@ -359,6 +414,29 @@ function AlertsTab() {
             </select>
           </div>
         </div>
+        )}
+        footer={(
+          <div data-admin-monitor-alert-pagination>
+            <BottomPagination
+              page={page}
+              pageSize={pageSize}
+              itemCount={totalAlerts}
+              hasNextPage={page * pageSize < totalAlerts}
+              disabled={loading}
+              showingLabel={t('admin.group.pagination.showing')}
+              pageLabel={t('admin.group.pagination.page', { page })}
+              pageSizeLabel={t('admin.group.pagination.pageSize')}
+              previousLabel={t('common.actions.previousPage')}
+              nextLabel={t('common.actions.nextPage')}
+              pageSizeOptions={[10, 20, 50, 100]}
+              onPreviousPage={() => setPage(current => Math.max(1, current - 1))}
+              onNextPage={() => setPage(current => current + 1)}
+              onPageSizeChange={(nextPageSize) => {
+                setPageSize(nextPageSize);
+                setPage(1);
+              }}
+            />
+          </div>
         )}
         viewportProps={{ 'data-admin-monitor-alert-table-viewport': true }}
       >

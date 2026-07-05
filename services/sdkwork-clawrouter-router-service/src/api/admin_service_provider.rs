@@ -9,7 +9,10 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, normalize_list_search_query, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, success_envelope,
+};
 use crate::domain::{DecimalValue, DomainError};
 use crate::ports::{
     AdminServiceProviderCollection, AdminServiceProviderDashboardItem,
@@ -20,9 +23,6 @@ use crate::ports::{
     ListAdminServiceProviderRecordsQuery, UpdateAdminServiceProviderPricingRuleCommand,
 };
 
-const DEFAULT_PAGE_NO: i64 = 1;
-const DEFAULT_PAGE_SIZE: i64 = 100;
-const MAX_PAGE_SIZE: i64 = 200;
 const MAX_STATUS_LEN: usize = 32;
 const MAX_ID_LEN: usize = 128;
 const MAX_PROVIDER_NO_LEN: usize = 64;
@@ -112,15 +112,6 @@ struct ServiceProviderPricingRuleUpdateRequest {
 #[serde(rename_all = "camelCase")]
 struct ServiceProviderDashboardResponse {
     item: AdminServiceProviderDashboardItem,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct ServiceProviderCollectionResponse {
-    items: Vec<serde_json::Map<String, serde_json::Value>>,
-    total: i64,
-    page: i64,
-    page_size: i64,
 }
 
 #[derive(Debug, Serialize)]
@@ -484,13 +475,11 @@ where
 }
 
 fn collection_response(collection: AdminServiceProviderCollection) -> Response {
-    Json(success_envelope(ServiceProviderCollectionResponse {
-        items: collection.items,
-        total: collection.total,
-        page: collection.page_no,
-        page_size: collection.page_size,
-    }))
-    .into_response()
+    json_success_list_response(
+        None,
+        collection.items,
+        offset_page_info(collection.page_no, collection.page_size, collection.total),
+    )
 }
 
 fn validated_list_query(
@@ -498,23 +487,15 @@ fn validated_list_query(
     query: AdminServiceProviderListRequestQuery,
 ) -> Result<ListAdminServiceProviderRecordsQuery, Response> {
     let subject = scoped.into();
-    let page_no = query.page.unwrap_or(DEFAULT_PAGE_NO);
-    if page_no < 1 {
-        return Err(bad_request("page must be greater than or equal to 1"));
-    }
-    let page_size = query.page_size.unwrap_or(DEFAULT_PAGE_SIZE);
-    if !(1..=MAX_PAGE_SIZE).contains(&page_size) {
-        return Err(bad_request(format!(
-            "page_size must be between 1 and {MAX_PAGE_SIZE}"
-        )));
-    }
+    let pagination = parse_offset_list_query(query.page, query.page_size)
+        .map_err(bad_request)?;
     let status = normalize_optional_text(query.status, "status", MAX_STATUS_LEN)?
         .map(|value| value.to_ascii_lowercase());
     Ok(ListAdminServiceProviderRecordsQuery {
         subject,
-        page_no,
-        page_size,
-        offset: (page_no - 1) * page_size,
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
         status,
         provider_id: normalize_optional_text(query.provider_id, "providerId", MAX_ID_LEN)?,
         seller_provider_id: normalize_optional_text(

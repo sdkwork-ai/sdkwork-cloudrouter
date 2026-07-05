@@ -33,16 +33,8 @@ impl ProviderAdapter for TencentCloudProviderAdapter {
 
     fn resolve_endpoint(
         &self,
-        request: &sdkwork_claw_provider_adapter_contract::AdapterInvocationRequest,
+        _request: &sdkwork_claw_provider_adapter_contract::AdapterInvocationRequest,
     ) -> Option<Arc<dyn EndpointAdapter>> {
-        if request.invocation.endpoint_key == video::start_end2video::ENDPOINT_KEY
-            && request.invocation.method.eq_ignore_ascii_case("POST")
-            && request.invocation.standard_path == video::start_end2video::STANDARD_PATH
-        {
-            return Some(Arc::new(
-                video::start_end2video::TencentCloudViduStartEnd2VideoAdapter,
-            ));
-        }
         None
     }
 }

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "workspace": "file-app-sdk",
+  "generationInputSpec": "openapi/file-app-sdk.openapi.json",
+  "derivedSpecs": {},
+  "languages": [
+    {
+      "clientName": "SdkworkFileAppClient",
+      "language": "typescript",
+      "packageName": "@sdkwork/file-app-sdk",
+      "packageRoot": "file-app-sdk-typescript",
+      "consumerPackageName": "@sdkwork/file-app-sdk",
+      "transportPackageName": "file-app-sdk-generated-typescript"
+    }
+  ],
+  "sdkOwner": "sdkwork-clawrouter",
+  "apiAuthority": "file-app-api",
+  "sdkDependencies": [],
+  "sdkFamily": "file-app-sdk",
+  "sdkName": "file-app-sdk",
+  "packageName": "@sdkwork/file-app-sdk",
+  "transportPackageName": "file-app-sdk-generated-typescript"
+}

@@ -3,16 +3,16 @@
   "compilerOptions": {
     "paths": {
       "@sdkwork/clawrouter-app-sdk": [
-        "../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/index.ts"
+        "../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts"
       ],
       "@sdkwork/clawrouter-backend-sdk": [
-        "../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/index.ts"
+        "../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts"
       ],
       "@sdkwork/clawrouter-open-sdk": [
-        "../../sdks/clawrouter-open-sdk/clawrouter-open-sdk-typescript/generated/server-openapi/src/index.ts"
+        "../../sdks/clawrouter-open-sdk/clawrouter-open-sdk-typescript/src/index.ts"
       ],
       "@sdkwork/documents-app-sdk": [
-        "../../../sdkwork-documents/sdks/sdkwork-documents-app-sdk/sdkwork-documents-app-sdk-typescript/generated/server-openapi/src/index.ts"
+        "../../../sdkwork-documents/sdks/sdkwork-documents-app-sdk/sdkwork-documents-app-sdk-typescript/src/index.ts"
       ],
       "@sdkwork/documents-pc-commons": [
         "./src/typecheck-shims.d.ts"
@@ -122,6 +122,9 @@
       "@sdkwork/image-pc-generation/generation-history": [
         "./src/typecheck-shims.d.ts"
       ],
+      "@sdkwork/models-pc-picker": [
+        "./src/typecheck-shims.d.ts"
+      ],
       "@sdkwork/generations-pc-workspace": [
         "./src/typecheck-shims.d.ts"
       ],
@@ -134,14 +137,14 @@
       "@sdkwork/generations-pc-workspace/generation-service": [
         "./src/typecheck-shims.d.ts"
       ],
-      "sdkwork-generations-app-sdk-generated-typescript": [
+      "@sdkwork/generations-app-sdk": [
         "./src/typecheck-shims.d.ts"
       ],
-      "clawrouter-app-domain-transport-generated-typescript": [
-        "../../sdks/clawrouter-app-sdk/clawrouter-app-domain-transport-typescript/generated/server-openapi/src/index.ts"
+      "@sdkwork/clawrouter-app-sdk/domains": [
+        "../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/domains/index.ts"
       ],
-      "clawrouter-backend-domain-transport-generated-typescript": [
-        "../../sdks/clawrouter-backend-sdk/clawrouter-backend-domain-transport-typescript/generated/server-openapi/src/index.ts"
+      "@sdkwork/clawrouter-backend-sdk/domains": [
+        "../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/domains/index.ts"
       ],
       "@sdkwork/memory-app-sdk": [
         "./src/typecheck-shims.d.ts"
@@ -180,7 +183,7 @@
         "./src/typecheck-shims.d.ts"
       ],
       "@sdkwork/models-app-sdk": [
-        "../../../sdkwork-models/sdks/sdkwork-models-app-sdk/sdkwork-models-app-sdk-typescript/generated/server-openapi/src/index.ts"
+        "../../../sdkwork-models/sdks/sdkwork-models-app-sdk/sdkwork-models-app-sdk-typescript/src/index.ts"
       ],
       "@sdkwork/models-pc-admin-catalog": [
         "./src/typecheck-shims.d.ts"
@@ -191,14 +194,14 @@
       "@sdkwork/models-pc-admin-catalog/vendorPickerModal": [
         "./src/typecheck-shims.d.ts"
       ],
-      "sdkwork-drive-backend-sdk-generated-typescript": [
-        "../../../sdkwork-drive/sdks/sdkwork-drive-backend-sdk/sdkwork-drive-backend-sdk-typescript/generated/server-openapi/src/index.ts"
+      "@sdkwork/drive-backend-sdk": [
+        "../../../sdkwork-drive/sdks/sdkwork-drive-backend-sdk/sdkwork-drive-backend-sdk-typescript/src/index.ts"
       ],
       "@sdkwork/models-backend-sdk": [
-        "../../../sdkwork-models/sdks/sdkwork-models-backend-sdk/sdkwork-models-backend-sdk-typescript/generated/server-openapi/src/index.ts"
+        "../../../sdkwork-models/sdks/sdkwork-models-backend-sdk/sdkwork-models-backend-sdk-typescript/src/index.ts"
       ],
       "@sdkwork/models-backend-sdk/api/ai": [
-        "../../../sdkwork-models/sdks/sdkwork-models-backend-sdk/sdkwork-models-backend-sdk-typescript/generated/server-openapi/src/api/ai.ts"
+        "../../../sdkwork-models/sdks/sdkwork-models-backend-sdk/sdkwork-models-backend-sdk-typescript/src/index.ts/api/ai.ts"
       ],
       "@sdkwork/iam-sdk-adapter": [
         "./src/typecheck-shims.d.ts"

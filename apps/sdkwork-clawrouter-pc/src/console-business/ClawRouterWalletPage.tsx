@@ -11,6 +11,10 @@ import {
   type SdkworkWalletRechargePackage,
   type SdkworkWalletTransaction,
 } from '@sdkwork/account-pc-wallet';
+import {
+  getSdkworkPromotionService,
+  unwrapSdkworkPromotionResponse,
+} from '@sdkwork/promotion-service';
 
 import { ClawRouterWithdrawDialog } from './ClawRouterWithdrawDialog.tsx';
 import { resolveConsoleWalletLocale } from './consoleCommerceLocale.ts';
@@ -110,11 +114,26 @@ function ClawRouterWalletPageContent() {
     return Number((effectivePoints / pointsToCashRate).toFixed(2));
   }, [effectivePoints, pointsToCashRate]);
 
-  function handleRedeem() {
-    if (!redeemCode.trim()) {
+  async function handleRedeem() {
+    const code = redeemCode.trim();
+    if (!code) {
       return;
     }
-    setRedeemNotice({ tone: 'warning', message: t('console.wallet.redeem.unavailable') });
+    setRedeemNotice(null);
+    try {
+      unwrapSdkworkPromotionResponse(
+        await getSdkworkPromotionService().promotions.codes.redemptions.create({
+          code,
+          channel: 'console-wallet',
+        }),
+        t('console.billing.errors.redeemFallback'),
+      );
+      setRedeemCode('');
+      setRedeemNotice({ tone: 'success', message: t('console.billing.billingview.text.1gjg4cp') });
+      await controller.refresh();
+    } catch {
+      setRedeemNotice({ tone: 'danger', message: t('console.billing.errors.redeemFallback') });
+    }
   }
 
   async function handleRecharge() {

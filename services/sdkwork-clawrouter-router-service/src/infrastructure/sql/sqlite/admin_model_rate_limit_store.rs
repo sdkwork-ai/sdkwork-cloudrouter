@@ -8,8 +8,8 @@ use crate::infrastructure::sql::routing_config_change::{
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    AdminModelRateLimitCommandFuture, AdminModelRateLimitItem, AdminModelRateLimitStore,
-    CreateAdminModelRateLimitCommand, ListAdminModelRateLimitsQuery,
+    AdminModelRateLimitCommandFuture, AdminModelRateLimitItem, AdminModelRateLimitListPage,
+    AdminModelRateLimitStore, CreateAdminModelRateLimitCommand, ListAdminModelRateLimitsQuery,
 };
 
 const MODEL_RATE_LIMIT_TARGET_TYPE: i32 = 45;
@@ -42,7 +42,7 @@ impl AdminModelRateLimitStore for SqliteAdminModelRateLimitStore {
     fn list_model_rate_limits<'a>(
         &'a self,
         query: ListAdminModelRateLimitsQuery,
-    ) -> AdminModelRateLimitCommandFuture<'a, Vec<AdminModelRateLimitItem>> {
+    ) -> AdminModelRateLimitCommandFuture<'a, AdminModelRateLimitListPage> {
         Box::pin(async move { list_model_rate_limits(&self.pool, query).await })
     }
 
@@ -133,7 +133,11 @@ impl AdminModelRateLimitStore for SqliteAdminModelRateLimitStore {
 async fn list_model_rate_limits(
     pool: &SqlitePool,
     query: ListAdminModelRateLimitsQuery,
-) -> DomainResult<Vec<AdminModelRateLimitItem>> {
+) -> DomainResult<AdminModelRateLimitListPage> {
+    let search = query
+        .q
+        .as_ref()
+        .map(|value| format!("%{}%", value.to_lowercase()));
     let sql = model_rate_limit_select_sql(
         r#"
         WHERE q.tenant_id = ?
@@ -141,19 +145,39 @@ async fn list_model_rate_limits(
           AND q.subject_type = ?
           AND q.policy_code LIKE 'mrl-%'
           AND q.deleted_at IS NULL
+          AND (
+              ? IS NULL
+              OR LOWER(COALESCE(q.model, '')) LIKE ?
+              OR LOWER(COALESCE(NULLIF(g.group_code, ''), NULLIF(g.group_name, ''), q.subject_ref_masked, '')) LIKE ?
+          )
         ORDER BY q.updated_at DESC, q.id DESC
-        LIMIT 200
+        LIMIT ? OFFSET ?
         "#,
     );
     let rows = sqlx::query(&sql)
         .bind(query.subject.tenant_id)
         .bind(query.subject.organization_id)
         .bind(MODEL_RATE_LIMIT_SUBJECT_TYPE)
+        .bind(search.as_deref())
+        .bind(search.as_deref())
+        .bind(search.as_deref())
+        .bind(query.page_size)
+        .bind(query.offset)
         .fetch_all(pool)
         .await
         .map_err(|error| store_error("failed to list model rate limits", error))?;
 
-    rows.into_iter().map(item_from_row).collect()
+    let total = rows
+        .first()
+        .and_then(|row| row.try_get::<i64, _>("total").ok())
+        .unwrap_or(0);
+    let items = rows.into_iter().map(item_from_row).collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminModelRateLimitListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn find_channel_group(
@@ -487,7 +511,8 @@ fn model_rate_limit_select_sql(predicate: &str) -> String {
             q.tokens_per_minute AS tpm,
             q.status,
             CAST(q.exhausted_at AS TEXT) AS exhausted_at,
-            CAST(q.deleted_at AS TEXT) AS deleted_at
+            CAST(q.deleted_at AS TEXT) AS deleted_at,
+            COUNT(*) OVER() AS total
         FROM ai_quota_policy q
         LEFT JOIN ai_channel_group g
           ON q.group_id = g.id

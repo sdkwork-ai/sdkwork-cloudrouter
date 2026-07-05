@@ -7,12 +7,6 @@ import {
   DEFAULT_CLAW_ROUTER_AUTH_RUNTIME_CONFIG,
 } from "./src/auth/clawRouterAuthConfig.ts";
 import {
-  formatOAuthProviders,
-  parseOAuthProviderText,
-  toAuthSettingsForm,
-  toAuthSettingsRequest,
-} from "./packages/sdkwork-clawrouter-pc-admin-site/src/ClawRouterAuthSettingsPage.tsx";
-import {
   PROTECTED_PORTAL_ROUTE_PREFIXES,
   buildProtectedPortalLoginRedirect,
   isProtectedPortalPath,
@@ -23,15 +17,46 @@ import {
   loadStoredAppSessionToken,
   storeAppSessionFromResult,
 } from "./packages/sdkwork-clawroutes-pc-commons/src/app-session-token.ts";
-import {
-  createClawRouterAppSdkClient,
-  handleClawRouterSdkSessionAuthError,
-  isClawRouterSdkSessionAuthError,
-  resetClawRouterSdkSessionAuthRedirectState,
-} from "./packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts";
-import {
-  createSdkworkIamRuntimeAuthService,
-} from "../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-iam-runtime.ts";
+
+type AuthSettingsPageModule = typeof import("./packages/sdkwork-clawrouter-pc-admin-site/src/ClawRouterAuthSettingsPage.tsx");
+
+let authSettingsPageModulePromise: Promise<AuthSettingsPageModule> | undefined;
+
+async function loadAuthSettingsPageModule(): Promise<AuthSettingsPageModule> {
+  authSettingsPageModulePromise ??= import("./packages/sdkwork-clawrouter-pc-admin-site/src/ClawRouterAuthSettingsPage.tsx");
+  return authSettingsPageModulePromise;
+}
+
+type SdkClientsModule = typeof import("./packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts");
+type AuthIamRuntimeModule = typeof import("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-iam-runtime.ts");
+
+let sdkClientsModulePromise: Promise<SdkClientsModule> | undefined;
+let authIamRuntimeModulePromise: Promise<AuthIamRuntimeModule> | undefined;
+
+async function loadSdkClientsModule(): Promise<SdkClientsModule> {
+  sdkClientsModulePromise ??= import("./packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts");
+  return sdkClientsModulePromise;
+}
+
+async function loadAuthIamRuntimeModule(): Promise<AuthIamRuntimeModule> {
+  authIamRuntimeModulePromise ??= import("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-iam-runtime.ts");
+  return authIamRuntimeModulePromise;
+}
+
+async function loadSdkSessionAuthRuntime() {
+  const {
+    createClawRouterAppSdkClient,
+    handleClawRouterSdkSessionAuthError,
+    isClawRouterSdkSessionAuthError,
+    resetClawRouterSdkSessionAuthRedirectState,
+  } = await loadSdkClientsModule();
+  return {
+    createClawRouterAppSdkClient,
+    handleClawRouterSdkSessionAuthError,
+    isClawRouterSdkSessionAuthError,
+    resetClawRouterSdkSessionAuthRedirectState,
+  };
+}
 
 function readPortalFile(relativePath: string): string {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8");
@@ -598,14 +623,14 @@ test("claw router app auth composes the appbase IAM OAuth dependency SDK without
   const appbaseAppOpenApiSource = readPortalFile("../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/openapi/sdkwork-iam-app-api.openapi.yaml");
   const appSdkAssemblySource = readPortalFile("../../sdks/clawrouter-app-sdk/.sdkwork-assembly.json");
   const appSdkComponentSource = readPortalFile("../../sdks/clawrouter-app-sdk/specs/component.spec.json");
-  const appSdkSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/sdk.ts");
-  const backendSdkSystemSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/api/system.ts");
-  const backendSdkIndexSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/sdk.ts");
-  const backendSdkAuthSettingsUpdateSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/types/admin-auth-settings-update-request.ts");
-  const backendSdkAuthVerificationPolicySource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/types/admin-auth-verification-policy.ts");
-  const backendSdkAuthWechatSettingsSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/types/admin-auth-wechat-settings-update.ts");
-  const appSdkTypesSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/types/index.ts");
-  const backendSdkTypesSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/types/index.ts");
+  const appSdkSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts/sdk.ts");
+  const backendSdkSystemSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/api/system.ts");
+  const backendSdkIndexSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/sdk.ts");
+  const backendSdkAuthSettingsUpdateSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/types/admin-auth-settings-update-request.ts");
+  const backendSdkAuthVerificationPolicySource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/types/admin-auth-verification-policy.ts");
+  const backendSdkAuthWechatSettingsSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/types/admin-auth-wechat-settings-update.ts");
+  const appSdkTypesSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts/types/index.ts");
+  const backendSdkTypesSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/types/index.ts");
   const appbaseAuthServiceSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-service.ts");
   const appbaseIamRuntimeSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-iam-runtime.ts");
   const appbaseIamSdkPortsSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-sdk-ports/src/index.ts");
@@ -726,7 +751,7 @@ test("claw router app auth composes the appbase IAM OAuth dependency SDK without
     assert.equal(dependency?.packageByLanguage?.typescript, "@sdkwork/iam-app-sdk");
   }
 
-  assert.equal(existsSync(new URL("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/api/auth.ts", import.meta.url)), false);
+  assert.equal(existsSync(new URL("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts/api/auth.ts", import.meta.url)), false);
   assert.doesNotMatch(appSdkSource, /public readonly auth: AuthApi/);
   assert.doesNotMatch(appSdkSource, new RegExp(`public readonly ${retiredProviderPlatformCamel}:`));
   assert.doesNotMatch(appSdkSource, /@sdkwork\/appbase-app-sdk/);
@@ -918,7 +943,8 @@ test("admin auth settings page localizes visible copy and uses the available con
   }
 });
 
-test("admin auth settings form preserves compact WeChat QR settings and validates mini program URLs", () => {
+test("admin auth settings form preserves compact WeChat QR settings and validates mini program URLs", async () => {
+  const { toAuthSettingsForm, toAuthSettingsRequest } = await loadAuthSettingsPageModule();
   const form = toAuthSettingsForm(authRuntimeSettingsFixture({
     qrLoginType: "mini",
     wechat: {
@@ -995,7 +1021,13 @@ test("admin auth settings form preserves compact WeChat QR settings and validate
   );
 });
 
-test("admin auth settings form preserves flexible OAuth providers and validates provider codes", () => {
+test("admin auth settings form preserves flexible OAuth providers and validates provider codes", async () => {
+  const {
+    formatOAuthProviders,
+    parseOAuthProviderText,
+    toAuthSettingsForm,
+    toAuthSettingsRequest,
+  } = await loadAuthSettingsPageModule();
   const form = toAuthSettingsForm(authRuntimeSettingsFixture({
     oauthProviders: [" github ", "custom-provider", "github", "enterprise_iam"],
   }));
@@ -1026,12 +1058,12 @@ test("admin auth settings form preserves flexible OAuth providers and validates 
 });
 
 test("generated appbase app SDK surface satisfies the IAM SDK port contract", () => {
-  const productSdkSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/sdk.ts");
-  const sdkSource = readPortalFile("../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/generated/server-openapi/src/sdk.ts");
-  const appSdkAuthSource = readPortalFile("../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/generated/server-openapi/src/api/auth.ts");
-  const appSdkIamSource = readPortalFile("../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/generated/server-openapi/src/api/iam.ts");
-  const appSdkOauthSource = readPortalFile("../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/generated/server-openapi/src/api/oauth.ts");
-  const appSdkSystemSource = readPortalFile("../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/generated/server-openapi/src/api/system.ts");
+  const productSdkSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts/sdk.ts");
+  const sdkSource = readPortalFile("../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/src/index.ts/sdk.ts");
+  const appSdkAuthSource = readPortalFile("../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/src/index.ts/api/auth.ts");
+  const appSdkIamSource = readPortalFile("../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/src/index.ts/api/iam.ts");
+  const appSdkOauthSource = readPortalFile("../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/src/index.ts/api/oauth.ts");
+  const appSdkSystemSource = readPortalFile("../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/src/index.ts/api/system.ts");
   const iamSdkPortsSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-sdk-ports/src/index.ts");
   const authServiceSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-service.ts");
   const iamRuntimeSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-iam-runtime.ts");
@@ -1163,6 +1195,7 @@ test("portal auth guard classifies every console and admin path as login protect
     "/api-reference",
     "/sdk-reference",
     "/playground",
+    "/token-plan",
     "/auth/login",
     "/console-public",
     "/administrator",
@@ -1215,6 +1248,7 @@ test("portal auth guard redirects anonymous protected routes to login with a saf
 });
 
 test("appbase IAM runtime auth service persists sessions before portal redirects to protected pages", async () => {
+  const { createSdkworkIamRuntimeAuthService } = await loadAuthIamRuntimeModule();
   let storedSession: { accessToken?: string; authToken?: string; refreshToken?: string } = {};
   const persistedSessions: Array<{ accessToken?: string; authToken?: string; refreshToken?: string }> = [];
   const runtime = {
@@ -1431,7 +1465,12 @@ test("portal i18n keeps document language aligned with active locale", () => {
   assert.match(i18nSource, /i18n\.on\('languageChanged', syncDocumentLanguage\)/);
 });
 
-test("generated SDK auth errors clear the app session and redirect protected pages to login", () => {
+test("generated SDK auth errors clear the app session and redirect protected pages to login", async () => {
+  const {
+    handleClawRouterSdkSessionAuthError,
+    isClawRouterSdkSessionAuthError,
+    resetClawRouterSdkSessionAuthRedirectState,
+  } = await loadSdkSessionAuthRuntime();
   const redirects: string[] = [];
   const restoreWindow = installPortalAuthRedirectWindow({
     hash: "#risk",
@@ -1471,7 +1510,11 @@ test("generated SDK auth errors clear the app session and redirect protected pag
   }
 });
 
-test("generated SDK auth errors clear stale sessions on public pages without forcing login", () => {
+test("generated SDK auth errors clear stale sessions on public pages without forcing login", async () => {
+  const {
+    handleClawRouterSdkSessionAuthError,
+    resetClawRouterSdkSessionAuthRedirectState,
+  } = await loadSdkSessionAuthRuntime();
   const redirects: string[] = [];
   const restoreWindow = installPortalAuthRedirectWindow({
     hash: "",
@@ -1505,7 +1548,11 @@ test("generated SDK auth errors clear stale sessions on public pages without for
   }
 });
 
-test("generated SDK auth errors stay on local protected pages when dev redirect bypass is enabled", () => {
+test("generated SDK auth errors stay on local protected pages when dev redirect bypass is enabled", async () => {
+  const {
+    handleClawRouterSdkSessionAuthError,
+    resetClawRouterSdkSessionAuthRedirectState,
+  } = await loadSdkSessionAuthRuntime();
   const redirects: string[] = [];
   const restoreWindow = installPortalAuthRedirectWindow({
     hash: "",
@@ -1543,7 +1590,11 @@ test("generated SDK auth errors stay on local protected pages when dev redirect 
   }
 });
 
-test("generated SDK auth errors open modal details on local protected pages by default", () => {
+test("generated SDK auth errors open modal details on local protected pages by default", async () => {
+  const {
+    handleClawRouterSdkSessionAuthError,
+    resetClawRouterSdkSessionAuthRedirectState,
+  } = await loadSdkSessionAuthRuntime();
   const redirects: string[] = [];
   const sessionAuthEvents: Array<Record<string, unknown>> = [];
   const restoreWindow = installPortalAuthRedirectWindow({
@@ -1584,7 +1635,11 @@ test("generated SDK auth errors open modal details on local protected pages by d
   }
 });
 
-test("generated SDK auth errors redirect from local protected pages when redirect mode is configured", () => {
+test("generated SDK auth errors redirect from local protected pages when redirect mode is configured", async () => {
+  const {
+    handleClawRouterSdkSessionAuthError,
+    resetClawRouterSdkSessionAuthRedirectState,
+  } = await loadSdkSessionAuthRuntime();
   const redirects: string[] = [];
   const restoreWindow = installPortalAuthRedirectWindow({
     hash: "",
@@ -1624,7 +1679,12 @@ test("generated SDK auth errors redirect from local protected pages when redirec
   }
 });
 
-test("generated SDK unauthorized errors redirect once and skip auth pages", () => {
+test("generated SDK unauthorized errors redirect once and skip auth pages", async () => {
+  const {
+    handleClawRouterSdkSessionAuthError,
+    isClawRouterSdkSessionAuthError,
+    resetClawRouterSdkSessionAuthRedirectState,
+  } = await loadSdkSessionAuthRuntime();
   const redirects: string[] = [];
   const restoreWindow = installPortalAuthRedirectWindow({
     hash: "",
@@ -1674,6 +1734,10 @@ test("generated SDK unauthorized errors redirect once and skip auth pages", () =
 });
 
 test("generated SDK request boundary redirects when API responses report an expired app session", async () => {
+  const {
+    createClawRouterAppSdkClient,
+    resetClawRouterSdkSessionAuthRedirectState,
+  } = await loadSdkSessionAuthRuntime();
   const redirects: string[] = [];
   const restoreWindow = installPortalAuthRedirectWindow({
     hash: "",
@@ -2062,9 +2126,8 @@ test("admin sidebar menu groups are expanded by default", () => {
   assert.doesNotMatch(adminLayoutSource, /defaultOpen=\{group\.items\.some/);
 });
 
-test("portal aliases appbase auth and Tauri host packages for local reuse", () => {
+test("portal composes appbase auth and Tauri host packages through workspace installs", () => {
   const packageJson = JSON.parse(readPortalFile("./package.json")) as { dependencies: Record<string, string> };
-  const tsconfigSource = readPortalFile("./tsconfig.json");
   const viteConfigSource = readPortalFile("./vite.config.ts");
   const workspaceSource = readRepoFile("pnpm-workspace.yaml");
   const tauriBridgeSource = readPortalFile("./src/auth/clawRouterTauriAuthHost.ts");
@@ -2089,41 +2152,13 @@ test("portal aliases appbase auth and Tauri host packages for local reuse", () =
   assert.equal(packageJson.dependencies.qrcode, "^1.5.4");
   assert.equal(packageJson.dependencies["react-hook-form"], "^7.72.1");
 
-  for (const packageName of [
-    "@sdkwork/auth-pc-react",
-    "@sdkwork/auth-runtime-pc-react",
-    "@sdkwork/appbase-pc-react",
-    "@sdkwork/core-pc-react",
-    "@sdkwork/iam-contracts",
-    "@sdkwork/iam-core-pc-react",
-    "@sdkwork/iam-react",
-    "@sdkwork/iam-runtime",
-    "@sdkwork/iam-sdk-adapter",
-    "@sdkwork/iam-sdk-ports",
-    "@sdkwork/iam-service",
-    "@sdkwork/runtime-bootstrap",
-    "@sdkwork/host-pc-react",
-    "@sdkwork/host-tauri-pc-react",
-    "@sdkwork/i18n-pc-react",
-    "@sdkwork/ui-pc-react",
-  ]) {
-    assert.ok(tsconfigSource.includes(`"${packageName}"`), `${packageName} must be present in tsconfig paths`);
-    assert.ok(viteConfigSource.includes(`'${packageName}'`), `${packageName} must be present in Vite aliases`);
-  }
-  assert.match(tsconfigSource, /packages\/pc-react\/foundation\/sdkwork-i18n-pc-react/);
-  assert.match(viteConfigSource, /packages\/pc-react\/foundation\/sdkwork-i18n-pc-react/);
-  assert.match(tsconfigSource, /packages\/common\/foundation\/sdkwork-runtime-bootstrap\/src\/index\.ts/);
-  assert.match(viteConfigSource, /packages\/common\/foundation\/sdkwork-runtime-bootstrap\/src\/index\.ts/);
+  assert.match(viteConfigSource, /clawrouter-portal-pnpm-workspace-resolver/);
+  assert.doesNotMatch(viteConfigSource, /find: '@sdkwork\//);
   assert.match(workspaceSource, /packages\/pc-react\/foundation\/(?:\*|sdkwork-i18n-pc-react)/);
-  assert.match(tsconfigSource, /sdkwork-core\/sdkwork-core-pc-react\/src\/index\.ts/);
-  assert.match(viteConfigSource, /sdkwork-core-pc-react\/src\/index\.ts/);
   assert.match(workspaceSource, /sdkwork-core\/sdkwork-core-pc-react/);
-  assert.match(tsconfigSource, /sdkwork-iam\/apps\/sdkwork-iam-pc\/packages\/sdkwork-auth-pc-react/);
-  assert.match(viteConfigSource, /apps\/sdkwork-iam-pc\/packages\/sdkwork-auth-pc-react/);
   assert.match(workspaceSource, /sdkwork-iam\/apps\/sdkwork-iam-pc\/packages\/(?:\*|sdkwork-auth-pc-react)/);
   assert.match(workspaceSource, /packages\/common\/foundation\/(?:\*|sdkwork-runtime-bootstrap)/);
   assert.match(workspaceSource, /sdkwork-iam\/apps\/sdkwork-iam-common\/packages\/(?:\*|sdkwork-iam-runtime)/);
-  assert.doesNotMatch(tsconfigSource, legacyAppbasePackageFamilyPattern);
   assert.doesNotMatch(viteConfigSource, legacyAppbasePackageFamilyPattern);
   assert.doesNotMatch(workspaceSource, legacyAppbasePackageFamilyPattern);
 
@@ -2132,30 +2167,17 @@ test("portal aliases appbase auth and Tauri host packages for local reuse", () =
   assert.match(tauriBridgeSource, /evaluateTauriHostBridgeReadiness/);
 });
 
-test("portal consumes sdkwork UI from source so Vite does not ship the UI dist require helper", () => {
-  const tsconfigSource = readPortalFile("./tsconfig.json");
+test("portal resolves sdkwork UI through workspace package exports", () => {
   const viteConfigSource = readPortalFile("./vite.config.ts");
 
-  assert.match(viteConfigSource, /sdkwork-ui-pc-react\/src\/index\.ts/);
-  assert.match(viteConfigSource, /sdkwork-ui-pc-react\/src\/theme\/index\.ts/);
-  assert.match(
-    viteConfigSource,
-    /clawrouterPortalWorkspaceDependencyResolver\(configDir,\s*\[[\s\S]*appbaseRoot,[\s\S]*sdkworkAccountRoot,[\s\S]*\]\)/,
-  );
-  assert.match(viteConfigSource, /workspaceDependencyRoots\.some/);
-  assert.match(viteConfigSource, /function isPortalWorkspaceDependencyImporter/);
-  assert.match(viteConfigSource, /isPortalWorkspaceDependencyImporter\(importer, workspaceDependencyRoots\)/);
+  assert.match(viteConfigSource, /clawrouter-portal-pnpm-workspace-resolver/);
+  assert.match(viteConfigSource, /resolvePortalPackageModule/);
   assert.match(viteConfigSource, /readPackageImportEntry/);
-  assert.doesNotMatch(viteConfigSource, /sdkwork-ui-pc-react\/dist\/index\.js/);
-  assert.doesNotMatch(viteConfigSource, /sdkwork-ui-pc-react\/dist\/theme\.js/);
-  assert.match(tsconfigSource, /sdkwork-ui-pc-react\/src\/index\.ts/);
-  assert.match(tsconfigSource, /sdkwork-ui-pc-react\/src\/theme\/index\.ts/);
-  assert.doesNotMatch(tsconfigSource, /sdkwork-ui-pc-react\/dist\/index\.d\.ts/);
+  assert.doesNotMatch(viteConfigSource, /find: '@sdkwork\/ui-pc-react'/);
 });
 
-test("portal resolves T1 domain console packages from source and no longer uses repository packages/pc-react", () => {
+test("portal resolves T1 domain console packages through workspace installs", () => {
   const packageJson = JSON.parse(readPortalFile("./package.json")) as { dependencies: Record<string, string> };
-  const tsconfigSource = readPortalFile("./tsconfig.json");
   const viteConfigSource = readPortalFile("./vite.config.ts");
   const workspaceSource = readRepoFile("pnpm-workspace.yaml");
 
@@ -2166,26 +2188,17 @@ test("portal resolves T1 domain console packages from source and no longer uses 
   assert.equal(packageJson.dependencies["@sdkwork/payment-pc-payment"], "workspace:*");
   assert.equal(packageJson.dependencies["@sdkwork/order-pc-order"], "workspace:*");
   assert.equal(packageJson.dependencies["@sdkwork/commerce-service"], undefined);
-  assert.doesNotMatch(tsconfigSource, /sdkwork-clawrouter-pc-admin-catalog\/src\/index\.tsx/);
-  assert.doesNotMatch(tsconfigSource, /sdkwork-file-platform-pc-react\/src\/index\.ts/);
   assert.equal(packageJson.dependencies['@sdkwork/clawrouter-pc-admin-inventory'], undefined);
   assert.equal(packageJson.dependencies['@sdkwork/clawrouter-pc-admin-file-platform'], undefined);
-  assert.match(tsconfigSource, /sdkwork-account-pc-wallet\/src\/index\.ts/);
-  assert.match(tsconfigSource, /sdkwork-membership-pc-membership\/src\/index\.ts/);
-  assert.match(tsconfigSource, /sdkwork-payment-pc-payment\/src\/index\.ts/);
-  assert.doesNotMatch(tsconfigSource, /sdkwork-commerce-service\/src\/index\.ts/);
-  assert.doesNotMatch(tsconfigSource, /sdkwork-commerce-sdk-ports\/src\/index\.ts/);
-  assert.doesNotMatch(tsconfigSource, /sdkwork-commerce-contracts\/src\/index\.ts/);
   assert.doesNotMatch(viteConfigSource, /find: '@sdkwork\/commerce-pc-admin-product'/);
-  assert.match(viteConfigSource, /find: '@sdkwork\/account-pc-wallet'/);
-  assert.match(viteConfigSource, /find: '@sdkwork\/membership-pc-membership'/);
-  assert.match(viteConfigSource, /find: '@sdkwork\/payment-pc-payment'/);
+  assert.doesNotMatch(viteConfigSource, /find: '@sdkwork\/account-pc-wallet'/);
+  assert.doesNotMatch(viteConfigSource, /find: '@sdkwork\/membership-pc-membership'/);
+  assert.doesNotMatch(viteConfigSource, /find: '@sdkwork\/payment-pc-payment'/);
   assert.doesNotMatch(viteConfigSource, /find: '@sdkwork\/commerce-service'/);
   assert.doesNotMatch(viteConfigSource, /find: '@sdkwork\/commerce-sdk-ports'/);
   assert.doesNotMatch(viteConfigSource, /find: '@sdkwork\/commerce-contracts'/);
   assert.doesNotMatch(viteConfigSource, /sdkworkCommerceRoot/);
-  assert.match(viteConfigSource, /return isPortalWorkspaceDependencyImporter\(importer, workspaceDependencyRoots\)\s*&& !isSdkworkWorkspaceDependency\(source\)/);
-  assert.match(viteConfigSource, /rootDefaultExport/);
+  assert.match(viteConfigSource, /clawrouter-portal-pnpm-workspace-resolver/);
   assert.doesNotMatch(workspaceSource, /^\s*- 'packages\/pc-react\//m);
   assert.match(workspaceSource, /sdkwork-account\/apps\/sdkwork-account-pc\/packages\/sdkwork-account-pc-wallet/);
   assert.match(workspaceSource, /sdkwork-membership\/apps\/sdkwork-membership-pc\/packages\/sdkwork-membership-pc-membership/);

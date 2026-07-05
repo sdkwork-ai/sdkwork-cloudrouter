@@ -20,7 +20,7 @@ APP_SEED_SOURCE_PATH = (
     / "app_seed.rs"
 )
 
-PLUS_APP_FIELDS = {
+PLATFORM_APP_FIELDS = {
     "name",
     "description",
     "version",
@@ -144,9 +144,9 @@ def app_category_id(code):
 def expected_app_categories(seed):
     names = sorted(
         {
-            item["plusApp"]["config"]["portal"]["category"].strip()
+            item["platformApp"]["config"]["portal"]["category"].strip()
             for item in seed["apps"]
-            if item["plusApp"]["config"]["portal"].get("category", "").strip()
+            if item["platformApp"]["config"]["portal"].get("category", "").strip()
         },
         key=lambda value: f"app-store-{normalize_code(value)}",
     )
@@ -200,11 +200,11 @@ class AppSeedCatalogStandardTest(unittest.TestCase):
                 self.assertIsInstance(item.get("tenantId"), int)
                 self.assertIsInstance(item.get("organizationId"), int)
 
-                platform_app = item.get("plusApp")
+                platform_app = item.get("platformApp")
                 self.assertIsInstance(platform_app, dict)
                 self.assertTrue(
-                    PLUS_APP_FIELDS.issubset(platform_app.keys()),
-                    f"plusApp is missing Java PlusApp projection fields: {PLUS_APP_FIELDS - set(platform_app.keys())}",
+                    PLATFORM_APP_FIELDS.issubset(platform_app.keys()),
+                    f"platformApp is missing platform_app projection fields: {PLATFORM_APP_FIELDS - set(platform_app.keys())}",
                 )
                 self.assertIsInstance(platform_app["name"], str)
                 self.assertTrue(platform_app["name"].strip())
@@ -217,7 +217,7 @@ class AppSeedCatalogStandardTest(unittest.TestCase):
                 self.assertIn(
                     platform_app["status"],
                     {"ACTIVE", "INACTIVE"},
-                    "PlusApp runtime status must use only ACTIVE/INACTIVE; marketplace state belongs in config.portal.marketStatus",
+                    "platform_app runtime status must use only ACTIVE/INACTIVE; marketplace state belongs in config.portal.marketStatus",
                 )
                 self.assertIsInstance(platform_app["config"], dict)
                 self.assertEqual(item["appKey"], platform_app["config"].get("standard", {}).get("appKey"))
@@ -225,13 +225,13 @@ class AppSeedCatalogStandardTest(unittest.TestCase):
                 self.assertEqual(
                     expected_market_status,
                     platform_app["config"].get("portal", {}).get("marketStatus"),
-                    "installable app seed must persist marketplace state in PlusApp config.portal.marketStatus",
+                    "installable app seed must persist marketplace state in platform_app config.portal.marketStatus",
                 )
                 portal_category = platform_app["config"].get("portal", {}).get("category")
                 self.assertIsInstance(
                     portal_category,
                     str,
-                    "installable app seed must persist AppCenter category in PlusApp config.portal.category",
+                    "installable app seed must persist AppCenter category in platform_app config.portal.category",
                 )
                 self.assertTrue(portal_category.strip())
                 store_categories = [
@@ -260,7 +260,7 @@ class AppSeedCatalogStandardTest(unittest.TestCase):
         source = APP_SEED_SOURCE_PATH.read_text(encoding="utf-8")
 
         for item in seed["apps"]:
-            platform_app = item["plusApp"]
+            platform_app = item["platformApp"]
             with self.subTest(app=item["appKey"]):
                 self.assertNotIn("iconUrl", platform_app)
                 self.assertNotIn("downloadUrl", platform_app)
@@ -485,7 +485,7 @@ class AppSeedCatalogStandardTest(unittest.TestCase):
         disabled_package_count = sum(
             1
             for item in seed["apps"]
-            for package in item["plusApp"]["installConfig"]["packages"]
+            for package in item["platformApp"]["installConfig"]["packages"]
             if package.get("enabled") is False
         )
         self.assertGreater(
@@ -579,7 +579,7 @@ class AppSeedCatalogStandardTest(unittest.TestCase):
             self.assertIn(
                 expected,
                 source,
-                "app seed importer must retire stale PlusApp and PlusCategory seed rows without adding schema columns",
+                "app seed importer must retire stale platform_app and PlusCategory seed rows without adding schema columns",
             )
 
 

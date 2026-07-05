@@ -5,7 +5,7 @@ use sdkwork_clawrouter_app_gateway_traces_repository_sqlx::{
 };
 
 use crate::domain::DomainError;
-use crate::ports::{AppGatewayTracesReadFuture, AppGatewayTracesReadStore};
+use crate::ports::{AppGatewayTracesListQuery, AppGatewayTracesReadFuture, AppGatewayTracesReadStore};
 
 #[derive(Debug, Clone)]
 pub struct PostgresAppGatewayTracesReadStore(RepositoryPostgresAppGatewayTracesReadStore);
@@ -20,9 +20,10 @@ impl AppGatewayTracesReadStore for PostgresAppGatewayTracesReadStore {
     fn load_gateway_traces<'a>(
         &'a self,
         subject: Option<crate::ports::AppGatewayTracesSubject>,
-    ) -> AppGatewayTracesReadFuture<'a, Vec<crate::ports::AppGatewayTraceItem>> {
+        query: AppGatewayTracesListQuery,
+    ) -> AppGatewayTracesReadFuture<'a, crate::ports::AppGatewayTracesListPage> {
         Box::pin(async move {
-            RepositoryAppGatewayTracesReadStore::load_gateway_traces(&self.0, subject)
+            RepositoryAppGatewayTracesReadStore::load_gateway_traces(&self.0, subject, query)
                 .await
                 .map_err(|error| DomainError::new(error.to_string()))
         })
@@ -42,9 +43,10 @@ impl AppGatewayTracesReadStore for SqliteAppGatewayTracesReadStore {
     fn load_gateway_traces<'a>(
         &'a self,
         subject: Option<crate::ports::AppGatewayTracesSubject>,
-    ) -> AppGatewayTracesReadFuture<'a, Vec<crate::ports::AppGatewayTraceItem>> {
+        query: AppGatewayTracesListQuery,
+    ) -> AppGatewayTracesReadFuture<'a, crate::ports::AppGatewayTracesListPage> {
         Box::pin(async move {
-            RepositoryAppGatewayTracesReadStore::load_gateway_traces(&self.0, subject)
+            RepositoryAppGatewayTracesReadStore::load_gateway_traces(&self.0, subject, query)
                 .await
                 .map_err(|error| DomainError::new(error.to_string()))
         })

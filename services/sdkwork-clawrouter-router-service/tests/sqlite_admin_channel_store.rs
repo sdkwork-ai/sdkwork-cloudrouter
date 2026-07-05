@@ -121,23 +121,28 @@ async fn sqlite_admin_channel_store_encrypts_channel_api_key_material() {
                 operator_id: 30,
                 operator_type: 1,
             },
+            page_no: 1,
+            page_size: 100,
+            offset: 0,
+            q: None,
         })
         .await
         .unwrap();
     assert_eq!(
         Some("sk-live-provider-secret"),
         listed
+            .items
             .first()
             .and_then(|item| item.credentials.first())
             .and_then(|credential| credential.api_key.as_deref())
     );
     assert_eq!(
         Some("2026-06-30T08:00:00Z"),
-        listed.first().and_then(|item| item.expires_at.as_deref())
+        listed.items.first().and_then(|item| item.expires_at.as_deref())
     );
     assert_eq!(
         Some("official"),
-        listed.first().map(|item| item.channel_type.as_str())
+        listed.items.first().map(|item| item.channel_type.as_str())
     );
     let channel_id: i64 = sqlx::query_scalar("SELECT id FROM ai_channel WHERE id = ?")
         .bind(item.id)
@@ -145,7 +150,7 @@ async fn sqlite_admin_channel_store_encrypts_channel_api_key_material() {
         .await
         .unwrap();
     assert_eq!(channel_id, item.channel_id);
-    assert_eq!(Some(channel_id), listed.first().map(|item| item.channel_id));
+    assert_eq!(Some(channel_id), listed.items.first().map(|item| item.channel_id));
     assert_eq!(
         vec![
             "vendor.openai".to_owned(),
@@ -153,6 +158,7 @@ async fn sqlite_admin_channel_store_encrypts_channel_api_key_material() {
             "modality.llm".to_owned(),
         ],
         listed
+            .items
             .first()
             .map(|item| item.resource_codes.clone())
             .unwrap_or_default()
@@ -240,10 +246,15 @@ async fn sqlite_admin_channel_store_does_not_bind_models_to_accounts() {
                 operator_id: 30,
                 operator_type: 1,
             },
+            page_no: 1,
+            page_size: 100,
+            offset: 0,
+            q: None,
         })
         .await
         .unwrap();
     let listed_item = listed
+        .items
         .iter()
         .find(|item| item.id == created.id)
         .expect("created account should be listed");

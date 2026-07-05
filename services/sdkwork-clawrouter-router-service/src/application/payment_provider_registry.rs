@@ -165,6 +165,11 @@ impl PaymentProviderRegistry {
 }
 
 pub fn default_payment_provider_registry() -> PaymentProviderRegistry {
+    sandbox_payment_provider_registry()
+}
+
+/// Sandbox adapters for local development and contract tests only.
+pub fn sandbox_payment_provider_registry() -> PaymentProviderRegistry {
     let mut adapters: HashMap<&'static str, Arc<dyn PaymentProviderAdapter>> = HashMap::new();
     for capabilities in MAINSTREAM_PAYMENT_PROVIDER_CAPABILITIES {
         adapters.insert(
@@ -177,6 +182,31 @@ pub fn default_payment_provider_registry() -> PaymentProviderRegistry {
         adapters,
         aliases: default_payment_provider_aliases(),
     }
+}
+
+/// Production runtime registry without sandbox adapters. Providers are assembled from configured payment accounts.
+pub fn production_payment_provider_registry() -> PaymentProviderRegistry {
+    PaymentProviderRegistry::empty()
+}
+
+pub fn resolve_payment_provider_registry_for_deployment() -> PaymentProviderRegistry {
+    if payment_sandbox_enabled() {
+        sandbox_payment_provider_registry()
+    } else {
+        production_payment_provider_registry()
+    }
+}
+
+fn payment_sandbox_enabled() -> bool {
+    std::env::var("SDKWORK_CLAW_PAYMENT_SANDBOX")
+        .ok()
+        .map(|value| {
+            matches!(
+                value.trim().to_ascii_lowercase().as_str(),
+                "1" | "true" | "yes" | "on"
+            )
+        })
+        .unwrap_or(false)
 }
 
 fn default_payment_provider_aliases() -> HashMap<&'static str, &'static str> {

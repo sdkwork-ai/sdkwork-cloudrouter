@@ -6,8 +6,8 @@ use sdkwork_clawrouter_admin_monitor_repository_sqlx::{
 
 use crate::domain::DomainError;
 use crate::ports::{
-    AdminMonitorAlert, AdminMonitorNode, AdminMonitorPerformanceDatum, AdminMonitorQuery,
-    AdminMonitorReadFuture, AdminMonitorReadStore,
+    AdminMonitorAlert, AdminMonitorCollection, AdminMonitorNode, AdminMonitorPerformanceDatum,
+    AdminMonitorQuery, AdminMonitorReadFuture, AdminMonitorReadStore,
 };
 
 #[derive(Debug, Clone)]
@@ -23,7 +23,7 @@ impl AdminMonitorReadStore for PostgresAdminMonitorReadStore {
     fn list_monitor_nodes<'a>(
         &'a self,
         query: AdminMonitorQuery,
-    ) -> AdminMonitorReadFuture<'a, Vec<AdminMonitorNode>> {
+    ) -> AdminMonitorReadFuture<'a, AdminMonitorCollection<AdminMonitorNode>> {
         Box::pin(async move {
             RepositoryAdminMonitorReadStore::list_monitor_nodes(&self.0, query)
                 .await
@@ -34,7 +34,7 @@ impl AdminMonitorReadStore for PostgresAdminMonitorReadStore {
     fn list_monitor_alerts<'a>(
         &'a self,
         query: AdminMonitorQuery,
-    ) -> AdminMonitorReadFuture<'a, Vec<AdminMonitorAlert>> {
+    ) -> AdminMonitorReadFuture<'a, AdminMonitorCollection<AdminMonitorAlert>> {
         Box::pin(async move {
             RepositoryAdminMonitorReadStore::list_monitor_alerts(&self.0, query)
                 .await
@@ -45,7 +45,7 @@ impl AdminMonitorReadStore for PostgresAdminMonitorReadStore {
     fn list_monitor_performance<'a>(
         &'a self,
         query: AdminMonitorQuery,
-    ) -> AdminMonitorReadFuture<'a, Vec<AdminMonitorPerformanceDatum>> {
+    ) -> AdminMonitorReadFuture<'a, AdminMonitorCollection<AdminMonitorPerformanceDatum>> {
         Box::pin(async move {
             RepositoryAdminMonitorReadStore::list_monitor_performance(&self.0, query)
                 .await
@@ -67,7 +67,7 @@ impl AdminMonitorReadStore for SqliteAdminMonitorReadStore {
     fn list_monitor_nodes<'a>(
         &'a self,
         query: AdminMonitorQuery,
-    ) -> AdminMonitorReadFuture<'a, Vec<AdminMonitorNode>> {
+    ) -> AdminMonitorReadFuture<'a, AdminMonitorCollection<AdminMonitorNode>> {
         Box::pin(async move {
             RepositoryAdminMonitorReadStore::list_monitor_nodes(&self.0, query)
                 .await
@@ -78,7 +78,7 @@ impl AdminMonitorReadStore for SqliteAdminMonitorReadStore {
     fn list_monitor_alerts<'a>(
         &'a self,
         query: AdminMonitorQuery,
-    ) -> AdminMonitorReadFuture<'a, Vec<AdminMonitorAlert>> {
+    ) -> AdminMonitorReadFuture<'a, AdminMonitorCollection<AdminMonitorAlert>> {
         Box::pin(async move {
             RepositoryAdminMonitorReadStore::list_monitor_alerts(&self.0, query)
                 .await
@@ -89,7 +89,7 @@ impl AdminMonitorReadStore for SqliteAdminMonitorReadStore {
     fn list_monitor_performance<'a>(
         &'a self,
         query: AdminMonitorQuery,
-    ) -> AdminMonitorReadFuture<'a, Vec<AdminMonitorPerformanceDatum>> {
+    ) -> AdminMonitorReadFuture<'a, AdminMonitorCollection<AdminMonitorPerformanceDatum>> {
         Box::pin(async move {
             RepositoryAdminMonitorReadStore::list_monitor_performance(&self.0, query)
                 .await

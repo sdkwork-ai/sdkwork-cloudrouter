@@ -48,8 +48,10 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isPortalSessionStored, setIsPortalSessionStored] = useState(() => hasStoredPortalSession());
   const langMenuRef = useRef<HTMLDivElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const isConsolePath = location.pathname.startsWith('/console');
@@ -76,13 +78,22 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (langMenuRef.current && !langMenuRef.current.contains(target)) {
         setIsLangMenuOpen(false);
+      }
+      if (moreMenuRef.current && !moreMenuRef.current.contains(target)) {
+        setIsMoreMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setIsMoreMenuOpen(false);
+  }, [location.pathname]);
 
 
   const changeLanguage = (lang: string) => {
@@ -106,13 +117,79 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
   const navLinks = [
     { name: t('nav.home'), href: '/' },
     { name: t('nav.models'), href: '/models' },
-    { name: t('nav.rankings'), href: '/rankings' },
-    { name: t('nav.productDocs'), href: '/product-docs' },
+    { name: t('nav.rankings'), href: '/rankings', showFrom: 'xl' as const },
+    { name: t('nav.productDocs'), href: '/product-docs', showFrom: 'xl' as const },
     { name: t('nav.docs'), href: '/docs' },
-    { name: t('nav.api'), href: '/api-reference' },
-    { name: t('nav.sdk'), href: '/sdk-reference' },
+    { name: t('nav.api'), href: '/api-reference', showFrom: '2xl' as const },
+    { name: t('nav.sdk'), href: '/sdk-reference', showFrom: '2xl' as const },
     { name: t('nav.playground', 'Playground'), href: '/playground' },
+    { name: t('nav.tokenPlan', 'Token Plan'), href: '/token-plan', showFrom: '2xl' as const },
   ];
+
+  const navLinkVisibilityClass = (showFrom?: 'xl' | '2xl') => {
+    if (showFrom === '2xl') {
+      return 'hidden 2xl:inline-flex';
+    }
+    if (showFrom === 'xl') {
+      return 'hidden xl:inline-flex';
+    }
+    return 'inline-flex';
+  };
+
+  const overflowMenuItemClass = (showFrom?: 'xl' | '2xl') => {
+    if (showFrom === '2xl') {
+      return 'flex 2xl:hidden';
+    }
+    if (showFrom === 'xl') {
+      return 'flex xl:hidden';
+    }
+    return 'hidden';
+  };
+
+  const overflowNavLinks = navLinks.filter((link) => link.showFrom);
+  const isOverflowNavActive = overflowNavLinks.some(
+    (link) =>
+      location.pathname === link.href ||
+      (link.href !== '/' && location.pathname.startsWith(link.href)),
+  );
+
+  const renderNavLink = (
+    link: (typeof navLinks)[number],
+    options?: { onNavigate?: () => void; layout?: 'desktop' | 'mobile' },
+  ) => {
+    const layout = options?.layout ?? 'desktop';
+    const isActive =
+      location.pathname === link.href ||
+      (link.href !== '/' && location.pathname.startsWith(link.href));
+
+    return (
+      <Link
+        key={link.href}
+        to={link.href}
+        aria-current={isActive ? 'page' : undefined}
+        onClick={options?.onNavigate}
+        className={`${
+          layout === 'mobile' ? 'inline-flex text-base' : `${navLinkVisibilityClass(link.showFrom)} text-xs xl:text-sm`
+        } relative shrink-0 items-center whitespace-nowrap px-1 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background ${
+          isActive
+            ? 'text-lobster-500 dark:text-white'
+            : layout === 'mobile'
+              ? 'text-slate-600 dark:text-slate-300'
+              : 'text-slate-600 hover:text-lobster-500 dark:text-slate-400 dark:hover:text-white'
+        }`}
+      >
+        {link.name}
+        {isActive && layout === 'desktop' ? (
+          <motion.div
+            layoutId="navbar-active"
+            className="absolute -bottom-1.5 left-0 right-0 h-0.5 rounded-full bg-lobster-500"
+            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+            aria-hidden="true"
+          />
+        ) : null}
+      </Link>
+    );
+  };
 
   return (
     <header
@@ -122,9 +199,12 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
           : 'bg-transparent'
       }`}
     >
-      <div className="relative mx-auto flex w-full items-center justify-between px-4 md:px-6 lg:px-8">
-        <Link to="/" className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background rounded-md">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 dark:bg-white">
+      <div className="relative mx-auto flex w-full min-w-0 items-center gap-2 px-3 sm:gap-3 sm:px-4 md:px-6 lg:gap-4 lg:px-8">
+        <Link
+          to="/"
+          className="flex min-w-0 shrink-0 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background"
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 dark:bg-white">
             {logoSource ? (
               <img
                 src={logoSource}
@@ -135,42 +215,69 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
               <Terminal className="h-5 w-5 text-white dark:text-slate-900" aria-hidden="true" />
             )}
           </div>
-          <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+          <span className="hidden max-w-[7rem] truncate text-base font-bold tracking-tight text-slate-900 dark:text-white sm:inline md:max-w-[10rem] lg:max-w-[12rem] lg:text-lg xl:max-w-none xl:text-xl">
             {displaySiteName}
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
-          {navLinks.map((link) => {
-            const isActive =
-              location.pathname === link.href ||
-              (link.href !== '/' && location.pathname.startsWith(link.href));
-            return (
-              <Link
-                key={link.name}
-                to={link.href}
-                aria-current={isActive ? 'page' : undefined}
-                className={`relative text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background ${
-                  isActive
-                    ? 'text-lobster-500 dark:text-white'
-                    : 'text-slate-600 hover:text-lobster-500 dark:text-slate-400 dark:hover:text-white'
-                }`}
-              >
-                {link.name}
-                {isActive ? (
-                  <motion.div
-                    layoutId="navbar-active"
-                    className="absolute -bottom-1.5 left-0 right-0 h-0.5 rounded-full bg-lobster-500"
-                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                    aria-hidden="true"
-                  />
-                ) : null}
-              </Link>
-            );
-          })}
+        <nav
+          className="hidden min-w-0 flex-1 items-center justify-center gap-1 px-1 lg:flex xl:gap-2 2xl:gap-3"
+          aria-label={t('navbar.menu.label', 'Navigation menu')}
+        >
+          {navLinks.map((link) => renderNavLink(link))}
+          <div className="relative hidden lg:inline-flex 2xl:hidden" ref={moreMenuRef}>
+            <button
+              type="button"
+              onClick={() => setIsMoreMenuOpen((open) => !open)}
+              className={`inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background xl:text-sm ${
+                isOverflowNavActive || isMoreMenuOpen
+                  ? 'text-lobster-500 dark:text-white'
+                  : 'text-slate-600 hover:text-lobster-500 dark:text-slate-400 dark:hover:text-white'
+              }`}
+              aria-expanded={isMoreMenuOpen}
+              aria-haspopup="menu"
+              aria-controls="navbar-more-menu"
+            >
+              {t('navbar.more', 'More')}
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isMoreMenuOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+            </button>
+            <AnimatePresence>
+              {isMoreMenuOpen ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute left-1/2 top-full z-50 mt-2 min-w-[11rem] -translate-x-1/2 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700/60 dark:bg-[#1a1a1a]"
+                  id="navbar-more-menu"
+                  role="menu"
+                  aria-label={t('navbar.moreMenu.label', 'More navigation links')}
+                >
+                  {overflowNavLinks.map((link) => {
+                    const isActive =
+                      location.pathname === link.href ||
+                      (link.href !== '/' && location.pathname.startsWith(link.href));
+                    return (
+                      <Link
+                        key={link.href}
+                        to={link.href}
+                        role="menuitem"
+                        onClick={() => setIsMoreMenuOpen(false)}
+                        className={`${overflowMenuItemClass(link.showFrom)} w-full items-center px-4 py-2 text-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lobster-500 dark:hover:bg-white/5 ${
+                          isActive ? 'font-medium text-lobster-500' : 'text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        {link.name}
+                      </Link>
+                    );
+                  })}
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
         </nav>
 
-        <div className="hidden items-center gap-4 md:flex">
+        <div className="hidden shrink-0 items-center gap-1.5 lg:flex xl:gap-3">
           <div className="relative" ref={langMenuRef}>
             <button
               onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
@@ -230,32 +337,34 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
             <>
               <button
                 onClick={handleSignIn}
-                className={`rounded-md text-sm font-medium ${NAVBAR_HEADER_ACTION_CLASS}`}
+                className={`rounded-md px-1 text-xs font-medium xl:text-sm ${NAVBAR_HEADER_ACTION_CLASS}`}
                 type="button"
               >
                 {t('nav.signin')}
               </button>
               <Link to="/console"
-                className="flex items-center gap-1 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+                className="flex shrink-0 items-center gap-1 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200 xl:px-4 xl:py-2 xl:text-sm"
               >
-                {t('nav.console')} <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                <span className="whitespace-nowrap">{t('nav.console')}</span>
+                <ChevronRight className="h-3.5 w-3.5 xl:h-4 xl:w-4" aria-hidden="true" />
               </Link>
             </>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-1.5 xl:gap-2">
               {authenticatedActionsStart}
               {!isConsolePath ? (
                 <Link to="/console"
-                  className="flex items-center gap-1 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+                  className="flex shrink-0 items-center gap-1 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200 xl:px-4 xl:py-2 xl:text-sm"
                 >
-                  {t('nav.console')} <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                  <span className="whitespace-nowrap">{t('nav.console')}</span>
+                  <ChevronRight className="h-3.5 w-3.5 xl:h-4 xl:w-4" aria-hidden="true" />
                 </Link>
               ) : null}
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-4 md:hidden">
+        <div className="ml-auto flex shrink-0 items-center gap-2 lg:hidden">
           <button
             onClick={toggleTheme}
             className={`rounded-md ${NAVBAR_HEADER_ACTION_CLASS}`}
@@ -282,7 +391,7 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute left-0 right-0 top-full flex flex-col gap-4 bg-white p-6 shadow-2xl dark:bg-[#0a0a0a] md:hidden"
+          className="absolute left-0 right-0 top-full flex flex-col gap-4 bg-white p-6 shadow-2xl dark:bg-[#0a0a0a] lg:hidden"
           id="mobile-menu"
           role="dialog"
           aria-modal="true"
@@ -293,24 +402,7 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
             }
           }}
         >
-          {navLinks.map((link) => {
-            const isActive =
-              location.pathname === link.href ||
-              (link.href !== '/' && location.pathname.startsWith(link.href));
-            return (
-              <Link
-                key={link.name}
-                to={link.href}
-                aria-current={isActive ? 'page' : undefined}
-                className={`text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background ${
-                  isActive ? 'text-lobster-500' : 'text-slate-600 dark:text-slate-300'
-                }`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {link.name}
-              </Link>
-            );
-          })}
+          {navLinks.map((link) => renderNavLink(link, { layout: 'mobile', onNavigate: () => setMobileMenuOpen(false) }))}
           <div className="my-2 h-px bg-slate-200 dark:bg-white/10" aria-hidden="true" />
           <div className="flex flex-col gap-3">
             <span className="text-sm font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">{t('navbar.language.label', 'Language')}</span>

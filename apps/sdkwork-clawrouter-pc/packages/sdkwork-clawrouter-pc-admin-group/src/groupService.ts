@@ -3,6 +3,10 @@ import {
   getClawRouterBackendSdkClient,
   getModelsBackendSdkClient,
   isRecord,
+  optionalBoundedPositiveInteger as optionalQueryPageSize,
+  optionalPositiveInteger as optionalQueryPage,
+  optionalText as optionalQueryText,
+  pruneUndefinedQueryParams,
   readApiRecord,
   readBoolean,
   readRequiredApiItems,
@@ -102,6 +106,42 @@ type ChannelGroupUpdateRequestWithResourceAccess =
   AdminChannelGroupUpdateRequest & ChannelGroupResourceAccessRequest;
 
 let groupCodeFallbackCounter = 0;
+
+const MAX_GROUP_LIST_PAGE_SIZE = 200;
+const MAX_GROUP_LIST_QUERY_TEXT_LENGTH = 128;
+const MAX_ASSIGNABLE_CHANNEL_LIST_PAGE_SIZE = 200;
+const MAX_ASSIGNABLE_CHANNEL_LIST_QUERY_TEXT_LENGTH = 128;
+const MAX_ASSIGNABLE_RESOURCE_GROUP_LIST_PAGE_SIZE = 200;
+const MAX_ASSIGNABLE_RESOURCE_LIST_PAGE_SIZE = 200;
+const MAX_ASSIGNABLE_RESOURCE_LIST_QUERY_TEXT_LENGTH = 128;
+
+type GroupListFilters = Record<string, unknown>;
+
+type GroupListPage = {
+  groups: GroupData[];
+  total: number;
+};
+
+type AssignableChannelListFilters = Record<string, unknown>;
+
+type AssignableResourceGroupListFilters = Record<string, unknown>;
+
+type AssignableResourceListFilters = Record<string, unknown>;
+
+export type AssignableResourceGroupListPage = {
+  resourceGroups: GroupResourceGroupOption[];
+  total: number;
+};
+
+export type AssignableAiResourceListPage = {
+  resources: GroupAiResourceOption[];
+  total: number;
+};
+
+export type AssignableChannelListPage = {
+  channels: GroupChannelOption[];
+  total: number;
+};
 
 export interface GroupChannelBindingData {
   id: string;
@@ -341,10 +381,14 @@ export function buildGroupRoutePreflight(
 }
 
 export class GroupService {
-  static async fetchGroups(): Promise<GroupData[]> {
-    const result = await getClawRouterBackendSdkClient().ai.channelGroups.list();
+  static async fetchGroups(filters: GroupListFilters = {}): Promise<GroupListPage> {
+    const result = await getClawRouterBackendSdkClient().ai.channelGroups.list(toGroupListQueryParams(filters));
     ensureSdkworkApiSuccess(result, 'Failed to fetch groups');
-    return readRequiredApiItems(result, 'Failed to fetch groups').map(normalizeGroup);
+    const data = readApiRecord(result);
+    return {
+      groups: readRequiredApiItems(result, 'Failed to fetch groups').map(normalizeGroup),
+      total: readGroupListPageTotal(data),
+    };
   }
 
   static async addGroup(group: GroupCreateInput): Promise<GroupData> {
@@ -415,25 +459,49 @@ export class GroupService {
       .map(normalizeGroupChannelBinding);
   }
 
-  static async fetchAssignableChannels(): Promise<GroupChannelOption[]> {
-    const result = await getClawRouterBackendSdkClient().integration.channels.list();
+  static async fetchAssignableChannels(
+    filters: AssignableChannelListFilters = {},
+  ): Promise<AssignableChannelListPage> {
+    const result = await getClawRouterBackendSdkClient().integration.channels.list(
+      toAssignableChannelListQueryParams(filters),
+    );
     ensureSdkworkApiSuccess(result, 'Failed to fetch channels');
-    return readRequiredApiItems(result, 'Failed to fetch channels')
-      .map(normalizeGroupChannelOption);
+    const data = readApiRecord(result);
+    return {
+      channels: readRequiredApiItems(result, 'Failed to fetch channels')
+        .map(normalizeGroupChannelOption),
+      total: readListPageTotal(data, 'Channel list total is required'),
+    };
   }
 
-  static async fetchAssignableResourceGroups(): Promise<GroupResourceGroupOption[]> {
-    const result = await getModelsBackendSdkClient().ai.aiResourceGroups.list();
+  static async fetchAssignableResourceGroups(
+    filters: AssignableResourceGroupListFilters = {},
+  ): Promise<AssignableResourceGroupListPage> {
+    const result = await getModelsBackendSdkClient().ai.aiResourceGroups.list(
+      toAssignableResourceGroupListQueryParams(filters),
+    );
     ensureSdkworkApiSuccess(result, 'Failed to fetch resource groups');
-    return readRequiredApiItems(result, 'Failed to fetch resource groups')
-      .map(normalizeResourceGroupOption);
+    const data = readApiRecord(result);
+    return {
+      resourceGroups: readRequiredApiItems(result, 'Failed to fetch resource groups')
+        .map(normalizeResourceGroupOption),
+      total: readListPageTotal(data, 'Resource group list total is required'),
+    };
   }
 
-  static async fetchAssignableResources(): Promise<GroupAiResourceOption[]> {
-    const result = await getModelsBackendSdkClient().ai.aiResources.list();
+  static async fetchAssignableResources(
+    filters: AssignableResourceListFilters = {},
+  ): Promise<AssignableAiResourceListPage> {
+    const result = await getModelsBackendSdkClient().ai.aiResources.list(
+      toAssignableResourceListQueryParams(filters),
+    );
     ensureSdkworkApiSuccess(result, 'Failed to fetch AI resources');
-    return readRequiredApiItems(result, 'Failed to fetch AI resources')
-      .map(normalizeAiResourceOption);
+    const data = readApiRecord(result);
+    return {
+      resources: readRequiredApiItems(result, 'Failed to fetch AI resources')
+        .map(normalizeAiResourceOption),
+      total: readListPageTotal(data, 'AI resource list total is required'),
+    };
   }
 }
 
@@ -680,6 +748,114 @@ function ensureDeleteResult(result: unknown, message: string): void {
   if (readBoolean(readApiRecord(result), 'deleted') !== true) {
     throw new Error(message);
   }
+}
+
+function toGroupListQueryParams(filters: GroupListFilters = {}): {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+} {
+  return toListQueryParams(
+    filters,
+    MAX_GROUP_LIST_PAGE_SIZE,
+    MAX_GROUP_LIST_QUERY_TEXT_LENGTH,
+  );
+}
+
+function toAssignableChannelListQueryParams(filters: AssignableChannelListFilters = {}): {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+} {
+  return toListQueryParams(
+    filters,
+    MAX_ASSIGNABLE_CHANNEL_LIST_PAGE_SIZE,
+    MAX_ASSIGNABLE_CHANNEL_LIST_QUERY_TEXT_LENGTH,
+  );
+}
+
+function toAssignableResourceGroupListQueryParams(filters: AssignableResourceGroupListFilters = {}): {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+} {
+  return toListQueryParams(
+    filters,
+    MAX_ASSIGNABLE_RESOURCE_GROUP_LIST_PAGE_SIZE,
+    MAX_ASSIGNABLE_RESOURCE_LIST_QUERY_TEXT_LENGTH,
+  );
+}
+
+function toAssignableResourceListQueryParams(filters: AssignableResourceListFilters = {}): {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+} {
+  return toListQueryParams(
+    filters,
+    MAX_ASSIGNABLE_RESOURCE_LIST_PAGE_SIZE,
+    MAX_ASSIGNABLE_RESOURCE_LIST_QUERY_TEXT_LENGTH,
+  );
+}
+
+function toListQueryParams(
+  filters: Record<string, unknown>,
+  maxPageSize: number,
+  maxQueryTextLength: number,
+): {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+} {
+  const page = optionalQueryPage(filters.page, 'page');
+  const pageSize = optionalQueryPageSize(filters.pageSize, 'pageSize', maxPageSize);
+  const q = optionalQueryText(filters.q ?? filters.searchQuery, 'q', maxQueryTextLength);
+
+  return pruneUndefinedQueryParams({
+    page,
+    pageSize,
+    q,
+  });
+}
+
+function readGroupListPageTotal(data: ApiRecord): number {
+  return readListPageTotal(data, 'Group list total is required');
+}
+
+function readListPageTotal(data: ApiRecord, message: string): number {
+  if (data.total !== undefined && data.total !== null && data.total !== '') {
+    return readRequiredNonNegativeNumber(data, 'total', message);
+  }
+
+  const pageInfo = data.pageInfo;
+  if (isRecord(pageInfo)) {
+    for (const key of ['totalItems', 'total_items'] as const) {
+      const value = pageInfo[key];
+      if (value === undefined || value === null || value === '') {
+        continue;
+      }
+      const parsed = typeof value === 'number' ? value : Number(String(value).trim());
+      if (Number.isFinite(parsed) && parsed >= 0) {
+        return parsed;
+      }
+      throw new Error(`${message.replace(/ is required$/, '')} must be a non-negative number`);
+    }
+  }
+
+  const itemsCount = readListItemsCount(data);
+  if (itemsCount !== undefined) {
+    return itemsCount;
+  }
+
+  throw new Error(message);
+}
+
+function readListItemsCount(data: ApiRecord): number | undefined {
+  const items = data.items;
+  if (Array.isArray(items)) {
+    return items.length;
+  }
+  return undefined;
 }
 
 function normalizeGroup(value: unknown): GroupData {

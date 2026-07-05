@@ -3,7 +3,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
 use axum::body::Bytes;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, patch};
@@ -11,7 +11,10 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, normalize_list_search_query, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, success_envelope,
+};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::ports::{
@@ -22,7 +25,6 @@ use crate::ports::{
     ReplaceAdminChannelGroupChannelBindingsCommand, UpdateAdminChannelGroupCommand,
 };
 
-const MAX_NAME_LEN: usize = 128;
 const MAX_CODE_LEN: usize = 64;
 const MAX_PLATFORM_LEN: usize = 64;
 const MAX_CHANNEL_BINDINGS_PER_GROUP: usize = 200;
@@ -43,6 +45,15 @@ struct AdminChannelGroupState {
     store: Arc<dyn AdminChannelGroupStore + Send + Sync>,
     entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
 }
+
+#[derive(Debug, Default, Deserialize)]
+struct AdminChannelGroupListQueryRequest {
+    page: Option<i64>,
+    page_size: Option<i64>,
+    q: Option<String>,
+}
+
+const MAX_NAME_LEN: usize = 128;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -369,10 +380,17 @@ async fn fetch_channel_group_route_explain(
 
     let group = match state
         .store
-        .list_channel_groups(ListAdminChannelGroupsQuery { subject })
+        .list_channel_groups(ListAdminChannelGroupsQuery {
+            subject,
+            page_no: 1,
+            page_size: 1,
+            offset: 0,
+            q: None,
+            group_id: Some(group_id),
+        })
         .await
     {
-        Ok(items) => match items.into_iter().find(|item| item.id == group_id) {
+        Ok(page) => match page.items.into_iter().next() {
             Some(item) => item,
             None => return not_found_response("channel group was not found"),
         },
@@ -401,22 +419,39 @@ async fn fetch_channel_groups(
     State(state): State<AdminChannelGroupState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
+    Query(request): Query<AdminChannelGroupListQueryRequest>,
 ) -> Response {
     let subject = scoped.into();
+    let query = match build_list_query(subject, request) {
+        Ok(query) => query,
+        Err(message) => return bad_request(message),
+    };
 
-    match state
-        .store
-        .list_channel_groups(ListAdminChannelGroupsQuery { subject })
-        .await
-    {
-        Ok(items) => Json(success_envelope(AdminChannelGroupListResponse {
-            items: items.into_iter().map(to_item_response).collect(),
-        }))
-        .into_response(),
+    match state.store.list_channel_groups(query).await {
+        Ok(page) => json_success_list_response(
+            None,
+            page.items.into_iter().map(to_item_response).collect(),
+            offset_page_info(page.page_no, page.page_size, page.total),
+        ),
         Err(error) => {
             channel_group_system_response("channel group read model is unavailable", error)
         }
     }
+}
+
+fn build_list_query(
+    subject: AdminChannelGroupSubject,
+    request: AdminChannelGroupListQueryRequest,
+) -> Result<ListAdminChannelGroupsQuery, String> {
+    let pagination = parse_offset_list_query(request.page, request.page_size)?;
+    Ok(ListAdminChannelGroupsQuery {
+        subject,
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
+        q: normalize_list_search_query(request.q, "q")?,
+        group_id: None,
+    })
 }
 
 async fn create_channel_group(

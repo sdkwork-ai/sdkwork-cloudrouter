@@ -1,0 +1,316 @@
+{
+  "schemaVersion": 1,
+  "sdkFamily": "clawrouter-open-sdk",
+  "sdkName": "clawrouter-open-sdk",
+  "packageName": "@sdkwork/clawrouter-open-sdk",
+  "transportPackageName": "clawrouter-open-sdk-generated-typescript",
+  "typescript": {
+    "composedRoot": "clawrouter-open-sdk-typescript",
+    "composedEntry": "clawrouter-open-sdk-typescript/src/index.ts",
+    "transportRoot": "clawrouter-open-sdk-typescript/generated/server-openapi",
+    "transportEntry": "clawrouter-open-sdk-typescript/generated/server-openapi/src/index.ts"
+  },
+  "workspace": "clawrouter-open-sdk",
+  "title": "SDKWork Claw Router OpenAI-compatible gateway SDK",
+  "apiVersion": "0.1.0",
+  "authoritySpec": "openapi/clawrouter-open-sdk.openapi.json",
+  "generationInputSpec": "openapi/clawrouter-open-sdk.sdkgen.json",
+  "derivedSpecs": {
+    "sdk-generator": "openapi/clawrouter-open-sdk.sdkgen.json"
+  },
+  "sdkOwner": "sdkwork-clawrouter",
+  "apiAuthority": "sdkwork-clawrouter.ai",
+  "discoverySurface": {
+    "sdkTarget": "ai",
+    "apiPrefix": "/v1",
+    "generatedProtocols": [
+      "http"
+    ],
+    "manualTransports": []
+  },
+  "languages": [
+    {
+      "language": "typescript",
+      "workspace": "clawrouter-open-sdk-typescript",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "clawrouter-open-sdk-typescript/generated/server-openapi",
+      "packagePath": "clawrouter-open-sdk-typescript",
+      "manifestPath": "clawrouter-open-sdk-typescript/package.json",
+      "version": "0.1.0",
+      "description": "SDKWork Claw Router OpenAI-compatible gateway SDK",
+      "entrypoints": {
+        "main": "./dist/index.cjs",
+        "module": "./dist/index.js",
+        "types": "./dist/index.d.ts"
+      },
+      "consumerSurface": {
+        "primaryClient": "SdkworkAiClient",
+        "apiPrefix": "/v1"
+      },
+      "packages": [
+        {
+          "layer": "generated-output",
+          "packagePath": "clawrouter-open-sdk-typescript/generated/server-openapi",
+          "manifestPath": "clawrouter-open-sdk-typescript/generated/server-openapi/package.json",
+          "name": "@sdkwork/clawrouter-open-sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Claw Router OpenAI-compatible gateway SDK generator-owned transport output",
+          "entrypoints": {
+            "main": "./dist/index.cjs",
+            "module": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+          }
+        },
+        {
+          "layer": "package",
+          "packagePath": "clawrouter-open-sdk-typescript",
+          "manifestPath": "clawrouter-open-sdk-typescript/package.json",
+          "name": "@sdkwork/clawrouter-open-sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Claw Router OpenAI-compatible gateway SDK",
+          "entrypoints": {
+            "main": "./dist/index.cjs",
+            "module": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+          }
+        }
+      ],
+      "consumerPackageName": "@sdkwork/clawrouter-open-sdk",
+      "transportPackageName": "clawrouter-open-sdk-generated-typescript"
+    },
+    {
+      "language": "flutter",
+      "workspace": "clawrouter-open-sdk-flutter",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "clawrouter-open-sdk-flutter/generated/server-openapi",
+      "manifestPath": "clawrouter-open-sdk-flutter/generated/server-openapi/pubspec.yaml",
+      "name": "clawrouter_open_sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Claw Router OpenAI-compatible gateway SDK flutter generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "clawrouter-open-sdk-flutter/generated/server-openapi",
+          "manifestPath": "clawrouter-open-sdk-flutter/generated/server-openapi/pubspec.yaml",
+          "name": "clawrouter_open_sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Claw Router OpenAI-compatible gateway SDK flutter generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "clawrouter-open-sdk-flutter/composed",
+          "status": "reserved",
+          "name": "clawrouter_open_sdk",
+          "version": "",
+          "description": "Reserved composed flutter SDK boundary for clawrouter-open-sdk"
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "workspace": "clawrouter-open-sdk-rust",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "clawrouter-open-sdk-rust/generated/server-openapi",
+      "manifestPath": "clawrouter-open-sdk-rust/generated/server-openapi/Cargo.toml",
+      "name": "clawrouter-open-sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Claw Router OpenAI-compatible gateway SDK rust generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "clawrouter-open-sdk-rust/generated/server-openapi",
+          "manifestPath": "clawrouter-open-sdk-rust/generated/server-openapi/Cargo.toml",
+          "name": "clawrouter-open-sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Claw Router OpenAI-compatible gateway SDK rust generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "clawrouter-open-sdk-rust/composed",
+          "status": "reserved",
+          "name": "clawrouter-open-sdk",
+          "version": "",
+          "description": "Reserved composed rust SDK boundary for clawrouter-open-sdk"
+        }
+      ]
+    },
+    {
+      "language": "java",
+      "workspace": "clawrouter-open-sdk-java",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "clawrouter-open-sdk-java/generated/server-openapi",
+      "manifestPath": "clawrouter-open-sdk-java/generated/server-openapi/pom.xml",
+      "name": "com.sdkwork.clawrouter:clawrouter-open-sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Claw Router OpenAI-compatible gateway SDK java generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "clawrouter-open-sdk-java/generated/server-openapi",
+          "manifestPath": "clawrouter-open-sdk-java/generated/server-openapi/pom.xml",
+          "name": "com.sdkwork.clawrouter:clawrouter-open-sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Claw Router OpenAI-compatible gateway SDK java generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "clawrouter-open-sdk-java/composed",
+          "status": "reserved",
+          "name": "com.sdkwork.clawrouter:clawrouter-open-sdk",
+          "version": "",
+          "description": "Reserved composed java SDK boundary for clawrouter-open-sdk"
+        }
+      ]
+    },
+    {
+      "language": "csharp",
+      "workspace": "clawrouter-open-sdk-csharp",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "clawrouter-open-sdk-csharp/generated/server-openapi",
+      "manifestPath": "clawrouter-open-sdk-csharp/generated/server-openapi/Sdkwork.ClawRouter.Open.Sdk.csproj",
+      "name": "Sdkwork.ClawRouter.Open.Sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Claw Router OpenAI-compatible gateway SDK csharp generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "clawrouter-open-sdk-csharp/generated/server-openapi",
+          "manifestPath": "clawrouter-open-sdk-csharp/generated/server-openapi/Sdkwork.ClawRouter.Open.Sdk.csproj",
+          "name": "Sdkwork.ClawRouter.Open.Sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Claw Router OpenAI-compatible gateway SDK csharp generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "clawrouter-open-sdk-csharp/composed",
+          "status": "reserved",
+          "name": "Sdkwork.ClawRouter.Open.Sdk",
+          "version": "",
+          "description": "Reserved composed csharp SDK boundary for clawrouter-open-sdk"
+        }
+      ]
+    },
+    {
+      "language": "swift",
+      "workspace": "clawrouter-open-sdk-swift",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "clawrouter-open-sdk-swift/generated/server-openapi",
+      "manifestPath": "clawrouter-open-sdk-swift/generated/server-openapi/Package.swift",
+      "name": "ClawRouterOpenSdk",
+      "version": "0.1.0",
+      "description": "SDKWork Claw Router OpenAI-compatible gateway SDK swift generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "clawrouter-open-sdk-swift/generated/server-openapi",
+          "manifestPath": "clawrouter-open-sdk-swift/generated/server-openapi/Package.swift",
+          "name": "ClawRouterOpenSdk",
+          "version": "0.1.0",
+          "description": "SDKWork Claw Router OpenAI-compatible gateway SDK swift generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "clawrouter-open-sdk-swift/composed",
+          "status": "reserved",
+          "name": "ClawRouterOpenSdk",
+          "version": "",
+          "description": "Reserved composed swift SDK boundary for clawrouter-open-sdk"
+        }
+      ]
+    },
+    {
+      "language": "kotlin",
+      "workspace": "clawrouter-open-sdk-kotlin",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "clawrouter-open-sdk-kotlin/generated/server-openapi",
+      "manifestPath": "clawrouter-open-sdk-kotlin/generated/server-openapi/build.gradle.kts",
+      "name": "com.sdkwork.clawrouter:clawrouter-open-sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Claw Router OpenAI-compatible gateway SDK kotlin generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "clawrouter-open-sdk-kotlin/generated/server-openapi",
+          "manifestPath": "clawrouter-open-sdk-kotlin/generated/server-openapi/build.gradle.kts",
+          "name": "com.sdkwork.clawrouter:clawrouter-open-sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Claw Router OpenAI-compatible gateway SDK kotlin generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "clawrouter-open-sdk-kotlin/composed",
+          "status": "reserved",
+          "name": "com.sdkwork.clawrouter:clawrouter-open-sdk",
+          "version": "",
+          "description": "Reserved composed kotlin SDK boundary for clawrouter-open-sdk"
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "workspace": "clawrouter-open-sdk-go",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "clawrouter-open-sdk-go/generated/server-openapi",
+      "manifestPath": "clawrouter-open-sdk-go/generated/server-openapi/go.mod",
+      "name": "github.com/sdkwork/clawrouter-open-sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Claw Router OpenAI-compatible gateway SDK go generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "clawrouter-open-sdk-go/generated/server-openapi",
+          "manifestPath": "clawrouter-open-sdk-go/generated/server-openapi/go.mod",
+          "name": "github.com/sdkwork/clawrouter-open-sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Claw Router OpenAI-compatible gateway SDK go generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "clawrouter-open-sdk-go/composed",
+          "status": "reserved",
+          "name": "github.com/sdkwork/clawrouter-open-sdk",
+          "version": "",
+          "description": "Reserved composed go SDK boundary for clawrouter-open-sdk"
+        }
+      ]
+    },
+    {
+      "language": "python",
+      "workspace": "clawrouter-open-sdk-python",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "clawrouter-open-sdk-python/generated/server-openapi",
+      "manifestPath": "clawrouter-open-sdk-python/generated/server-openapi/pyproject.toml",
+      "name": "sdkwork-clawrouter-open-sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Claw Router OpenAI-compatible gateway SDK python generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "clawrouter-open-sdk-python/generated/server-openapi",
+          "manifestPath": "clawrouter-open-sdk-python/generated/server-openapi/pyproject.toml",
+          "name": "sdkwork-clawrouter-open-sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Claw Router OpenAI-compatible gateway SDK python generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "clawrouter-open-sdk-python/composed",
+          "status": "reserved",
+          "name": "sdkwork-clawrouter-open-sdk",
+          "version": "",
+          "description": "Reserved composed python SDK boundary for clawrouter-open-sdk"
+        }
+      ]
+    }
+  ],
+  "sdkDependencies": []
+}

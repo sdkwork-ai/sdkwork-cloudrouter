@@ -30,9 +30,21 @@ pub struct AdminModelRateLimitItem {
     pub deleted_at: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListAdminModelRateLimitsQuery {
     pub subject: AdminModelRateLimitSubject,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+    pub q: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminModelRateLimitListPage {
+    pub items: Vec<AdminModelRateLimitItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -54,7 +66,7 @@ pub trait AdminModelRateLimitStore {
     fn list_model_rate_limits<'a>(
         &'a self,
         query: ListAdminModelRateLimitsQuery,
-    ) -> AdminModelRateLimitCommandFuture<'a, Vec<AdminModelRateLimitItem>>;
+    ) -> AdminModelRateLimitCommandFuture<'a, AdminModelRateLimitListPage>;
 
     fn create_model_rate_limit<'a>(
         &'a self,

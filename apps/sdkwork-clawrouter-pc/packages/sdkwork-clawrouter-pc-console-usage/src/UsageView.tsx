@@ -22,7 +22,7 @@ import { useTranslation } from 'react-i18next';
 import { UsageService, UsageLog } from './usageService';
 import { formatUsageLogLocalTime } from './usageFormatting';
 
-const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 20;
 const SPEND_DECIMAL_DIGITS = 9;
 
 type UsageLogStatus = 'all' | 'success' | 'error';

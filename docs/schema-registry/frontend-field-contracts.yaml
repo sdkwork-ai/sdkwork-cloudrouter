@@ -1753,9 +1753,23 @@ frontend_operations:
   read_sources:
   - system
   response_schema:
-    name: NoData
+    name: PromotionsCodesRedemptionsCreateResult
     properties: {}
-  request_body_required: false
+  request_body_required: true
+  request_schema:
+    name: PromotionsCodesRedemptionsCreateRequest
+    schema:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      properties:
+        code:
+          type: string
+          maxLength: 128
+        channel:
+          type: string
+          maxLength: 64
   write_tables:
   - ops_audit_log
 - route: /console/promotions/discount_applications

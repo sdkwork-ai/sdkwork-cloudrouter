@@ -139,6 +139,7 @@ data_directory = "/var/lib/sdkwork/router"
 admin_app_json_body_max_bytes = 131072
 admin_skill_json_body_max_bytes = 65536
 payment_callback_body_max_bytes = 65536
+gateway_invocation_body_max_bytes = 1048576
 
 [observability]
 log_filter = "info,sdkwork_claw=debug"
@@ -358,6 +359,10 @@ password_file = "/etc/sdkwork/router/bootstrap-admin.secret"
     assert_eq!(
         Some(65536),
         config.request_limits.payment_callback_body_max_bytes
+    );
+    assert_eq!(
+        Some(1048576),
+        config.request_limits.gateway_invocation_body_max_bytes
     );
     assert_eq!(
         Some("info,sdkwork_claw=debug"),

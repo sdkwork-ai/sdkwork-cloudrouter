@@ -11,16 +11,16 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, offset_page_info, parse_offset_list_query, problem_from_wire_code,
+    success_envelope,
+};
 use crate::domain::DomainError;
 use crate::ports::{
     AdminInventoryCollection, AdminInventoryJsonRecord, AdminInventoryStore, AdminInventorySubject,
     ListAdminInventoryRecordsQuery, UpdateAdminInventoryStockCommand,
 };
 
-const DEFAULT_PAGE_NO: i64 = 1;
-const DEFAULT_PAGE_SIZE: i64 = 100;
-const MAX_PAGE_SIZE: i64 = 200;
 const MAX_ID_LEN: usize = 128;
 const MAX_CODE_LEN: usize = 128;
 const IDEMPOTENCY_KEY_HEADER: &str = "Idempotency-Key";
@@ -52,15 +52,6 @@ struct StockUpdateRequest {
     status: Option<String>,
     version: i64,
     reason_code: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct InventoryCollectionResponse {
-    items: Vec<AdminInventoryJsonRecord>,
-    total: i64,
-    page: i64,
-    page_size: i64,
 }
 
 #[derive(Debug, Serialize)]
@@ -157,13 +148,11 @@ where
         Err(response) => return response,
     };
     match load(query).await {
-        Ok(collection) => Json(success_envelope(InventoryCollectionResponse {
-            items: collection.items,
-            total: collection.total,
-            page: collection.page_no,
-            page_size: collection.page_size,
-        }))
-        .into_response(),
+        Ok(collection) => json_success_list_response(
+            None,
+            collection.items,
+            offset_page_info(collection.page_no, collection.page_size, collection.total),
+        ),
         Err(error) => domain_error_response("inventory collection is unavailable", error),
     }
 }
@@ -173,21 +162,13 @@ fn validated_list_query(
     request: InventoryListQueryRequest,
 ) -> Result<ListAdminInventoryRecordsQuery, Response> {
     let subject = scoped.into();
-    let page_no = request.page.unwrap_or(DEFAULT_PAGE_NO);
-    if page_no < 1 {
-        return Err(bad_request("page must be greater than or equal to 1"));
-    }
-    let page_size = request.page_size.unwrap_or(DEFAULT_PAGE_SIZE);
-    if !(1..=MAX_PAGE_SIZE).contains(&page_size) {
-        return Err(bad_request(format!(
-            "page_size must be between 1 and {MAX_PAGE_SIZE}"
-        )));
-    }
+    let pagination = parse_offset_list_query(request.page, request.page_size)
+        .map_err(bad_request)?;
     Ok(ListAdminInventoryRecordsQuery {
         subject,
-        page_no,
-        page_size,
-        offset: (page_no - 1) * page_size,
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
         status: normalize_optional_text(request.status, "status", MAX_CODE_LEN)?
             .map(|value| value.to_ascii_lowercase()),
         sku_id: normalize_optional_text(request.sku_id, "skuId", MAX_ID_LEN)?,

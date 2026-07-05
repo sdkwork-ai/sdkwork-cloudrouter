@@ -9,7 +9,10 @@ use axum::routing::{get, put};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, normalize_list_search_query, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, success_envelope,
+};
 use crate::api::subject::admin_operator_fields;
 use crate::ports::{
     AdminServiceNodeItem, AdminServiceNodeStore, AdminServiceNodeSubject,
@@ -28,8 +31,10 @@ struct AdminServiceNodeState {
     store: Arc<dyn AdminServiceNodeStore + Send + Sync>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Default, Deserialize)]
 struct AdminServiceNodeListQuery {
+    page: Option<i64>,
+    page_size: Option<i64>,
     q: Option<String>,
     status: Option<String>,
 }
@@ -58,12 +63,6 @@ struct AdminServiceNodeUpdateRequest {
 #[serde(rename_all = "camelCase")]
 struct AdminServiceNodeStatusRequest {
     status: String,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct AdminServiceNodeListResponse {
-    items: Vec<AdminServiceNodeItem>,
 }
 
 #[derive(Debug, Serialize)]
@@ -102,10 +101,11 @@ async fn list_service_nodes(
         Err(response) => return response,
     };
     match state.store.list_service_nodes(query).await {
-        Ok(items) => Json(success_envelope(AdminServiceNodeListResponse {
-            items,
-        }))
-        .into_response(),
+        Ok(page) => json_success_list_response(
+            None,
+            page.items,
+            offset_page_info(page.page_no, page.page_size, page.total),
+        ),
         Err(error) => system_error("service node list is unavailable", error),
     }
 }
@@ -194,9 +194,13 @@ fn build_list_query(
     subject: AdminServiceNodeSubject,
     query: AdminServiceNodeListQuery,
 ) -> Result<ListAdminServiceNodesQuery, Response> {
+    let pagination = parse_offset_list_query(query.page, query.page_size).map_err(bad_request)?;
     Ok(ListAdminServiceNodesQuery {
         subject,
-        search: optional_visible_text(query.q, "q", MAX_TEXT_LEN)?,
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
+        search: normalize_list_search_query(query.q, "q").map_err(bad_request)?,
         status: optional_status(query.status)?,
     })
 }

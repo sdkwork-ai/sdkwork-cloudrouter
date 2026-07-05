@@ -14,7 +14,7 @@ import type {
 
 const DEFAULT_NOTIFICATION_APP_ID = 'claw-router';
 const DEFAULT_NOTIFICATION_PAGE = 1;
-const DEFAULT_NOTIFICATION_PAGE_SIZE = 50;
+const DEFAULT_NOTIFICATION_PAGE_SIZE = 20;
 
 export type PortalNotificationClient = SdkworkNotificationGeneratedClient;
 

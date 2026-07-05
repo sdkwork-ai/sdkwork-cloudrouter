@@ -9,6 +9,6 @@ pub use error::RepositoryError;
 pub use postgres::PostgresAppProvidersReadStore;
 pub use sqlite::SqliteAppProvidersReadStore;
 pub use types::{
-    AppProviderItem, AppProvidersItems, AppProvidersReadFuture, AppProvidersReadStore,
-    AppProvidersSubject,
+    AppProviderItem, AppProvidersItems, AppProvidersListPage, AppProvidersListQuery,
+    AppProvidersReadFuture, AppProvidersReadStore, AppProvidersSubject,
 };

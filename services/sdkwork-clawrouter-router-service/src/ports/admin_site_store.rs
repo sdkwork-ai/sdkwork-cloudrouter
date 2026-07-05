@@ -67,6 +67,17 @@ pub struct AdminSiteConnectionCheckItem {
 pub struct ListAdminSitesQuery {
     pub subject: AdminSiteSubject,
     pub search: Option<String>,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct AdminSiteListPage {
+    pub items: Vec<AdminSiteItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -135,6 +146,17 @@ pub struct DeleteAdminSiteCommand {
 pub struct ListAdminSiteChannelsQuery {
     pub subject: AdminSiteSubject,
     pub site_id: i64,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct AdminSiteChannelListPage {
+    pub items: Vec<AdminSiteChannelItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -151,7 +173,7 @@ pub trait AdminSiteStore {
     fn list_sites<'a>(
         &'a self,
         query: ListAdminSitesQuery,
-    ) -> AdminSiteFuture<'a, Vec<AdminSiteItem>>;
+    ) -> AdminSiteFuture<'a, AdminSiteListPage>;
 
     fn create_site<'a>(
         &'a self,
@@ -168,7 +190,7 @@ pub trait AdminSiteStore {
     fn list_site_channels<'a>(
         &'a self,
         query: ListAdminSiteChannelsQuery,
-    ) -> AdminSiteFuture<'a, Vec<AdminSiteChannelItem>>;
+    ) -> AdminSiteFuture<'a, AdminSiteChannelListPage>;
 
     fn test_site_connection<'a>(
         &'a self,

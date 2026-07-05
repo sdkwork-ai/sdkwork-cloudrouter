@@ -6,8 +6,8 @@ use axum::routing::get;
 use axum::Router;
 use crate::api::app_sql_subject::{map_optional_app_sql_subject, ResolvedAppSqlScopedSubject};
 use crate::api::response::{
-    json_success_list_response, offset_page_info, problem_from_wire_code_for_context,
-    validation_problem_for_context,
+    json_success_list_response, normalize_list_search_query, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code_for_context, validation_problem_for_context,
 };
 use sdkwork_web_core::WebRequestContext;
 use serde::Deserialize;
@@ -16,9 +16,6 @@ use crate::ports::{
     UsageLogsSubject,
 };
 
-const DEFAULT_USAGE_LOGS_PAGE_NO: i64 = 1;
-const DEFAULT_USAGE_LOGS_PAGE_SIZE: i64 = 10;
-const MAX_USAGE_LOGS_PAGE_SIZE: i64 = 100;
 const MAX_USAGE_LOGS_KEYWORD_LEN: usize = 128;
 const MAX_USAGE_LOGS_RANGE_DAYS: i64 = 1096;
 const SECONDS_PER_DAY: i64 = 86_400;
@@ -157,21 +154,19 @@ async fn fetch_usage_logs(
 fn validate_usage_logs_query(
     query: AppUsageLogsQuery,
 ) -> Result<ValidatedUsageLogsQuery, UsageLogsQueryValidationError> {
-    let page_no = query.page.unwrap_or(DEFAULT_USAGE_LOGS_PAGE_NO);
-    if page_no < 1 {
-        return Err(UsageLogsQueryValidationError::new(
-            "usage logs page must be greater than or equal to 1",
-        ));
-    }
+    let pagination = parse_offset_list_query(query.page, query.page_size).map_err(|message| {
+        UsageLogsQueryValidationError::new(if message.starts_with("page ") {
+            format!("usage logs {message}")
+        } else if message.starts_with("page_size ") {
+            format!("usage logs {message}")
+        } else {
+            message
+        })
+    })?;
 
-    let page_size = query.page_size.unwrap_or(DEFAULT_USAGE_LOGS_PAGE_SIZE);
-    if !(1..=MAX_USAGE_LOGS_PAGE_SIZE).contains(&page_size) {
-        return Err(UsageLogsQueryValidationError::new(format!(
-            "usage logs page_size must be between 1 and {MAX_USAGE_LOGS_PAGE_SIZE}"
-        )));
-    }
-
-    let keyword = normalize_usage_logs_query_string(query.q);
+    let keyword = normalize_usage_logs_query_string(
+        normalize_list_search_query(query.q, "q").map_err(UsageLogsQueryValidationError::new)?,
+    );
     if keyword
         .as_ref()
         .is_some_and(|value| value.chars().count() > MAX_USAGE_LOGS_KEYWORD_LEN)
@@ -208,9 +203,9 @@ fn validate_usage_logs_query(
 
     Ok(ValidatedUsageLogsQuery {
         query: UsageLogsQuery {
-            page_no,
-            page_size,
-            offset: (page_no - 1) * page_size,
+            page_no: pagination.page_no,
+            page_size: pagination.page_size,
+            offset: pagination.offset,
             keyword,
             status,
             start_time: parsed_start

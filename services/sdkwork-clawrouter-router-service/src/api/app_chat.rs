@@ -12,17 +12,19 @@ use serde_json::{Map, Value};
 
 use crate::api::app_sql_subject::{map_required_app_sql_subject, RequiredAppSqlScopedSubject};
 
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, offset_page_info, parse_offset_list_query, problem_from_wire_code,
+    success_envelope,
+};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::infrastructure::OsApiKeySecretGenerator;
 use crate::ports::{
     AppChatConversationItem, AppChatConversationList, AppChatFuture, AppChatMessageItem,
-    AppChatStore, AppChatSubject, AppChatTurnOutcome, AppChatUsageSnapshot,
+    AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnOutcome, AppChatUsageSnapshot,
     CompleteAppChatTurnCommand, CreateAppChatConversationCommand, CreateAppChatTurnCommand,
 };
 
-const MAX_PAGE_SIZE: i64 = 100;
 const MAX_TITLE_LEN: usize = 256;
 const MAX_SOURCE_SURFACE_LEN: usize = 64;
 const MAX_MODEL_LEN: usize = 128;
@@ -115,7 +117,14 @@ impl AppChatStore for EmptyAppChatStore {
         _page: i64,
         _page_size: i64,
     ) -> AppChatFuture<'a, AppChatConversationList> {
-        Box::pin(async { Ok(AppChatConversationList { items: Vec::new() }) })
+        Box::pin(async move {
+            Ok(AppChatConversationList {
+                items: Vec::new(),
+                total: 0,
+                page_no: _page.max(1),
+                page_size: _page_size.max(1),
+            })
+        })
     }
 
     fn get_conversation<'a>(
@@ -141,8 +150,17 @@ impl AppChatStore for EmptyAppChatStore {
         &'a self,
         _subject: AppChatSubject,
         _conversation_id: String,
-    ) -> AppChatFuture<'a, Vec<AppChatMessageItem>> {
-        Box::pin(async { Ok(Vec::new()) })
+        _page: i64,
+        _page_size: i64,
+    ) -> AppChatFuture<'a, AppChatMessageList> {
+        Box::pin(async move {
+            Ok(AppChatMessageList {
+                items: Vec::new(),
+                total: 0,
+                page_no: 1,
+                page_size: 30,
+            })
+        })
     }
 
     fn create_turn<'a>(
@@ -213,16 +231,20 @@ async fn list_conversations(
     Query(query): Query<AppChatListQuery>,
 ) -> Response {
     let subject = map_required_app_sql_subject(subject, AppChatSubject::from);
-    let (page, page_size) = match normalize_page(query) {
+    let pagination = match parse_offset_list_query(query.page, query.page_size) {
         Ok(value) => value,
         Err(message) => return bad_request(message),
     };
     match state
         .store
-        .list_conversations(subject, page, page_size)
+        .list_conversations(subject, pagination.page_no, pagination.page_size)
         .await
     {
-        Ok(list) => Json(success_envelope(list)).into_response(),
+        Ok(list) => json_success_list_response(
+            None,
+            list.items,
+            offset_page_info(list.page_no, list.page_size, list.total),
+        ),
         Err(error) => app_chat_system_response("app chat conversations are unavailable", error),
     }
 }
@@ -273,16 +295,27 @@ async fn list_messages(
     RequiredAppSqlScopedSubject(subject): RequiredAppSqlScopedSubject,
     _headers: HeaderMap,
     Path(conversation_id): Path<String>,
+    Query(query): Query<AppChatListQuery>,
 ) -> Response {
     let subject = map_required_app_sql_subject(subject, AppChatSubject::from);
     let conversation_id = match normalize_id(&conversation_id, "conversationId") {
         Ok(value) => value,
         Err(message) => return bad_request(message),
     };
-    match state.store.list_messages(subject, conversation_id).await {
-        Ok(items) => Json(success_envelope(
-            serde_json::json!({ "items": items }),
-        )).into_response(),
+    let pagination = match parse_offset_list_query(query.page, query.page_size) {
+        Ok(value) => value,
+        Err(message) => return bad_request(message),
+    };
+    match state
+        .store
+        .list_messages(subject, conversation_id, pagination.page_no, pagination.page_size)
+        .await
+    {
+        Ok(list) => json_success_list_response(
+            None,
+            list.items,
+            offset_page_info(list.page_no, list.page_size, list.total),
+        ),
         Err(error) => app_chat_system_response("app chat messages are unavailable", error),
     }
 }
@@ -462,12 +495,6 @@ fn build_complete_turn_response_command(
         metadata: normalize_metadata(request.metadata)?,
         requested_at: current_timestamp_string(),
     })
-}
-
-fn normalize_page(query: AppChatListQuery) -> Result<(i64, i64), String> {
-    let page = query.page.unwrap_or(1).max(1);
-    let page_size = query.page_size.unwrap_or(30).max(1).min(MAX_PAGE_SIZE);
-    Ok((page, page_size))
 }
 
 fn normalize_required_message_text(

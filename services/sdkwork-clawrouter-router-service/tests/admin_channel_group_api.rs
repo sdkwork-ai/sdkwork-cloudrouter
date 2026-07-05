@@ -13,7 +13,7 @@ use sdkwork_clawrouter_router_service::application::{
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
     AdminChannelGroupChannelBindingItem, AdminChannelGroupCommandFuture, AdminChannelGroupItem,
-    AdminChannelGroupStore, CreateAdminChannelGroupCommand, DeleteAdminChannelGroupCommand,
+    AdminChannelGroupListPage, AdminChannelGroupStore, CreateAdminChannelGroupCommand, DeleteAdminChannelGroupCommand,
     ListAdminChannelGroupChannelBindingsQuery, ListAdminChannelGroupsQuery,
     ReplaceAdminChannelGroupChannelBindingsCommand, UpdateAdminChannelGroupCommand,
 };
@@ -633,9 +633,9 @@ impl AdminChannelGroupStore for TestChannelGroupStore {
     fn list_channel_groups<'a>(
         &'a self,
         query: ListAdminChannelGroupsQuery,
-    ) -> AdminChannelGroupCommandFuture<'a, Vec<AdminChannelGroupItem>> {
+    ) -> AdminChannelGroupCommandFuture<'a, AdminChannelGroupListPage> {
         Box::pin(async move {
-            Ok(self
+            let mut items: Vec<_> = self
                 .items
                 .lock()
                 .unwrap()
@@ -645,8 +645,30 @@ impl AdminChannelGroupStore for TestChannelGroupStore {
                         && item.organization_id == query.subject.organization_id
                         && item.deleted_at.is_none()
                 })
+                .filter(|item| query.group_id.is_none_or(|group_id| item.id == group_id))
+                .filter(|item| {
+                    query.q.as_ref().is_none_or(|search| {
+                        let search = search.to_lowercase();
+                        item.group_name.to_lowercase().contains(&search)
+                            || item.group_code.to_lowercase().contains(&search)
+                    })
+                })
                 .cloned()
-                .collect())
+                .collect();
+            let total = items.len() as i64;
+            let offset = query.offset.max(0) as usize;
+            let page_size = query.page_size.max(0) as usize;
+            if offset >= items.len() {
+                items.clear();
+            } else {
+                items = items.into_iter().skip(offset).take(page_size).collect();
+            }
+            Ok(AdminChannelGroupListPage {
+                items,
+                total,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
         })
     }
 
@@ -847,8 +869,8 @@ fn channel_binding_item(
     AdminChannelGroupChannelBindingItem {
         id,
         uuid: format!("binding-{id}"),
-        tenant_id: 100001,
-        organization_id: 0,
+        tenant_id: 10,
+        organization_id: 20,
         group_id,
         channel_id,
         channel_name: channel_name.to_owned(),
@@ -878,8 +900,8 @@ fn channel_group_item(
     AdminChannelGroupItem {
         id,
         uuid: format!("group-{id}"),
-        tenant_id: 100001,
-        organization_id: 0,
+        tenant_id: 10,
+        organization_id: 20,
         group_code: group_code.to_owned(),
         group_name: group_name.to_owned(),
         provider_code: "openai".to_owned(),

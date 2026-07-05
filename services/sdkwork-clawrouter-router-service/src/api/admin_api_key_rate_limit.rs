@@ -3,7 +3,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
 use axum::body::Bytes;
-use axum::extract::State;
+use axum::extract::{Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
@@ -12,7 +12,10 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, normalize_list_search_query, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, success_envelope,
+};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::ports::{
@@ -31,6 +34,13 @@ const API_KEY_PREFIX_NOT_FOUND: &str = "api key prefix was not found";
 struct AdminApiKeyRateLimitState {
     store: Arc<dyn AdminApiKeyRateLimitStore + Send + Sync>,
     entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct AdminApiKeyRateLimitListQueryRequest {
+    page: Option<i64>,
+    page_size: Option<i64>,
+    q: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -55,12 +65,6 @@ struct NormalizedCreateRequest {
 enum ApiKeyRateLimitCommandBuildError {
     BadRequest(String),
     System(DomainError),
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct AdminApiKeyRateLimitListResponse {
-    items: Vec<AdminApiKeyRateLimitItemResponse>,
 }
 
 #[derive(Debug, Serialize)]
@@ -104,23 +108,39 @@ async fn fetch_api_key_rate_limits(
     State(state): State<AdminApiKeyRateLimitState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
+    Query(request): Query<AdminApiKeyRateLimitListQueryRequest>,
 ) -> Response {
     let subject = scoped.into();
+    let query = match build_list_query(subject, request) {
+        Ok(query) => query,
+        Err(message) => return bad_request(message),
+    };
 
-    match state
-        .store
-        .list_api_key_rate_limits(ListAdminApiKeyRateLimitsQuery { subject })
-        .await
-    {
-        Ok(items) => Json(success_envelope(AdminApiKeyRateLimitListResponse {
-            items: items.into_iter().map(to_item_response).collect(),
-        }))
-        .into_response(),
+    match state.store.list_api_key_rate_limits(query).await {
+        Ok(page) => json_success_list_response(
+            None,
+            page.items.into_iter().map(to_item_response).collect(),
+            offset_page_info(page.page_no, page.page_size, page.total),
+        ),
         Err(error) => api_key_rate_limit_system_response(
             "api key rate limit read model is unavailable",
             error,
         ),
     }
+}
+
+fn build_list_query(
+    subject: AdminApiKeyRateLimitSubject,
+    request: AdminApiKeyRateLimitListQueryRequest,
+) -> Result<ListAdminApiKeyRateLimitsQuery, String> {
+    let pagination = parse_offset_list_query(request.page, request.page_size)?;
+    Ok(ListAdminApiKeyRateLimitsQuery {
+        subject,
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
+        q: normalize_list_search_query(request.q, "q")?,
+    })
 }
 
 async fn create_api_key_rate_limit(

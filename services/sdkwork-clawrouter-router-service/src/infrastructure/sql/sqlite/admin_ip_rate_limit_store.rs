@@ -8,8 +8,8 @@ use crate::infrastructure::sql::routing_config_change::{
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    AdminIpRateLimitCommandFuture, AdminIpRateLimitItem, AdminIpRateLimitStore,
-    CreateAdminIpRateLimitCommand, ListAdminIpRateLimitsQuery,
+    AdminIpRateLimitCommandFuture, AdminIpRateLimitItem, AdminIpRateLimitListPage,
+    AdminIpRateLimitStore, CreateAdminIpRateLimitCommand, ListAdminIpRateLimitsQuery,
 };
 
 const IP_RATE_LIMIT_TARGET_TYPE: i32 = 42;
@@ -37,7 +37,7 @@ impl AdminIpRateLimitStore for SqliteAdminIpRateLimitStore {
     fn list_ip_rate_limits<'a>(
         &'a self,
         query: ListAdminIpRateLimitsQuery,
-    ) -> AdminIpRateLimitCommandFuture<'a, Vec<AdminIpRateLimitItem>> {
+    ) -> AdminIpRateLimitCommandFuture<'a, AdminIpRateLimitListPage> {
         Box::pin(async move { list_ip_rate_limits(&self.pool, query).await })
     }
 
@@ -130,7 +130,11 @@ impl AdminIpRateLimitStore for SqliteAdminIpRateLimitStore {
 async fn list_ip_rate_limits(
     pool: &SqlitePool,
     query: ListAdminIpRateLimitsQuery,
-) -> DomainResult<Vec<AdminIpRateLimitItem>> {
+) -> DomainResult<AdminIpRateLimitListPage> {
+    let search = query
+        .q
+        .as_ref()
+        .map(|value| format!("%{}%", value.to_lowercase()));
     let sql = ip_rate_limit_select_sql(
         r#"
         WHERE tenant_id = ?
@@ -139,8 +143,13 @@ async fn list_ip_rate_limits(
           AND rule_type = ?
           AND target_type = ?
           AND deleted_at IS NULL
+          AND (
+              ? IS NULL
+              OR LOWER(COALESCE(rule_name, '')) LIKE ?
+              OR LOWER(COALESCE(target_value, '')) LIKE ?
+          )
         ORDER BY priority ASC, updated_at DESC, id DESC
-        LIMIT 200
+        LIMIT ? OFFSET ?
         "#,
     );
     let rows = sqlx::query(&sql)
@@ -149,11 +158,26 @@ async fn list_ip_rate_limits(
         .bind(RATE_LIMIT_RULE_CATEGORY)
         .bind(IP_RATE_LIMIT_RULE_TYPE)
         .bind(IP_TARGET_TYPE)
+        .bind(search.as_deref())
+        .bind(search.as_deref())
+        .bind(search.as_deref())
+        .bind(query.page_size)
+        .bind(query.offset)
         .fetch_all(pool)
         .await
         .map_err(|error| store_error("failed to list ip rate limits", error))?;
 
-    rows.into_iter().map(item_from_row).collect()
+    let total = rows
+        .first()
+        .and_then(|row| row.try_get::<i64, _>("total").ok())
+        .unwrap_or(0);
+    let items = rows.into_iter().map(item_from_row).collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminIpRateLimitListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn upsert_ip_rate_limit(
@@ -436,7 +460,8 @@ fn ip_rate_limit_select_sql(predicate: &str) -> String {
             requests_per_minute AS rpm,
             block_duration_seconds,
             status,
-            CAST(deleted_at AS TEXT) AS deleted_at
+            CAST(deleted_at AS TEXT) AS deleted_at,
+            COUNT(*) OVER() AS total
         FROM iam_gateway_risk_rule
         {predicate}
         "#

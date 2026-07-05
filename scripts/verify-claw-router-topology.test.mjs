@@ -64,7 +64,11 @@ test('declares v2 topology spec and profile env files for sdkwork-clawrouter', a
 test('root package.json wires @sdkwork/app-topology and canonical dev scripts', async () => {
   const packageJson = await readJson('package.json');
   const spec = await readJson('specs/topology.spec.json');
-  assert.equal(packageJson.dependencies['@sdkwork/app-topology'], 'file:../sdkwork-app-topology');
+  assert.ok(
+    packageJson.dependencies['@sdkwork/app-topology'] === 'file:../sdkwork-app-topology'
+      || packageJson.dependencies['@sdkwork/app-topology'] === 'workspace:*',
+    'expected @sdkwork/app-topology to resolve via sibling file: or workspace:* link',
+  );
   assert.equal(packageJson.scripts.dev, 'pnpm install:deps:ensure && pnpm dev:browser');
   assert.equal(packageJson.scripts['dev:browser'], 'pnpm dev:browser:postgres:unified-process:standalone');
   assert.match(packageJson.scripts['dev:browser:postgres:unified-process:standalone'], /scripts\/claw-router-dev\.mjs/);

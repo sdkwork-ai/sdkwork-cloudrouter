@@ -222,6 +222,59 @@ pub fn json_success_response<T: Serialize>(
     response
 }
 
+/// Default list query values per `API_SPEC.md` §14.1.1.
+pub const DEFAULT_LIST_PAGE_NO: i64 = 1;
+pub const DEFAULT_LIST_PAGE_SIZE: i64 = 20;
+pub const MAX_LIST_PAGE_SIZE: i64 = 200;
+pub const MAX_LIST_SEARCH_LEN: usize = 256;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ParsedOffsetListQuery {
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+}
+
+pub fn parse_offset_list_query(
+    page: Option<i64>,
+    page_size: Option<i64>,
+) -> Result<ParsedOffsetListQuery, String> {
+    let page_no = page.unwrap_or(DEFAULT_LIST_PAGE_NO);
+    if page_no < 1 {
+        return Err("page must be greater than or equal to 1".to_owned());
+    }
+    let page_size = page_size.unwrap_or(DEFAULT_LIST_PAGE_SIZE);
+    if !(1..=MAX_LIST_PAGE_SIZE).contains(&page_size) {
+        return Err(format!(
+            "page_size must be between 1 and {MAX_LIST_PAGE_SIZE}"
+        ));
+    }
+    Ok(ParsedOffsetListQuery {
+        page_no,
+        page_size,
+        offset: (page_no - 1) * page_size,
+    })
+}
+
+pub fn normalize_list_search_query(
+    value: Option<String>,
+    field: &str,
+) -> Result<Option<String>, String> {
+    let Some(value) = value else {
+        return Ok(None);
+    };
+    let value = value.trim();
+    if value.is_empty() {
+        return Ok(None);
+    }
+    if value.chars().count() > MAX_LIST_SEARCH_LEN {
+        return Err(format!(
+            "{field} must be at most {MAX_LIST_SEARCH_LEN} characters"
+        ));
+    }
+    Ok(Some(value.to_owned()))
+}
+
 /// Offset pagination metadata for list responses (`API_SPEC.md` §16).
 pub fn offset_page_info(page_no: i64, page_size: i64, total_items: i64) -> PageInfo {
     let total_pages = if page_size > 0 {

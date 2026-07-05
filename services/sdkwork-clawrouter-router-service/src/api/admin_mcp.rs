@@ -9,19 +9,19 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, normalize_list_search_query, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, success_envelope,
+};
 use crate::domain::DomainError;
 use crate::ports::{
-    AdminMcpStore, AdminMcpSubject, CreateAdminMcpBindingCommand, CreateAdminMcpServerCommand,
+    AdminMcpListPage, AdminMcpStore, AdminMcpSubject, CreateAdminMcpBindingCommand, CreateAdminMcpServerCommand,
     CreateAdminMcpServerRevisionCommand, DiscoverAdminMcpToolsCommand, GetAdminMcpServerQuery,
     ListAdminMcpBindingsQuery, ListAdminMcpServerRevisionsQuery, ListAdminMcpServersQuery,
     ListAdminMcpToolsQuery, PublishAdminMcpServerRevisionCommand, TestAdminMcpServerHealthCommand,
     UpdateAdminMcpBindingCommand, UpdateAdminMcpServerCommand, UpdateAdminMcpToolCommand,
 };
 
-const DEFAULT_PAGE_NO: i64 = 1;
-const DEFAULT_PAGE_SIZE: i64 = 50;
-const MAX_PAGE_SIZE: i64 = 200;
 const MAX_KEY_LEN: usize = 128;
 const MAX_NAME_LEN: usize = 255;
 const MAX_DESCRIPTION_LEN: usize = 4000;
@@ -37,6 +37,12 @@ const MAX_TIMEOUT_MS: i32 = 300_000;
 #[derive(Clone)]
 struct AdminMcpState {
     store: Arc<dyn AdminMcpStore + Send + Sync>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct ListPaginationQuery {
+    page: Option<i64>,
+    page_size: Option<i64>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -137,12 +143,6 @@ struct UpdateBindingRequest {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct AdminMcpListResponse<T> {
-    items: Vec<T>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
 struct AdminMcpItemEnvelope<T> {
     item: T,
 }
@@ -204,7 +204,7 @@ async fn list_servers(
         Err(response) => return response,
     };
     match state.store.list_servers(query).await {
-        Ok(items) => list_response(items),
+        Ok(page) => paginated_list_response(page),
         Err(error) => mcp_error_response("mcp server list is unavailable", error),
     }
 }
@@ -265,13 +265,14 @@ async fn list_revisions(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: HeaderMap,
     Path(server_id): Path<String>,
+    Query(request): Query<ListPaginationQuery>,
 ) -> Response {
-    let query = match build_list_revisions_query(scoped, &headers, &server_id) {
+    let query = match build_list_revisions_query(scoped, &headers, &server_id, request) {
         Ok(query) => query,
         Err(response) => return response,
     };
     match state.store.list_revisions(query).await {
-        Ok(items) => list_response(items),
+        Ok(page) => paginated_list_response(page),
         Err(error) => mcp_error_response("mcp revision list is unavailable", error),
     }
 }
@@ -347,13 +348,14 @@ async fn list_tools(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: HeaderMap,
     Path(server_id): Path<String>,
+    Query(request): Query<ListPaginationQuery>,
 ) -> Response {
-    let query = match build_list_tools_query(scoped, &headers, &server_id) {
+    let query = match build_list_tools_query(scoped, &headers, &server_id, request) {
         Ok(query) => query,
         Err(response) => return response,
     };
     match state.store.list_tools(query).await {
-        Ok(items) => list_response(items),
+        Ok(page) => paginated_list_response(page),
         Err(error) => mcp_error_response("mcp tool list is unavailable", error),
     }
 }
@@ -381,13 +383,14 @@ async fn list_bindings(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: HeaderMap,
     Path(server_id): Path<String>,
+    Query(request): Query<ListPaginationQuery>,
 ) -> Response {
-    let query = match build_list_bindings_query(scoped, &headers, &server_id) {
+    let query = match build_list_bindings_query(scoped, &headers, &server_id, request) {
         Ok(query) => query,
         Err(response) => return response,
     };
     match state.store.list_bindings(query).await {
-        Ok(items) => list_response(items),
+        Ok(page) => paginated_list_response(page),
         Err(error) => mcp_error_response("mcp binding list is unavailable", error),
     }
 }
@@ -433,26 +436,17 @@ fn build_list_servers_query(
     request: ListServersRequest,
 ) -> Result<ListAdminMcpServersQuery, Response> {
     let subject = scoped.into();
-    let page_no = request.page.unwrap_or(DEFAULT_PAGE_NO);
-    if page_no < 1 {
-        return Err(bad_request("page must be greater than or equal to 1"));
-    }
-    let page_size = request.page_size.unwrap_or(DEFAULT_PAGE_SIZE);
-    if !(1..=MAX_PAGE_SIZE).contains(&page_size) {
-        return Err(bad_request(format!(
-            "page_size must be between 1 and {MAX_PAGE_SIZE}"
-        )));
-    }
+    let pagination = parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
     Ok(ListAdminMcpServersQuery {
         subject,
-        keyword: normalize_optional_text(request.q, "q", MAX_KEY_LEN)?,
+        keyword: normalize_list_search_query(request.q, "q").map_err(bad_request)?,
         transport: normalize_optional_enum(request.transport, "transport")?,
         visibility: normalize_optional_enum(request.visibility, "visibility")?,
         status: normalize_optional_enum(request.status, "status")?,
         category_id: normalize_optional_id(request.category_id, "categoryId")?,
-        page_no,
-        page_size,
-        offset: (page_no - 1) * page_size,
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
     })
 }
 
@@ -527,10 +521,15 @@ fn build_list_revisions_query(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: &HeaderMap,
     server_id: &str,
+    request: ListPaginationQuery,
 ) -> Result<ListAdminMcpServerRevisionsQuery, Response> {
+    let pagination = parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
     Ok(ListAdminMcpServerRevisionsQuery {
         subject: scoped.into(),
         server_id: parse_positive_i64(server_id, "serverId")?,
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
     })
 }
 
@@ -596,10 +595,15 @@ fn build_list_tools_query(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: &HeaderMap,
     server_id: &str,
+    request: ListPaginationQuery,
 ) -> Result<ListAdminMcpToolsQuery, Response> {
+    let pagination = parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
     Ok(ListAdminMcpToolsQuery {
         subject: scoped.into(),
         server_id: parse_positive_i64(server_id, "serverId")?,
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
     })
 }
 
@@ -645,10 +649,15 @@ fn build_list_bindings_query(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: &HeaderMap,
     server_id: &str,
+    request: ListPaginationQuery,
 ) -> Result<ListAdminMcpBindingsQuery, Response> {
+    let pagination = parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
     Ok(ListAdminMcpBindingsQuery {
         subject: scoped.into(),
         server_id: parse_positive_i64(server_id, "serverId")?,
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
     })
 }
 
@@ -940,8 +949,12 @@ fn json_string_array_or_default(value: Option<Value>, field_name: &str) -> Resul
     )))
 }
 
-fn list_response<T: Serialize>(items: Vec<T>) -> Response {
-    Json(success_envelope(AdminMcpListResponse { items })).into_response()
+fn paginated_list_response<T: Serialize>(page: AdminMcpListPage<T>) -> Response {
+    json_success_list_response(
+        None,
+        page.items,
+        offset_page_info(page.page_no, page.page_size, page.total),
+    )
 }
 
 fn item_response<T: Serialize>(item: T) -> Response {

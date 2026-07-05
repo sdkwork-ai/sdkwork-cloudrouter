@@ -9,7 +9,8 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{json_success_list_response, problem_from_wire_code, success_envelope};
+use sdkwork_utils_rust::offset_limit_page_info;
 use crate::domain::DomainError;
 use crate::ports::{
     AdminStorageCollection, AdminStorageJsonRecord, AdminStorageStore, AdminStorageSubject,
@@ -20,7 +21,7 @@ use crate::ports::{
     UpdateStorageProviderCommand,
 };
 
-const DEFAULT_LIMIT: i64 = 100;
+const DEFAULT_LIMIT: i64 = 20;
 const MAX_LIMIT: i64 = 200;
 const MAX_ID_LEN: usize = 128;
 const MAX_CODE_LEN: usize = 96;
@@ -164,15 +165,6 @@ struct CreateStorageGarbageCollectionJobRequest {
     retention_window: Option<String>,
     dry_run_sample: Option<String>,
     criteria: Option<serde_json::Value>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct StorageListResponse {
-    items: Vec<AdminStorageJsonRecord>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    next_cursor: Option<String>,
-    request_id: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -625,12 +617,12 @@ where
 }
 
 fn collection_response(collection: AdminStorageCollection) -> Response {
-    Json(success_envelope(StorageListResponse {
-        items: collection.items,
-        next_cursor: collection.next_cursor,
-        request_id: collection.request_id,
-    }))
-    .into_response()
+    let has_more = collection.next_cursor.is_some();
+    json_success_list_response(
+        None,
+        collection.items,
+        offset_limit_page_info(collection.next_cursor, has_more),
+    )
 }
 
 fn validated_list_query(

@@ -11,6 +11,11 @@ import {
   resolvePortalRuntimeEnv,
   resolvePortalWorkspaceDependencyRoot,
 } from "./vite.config.ts";
+import {
+  createPortalOptimizeDepsEsbuildPlugin,
+  shouldResolvePortalOptimizeDepsImport,
+} from "./scripts/lib/portal-optimize-deps-esbuild-resolver.mjs";
+import { resolvePortalPackageModule } from "./scripts/lib/portal-workspace-package-resolver.mjs";
 
 async function resolvePortalViteConfig(mode = 'development', command: 'serve' | 'build' = 'serve'): Promise<UserConfig> {
   if (typeof portalViteConfig !== "function") {
@@ -123,41 +128,52 @@ test("SDK reference workspace package is not served from stale dependency optimi
   assert.ok(config.optimizeDeps?.exclude?.includes("@sdkwork/documents-pc-sdk-reference"));
 });
 
-test("portal workspace packages resolve to source files outside node_modules in dev", async () => {
+test("portal workspace packages resolve through pnpm workspace exports", async () => {
   const config = await resolvePortalViteConfig();
   const plugins: unknown[] = Array.isArray(config.plugins) ? config.plugins.flat() : [];
-  const resolver = plugins.find((plugin) => hasPluginName(plugin, "clawrouter-portal-local-package-resolver"));
+  const resolver = plugins.find((plugin) => hasPluginName(plugin, "clawrouter-portal-pnpm-workspace-resolver"));
 
   assert.ok(resolver && typeof resolver === "object");
   assert.ok("resolveId" in resolver);
 
-  const resolvedRoot = await callResolveId(
+  const documentsImporter = path.resolve(
+    import.meta.dirname,
+    "../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/ideToolProfiles.ts",
+  );
+  const resolvedDocumentsRoot = await callResolveId(
     resolver.resolveId,
     "@sdkwork/documents-pc-api-reference",
     new URL("./src/App.tsx", import.meta.url).pathname,
   );
-  const resolvedSubpath = await callResolveId(
+  const resolvedGatewayEndpoint = await callResolveId(
     resolver.resolveId,
+    "@sdkwork/utils/gatewayEndpoint",
+    documentsImporter,
+  );
+  const resolvedLocalSubpath = await callResolveId(
+    plugins.find((plugin) => hasPluginName(plugin, "clawrouter-portal-local-package-resolver"))?.resolveId,
     "sdkwork-clawroutes-pc-commons/runtime",
-    new URL("../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/codeSnippetClient.ts", import.meta.url).pathname,
+    documentsImporter,
   );
 
   assert.equal(
-    resolvedRoot,
-    path.resolve(import.meta.dirname, "../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/index.ts"),
+    resolvedDocumentsRoot,
+    path.resolve(import.meta.dirname, "node_modules/@sdkwork/documents-pc-api-reference/src/index.ts"),
   );
   assert.equal(
-    resolvedSubpath,
+    resolvedGatewayEndpoint,
+    path.resolve(import.meta.dirname, "node_modules/@sdkwork/utils/dist/gatewayEndpoint.js"),
+  );
+  assert.equal(
+    resolvedLocalSubpath,
     path.resolve(import.meta.dirname, "packages/sdkwork-clawroutes-pc-commons/src/runtime.ts"),
   );
-  assert.ok(!String(resolvedRoot).includes(`${path.sep}node_modules${path.sep}`));
-  assert.ok(!String(resolvedSubpath).includes(`${path.sep}node_modules${path.sep}`));
 });
 
-test("portal local packages resolve scoped clawrouter pc downloads to source files", async () => {
+test("portal local packages resolve scoped clawrouter pc downloads through package exports", async () => {
   const config = await resolvePortalViteConfig();
   const plugins: unknown[] = Array.isArray(config.plugins) ? config.plugins.flat() : [];
-  const resolver = plugins.find((plugin) => hasPluginName(plugin, "clawrouter-portal-local-package-resolver"));
+  const resolver = plugins.find((plugin) => hasPluginName(plugin, "clawrouter-portal-pnpm-workspace-resolver"));
 
   assert.ok(resolver && typeof resolver === "object");
   assert.ok("resolveId" in resolver);
@@ -170,7 +186,7 @@ test("portal local packages resolve scoped clawrouter pc downloads to source fil
 
   assert.equal(
     resolvedRoot,
-    path.resolve(import.meta.dirname, "packages/sdkwork-clawrouter-pc-downloads/src/index.ts"),
+    path.resolve(import.meta.dirname, "node_modules/@sdkwork/clawrouter-pc-downloads/src/index.ts"),
   );
   assert.ok(existsSync(resolvedRoot));
 });
@@ -204,30 +220,30 @@ test("portal dev server may serve workspace SDK sources resolved by aliases", as
   assert.ok(config.server?.fs?.allow?.includes(workspaceRoot));
 });
 
-test("portal resolves ClawRouter generated SDK imports to source entries", async () => {
+test("portal resolves ClawRouter generated SDK imports through workspace package exports", async () => {
   const config = await resolvePortalViteConfig();
-  const aliases = config.resolve?.alias;
+  const plugins: unknown[] = Array.isArray(config.plugins) ? config.plugins.flat() : [];
+  const resolver = plugins.find((plugin) => hasPluginName(plugin, "clawrouter-portal-pnpm-workspace-resolver"));
 
-  assert.ok(Array.isArray(aliases));
-  for (const [packageName, sdkFamily] of [
-    ["@sdkwork/clawrouter-app-sdk", "clawrouter-app-sdk"],
-    ["@sdkwork/clawrouter-backend-sdk", "clawrouter-backend-sdk"],
-    ["@sdkwork/clawrouter-open-sdk", "clawrouter-open-sdk"],
+  assert.ok(resolver && typeof resolver === "object");
+  assert.ok("resolveId" in resolver);
+
+  for (const packageName of [
+    "@sdkwork/clawrouter-app-sdk",
+    "@sdkwork/clawrouter-backend-sdk",
+    "@sdkwork/clawrouter-open-sdk",
   ] as const) {
-    const expectedEntry = path.resolve(
-      import.meta.dirname,
-      `../../sdks/${sdkFamily}/${sdkFamily}-typescript/generated/server-openapi/src/index.ts`,
+    const resolvedEntry = await callResolveId(
+      resolver.resolveId,
+      packageName,
+      new URL("./src/App.tsx", import.meta.url).pathname,
     );
-    assert.equal(
-      aliases.find((alias) => (
-        typeof alias === "object"
-        && alias !== null
-        && "find" in alias
-        && alias.find === packageName
-      ))?.replacement,
-      expectedEntry,
+    assert.match(
+      String(resolvedEntry),
+      /[\\/]node_modules[\\/]@sdkwork[\\/]clawrouter-(?:app|backend|open)-sdk[\\/].*index\.(?:js|ts)$/u,
+      `${packageName} must resolve through the portal install graph`,
     );
-    assert.ok(existsSync(expectedEntry), `${packageName} alias must point to a real generated source file`);
+    assert.ok(existsSync(resolvedEntry), `${packageName} must resolve to an existing workspace entry`);
   }
 });
 
@@ -243,73 +259,230 @@ test("portal dependency roots resolve to the sibling workspace repository path",
   );
 });
 
-test("portal resolves sdkwork UI workspace imports to the app workspace source root", async () => {
+test("portal resolves sdkwork UI workspace imports through package exports", async () => {
   const config = await resolvePortalViteConfig();
-  const aliases = config.resolve?.alias;
+  const plugins: unknown[] = Array.isArray(config.plugins) ? config.plugins.flat() : [];
+  const resolver = plugins.find((plugin) => hasPluginName(plugin, "clawrouter-portal-pnpm-workspace-resolver"));
   const expectedUiRoot = resolvePortalWorkspaceDependencyRoot(import.meta.dirname, "sdkwork-ui");
-  const expectedUiEntry = path.resolve(expectedUiRoot, "sdkwork-ui-pc-react/src/index.ts");
+  const expectedUiEntry = path.resolve(import.meta.dirname, "node_modules/@sdkwork/ui-pc-react/dist/index.js");
+  const membershipHeroImporter = path.resolve(
+    import.meta.dirname,
+    "../../../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-membership/src/components/membership-hero.tsx",
+  );
+  const expectedUiButtonEntry = path.resolve(
+    import.meta.dirname,
+    "node_modules/@sdkwork/ui-pc-react/src/components/ui/button.tsx",
+  );
 
-  assert.ok(Array.isArray(aliases));
+  assert.ok(resolver && typeof resolver === "object");
+  assert.ok("resolveId" in resolver);
   assert.equal(
-    aliases.find((alias) => (
-      typeof alias === "object"
-      && alias !== null
-      && "find" in alias
-      && alias.find === "@sdkwork/ui-pc-react"
-    ))?.replacement,
+    await callResolveId(
+      resolver.resolveId,
+      "@sdkwork/ui-pc-react",
+      new URL("./src/App.tsx", import.meta.url).pathname,
+    ),
     expectedUiEntry,
   );
-  assert.ok(existsSync(expectedUiEntry), "@sdkwork/ui-pc-react alias must point to a real source file");
+  assert.equal(
+    await callResolveId(
+      resolver.resolveId,
+      "@sdkwork/ui-pc-react/components/ui/button",
+      membershipHeroImporter,
+    ),
+    expectedUiButtonEntry,
+  );
+  assert.ok(existsSync(expectedUiEntry), "@sdkwork/ui-pc-react must resolve through workspace exports");
+  assert.ok(
+    existsSync(expectedUiButtonEntry),
+    "@sdkwork/ui-pc-react deep component imports must fall back to TSX source",
+  );
+  assert.ok(
+    config.optimizeDeps?.exclude?.includes("@sdkwork/ui-pc-react"),
+    "@sdkwork/ui-pc-react must bypass stale dependency optimizer cache for deep component imports",
+  );
   assert.ok(
     config.server?.fs?.allow?.includes(expectedUiRoot),
     "Vite dev server must allow serving sdkwork-ui workspace sources",
   );
 });
 
-test("portal resolves runtime bootstrap workspace imports to the appbase foundation source root", async () => {
+test("portal resolves commerce SDK imports from sibling workspace packages", async () => {
   const config = await resolvePortalViteConfig();
-  const aliases = config.resolve?.alias;
-  const appbaseRoot = resolvePortalWorkspaceDependencyRoot(import.meta.dirname, "sdkwork-appbase");
-  const expectedRuntimeBootstrapEntry = path.resolve(
-    appbaseRoot,
-    "packages/common/foundation/sdkwork-runtime-bootstrap/src/index.ts",
+  const plugins: unknown[] = Array.isArray(config.plugins) ? config.plugins.flat() : [];
+  const resolver = plugins.find((plugin) => hasPluginName(plugin, "clawrouter-portal-pnpm-workspace-resolver"));
+  const accountTransportImporter = path.resolve(
+    import.meta.dirname,
+    "../../../sdkwork-account/apps/sdkwork-account-common/packages/sdkwork-account-service/src/transport.ts",
+  );
+  const orderTransportImporter = path.resolve(
+    import.meta.dirname,
+    "../../../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-service/src/transport.ts",
   );
 
-  assert.ok(Array.isArray(aliases));
+  assert.ok(resolver && typeof resolver === "object");
+  assert.ok("resolveId" in resolver);
+
+  const resolvedAccountAppSdk = await callResolveId(
+    resolver.resolveId,
+    "@sdkwork/account-app-sdk",
+    accountTransportImporter,
+  );
+  const resolvedOrderAppSdk = await callResolveId(
+    resolver.resolveId,
+    "@sdkwork/order-app-sdk",
+    orderTransportImporter,
+  );
+
+  assert.match(String(resolvedAccountAppSdk), /[\\/]@sdkwork[\\/]account-app-sdk[\\/]src[\\/]index\.ts$/u);
+  assert.match(String(resolvedOrderAppSdk), /[\\/]@sdkwork[\\/]order-app-sdk[\\/]src[\\/]index\.ts$/u);
+  assert.ok(existsSync(String(resolvedAccountAppSdk)));
+  assert.ok(existsSync(String(resolvedOrderAppSdk)));
+});
+
+test("portal maps retired clawrouter commons imports to clawroutes commons", async () => {
+  const config = await resolvePortalViteConfig();
+  const plugins: unknown[] = Array.isArray(config.plugins) ? config.plugins.flat() : [];
+  const resolver = plugins.find((plugin) => hasPluginName(plugin, "clawrouter-portal-pnpm-workspace-resolver"));
+  const modelsImporter = path.resolve(
+    import.meta.dirname,
+    "node_modules/@sdkwork/models-pc-admin-catalog/src/modelService.ts",
+  );
+
+  assert.ok(resolver && typeof resolver === "object");
+  assert.ok("resolveId" in resolver);
+
+  const resolvedRuntime = await callResolveId(
+    resolver.resolveId,
+    "@sdkwork/clawrouter-pc-commons/runtime",
+    modelsImporter,
+  );
+
+  assert.match(
+    String(resolvedRuntime),
+    /[\\/]@sdkwork[\\/]clawroutes-pc-commons[\\/]src[\\/]runtime\.ts$/u,
+  );
+  assert.ok(existsSync(String(resolvedRuntime)));
+});
+
+test("dependency optimizer resolves lucide-react for sibling workspace packages", async () => {
+  const config = await resolvePortalViteConfig("development", "serve");
+  const paymentImporter = path.resolve(
+    import.meta.dirname,
+    "../../../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-payment/src/pages/PaymentPage.tsx",
+  );
+  const paymentRoot = resolvePortalWorkspaceDependencyRoot(import.meta.dirname, "sdkwork-payment");
+  const optimizedBareDependencies = new Set([
+    "react",
+    "react/jsx-runtime",
+    "react/jsx-dev-runtime",
+    "react-dom",
+    "react-dom/client",
+    "react-router",
+    "react-router/dom",
+    "react-router-dom",
+    "cookie",
+    "set-cookie-parser",
+    "motion/react",
+    "react-i18next",
+    "html-parse-stringify",
+    "void-elements",
+    "framer-motion",
+    "i18next",
+    "recharts",
+  ]);
+  const optimizePlugins = config.optimizeDeps?.esbuildOptions?.plugins ?? [];
+
+  assert.ok(config.optimizeDeps?.include?.includes("lucide-react"));
+  assert.ok(
+    optimizePlugins.some((plugin) => plugin && typeof plugin === "object" && plugin.name === "portal-optimize-deps-resolver"),
+    "optimizeDeps must install a portal resolver esbuild plugin for sibling workspace imports",
+  );
+  assert.ok(
+    shouldResolvePortalOptimizeDepsImport(
+      "lucide-react",
+      paymentImporter,
+      [paymentRoot],
+      optimizedBareDependencies,
+    ),
+  );
+
+  const resolvedLucide = resolvePortalPackageModule(
+    "lucide-react",
+    import.meta.dirname,
+    paymentImporter,
+  );
+
+  assert.match(resolvedLucide ?? "", /[\\/]lucide-react[\\/]/u);
+  assert.ok(
+    typeof createPortalOptimizeDepsEsbuildPlugin(import.meta.dirname, [paymentRoot], optimizedBareDependencies).setup
+      === "function",
+  );
+});
+
+test("portal resolves runtime bootstrap workspace imports through package exports", async () => {
+  const config = await resolvePortalViteConfig();
+  const plugins: unknown[] = Array.isArray(config.plugins) ? config.plugins.flat() : [];
+  const resolver = plugins.find((plugin) => hasPluginName(plugin, "clawrouter-portal-pnpm-workspace-resolver"));
+  const appbaseRoot = resolvePortalWorkspaceDependencyRoot(import.meta.dirname, "sdkwork-appbase");
+  const expectedRuntimeBootstrapEntry = path.resolve(
+    import.meta.dirname,
+    "node_modules/@sdkwork/runtime-bootstrap/src/index.ts",
+  );
+
+  assert.ok(resolver && typeof resolver === "object");
+  assert.ok("resolveId" in resolver);
   assert.equal(
-    aliases.find((alias) => (
-      typeof alias === "object"
-      && alias !== null
-      && "find" in alias
-      && alias.find === "@sdkwork/runtime-bootstrap"
-    ))?.replacement,
+    await callResolveId(
+      resolver.resolveId,
+      "@sdkwork/runtime-bootstrap",
+      new URL("./src/App.tsx", import.meta.url).pathname,
+    ),
     expectedRuntimeBootstrapEntry,
   );
   assert.ok(
     existsSync(expectedRuntimeBootstrapEntry),
-    "@sdkwork/runtime-bootstrap alias must point to a real source file",
+    "@sdkwork/runtime-bootstrap must resolve through workspace exports",
   );
 });
 
-test("portal resolves SDK common imports for generated SDKs served from sibling workspaces", async () => {
+test("portal resolves SDK common imports through workspace package exports", async () => {
   const config = await resolvePortalViteConfig();
-  const aliases = config.resolve?.alias;
+  const plugins: unknown[] = Array.isArray(config.plugins) ? config.plugins.flat() : [];
+  const resolver = plugins.find((plugin) => hasPluginName(plugin, "clawrouter-portal-pnpm-workspace-resolver"));
   const expectedSdkCommonEntry = path.resolve(
     import.meta.dirname,
     "node_modules/@sdkwork/sdk-common/dist/index.js",
   );
 
-  assert.ok(Array.isArray(aliases));
+  assert.ok(resolver && typeof resolver === "object");
+  assert.ok("resolveId" in resolver);
   assert.equal(
-    aliases.find((alias) => (
-      typeof alias === "object"
-      && alias !== null
-      && "find" in alias
-      && alias.find === "@sdkwork/sdk-common"
-    ))?.replacement,
+    await callResolveId(
+      resolver.resolveId,
+      "@sdkwork/sdk-common",
+      new URL("./src/App.tsx", import.meta.url).pathname,
+    ),
     expectedSdkCommonEntry,
   );
-  assert.ok(existsSync(expectedSdkCommonEntry), "@sdkwork/sdk-common alias must point to an installed SDK common entrypoint");
+  assert.ok(existsSync(expectedSdkCommonEntry), "@sdkwork/sdk-common must resolve through workspace exports");
+});
+
+test("workspace SDKWork packages are not mapped through Vite aliases", async () => {
+  const config = await resolvePortalViteConfig();
+  const aliases = config.resolve?.alias;
+
+  assert.ok(Array.isArray(aliases));
+  for (const alias of aliases) {
+    if (typeof alias !== "object" || alias === null || !("find" in alias)) {
+      continue;
+    }
+    const find = alias.find;
+    if (typeof find === "string") {
+      assert.equal(find.startsWith("@sdkwork/"), false, `${find} must not use a Vite alias`);
+      assert.equal(find.endsWith("-generated-typescript"), false, `${find} must not use a Vite alias`);
+    }
+  }
 });
 
 test("workspace package imports resolve to one React and router runtime instance", async () => {
@@ -329,6 +502,9 @@ test("workspace package imports resolve to one React and router runtime instance
     "react-router",
     "react-router/dom",
     "react-router-dom",
+    "i18next",
+    "i18next-browser-languagedetector",
+    "react-i18next",
   ]);
 });
 
@@ -442,8 +618,14 @@ test("portal scripts run dependency preflight before Vite entrypoints", () => {
   assert.equal(portalPackage.scripts["deps:check"], "node scripts/check-portal-deps.mjs");
   assert.equal(portalPackage.scripts.predev, "node ../../scripts/ensure-claw-router-env.mjs --lifecycle dev");
   assert.equal(portalPackage.scripts.prebuild, "node ../../scripts/ensure-claw-router-env.mjs --lifecycle build");
-  assert.equal(portalPackage.scripts.dev, "pnpm deps:check && vite --configLoader native");
-  assert.equal(portalPackage.scripts["dev:browser"], "pnpm deps:check && vite --configLoader native");
+  assert.equal(
+    portalPackage.scripts.dev,
+    "pnpm deps:check && node --import ./scripts/register-portal-workspace-resolver.mjs ./node_modules/vite/bin/vite.js --configLoader native",
+  );
+  assert.equal(
+    portalPackage.scripts["dev:browser"],
+    "pnpm deps:check && node --import ./scripts/register-portal-workspace-resolver.mjs ./node_modules/vite/bin/vite.js --configLoader native",
+  );
   assert.equal(portalPackage.scripts.build, "pnpm deps:check && node scripts/build-portal.mjs");
 });
 
@@ -542,6 +724,25 @@ test("React Router cookie interop dependencies are served through dependency opt
   for (const dependency of ["cookie", "set-cookie-parser"]) {
     assert.ok(needsInterop.includes(dependency), `${dependency} must use Vite CommonJS named-export interop`);
   }
+});
+
+test("playground markdown interop dependencies are served through dependency optimization", async () => {
+  const config = await resolvePortalViteConfig();
+  const include = config.optimizeDeps?.include ?? [];
+  const needsInterop = config.optimizeDeps?.needsInterop ?? [];
+
+  for (const dependency of [
+    "hast-util-to-jsx-runtime",
+    "hast-util-sanitize",
+    "style-to-js",
+  ]) {
+    assert.ok(include.includes(dependency), `${dependency} must be pre-bundled by Vite`);
+  }
+  assert.ok(needsInterop.includes("style-to-js"), "style-to-js must use Vite CommonJS default-export interop");
+
+  const source = readFileSync(new URL("./vite.config.ts", import.meta.url), "utf8");
+  assert.match(source, /resolvePortalMarkdownOptimizeEntries/);
+  assert.match(source, /sdkwork-generations-pc-playground\/src\/react\.ts/);
 });
 
 test("production TypeScript transform does not allocate source maps when build sourcemaps are disabled", () => {

@@ -8,9 +8,10 @@ use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::EntityUuidGenerator;
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
-    AdminSiteChannelItem, AdminSiteConnectionCheckItem, AdminSiteFuture, AdminSiteItem,
-    AdminSiteStore, CreateAdminSiteCommand, DeleteAdminSiteCommand, ListAdminSiteChannelsQuery,
-    ListAdminSitesQuery, TestAdminSiteConnectionCommand, UpdateAdminSiteCommand,
+    AdminSiteChannelItem, AdminSiteChannelListPage, AdminSiteConnectionCheckItem, AdminSiteFuture, AdminSiteItem,
+    AdminSiteListPage, AdminSiteStore, CreateAdminSiteCommand, DeleteAdminSiteCommand,
+    ListAdminSiteChannelsQuery, ListAdminSitesQuery, TestAdminSiteConnectionCommand,
+    UpdateAdminSiteCommand,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -78,8 +79,15 @@ impl AdminSiteStore for TestSiteStore {
     fn list_sites<'a>(
         &'a self,
         _query: ListAdminSitesQuery,
-    ) -> AdminSiteFuture<'a, Vec<AdminSiteItem>> {
-        Box::pin(async { Ok(Vec::new()) })
+    ) -> AdminSiteFuture<'a, AdminSiteListPage> {
+        Box::pin(async move {
+            Ok(AdminSiteListPage {
+                items: Vec::new(),
+                total: 0,
+                page_no: 1,
+                page_size: 100,
+            })
+        })
     }
 
     fn create_site<'a>(
@@ -129,8 +137,15 @@ impl AdminSiteStore for TestSiteStore {
     fn list_site_channels<'a>(
         &'a self,
         _query: ListAdminSiteChannelsQuery,
-    ) -> AdminSiteFuture<'a, Vec<AdminSiteChannelItem>> {
-        Box::pin(async { Ok(Vec::new()) })
+    ) -> AdminSiteFuture<'a, AdminSiteChannelListPage> {
+        Box::pin(async {
+            Ok(AdminSiteChannelListPage {
+                items: Vec::new(),
+                total: 0,
+                page_no: 1,
+                page_size: 100,
+            })
+        })
     }
 
     fn test_site_connection<'a>(

@@ -2,7 +2,8 @@ use std::future::Future;
 use std::pin::Pin;
 
 pub use sdkwork_clawrouter_app_gateway_traces_repository_sqlx::{
-    AppGatewayTraceItem, AppGatewayTraceItems, AppGatewayTracesSubject,
+    AppGatewayTraceItem, AppGatewayTraceItems, AppGatewayTracesListPage,
+    AppGatewayTracesListQuery, AppGatewayTracesSubject,
 };
 
 use crate::domain::DomainResult;
@@ -14,5 +15,6 @@ pub trait AppGatewayTracesReadStore {
     fn load_gateway_traces<'a>(
         &'a self,
         subject: Option<AppGatewayTracesSubject>,
-    ) -> AppGatewayTracesReadFuture<'a, Vec<AppGatewayTraceItem>>;
+        query: AppGatewayTracesListQuery,
+    ) -> AppGatewayTracesReadFuture<'a, AppGatewayTracesListPage>;
 }

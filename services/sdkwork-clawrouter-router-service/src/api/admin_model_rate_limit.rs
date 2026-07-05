@@ -3,7 +3,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
 use axum::body::Bytes;
-use axum::extract::State;
+use axum::extract::{Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
@@ -11,7 +11,10 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, normalize_list_search_query, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, success_envelope,
+};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::ports::{
@@ -29,6 +32,13 @@ const CHANNEL_GROUP_NOT_FOUND: &str = "channel group was not found";
 struct AdminModelRateLimitState {
     store: Arc<dyn AdminModelRateLimitStore + Send + Sync>,
     entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct AdminModelRateLimitListQueryRequest {
+    page: Option<i64>,
+    page_size: Option<i64>,
+    q: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -51,12 +61,6 @@ struct NormalizedCreateRequest {
 enum ModelRateLimitCommandBuildError {
     BadRequest(String),
     System(DomainError),
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct AdminModelRateLimitListResponse {
-    items: Vec<AdminModelRateLimitItemResponse>,
 }
 
 #[derive(Debug, Serialize)]
@@ -97,22 +101,38 @@ async fn fetch_model_rate_limits(
     State(state): State<AdminModelRateLimitState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
+    Query(request): Query<AdminModelRateLimitListQueryRequest>,
 ) -> Response {
     let subject = scoped.into();
+    let query = match build_list_query(subject, request) {
+        Ok(query) => query,
+        Err(message) => return bad_request(message),
+    };
 
-    match state
-        .store
-        .list_model_rate_limits(ListAdminModelRateLimitsQuery { subject })
-        .await
-    {
-        Ok(items) => Json(success_envelope(AdminModelRateLimitListResponse {
-            items: items.into_iter().map(to_item_response).collect(),
-        }))
-        .into_response(),
+    match state.store.list_model_rate_limits(query).await {
+        Ok(page) => json_success_list_response(
+            None,
+            page.items.into_iter().map(to_item_response).collect(),
+            offset_page_info(page.page_no, page.page_size, page.total),
+        ),
         Err(error) => {
             model_rate_limit_system_response("model rate limit read model is unavailable", error)
         }
     }
+}
+
+fn build_list_query(
+    subject: AdminModelRateLimitSubject,
+    request: AdminModelRateLimitListQueryRequest,
+) -> Result<ListAdminModelRateLimitsQuery, String> {
+    let pagination = parse_offset_list_query(request.page, request.page_size)?;
+    Ok(ListAdminModelRateLimitsQuery {
+        subject,
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
+        q: normalize_list_search_query(request.q, "q")?,
+    })
 }
 
 async fn create_model_rate_limit(

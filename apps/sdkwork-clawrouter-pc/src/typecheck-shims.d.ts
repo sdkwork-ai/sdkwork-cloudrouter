@@ -788,7 +788,7 @@ declare module '@sdkwork/generations-pc-workspace/generation-history' {
   ): SdkworkGenerationSerializedAssetConfig | undefined;
 }
 
-declare module 'sdkwork-generations-app-sdk-generated-typescript' {
+declare module '@sdkwork/generations-app-sdk' {
   export interface SdkworkAppConfig {
     baseUrl?: string;
     platform?: string;
@@ -971,6 +971,62 @@ declare module '@sdkwork/image-pc-generation/generation-history' {
   export function restoreSdkworkGenerationSerializedConfigFromHistoryItem(
     item: SdkworkGenerationHistoryItem,
   ): SdkworkGenerationSerializedAssetConfig | undefined;
+}
+
+declare module '@sdkwork/generations-pc-studio/react' {
+  import type { ReactNode } from 'react';
+
+  export function formatGenerationCreditPoints(value: number, locale?: string): string;
+
+  export interface SdkworkStudioGenerationBottomBarProps {
+    canSubmit: boolean;
+    creditEstimate: {
+      detail: string;
+      points: number | null;
+      reference?: boolean;
+    };
+    onSubmit: () => void | Promise<void>;
+    submitting: boolean;
+  }
+
+  export function SdkworkStudioGenerationBottomBar(props: SdkworkStudioGenerationBottomBarProps): ReactNode;
+
+  export interface SdkworkGenerationModeSection<Config extends object = Record<string, boolean | number | string>> {
+    id: string;
+    label: string;
+    max?: number;
+    min?: number;
+    options?: Array<{
+      icon?: ReactNode;
+      isVip?: boolean;
+      label: string;
+      value: boolean | number | string;
+    }>;
+    step?: number;
+    type: 'select' | 'slider' | 'toggle';
+    unit?: string;
+    valueKey: keyof Config & string;
+  }
+
+  export interface SdkworkGenerationModePopupBaseProps<Config extends object> {
+    canGenerate?: boolean;
+    config: Config;
+    generateLabel?: string;
+    generatingLabel?: string;
+    getSummary: (config: Config) => string;
+    isGenerating?: boolean;
+    onChangeConfig: (config: Config) => void;
+    onGenerate: () => void;
+    renderExtraControls?: () => ReactNode;
+    sections: SdkworkGenerationModeSection<Config>[];
+    title?: string;
+    barClassName?: string;
+    popupClassName?: string;
+  }
+
+  export function SdkworkGenerationModePopupBase<Config extends object>(
+    props: SdkworkGenerationModePopupBaseProps<Config>,
+  ): ReactNode;
 }
 
 declare module '@sdkwork/image-pc-generation/react' {
@@ -1179,6 +1235,75 @@ declare module '@sdkwork/image-pc-generation/react' {
     config: SdkworkGenerationAssetConfig,
     updates: Partial<SdkworkGenerationVideoModeConfig>,
   ): SdkworkGenerationAssetConfig;
+  export function ImageGenerationWorkspaceView(props: Record<string, unknown>): ReactNode;
+}
+
+declare module '@sdkwork/video-pc-generation/react' {
+  import type { ReactNode } from 'react';
+
+  export function VideoGenerationWorkspaceView(props: Record<string, unknown>): ReactNode;
+}
+
+declare module '@sdkwork/music-pc-generation/react' {
+  import type { ReactNode } from 'react';
+
+  export function MusicGenerationWorkspaceView(props: Record<string, unknown>): ReactNode;
+}
+
+declare module '@sdkwork/audio-pc-generation/react' {
+  import type { ReactNode } from 'react';
+
+  export function AudioGenerationWorkspaceView(props: Record<string, unknown>): ReactNode;
+  export function SfxGenerationWorkspaceView(props: Record<string, unknown>): ReactNode;
+}
+
+declare module '@sdkwork/assets-pc-assets/generation-playground-workspace' {
+  import type { ReactNode } from 'react';
+
+  export function DomainGenerationWorkspaceView(props: Record<string, unknown>): ReactNode;
+  export function DomainGenerationHistoryPanel(props: Record<string, unknown>): ReactNode;
+  export function createPlaygroundGenerationHistoryPresentation(
+    t: (key: string) => string,
+  ): Record<string, unknown>;
+  export const PLAYGROUND_GENERATION_HISTORY_KIND_TABS: readonly unknown[];
+}
+
+declare module '@sdkwork/models-pc-picker' {
+  import type { ReactNode } from 'react';
+
+  export type ModelsPickerBucket = 'llms' | 'images' | 'videos' | 'audios' | 'music' | 'sfx';
+
+  export interface ModelsPickerOption {
+    id: string;
+    displayName: string;
+    name: string;
+    model: string;
+    desc: string;
+    ver: string;
+    versionLabel: string;
+    vendorCode: string;
+    vendorName: string;
+  }
+
+  export interface ModelsPickerGroup {
+    id: string;
+    vendor: { code: string; name: string };
+    llms: ModelsPickerOption[];
+    images: ModelsPickerOption[];
+    videos: ModelsPickerOption[];
+    audios: ModelsPickerOption[];
+    music: ModelsPickerOption[];
+    sfx: ModelsPickerOption[];
+  }
+
+  export function ModelPicker(props: Record<string, unknown>): ReactNode;
+  export function createFallbackModel(
+    name: string,
+    desc: string,
+    versionLabel: string,
+    bucket: ModelsPickerBucket,
+    vendorName: string,
+  ): ModelsPickerOption;
 }
 
 declare module '@sdkwork/appbase-pc-react' {

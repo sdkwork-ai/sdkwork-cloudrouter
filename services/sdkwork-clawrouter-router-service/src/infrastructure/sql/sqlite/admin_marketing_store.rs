@@ -14,7 +14,8 @@ use crate::infrastructure::sql::admin_marketing_recharge::{
 };
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    AdminExchangeRuleItem, AdminMarketingCommandFuture, AdminMarketingStore, AdminMarketingSubject,
+    AdminExchangeRuleItem, AdminMarketingCommandFuture, AdminMarketingListPage, AdminMarketingStore,
+    AdminMarketingSubject,
     AdminPaymentAttemptItem, AdminRechargePackageItem, AdminRechargePackageStatus,
     AdminRechargeRecordItem, AdminReferralStatItem, CreateAdminRechargePackageCommand,
     CreatePromotionOfferCommand, DeleteAdminRechargePackageCommand, DeletePromotionOfferCommand,
@@ -71,7 +72,7 @@ impl AdminMarketingStore for SqliteAdminMarketingStore {
     fn list_promotion_offers<'a>(
         &'a self,
         query: ListPromotionOffersQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<PromotionOfferItem>> {
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<PromotionOfferItem>> {
         Box::pin(async move { list_promotion_offers(&self.pool, query).await })
     }
 
@@ -207,7 +208,7 @@ impl AdminMarketingStore for SqliteAdminMarketingStore {
     fn list_promotion_coupon_stocks<'a>(
         &'a self,
         query: ListPromotionCouponStocksQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<PromotionCouponStockItem>> {
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<PromotionCouponStockItem>> {
         Box::pin(async move { list_promotion_coupon_stocks(&self.pool, query).await })
     }
 
@@ -278,7 +279,7 @@ impl AdminMarketingStore for SqliteAdminMarketingStore {
     fn list_promotion_codes<'a>(
         &'a self,
         query: ListPromotionCodesQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<PromotionCodeItem>> {
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<PromotionCodeItem>> {
         Box::pin(async move { list_promotion_codes(&self.pool, query).await })
     }
 
@@ -324,14 +325,14 @@ impl AdminMarketingStore for SqliteAdminMarketingStore {
     fn list_promotion_code_redemptions<'a>(
         &'a self,
         query: ListPromotionCodeRedemptionsQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<PromotionCodeRedemptionItem>> {
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<PromotionCodeRedemptionItem>> {
         Box::pin(async move { list_promotion_code_redemptions(&self.pool, query).await })
     }
 
     fn list_recharge_records<'a>(
         &'a self,
         query: ListAdminRechargeRecordsQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<AdminRechargeRecordItem>> {
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<AdminRechargeRecordItem>> {
         Box::pin(async move { list_recharge_records(&self.pool, query).await })
     }
 
@@ -345,14 +346,14 @@ impl AdminMarketingStore for SqliteAdminMarketingStore {
     fn list_recharge_packages<'a>(
         &'a self,
         query: ListAdminRechargePackagesQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<AdminRechargePackageItem>> {
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<AdminRechargePackageItem>> {
         Box::pin(async move { list_recharge_packages(&self.pool, query).await })
     }
 
     fn list_exchange_rules<'a>(
         &'a self,
         query: ListAdminExchangeRulesQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<AdminExchangeRuleItem>> {
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<AdminExchangeRuleItem>> {
         Box::pin(async move { list_exchange_rules(&self.pool, query).await })
     }
 
@@ -600,14 +601,14 @@ impl AdminMarketingStore for SqliteAdminMarketingStore {
     fn list_payment_attempts<'a>(
         &'a self,
         query: ListAdminPaymentAttemptsQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<AdminPaymentAttemptItem>> {
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<AdminPaymentAttemptItem>> {
         Box::pin(async move { list_payment_attempts(&self.pool, query).await })
     }
 
     fn list_referral_stats<'a>(
         &'a self,
         query: ListAdminReferralStatsQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<AdminReferralStatItem>> {
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<AdminReferralStatItem>> {
         Box::pin(async move { list_referral_stats(&self.pool, query).await })
     }
 }
@@ -615,7 +616,7 @@ impl AdminMarketingStore for SqliteAdminMarketingStore {
 async fn list_promotion_offers(
     pool: &SqlitePool,
     query: ListPromotionOffersQuery,
-) -> DomainResult<Vec<PromotionOfferItem>> {
+) -> DomainResult<AdminMarketingListPage<PromotionOfferItem>> {
     let rows = sqlx::query(
         r#"
         SELECT
@@ -624,7 +625,8 @@ async fn list_promotion_offers(
             COALESCE(v.discount_type, '') AS type_code,
             CAST(COALESCE(v.discount_value, '0') AS TEXT) AS amount,
             CAST(COALESCE(v.discount_value, '0') AS TEXT) AS discount,
-            o.status AS status
+            o.status AS status,
+            COUNT(*) OVER() AS total
         FROM promotion_offer o
         LEFT JOIN promotion_offer_version v
           ON v.tenant_id = o.tenant_id
@@ -637,16 +639,25 @@ async fn list_promotion_offers(
           AND o.offer_type = 'coupon'
           AND o.status <> 'disabled'
         ORDER BY o.updated_at DESC, o.id DESC
-        LIMIT 500
+        LIMIT ? OFFSET ?
         "#,
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list promotion offers", error))?;
 
-    rows.iter().map(promotion_offer_from_row).collect()
+    let total = list_total(&rows);
+    let items = rows.iter().map(promotion_offer_from_row).collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminMarketingListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn create_promotion_offer(
@@ -911,15 +922,27 @@ async fn next_offer_version_number(
 async fn list_promotion_coupon_stocks(
     pool: &SqlitePool,
     query: ListPromotionCouponStocksQuery,
-) -> DomainResult<Vec<PromotionCouponStockItem>> {
+) -> DomainResult<AdminMarketingListPage<PromotionCouponStockItem>> {
     let rows = sqlx::query(COUPON_STOCK_LIST_SQL)
         .bind(query.subject.tenant_id)
         .bind(query.subject.organization_id)
+        .bind(query.page_size)
+        .bind(query.offset)
         .fetch_all(pool)
         .await
         .map_err(|error| store_error("failed to list promotion coupon stocks", error))?;
 
-    rows.iter().map(promotion_coupon_stock_from_row).collect()
+    let total = list_total(&rows);
+    let items = rows
+        .iter()
+        .map(promotion_coupon_stock_from_row)
+        .collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminMarketingListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn promotion_offer_exists(
@@ -1196,7 +1219,7 @@ async fn load_promotion_coupon_stock_by_id(
 async fn list_promotion_codes(
     pool: &SqlitePool,
     query: ListPromotionCodesQuery,
-) -> DomainResult<Vec<PromotionCodeItem>> {
+) -> DomainResult<AdminMarketingListPage<PromotionCodeItem>> {
     let rows = sqlx::query(
         r#"
         SELECT
@@ -1210,7 +1233,8 @@ async fn list_promotion_codes(
             END AS status,
             puc.owner_user_id AS user_id,
             CAST(puc.redeemed_at AS TEXT) AS used_at,
-            COALESCE(NULLIF(u.email, ''), NULLIF(u.username, ''), '') AS used_by
+            COALESCE(NULLIF(u.email, ''), NULLIF(u.username, ''), '') AS used_by,
+            COUNT(*) OVER() AS total
         FROM promotion_code pc
         LEFT JOIN promotion_user_coupon puc
           ON puc.tenant_id = pc.tenant_id
@@ -1223,16 +1247,25 @@ async fn list_promotion_codes(
           AND pc.organization_id = CAST(? AS TEXT)
           AND pc.stock_id IS NOT NULL
         ORDER BY pc.created_at DESC, pc.promotion_code DESC, pc.id DESC
-        LIMIT 1000
+        LIMIT ? OFFSET ?
         "#,
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list promotion codes", error))?;
 
-    rows.iter().map(promotion_code_from_row).collect()
+    let total = list_total(&rows);
+    let items = rows.iter().map(promotion_code_from_row).collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminMarketingListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn update_promotion_code_status(
@@ -1406,7 +1439,7 @@ async fn refresh_stock_counters(
 async fn list_promotion_code_redemptions(
     pool: &SqlitePool,
     query: ListPromotionCodeRedemptionsQuery,
-) -> DomainResult<Vec<PromotionCodeRedemptionItem>> {
+) -> DomainResult<AdminMarketingListPage<PromotionCodeRedemptionItem>> {
     let rows = sqlx::query(
         r#"
         SELECT
@@ -1415,7 +1448,8 @@ async fn list_promotion_code_redemptions(
             COALESCE(NULLIF(u.email, ''), NULLIF(u.username, ''), '') AS user_name,
             COALESCE(c.coupon_code, '') AS submitted_code,
             CAST(COALESCE(v.discount_value, '0') AS TEXT) AS amount,
-            CAST(COALESCE(c.redeemed_at, c.updated_at, c.claimed_at, c.created_at) AS TEXT) AS occurred_at
+            CAST(COALESCE(c.redeemed_at, c.updated_at, c.claimed_at, c.created_at) AS TEXT) AS occurred_at,
+            COUNT(*) OVER() AS total
         FROM promotion_user_coupon c
         JOIN promotion_offer_version v
           ON v.id = c.offer_version_id
@@ -1428,16 +1462,20 @@ async fn list_promotion_code_redemptions(
           AND c.owner_user_id IS NOT NULL
           AND (c.redeemed_at IS NOT NULL OR c.status = 'redeemed')
         ORDER BY COALESCE(c.redeemed_at, c.updated_at, c.claimed_at, c.created_at) DESC, c.id DESC
-        LIMIT 500
+        LIMIT ? OFFSET ?
         "#,
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list promotion code redemptions", error))?;
 
-    rows.iter()
+    let total = list_total(&rows);
+    let items = rows
+        .iter()
         .map(|row| {
             Ok(PromotionCodeRedemptionItem {
                 id: string_cell(row, "id"),
@@ -1448,13 +1486,19 @@ async fn list_promotion_code_redemptions(
                 occurred_at: string_cell(row, "occurred_at"),
             })
         })
-        .collect()
+        .collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminMarketingListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn list_recharge_records(
     pool: &SqlitePool,
     query: ListAdminRechargeRecordsQuery,
-) -> DomainResult<Vec<AdminRechargeRecordItem>> {
+) -> DomainResult<AdminMarketingListPage<AdminRechargeRecordItem>> {
     let rows = sqlx::query(
         r#"
         SELECT
@@ -1466,7 +1510,8 @@ async fn list_recharge_records(
             COALESCE(NULLIF(json_extract(COALESCE(pa.callback_payload, '{}'), '$.points'), ''), '0') AS point_amount,
             COALESCE(NULLIF(pm.display_name, ''), NULLIF(pa.provider, ''), 'manual') AS method,
             COALESCE(NULLIF(o.status, ''), NULLIF(pa.status, ''), 'pending') AS status,
-            CAST(COALESCE(pa.paid_at, pa.updated_at, pa.created_at, o.updated_at, o.created_at) AS TEXT) AS time
+            CAST(COALESCE(pa.paid_at, pa.updated_at, pa.created_at, o.updated_at, o.created_at) AS TEXT) AS time,
+            COUNT(*) OVER() AS total
         FROM commerce_payment_attempt pa
         JOIN commerce_order o
           ON o.id = pa.order_id
@@ -1483,16 +1528,25 @@ async fn list_recharge_records(
         WHERE pa.tenant_id = CAST(? AS TEXT)
           AND pa.organization_id = CAST(? AS TEXT)
         ORDER BY COALESCE(pa.paid_at, pa.updated_at, pa.created_at, o.updated_at, o.created_at) DESC, pa.id DESC
-        LIMIT 500
+        LIMIT ? OFFSET ?
         "#,
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list recharge records", error))?;
 
-    rows.iter().map(recharge_record_from_row).collect()
+    let total = list_total(&rows);
+    let items = rows.iter().map(recharge_record_from_row).collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminMarketingListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn load_recharge_record(
@@ -1549,7 +1603,7 @@ async fn load_recharge_record(
 async fn list_recharge_packages(
     pool: &SqlitePool,
     query: ListAdminRechargePackagesQuery,
-) -> DomainResult<Vec<AdminRechargePackageItem>> {
+) -> DomainResult<AdminMarketingListPage<AdminRechargePackageItem>> {
     ensure_recharge_catalog_initialized(pool, query.subject).await?;
     let settings = load_recharge_settings_model(pool, query.subject).await?;
     let mut sql = String::from(
@@ -1563,7 +1617,8 @@ async fn list_recharge_packages(
             COALESCE(NULLIF(currency_code, ''), 'CNY') AS currency_code,
             COALESCE(bonus_points, 0) AS bonus_points,
             COALESCE(status, '') AS status,
-            COALESCE(updated_at, '') AS updated_at
+            COALESCE(updated_at, '') AS updated_at,
+            COUNT(*) OVER() AS total
         FROM commerce_recharge_package
         WHERE tenant_id = CAST(? AS TEXT)
           AND organization_id = CAST(? AS TEXT)
@@ -1574,7 +1629,7 @@ async fn list_recharge_packages(
     } else {
         sql.push_str(" AND status <> 'deleted'");
     }
-    sql.push_str(" ORDER BY COALESCE(sort_weight, 0) ASC, id ASC LIMIT 500");
+    sql.push_str(" ORDER BY COALESCE(sort_weight, 0) ASC, id ASC LIMIT ? OFFSET ?");
 
     let mut query_builder = sqlx::query(&sql)
         .bind(query.subject.tenant_id)
@@ -1582,14 +1637,25 @@ async fn list_recharge_packages(
     if let Some(status) = query.status {
         query_builder = query_builder.bind(recharge_package_status_label(status));
     }
+    let query_builder = query_builder
+        .bind(query.page_size)
+        .bind(query.offset);
     let rows = query_builder
         .fetch_all(pool)
         .await
         .map_err(|error| store_error("failed to list recharge packages", error))?;
 
-    rows.iter()
+    let total = list_total(&rows);
+    let items = rows
+        .iter()
         .map(|row| recharge_package_from_row(row, &settings))
-        .collect()
+        .collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminMarketingListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn load_recharge_settings(
@@ -1861,7 +1927,19 @@ async fn seed_recharge_packages(
 async fn list_exchange_rules(
     pool: &SqlitePool,
     query: ListAdminExchangeRulesQuery,
-) -> DomainResult<Vec<AdminExchangeRuleItem>> {
+) -> DomainResult<AdminMarketingListPage<AdminExchangeRuleItem>> {
+    let source_filter = query
+        .source_asset_type
+        .as_deref()
+        .map(storage_asset_type)
+        .transpose()?;
+    let target_filter = query
+        .target_asset_type
+        .as_deref()
+        .map(storage_asset_type)
+        .transpose()?;
+    let status_filter = query.status.as_deref();
+
     let rows = sqlx::query(
         r#"
         SELECT
@@ -1869,30 +1947,43 @@ async fn list_exchange_rules(
             source_asset_type,
             target_asset_type,
             rate,
-            status
+            status,
+            COUNT(*) OVER() AS total
         FROM commerce_exchange_rule
         WHERE tenant_id = CAST(? AS TEXT)
           AND organization_id = CAST(? AS TEXT)
-          AND source_asset_type = 'points'
-          AND target_asset_type = 'cash'
-          AND status = 'active'
+          AND (? IS NULL OR source_asset_type = ?)
+          AND (? IS NULL OR target_asset_type = ?)
+          AND (? IS NULL OR status = ?)
         ORDER BY updated_at DESC, id DESC
-        LIMIT 500
+        LIMIT ? OFFSET ?
         "#,
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
+    .bind(source_filter)
+    .bind(source_filter)
+    .bind(target_filter)
+    .bind(target_filter)
+    .bind(status_filter)
+    .bind(status_filter)
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list exchange rules", error))?;
 
-    rows.iter()
+    let total = list_total(&rows);
+    let items = rows
+        .iter()
         .map(exchange_rule_from_row)
-        .filter(|item| match item {
-            Ok(item) => exchange_rule_matches_filters(item, &query),
-            Err(_) => true,
-        })
-        .collect()
+        .collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminMarketingListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn insert_recharge_package(
@@ -2760,7 +2851,7 @@ async fn upsert_recharge_settings(
 async fn list_referral_stats(
     pool: &SqlitePool,
     query: ListAdminReferralStatsQuery,
-) -> DomainResult<Vec<AdminReferralStatItem>> {
+) -> DomainResult<AdminMarketingListPage<AdminReferralStatItem>> {
     let rows = sqlx::query(
         r#"
         SELECT
@@ -2769,22 +2860,27 @@ async fn list_referral_stats(
             COALESCE(total_invited_count, 0) AS total_invited,
             CAST(COALESCE(total_revenue_amount, 0) AS TEXT) AS total_revenue,
             CAST(COALESCE(reward_awarded_amount, 0) AS TEXT) AS bonus_awarded,
-            COALESCE(invite_link, '') AS link
+            COALESCE(invite_link, '') AS link,
+            COUNT(*) OVER() AS total
         FROM ops_referral_stat_snapshot
         WHERE tenant_id = ?
           AND organization_id = ?
           AND status = 1
         ORDER BY snapshot_at DESC, id DESC
-        LIMIT 500
+        LIMIT ? OFFSET ?
         "#,
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list referral stats", error))?;
 
-    rows.iter()
+    let total = list_total(&rows);
+    let items = rows
+        .iter()
         .map(|row| {
             Ok(AdminReferralStatItem {
                 id: string_cell(row, "id"),
@@ -2795,13 +2891,19 @@ async fn list_referral_stats(
                 link: string_cell(row, "link"),
             })
         })
-        .collect()
+        .collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminMarketingListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn list_payment_attempts(
     pool: &SqlitePool,
     query: ListAdminPaymentAttemptsQuery,
-) -> DomainResult<Vec<AdminPaymentAttemptItem>> {
+) -> DomainResult<AdminMarketingListPage<AdminPaymentAttemptItem>> {
     let rows = sqlx::query(
         r#"
         SELECT
@@ -2810,7 +2912,8 @@ async fn list_payment_attempts(
             pa.provider AS provider,
             CAST(COALESCE(pa.amount, '0') AS TEXT) AS amount,
             pa.status AS status,
-            CAST(COALESCE(pa.paid_at, pa.updated_at, pa.created_at) AS TEXT) AS created_at
+            CAST(COALESCE(pa.paid_at, pa.updated_at, pa.created_at) AS TEXT) AS created_at,
+            COUNT(*) OVER() AS total
         FROM commerce_payment_attempt pa
         LEFT JOIN commerce_order o
           ON o.id = pa.order_id
@@ -2819,16 +2922,28 @@ async fn list_payment_attempts(
         WHERE pa.tenant_id = CAST(? AS TEXT)
           AND pa.organization_id = CAST(? AS TEXT)
         ORDER BY COALESCE(pa.paid_at, pa.updated_at, pa.created_at) DESC, pa.id DESC
-        LIMIT 500
+        LIMIT ? OFFSET ?
         "#,
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list payment attempts", error))?;
 
-    rows.iter().map(payment_attempt_from_row).collect()
+    let total = list_total(&rows);
+    let items = rows
+        .iter()
+        .map(payment_attempt_from_row)
+        .collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminMarketingListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn insert_audit_log(
@@ -2912,13 +3027,14 @@ SELECT
     COALESCE(name, '') AS name,
     COALESCE(total_quantity, 0) AS total_quantity,
     COALESCE(SUBSTR(stock_no, 7, INSTR(SUBSTR(stock_no, 7), '-') - 1), '') AS code_prefix,
-    CAST(created_at AS TEXT) AS created_at
+    CAST(created_at AS TEXT) AS created_at,
+    COUNT(*) OVER() AS total
 FROM promotion_coupon_stock
 WHERE tenant_id = CAST(? AS TEXT)
   AND organization_id = CAST(? AS TEXT)
   AND status = 'active'
 ORDER BY created_at DESC, id DESC
-LIMIT 500
+LIMIT ? OFFSET ?
 "#;
 
 const COUPON_STOCK_BY_ID_SQL: &str = r#"
@@ -3514,6 +3630,12 @@ fn optional_string_cell(row: &sqlx::sqlite::SqliteRow, column: &str) -> Option<S
                 .ok()
                 .map(|value| value.to_string())
         })
+}
+
+fn list_total(rows: &[sqlx::sqlite::SqliteRow]) -> i64 {
+    rows.first()
+        .and_then(|row| row.try_get::<i64, _>("total").ok())
+        .unwrap_or(0)
 }
 
 fn string_cell(row: &sqlx::sqlite::SqliteRow, column: &str) -> String {

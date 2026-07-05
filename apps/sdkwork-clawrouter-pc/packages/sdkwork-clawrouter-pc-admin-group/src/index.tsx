@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { AdminTableShell, AiResourceSelectorModal, BottomPagination, BusinessStateTableRow, ConfirmDialog } from '@sdkwork/clawroutes-pc-commons';
+import { AdminTableShell, BottomPagination, BusinessStateTableRow, ConfirmDialog } from '@sdkwork/clawroutes-pc-commons';
 import { Plus, Search, Trash2, Edit, ChevronDown, ChevronLeft, ChevronRight, RefreshCw, ArrowUpDown, LayoutGrid, X, Link2, Save, Coins, Info } from 'lucide-react';
 import { GroupService, buildGroupRoutePreflight, type GroupAiResourceOption, type GroupChannelBindingData, type GroupChannelBindingInput, type GroupChannelOption, type GroupData, type GroupResourceGroupOption, type GroupRouteExplainResult } from './groupService';
 import { createGroupInputFromForm, createGroupUpdateInputFromForm } from './groupForm';
 import { useTranslation } from 'react-i18next';
 
 const CHANNEL_PICKER_PAGE_SIZE = 12;
+const RESOURCE_GROUP_PICKER_PAGE_SIZE = 20;
+const RESOURCE_PICKER_PAGE_SIZE = 20;
 type ResourceAccessTab = 'resourceGroups' | 'resources';
 type ResourceSelectorSelectionMode = 'single' | 'multiple';
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
@@ -31,13 +33,11 @@ const pricingResourceCategories = [
 export function GroupAdmin() {
   const { t } = useTranslation();
   const [groups, setGroups] = useState<GroupData[]>([]);
+  const [totalGroups, setTotalGroups] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<GroupData | null>(null);
   const [priceReferenceMode, setPriceReferenceMode] = useState<GroupData['priceReferenceMode']>('multiplier');
-  const [platformFilter, setPlatformFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -61,15 +61,27 @@ export function GroupAdmin() {
   const [pickerSearchQuery, setPickerSearchQuery] = useState('');
   const [pickerSelection, setPickerSelection] = useState<Record<string, boolean>>({});
   const [pickerPage, setPickerPage] = useState(1);
+  const [pickerChannels, setPickerChannels] = useState<GroupChannelOption[]>([]);
+  const [pickerTotal, setPickerTotal] = useState(0);
+  const [pickerLoading, setPickerLoading] = useState(false);
   const [resourceAccessTab, setResourceAccessTab] = useState<ResourceAccessTab>('resourceGroups');
   const [selectedResourceGroupCodes, setSelectedResourceGroupCodes] = useState<string[]>([]);
   const [selectedResourceCodes, setSelectedResourceCodes] = useState<string[]>([]);
-  const [resourceGroupOptions, setResourceGroupOptions] = useState<GroupResourceGroupOption[]>([]);
-  const [resourceOptions, setResourceOptions] = useState<GroupAiResourceOption[]>([]);
-  const [resourceAccessLoading, setResourceAccessLoading] = useState(false);
+  const [resourceGroupOptionByCode, setResourceGroupOptionByCode] = useState<Record<string, GroupResourceGroupOption>>({});
+  const [resourceOptionByCode, setResourceOptionByCode] = useState<Record<string, GroupAiResourceOption>>({});
   const [resourceAccessError, setResourceAccessError] = useState<string | null>(null);
   const [resourceGroupSelectorOpen, setResourceGroupSelectorOpen] = useState(false);
   const [resourceSelectorOpen, setResourceSelectorOpen] = useState(false);
+  const [resourceGroupPickerSearch, setResourceGroupPickerSearch] = useState('');
+  const [resourceGroupPickerPage, setResourceGroupPickerPage] = useState(1);
+  const [resourceGroupPickerOptions, setResourceGroupPickerOptions] = useState<GroupResourceGroupOption[]>([]);
+  const [resourceGroupPickerTotal, setResourceGroupPickerTotal] = useState(0);
+  const [resourceGroupPickerLoading, setResourceGroupPickerLoading] = useState(false);
+  const [resourcePickerSearch, setResourcePickerSearch] = useState('');
+  const [resourcePickerPage, setResourcePickerPage] = useState(1);
+  const [resourcePickerOptions, setResourcePickerOptions] = useState<GroupAiResourceOption[]>([]);
+  const [resourcePickerTotal, setResourcePickerTotal] = useState(0);
+  const [resourcePickerLoading, setResourcePickerLoading] = useState(false);
   const [resourceAccessDetailTarget, setResourceAccessDetailTarget] = useState<ResourceAccessSummaryItem | null>(null);
   const groupSelectClassName = 'w-full rounded-lg border border-slate-300 bg-white pl-3 pr-10 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-emerald-500 dark:border-white/10 dark:bg-[#202020] dark:text-white dark:focus:border-emerald-500 appearance-none cursor-pointer';
   const groupOptionClassName = 'bg-white text-slate-900 dark:bg-[#202020] dark:text-white';
@@ -78,8 +90,13 @@ export function GroupAdmin() {
     setLoading(true);
     setLoadError(null);
     try {
-      const data = await GroupService.fetchGroups();
-      setGroups(data);
+      const data = await GroupService.fetchGroups({
+        page,
+        pageSize,
+        q: searchQuery.trim() || undefined,
+      });
+      setGroups(data.groups);
+      setTotalGroups(data.total);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : 'Failed to load groups');
     } finally {
@@ -89,39 +106,28 @@ export function GroupAdmin() {
 
   useEffect(() => {
     void loadGroups();
-  }, []);
+  }, [page, pageSize, searchQuery]);
 
-  const platformOptions = Array.from(new Set(groups.map(group => group.providerCode).filter(Boolean))).sort();
-
-  const filteredGroups = groups
-    .filter(group => group.groupName.toLowerCase().includes(searchQuery.toLowerCase()))
-    .filter(group => !platformFilter || group.providerCode === platformFilter)
-    .filter(group => !statusFilter || group.status === statusFilter)
-    .filter(group => !typeFilter || group.groupType === typeFilter)
-    .sort((left, right) => {
-      const result = left.groupName.localeCompare(right.groupName);
-      return sortDirection === 'asc' ? result : -result;
-    });
-  const paginatedGroups = filteredGroups.slice(
-    (page - 1) * pageSize,
-    page * pageSize,
-  );
+  // Group list filters are server-side via q only; channelGroups.list has no provider/status/type query params.
+  const visibleGroups = [...groups].sort((left, right) => {
+    const result = left.groupName.localeCompare(right.groupName);
+    return sortDirection === 'asc' ? result : -result;
+  });
 
   useEffect(() => {
     setPage(1);
-  }, [searchQuery, platformFilter, statusFilter, typeFilter, sortDirection]);
+  }, [searchQuery, sortDirection]);
 
   useEffect(() => {
-    const totalPages = Math.max(1, Math.ceil(filteredGroups.length / pageSize));
+    const totalPages = Math.max(1, Math.ceil(totalGroups / pageSize));
     setPage(current => Math.min(Math.max(current, 1), totalPages));
-  }, [filteredGroups.length, pageSize]);
+  }, [totalGroups, pageSize]);
 
   const openCreateModal = () => {
     setEditingGroup(null);
     setPriceReferenceMode('multiplier');
     resetResourceAccessSelection(null);
     setIsModalOpen(true);
-    void loadResourceAccessOptions();
   };
 
   const openEditModal = (group: GroupData) => {
@@ -129,7 +135,6 @@ export function GroupAdmin() {
     setPriceReferenceMode(group.priceReferenceMode);
     resetResourceAccessSelection(group);
     setIsModalOpen(true);
-    void loadResourceAccessOptions();
   };
 
   const closeModal = () => {
@@ -142,6 +147,10 @@ export function GroupAdmin() {
     resetResourceAccessSelection(null);
     setResourceGroupSelectorOpen(false);
     setResourceSelectorOpen(false);
+    setResourceGroupPickerSearch('');
+    setResourceGroupPickerPage(1);
+    setResourcePickerSearch('');
+    setResourcePickerPage(1);
     setResourceAccessDetailTarget(null);
   };
 
@@ -167,21 +176,96 @@ export function GroupAdmin() {
     setResourceAccessDetailTarget(item);
   };
 
-  const loadResourceAccessOptions = async () => {
-    setResourceAccessLoading(true);
+  const mergeResourceGroupOptions = (options: GroupResourceGroupOption[]) => {
+    setResourceGroupOptionByCode(current => {
+      const next = { ...current };
+      for (const option of options) {
+        next[option.groupCode] = option;
+      }
+      return next;
+    });
+  };
+
+  const mergeResourceOptions = (options: GroupAiResourceOption[]) => {
+    setResourceOptionByCode(current => {
+      const next = { ...current };
+      for (const option of options) {
+        next[option.resourceCode] = option;
+      }
+      return next;
+    });
+  };
+
+  const loadResourceGroupPicker = async () => {
+    setResourceGroupPickerLoading(true);
     setResourceAccessError(null);
     try {
-      const [resourceGroups, resources] = await Promise.all([
-        GroupService.fetchAssignableResourceGroups(),
-        GroupService.fetchAssignableResources(),
-      ]);
-      setResourceGroupOptions(resourceGroups);
-      setResourceOptions(resources);
+      const data = await GroupService.fetchAssignableResourceGroups({
+        page: resourceGroupPickerPage,
+        pageSize: RESOURCE_GROUP_PICKER_PAGE_SIZE,
+        q: resourceGroupPickerSearch.trim() || undefined,
+      });
+      setResourceGroupPickerOptions(data.resourceGroups);
+      setResourceGroupPickerTotal(data.total);
+      mergeResourceGroupOptions(data.resourceGroups);
     } catch (error) {
       setResourceAccessError(error instanceof Error ? error.message : t('admin.group.resourceAccess.errors.load'));
     } finally {
-      setResourceAccessLoading(false);
+      setResourceGroupPickerLoading(false);
     }
+  };
+
+  const loadResourcePicker = async () => {
+    setResourcePickerLoading(true);
+    setResourceAccessError(null);
+    try {
+      const data = await GroupService.fetchAssignableResources({
+        page: resourcePickerPage,
+        pageSize: RESOURCE_PICKER_PAGE_SIZE,
+        q: resourcePickerSearch.trim() || undefined,
+      });
+      setResourcePickerOptions(data.resources);
+      setResourcePickerTotal(data.total);
+      mergeResourceOptions(data.resources);
+    } catch (error) {
+      setResourceAccessError(error instanceof Error ? error.message : t('admin.group.resourceAccess.errors.load'));
+    } finally {
+      setResourcePickerLoading(false);
+    }
+  };
+
+  const refreshResourceAccessPickers = () => {
+    if (resourceGroupSelectorOpen) {
+      void loadResourceGroupPicker();
+      return;
+    }
+    if (resourceSelectorOpen) {
+      void loadResourcePicker();
+    }
+  };
+
+  const openResourceGroupSelector = () => {
+    setResourceGroupPickerSearch('');
+    setResourceGroupPickerPage(1);
+    setResourceGroupSelectorOpen(true);
+  };
+
+  const closeResourceGroupSelector = () => {
+    setResourceGroupSelectorOpen(false);
+    setResourceGroupPickerSearch('');
+    setResourceGroupPickerPage(1);
+  };
+
+  const openResourceSelector = () => {
+    setResourcePickerSearch('');
+    setResourcePickerPage(1);
+    setResourceSelectorOpen(true);
+  };
+
+  const closeResourceSelector = () => {
+    setResourceSelectorOpen(false);
+    setResourcePickerSearch('');
+    setResourcePickerPage(1);
   };
 
   const handleAddGroup = async (e: React.FormEvent) => {
@@ -243,15 +327,13 @@ export function GroupAdmin() {
     setPickerSearchQuery('');
     setPickerSelection({});
     try {
-      const [channels, bindings, explain] = await Promise.all([
-        GroupService.fetchAssignableChannels(),
+      const [bindings, explain] = await Promise.all([
         GroupService.fetchGroupChannelBindings(group.id),
         GroupService.fetchGroupRouteExplain(group.id).then(
           value => ({ value, error: null }),
           error => ({ value: null, error }),
         ),
       ]);
-      setChannelOptions(channels);
       setChannelBindings(bindings);
       setBindingDraft(bindingsToDraft(bindings));
       setRouteExplain(explain.value);
@@ -279,7 +361,65 @@ export function GroupAdmin() {
     setPickerSearchQuery('');
     setPickerSelection({});
     setPickerPage(1);
+    setPickerChannels([]);
+    setPickerTotal(0);
   };
+
+  const loadPickerChannels = async () => {
+    setPickerLoading(true);
+    try {
+      const data = await GroupService.fetchAssignableChannels({
+        page: pickerPage,
+        pageSize: CHANNEL_PICKER_PAGE_SIZE,
+        q: pickerSearchQuery.trim() || undefined,
+      });
+      setPickerChannels(data.channels);
+      setPickerTotal(data.total);
+      setChannelOptions(current => {
+        const next = new Map(current.map(channel => [channel.id, channel]));
+        for (const channel of data.channels) {
+          next.set(channel.id, channel);
+        }
+        return Array.from(next.values());
+      });
+    } catch (error) {
+      setBindingError(error instanceof Error ? error.message : t('admin.group.channelBindings.errors.load'));
+    } finally {
+      setPickerLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isChannelPickerOpen) {
+      return;
+    }
+    void loadPickerChannels();
+  }, [isChannelPickerOpen, pickerPage, pickerSearchQuery]);
+
+  useEffect(() => {
+    if (!resourceGroupSelectorOpen) {
+      return;
+    }
+    void loadResourceGroupPicker();
+  }, [resourceGroupSelectorOpen, resourceGroupPickerPage, resourceGroupPickerSearch]);
+
+  useEffect(() => {
+    if (!resourceSelectorOpen) {
+      return;
+    }
+    void loadResourcePicker();
+  }, [resourceSelectorOpen, resourcePickerPage, resourcePickerSearch]);
+
+  const resourceGroupPickerTotalPages = Math.max(1, Math.ceil(resourceGroupPickerTotal / RESOURCE_GROUP_PICKER_PAGE_SIZE));
+  const resourcePickerTotalPages = Math.max(1, Math.ceil(resourcePickerTotal / RESOURCE_PICKER_PAGE_SIZE));
+
+  useEffect(() => {
+    setResourceGroupPickerPage(current => Math.min(Math.max(current, 1), resourceGroupPickerTotalPages));
+  }, [resourceGroupPickerTotalPages]);
+
+  useEffect(() => {
+    setResourcePickerPage(current => Math.min(Math.max(current, 1), resourcePickerTotalPages));
+  }, [resourcePickerTotalPages]);
 
   const openPriceSettingsDrawer = (group: GroupData) => {
     setPriceSettingsTarget(group);
@@ -327,7 +467,8 @@ export function GroupAdmin() {
         if (next[channelId]) {
           continue;
         }
-        const channel = channelOptions.find(option => option.id === channelId);
+        const channel = pickerChannels.find(option => option.id === channelId)
+          ?? channelOptions.find(option => option.id === channelId);
         if (!channel) {
           continue;
         }
@@ -434,27 +575,12 @@ export function GroupAdmin() {
     ? buildGroupRoutePreflight(channelBindingTarget, routePreflightBindingRows)
     : null;
   const routePreflightSummary = routeExplain ?? routePreflight;
-  const pickerChannelOptions = channelOptions
-    .filter(channel => matchesChannelSearch(pickerSearchQuery, [
-      channel.name,
-      channel.channelCode,
-      channel.providerName,
-      channel.providerCode,
-      ...channel.resourceCodes,
-      ...channel.apiScope,
-      ...channel.capabilities,
-    ]))
-    .sort((left, right) => `${left.providerName} ${left.name}`.localeCompare(`${right.providerName} ${right.name}`));
-  const addableChannelCount = pickerChannelOptions.filter(channel => !isChannelAlreadyBound(channel.id)).length;
-  const pickerTotalPages = Math.max(1, Math.ceil(pickerChannelOptions.length / CHANNEL_PICKER_PAGE_SIZE));
-  const paginatedPickerChannelOptions = pickerChannelOptions.slice(
-    (pickerPage - 1) * CHANNEL_PICKER_PAGE_SIZE,
-    pickerPage * CHANNEL_PICKER_PAGE_SIZE,
-  );
-  const pickerStartIndex = pickerChannelOptions.length === 0
+  const addableChannelCount = pickerChannels.filter(channel => !isChannelAlreadyBound(channel.id)).length;
+  const pickerTotalPages = Math.max(1, Math.ceil(pickerTotal / CHANNEL_PICKER_PAGE_SIZE));
+  const pickerStartIndex = pickerTotal === 0
     ? 0
     : (pickerPage - 1) * CHANNEL_PICKER_PAGE_SIZE + 1;
-  const pickerEndIndex = Math.min(pickerChannelOptions.length, pickerPage * CHANNEL_PICKER_PAGE_SIZE);
+  const pickerEndIndex = Math.min(pickerTotal, pickerPage * CHANNEL_PICKER_PAGE_SIZE);
 
   useEffect(() => {
     setPickerPage(current => Math.min(Math.max(current, 1), pickerTotalPages));
@@ -473,34 +599,6 @@ export function GroupAdmin() {
               onChange={e => setSearchQuery(e.target.value)}
               className="bg-white dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-emerald-500 w-[200px] text-slate-900 dark:text-white placeholder-slate-500 transition-colors shadow-sm"
             />
-          </div>
-
-          <div className="relative">
-            <select value={platformFilter} onChange={e => setPlatformFilter(e.target.value)} className="bg-white dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 rounded-lg pl-4 pr-10 py-2 text-sm focus:outline-none focus:border-emerald-500 text-slate-700 dark:text-slate-300 appearance-none shadow-sm cursor-pointer w-[140px]">
-              <option value="">{t("admin.group.index.text.1u2mbem", "All providers")}</option>
-              {platformOptions.map(platform => (
-                <option key={platform} value={platform}>{platform}</option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-          </div>
-
-          <div className="relative">
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="bg-white dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 rounded-lg pl-4 pr-10 py-2 text-sm focus:outline-none focus:border-emerald-500 text-slate-700 dark:text-slate-300 appearance-none shadow-sm cursor-pointer w-[140px]">
-              <option value="">{t("admin.group.index.text.igzce8", "All statuses")}</option>
-              <option value="active">{t('common.status.active')}</option>
-              <option value="disabled">{t('common.status.disabled')}</option>
-            </select>
-            <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-          </div>
-
-          <div className="relative">
-            <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="bg-white dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 rounded-lg pl-4 pr-10 py-2 text-sm focus:outline-none focus:border-emerald-500 text-slate-700 dark:text-slate-300 appearance-none shadow-sm cursor-pointer w-[140px]">
-              <option value="">{t("admin.group.index.text.75150v", "All group types")}</option>
-              <option value="public">{t('admin.group.groupType.public')}</option>
-              <option value="dedicated">{t('admin.group.groupType.dedicated')}</option>
-            </select>
-            <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           </div>
         </div>
 
@@ -531,8 +629,8 @@ export function GroupAdmin() {
             <BottomPagination
               page={page}
               pageSize={pageSize}
-              itemCount={paginatedGroups.length}
-              hasNextPage={page * pageSize < filteredGroups.length}
+              itemCount={totalGroups}
+              hasNextPage={page * pageSize < totalGroups}
               disabled={loading}
               showingLabel={t('admin.group.pagination.showing')}
               pageLabel={t('admin.group.pagination.page', { page })}
@@ -578,14 +676,14 @@ export function GroupAdmin() {
                 onRetry={() => { void loadGroups(); }}
                 retryLabel={t('common.actions.retry')}
               />
-            ) : filteredGroups.length === 0 ? (
+            ) : visibleGroups.length === 0 ? (
               <BusinessStateTableRow
                 colSpan={9}
                 kind="empty"
                 title={t('admin.group.state.emptyTitle')}
                 description={t('admin.group.state.emptyDescription')}
               />
-            ) : paginatedGroups.map(group => (
+            ) : visibleGroups.map(group => (
               <tr key={group.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
                 <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
                   <div className="flex flex-col gap-1">
@@ -724,7 +822,7 @@ export function GroupAdmin() {
                       <h4 className="text-sm font-semibold text-slate-900 dark:text-white">{t('admin.group.resourceAccess.title')}</h4>
                       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('admin.group.resourceAccess.description')}</p>
                     </div>
-                    <button type="button" onClick={() => { void loadResourceAccessOptions(); }} disabled={resourceAccessLoading} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5">
+                    <button type="button" onClick={refreshResourceAccessPickers} disabled={resourceGroupPickerLoading || resourcePickerLoading} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5">
                       {t('common.actions.refresh')}
                     </button>
                   </div>
@@ -759,12 +857,12 @@ export function GroupAdmin() {
                         emptyText={t('admin.group.resourceAccess.emptyResourceGroups')}
                         items={selectedResourceGroupCodes.map(code => toResourceGroupSummaryItem(
                           code,
-                          resourceGroupOptions.find(option => option.groupCode === code),
+                          resourceGroupOptionByCode[code],
                           t,
                         ))}
                         rowDataAttribute="data-admin-group-selected-resource-group-row"
                         onDetail={openResourceAccessDetail}
-                        onOpen={() => setResourceGroupSelectorOpen(true)}
+                        onOpen={openResourceGroupSelector}
                         onRemove={removeSelectedResourceGroupCode}
                         t={t}
                       />
@@ -773,12 +871,12 @@ export function GroupAdmin() {
                         emptyText={t('admin.group.resourceAccess.emptyResources')}
                         items={selectedResourceCodes.map(code => toAiResourceSummaryItem(
                           code,
-                          resourceOptions.find(option => option.resourceCode === code),
+                          resourceOptionByCode[code],
                           t,
                         ))}
                         rowDataAttribute="data-admin-group-selected-ai-resource-row"
                         onDetail={openResourceAccessDetail}
-                        onOpen={() => setResourceSelectorOpen(true)}
+                        onOpen={openResourceSelector}
                         onRemove={removeSelectedResourceCode}
                         t={t}
                       />
@@ -802,40 +900,42 @@ export function GroupAdmin() {
       {resourceGroupSelectorOpen && (
         <ResourceGroupSelectorModal
           selectionMode="multiple"
-          loading={resourceAccessLoading}
-          options={resourceGroupOptions}
+          loading={resourceGroupPickerLoading}
+          options={resourceGroupPickerOptions}
           selectedCodes={selectedResourceGroupCodes}
+          searchQuery={resourceGroupPickerSearch}
+          page={resourceGroupPickerPage}
+          total={resourceGroupPickerTotal}
+          totalPages={resourceGroupPickerTotalPages}
+          onSearchChange={(value) => {
+            setResourceGroupPickerSearch(value);
+            setResourceGroupPickerPage(1);
+          }}
+          onPageChange={setResourceGroupPickerPage}
           onChange={setSelectedResourceGroupCodes}
-          onClose={() => setResourceGroupSelectorOpen(false)}
+          onClose={closeResourceGroupSelector}
           t={t}
         />
       )}
 
       {resourceSelectorOpen && (
-        <AiResourceSelectorModal
+        <PaginatedAiResourceSelectorModal
           selectionMode="multiple"
-          loading={resourceAccessLoading}
-          options={resourceOptions}
+          loading={resourcePickerLoading}
+          options={resourcePickerOptions}
           selectedCodes={selectedResourceCodes}
-          onChange={setSelectedResourceCodes}
-          onClose={() => setResourceSelectorOpen(false)}
-          labels={{
-            title: t('admin.group.resourceAccess.resourceSelectorTitle'),
-            searchPlaceholder: t('admin.group.resourceAccess.search.resourcesPlaceholder'),
-            loading: t('admin.group.resourceAccess.loading'),
-            empty: t('admin.group.resourceAccess.emptyResources'),
-            emptySearch: t('admin.group.resourceAccess.emptyResourcesSearch'),
-            selectedCount: count => t('admin.group.resourceAccess.selectedCount', { count }),
-            done: t('common.actions.done'),
-            close: t('common.actions.close'),
-            columns: {
-              resource: t('admin.group.resourceAccess.columns.resource'),
-              kind: t('admin.group.resourceAccess.columns.kind'),
-              vendor: t('admin.group.resourceAccess.columns.vendor'),
-              status: t('admin.group.resourceAccess.columns.status'),
-            },
+          searchQuery={resourcePickerSearch}
+          page={resourcePickerPage}
+          total={resourcePickerTotal}
+          totalPages={resourcePickerTotalPages}
+          onSearchChange={(value) => {
+            setResourcePickerSearch(value);
+            setResourcePickerPage(1);
           }}
-          searchDataAttribute="data-admin-group-resource-selector-search"
+          onPageChange={setResourcePickerPage}
+          onChange={setSelectedResourceCodes}
+          onClose={closeResourceSelector}
+          t={t}
         />
       )}
 
@@ -1094,7 +1194,7 @@ export function GroupAdmin() {
                       {t('admin.group.channelBindings.pickerTitle')}
                     </h3>
                     <p className="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">
-                      {t('admin.group.channelBindings.pickerSubtitle', { count: addableChannelCount, total: pickerChannelOptions.length })}
+                      {t('admin.group.channelBindings.pickerSubtitle', { count: addableChannelCount, total: pickerTotal })}
                     </p>
                   </div>
                   <div className="relative w-full min-w-0 lg:max-w-xl">
@@ -1122,7 +1222,11 @@ export function GroupAdmin() {
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-auto">
-                  {pickerChannelOptions.length === 0 ? (
+                  {pickerLoading ? (
+                    <div className="flex min-h-[240px] flex-col items-center justify-center gap-2 px-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                      {t('admin.group.channelBindings.loading')}
+                    </div>
+                  ) : pickerChannels.length === 0 ? (
                     <div className="flex min-h-[240px] flex-col items-center justify-center gap-2 px-6 text-center text-sm text-slate-500 dark:text-slate-400">
                       <div className="font-medium text-slate-700 dark:text-slate-200">{t('admin.group.channelBindings.pickerEmpty')}</div>
                       <div className="max-w-md text-xs leading-5">{t('admin.group.channelBindings.pickerEmptyDescription')}</div>
@@ -1139,7 +1243,7 @@ export function GroupAdmin() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200 dark:divide-white/5">
-                        {paginatedPickerChannelOptions.map(channel => {
+                        {pickerChannels.map(channel => {
                           const isAlreadyBound = isChannelAlreadyBound(channel.id);
                           return (
                             <tr key={channel.id} className={`hover:bg-slate-50 dark:hover:bg-white/5 ${isAlreadyBound ? 'bg-slate-50/70 text-slate-400 dark:bg-white/[0.02] dark:text-slate-500' : ''}`}>
@@ -1202,7 +1306,7 @@ export function GroupAdmin() {
                         end: pickerEndIndex,
                         page: pickerPage,
                         start: pickerStartIndex,
-                        total: pickerChannelOptions.length,
+                        total: pickerTotal,
                         totalPages: pickerTotalPages,
                       })}
                     </span>
@@ -1377,14 +1481,6 @@ function matchesChannelSearch(query: string, values: string[]): boolean {
     return true;
   }
   return values.some(value => value.toLowerCase().includes(normalizedQuery));
-}
-
-function matchesResourceSelectorSearch(query: string, values: Array<string | null | undefined>): boolean {
-  const normalizedQuery = query.trim().toLowerCase();
-  if (!normalizedQuery) {
-    return true;
-  }
-  return values.some(value => (value ?? '').toLowerCase().includes(normalizedQuery));
 }
 
 function displayGroupStatus(status: GroupData['status'], t: ReturnType<typeof useTranslation>['t']): string {
@@ -1586,30 +1682,37 @@ function ResourceGroupSelectorModal({
   loading,
   onChange,
   onClose,
+  onPageChange,
+  onSearchChange,
   options,
+  page,
+  searchQuery,
   selectedCodes,
   selectionMode = 'single',
+  total,
+  totalPages,
   t,
 }: {
   loading: boolean;
   onChange: (codes: string[]) => void;
   onClose: () => void;
+  onPageChange: (page: number) => void;
+  onSearchChange: (value: string) => void;
   options: GroupResourceGroupOption[];
+  page: number;
+  searchQuery: string;
   selectedCodes: string[];
   selectionMode?: ResourceSelectorSelectionMode;
+  total: number;
+  totalPages: number;
   t: TranslationFunction;
 }) {
   const selected = new Set(selectedCodes);
-  const [resourceGroupSearchQuery, setResourceGroupSearchQuery] = useState('');
-  const filteredResourceGroupOptions = options.filter(option => matchesResourceSelectorSearch(resourceGroupSearchQuery, [
-    option.groupName,
-    option.groupCode,
-    option.description,
-    option.status,
-  ]));
   const toggleCode = (code: string) => {
     onChange(toggleSelectionCode(selectedCodes, code, selectionMode));
   };
+  const startIndex = total === 0 ? 0 : (page - 1) * RESOURCE_GROUP_PICKER_PAGE_SIZE + 1;
+  const endIndex = Math.min(total, page * RESOURCE_GROUP_PICKER_PAGE_SIZE);
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
@@ -1624,8 +1727,8 @@ function ResourceGroupSelectorModal({
             <input
               data-admin-group-resource-group-selector-search="true"
               type="search"
-              value={resourceGroupSearchQuery}
-              onChange={event => setResourceGroupSearchQuery(event.currentTarget.value)}
+              value={searchQuery}
+              onChange={event => onSearchChange(event.currentTarget.value)}
               aria-label={t('admin.group.resourceAccess.search.resourceGroupsPlaceholder')}
               placeholder={t('admin.group.resourceAccess.search.resourceGroupsPlaceholder')}
               className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white dark:border-white/10 dark:bg-[#121212] dark:text-white dark:focus:border-emerald-500"
@@ -1635,9 +1738,11 @@ function ResourceGroupSelectorModal({
         <div className="min-h-0 flex-1 overflow-auto">
           {loading ? (
             <SelectorState text={t('admin.group.resourceAccess.loading')} />
+          ) : total === 0 ? (
+            <SelectorState text={searchQuery.trim().length > 0
+              ? t('admin.group.resourceAccess.emptyResourceGroupsSearch')
+              : t('admin.group.resourceAccess.emptyResourceGroups')} />
           ) : options.length === 0 ? (
-            <SelectorState text={t('admin.group.resourceAccess.emptyResourceGroups')} />
-          ) : filteredResourceGroupOptions.length === 0 ? (
             <SelectorState text={t('admin.group.resourceAccess.emptyResourceGroupsSearch')} />
           ) : (
             <table className="w-full min-w-[720px] text-left text-sm text-slate-600 dark:text-slate-400">
@@ -1650,7 +1755,7 @@ function ResourceGroupSelectorModal({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-white/5">
-                {filteredResourceGroupOptions.map(option => (
+                {options.map(option => (
                   <tr key={option.groupCode} className="hover:bg-slate-50 dark:hover:bg-white/5">
                     <td className="px-5 py-3">
                       <input
@@ -1672,7 +1777,196 @@ function ResourceGroupSelectorModal({
             </table>
           )}
         </div>
-        <SelectorFooter count={selectedCodes.length} onClose={onClose} t={t} />
+        <div className="flex shrink-0 flex-col gap-3 border-t border-slate-200 p-5 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
+          <div data-admin-group-resource-group-selector-pagination className="flex flex-col gap-2 text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center">
+            <span>
+              {t('admin.group.resourceAccess.pagination', {
+                end: endIndex,
+                page,
+                start: startIndex,
+                total,
+                totalPages,
+                defaultValue: `${startIndex}-${endIndex} of ${total}`,
+              })}
+            </span>
+            <div className="inline-flex items-center overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-white/10 dark:bg-[#202020]">
+              <button
+                type="button"
+                aria-label={t('common.actions.previousPage')}
+                title={t('common.actions.previousPage')}
+                onClick={() => onPageChange(Math.max(1, page - 1))}
+                disabled={page <= 1 || loading}
+                className="inline-flex h-8 w-8 items-center justify-center text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="border-x border-slate-200 px-3 text-xs font-medium text-slate-700 dark:border-white/10 dark:text-slate-200">
+                {page} / {totalPages}
+              </span>
+              <button
+                type="button"
+                aria-label={t('common.actions.nextPage')}
+                title={t('common.actions.nextPage')}
+                onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+                disabled={page >= totalPages || loading}
+                className="inline-flex h-8 w-8 items-center justify-center text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          <SelectorFooter count={selectedCodes.length} onClose={onClose} t={t} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PaginatedAiResourceSelectorModal({
+  loading,
+  onChange,
+  onClose,
+  onPageChange,
+  onSearchChange,
+  options,
+  page,
+  searchQuery,
+  selectedCodes,
+  selectionMode = 'single',
+  total,
+  totalPages,
+  t,
+}: {
+  loading: boolean;
+  onChange: (codes: string[]) => void;
+  onClose: () => void;
+  onPageChange: (page: number) => void;
+  onSearchChange: (value: string) => void;
+  options: GroupAiResourceOption[];
+  page: number;
+  searchQuery: string;
+  selectedCodes: string[];
+  selectionMode?: ResourceSelectorSelectionMode;
+  total: number;
+  totalPages: number;
+  t: TranslationFunction;
+}) {
+  const selected = new Set(selectedCodes);
+  const toggleCode = (code: string) => {
+    onChange(toggleSelectionCode(selectedCodes, code, selectionMode));
+  };
+  const startIndex = total === 0 ? 0 : (page - 1) * RESOURCE_PICKER_PAGE_SIZE + 1;
+  const endIndex = Math.min(total, page * RESOURCE_PICKER_PAGE_SIZE);
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+      <div className="flex h-[76vh] max-h-[76vh] w-[88vw] max-w-6xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#1a1a1a]">
+        <SelectorHeader
+          title={t('admin.group.resourceAccess.resourceSelectorTitle')}
+          onClose={onClose}
+        />
+        <div className="shrink-0 border-b border-slate-200 px-5 py-4 dark:border-white/10">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              data-admin-group-resource-selector-search="true"
+              type="search"
+              value={searchQuery}
+              onChange={event => onSearchChange(event.currentTarget.value)}
+              aria-label={t('admin.group.resourceAccess.search.resourcesPlaceholder')}
+              placeholder={t('admin.group.resourceAccess.search.resourcesPlaceholder')}
+              className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white dark:border-white/10 dark:bg-[#121212] dark:text-white dark:focus:border-emerald-500"
+            />
+          </div>
+        </div>
+        <div className="min-h-0 flex-1 overflow-auto">
+          {loading ? (
+            <SelectorState text={t('admin.group.resourceAccess.loading')} />
+          ) : total === 0 ? (
+            <SelectorState text={searchQuery.trim().length > 0
+              ? t('admin.group.resourceAccess.emptyResourcesSearch')
+              : t('admin.group.resourceAccess.emptyResources')} />
+          ) : options.length === 0 ? (
+            <SelectorState text={t('admin.group.resourceAccess.emptyResourcesSearch')} />
+          ) : (
+            <table className="w-full min-w-[860px] text-left text-sm text-slate-600 dark:text-slate-400">
+              <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 dark:border-white/10 dark:bg-[#121212] dark:text-slate-400">
+                <tr>
+                  <th className="w-12 px-5 py-3"></th>
+                  <th className="px-5 py-3">{t('admin.group.resourceAccess.columns.resource')}</th>
+                  <th className="px-5 py-3">{t('admin.group.resourceAccess.columns.kind')}</th>
+                  <th className="px-5 py-3">{t('admin.group.resourceAccess.columns.vendor')}</th>
+                  <th className="px-5 py-3">{t('admin.group.resourceAccess.columns.status')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 dark:divide-white/5">
+                {options.map(option => (
+                  <tr key={option.resourceCode} className="hover:bg-slate-50 dark:hover:bg-white/5">
+                    <td className="px-5 py-3">
+                      <input
+                        type={selectionMode === 'multiple' ? 'checkbox' : 'radio'}
+                        checked={selected.has(option.resourceCode)}
+                        onChange={() => toggleCode(option.resourceCode)}
+                        className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="font-medium text-slate-900 dark:text-white">{option.displayName}</div>
+                      <div className="font-mono text-xs text-slate-500">{option.resourceCode}</div>
+                    </td>
+                    <td className="px-5 py-3">
+                      <span className="rounded bg-emerald-50 px-1.5 py-0.5 font-mono text-[10px] text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+                        {option.resourceType}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3">{option.vendorCode ?? '-'}</td>
+                    <td className="px-5 py-3">{option.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+        <div className="flex shrink-0 flex-col gap-3 border-t border-slate-200 p-5 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
+          <div data-admin-group-resource-selector-pagination className="flex flex-col gap-2 text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center">
+            <span>
+              {t('admin.group.resourceAccess.pagination', {
+                end: endIndex,
+                page,
+                start: startIndex,
+                total,
+                totalPages,
+                defaultValue: `${startIndex}-${endIndex} of ${total}`,
+              })}
+            </span>
+            <div className="inline-flex items-center overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-white/10 dark:bg-[#202020]">
+              <button
+                type="button"
+                aria-label={t('common.actions.previousPage')}
+                title={t('common.actions.previousPage')}
+                onClick={() => onPageChange(Math.max(1, page - 1))}
+                disabled={page <= 1 || loading}
+                className="inline-flex h-8 w-8 items-center justify-center text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="border-x border-slate-200 px-3 text-xs font-medium text-slate-700 dark:border-white/10 dark:text-slate-200">
+                {page} / {totalPages}
+              </span>
+              <button
+                type="button"
+                aria-label={t('common.actions.nextPage')}
+                title={t('common.actions.nextPage')}
+                onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+                disabled={page >= totalPages || loading}
+                className="inline-flex h-8 w-8 items-center justify-center text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          <SelectorFooter count={selectedCodes.length} onClose={onClose} t={t} />
+        </div>
       </div>
     </div>
   );

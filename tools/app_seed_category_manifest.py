@@ -135,7 +135,7 @@ class AppCategorySeedManifestGenerator:
     def _portal_category(self, app: Any) -> str:
         if not isinstance(app, dict):
             return ""
-        for key in ("platformApp", "plusApp"):
+        for key in ("platformApp",):
             app_record = app.get(key)
             if not isinstance(app_record, dict):
                 continue

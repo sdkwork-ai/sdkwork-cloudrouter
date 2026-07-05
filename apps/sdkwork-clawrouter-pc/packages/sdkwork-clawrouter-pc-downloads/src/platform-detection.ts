@@ -1,4 +1,4 @@
-import { isBlank } from "@sdkwork/utils";
+import { isBlank } from "@sdkwork/utils/string";
 import type {
   SdkworkDownloadAction,
   SdkworkDownloadCard,

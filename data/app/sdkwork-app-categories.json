@@ -4,7 +4,7 @@
   "count": 2,
   "source": {
     "appSeedKind": "sdkwork.platform_app.seed",
-    "appCount": 31,
+    "appCount": 30,
     "appSeedSource": {
       "rootAppKey": "sdkwork-clawrouter",
       "appsRoot": "sdkwork-space",

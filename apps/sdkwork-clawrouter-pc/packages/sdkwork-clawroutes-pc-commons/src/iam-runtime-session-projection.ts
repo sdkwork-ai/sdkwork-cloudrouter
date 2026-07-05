@@ -1,6 +1,6 @@
 import type { IamAppContext } from '@sdkwork/iam-contracts';
 import type { IamContextStore, IamRuntime } from '@sdkwork/iam-runtime';
-import type { SdkworkAppbasePcAuthSessionBridgeSession } from '@sdkwork/auth-runtime-pc-react';
+import type { SdkworkAppbasePcAuthSessionBridgeSession } from '@sdkwork/auth-runtime-pc-react/appbasePcAuthSessionBridge';
 import {
   loadStoredAppSessionToken,
   storeAppSessionFromResult,

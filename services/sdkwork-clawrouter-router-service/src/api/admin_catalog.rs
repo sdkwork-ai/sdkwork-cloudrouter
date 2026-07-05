@@ -12,7 +12,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, normalize_list_search_query, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, success_envelope,
+};
 use crate::application::{load_admin_category_seed_bundles, DEFAULT_ADMIN_CATEGORY_SEED_DATASETS};
 use crate::domain::DomainError;
 use crate::ports::{
@@ -25,9 +28,6 @@ use crate::ports::{
     ListAdminCatalogRecordsQuery,
 };
 
-const DEFAULT_PAGE_NO: i64 = 1;
-const DEFAULT_PAGE_SIZE: i64 = 100;
-const MAX_PAGE_SIZE: i64 = 200;
 const MAX_ID_LEN: usize = 128;
 const MAX_CODE_LEN: usize = 128;
 const MAX_SHORT_TEXT_LEN: usize = 512;
@@ -174,15 +174,6 @@ struct PriceListMutationRequest {
     starts_at: Option<String>,
     ends_at: Option<String>,
     status: String,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct CatalogCollectionResponse {
-    items: Vec<AdminCatalogJsonRecord>,
-    total: i64,
-    page: i64,
-    page_size: i64,
 }
 
 #[derive(Debug, Serialize)]
@@ -706,13 +697,11 @@ where
         Err(response) => return response,
     };
     match load(query).await {
-        Ok(collection) => Json(success_envelope(CatalogCollectionResponse {
-            items: collection.items,
-            total: collection.total,
-            page: collection.page_no,
-            page_size: collection.page_size,
-        }))
-        .into_response(),
+        Ok(collection) => json_success_list_response(
+            None,
+            collection.items,
+            offset_page_info(collection.page_no, collection.page_size, collection.total),
+        ),
         Err(error) => domain_error_response("catalog collection is unavailable", error),
     }
 }
@@ -729,25 +718,17 @@ fn validated_list_query(
     request: CatalogListQueryRequest,
 ) -> Result<ListAdminCatalogRecordsQuery, Response> {
     let subject = scoped.into();
-    let page_no = request.page.unwrap_or(DEFAULT_PAGE_NO);
-    if page_no < 1 {
-        return Err(bad_request("page must be greater than or equal to 1"));
-    }
-    let page_size = request.page_size.unwrap_or(DEFAULT_PAGE_SIZE);
-    if !(1..=MAX_PAGE_SIZE).contains(&page_size) {
-        return Err(bad_request(format!(
-            "page_size must be between 1 and {MAX_PAGE_SIZE}"
-        )));
-    }
+    let pagination = parse_offset_list_query(request.page, request.page_size)
+        .map_err(bad_request)?;
     Ok(ListAdminCatalogRecordsQuery {
         subject,
-        page_no,
-        page_size,
-        offset: (page_no - 1) * page_size,
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
         status: normalize_optional_text(request.status, "status", MAX_CODE_LEN)?
             .map(|value| value.to_ascii_lowercase()),
         parent_id: normalize_optional_text(request.parent_id, "parentId", MAX_ID_LEN)?,
-        query_text: normalize_optional_text(request.q, "q", 256)?,
+        query_text: normalize_list_search_query(request.q, "q").map_err(bad_request)?,
         category_id: normalize_optional_text(request.category_id, "categoryId", MAX_ID_LEN)?,
         attribute_id: normalize_optional_text(request.attribute_id, "attributeId", MAX_ID_LEN)?,
         product_type: normalize_optional_text(request.product_type, "productType", MAX_CODE_LEN)?

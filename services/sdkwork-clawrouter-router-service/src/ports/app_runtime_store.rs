@@ -30,6 +30,9 @@ pub struct AppRuntimeInvocationQuery {
 #[serde(rename_all = "camelCase")]
 pub struct AppRuntimeInvocationList {
     pub items: Vec<AppRuntimeInvocationItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -86,6 +89,9 @@ pub struct AppRuntimeInvocationExecution {
 #[serde(rename_all = "camelCase")]
 pub struct AppRuntimeEventList {
     pub items: Vec<AppRuntimeEventItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -105,6 +111,9 @@ pub struct AppRuntimeEventItem {
 #[serde(rename_all = "camelCase")]
 pub struct AppRuntimeArtifactList {
     pub items: Vec<AppRuntimeArtifactItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]

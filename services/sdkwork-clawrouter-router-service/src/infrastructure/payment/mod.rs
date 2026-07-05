@@ -1,0 +1,3 @@
+mod payment_provider_secret_bridge;
+
+pub use payment_provider_secret_bridge::ProviderSecretPaymentBridge;

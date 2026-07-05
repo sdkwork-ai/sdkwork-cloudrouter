@@ -56,6 +56,7 @@ const CLAW_EDGE_DEFAULT_CSP_FRAME_SRC = ['https://player.bilibili.com'];
 const REQUEST_LIMIT_ADMIN_APP_JSON_BODY_MAX_BYTES = 128 * 1024;
 const REQUEST_LIMIT_ADMIN_SKILL_JSON_BODY_MAX_BYTES = 64 * 1024;
 const REQUEST_LIMIT_PAYMENT_CALLBACK_BODY_MAX_BYTES = 64 * 1024;
+const REQUEST_LIMIT_GATEWAY_INVOCATION_BODY_MAX_BYTES = 1024 * 1024;
 
 function printHelp() {
   console.log(`Usage: node scripts/build-claw-router-install-package.mjs [options]
@@ -751,10 +752,12 @@ function requestLimitsPolicyFor() {
     adminAppJsonBodyMaxBytes: REQUEST_LIMIT_ADMIN_APP_JSON_BODY_MAX_BYTES,
     adminSkillJsonBodyMaxBytes: REQUEST_LIMIT_ADMIN_SKILL_JSON_BODY_MAX_BYTES,
     paymentCallbackBodyMaxBytes: REQUEST_LIMIT_PAYMENT_CALLBACK_BODY_MAX_BYTES,
+    gatewayInvocationBodyMaxBytes: REQUEST_LIMIT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
     envOverrides: [
       'SDKWORK_CLAW_ADMIN_APP_JSON_BODY_MAX_BYTES',
       'SDKWORK_CLAW_ADMIN_SKILL_JSON_BODY_MAX_BYTES',
       'SDKWORK_CLAW_PAYMENT_CALLBACK_BODY_MAX_BYTES',
+      'SDKWORK_CLAW_GATEWAY_INVOCATION_BODY_MAX_BYTES',
     ],
   };
 }
@@ -989,6 +992,7 @@ function createInstallGuide(packageItem) {
     'Request body limits are configured in [request_limits].',
     `Admin app JSON defaults to ${installConfiguration.requestLimits.adminAppJsonBodyMaxBytes} bytes; admin skill JSON defaults to ${installConfiguration.requestLimits.adminSkillJsonBodyMaxBytes} bytes.`,
     `Payment callback payloads default to ${installConfiguration.requestLimits.paymentCallbackBodyMaxBytes} bytes.`,
+    `Gateway invocation bodies default to ${installConfiguration.requestLimits.gatewayInvocationBodyMaxBytes} bytes.`,
     'Keep load balancer, reverse proxy, and container ingress body limits aligned with these values.',
     '',
   );
@@ -1350,6 +1354,7 @@ function createRuntimeConfigTemplate(packageItem) {
     `admin_app_json_body_max_bytes = ${requestLimitsPolicy.adminAppJsonBodyMaxBytes}`,
     `admin_skill_json_body_max_bytes = ${requestLimitsPolicy.adminSkillJsonBodyMaxBytes}`,
     `payment_callback_body_max_bytes = ${requestLimitsPolicy.paymentCallbackBodyMaxBytes}`,
+    `gateway_invocation_body_max_bytes = ${requestLimitsPolicy.gatewayInvocationBodyMaxBytes}`,
     '',
     '[runtime]',
     `deployment_mode = "${packageItem.runtimeProfile === 'desktop' ? 'desktop' : 'server'}"`,

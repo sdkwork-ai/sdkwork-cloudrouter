@@ -72,9 +72,22 @@ pub struct AdminChannelGroupChannelBindingInput {
     pub capabilities: Vec<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListAdminChannelGroupsQuery {
     pub subject: AdminChannelGroupSubject,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+    pub q: Option<String>,
+    pub group_id: Option<i64>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct AdminChannelGroupListPage {
+    pub items: Vec<AdminChannelGroupItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -153,7 +166,7 @@ pub trait AdminChannelGroupStore {
     fn list_channel_groups<'a>(
         &'a self,
         query: ListAdminChannelGroupsQuery,
-    ) -> AdminChannelGroupCommandFuture<'a, Vec<AdminChannelGroupItem>>;
+    ) -> AdminChannelGroupCommandFuture<'a, AdminChannelGroupListPage>;
 
     fn create_channel_group<'a>(
         &'a self,

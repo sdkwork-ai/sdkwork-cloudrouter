@@ -196,25 +196,25 @@ function defaultInstallPackage(installConfig) {
     ?? null;
 }
 
-function canonicalPlusApp(plusApp, context) {
-  if (!isRecord(plusApp)) {
+function canonicalPlatformApp(platformApp, context) {
+  if (!isRecord(platformApp)) {
     throw new Error(`${context} must be an object`);
   }
-  const config = isRecord(plusApp.config) ? { ...plusApp.config } : {};
+  const config = isRecord(platformApp.config) ? { ...platformApp.config } : {};
   const media = canonicalMediaConfig(config.media, `${context}.config.media`);
   config.media = media;
-  const installConfig = canonicalInstallConfig(plusApp.installConfig, `${context}.installConfig`);
+  const installConfig = canonicalInstallConfig(platformApp.installConfig, `${context}.installConfig`);
 
   const primaryIcon = isRecord(media?.icons?.primary) ? media.icons.primary.asset : null;
-  const icon = optionalMediaResource(plusApp[FIELD_ICON], 'image', `${context}.icon`)
+  const icon = optionalMediaResource(platformApp[FIELD_ICON], 'image', `${context}.icon`)
     ?? optionalMediaResource(primaryIcon, 'image', `${context}.icon`)
-    ?? optionalMediaResource(plusApp[FIELD_ICON_LINK], 'image', `${context}.icon`);
+    ?? optionalMediaResource(platformApp[FIELD_ICON_LINK], 'image', `${context}.icon`);
   if (!icon) {
     throw new Error(`${context}.icon is required`);
   }
 
-  const linkedArtifact = optionalMediaResource(plusApp.artifact, 'document', `${context}.artifact`)
-    ?? optionalMediaResource(plusApp[FIELD_DOWNLOAD_LINK], 'document', `${context}.artifact`);
+  const linkedArtifact = optionalMediaResource(platformApp.artifact, 'document', `${context}.artifact`)
+    ?? optionalMediaResource(platformApp[FIELD_DOWNLOAD_LINK], 'document', `${context}.artifact`);
   const selectedPackage = packageByArtifactLocator(
     installConfig.packages,
     linkedArtifact ? mediaResourceLocator(linkedArtifact) : '',
@@ -222,29 +222,29 @@ function canonicalPlusApp(plusApp, context) {
   const artifact = linkedArtifact ?? selectedPackage?.artifact ?? null;
 
   return {
-    name: plusApp.name,
-    description: plusApp.description ?? null,
-    version: plusApp.version ?? null,
+    name: platformApp.name,
+    description: platformApp.description ?? null,
+    version: platformApp.version ?? null,
     icon,
-    accessUrl: plusApp.accessUrl ?? null,
+    accessUrl: platformApp.accessUrl ?? null,
     config,
-    status: plusApp.status,
-    appType: plusApp.appType,
-    platforms: plusApp.platforms,
-    installPlatforms: plusApp.installPlatforms,
-    installSkill: plusApp.installSkill,
+    status: platformApp.status,
+    appType: platformApp.appType,
+    platforms: platformApp.platforms,
+    installPlatforms: platformApp.installPlatforms,
+    installSkill: platformApp.installSkill,
     installConfig,
-    releaseNotes: Array.isArray(plusApp.releaseNotes) ? plusApp.releaseNotes : [],
-    packageName: plusApp.packageName ?? null,
-    bundleId: plusApp.bundleId ?? null,
-    storeUrl: plusApp.storeUrl ?? null,
+    releaseNotes: Array.isArray(platformApp.releaseNotes) ? platformApp.releaseNotes : [],
+    packageName: platformApp.packageName ?? null,
+    bundleId: platformApp.bundleId ?? null,
+    storeUrl: platformApp.storeUrl ?? null,
     artifact,
   };
 }
 
 function canonicalAppSeedBundle(bundle) {
   if (!isRecord(bundle)) {
-    throw new Error('app store PlusApp seed export must be an object');
+    throw new Error('app store platform_app seed export must be an object');
   }
   return {
     ...bundle,
@@ -257,9 +257,13 @@ function canonicalAppSeedBundle(bundle) {
         if (!isRecord(entry)) {
           throw new Error(`apps[${index}] must be an object`);
         }
+        const sourcePlatformApp = entry.platformApp;
+        if (!isRecord(sourcePlatformApp)) {
+          throw new Error(`apps[${index}] requires platformApp`);
+        }
         return {
           ...entry,
-          plusApp: canonicalPlusApp(entry.plusApp, `apps[${index}].plusApp`),
+          platformApp: canonicalPlatformApp(sourcePlatformApp, `apps[${index}].platformApp`),
         };
       })
       : [],
@@ -273,8 +277,8 @@ Refresh SDKWork App Store install-time seed data from app repositories under the
 
 Options:
   --apps-root <path>       Workspace root to scan, default the nearest SDKWork workspace root.
-  --environment <name>     PlusApp projection environment, default production.
-  --channel <name>         PlusApp release channel, default STABLE.
+  --environment <name>     platform_app projection environment, default production.
+  --channel <name>         platform_app release channel, default STABLE.
   --platform <name>        Optional package platform selector.
   --architecture <value>   Optional package architecture selector.
   --distro <value>         Optional Linux distro selector.
@@ -409,7 +413,7 @@ export function buildAppStoreSeedCommandPlan(settings, { workspaceRoot = DEFAULT
   }
 
   steps.push({
-    name: 'export-plus-app-seed',
+    name: 'export-platform-app-seed',
     mode,
     appsRoot: settings.appsRoot,
     output: appSeedPath,
@@ -593,7 +597,11 @@ async function initializeMissingAppManifests(settings, initModule) {
 }
 
 async function exportAppSeed(settings, initModule, appSeedPath) {
-  const result = await initModule.buildSdkworkAppPlusAppRegistrationBundle(settings.appsRoot, {
+  const buildRegistrationBundle = initModule.buildSdkworkAppPlatformAppRegistrationBundle;
+  if (typeof buildRegistrationBundle !== 'function') {
+    throw new Error('sdkwork app standard initializer is missing buildSdkworkAppPlatformAppRegistrationBundle');
+  }
+  const result = await buildRegistrationBundle(settings.appsRoot, {
     environment: settings.environment,
     channel: settings.channel,
     platform: settings.platform,
@@ -603,7 +611,7 @@ async function exportAppSeed(settings, initModule, appSeedPath) {
   if (!result.ok) {
     throw new Error(
       [
-        'app store PlusApp seed export failed:',
+        'app store platform_app seed export failed:',
         ...result.errors,
       ].join('\n'),
     );
@@ -615,7 +623,7 @@ async function exportAppSeed(settings, initModule, appSeedPath) {
   const mismatch = existing ? firstJsonMismatch(seedBundle, existing) : `missing file: ${appSeedPath}`;
   if (settings.check && mismatch) {
     throw new Error(
-      `app store PlusApp seed is stale: ${appSeedPath}\nfirst mismatch: ${mismatch}\nRun pnpm app-store:seed:update.`,
+      `app store platform_app seed is stale: ${appSeedPath}\nfirst mismatch: ${mismatch}\nRun pnpm app-store:seed:update.`,
     );
   }
   if (!settings.check && !settings.dryRun) {
@@ -674,24 +682,24 @@ async function syncDatabase(settings, workspaceRoot) {
 async function runAppStoreSeedCheckFromCommittedSeeds(settings, { workspaceRoot, plan }) {
   const appSeed = await readJsonIfExists(plan.appSeedPath);
   if (!isRecord(appSeed)) {
-    throw new Error(`app store PlusApp seed is missing or invalid: ${plan.appSeedPath}`);
+    throw new Error(`app store platform_app seed is missing or invalid: ${plan.appSeedPath}`);
   }
   if (appSeed.kind !== 'sdkwork.platform_app.seed') {
-    throw new Error(`app store PlusApp seed has unsupported kind: ${appSeed.kind ?? '(missing)'}`);
+    throw new Error(`app store platform_app seed has unsupported kind: ${appSeed.kind ?? '(missing)'}`);
   }
   if (!Array.isArray(appSeed.apps)) {
-    throw new Error('app store PlusApp seed apps must be an array');
+    throw new Error('app store platform_app seed apps must be an array');
   }
 
   const source = isRecord(appSeed.source) ? appSeed.source : {};
   if (stringValue(source.environment) && stringValue(source.environment) !== settings.environment) {
     throw new Error(
-      `app store PlusApp seed environment mismatch: expected ${settings.environment} actual ${source.environment}`,
+      `app store platform_app seed environment mismatch: expected ${settings.environment} actual ${source.environment}`,
     );
   }
   if (stringValue(source.channel) && stringValue(source.channel) !== settings.channel) {
     throw new Error(
-      `app store PlusApp seed channel mismatch: expected ${settings.channel} actual ${source.channel}`,
+      `app store platform_app seed channel mismatch: expected ${settings.channel} actual ${source.channel}`,
     );
   }
 

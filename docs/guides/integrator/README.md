@@ -49,6 +49,21 @@ const client = createClawRouterAppSdkClient({
 const result = await client.apiKeys.list({ page: '1', pageSize: '20' });
 ```
 
+### List/search pagination (required)
+
+All Claw Router list and search endpoints paginate in the database. Clients must pass `page` and `page_size` (OpenAPI camelCase: `pageSize`) and read `data.items` plus `data.pageInfo` from the SdkWork list envelope. Do not fetch full collections and paginate or filter in browser memory.
+
+Representative admin/app list operations with server paging: `channels.list`, `channelGroups.list`, `apiKeys.list`, `system.records`, usage logs, cache namespace keys (cursor), catalog categories/products, chat conversation messages, and relay sites.
+
+```typescript
+const page = await client.integration.channels.list({
+  page: '1',
+  pageSize: '20',
+  q: 'openai',
+});
+// page.data.items + page.data.pageInfo.totalItems
+```
+
 ### Call the OpenAI-compatible gateway
 
 ```typescript

@@ -25,7 +25,9 @@ pub fn resolve_usage_settlement_worker_config(
 pub fn resolve_usage_settlement_worker_config_result(
     runtime_toml: Option<&RuntimeTomlConfig>,
 ) -> Result<UsageSettlementWorkerConfig, String> {
-    usage_settlement_worker_config_from_env_or_toml(runtime_toml).map(|config| config.normalized())
+    let config = usage_settlement_worker_config_from_env_or_toml(runtime_toml)?.normalized();
+    config.validate_for_deployment()?;
+    Ok(config)
 }
 
 pub fn usage_settlement_worker_config_from_env_or_toml(

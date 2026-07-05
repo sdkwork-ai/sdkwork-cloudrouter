@@ -3,7 +3,8 @@ use std::sync::Arc;
 use axum::Router;
 use sdkwork_claw_config::DatabaseConfig;
 use sdkwork_claw_http::{
-    iam_web_resolver_for_claw_database, inject_legacy_handler_context_from_web_context,
+    claw_service_security_policy, iam_web_resolver_for_claw_database,
+    inject_legacy_handler_context_from_web_context, resolve_claw_web_environment_from_process_env,
 };
 use sdkwork_iam_web_adapter::{iam_app_context_from_web_request, IamAuthorizationPolicy, IamWebRequestContextResolver};
 use sdkwork_web_axum::{with_web_request_context, WebFrameworkLayer};
@@ -44,12 +45,16 @@ fn build_claw_router_app_web_framework_layer(
     if let Err(error) = route_manifest.validate_public_path_prefixes(&prefixes) {
         tracing::warn!(%error, "claw router app-api public path prefixes overlap protected routes");
     }
+    let environment = resolve_claw_web_environment_from_process_env();
+    let security_policy = claw_service_security_policy(&environment);
 
     WebFrameworkLayer::new(resolver)
         .with_profile(WebRequestContextProfile {
             public_path_prefixes: prefixes,
+            environment,
             ..WebRequestContextProfile::default()
         })
+        .with_security_policy(security_policy)
         .with_route_manifest(route_manifest.clone())
         .with_authorization_policy(Arc::new(IamAuthorizationPolicy::new(route_manifest)))
         .with_domain_injector(Arc::new(ClawRouterAppDomainInjector))

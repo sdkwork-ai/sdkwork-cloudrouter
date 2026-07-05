@@ -17,12 +17,33 @@ pub struct AdminUserSubject {
 pub struct ListAdminUsersQuery {
     pub subject: AdminUserSubject,
     pub q: Option<String>,
+    pub page_no: i64,
     pub page_size: i64,
+    pub offset: i64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ListAdminUserApiKeysQuery {
     pub subject: AdminUserSubject,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminUserListPage {
+    pub items: Vec<AdminUserItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminUserApiKeyListPage {
+    pub items: Vec<AdminUserApiKeyItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -122,12 +143,12 @@ pub trait AdminUserStore {
     fn list_users<'a>(
         &'a self,
         query: ListAdminUsersQuery,
-    ) -> AdminUserCommandFuture<'a, Vec<AdminUserItem>>;
+    ) -> AdminUserCommandFuture<'a, AdminUserListPage>;
 
     fn list_api_keys<'a>(
         &'a self,
         query: ListAdminUserApiKeysQuery,
-    ) -> AdminUserCommandFuture<'a, Vec<AdminUserApiKeyItem>>;
+    ) -> AdminUserCommandFuture<'a, AdminUserApiKeyListPage>;
 
     fn create_user<'a>(
         &'a self,

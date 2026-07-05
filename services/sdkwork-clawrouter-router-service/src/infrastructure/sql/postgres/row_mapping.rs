@@ -6,6 +6,7 @@ pub(crate) fn postgres_row_i64(row: &PgRow, column: &str) -> Result<i64, sqlx::E
         .or_else(|_| row.try_get::<i32, _>(column).map(i64::from))
 }
 
+use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::rows::{
     AiModelRow, ChannelGroupMetricSnapshotRow, ChannelGroupRow, GatewayAccessPolicyRow,
     GatewayApiKeyRow, GatewayRiskRuleRow, ModelMappingRuleRow, ModelPriceRow,
@@ -407,4 +408,158 @@ where
     F: Fn(PgRow) -> Result<T, sqlx::Error>,
 {
     QueryMapper { sql, mapper }
+}
+
+fn api_key_from_row(row: PgRow) -> Result<GatewayApiKeyRow, sqlx::Error> {
+    Ok(GatewayApiKeyRow {
+        id: row.try_get("id")?,
+        tenant_id: row.try_get("tenant_id")?,
+        organization_id: row.try_get("organization_id")?,
+        user_id: row.try_get("user_id")?,
+        group_id: row.try_get("group_id")?,
+        group_bindings_json: row.try_get("group_bindings_json")?,
+        name: row.try_get("name")?,
+        key_prefix: row.try_get("key_prefix")?,
+        key_display_masked: row.try_get("key_display_masked")?,
+        key_hash: row.try_get("key_hash")?,
+        copyable_key: row.try_get("copyable_key")?,
+        policy_id: row.try_get("policy_id")?,
+        quota_policy_id: row.try_get("quota_policy_id")?,
+        created_at: row.try_get("created_at")?,
+        expire_at: row.try_get("expire_at")?,
+        status_code: row.try_get("status_code")?,
+        default_for_runtime: row.try_get("default_for_runtime")?,
+    })
+}
+
+pub async fn load_api_keys_paginated(
+    pool: &sqlx::PgPool,
+    base_sql: &str,
+    tenant_id: i64,
+    organization_id: i64,
+    user_id: i64,
+    search: Option<&str>,
+    page_size: i64,
+    offset: i64,
+) -> Result<Vec<GatewayApiKeyRow>, sqlx::Error> {
+    let sql = format!(
+        r#"
+        SELECT page.*
+        FROM ({base_sql}) page
+        WHERE page.tenant_id = $1
+          AND page.organization_id = $2
+          AND page.user_id = $3
+          AND (
+              $4 IS NULL
+              OR LOWER(page.name) LIKE $4
+              OR LOWER(page.key_prefix) LIKE $4
+              OR LOWER(page.key_display_masked) LIKE $4
+          )
+        ORDER BY page.created_at DESC, page.id DESC
+        LIMIT $5 OFFSET $6
+        "#
+    );
+    let rows = sqlx::query(&sql)
+        .bind(tenant_id)
+        .bind(organization_id)
+        .bind(user_id)
+        .bind(search)
+        .bind(page_size)
+        .bind(offset)
+        .fetch_all(pool)
+        .await?;
+    rows.into_iter().map(api_key_from_row).collect()
+}
+
+pub async fn count_api_keys_paginated(
+    pool: &sqlx::PgPool,
+    base_sql: &str,
+    tenant_id: i64,
+    organization_id: i64,
+    user_id: i64,
+    search: Option<&str>,
+) -> Result<i64, sqlx::Error> {
+    let sql = format!(
+        r#"
+        SELECT COUNT(*)::bigint
+        FROM ({base_sql}) page
+        WHERE page.tenant_id = $1
+          AND page.organization_id = $2
+          AND page.user_id = $3
+          AND (
+              $4 IS NULL
+              OR LOWER(page.name) LIKE $4
+              OR LOWER(page.key_prefix) LIKE $4
+              OR LOWER(page.key_display_masked) LIKE $4
+          )
+        "#
+    );
+    sqlx::query_scalar(&sql)
+        .bind(tenant_id)
+        .bind(organization_id)
+        .bind(user_id)
+        .bind(search)
+        .fetch_one(pool)
+        .await
+}
+
+pub async fn load_paginated_channel_groups(
+    pool: &sqlx::PgPool,
+    tenant_id: i64,
+    organization_id: i64,
+    search: Option<&str>,
+    page_size: i64,
+    offset: i64,
+) -> Result<Vec<PgRow>, sqlx::Error> {
+    sqlx::query(
+        r#"
+        SELECT
+            g.id,
+            COALESCE(g.tenant_id, 0) AS tenant_id,
+            COALESCE(g.organization_id, 0) AS organization_id,
+            COALESCE(NULLIF(g.group_name, ''), g.group_code) AS name,
+            g.group_code AS code,
+            COALESCE(NULLIF(BTRIM(g.pricing_plan_code), ''), 'standard') AS pricing_plan_code,
+            g.rate_multiplier::text AS rate_multiplier,
+            g.official_price_multiplier::text AS official_price_multiplier,
+            COUNT(*) OVER() AS total
+        FROM ai_channel_group g
+        WHERE g.deleted_at IS NULL
+          AND g.status = 1
+          AND (g.tenant_id = $1 OR g.tenant_id = 0)
+          AND (g.organization_id = $2 OR g.organization_id = 0)
+          AND (
+              $3 IS NULL
+              OR LOWER(COALESCE(g.group_name, g.group_code, '')) LIKE $3
+              OR LOWER(COALESCE(g.group_code, '')) LIKE $3
+          )
+        ORDER BY g.updated_at DESC NULLS LAST, g.id DESC
+        LIMIT $4 OFFSET $5
+        "#,
+    )
+    .bind(tenant_id)
+    .bind(organization_id)
+    .bind(search)
+    .bind(page_size)
+    .bind(offset)
+    .fetch_all(pool)
+    .await
+}
+
+pub fn channel_group_from_row(row: &PgRow) -> DomainResult<crate::domain::ChannelGroup> {
+    ChannelGroupRow {
+        id: row.try_get("id").map_err(row_error)?,
+        tenant_id: row.try_get("tenant_id").map_err(row_error)?,
+        organization_id: row.try_get("organization_id").map_err(row_error)?,
+        name: row.try_get("name").map_err(row_error)?,
+        code: row.try_get("code").map_err(row_error)?,
+        pricing_plan_code: row.try_get("pricing_plan_code").map_err(row_error)?,
+        rate_multiplier: row.try_get("rate_multiplier").map_err(row_error)?,
+        official_price_multiplier: row.try_get("official_price_multiplier").map_err(row_error)?,
+    }
+    .try_into_domain()
+}
+
+fn row_error(error: sqlx::Error) -> DomainError {
+    DomainError::new(error.to_string())
 }

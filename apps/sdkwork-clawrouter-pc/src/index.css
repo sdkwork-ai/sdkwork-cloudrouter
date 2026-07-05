@@ -19,7 +19,11 @@
 @source "../../../../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-payment/src";
 @source "../../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-order/src";
 @source "../../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/*/src";
+@source "../../../../sdkwork-assets/apps/sdkwork-assets-pc/packages/*/src";
 @source "../../../../sdkwork-image/apps/sdkwork-image-pc/packages/*/src";
+@source "../../../../sdkwork-video/apps/sdkwork-video-pc/packages/*/src";
+@source "../../../../sdkwork-music/apps/sdkwork-music-pc/packages/*/src";
+@source "../../../../sdkwork-audio/apps/sdkwork-audio-pc/packages/*/src";
 @source "../../../../sdkwork-models/apps/sdkwork-models-pc/packages/*/src";
 
 @custom-variant dark (&:is(.dark *));
@@ -48,13 +52,3902 @@
 :root {
   --sdkwork-portal-navbar-height: 4rem;
   --sdkwork-documents-subheader-height: 3.375rem;
+  --sdkwork-playground-workspace-sidebar-width: 28rem;
+  --sdkwork-playground-chat-sidebar-width: 16rem;
+  --sdkwork-playground-rail-width: 3.5rem;
+  --sdkwork-sidebar-accent-rgb: 229 80 57;
+  --sdkwork-sidebar-item-radius: 10px;
+  --sdkwork-sidebar-transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/*
- * Documents shell layout offsets for host apps with a fixed portal navbar.
- * AppShellLayout applies sdkwork-clawrouter-documents-host-offset on embedded
- * documents routes so page content clears the fixed Navbar.
- */
+/* Portal sidebar navigation (console / admin) */
+.sdkwork-portal-sidebar-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem 0.625rem 0.875rem;
+  border: 1px solid transparent;
+  border-radius: var(--sdkwork-sidebar-item-radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  color: rgb(71 85 105);
+  text-decoration: none;
+  transition:
+    background-color var(--sdkwork-sidebar-transition),
+    border-color var(--sdkwork-sidebar-transition),
+    color var(--sdkwork-sidebar-transition),
+    box-shadow var(--sdkwork-sidebar-transition),
+    transform var(--sdkwork-sidebar-transition);
+}
+
+.dark .sdkwork-portal-sidebar-item {
+  color: rgb(148 163 184);
+}
+
+.sdkwork-portal-sidebar-item:hover {
+  color: rgb(15 23 42);
+  background-color: rgb(241 245 249);
+  border-color: rgb(226 232 240 / 0.85);
+}
+
+.dark .sdkwork-portal-sidebar-item:hover {
+  color: rgb(226 232 240);
+  background-color: rgb(255 255 255 / 0.05);
+  border-color: rgb(255 255 255 / 0.07);
+}
+
+.sdkwork-portal-sidebar-item:focus-visible {
+  outline: 2px solid rgb(var(--sdkwork-sidebar-accent-rgb) / 0.45);
+  outline-offset: 2px;
+}
+
+.sdkwork-portal-sidebar-item[data-active='true'] {
+  color: rgb(var(--sdkwork-sidebar-accent-rgb));
+  font-weight: 600;
+  background: linear-gradient(
+    90deg,
+    rgb(var(--sdkwork-sidebar-accent-rgb) / 0.17) 0%,
+    rgb(var(--sdkwork-sidebar-accent-rgb) / 0.07) 54%,
+    transparent 100%
+  );
+  border-color: rgb(var(--sdkwork-sidebar-accent-rgb) / 0.24);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 1px 3px rgb(var(--sdkwork-sidebar-accent-rgb) / 0.1);
+}
+
+.dark .sdkwork-portal-sidebar-item[data-active='true'] {
+  color: rgb(252 211 207);
+  background: linear-gradient(
+    90deg,
+    rgb(var(--sdkwork-sidebar-accent-rgb) / 0.24) 0%,
+    rgb(var(--sdkwork-sidebar-accent-rgb) / 0.09) 56%,
+    transparent 100%
+  );
+  border-color: rgb(var(--sdkwork-sidebar-accent-rgb) / 0.3);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.05),
+    0 6px 18px rgb(0 0 0 / 0.22);
+}
+
+.sdkwork-portal-sidebar-item[data-active='true']::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 58%;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(
+    180deg,
+    rgb(var(--sdkwork-sidebar-accent-rgb) / 0.55),
+    rgb(var(--sdkwork-sidebar-accent-rgb)),
+    rgb(var(--sdkwork-sidebar-accent-rgb) / 0.55)
+  );
+  box-shadow: 0 0 12px rgb(var(--sdkwork-sidebar-accent-rgb) / 0.55);
+  transform: translateY(-50%);
+}
+
+.sdkwork-portal-sidebar-item__icon {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  transition:
+    color var(--sdkwork-sidebar-transition),
+    transform var(--sdkwork-sidebar-transition),
+    filter var(--sdkwork-sidebar-transition);
+}
+
+.sdkwork-portal-sidebar-item:hover .sdkwork-portal-sidebar-item__icon {
+  transform: scale(1.04);
+}
+
+.sdkwork-portal-sidebar-item[data-active='true'] .sdkwork-portal-sidebar-item__icon {
+  color: rgb(var(--sdkwork-sidebar-accent-rgb));
+  filter: drop-shadow(0 0 6px rgb(var(--sdkwork-sidebar-accent-rgb) / 0.38));
+}
+
+.dark .sdkwork-portal-sidebar-item[data-active='true'] .sdkwork-portal-sidebar-item__icon {
+  color: rgb(255 255 255);
+}
+
+.sdkwork-portal-sidebar-item__label {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.sdkwork-portal-sidebar-item--icon-only {
+  justify-content: center;
+  padding-inline: 0.75rem;
+}
+
+.sdkwork-portal-sidebar-group-label {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  border: 0;
+  background: transparent;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1rem;
+  text-transform: uppercase;
+  color: rgb(148 163 184);
+  transition: color var(--sdkwork-sidebar-transition);
+}
+
+.dark .sdkwork-portal-sidebar-group-label {
+  color: rgb(100 116 139);
+}
+
+.sdkwork-portal-sidebar-group-label:hover {
+  color: rgb(71 85 105);
+}
+
+.dark .sdkwork-portal-sidebar-group-label:hover {
+  color: rgb(203 213 225);
+}
+
+.sdkwork-portal-sidebar-group-label[data-active='true'] {
+  color: rgb(var(--sdkwork-sidebar-accent-rgb));
+}
+
+.dark .sdkwork-portal-sidebar-group-label[data-active='true'] {
+  color: rgb(244 162 140);
+}
+
+/* Playground modality rail — icon-only nav with hover tooltips */
+.sdkwork-playground-host {
+  background-color: var(--theme-aware-surface, #f8fafc);
+}
+
+html.dark .theme-aware-dark-surface.sdkwork-playground-host {
+  background-color: var(--sdkwork-playground-page-bg, #0a0a0a);
+}
+
+.sdkwork-playground-page {
+  background-color: var(--theme-aware-surface, #f8fafc);
+  color: var(--theme-aware-text, #0f172a);
+}
+
+html.dark .theme-aware-dark-surface.sdkwork-playground-page {
+  background-color: #0a0a0a;
+  color: rgb(241 245 249);
+}
+
+.sdkwork-playground-main {
+  background-color: var(--sdkwork-playground-workspace-sidebar-bg, #151515);
+  color: var(--sdkwork-generation-workspace-text, rgb(248 250 252));
+}
+
+.sdkwork-playground-workspace-sidebar--agent {
+  background-color: var(--sdkwork-playground-workspace-sidebar-bg, #151515) !important;
+}
+
+.sdkwork-generation-empty,
+.sdkwork-studio-empty {
+  border: none;
+  border-radius: 12px;
+  background: var(--sdkwork-image-generation-surface, #1a1a1f);
+  color: var(--sdkwork-image-generation-text-muted, #64748b);
+}
+
+.sdkwork-generation-empty h3,
+.sdkwork-studio-empty h3 {
+  color: var(--sdkwork-image-generation-text, #f1f5f9);
+}
+
+.sdkwork-generation-empty p,
+.sdkwork-studio-empty p {
+  color: var(--sdkwork-image-generation-text-muted, #64748b);
+}
+
+.sdkwork-generation-empty-icon,
+.sdkwork-studio-empty-icon {
+  background: var(--sdkwork-image-generation-empty-icon-bg, #1c1c22);
+  color: var(--sdkwork-image-generation-text-secondary, #94a3b8);
+  border-radius: 12px;
+}
+
+.sdkwork-playground-preview-close {
+  background: var(--sdkwork-playground-preview-control-bg, rgb(255 255 255 / 0.05));
+  color: var(--sdkwork-playground-preview-control-color, rgb(148 163 184));
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.sdkwork-playground-preview-close:hover {
+  background: var(--sdkwork-playground-preview-control-hover-bg, rgb(255 255 255 / 0.1));
+  color: var(--sdkwork-playground-preview-control-hover-color, var(--sdkwork-generation-workspace-text));
+}
+
+.sdkwork-playground-preview-nav {
+  border: none;
+  background: var(--sdkwork-playground-preview-nav-bg, rgb(0 0 0 / 0.6));
+  color: var(--sdkwork-playground-preview-nav-color, #fff);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--sdkwork-playground-preview-nav-shadow, 0 20px 25px rgb(0 0 0 / 0.25));
+}
+
+.sdkwork-playground-preview-nav:hover {
+  background: var(--sdkwork-playground-preview-nav-hover-bg, rgb(0 0 0 / 0.9));
+}
+
+.sdkwork-playground-preview-download {
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.sdkwork-playground-preview-download[data-enabled='true'] {
+  background: var(--sdkwork-playground-preview-control-bg, rgb(255 255 255 / 0.1));
+  color: var(--sdkwork-playground-preview-control-hover-color, #fff);
+}
+
+.sdkwork-playground-preview-download[data-enabled='true']:hover {
+  background: var(--sdkwork-playground-preview-control-hover-bg, rgb(255 255 255 / 0.15));
+}
+
+.sdkwork-playground-preview-download[data-enabled='false'] {
+  cursor: not-allowed;
+  background: var(--sdkwork-playground-preview-control-bg, rgb(255 255 255 / 0.05));
+  color: var(--sdkwork-image-generation-text-muted, #64748b);
+}
+
+.sdkwork-playground-preview-icon-btn {
+  border: none;
+  border-radius: 8px;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.sdkwork-playground-preview-icon-btn[data-enabled='true'] {
+  color: var(--sdkwork-playground-preview-control-color, rgb(148 163 184));
+}
+
+.sdkwork-playground-preview-icon-btn[data-enabled='true']:hover {
+  background: var(--sdkwork-playground-preview-control-hover-bg, rgb(255 255 255 / 0.1));
+  color: var(--sdkwork-playground-preview-control-hover-color, #fff);
+}
+
+.sdkwork-playground-preview-icon-btn[data-enabled='false'] {
+  cursor: not-allowed;
+  color: var(--sdkwork-image-generation-text-subtle, #475569);
+}
+
+.sdkwork-playground-preview-audio-stage {
+  border: none;
+  border-radius: 16px;
+  background: var(--sdkwork-playground-preview-panel-bg, #111);
+  color: var(--sdkwork-playground-preview-control-color, rgb(148 163 184));
+}
+
+.sdkwork-playground-preview-audio-wave > div {
+  background: var(--sdkwork-studio-accent, #6366f1);
+  opacity: 0.8;
+}
+
+.sdkwork-studio-segmented__tabs,
+.sdkwork-image-generation-reference__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border: none;
+  border-radius: 10px;
+  background: var(--sdkwork-segmented-track-bg);
+}
+
+.sdkwork-studio-segmented__tab,
+.sdkwork-image-generation-reference__tab {
+  display: inline-flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  border: none;
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--sdkwork-segmented-tab-color);
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.sdkwork-studio-segmented__tab-icon,
+.sdkwork-image-generation-reference__tab-icon {
+  color: var(--sdkwork-segmented-tab-icon-color);
+  transition: color 0.15s ease;
+}
+
+.sdkwork-studio-segmented__tab:hover:not([data-active='true']),
+.sdkwork-image-generation-reference__tab:hover:not([data-active='true']) {
+  color: var(--sdkwork-segmented-tab-hover-color);
+  background: var(--sdkwork-segmented-tab-hover-bg);
+}
+
+.sdkwork-studio-segmented__tab[data-active='true'],
+.sdkwork-image-generation-reference__tab[data-active='true'] {
+  color: var(--sdkwork-segmented-tab-active-color);
+  font-weight: 600;
+  background: var(--sdkwork-segmented-tab-active-bg);
+}
+
+.sdkwork-studio-segmented__tab[data-active='true'] .sdkwork-studio-segmented__tab-icon,
+.sdkwork-studio-segmented__tab[data-active='true'] .sdkwork-image-generation-reference__tab-icon,
+.sdkwork-image-generation-reference__tab[data-active='true'] .sdkwork-image-generation-reference__tab-icon {
+  color: var(--sdkwork-segmented-tab-active-icon-color);
+}
+
+.sdkwork-playground-preview-overlay {
+  background-color: var(--sdkwork-playground-preview-overlay-bg, #0a0a0a);
+}
+
+.sdkwork-playground-preview-panel {
+  background-color: var(--sdkwork-playground-preview-panel-bg, #111);
+  color: var(--sdkwork-generation-workspace-text, rgb(226 232 240));
+}
+
+.sdkwork-playground-preview-sidebar {
+  background-color: var(--sdkwork-playground-preview-sidebar-bg, #111111);
+  border-color: var(--theme-aware-border, rgb(255 255 255 / 0.06));
+}
+
+.sdkwork-playground-filter-bar {
+  border: none;
+  border-radius: 8px;
+  background: var(--sdkwork-image-generation-surface, #1a1a1a);
+}
+
+.sdkwork-playground-filter-trigger {
+  color: var(--sdkwork-image-generation-text-emphasis, #cbd5e1);
+}
+
+.sdkwork-playground-filter-trigger[data-active='true'] {
+  background: var(--sdkwork-image-generation-control-hover, #2a2a2a);
+  color: var(--sdkwork-image-generation-text, #f8fafc);
+}
+
+.sdkwork-playground-filter-menu {
+  border: none;
+  border-radius: 12px;
+  background: var(--sdkwork-image-generation-surface, #1a1a1a);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.35);
+}
+
+.sdkwork-playground-filter-field {
+  background: var(--sdkwork-image-generation-control-bg, #242424);
+}
+
+.sdkwork-playground-filter-option {
+  color: var(--sdkwork-image-generation-text-emphasis, #e2e8f0);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.sdkwork-playground-filter-option:hover {
+  background: var(--sdkwork-image-generation-control-hover, #2a2a2a);
+}
+
+.sdkwork-playground-filter-search {
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--sdkwork-playground-filter-icon, rgb(148 163 184));
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.sdkwork-playground-filter-search[data-active='true'] {
+  background: var(--sdkwork-playground-filter-icon-active-bg, rgb(255 255 255 / 0.1));
+  color: var(--sdkwork-playground-filter-icon-active-text, rgb(255 255 255));
+}
+
+.sdkwork-playground-filter-search:hover {
+  color: var(--sdkwork-playground-filter-icon-hover-text, rgb(255 255 255));
+}
+
+.sdkwork-playground-filter-divider {
+  margin-inline: 0.25rem;
+  height: 1rem;
+  width: 1px;
+  background: var(--sdkwork-playground-filter-divider, rgb(255 255 255 / 0.1));
+}
+
+.sdkwork-playground-filter-input {
+  width: 12rem;
+  border: none;
+  background: transparent;
+  padding-inline: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--sdkwork-playground-filter-input-text, rgb(255 255 255));
+  outline: none;
+}
+
+.sdkwork-playground-filter-input::placeholder {
+  color: var(--sdkwork-playground-filter-input-placeholder, rgb(100 116 139));
+}
+
+.sdkwork-playground-filter-field-label {
+  width: 100%;
+  font-size: 0.875rem;
+  color: var(--sdkwork-playground-filter-field-text, rgb(100 116 139));
+}
+
+.sdkwork-playground-filter-field-icon {
+  height: 1rem;
+  width: 1rem;
+  color: var(--sdkwork-playground-filter-field-text, rgb(100 116 139));
+}
+
+.sdkwork-playground-filter-field-separator {
+  color: var(--sdkwork-playground-filter-field-separator, rgb(71 85 105));
+}
+
+.sdkwork-playground-preview-meta-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--sdkwork-playground-preview-meta-label, rgb(100 116 139));
+}
+
+.sdkwork-playground-preview-meta-body {
+  font-size: 14px;
+  line-height: 1.625;
+  color: var(--sdkwork-playground-preview-meta-body, rgb(226 232 240));
+}
+
+.sdkwork-playground-preview-meta-details {
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  color: var(--sdkwork-playground-preview-meta-details, rgb(100 116 139));
+}
+
+.sdkwork-playground-preview-meta-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border-top: 1px solid var(--sdkwork-playground-preview-meta-footer-border, rgb(255 255 255 / 0.05));
+  padding-top: 1.5rem;
+}
+
+.sdkwork-playground-preview-empty-hint {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  color: var(--sdkwork-playground-preview-empty-hint, rgb(100 116 139));
+}
+
+.sdkwork-playground-preview-thumb {
+  position: relative;
+  height: 4rem;
+  width: 4rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 0.75rem;
+  opacity: 0.6;
+  transition: border-color 150ms ease, opacity 150ms ease, transform 150ms ease;
+}
+
+@media (min-width: 768px) {
+  .sdkwork-playground-preview-thumb {
+    height: 5rem;
+    width: 5rem;
+  }
+}
+
+.sdkwork-playground-preview-thumb[data-active='true'] {
+  border-color: var(--sdkwork-playground-preview-thumb-active-border, var(--sdkwork-studio-accent));
+  opacity: 1;
+  transform: scale(1);
+}
+
+.sdkwork-playground-preview-thumb[data-active='false']:hover {
+  border-color: var(--sdkwork-playground-preview-thumb-hover-border, rgb(255 255 255 / 0.2));
+  opacity: 1;
+  transform: scale(1.02);
+}
+
+.sdkwork-playground-preview-thumb__overlay {
+  position: absolute;
+  inset: 0;
+  transition: background-color 150ms ease;
+}
+
+.sdkwork-playground-preview-thumb[data-active='true'] .sdkwork-playground-preview-thumb__overlay {
+  background: rgb(0 0 0 / 0);
+}
+
+.sdkwork-playground-preview-thumb[data-active='false'] .sdkwork-playground-preview-thumb__overlay {
+  background: rgb(0 0 0 / 0.2);
+}
+
+.sdkwork-playground-preview-thumb[data-active='false']:hover .sdkwork-playground-preview-thumb__overlay {
+  background: rgb(0 0 0 / 0);
+}
+
+.sdkwork-playground-preview-thumb__badge {
+  position: absolute;
+  left: 0.375rem;
+  top: 0.25rem;
+  border-radius: 0.25rem;
+  background: rgb(0 0 0 / 0.4);
+  padding: 0.125rem 0.375rem;
+  backdrop-filter: blur(4px);
+}
+
+.sdkwork-playground-preview-thumb__badge-label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--sdkwork-playground-preview-thumb-badge-text, rgb(255 255 255 / 0.9));
+}
+
+.sdkwork-playground-preview-audio-icon {
+  margin-bottom: 1rem;
+  height: 2.5rem;
+  width: 2.5rem;
+  opacity: 0.8;
+  color: var(--sdkwork-playground-preview-audio-icon, var(--sdkwork-studio-accent-text, rgb(129 140 248)));
+}
+
+.sdkwork-playground-preview-action {
+  border: 1px solid rgb(255 255 255 / 0.05);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.sdkwork-playground-preview-action[data-enabled='true'] {
+  background: var(--sdkwork-image-generation-surface, #1a1a1a);
+  color: var(--sdkwork-image-generation-text-secondary, #cbd5e1);
+}
+
+.sdkwork-playground-preview-action[data-enabled='true']:hover {
+  background: rgb(255 255 255 / 0.1);
+  color: var(--sdkwork-image-generation-text, #f8fafc);
+}
+
+.sdkwork-playground-preview-action[data-enabled='false'] {
+  cursor: not-allowed;
+  background: var(--sdkwork-playground-preview-sidebar-bg, #151515);
+  color: var(--sdkwork-image-generation-text-muted, #475569);
+}
+
+.sdkwork-playground-chat-code-block {
+  border-radius: 12px;
+  border: 1px solid var(--sdkwork-playground-chat-code-border, rgb(255 255 255 / 0.1));
+  background: var(--sdkwork-playground-chat-code-bg, #0d1117);
+  color: var(--sdkwork-playground-chat-code-text, #f1f5f9);
+  box-shadow: none;
+}
+
+.sdkwork-playground-chat-code-block[data-tone='user'] {
+  border-color: rgb(15 23 42 / 0.1);
+  background: var(--sdkwork-playground-chat-code-user-bg, #0f1117);
+  color: #f8fafc;
+}
+
+.sdkwork-playground-chat-code-block[data-tone='danger'] {
+  border-color: rgb(252 165 165 / 0.2);
+  background: var(--sdkwork-playground-chat-code-danger-bg, #0d1117);
+  color: #fef2f2;
+}
+
+.sdkwork-playground-chat-code-block__header {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--sdkwork-playground-chat-code-header-border, rgb(255 255 255 / 0.1));
+  padding: 0.5rem 1rem;
+  font-size: 12px;
+}
+
+.sdkwork-playground-chat-code-block[data-tone='user'] .sdkwork-playground-chat-code-block__header {
+  border-color: rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.07);
+  color: #cbd5e1;
+}
+
+.sdkwork-playground-chat-code-block[data-tone='danger'] .sdkwork-playground-chat-code-block__header {
+  border-color: rgb(252 165 165 / 0.2);
+  background: rgb(248 113 113 / 0.08);
+  color: #fecaca;
+}
+
+.sdkwork-playground-chat-code-block[data-tone='assistant'] .sdkwork-playground-chat-code-block__header {
+  background: rgb(255 255 255 / 0.055);
+  color: #94a3b8;
+}
+
+.sdkwork-playground-chat-code-block__language {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: normal;
+  color: var(--sdkwork-playground-chat-code-language, rgb(148 163 184));
+}
+
+.sdkwork-playground-chat-code-block__copy {
+  display: inline-flex;
+  height: 1.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.375rem;
+  border: none;
+  border-radius: 0.375rem;
+  background: transparent;
+  padding-inline: 0.5rem;
+  font-size: 12px;
+  color: var(--sdkwork-playground-chat-code-copy, rgb(148 163 184));
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sdkwork-playground-chat-code-block__copy:hover {
+  background: var(--sdkwork-playground-chat-code-copy-hover-bg, rgb(255 255 255 / 0.1));
+  color: var(--sdkwork-playground-chat-code-copy-hover-text, rgb(248 250 252));
+}
+
+.sdkwork-playground-chat-code-token--comment {
+  color: var(--sdkwork-playground-chat-code-token-comment, rgb(100 116 139));
+}
+
+.sdkwork-playground-chat-code-token--string {
+  color: var(--sdkwork-playground-chat-code-token-string, rgb(110 231 183));
+}
+
+.sdkwork-playground-chat-code-token--number {
+  color: var(--sdkwork-playground-chat-code-token-number, rgb(252 211 77));
+}
+
+.sdkwork-playground-chat-code-token--keyword {
+  color: var(--sdkwork-playground-chat-code-token-keyword, rgb(125 211 252));
+}
+
+.sdkwork-playground-chat-code-token--builtin {
+  color: var(--sdkwork-playground-chat-code-token-builtin, rgb(196 181 253));
+}
+
+.sdkwork-playground-chat-code-token--punct {
+  color: var(--sdkwork-playground-chat-code-token-punct, rgb(148 163 184));
+}
+
+.sdkwork-playground-chat-markdown {
+  min-width: 0;
+  max-width: 100%;
+  font-size: 15px;
+  line-height: 1.75rem;
+  letter-spacing: normal;
+  color: var(--sdkwork-playground-chat-markdown-text, rgb(241 245 249));
+}
+
+.sdkwork-playground-chat-markdown[data-tone='user'] {
+  --sdkwork-playground-chat-markdown-text: rgb(248 250 252);
+}
+
+.sdkwork-playground-chat-markdown[data-tone='danger'] {
+  --sdkwork-playground-chat-markdown-text: rgb(254 226 226);
+}
+
+.sdkwork-playground-chat-markdown[data-tone='assistant'] {
+  --sdkwork-playground-chat-markdown-text: rgb(241 245 249);
+}
+
+.sdkwork-playground-chat-markdown__blockquote {
+  margin-block: 1rem;
+  border-radius: 0.75rem;
+  border-left: 2px solid var(--sdkwork-playground-chat-markdown-blockquote-border, rgb(255 255 255 / 0.1));
+  padding: 0.75rem 1rem;
+  background: var(--sdkwork-playground-chat-markdown-blockquote-bg, rgb(255 255 255 / 0.04));
+  color: var(--sdkwork-playground-chat-markdown-blockquote-text, rgb(226 232 240));
+}
+
+.sdkwork-playground-chat-markdown__blockquote[data-tone='user'] {
+  border-color: rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.06);
+  color: rgb(241 245 249);
+}
+
+.sdkwork-playground-chat-markdown__blockquote[data-tone='danger'] {
+  border-color: rgb(252 165 165 / 0.4);
+  background: rgb(248 113 113 / 0.1);
+  color: rgb(254 226 226);
+}
+
+.sdkwork-playground-chat-markdown__blockquote[data-tone='assistant'] {
+  border-color: rgb(103 232 249 / 0.4);
+}
+
+.sdkwork-playground-chat-markdown__hr {
+  margin-block: 1.5rem;
+  border: 0;
+  border-top: 1px solid var(--sdkwork-playground-chat-markdown-divider, rgb(255 255 255 / 0.1));
+}
+
+.sdkwork-playground-chat-markdown__hr[data-tone='user'] {
+  border-top-color: rgb(255 255 255 / 0.15);
+}
+
+.sdkwork-playground-chat-markdown__hr[data-tone='danger'] {
+  border-top-color: rgb(252 165 165 / 0.2);
+}
+
+.sdkwork-playground-chat-markdown__inline-code {
+  border-radius: 0.375rem;
+  padding: 0.125rem 0.375rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.92em;
+  background: var(--sdkwork-playground-chat-markdown-inline-code-bg, rgb(255 255 255 / 0.1));
+  color: var(--sdkwork-playground-chat-markdown-inline-code-text, rgb(241 245 249));
+}
+
+.sdkwork-playground-chat-markdown__inline-code[data-tone='user'] {
+  background: rgb(255 255 255 / 0.12);
+  color: rgb(248 250 252);
+}
+
+.sdkwork-playground-chat-markdown__inline-code[data-tone='danger'] {
+  background: rgb(252 165 165 / 0.15);
+  color: rgb(254 242 242);
+}
+
+.sdkwork-playground-chat-markdown__math-display {
+  margin-block: 1rem;
+  max-width: 100%;
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  border: 1px solid var(--sdkwork-playground-chat-markdown-math-border, rgb(255 255 255 / 0.1));
+  background: var(--sdkwork-playground-chat-markdown-math-bg, rgb(255 255 255 / 0.035));
+  padding: 0.75rem 1rem;
+  text-align: center;
+  color: var(--sdkwork-playground-chat-markdown-text, rgb(241 245 249));
+}
+
+.sdkwork-playground-chat-markdown__math-display[data-tone='user'] {
+  border-color: rgb(255 255 255 / 0.12);
+  background: rgb(255 255 255 / 0.06);
+}
+
+.sdkwork-playground-chat-markdown__math-display[data-tone='danger'] {
+  border-color: rgb(252 165 165 / 0.2);
+  background: rgb(248 113 113 / 0.1);
+}
+
+.sdkwork-playground-preview-text-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--sdkwork-playground-preview-text-header-border, rgb(255 255 255 / 0.05));
+  padding: 1rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--sdkwork-playground-preview-text-header-text, rgb(148 163 184));
+}
+
+.sdkwork-playground-preview-text-header__icon {
+  height: 1.25rem;
+  width: 1.25rem;
+  color: var(--sdkwork-playground-preview-text-header-icon, rgb(165 180 252));
+}
+
+.sdkwork-playground-preview-text-body {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem;
+  font-size: 15px;
+  line-height: 1.75rem;
+  color: var(--sdkwork-playground-preview-text-body-text, var(--theme-aware-text, rgb(241 245 249)));
+}
+
+.sdkwork-generation-mode-bar {
+  border-top: 1px solid var(--sdkwork-image-generation-border, rgb(255 255 255 / 0.06));
+  background: var(--sdkwork-image-generation-bg, #151515);
+  backdrop-filter: none;
+}
+
+.sdkwork-generation-mode-popup {
+  border: none;
+  border-radius: 12px 12px 0 0;
+  background: var(--sdkwork-image-generation-settings-bg, #1a1a1f);
+  box-shadow: none;
+}
+
+.sdkwork-generation-mode-option {
+  border: none;
+  background: var(--sdkwork-image-generation-settings-option-bg, #16161c);
+  color: var(--sdkwork-image-generation-text-muted, #64748b);
+}
+
+.sdkwork-generation-mode-option:hover:not(:disabled) {
+  background: var(--sdkwork-image-generation-settings-option-hover-bg, #1c1c24);
+  color: var(--sdkwork-image-generation-text-secondary, #94a3b8);
+}
+
+.sdkwork-generation-mode-option[data-selected='true'] {
+  background: var(--sdkwork-image-generation-settings-option-active-bg, #1f1f27);
+  color: var(--sdkwork-image-generation-settings-option-active-text, #f8fafc);
+}
+
+.sdkwork-generation-mode-option[data-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.sdkwork-generation-mode-slider {
+  background: var(--sdkwork-studio-control-bg, var(--sdkwork-image-generation-control-bg));
+  accent-color: var(--sdkwork-studio-accent, #6366f1);
+}
+
+.sdkwork-generation-mode-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--sdkwork-studio-accent, #6366f1);
+}
+
+.sdkwork-generation-mode-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--sdkwork-studio-accent, #6366f1);
+}
+
+.sdkwork-generation-mode-bar-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-inline: -0.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  padding: 0.375rem 0.5rem;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.sdkwork-generation-mode-bar-toggle:hover {
+  background: var(--sdkwork-studio-control-hover-bg, rgb(255 255 255 / 0.05));
+}
+
+.sdkwork-generation-mode-bar-icon,
+.sdkwork-generation-mode-bar-chevron,
+.sdkwork-generation-mode-popup-head-icon {
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+}
+
+.sdkwork-generation-mode-bar-summary {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--sdkwork-studio-text-secondary, var(--sdkwork-image-generation-text-secondary));
+}
+
+.sdkwork-generation-mode-popup-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--sdkwork-studio-border, var(--sdkwork-image-generation-border));
+  padding: 1rem 1.5rem;
+}
+
+.sdkwork-generation-mode-popup-head-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sdkwork-generation-mode-popup-head-title h3 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--sdkwork-studio-text-emphasis, var(--sdkwork-image-generation-text-emphasis));
+}
+
+.sdkwork-generation-mode-popup-close {
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  padding: 0.25rem;
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.sdkwork-generation-mode-popup-close:hover {
+  background: var(--sdkwork-studio-control-hover-bg, rgb(255 255 255 / 0.1));
+  color: var(--sdkwork-studio-text-secondary, var(--sdkwork-image-generation-text-secondary));
+}
+
+.sdkwork-generation-mode-section-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+}
+
+.sdkwork-generation-mode-section-divider {
+  margin-bottom: 1.5rem;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--sdkwork-studio-border-subtle, rgb(255 255 255 / 0.06)),
+    transparent
+  );
+}
+
+.sdkwork-generation-mode-value-chip {
+  border-radius: 0.375rem;
+  background: var(--sdkwork-studio-control-bg, var(--sdkwork-image-generation-control-bg));
+  padding: 0.125rem 0.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--sdkwork-studio-text-secondary, var(--sdkwork-image-generation-text-secondary));
+}
+
+.sdkwork-generation-mode-range-label {
+  width: 2rem;
+  font-size: 0.75rem;
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+}
+
+.sdkwork-generation-mode-option-check {
+  position: absolute;
+  left: 0.625rem;
+  top: 50%;
+  height: 0.875rem;
+  width: 0.875rem;
+  transform: translateY(-50%);
+  color: var(--sdkwork-studio-accent-text, #22d3ee);
+}
+
+.sdkwork-generation-mode-vip-badge {
+  position: absolute;
+  right: 0.375rem;
+  top: 0.375rem;
+  border: 1px solid rgb(245 158 11 / 0.3);
+  border-radius: 0.375rem;
+  background: linear-gradient(to bottom, rgb(245 158 11 / 0.25), rgb(217 119 6 / 0.15));
+  padding: 0.125rem 0.375rem;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--sdkwork-generation-mode-vip-text, #f59e0b);
+}
+
+.sdkwork-generation-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--sdkwork-studio-border, var(--sdkwork-image-generation-border));
+  border-radius: 0.75rem;
+  background: transparent;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+  cursor: pointer;
+}
+
+.sdkwork-generation-mode-toggle[data-active='true'] {
+  border-color: color-mix(in srgb, var(--sdkwork-studio-accent, #6366f1) 30%, transparent);
+  background: color-mix(in srgb, var(--sdkwork-studio-accent, #6366f1) 8%, transparent);
+  color: var(--sdkwork-studio-text-emphasis, var(--sdkwork-image-generation-text-emphasis));
+}
+
+.sdkwork-generation-mode-toggle[data-active='false'] {
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+}
+
+.sdkwork-generation-mode-toggle[data-active='false']:hover {
+  border-color: var(--sdkwork-studio-border-strong, rgb(255 255 255 / 0.12));
+}
+
+.sdkwork-generation-mode-toggle-track {
+  position: relative;
+  display: flex;
+  height: 1rem;
+  width: 1.75rem;
+  align-items: center;
+  border-radius: 9999px;
+  transition: background-color 200ms ease;
+}
+
+.sdkwork-generation-mode-toggle-track[data-active='true'] {
+  background: var(--sdkwork-studio-accent, #6366f1);
+}
+
+.sdkwork-generation-mode-toggle-track[data-active='false'] {
+  background: var(--sdkwork-studio-control-bg, var(--sdkwork-image-generation-control-bg));
+}
+
+.sdkwork-generation-mode-toggle-knob {
+  display: inline-block;
+  height: 0.75rem;
+  width: 0.75rem;
+  border-radius: 9999px;
+  background: #fff;
+  transition: transform 200ms ease;
+}
+
+.sdkwork-generation-mode-toggle-track[data-active='false'] .sdkwork-generation-mode-toggle-knob {
+  transform: translateX(0.125rem);
+}
+
+.sdkwork-generation-mode-toggle-track[data-active='true'] .sdkwork-generation-mode-toggle-knob {
+  transform: translateX(0.875rem);
+}
+
+.sdkwork-playground-chat-input-shell {
+  border: none;
+  background: var(--sdkwork-image-generation-surface, #1c1c1e);
+  box-shadow: none;
+}
+
+.sdkwork-playground-chat-input-shell:focus-within {
+  background: var(--sdkwork-image-generation-surface-focus, #1e1e24);
+}
+
+.sdkwork-playground-chat-input-chip {
+  border: none;
+  background: var(--sdkwork-image-generation-control-bg, #252528);
+  color: var(--sdkwork-image-generation-text-emphasis, #cbd5e1);
+}
+
+.sdkwork-playground-chat-input-chip[data-active='true'] {
+  background: var(--sdkwork-image-generation-control-hover, #2a2a2d);
+  color: var(--sdkwork-image-generation-text, #f8fafc);
+}
+
+.sdkwork-playground-chat-input-menu {
+  border: none;
+  border-radius: 12px;
+  background: var(--sdkwork-image-generation-control-bg, #252528);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.35);
+}
+
+.sdkwork-playground-chat-input-model {
+  background: var(--sdkwork-image-generation-control-disabled, #202024);
+  color: var(--sdkwork-image-generation-text-muted, #64748b);
+}
+
+.sdkwork-playground-chat-input__attach-btn {
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.25rem;
+  border: none;
+  border-radius: 9999px;
+  background: var(--sdkwork-playground-chat-input-attach-bg, rgb(255 255 255 / 0.05));
+  color: var(--sdkwork-playground-chat-input-attach-text, rgb(255 255 255));
+  transition: background-color 150ms ease;
+}
+
+.sdkwork-playground-chat-input__attach-btn:hover {
+  background: var(--sdkwork-playground-chat-input-attach-hover-bg, rgb(255 255 255 / 0.1));
+}
+
+.sdkwork-playground-chat-input__placeholder {
+  flex: 1 1 auto;
+  overflow: hidden;
+  padding-inline: 0.75rem;
+  font-size: 15px;
+  color: var(--sdkwork-playground-chat-input-placeholder, rgb(148 163 184));
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.sdkwork-playground-chat-input__submit-idle {
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.25rem;
+  border: none;
+  border-radius: 9999px;
+  background: var(--sdkwork-playground-chat-input-submit-idle-bg, rgb(255 255 255 / 0.05));
+  color: var(--sdkwork-playground-chat-input-submit-idle-text, rgb(100 116 139));
+  cursor: not-allowed;
+}
+
+.sdkwork-playground-chat-input__textarea {
+  min-height: 112px;
+  max-height: 160px;
+  width: 100%;
+  resize: none;
+  overflow-y: auto;
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  line-height: 1.5rem;
+  color: var(--sdkwork-playground-chat-input-text, rgb(255 255 255));
+  outline: none;
+}
+
+.sdkwork-playground-chat-input__textarea::placeholder {
+  color: var(--sdkwork-playground-chat-input-text-placeholder, rgb(100 116 139));
+}
+
+.sdkwork-playground-chat-input__chip-chevron {
+  height: 0.875rem;
+  width: 0.875rem;
+  opacity: 0.8;
+  color: var(--sdkwork-playground-chat-input-chip-chevron, rgb(148 163 184));
+}
+
+.sdkwork-playground-chat-input__menu-label {
+  padding: 0.5rem 0.75rem;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--sdkwork-playground-chat-input-menu-label, rgb(100 116 139));
+}
+
+.sdkwork-playground-chat-input__menu-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  border: none;
+  background: transparent;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-size: 0.875rem;
+  color: var(--sdkwork-playground-chat-input-menu-item-text, rgb(226 232 240));
+  transition: background-color 150ms ease;
+}
+
+.sdkwork-playground-chat-input__menu-item:hover {
+  background: var(--sdkwork-playground-chat-input-menu-item-hover-bg, rgb(255 255 255 / 0.05));
+}
+
+.sdkwork-playground-chat-input__menu-item-check {
+  color: var(--sdkwork-playground-chat-input-menu-item-check, var(--sdkwork-studio-accent-text, rgb(34 211 238)));
+}
+
+.sdkwork-playground-chat-input__submit {
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 9999px;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.sdkwork-playground-chat-input__submit[data-enabled='true'] {
+  background: var(--sdkwork-playground-chat-submit-bg, var(--sdkwork-studio-accent));
+  color: var(--sdkwork-playground-chat-submit-text, #ffffff);
+}
+
+.sdkwork-playground-chat-input__submit[data-enabled='true']:hover {
+  background: var(--sdkwork-playground-chat-submit-hover-bg, var(--sdkwork-studio-accent-hover));
+}
+
+.sdkwork-playground-chat-input__submit[data-enabled='false'] {
+  background: var(--sdkwork-playground-chat-submit-disabled-bg, rgb(255 255 255 / 0.05));
+  color: var(--sdkwork-playground-chat-submit-disabled-text, rgb(71 85 105));
+  cursor: not-allowed;
+}
+
+.sdkwork-playground-chat-error-banner,
+.sdkwork-playground-chat-error-inline {
+  min-width: 0;
+  border-radius: 0.75rem;
+  border: 1px solid var(--sdkwork-playground-chat-error-border, rgb(248 113 113 / 0.3));
+  background: var(--sdkwork-playground-chat-error-bg, rgb(239 68 68 / 0.1));
+  color: var(--sdkwork-playground-chat-error-text, rgb(254 226 226));
+}
+
+.sdkwork-playground-chat-error-banner {
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+}
+
+.sdkwork-playground-chat-error-inline {
+  margin-top: 0.75rem;
+  max-width: 28rem;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
+
+.sdkwork-playground-chat-error-divider {
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--sdkwork-playground-chat-error-divider, rgb(252 165 165 / 0.2));
+  padding-top: 0.75rem;
+}
+
+.sdkwork-playground-chat-error-panel {
+  display: flex;
+  min-width: 0;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  background: var(--sdkwork-playground-chat-error-panel-bg, rgb(69 10 10 / 0.3));
+  padding: 0.5rem 0.75rem;
+  color: var(--sdkwork-playground-chat-error-text, rgb(254 226 226));
+}
+
+.sdkwork-playground-chat-error-panel__icon,
+.sdkwork-playground-chat-message-meta__failed-icon {
+  flex-shrink: 0;
+  color: var(--sdkwork-playground-chat-error-icon, rgb(252 165 165));
+}
+
+.sdkwork-playground-chat-error-panel__icon {
+  margin-top: 0.125rem;
+  height: 1rem;
+  width: 1rem;
+}
+
+.sdkwork-playground-chat-message-meta__failed-icon {
+  height: 0.75rem;
+  width: 0.75rem;
+}
+
+.sdkwork-playground-agent-error {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  color: var(--sdkwork-playground-chat-error-text, rgb(254 226 226));
+}
+
+.sdkwork-playground-rail {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  width: var(--sdkwork-playground-rail-width, 3.5rem);
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  border-right: 1px solid var(--sdkwork-playground-rail-border, rgb(255 255 255 / 0.1));
+  background: var(--sdkwork-playground-rail-bg, #0a0a0a);
+  padding-block: 0.625rem;
+  padding-inline: 0.375rem;
+}
+
+.sdkwork-playground-rail-divider {
+  margin-block: 0.375rem;
+  height: 1px;
+  width: 1.5rem;
+  flex-shrink: 0;
+  background: var(--sdkwork-playground-rail-divider, rgb(255 255 255 / 0.07));
+}
+
+.sdkwork-playground-rail-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+  border-radius: 0.625rem;
+  background: transparent;
+  color: var(--sdkwork-playground-rail-item-color, rgb(100 116 139));
+  cursor: pointer;
+  transition:
+    background-color var(--sdkwork-sidebar-transition),
+    border-color var(--sdkwork-sidebar-transition),
+    color var(--sdkwork-sidebar-transition),
+    box-shadow var(--sdkwork-sidebar-transition),
+    transform var(--sdkwork-sidebar-transition);
+}
+
+.sdkwork-playground-rail-item:hover {
+  color: var(--sdkwork-playground-rail-item-hover-color, rgb(226 232 240));
+  background-color: var(--sdkwork-playground-rail-item-hover-bg, rgb(255 255 255 / 0.06));
+  border-color: var(--sdkwork-playground-rail-item-hover-border, rgb(255 255 255 / 0.06));
+}
+
+.sdkwork-playground-rail-item:focus-visible {
+  outline: 2px solid rgb(var(--sdkwork-sidebar-accent-rgb) / 0.45);
+  outline-offset: 2px;
+}
+
+.sdkwork-playground-rail-item[data-active='true'] {
+  color: var(--sdkwork-playground-rail-item-active-color, rgb(252 211 207));
+  background: linear-gradient(
+    135deg,
+    rgb(var(--sdkwork-sidebar-accent-rgb) / 0.22) 0%,
+    rgb(var(--sdkwork-sidebar-accent-rgb) / 0.08) 100%
+  );
+  border-color: rgb(var(--sdkwork-sidebar-accent-rgb) / 0.28);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    0 2px 8px rgb(var(--sdkwork-sidebar-accent-rgb) / 0.12);
+}
+
+.sdkwork-playground-rail-item[data-active='true']::before {
+  content: '';
+  position: absolute;
+  left: -0.375rem;
+  top: 50%;
+  width: 3px;
+  height: 52%;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(
+    180deg,
+    rgb(var(--sdkwork-sidebar-accent-rgb) / 0.55),
+    rgb(var(--sdkwork-sidebar-accent-rgb)),
+    rgb(var(--sdkwork-sidebar-accent-rgb) / 0.55)
+  );
+  box-shadow: 0 0 10px rgb(var(--sdkwork-sidebar-accent-rgb) / 0.5);
+  transform: translateY(-50%);
+}
+
+.sdkwork-playground-rail-item__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  transition:
+    color var(--sdkwork-sidebar-transition),
+    transform var(--sdkwork-sidebar-transition);
+}
+
+.sdkwork-playground-rail-item__svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  stroke: currentColor;
+  transition:
+    fill var(--sdkwork-sidebar-transition),
+    stroke var(--sdkwork-sidebar-transition),
+    stroke-width var(--sdkwork-sidebar-transition),
+    transform var(--sdkwork-sidebar-transition);
+}
+
+/* Custom outline/filled icon pairs (e.g. image generation) */
+.sdkwork-playground-rail-item__svg--outline,
+.sdkwork-playground-rail-item__svg--outline * {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+}
+
+.sdkwork-playground-rail-item__svg--filled {
+  fill: currentColor;
+  stroke: none;
+}
+
+.sdkwork-playground-rail-item__svg--filled * {
+  fill: currentColor;
+  stroke: none;
+}
+
+.sdkwork-playground-rail-item[data-active='true'] .sdkwork-playground-rail-item__svg--filled {
+  color: rgb(255 255 255);
+}
+
+/* Inactive: uniform outline (Lucide icons only) */
+.sdkwork-playground-rail-item:not([data-active='true']) .sdkwork-playground-rail-item__icon:not([data-icon-pair='true']) .sdkwork-playground-rail-item__svg,
+.sdkwork-playground-rail-item:not([data-active='true']) .sdkwork-playground-rail-item__icon:not([data-icon-pair='true']) .sdkwork-playground-rail-item__svg * {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+}
+
+/* Active: Lucide auto-fill rules */
+.sdkwork-playground-rail-item[data-active='true'] .sdkwork-playground-rail-item__icon:not([data-icon-pair='true']) .sdkwork-playground-rail-item__svg,
+.sdkwork-playground-rail-item[data-active='true'] .sdkwork-playground-rail-item__icon:not([data-icon-pair='true']) .sdkwork-playground-rail-item__svg * {
+  stroke: currentColor;
+}
+
+.sdkwork-playground-rail-item[data-active='true'] .sdkwork-playground-rail-item__icon:not([data-icon-pair='true']) .sdkwork-playground-rail-item__svg {
+  color: var(--sdkwork-playground-rail-active-icon-color, rgb(255 255 255));
+}
+
+.sdkwork-playground-rail-item[data-active='true'] .sdkwork-playground-rail-item__icon:not([data-icon-pair='true']) .sdkwork-playground-rail-item__svg rect {
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.25;
+}
+
+.sdkwork-playground-rail-item[data-active='true'] .sdkwork-playground-rail-item__icon:not([data-icon-pair='true']) .sdkwork-playground-rail-item__svg:has(rect) path,
+.sdkwork-playground-rail-item[data-active='true'] .sdkwork-playground-rail-item__icon:not([data-icon-pair='true']) .sdkwork-playground-rail-item__svg:has(rect) circle {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
+.sdkwork-playground-rail-item[data-active='true'] .sdkwork-playground-rail-item__icon:not([data-icon-pair='true']) .sdkwork-playground-rail-item__svg:not(:has(rect)):has(path:only-of-type) path {
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.25;
+}
+
+.sdkwork-playground-rail-item[data-active='true'] .sdkwork-playground-rail-item__icon:not([data-icon-pair='true']) .sdkwork-playground-rail-item__svg:not(:has(rect)):has(circle) circle {
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.25;
+}
+
+.sdkwork-playground-rail-item[data-active='true'] .sdkwork-playground-rail-item__icon:not([data-icon-pair='true']) .sdkwork-playground-rail-item__svg:not(:has(rect)):has(circle) path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
+.sdkwork-playground-rail-item[data-active='true'] .sdkwork-playground-rail-item__icon:not([data-icon-pair='true']) .sdkwork-playground-rail-item__svg:not(:has(rect)):not(:has(path:only-of-type)):not(:has(circle)) path {
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.25;
+}
+
+.sdkwork-playground-rail-item:hover .sdkwork-playground-rail-item__icon {
+  transform: scale(1.06);
+}
+
+.sdkwork-playground-rail-item[data-active='true'] .sdkwork-playground-rail-item__icon {
+  filter: drop-shadow(0 0 4px rgb(var(--sdkwork-sidebar-accent-rgb) / 0.35));
+}
+
+.sdkwork-playground-rail-item::after {
+  content: attr(aria-label);
+  position: absolute;
+  left: calc(100% + 0.625rem);
+  top: 50%;
+  z-index: 50;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid var(--sdkwork-playground-rail-tooltip-border, rgb(255 255 255 / 0.08));
+  border-radius: 0.5rem;
+  background: var(--sdkwork-playground-rail-tooltip-bg, rgb(26 26 26 / 0.96));
+  box-shadow: 0 8px 24px var(--sdkwork-playground-rail-tooltip-shadow, rgb(0 0 0 / 0.45));
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1rem;
+  white-space: nowrap;
+  color: var(--sdkwork-playground-rail-tooltip-text, rgb(241 245 249));
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-50%) translateX(-4px);
+  transition:
+    opacity var(--sdkwork-sidebar-transition),
+    transform var(--sdkwork-sidebar-transition);
+}
+
+.sdkwork-playground-rail-item:hover::after,
+.sdkwork-playground-rail-item:focus-visible::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* Playground chat session sidebar */
+.sdkwork-playground-chat-sidebar {
+  display: flex;
+  width: 100%;
+  max-height: 280px;
+  flex-shrink: 0;
+  flex-direction: column;
+  border-bottom: 1px solid var(--sdkwork-playground-chat-sidebar-border, rgb(255 255 255 / 0.07));
+  background: var(--sdkwork-playground-chat-sidebar-bg, #111111);
+}
+
+@media (width >= 64rem) {
+  .sdkwork-playground-chat-sidebar {
+    width: var(--sdkwork-playground-chat-sidebar-width, 16rem);
+    max-height: none;
+    height: 100%;
+    min-height: 0;
+    border-bottom: 0;
+    border-right: 1px solid var(--sdkwork-playground-chat-sidebar-border, rgb(255 255 255 / 0.07));
+  }
+}
+
+.sdkwork-playground-chat-sidebar__header {
+  flex-shrink: 0;
+  padding: 0.875rem 0.75rem 0.625rem;
+}
+
+.sdkwork-playground-chat-sidebar__new-chat {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 2.25rem;
+  border: 1px solid var(--sdkwork-playground-chat-new-border, rgb(255 255 255 / 0.1));
+  border-radius: var(--sdkwork-sidebar-item-radius);
+  background: transparent;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  color: var(--sdkwork-playground-chat-new-text, rgb(226 232 240));
+  cursor: pointer;
+  transition:
+    background-color var(--sdkwork-sidebar-transition),
+    border-color var(--sdkwork-sidebar-transition),
+    color var(--sdkwork-sidebar-transition);
+}
+
+.sdkwork-playground-chat-sidebar__new-chat:hover {
+  background: var(--sdkwork-playground-chat-new-hover-bg, rgb(255 255 255 / 0.06));
+  border-color: var(--sdkwork-playground-chat-new-hover-border, rgb(255 255 255 / 0.14));
+  color: var(--sdkwork-playground-chat-new-hover-text, rgb(255 255 255));
+}
+
+.sdkwork-playground-chat-sidebar__new-chat:focus-visible {
+  outline: 2px solid rgb(var(--sdkwork-sidebar-accent-rgb) / 0.45);
+  outline-offset: 2px;
+}
+
+.sdkwork-playground-chat-sidebar__new-chat:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.sdkwork-playground-chat-sidebar__section-label {
+  flex-shrink: 0;
+  padding: 0.375rem 0.875rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1rem;
+  text-transform: uppercase;
+  color: var(--sdkwork-playground-chat-label, rgb(100 116 139));
+}
+
+.sdkwork-playground-chat-sidebar__list {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 0.5rem 0.75rem;
+}
+
+.sdkwork-playground-chat-sidebar__empty,
+.sdkwork-playground-chat-sidebar__error {
+  margin: 0 0.25rem;
+  border-radius: var(--sdkwork-sidebar-item-radius);
+  padding: 0.625rem 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
+
+.sdkwork-playground-chat-sidebar__empty {
+  background: var(--sdkwork-playground-chat-empty-bg, rgb(255 255 255 / 0.03));
+  color: var(--sdkwork-playground-chat-empty-text, rgb(100 116 139));
+}
+
+.sdkwork-playground-chat-sidebar__error {
+  border: 1px solid rgb(248 113 113 / 0.2);
+  background: rgb(239 68 68 / 0.08);
+  color: rgb(254 202 202);
+}
+
+.sdkwork-playground-chat-sidebar__skeleton {
+  margin: 0 0.25rem 0.375rem;
+  height: 2rem;
+  border-radius: var(--sdkwork-sidebar-item-radius);
+  background: var(--sdkwork-playground-chat-skeleton, rgb(255 255 255 / 0.04));
+}
+
+/* Playground chat session sidebar */
+.sdkwork-chat-session-item {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.125rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid transparent;
+  border-radius: var(--sdkwork-sidebar-item-radius);
+  background: transparent;
+  text-align: left;
+  color: var(--sdkwork-playground-chat-session-color, rgb(148 163 184));
+  cursor: pointer;
+  transition:
+    background-color var(--sdkwork-sidebar-transition),
+    border-color var(--sdkwork-sidebar-transition),
+    color var(--sdkwork-sidebar-transition);
+}
+
+.sdkwork-chat-session-item:hover {
+  color: var(--sdkwork-playground-chat-session-hover-color, rgb(226 232 240));
+  background-color: var(--sdkwork-playground-chat-session-hover-bg, rgb(255 255 255 / 0.05));
+}
+
+.sdkwork-chat-session-item:focus-visible {
+  outline: 2px solid rgb(var(--sdkwork-sidebar-accent-rgb) / 0.45);
+  outline-offset: 1px;
+}
+
+.sdkwork-chat-session-item[data-active='true'] {
+  color: var(--sdkwork-playground-chat-session-active-color, rgb(255 255 255));
+  font-weight: 600;
+  background: var(--sdkwork-playground-chat-session-active-bg, rgb(255 255 255 / 0.08));
+  border-color: var(--sdkwork-playground-chat-session-active-border, rgb(255 255 255 / 0.06));
+}
+
+.sdkwork-chat-session-item__title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+}
+
+.sdkwork-chat-session-item[data-active='true'] .sdkwork-chat-session-item__title {
+  font-weight: 600;
+}
+
+.sdkwork-chat-session-item__badge {
+  flex-shrink: 0;
+  min-width: 1.25rem;
+  border-radius: 999px;
+  background-color: var(--sdkwork-playground-chat-session-badge-bg, rgb(255 255 255 / 0.06));
+  padding: 0.0625rem 0.375rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  line-height: 1rem;
+  text-align: center;
+  color: var(--sdkwork-playground-chat-session-badge-color, rgb(100 116 139));
+  transition:
+    background-color var(--sdkwork-sidebar-transition),
+    color var(--sdkwork-sidebar-transition);
+}
+
+.sdkwork-chat-session-item[data-active='true'] .sdkwork-chat-session-item__badge {
+  background-color: rgb(var(--sdkwork-sidebar-accent-rgb) / 0.18);
+  color: rgb(252 211 207);
+}
+
+.sdkwork-playground-chat-page {
+  background-color: var(--sdkwork-playground-chat-page-bg, var(--sdkwork-playground-workspace-sidebar-bg, #151515));
+  color: var(--sdkwork-playground-chat-page-text, var(--theme-aware-text, #f8fafc));
+}
+
+.sdkwork-playground-chat-composer {
+  border-radius: 26px;
+  background: var(--sdkwork-playground-chat-composer-bg, var(--sdkwork-image-generation-surface, #1c1c20));
+  padding: 0.75rem;
+  backdrop-filter: blur(24px);
+}
+
+.sdkwork-playground-chat-composer__field {
+  border-radius: 20px;
+  background: var(--sdkwork-playground-chat-composer-field-bg, var(--sdkwork-image-generation-control-disabled, #151519));
+  padding: 0.75rem 1rem;
+  transition: background-color 0.15s ease;
+}
+
+.sdkwork-playground-chat-composer__field:focus-within {
+  background: var(--sdkwork-playground-chat-composer-field-focus-bg, var(--sdkwork-image-generation-surface-focus, #19191e));
+}
+
+.sdkwork-playground-chat-composer__textarea {
+  min-height: 5.5rem;
+  width: 100%;
+  resize: none;
+  overflow: hidden;
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  line-height: 1.5rem;
+  color: var(--sdkwork-playground-chat-composer-text, var(--theme-aware-text, #f1f5f9));
+  outline: none;
+}
+
+.sdkwork-playground-chat-composer__textarea::placeholder {
+  color: var(--sdkwork-playground-chat-composer-placeholder, var(--theme-aware-text-muted, #64748b));
+}
+
+.sdkwork-playground-chat-message-bubble--user {
+  user-select: text;
+  min-width: 0;
+  max-width: 100%;
+  border-radius: 22px 22px 8px 22px;
+  border: none;
+  background: var(--sdkwork-playground-chat-user-bubble-bg, var(--theme-aware-panel-strong, #1a1a1a));
+  padding: 0.75rem 1rem;
+  font-size: 15px;
+  line-height: 1.75rem;
+  color: var(--sdkwork-playground-chat-user-bubble-text, var(--theme-aware-text, #f8fafc));
+  box-shadow: none;
+}
+
+.sdkwork-playground-chat-message-bubble--assistant {
+  user-select: text;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+  color: var(--sdkwork-playground-chat-assistant-text, var(--theme-aware-text, #f1f5f9));
+}
+
+.sdkwork-playground-chat-empty {
+  color: var(--sdkwork-playground-chat-empty-text, var(--theme-aware-text-muted, #64748b));
+}
+
+.sdkwork-playground-chat-empty__icon {
+  display: flex;
+  height: 3.5rem;
+  width: 3.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  background: var(--sdkwork-playground-chat-empty-icon-bg, var(--sdkwork-studio-accent-soft, rgb(99 102 241 / 0.14)));
+  color: var(--sdkwork-playground-chat-empty-icon-color, var(--sdkwork-studio-accent-text, #a5b4fc));
+}
+
+.sdkwork-playground-chat-empty__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--sdkwork-playground-chat-empty-title, var(--theme-aware-text, #f8fafc));
+}
+
+.sdkwork-playground-chat-empty__description {
+  margin-top: 0.5rem;
+  max-width: 28rem;
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+  color: var(--sdkwork-playground-chat-empty-text, var(--theme-aware-text-muted, #64748b));
+}
+
+.sdkwork-playground-chat-loading-banner {
+  border-radius: 0.75rem;
+  border: none;
+  background: var(--sdkwork-playground-chat-loading-banner-bg, var(--theme-aware-panel-strong, rgb(255 255 255 / 0.05)));
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--sdkwork-playground-chat-loading-banner-text, var(--theme-aware-text-muted, #94a3b8));
+}
+
+.sdkwork-playground-chat-loading-state {
+  color: var(--sdkwork-playground-chat-loading-text, var(--theme-aware-text-muted, #64748b));
+}
+
+.sdkwork-playground-chat-composer__status-chip {
+  display: flex;
+  height: 2.5rem;
+  align-items: center;
+  border-radius: 9999px;
+  border: none;
+  background: var(--sdkwork-playground-chat-status-chip-bg, var(--theme-aware-panel-strong, rgb(255 255 255 / 0.05)));
+  padding-inline: 0.75rem;
+  font-size: 11px;
+  color: var(--sdkwork-playground-chat-status-chip-text, var(--theme-aware-text-muted, #64748b));
+}
+
+.sdkwork-playground-chat-composer__warning-chip {
+  min-height: 2.5rem;
+  min-width: 0;
+  border-radius: 9999px;
+  border: none;
+  background: var(--sdkwork-playground-chat-warning-chip-bg, rgb(251 191 36 / 0.1));
+  padding: 0.5rem 0.75rem;
+  font-size: 11px;
+  line-height: 1rem;
+  color: var(--sdkwork-playground-chat-warning-chip-text, rgb(253 230 138));
+}
+
+.sdkwork-playground-chat-composer__submit {
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 9999px;
+  box-shadow: none;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.sdkwork-playground-chat-composer__submit[data-state='active'] {
+  background: var(--sdkwork-playground-chat-submit-bg, var(--sdkwork-studio-accent, #6366f1));
+  color: var(--sdkwork-playground-chat-submit-text, #ffffff);
+}
+
+.sdkwork-playground-chat-composer__submit[data-state='active']:hover {
+  background: var(--sdkwork-playground-chat-submit-hover-bg, var(--sdkwork-studio-accent-hover, #4f46e5));
+}
+
+.sdkwork-playground-chat-composer__submit[data-state='active']:active {
+  transform: scale(0.95);
+}
+
+.sdkwork-playground-chat-composer__submit[data-state='stop'] {
+  background: var(--sdkwork-playground-chat-stop-bg, #f43f5e);
+  color: #ffffff;
+}
+
+.sdkwork-playground-chat-composer__submit[data-state='stop']:hover {
+  background: var(--sdkwork-playground-chat-stop-hover-bg, #fb7185);
+}
+
+.sdkwork-playground-chat-composer__submit[data-state='disabled'] {
+  cursor: not-allowed;
+  background: var(--sdkwork-playground-chat-submit-disabled-bg, var(--theme-aware-panel-muted, rgb(255 255 255 / 0.06)));
+  color: var(--sdkwork-playground-chat-submit-disabled-text, var(--theme-aware-text-muted, #64748b));
+  pointer-events: none;
+}
+
+.sdkwork-playground-chat-message-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--sdkwork-playground-chat-typing-text, var(--theme-aware-text-muted, #94a3b8));
+}
+
+.sdkwork-playground-chat-message-bubble--failed {
+  user-select: text;
+  width: 100%;
+  min-width: 0;
+  border-radius: 0.75rem;
+  border: 1px solid var(--sdkwork-playground-chat-error-border, rgb(248 113 113 / 0.3));
+  background: var(--sdkwork-playground-chat-error-bg, rgb(239 68 68 / 0.1));
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+  color: var(--sdkwork-playground-chat-error-text, rgb(254 226 226));
+}
+
+.sdkwork-playground-chat-message-meta {
+  display: flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  padding-inline: 0.25rem;
+  font-size: 11px;
+  color: var(--sdkwork-playground-chat-meta-text, var(--theme-aware-text-muted, #64748b));
+}
+
+.sdkwork-playground-chat-message-copy-btn {
+  display: flex;
+  height: 1.5rem;
+  width: 1.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--sdkwork-playground-chat-meta-text, var(--theme-aware-text-muted, #64748b));
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sdkwork-playground-chat-message-copy-btn:hover {
+  background: var(--sdkwork-playground-chat-copy-hover-bg, var(--theme-aware-panel-strong, rgb(255 255 255 / 0.05)));
+  color: var(--sdkwork-playground-chat-copy-hover-text, var(--theme-aware-text, #e2e8f0));
+}
+
+.sdkwork-clawrouter-playground-host-offset {
+  position: fixed;
+  top: var(--sdkwork-portal-navbar-height, 4rem);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sdkwork-clawrouter-playground-host-offset > * {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+}
+
+.sdkwork-playground-workspace-sidebar {
+  width: var(--sdkwork-playground-workspace-sidebar-width, 28rem);
+  flex-shrink: 0;
+  background-color: var(--sdkwork-playground-workspace-sidebar-bg, #151515);
+  border-right-color: var(--sdkwork-playground-workspace-sidebar-border, rgb(255 255 255 / 0.1));
+}
+
+.sdkwork-generation-workspace-view {
+  background-color: var(--sdkwork-generation-workspace-view-bg, var(--sdkwork-generation-workspace-bg, #121216));
+}
+
+.sdkwork-playground-workspace-sidebar--sfx {
+  --sdkwork-studio-accent: #ea580c;
+  --sdkwork-studio-accent-hover: #c2410c;
+  --sdkwork-studio-accent-soft: rgb(234 88 12 / 0.14);
+  --sdkwork-studio-accent-text: #fdba74;
+  background:
+    radial-gradient(circle at top right, var(--sdkwork-playground-sfx-sidebar-accent, rgb(249 115 22 / 0.08)), transparent 34%),
+    var(--sdkwork-playground-sfx-sidebar-bg, linear-gradient(180deg, #101014 0%, #0b0b0e 100%)) !important;
+  border-right-color: var(--sdkwork-playground-sfx-sidebar-border, rgb(255 255 255 / 0.06)) !important;
+}
+
+.sdkwork-playground-workspace-sidebar--image {
+  background: var(--sdkwork-image-generation-sidebar-bg, var(--sdkwork-image-generation-bg)) !important;
+}
+
+.sdkwork-playground-workspace-sidebar--video {
+  --sdkwork-studio-accent: #7c3aed;
+  --sdkwork-studio-accent-hover: #6d28d9;
+  --sdkwork-studio-accent-soft: rgb(124 58 237 / 0.14);
+  --sdkwork-studio-accent-text: #c4b5fd;
+  background: var(--sdkwork-image-generation-sidebar-bg, var(--sdkwork-image-generation-bg)) !important;
+}
+
+.sdkwork-playground-workspace-sidebar--music {
+  --sdkwork-studio-accent: #db2777;
+  --sdkwork-studio-accent-hover: #be185d;
+  --sdkwork-studio-accent-soft: rgb(219 39 119 / 0.14);
+  --sdkwork-studio-accent-text: #f9a8d4;
+  background: var(--sdkwork-image-generation-sidebar-bg, var(--sdkwork-image-generation-bg)) !important;
+}
+
+.sdkwork-playground-workspace-sidebar--audio {
+  --sdkwork-studio-accent: #0891b2;
+  --sdkwork-studio-accent-hover: #0e7490;
+  --sdkwork-studio-accent-soft: rgb(8 145 178 / 0.14);
+  --sdkwork-studio-accent-text: #67e8f9;
+  background: var(--sdkwork-image-generation-sidebar-bg, var(--sdkwork-image-generation-bg)) !important;
+}
+
+/* ── Shared studio panel (video / music / audio / sfx) ── */
+.sdkwork-studio-panel {
+  position: relative;
+  background: var(--sdkwork-studio-bg, var(--sdkwork-image-generation-bg));
+  color: var(--sdkwork-studio-text, var(--sdkwork-image-generation-text));
+}
+
+.sdkwork-studio-panel .text-slate-300 {
+  color: var(--sdkwork-studio-text-emphasis, var(--sdkwork-image-generation-text-emphasis));
+}
+
+.sdkwork-studio-panel .text-slate-400 {
+  color: var(--sdkwork-studio-text-secondary, var(--sdkwork-image-generation-text-secondary));
+}
+
+.sdkwork-studio-panel .text-slate-500,
+.sdkwork-studio-panel .text-slate-600 {
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+}
+
+.sdkwork-studio-hero {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px 12px;
+}
+
+.sdkwork-studio-hero-icon {
+  display: inline-flex;
+  height: 32px;
+  width: 32px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--sdkwork-studio-accent, #6366f1);
+  color: #fff;
+  box-shadow: none;
+}
+
+.sdkwork-studio-hero-title {
+  color: var(--sdkwork-studio-text, var(--sdkwork-image-generation-text));
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.sdkwork-studio-hero-subtitle {
+  margin-top: 2px;
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.sdkwork-studio-scroll {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 0 16px 16px;
+}
+
+.sdkwork-studio-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sdkwork-studio-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-radius: 8px;
+  border: none;
+  background: rgb(239 68 68 / 0.1);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--sdkwork-image-generation-error-text);
+}
+
+.sdkwork-studio-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sdkwork-studio-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+}
+
+.sdkwork-studio-section-head__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sdkwork-studio-prompt {
+  overflow: hidden;
+  border-radius: 8px;
+  border: none;
+  background: var(--sdkwork-studio-surface, var(--sdkwork-image-generation-surface));
+}
+
+.sdkwork-studio-prompt:focus-within {
+  background: var(--sdkwork-studio-surface-focus, var(--sdkwork-image-generation-surface-focus));
+}
+
+.sdkwork-studio-prompt__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px 0;
+}
+
+.sdkwork-studio-prompt__textarea {
+  min-height: 160px;
+  width: 100%;
+  resize: none;
+  border: 0;
+  background: transparent;
+  padding: 8px 16px 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--sdkwork-studio-text, var(--sdkwork-image-generation-text));
+  outline: none;
+}
+
+.sdkwork-studio-prompt__textarea::placeholder {
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+}
+
+.sdkwork-studio-prompt__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 10px;
+  font-size: 11px;
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+}
+
+.sdkwork-studio-prompt__kbd {
+  border: none;
+  border-radius: 4px;
+  background: var(--sdkwork-studio-control-bg, var(--sdkwork-image-generation-control-bg));
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.sdkwork-studio-chip-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sdkwork-studio-chip-grid--styles {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.sdkwork-studio-chip {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  border-radius: 8px;
+  background: var(--sdkwork-studio-surface, var(--sdkwork-image-generation-surface));
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sdkwork-studio-chip:hover:not([data-active='true']) {
+  background: var(--sdkwork-studio-surface-hover, var(--sdkwork-image-generation-surface-hover));
+  color: var(--sdkwork-studio-text-emphasis, var(--sdkwork-image-generation-text-emphasis));
+}
+
+.sdkwork-studio-chip[data-active='true'] {
+  background: var(--sdkwork-studio-accent-soft, rgb(99 102 241 / 0.14));
+  color: var(--sdkwork-studio-accent-text, #a5b4fc);
+  font-weight: 600;
+}
+
+.sdkwork-studio-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: 8px;
+  border: none;
+  background: var(--sdkwork-studio-surface, var(--sdkwork-image-generation-surface));
+  padding: 12px 14px;
+}
+
+.sdkwork-studio-toggle-row__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sdkwork-studio-text-emphasis, var(--sdkwork-image-generation-text-emphasis));
+}
+
+.sdkwork-studio-toggle-row__hint {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+}
+
+.sdkwork-studio-toggle {
+  position: relative;
+  height: 24px;
+  width: 44px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--sdkwork-studio-control-bg, var(--sdkwork-image-generation-control-bg));
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.sdkwork-studio-toggle[data-active='true'] {
+  background: var(--sdkwork-studio-accent, #6366f1);
+}
+
+.sdkwork-studio-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  height: 18px;
+  width: 18px;
+  border-radius: 999px;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+
+.sdkwork-studio-toggle[data-active='true'] .sdkwork-studio-toggle-thumb {
+  transform: translateX(20px);
+}
+
+.sdkwork-studio-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-radius: 8px;
+  border: none;
+  background: var(--sdkwork-studio-surface, var(--sdkwork-image-generation-surface));
+  padding: 14px;
+}
+
+.sdkwork-studio-controls__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.sdkwork-studio-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sdkwork-studio-field__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+}
+
+.sdkwork-studio-select {
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: var(--sdkwork-studio-control-bg, var(--sdkwork-image-generation-control-bg));
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sdkwork-studio-text-emphasis, var(--sdkwork-image-generation-text-emphasis));
+  outline: none;
+}
+
+.sdkwork-studio-select:focus {
+  background: var(--sdkwork-studio-control-hover, var(--sdkwork-image-generation-control-hover));
+}
+
+.sdkwork-studio-slider {
+  width: 100%;
+  height: 4px;
+  appearance: none;
+  border-radius: 999px;
+  background: var(--sdkwork-studio-control-bg, var(--sdkwork-image-generation-control-bg));
+  accent-color: var(--sdkwork-studio-accent, #6366f1);
+  outline: none;
+}
+
+.sdkwork-studio-reference {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sdkwork-studio-reference__dropzone {
+  min-height: 100px;
+  border-radius: 8px;
+  border: none;
+  background: var(--sdkwork-studio-surface, var(--sdkwork-image-generation-surface));
+}
+
+.sdkwork-studio-reference__dropzone:hover {
+  background: var(--sdkwork-studio-surface-hover, var(--sdkwork-image-generation-surface-hover));
+}
+
+.sdkwork-studio-reference__upload-btn--enabled {
+  cursor: pointer;
+  background: var(--sdkwork-studio-control-bg, var(--sdkwork-image-generation-control-bg));
+  color: var(--sdkwork-studio-text-emphasis, var(--sdkwork-image-generation-text-emphasis));
+}
+
+.sdkwork-studio-reference__upload-btn--disabled {
+  cursor: not-allowed;
+  background: var(--sdkwork-studio-control-disabled, var(--sdkwork-image-generation-control-disabled));
+  color: var(--sdkwork-studio-text-subtle, var(--sdkwork-image-generation-text-subtle));
+}
+
+.sdkwork-studio-reference__mode-hint {
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: none;
+  background: var(--sdkwork-studio-surface, var(--sdkwork-image-generation-surface));
+  padding: 16px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+}
+
+.sdkwork-studio-bottom-bar,
+.sdkwork-sfx-generation-bottom-bar {
+  border: none !important;
+  border-top: none !important;
+  background: var(--sdkwork-studio-bg, var(--sdkwork-image-generation-bg)) !important;
+  backdrop-filter: none;
+  box-shadow: none !important;
+}
+
+.sdkwork-studio-settings-popup,
+.sdkwork-video-generation-settings-popup {
+  border: none !important;
+  border-radius: 12px 12px 0 0 !important;
+  background: var(--sdkwork-image-generation-settings-bg) !important;
+  box-shadow: none !important;
+}
+
+.sdkwork-studio-settings-popup .space-y-7 button.rounded-xl,
+.sdkwork-video-generation-settings-popup .space-y-7 button.rounded-xl {
+  border: none !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  background: var(--sdkwork-image-generation-settings-option-bg) !important;
+  color: var(--sdkwork-image-generation-text-muted) !important;
+}
+
+.sdkwork-studio-settings-popup .space-y-7 button.rounded-xl:hover:not(:has(.text-cyan-500)),
+.sdkwork-video-generation-settings-popup .space-y-7 button.rounded-xl:hover:not(:has(.text-cyan-500)) {
+  background: var(--sdkwork-image-generation-settings-option-hover-bg) !important;
+  color: var(--sdkwork-image-generation-text-secondary) !important;
+}
+
+.sdkwork-studio-settings-popup .space-y-7 button.rounded-xl:has(.text-cyan-500),
+.sdkwork-video-generation-settings-popup .space-y-7 button.rounded-xl:has(.text-cyan-500) {
+  background: var(--sdkwork-image-generation-settings-option-active-bg) !important;
+  color: var(--sdkwork-image-generation-settings-option-active-text) !important;
+}
+
+.sdkwork-studio-settings-popup .space-y-7 button.rounded-xl:has(.text-cyan-500) svg,
+.sdkwork-video-generation-settings-popup .space-y-7 button.rounded-xl:has(.text-cyan-500) svg {
+  color: var(--sdkwork-studio-accent, var(--sdkwork-image-generation-settings-option-active-icon)) !important;
+}
+
+.sdkwork-studio-generate-btn {
+  border-radius: 8px !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.sdkwork-studio-generate-btn--enabled {
+  background: var(--sdkwork-studio-accent, #6366f1) !important;
+  color: #fff !important;
+}
+
+.sdkwork-studio-generate-btn--enabled:hover {
+  background: var(--sdkwork-studio-accent-hover, #4f46e5) !important;
+}
+
+.sdkwork-studio-generate-btn--disabled {
+  cursor: not-allowed !important;
+  background: var(--sdkwork-studio-generate-btn-disabled-bg, #334155) !important;
+  color: var(--sdkwork-studio-generate-btn-disabled-text, #94a3b8) !important;
+}
+
+.sdkwork-studio-cost {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-radius: 8px;
+  background: var(--sdkwork-studio-control-bg, var(--sdkwork-image-generation-control-bg));
+  padding: 6px 10px;
+  font-size: 13px;
+  color: #fbbf24;
+}
+
+.sdkwork-studio-empty {
+  border: none;
+  border-radius: 12px;
+  background: var(--sdkwork-studio-surface, var(--sdkwork-image-generation-surface));
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+}
+
+.sdkwork-studio-empty h3 {
+  color: var(--sdkwork-studio-text, var(--sdkwork-image-generation-text));
+}
+
+.sdkwork-studio-empty p {
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+}
+
+.sdkwork-studio-empty-icon {
+  background: var(--sdkwork-studio-control-bg, var(--sdkwork-image-generation-empty-icon-bg));
+  color: var(--sdkwork-studio-text-secondary, var(--sdkwork-image-generation-text-secondary));
+  border-radius: 12px;
+}
+
+.sdkwork-studio-sync-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+  background: var(--sdkwork-studio-surface, var(--sdkwork-image-generation-surface));
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sdkwork-studio-sync-chip[data-active='true'] {
+  background: var(--sdkwork-studio-accent-soft, rgb(99 102 241 / 0.14));
+  color: var(--sdkwork-studio-accent-text, #a5b4fc);
+}
+
+.sdkwork-generation-history-media--video {
+  border: none !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+.sdkwork-generation-history-card--music {
+  border: none !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  background: var(--sdkwork-generation-history-card-bg) !important;
+}
+
+.sdkwork-generation-history-card--music .sdkwork-generation-history-card__play {
+  background: var(--sdkwork-studio-accent, #db2777) !important;
+}
+
+.sdkwork-generation-history-card--music .sdkwork-generation-history-card__play:hover {
+  background: var(--sdkwork-studio-accent-hover, #be185d) !important;
+}
+
+.sdkwork-generation-history-card--audio,
+.sdkwork-generation-history-card--sfx {
+  border: none !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+.sdkwork-generation-history-card--audio .sdkwork-generation-history-card__play,
+.sdkwork-generation-history-card--audio .sdkwork-generation-history-card__play-secondary,
+.sdkwork-generation-history-card--sfx .sdkwork-generation-history-card__play,
+.sdkwork-generation-history-card--sfx .sdkwork-generation-history-card__play-secondary {
+  background: var(--sdkwork-studio-accent, #0891b2) !important;
+}
+
+.sdkwork-generation-history-card--audio .sdkwork-generation-history-card__play:hover,
+.sdkwork-generation-history-card--audio .sdkwork-generation-history-card__play-secondary:hover,
+.sdkwork-generation-history-card--sfx .sdkwork-generation-history-card__play:hover,
+.sdkwork-generation-history-card--sfx .sdkwork-generation-history-card__play-secondary:hover {
+  background: var(--sdkwork-studio-accent-hover, #0e7490) !important;
+}
+
+.sdkwork-generation-history-card--sfx .sdkwork-generation-history-card__play,
+.sdkwork-generation-history-card--sfx .sdkwork-generation-history-card__play-secondary {
+  background: var(--sdkwork-studio-accent, #ea580c) !important;
+}
+
+.sdkwork-generation-history-card--sfx .sdkwork-generation-history-card__play:hover,
+.sdkwork-generation-history-card--sfx .sdkwork-generation-history-card__play-secondary:hover {
+  background: var(--sdkwork-studio-accent-hover, #c2410c) !important;
+}
+
+.sdkwork-generation-history-media--video .sdkwork-generation-history-media__video-overlay {
+  background: var(--sdkwork-generation-history-video-hover-overlay) !important;
+}
+
+/* ── Image generation: borderless flat (theme-aware) ── */
+.sdkwork-image-generation-panel {
+  position: relative;
+  background: var(--sdkwork-image-generation-bg);
+  color: var(--sdkwork-image-generation-text);
+}
+
+.sdkwork-image-generation-panel .text-white {
+  color: var(--sdkwork-image-generation-text) !important;
+}
+
+.sdkwork-image-generation-panel .text-slate-300 {
+  color: var(--sdkwork-image-generation-text-emphasis);
+}
+
+.sdkwork-image-generation-panel .text-slate-400 {
+  color: var(--sdkwork-image-generation-text-secondary);
+}
+
+.sdkwork-image-generation-panel .text-slate-500,
+.sdkwork-image-generation-panel .text-slate-600 {
+  color: var(--sdkwork-image-generation-text-muted);
+}
+
+.sdkwork-image-generation-panel__scroll::before {
+  display: none;
+}
+
+.sdkwork-image-generation-hero {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px 12px;
+  border-bottom: none;
+}
+
+.sdkwork-image-generation-hero-icon {
+  display: inline-flex;
+  height: 32px;
+  width: 32px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #6366f1;
+  color: #eef2ff;
+  box-shadow: none;
+}
+
+.sdkwork-image-generation-hero-title {
+  color: var(--sdkwork-image-generation-text);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.sdkwork-image-generation-hero-subtitle {
+  margin-top: 2px;
+  color: var(--sdkwork-image-generation-text-muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.sdkwork-image-generation-empty-icon {
+  background: var(--sdkwork-image-generation-empty-icon-bg);
+  color: var(--sdkwork-image-generation-text-secondary);
+  box-shadow: none;
+  border-radius: 12px;
+}
+
+.sdkwork-image-generation-reference {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0 !important;
+}
+
+.sdkwork-image-generation-reference__dropzone {
+  min-height: 100px;
+  border-radius: 8px;
+  border: none;
+  background: var(--sdkwork-image-generation-surface);
+  transition: background-color 0.15s ease;
+}
+
+.sdkwork-image-generation-reference__dropzone:hover {
+  background: var(--sdkwork-image-generation-surface-hover);
+  box-shadow: none;
+}
+
+.sdkwork-image-generation-reference__dropzone-icon {
+  display: inline-flex;
+  height: 36px;
+  width: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: none;
+  background: var(--sdkwork-image-generation-control-bg);
+  color: var(--sdkwork-image-generation-text-secondary);
+  box-shadow: none;
+}
+
+.sdkwork-image-generation-reference__thumb {
+  border-radius: 8px;
+  overflow: hidden;
+  border: none !important;
+  box-shadow: none;
+  transition: opacity 0.15s ease;
+}
+
+.sdkwork-image-generation-reference__thumb:hover {
+  transform: none;
+  box-shadow: none;
+  opacity: 0.92;
+}
+
+.sdkwork-image-generation-reference__upload-btn {
+  display: inline-flex;
+  height: 32px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  border-radius: 8px;
+  border: none;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sdkwork-image-generation-reference__upload-btn--enabled {
+  cursor: pointer;
+  background: var(--sdkwork-image-generation-control-bg);
+  color: var(--sdkwork-image-generation-text-emphasis);
+}
+
+.sdkwork-image-generation-reference__upload-btn--enabled:hover {
+  background: var(--sdkwork-image-generation-control-hover);
+  color: var(--sdkwork-image-generation-text);
+}
+
+.sdkwork-image-generation-reference__upload-btn--disabled {
+  cursor: not-allowed;
+  background: var(--sdkwork-image-generation-control-disabled);
+  color: var(--sdkwork-image-generation-text-subtle);
+}
+
+.sdkwork-image-generation-reference__add-tile {
+  display: flex;
+  aspect-ratio: 1;
+  cursor: pointer;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 8px;
+  border: none;
+  background: var(--sdkwork-image-generation-surface);
+  padding: 12px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sdkwork-image-generation-text-muted);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sdkwork-image-generation-reference__add-tile:hover {
+  background: var(--sdkwork-image-generation-surface-hover);
+  color: var(--sdkwork-image-generation-text-emphasis);
+}
+
+.sdkwork-image-generation-reference__mode-hint {
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: none;
+  background: var(--sdkwork-image-generation-surface);
+  padding: 16px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--sdkwork-image-generation-text-muted);
+}
+
+.sdkwork-image-generation-prompt {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  border: none;
+  background: var(--sdkwork-image-generation-surface);
+  box-shadow: none;
+}
+
+.sdkwork-image-generation-prompt::before {
+  display: none;
+}
+
+.sdkwork-image-generation-prompt:focus-within {
+  background: var(--sdkwork-image-generation-surface-focus);
+  box-shadow: none;
+}
+
+.sdkwork-image-generation-prompt__textarea {
+  min-height: 160px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--sdkwork-image-generation-text);
+}
+
+.sdkwork-image-generation-prompt__textarea::placeholder {
+  color: var(--sdkwork-image-generation-text-muted);
+}
+
+.sdkwork-image-generation-prompt__header {
+  border-bottom: none;
+  letter-spacing: 0.08em;
+}
+
+.sdkwork-image-generation-prompt__footer {
+  border-top: none;
+  background: transparent;
+}
+
+.sdkwork-image-generation-prompt__kbd {
+  border: none;
+  border-radius: 4px;
+  background: var(--sdkwork-image-generation-control-bg);
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--sdkwork-image-generation-text-muted);
+}
+
+.sdkwork-image-generation-prompt__title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--sdkwork-image-generation-text-muted);
+}
+
+.sdkwork-image-generation-prompt__hint {
+  display: none;
+  max-width: 46%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  font-size: 10px;
+  color: var(--sdkwork-image-generation-text-subtle);
+}
+
+@media (min-width: 640px) {
+  .sdkwork-image-generation-prompt__hint {
+    display: inline;
+  }
+}
+
+.sdkwork-image-generation-prompt__keyboard-hint {
+  font-size: 11px;
+  color: var(--sdkwork-image-generation-text-subtle);
+}
+
+.sdkwork-image-generation-prompt__char-count {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  transition: color 150ms ease;
+  color: var(--sdkwork-image-generation-text-subtle);
+}
+
+.sdkwork-image-generation-prompt__char-count--warn {
+  color: var(--sdkwork-image-generation-warning-text, #fbbf24);
+}
+
+.sdkwork-image-generation-reference__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.sdkwork-image-generation-reference__heading-icon {
+  height: 0.875rem;
+  width: 0.875rem;
+  flex-shrink: 0;
+  color: var(--sdkwork-image-generation-text-muted);
+}
+
+.sdkwork-image-generation-reference__heading-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sdkwork-image-generation-text-emphasis);
+}
+
+.sdkwork-image-generation-reference__count {
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 11px;
+  color: var(--sdkwork-image-generation-text-muted);
+}
+
+.sdkwork-image-generation-reference__count-separator {
+  color: var(--sdkwork-image-generation-text-subtle);
+}
+
+.sdkwork-image-generation-reference__mode-copy {
+  margin-top: 0.25rem;
+  font-size: 11px;
+  line-height: 1.375;
+  color: var(--sdkwork-image-generation-text-muted);
+}
+
+.sdkwork-image-generation-reference__dropzone-label {
+  display: flex;
+  cursor: pointer;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 1.25rem 1rem;
+  font-weight: 500;
+  color: var(--sdkwork-image-generation-text-secondary);
+  transition: color 150ms ease;
+}
+
+.sdkwork-image-generation-reference__dropzone-label:hover {
+  color: var(--sdkwork-image-generation-text-emphasis);
+}
+
+.sdkwork-image-generation-reference__dropzone-hint {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--sdkwork-image-generation-text-subtle);
+}
+
+.sdkwork-image-generation-reference__media-placeholder {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  text-align: center;
+  color: var(--sdkwork-image-generation-text-secondary);
+}
+
+.sdkwork-image-generation-reference__media-placeholder-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.sdkwork-image-generation-reference__thumb-caption {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  background: linear-gradient(to top, rgb(0 0 0 / 0.8), rgb(0 0 0 / 0.4), transparent);
+  padding: 1.5rem 0.625rem 0.5rem;
+  font-size: 10px;
+  color: var(--sdkwork-image-generation-reference-overlay-text, #e2e8f0);
+}
+
+.sdkwork-image-generation-reference__thumb-caption--compact {
+  background: rgb(0 0 0 / 0.65);
+  padding: 0.25rem 0.5rem;
+}
+
+.sdkwork-image-generation-reference__thumb-caption-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--sdkwork-image-generation-text-muted);
+}
+
+.sdkwork-image-generation-reference__thumb-remove {
+  position: absolute;
+  right: 0.5rem;
+  top: 0.5rem;
+  display: flex;
+  height: 1.75rem;
+  width: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0.5rem;
+  background: rgb(0 0 0 / 0.6);
+  color: var(--sdkwork-image-generation-reference-overlay-text, #e2e8f0);
+  opacity: 0;
+  backdrop-filter: blur(4px);
+  transition: opacity 200ms ease, background-color 200ms ease, color 200ms ease;
+  cursor: pointer;
+}
+
+.sdkwork-image-generation-reference__thumb:hover .sdkwork-image-generation-reference__thumb-remove {
+  opacity: 1;
+}
+
+.sdkwork-image-generation-reference__thumb-remove:hover {
+  background: rgb(239 68 68 / 0.9);
+  color: #fff;
+}
+
+.sdkwork-image-generation-reference__error {
+  margin-top: 0.625rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: var(--sdkwork-image-generation-error-text, #fca5a5);
+}
+
+.sdkwork-image-generation-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-radius: 8px;
+  border: none;
+  background: rgb(239 68 68 / 0.1);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--sdkwork-image-generation-error-text);
+  box-shadow: none;
+}
+
+.sdkwork-image-generation-bottom-bar {
+  border: none !important;
+  border-top: none !important;
+  background: var(--sdkwork-image-generation-bg) !important;
+  backdrop-filter: none;
+}
+
+.sdkwork-image-generation-bottom-bar > button:first-child {
+  border-radius: 8px;
+}
+
+.sdkwork-image-generation-bottom-bar .group.relative.overflow-hidden.rounded-xl.px-8 {
+  border-radius: 8px !important;
+  background: #6366f1 !important;
+  box-shadow: none !important;
+}
+
+.sdkwork-image-generation-bottom-bar .group.relative.overflow-hidden.rounded-xl.px-8:hover {
+  background: #4f46e5 !important;
+  box-shadow: none !important;
+}
+
+.sdkwork-image-generation-bottom-bar .group.relative.overflow-hidden.rounded-xl.px-8 .pointer-events-none {
+  display: none;
+}
+
+.sdkwork-image-generation-settings-popup {
+  border: none !important;
+  border-radius: 12px 12px 0 0 !important;
+  background: var(--sdkwork-image-generation-settings-bg) !important;
+  box-shadow: none !important;
+}
+
+.sdkwork-image-generation-settings-popup > div:first-child {
+  border-bottom: none !important;
+}
+
+.sdkwork-image-generation-settings-popup .space-y-7 button.rounded-xl {
+  border: none !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  background: var(--sdkwork-image-generation-settings-option-bg) !important;
+  color: var(--sdkwork-image-generation-text-muted) !important;
+}
+
+.sdkwork-image-generation-settings-popup .space-y-7 button.rounded-xl:hover:not(:has(.text-cyan-500)) {
+  background: var(--sdkwork-image-generation-settings-option-hover-bg) !important;
+  color: var(--sdkwork-image-generation-text-secondary) !important;
+}
+
+.sdkwork-image-generation-settings-popup .space-y-7 button.rounded-xl:has(.text-cyan-500) {
+  background: var(--sdkwork-image-generation-settings-option-active-bg) !important;
+  color: var(--sdkwork-image-generation-settings-option-active-text) !important;
+}
+
+.sdkwork-image-generation-settings-popup .space-y-7 button.rounded-xl:has(.text-cyan-500) svg {
+  color: var(--sdkwork-image-generation-settings-option-active-icon) !important;
+}
+
+.sdkwork-image-generation-settings-popup .h-px {
+  display: none;
+}
+
+.sdkwork-image-generation-cost {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-radius: 8px;
+  background: var(--sdkwork-image-generation-control-bg);
+  padding: 6px 10px;
+  font-size: 13px;
+  color: #fbbf24;
+}
+
+.sdkwork-image-generation-cost .font-bold {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.sdkwork-image-generation-empty {
+  border: none;
+  border-radius: 12px;
+  background: var(--sdkwork-image-generation-surface);
+  color: var(--sdkwork-image-generation-text-muted);
+}
+
+.sdkwork-image-generation-empty h3 {
+  color: var(--sdkwork-image-generation-text);
+}
+
+.sdkwork-image-generation-empty p {
+  color: var(--sdkwork-image-generation-text-muted);
+}
+
+.sdkwork-generation-history-media--image {
+  border: none !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  transition: opacity 0.15s ease !important;
+}
+
+.sdkwork-generation-history-media--image:hover {
+  border: none !important;
+  transform: none !important;
+  box-shadow: none !important;
+  opacity: 0.88;
+}
+
+.sdkwork-generation-history-media--image .sdkwork-generation-history-media__image-overlay {
+  background: var(--sdkwork-generation-history-image-overlay, rgb(0 0 0 / 0.28)) !important;
+  opacity: 0;
+}
+
+.sdkwork-generation-history-media--image:hover .sdkwork-generation-history-media__image-overlay {
+  opacity: 1;
+}
+
+.sdkwork-generation-history-media--image img {
+  transition: none !important;
+  transform: none !important;
+}
+
+.sdkwork-sfx-generation-panel {
+  background: var(--sdkwork-studio-bg, var(--sdkwork-image-generation-bg));
+  color: var(--sdkwork-studio-text, var(--sdkwork-image-generation-text));
+}
+
+.sdkwork-sfx-generation-hero {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px 12px;
+  border-bottom: none;
+}
+
+.sdkwork-sfx-generation-hero-icon {
+  display: inline-flex;
+  height: 32px;
+  width: 32px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--sdkwork-studio-accent, #ea580c);
+  color: #fff;
+  box-shadow: none;
+}
+
+.sdkwork-sfx-generation-hero-title {
+  color: var(--sdkwork-studio-text, var(--sdkwork-image-generation-text));
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.sdkwork-sfx-generation-hero-subtitle {
+  margin-top: 2px;
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.sdkwork-sfx-generation-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px 20px 24px;
+}
+
+.sdkwork-sfx-generation-error {
+  border-radius: 8px;
+  border: none;
+  background: rgb(239 68 68 / 0.1);
+  padding: 12px 14px;
+  color: var(--sdkwork-image-generation-error-text);
+  font-size: 13px;
+}
+
+.sdkwork-sfx-generation-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sdkwork-sfx-generation-section-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sdkwork-sfx-generation-prompt-shell {
+  overflow: hidden;
+  border-radius: 8px;
+  border: none;
+  background: var(--sdkwork-studio-surface, var(--sdkwork-image-generation-surface));
+}
+
+.sdkwork-sfx-generation-prompt-shell:focus-within {
+  background: var(--sdkwork-studio-surface-focus, var(--sdkwork-image-generation-surface-focus));
+}
+
+.sdkwork-sfx-generation-prompt-input {
+  min-height: 132px;
+  width: 100%;
+  resize: vertical;
+  border: 0;
+  background: transparent;
+  padding: 14px 16px;
+  color: var(--sdkwork-studio-text, var(--sdkwork-image-generation-text));
+  font-size: 14px;
+  line-height: 1.55;
+  outline: none;
+}
+
+.sdkwork-sfx-generation-prompt-input::placeholder {
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+}
+
+.sdkwork-sfx-generation-hint {
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.sdkwork-sfx-duration-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sdkwork-sfx-duration-chip {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: var(--sdkwork-studio-surface, var(--sdkwork-image-generation-surface));
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+  font-size: 12px;
+  font-weight: 600;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sdkwork-sfx-duration-chip:hover {
+  background: var(--sdkwork-studio-surface-hover, var(--sdkwork-image-generation-surface-hover));
+  color: var(--sdkwork-studio-text-emphasis, var(--sdkwork-image-generation-text-emphasis));
+}
+
+.sdkwork-sfx-duration-chip[data-active='true'] {
+  background: var(--sdkwork-studio-accent-soft, rgb(234 88 12 / 0.14));
+  color: var(--sdkwork-studio-accent-text, #fdba74);
+}
+
+.sdkwork-sfx-output-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.sdkwork-sfx-setting-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: none;
+  background: var(--sdkwork-studio-surface, var(--sdkwork-image-generation-surface));
+}
+
+.sdkwork-sfx-setting-block--row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sdkwork-sfx-setting-label {
+  color: var(--sdkwork-studio-text-emphasis, var(--sdkwork-image-generation-text-emphasis));
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sdkwork-sfx-setting-caption {
+  margin-top: 2px;
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.sdkwork-sfx-format-group {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.sdkwork-sfx-format-chip {
+  min-width: 58px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: none;
+  background: var(--sdkwork-studio-control-bg, var(--sdkwork-image-generation-control-bg));
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sdkwork-sfx-format-chip[data-active='true'] {
+  background: var(--sdkwork-studio-accent-soft, rgb(234 88 12 / 0.14));
+  color: var(--sdkwork-studio-accent-text, #fdba74);
+}
+
+.sdkwork-sfx-toggle {
+  position: relative;
+  height: 24px;
+  width: 44px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--sdkwork-studio-control-bg, var(--sdkwork-image-generation-control-bg));
+  transition: background-color 0.15s ease;
+}
+
+.sdkwork-sfx-toggle[data-active='true'] {
+  background: var(--sdkwork-studio-accent, #ea580c);
+}
+
+.sdkwork-sfx-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  height: 18px;
+  width: 18px;
+  border-radius: 999px;
+  background: #f8fafc;
+  box-shadow: 0 2px 6px rgb(15 23 42 / 0.28);
+  transition: transform 0.15s ease;
+}
+
+.sdkwork-sfx-toggle[data-active='true'] .sdkwork-sfx-toggle-thumb {
+  transform: translateX(20px);
+}
+
+.sdkwork-sfx-slider-card {
+  padding: 12px 14px 10px;
+  border-radius: 8px;
+  border: none;
+  background: var(--sdkwork-studio-surface, var(--sdkwork-image-generation-surface));
+}
+
+.sdkwork-sfx-slider-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.sdkwork-sfx-slider-value {
+  color: var(--sdkwork-studio-accent-text, #fdba74);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sdkwork-sfx-slider {
+  width: 100%;
+  height: 4px;
+  appearance: none;
+  border-radius: 999px;
+  background: var(--sdkwork-studio-control-bg, var(--sdkwork-image-generation-control-bg));
+  accent-color: var(--sdkwork-studio-accent, #ea580c);
+  outline: none;
+}
+
+.sdkwork-sfx-slider::-webkit-slider-thumb {
+  appearance: none;
+  height: 14px;
+  width: 14px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: var(--sdkwork-studio-accent, #ea580c);
+}
+
+.sdkwork-sfx-slider::-moz-range-thumb {
+  height: 14px;
+  width: 14px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: var(--sdkwork-studio-accent, #ea580c);
+}
+
+.sdkwork-sfx-slider-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  color: var(--sdkwork-studio-text-muted, var(--sdkwork-image-generation-text-muted));
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.sdkwork-model-picker-trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 12px;
+  border: 1px solid var(--sdkwork-model-picker-trigger-border, rgb(255 255 255 / 0.05));
+  background-color: var(--sdkwork-model-picker-trigger-bg, #1a1a1a);
+  text-align: left;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.sdkwork-model-picker-trigger:hover:not(:disabled) {
+  border-color: var(--sdkwork-model-picker-trigger-hover-border, rgb(99 102 241 / 0.5));
+}
+
+.sdkwork-model-picker-trigger--flat {
+  border: none;
+  background-color: var(--sdkwork-model-picker-trigger-bg-flat, rgb(32 32 36 / 0.7));
+}
+
+.sdkwork-model-picker-trigger--flat:hover:not(:disabled) {
+  background-color: var(--sdkwork-model-picker-trigger-hover-bg-flat, #24242a);
+}
+
+.sdkwork-model-picker-trigger--compact {
+  min-height: 42px;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.sdkwork-model-picker-trigger--flat.sdkwork-model-picker-trigger--compact {
+  min-height: 38px;
+}
+
+.sdkwork-model-picker-trigger:not(.sdkwork-model-picker-trigger--compact) {
+  padding: 0.75rem;
+}
+
+.sdkwork-model-picker-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.sdkwork-model-picker-trigger__label {
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  color: var(--sdkwork-model-picker-trigger-text, #f1f5f9);
+}
+
+.sdkwork-model-picker-trigger__label--compact {
+  white-space: normal;
+  word-break: break-word;
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.sdkwork-model-picker-trigger__label--default {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.sdkwork-model-picker-trigger__subtitle {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  font-size: 10px;
+  letter-spacing: 0.025em;
+  color: var(--sdkwork-model-picker-text-subtle, #64748b);
+}
+
+.sdkwork-model-picker-trigger__chevron {
+  margin-left: 0.5rem;
+  height: 0.875rem;
+  width: 0.875rem;
+  flex-shrink: 0;
+  color: var(--sdkwork-model-picker-text-muted, #94a3b8);
+  transition: transform 0.3s ease;
+}
+
+.sdkwork-model-picker-trigger__chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.sdkwork-model-picker-menu {
+  min-width: 0;
+  box-sizing: border-box;
+  border-radius: 12px;
+  background-color: var(--sdkwork-model-picker-menu-bg, #1c1c20) !important;
+  border: 1px solid var(--sdkwork-model-picker-border, rgb(255 255 255 / 0.12));
+  box-shadow: var(--sdkwork-model-picker-shadow, 0 24px 64px rgb(0 0 0 / 0.58));
+  color: var(--sdkwork-model-picker-text, #e2e8f0);
+  overflow: hidden;
+}
+
+.sdkwork-model-picker-menu--flat {
+  background-color: var(--sdkwork-model-picker-menu-bg-flat, #242428) !important;
+}
+
+.sdkwork-model-picker-menu--flat .sdkwork-model-picker-vendor-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.sdkwork-model-picker-menu--flat .sdkwork-model-picker-vendor-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.sdkwork-model-picker-menu--flat .sdkwork-model-picker-panel-subtitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.sdkwork-model-picker-vendors,
+.sdkwork-model-picker-models {
+  min-width: 0;
+}
+
+.sdkwork-model-picker-vendors {
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+  height: auto;
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+  background-color: var(--sdkwork-model-picker-vendors-bg, #141418) !important;
+  border-right: 1px solid var(--sdkwork-model-picker-border-subtle, rgb(255 255 255 / 0.08));
+}
+
+.sdkwork-model-picker-vendor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 6px 6px;
+}
+
+.sdkwork-model-picker-panel-head {
+  flex-shrink: 0;
+  padding: 8px 10px 6px;
+  border-bottom: 1px solid var(--sdkwork-model-picker-border-head, rgb(255 255 255 / 0.06));
+}
+
+.sdkwork-model-picker-panel-head--models {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0 0 4px;
+  background-color: var(--sdkwork-model-picker-head-bg, #1c1c20) !important;
+}
+
+.sdkwork-model-picker-menu--flat .sdkwork-model-picker-panel-head--models {
+  background-color: var(--sdkwork-model-picker-head-bg-flat, #242428) !important;
+}
+
+.sdkwork-model-picker-panel-title {
+  display: block;
+  color: var(--sdkwork-model-picker-text-subtle, #64748b);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.sdkwork-model-picker-panel-subtitle {
+  display: block;
+  margin-top: 3px;
+  color: var(--sdkwork-model-picker-text-muted, #94a3b8);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.sdkwork-model-picker-vendors--scrollable {
+  align-self: stretch;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.sdkwork-model-picker-vendors--scrollable .sdkwork-model-picker-vendor-list {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sdkwork-model-picker-models {
+  min-height: 0;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 6px;
+  background-color: var(--sdkwork-model-picker-models-bg, #1c1c20) !important;
+}
+
+.sdkwork-model-picker-vendor-button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 4px 6px;
+  width: 100%;
+  padding: 8px 10px 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--sdkwork-model-picker-text-muted, #94a3b8);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+  position: relative;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sdkwork-model-picker-vendor-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.sdkwork-model-picker-vendor-button:hover {
+  background-color: var(--sdkwork-model-picker-vendor-hover-bg, rgb(255 255 255 / 0.05)) !important;
+  color: var(--sdkwork-model-picker-vendor-hover-text, #e2e8f0);
+}
+
+.sdkwork-model-picker-vendor-button[data-active='true'] {
+  background-color: var(--sdkwork-model-picker-vendor-active-bg, rgb(34 211 238 / 0.12)) !important;
+  color: var(--sdkwork-model-picker-vendor-active-text, #cffafe);
+}
+
+.sdkwork-model-picker-vendor-button[data-active='true']::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 7px;
+  bottom: 7px;
+  width: 2px;
+  border-radius: 2px;
+  background-color: var(--sdkwork-model-picker-vendor-active-accent, #22d3ee);
+}
+
+.sdkwork-model-picker-vendor-count {
+  flex-shrink: 0;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background-color: var(--sdkwork-model-picker-vendor-count-bg, rgb(255 255 255 / 0.08));
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.sdkwork-model-picker-vendor-button[data-active='true'] .sdkwork-model-picker-vendor-count {
+  background-color: var(--sdkwork-model-picker-vendor-count-active-bg, rgb(34 211 238 / 0.18));
+}
+
+.sdkwork-model-picker-model-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sdkwork-model-picker-model-button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 8px;
+  background-color: transparent;
+  text-align: left;
+  transition: background-color 0.15s ease;
+}
+
+.sdkwork-model-picker-model-button:hover {
+  background-color: var(--sdkwork-model-picker-model-hover-bg, rgb(255 255 255 / 0.05)) !important;
+}
+
+.sdkwork-model-picker-model-button[data-active='true'] {
+  background-color: var(--sdkwork-model-picker-model-active-bg, rgb(79 70 229 / 0.16)) !important;
+}
+
+.sdkwork-model-picker-model-name {
+  display: block;
+  color: var(--sdkwork-model-picker-model-name, #cbd5e1);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.sdkwork-model-picker-model-name.is-active {
+  color: var(--sdkwork-model-picker-model-name-active, #a5b4fc);
+}
+
+.sdkwork-model-picker-model-desc {
+  margin-top: 2px;
+  color: var(--sdkwork-model-picker-text-subtle, #64748b);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.sdkwork-model-picker-model-check {
+  color: var(--sdkwork-model-picker-check, #22d3ee);
+}
+
+.sdkwork-model-picker-empty {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--sdkwork-model-picker-text-subtle, #64748b);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.sdkwork-model-picker-empty--compact {
+  padding: 16px 10px;
+  font-size: 12px;
+}
+
+.sdkwork-generation-workspace-panel {
+  background-color: var(--sdkwork-generation-workspace-bg, #121216);
+  color: var(--sdkwork-generation-workspace-text, rgb(248 250 252));
+}
+
+.sdkwork-generation-workspace-panel__header {
+  border-bottom: 1px solid var(--sdkwork-generation-workspace-border, rgb(255 255 255 / 0.1));
+  background-color: var(--sdkwork-generation-workspace-bg, #121216);
+}
+
+.sdkwork-generation-workspace-panel__content {
+  background-color: var(--sdkwork-generation-workspace-bg, #121216);
+}
+
+.sdkwork-generation-workspace-panel__empty {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.sdkwork-generation-workspace-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--sdkwork-segmented-track-bg);
+}
+
+.sdkwork-generation-workspace-tabs__tab {
+  border: none;
+  border-radius: 7px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--sdkwork-segmented-tab-color);
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.sdkwork-generation-workspace-tabs__tab:hover:not(.sdkwork-generation-workspace-tabs__tab--active) {
+  color: var(--sdkwork-segmented-tab-hover-color);
+  background: var(--sdkwork-segmented-tab-hover-bg);
+}
+
+.sdkwork-generation-workspace-tabs__tab--active {
+  color: var(--sdkwork-segmented-tab-active-color);
+  font-weight: 600;
+  background: var(--sdkwork-segmented-tab-active-bg);
+}
+
+.sdkwork-generation-history-date {
+  color: var(--sdkwork-generation-history-date-color, rgb(255 255 255));
+}
+
+.sdkwork-generation-history-empty-card {
+  border: 1px dashed var(--sdkwork-generation-history-empty-border, rgb(255 255 255 / 0.12));
+  border-radius: 1rem;
+  background-color: var(--sdkwork-generation-history-empty-bg, #18181c);
+  color: var(--sdkwork-generation-history-empty-color, rgb(148 163 184));
+}
+
+.sdkwork-generation-history-item__type {
+  color: var(--sdkwork-generation-history-type-color, rgb(255 255 255));
+}
+
+.sdkwork-generation-history-item__divider {
+  background-color: var(--sdkwork-generation-history-divider, rgb(255 255 255 / 0.2));
+}
+
+.sdkwork-studio-bottom-bar .group.relative.overflow-hidden.rounded-xl.px-8,
+.sdkwork-video-generation-bottom-bar .group.relative.overflow-hidden.rounded-xl.px-8 {
+  border-radius: 8px !important;
+  background: var(--sdkwork-studio-accent, #6366f1) !important;
+  box-shadow: none !important;
+}
+
+.sdkwork-studio-bottom-bar .group.relative.overflow-hidden.rounded-xl.px-8:hover,
+.sdkwork-video-generation-bottom-bar .group.relative.overflow-hidden.rounded-xl.px-8:hover {
+  background: var(--sdkwork-studio-accent-hover, #4f46e5) !important;
+}
+
+.sdkwork-studio-bottom-bar .group.relative.overflow-hidden.rounded-xl.px-8 .pointer-events-none,
+.sdkwork-video-generation-bottom-bar .group.relative.overflow-hidden.rounded-xl.px-8 .pointer-events-none {
+  display: none;
+}
+
+.sdkwork-generation-history-item__chip {
+  border: none;
+  background-color: var(--sdkwork-generation-history-chip-bg, #222);
+  color: var(--sdkwork-generation-history-chip-color, rgb(203 213 225));
+}
+
+.sdkwork-generation-history-item__prompt {
+  color: var(--sdkwork-generation-history-prompt-color, rgb(203 213 225));
+}
+
+.sdkwork-generation-history-item__output {
+  border: 1px solid var(--sdkwork-generation-history-output-border, rgb(255 255 255 / 0.05));
+  background-color: var(--sdkwork-generation-history-output-bg, rgb(255 255 255 / 0.03));
+  color: var(--sdkwork-generation-history-output-color, rgb(226 232 240));
+}
+
+.sdkwork-generation-history-card {
+  border: 1px solid var(--sdkwork-generation-history-card-border, rgb(255 255 255 / 0.05));
+  border-radius: 0.5rem;
+  background-color: var(--sdkwork-generation-history-card-bg, #1a1a1a);
+}
+
+.sdkwork-generation-history-card:hover {
+  border-color: var(--sdkwork-generation-history-card-hover-border, rgb(99 102 241 / 0.5));
+}
+
+.sdkwork-generation-history-card--audio {
+  background-image: linear-gradient(
+    to top right,
+    var(--sdkwork-generation-history-audio-gradient-from, #111),
+    var(--sdkwork-generation-history-audio-gradient-to, #1a1a24)
+  );
+}
+
+.sdkwork-generation-history-card__play-secondary {
+  background-color: var(--sdkwork-generation-history-play-bg, rgb(255 255 255 / 0.1));
+}
+
+.sdkwork-generation-history-card__play-secondary:hover {
+  background-color: var(--sdkwork-generation-history-play-hover-bg, rgb(255 255 255 / 0.2));
+}
+
+.sdkwork-generation-history-card__wave > div {
+  background-color: var(--sdkwork-generation-history-wave-bg, rgb(255 255 255));
+}
+
+.sdkwork-generation-history-card__duration {
+  color: var(--sdkwork-generation-history-duration-color, rgb(100 116 139));
+}
+
+.sdkwork-generation-history-media__image-overlay {
+  background-color: rgb(0 0 0 / 0);
+}
+
+.sdkwork-generation-history-media:hover .sdkwork-generation-history-media__image-overlay {
+  background-color: var(--sdkwork-generation-history-media-hover-overlay, rgb(0 0 0 / 0.1));
+}
+
+.sdkwork-generation-history-media__video-overlay {
+  background-color: rgb(0 0 0 / 0);
+}
+
+.sdkwork-generation-history-media:hover .sdkwork-generation-history-media__video-overlay {
+  background-color: var(--sdkwork-generation-history-video-hover-overlay, rgb(0 0 0 / 0.3));
+}
+
+.sdkwork-generation-history-media__play-icon {
+  color: rgb(255 255 255 / 0.9);
+}
+
+.sdkwork-generation-history-placeholder {
+  border: 1px dashed var(--sdkwork-generation-history-placeholder-border, rgb(255 255 255 / 0.1));
+  border-radius: 0.5rem;
+  background-color: var(--sdkwork-generation-history-placeholder-bg, #1a1a1a);
+  color: var(--sdkwork-generation-history-placeholder-color, rgb(148 163 184));
+}
+
+.sdkwork-generation-history-placeholder__icon {
+  color: var(--sdkwork-generation-history-placeholder-icon-color, rgb(100 116 139));
+}
+
+/* Backward-compatible aliases */
+.sdkwork-asset-workspace-panel,
+.sdkwork-generation-workspace-panel {
+  background-color: var(--sdkwork-generation-workspace-bg, #121216);
+}
+
+.sdkwork-asset-workspace-empty-state,
+.sdkwork-generation-workspace-panel__empty {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.sdkwork-asset-workspace-empty-card,
+.sdkwork-generation-history-empty-card {
+  border: 1px dashed var(--sdkwork-generation-history-empty-border, rgb(255 255 255 / 0.12));
+  border-radius: 1rem;
+  background-color: var(--sdkwork-generation-history-empty-bg, #18181c);
+  color: var(--sdkwork-generation-history-empty-color, rgb(148 163 184));
+}
+
 .sdkwork-clawrouter-documents-host-offset {
   padding-top: var(--sdkwork-portal-navbar-height, 4rem);
 }
@@ -261,6 +4154,290 @@ html:not(.dark) [data-slot="dialog-content"] {
   --theme-aware-chart-grid: rgba(255, 255, 255, 0.08);
   --theme-aware-tooltip: #1e1e1e;
   --theme-aware-tooltip-cursor: rgba(255, 255, 255, 0.05);
+  --theme-aware-image-canvas: #121214;
+  --theme-aware-image-canvas-alt: #1a1a1e;
+  --theme-aware-image-frame: rgba(255, 255, 255, 0.08);
+  --theme-aware-image-preview-stage: #0c0c0e;
+  --theme-aware-image-overlay: rgba(0, 0, 0, 0.45);
+  --sdkwork-playground-rail-bg: #0a0a0a;
+  --sdkwork-playground-rail-border: rgb(255 255 255 / 0.1);
+  --sdkwork-playground-rail-divider: rgb(255 255 255 / 0.07);
+  --sdkwork-playground-rail-item-color: rgb(100 116 139);
+  --sdkwork-playground-rail-item-hover-color: rgb(226 232 240);
+  --sdkwork-playground-rail-item-hover-bg: rgb(255 255 255 / 0.06);
+  --sdkwork-playground-rail-item-hover-border: rgb(255 255 255 / 0.06);
+  --sdkwork-playground-rail-item-active-color: rgb(252 211 207);
+  --sdkwork-playground-rail-tooltip-bg: rgb(26 26 26 / 0.96);
+  --sdkwork-playground-rail-tooltip-border: rgb(255 255 255 / 0.08);
+  --sdkwork-playground-rail-tooltip-text: rgb(241 245 249);
+  --sdkwork-playground-rail-tooltip-shadow: rgb(0 0 0 / 0.45);
+  --sdkwork-playground-rail-active-icon-color: rgb(255 255 255);
+  --sdkwork-playground-chat-sidebar-bg: #111111;
+  --sdkwork-playground-chat-sidebar-border: rgb(255 255 255 / 0.07);
+  --sdkwork-playground-chat-new-text: rgb(226 232 240);
+  --sdkwork-playground-chat-new-border: rgb(255 255 255 / 0.1);
+  --sdkwork-playground-chat-new-hover-bg: rgb(255 255 255 / 0.06);
+  --sdkwork-playground-chat-new-hover-border: rgb(255 255 255 / 0.14);
+  --sdkwork-playground-chat-new-hover-text: rgb(255 255 255);
+  --sdkwork-playground-chat-label: rgb(100 116 139);
+  --sdkwork-playground-chat-empty-bg: rgb(255 255 255 / 0.03);
+  --sdkwork-playground-chat-empty-text: rgb(100 116 139);
+  --sdkwork-playground-chat-skeleton: rgb(255 255 255 / 0.04);
+  --sdkwork-playground-chat-session-color: rgb(148 163 184);
+  --sdkwork-playground-chat-session-hover-color: rgb(226 232 240);
+  --sdkwork-playground-chat-session-hover-bg: rgb(255 255 255 / 0.05);
+  --sdkwork-playground-chat-session-active-color: rgb(255 255 255);
+  --sdkwork-playground-chat-session-active-bg: rgb(255 255 255 / 0.08);
+  --sdkwork-playground-chat-session-active-border: rgb(255 255 255 / 0.06);
+  --sdkwork-playground-chat-session-badge-bg: rgb(255 255 255 / 0.06);
+  --sdkwork-playground-chat-session-badge-color: rgb(100 116 139);
+  --sdkwork-playground-chat-page-bg: #151515;
+  --sdkwork-playground-chat-page-text: rgb(248 250 252);
+  --sdkwork-playground-chat-composer-bg: #1c1c20;
+  --sdkwork-playground-chat-composer-field-bg: #151519;
+  --sdkwork-playground-chat-composer-field-focus-bg: #19191e;
+  --sdkwork-playground-chat-composer-text: rgb(241 245 249);
+  --sdkwork-playground-chat-composer-placeholder: rgb(100 116 139);
+  --sdkwork-playground-chat-user-bubble-bg: #1a1a1a;
+  --sdkwork-playground-chat-user-bubble-text: rgb(248 250 252);
+  --sdkwork-playground-chat-assistant-text: rgb(241 245 249);
+  --sdkwork-playground-chat-empty-icon-bg: rgb(255 255 255 / 0.05);
+  --sdkwork-playground-chat-empty-icon-color: #67e8f9;
+  --sdkwork-playground-chat-empty-title: rgb(248 250 252);
+  --sdkwork-playground-chat-loading-banner-bg: rgb(255 255 255 / 0.05);
+  --sdkwork-playground-chat-loading-banner-text: rgb(148 163 184);
+  --sdkwork-playground-chat-loading-text: rgb(100 116 139);
+  --sdkwork-playground-chat-status-chip-bg: rgb(255 255 255 / 0.05);
+  --sdkwork-playground-chat-status-chip-text: rgb(100 116 139);
+  --sdkwork-playground-chat-warning-chip-bg: rgb(251 191 36 / 0.1);
+  --sdkwork-playground-chat-warning-chip-text: rgb(253 230 138);
+  --sdkwork-playground-chat-submit-bg: var(--sdkwork-studio-accent);
+  --sdkwork-playground-chat-submit-hover-bg: var(--sdkwork-studio-accent-hover);
+  --sdkwork-playground-chat-submit-text: #ffffff;
+  --sdkwork-playground-chat-submit-disabled-bg: rgb(255 255 255 / 0.06);
+  --sdkwork-playground-chat-submit-disabled-text: rgb(100 116 139);
+  --sdkwork-playground-chat-stop-bg: #f43f5e;
+  --sdkwork-playground-chat-stop-hover-bg: #fb7185;
+  --sdkwork-playground-chat-typing-text: rgb(148 163 184);
+  --sdkwork-playground-chat-meta-text: rgb(100 116 139);
+  --sdkwork-playground-chat-copy-hover-bg: rgb(255 255 255 / 0.05);
+  --sdkwork-playground-chat-copy-hover-text: rgb(226 232 240);
+  --sdkwork-playground-chat-error-divider: rgb(252 165 165 / 0.2);
+  --sdkwork-playground-chat-error-panel-bg: rgb(69 10 10 / 0.3);
+  --sdkwork-playground-chat-error-icon: rgb(252 165 165);
+  --sdkwork-playground-chat-input-attach-bg: rgb(255 255 255 / 0.05);
+  --sdkwork-playground-chat-input-attach-text: rgb(255 255 255);
+  --sdkwork-playground-chat-input-attach-hover-bg: rgb(255 255 255 / 0.1);
+  --sdkwork-playground-chat-input-placeholder: rgb(148 163 184);
+  --sdkwork-playground-chat-input-submit-idle-bg: rgb(255 255 255 / 0.05);
+  --sdkwork-playground-chat-input-submit-idle-text: rgb(100 116 139);
+  --sdkwork-playground-chat-input-text: rgb(255 255 255);
+  --sdkwork-playground-chat-input-text-placeholder: rgb(100 116 139);
+  --sdkwork-playground-chat-input-chip-chevron: rgb(148 163 184);
+  --sdkwork-playground-chat-input-menu-label: rgb(100 116 139);
+  --sdkwork-playground-chat-input-menu-item-text: rgb(226 232 240);
+  --sdkwork-playground-chat-input-menu-item-hover-bg: rgb(255 255 255 / 0.05);
+  --sdkwork-playground-chat-input-menu-item-check: var(--sdkwork-studio-accent-text);
+  --sdkwork-playground-chat-error-border: rgb(248 113 113 / 0.3);
+  --sdkwork-playground-chat-error-bg: rgb(239 68 68 / 0.1);
+  --sdkwork-playground-chat-error-text: rgb(254 226 226);
+  --sdkwork-playground-code-bg: #0d1117;
+  --sdkwork-playground-code-header-bg: rgb(255 255 255 / 0.055);
+  --sdkwork-playground-chat-code-language: rgb(148 163 184);
+  --sdkwork-playground-chat-code-copy: rgb(148 163 184);
+  --sdkwork-playground-chat-code-copy-hover-bg: rgb(255 255 255 / 0.1);
+  --sdkwork-playground-chat-code-copy-hover-text: rgb(248 250 252);
+  --sdkwork-playground-chat-code-token-comment: rgb(100 116 139);
+  --sdkwork-playground-chat-code-token-string: rgb(110 231 183);
+  --sdkwork-playground-chat-code-token-number: rgb(252 211 77);
+  --sdkwork-playground-chat-code-token-keyword: rgb(125 211 252);
+  --sdkwork-playground-chat-code-token-builtin: rgb(196 181 253);
+  --sdkwork-playground-chat-code-token-punct: rgb(148 163 184);
+  --sdkwork-playground-chat-markdown-text: rgb(241 245 249);
+  --sdkwork-playground-chat-markdown-blockquote-border: rgb(255 255 255 / 0.1);
+  --sdkwork-playground-chat-markdown-blockquote-bg: rgb(255 255 255 / 0.04);
+  --sdkwork-playground-chat-markdown-blockquote-text: rgb(226 232 240);
+  --sdkwork-playground-chat-markdown-divider: rgb(255 255 255 / 0.1);
+  --sdkwork-playground-chat-markdown-inline-code-bg: rgb(255 255 255 / 0.1);
+  --sdkwork-playground-chat-markdown-inline-code-text: rgb(241 245 249);
+  --sdkwork-playground-chat-markdown-math-border: rgb(255 255 255 / 0.1);
+  --sdkwork-playground-chat-markdown-math-bg: rgb(255 255 255 / 0.035);
+  --sdkwork-playground-preview-text-header-border: rgb(255 255 255 / 0.05);
+  --sdkwork-playground-preview-text-header-text: rgb(148 163 184);
+  --sdkwork-playground-preview-text-header-icon: rgb(165 180 252);
+  --sdkwork-playground-preview-text-body-text: rgb(241 245 249);
+  --sdkwork-playground-filter-icon: rgb(148 163 184);
+  --sdkwork-playground-filter-icon-hover-text: rgb(255 255 255);
+  --sdkwork-playground-filter-icon-active-bg: rgb(255 255 255 / 0.1);
+  --sdkwork-playground-filter-icon-active-text: rgb(255 255 255);
+  --sdkwork-playground-filter-divider: rgb(255 255 255 / 0.1);
+  --sdkwork-playground-filter-input-text: rgb(255 255 255);
+  --sdkwork-playground-filter-input-placeholder: rgb(100 116 139);
+  --sdkwork-playground-filter-field-text: rgb(100 116 139);
+  --sdkwork-playground-filter-field-separator: rgb(71 85 105);
+  --sdkwork-playground-preview-meta-label: rgb(100 116 139);
+  --sdkwork-playground-preview-meta-body: rgb(226 232 240);
+  --sdkwork-playground-preview-meta-details: rgb(100 116 139);
+  --sdkwork-playground-preview-meta-footer-border: rgb(255 255 255 / 0.05);
+  --sdkwork-playground-preview-empty-hint: rgb(100 116 139);
+  --sdkwork-playground-preview-audio-icon: rgb(129 140 248);
+  --sdkwork-playground-preview-thumb-active-border: var(--sdkwork-studio-accent);
+  --sdkwork-playground-preview-thumb-hover-border: rgb(255 255 255 / 0.2);
+  --sdkwork-playground-preview-thumb-badge-text: rgb(255 255 255 / 0.9);
+  --sdkwork-playground-sfx-sidebar-bg: linear-gradient(180deg, #101014 0%, #0b0b0e 100%);
+  --sdkwork-generation-workspace-bg: #121216;
+  --sdkwork-generation-workspace-text: rgb(248 250 252);
+  --sdkwork-generation-workspace-border: rgb(255 255 255 / 0.1);
+  --sdkwork-generation-workspace-tab-color: rgb(148 163 184);
+  --sdkwork-generation-workspace-tab-hover-color: rgb(226 232 240);
+  --sdkwork-generation-workspace-tab-hover-bg: rgb(255 255 255 / 0.05);
+  --sdkwork-generation-workspace-tab-active-color: var(--sdkwork-segmented-tab-active-color);
+  --sdkwork-generation-workspace-tab-active-bg: var(--sdkwork-segmented-tab-active-bg);
+  --sdkwork-generation-history-date-color: rgb(255 255 255);
+  --sdkwork-generation-history-type-color: rgb(255 255 255);
+  --sdkwork-generation-history-divider: rgb(255 255 255 / 0.2);
+  --sdkwork-generation-history-chip-bg: #222;
+  --sdkwork-generation-history-chip-border: rgb(255 255 255 / 0.05);
+  --sdkwork-generation-history-chip-color: rgb(203 213 225);
+  --sdkwork-generation-history-prompt-color: rgb(203 213 225);
+  --sdkwork-generation-history-output-bg: rgb(255 255 255 / 0.03);
+  --sdkwork-generation-history-output-border: rgb(255 255 255 / 0.05);
+  --sdkwork-generation-history-output-color: rgb(226 232 240);
+  --sdkwork-generation-history-card-bg: #1a1a1a;
+  --sdkwork-generation-history-card-border: rgb(255 255 255 / 0.05);
+  --sdkwork-generation-history-card-hover-border: rgb(99 102 241 / 0.5);
+  --sdkwork-generation-history-audio-gradient-from: #111;
+  --sdkwork-generation-history-audio-gradient-to: #1a1a24;
+  --sdkwork-generation-history-wave-bg: rgb(255 255 255);
+  --sdkwork-generation-history-play-bg: rgb(255 255 255 / 0.1);
+  --sdkwork-generation-history-play-hover-bg: rgb(255 255 255 / 0.2);
+  --sdkwork-generation-history-duration-color: rgb(100 116 139);
+  --sdkwork-generation-history-media-hover-overlay: rgb(0 0 0 / 0.1);
+  --sdkwork-generation-history-video-hover-overlay: rgb(0 0 0 / 0.3);
+  --sdkwork-generation-history-placeholder-bg: #1a1a1a;
+  --sdkwork-generation-history-placeholder-border: rgb(255 255 255 / 0.1);
+  --sdkwork-generation-history-placeholder-color: rgb(148 163 184);
+  --sdkwork-generation-history-placeholder-icon-color: rgb(100 116 139);
+  --sdkwork-generation-history-empty-bg: #18181c;
+  --sdkwork-generation-history-empty-border: rgb(255 255 255 / 0.12);
+  --sdkwork-generation-history-empty-color: rgb(148 163 184);
+  --sdkwork-generation-history-image-overlay: rgb(0 0 0 / 0.28);
+  --sdkwork-segmented-track-bg: #0d0d11;
+  --sdkwork-segmented-tab-color: #64748b;
+  --sdkwork-segmented-tab-icon-color: #475569;
+  --sdkwork-segmented-tab-hover-color: #94a3b8;
+  --sdkwork-segmented-tab-hover-bg: rgb(255 255 255 / 0.04);
+  --sdkwork-segmented-tab-active-color: #f8fafc;
+  --sdkwork-segmented-tab-active-bg: #1f1f27;
+  --sdkwork-segmented-tab-active-icon-color: #a5b4fc;
+  --sdkwork-studio-bg: #131316;
+  --sdkwork-studio-sidebar-bg: #131316;
+  --sdkwork-studio-surface: #1a1a1f;
+  --sdkwork-studio-surface-hover: #222228;
+  --sdkwork-studio-surface-focus: #1e1e24;
+  --sdkwork-studio-control-bg: #25252c;
+  --sdkwork-studio-control-hover: #2e2e36;
+  --sdkwork-studio-control-disabled: #1a1a1f;
+  --sdkwork-studio-text: #f1f5f9;
+  --sdkwork-studio-text-muted: #64748b;
+  --sdkwork-studio-text-subtle: #475569;
+  --sdkwork-studio-text-secondary: #94a3b8;
+  --sdkwork-studio-text-emphasis: #cbd5e1;
+  --sdkwork-studio-empty-icon-bg: #1c1c22;
+  --sdkwork-studio-settings-bg: #1a1a1f;
+  --sdkwork-studio-settings-option-bg: #16161c;
+  --sdkwork-studio-settings-option-hover-bg: #1c1c24;
+  --sdkwork-studio-settings-option-active-bg: #1f1f27;
+  --sdkwork-studio-settings-option-active-text: #f8fafc;
+  --sdkwork-studio-settings-option-active-icon: #a5b4fc;
+  --sdkwork-studio-error-text: #fca5a5;
+  --sdkwork-image-generation-warning-text: #fbbf24;
+  --sdkwork-image-generation-reference-overlay-text: #e2e8f0;
+  --sdkwork-studio-border: rgb(255 255 255 / 0.06);
+  --sdkwork-studio-accent: #6366f1;
+  --sdkwork-studio-accent-hover: #4f46e5;
+  --sdkwork-studio-accent-soft: rgb(99 102 241 / 0.14);
+  --sdkwork-studio-accent-text: #a5b4fc;
+  --sdkwork-studio-generate-btn-disabled-bg: #374151;
+  --sdkwork-studio-generate-btn-disabled-text: #6b7280;
+  --sdkwork-studio-border-subtle: rgb(255 255 255 / 0.06);
+  --sdkwork-studio-border-strong: rgb(255 255 255 / 0.12);
+  --sdkwork-studio-control-hover-bg: rgb(255 255 255 / 0.05);
+  --sdkwork-generation-mode-vip-text: #fbbf24;
+  --sdkwork-playground-preview-nav-shadow: 0 20px 25px rgb(0 0 0 / 0.45);
+  --sdkwork-image-generation-bg: var(--sdkwork-studio-bg);
+  --sdkwork-image-generation-sidebar-bg: var(--sdkwork-studio-sidebar-bg);
+  --sdkwork-image-generation-surface: var(--sdkwork-studio-surface);
+  --sdkwork-image-generation-surface-hover: var(--sdkwork-studio-surface-hover);
+  --sdkwork-image-generation-surface-focus: var(--sdkwork-studio-surface-focus);
+  --sdkwork-image-generation-control-bg: var(--sdkwork-studio-control-bg);
+  --sdkwork-image-generation-control-hover: var(--sdkwork-studio-control-hover);
+  --sdkwork-image-generation-control-disabled: var(--sdkwork-studio-control-disabled);
+  --sdkwork-image-generation-text: var(--sdkwork-studio-text);
+  --sdkwork-image-generation-text-muted: var(--sdkwork-studio-text-muted);
+  --sdkwork-image-generation-text-subtle: var(--sdkwork-studio-text-subtle);
+  --sdkwork-image-generation-text-secondary: var(--sdkwork-studio-text-secondary);
+  --sdkwork-image-generation-text-emphasis: var(--sdkwork-studio-text-emphasis);
+  --sdkwork-image-generation-empty-icon-bg: var(--sdkwork-studio-empty-icon-bg);
+  --sdkwork-image-generation-settings-bg: var(--sdkwork-studio-settings-bg);
+  --sdkwork-image-generation-settings-option-bg: var(--sdkwork-studio-settings-option-bg);
+  --sdkwork-image-generation-settings-option-hover-bg: var(--sdkwork-studio-settings-option-hover-bg);
+  --sdkwork-image-generation-settings-option-active-bg: var(--sdkwork-studio-settings-option-active-bg);
+  --sdkwork-image-generation-settings-option-active-text: var(--sdkwork-studio-settings-option-active-text);
+  --sdkwork-image-generation-settings-option-active-icon: var(--sdkwork-studio-settings-option-active-icon);
+  --sdkwork-image-generation-error-text: var(--sdkwork-studio-error-text);
+  --sdkwork-image-generation-border: var(--sdkwork-studio-border);
+  --sdkwork-playground-workspace-sidebar-bg: #151515;
+  --sdkwork-playground-workspace-sidebar-border: rgb(255 255 255 / 0.1);
+  --sdkwork-generation-workspace-view-bg: #121216;
+  --sdkwork-playground-sfx-sidebar-accent: rgb(249 115 22 / 0.08);
+  --sdkwork-playground-sfx-sidebar-border: rgb(255 255 255 / 0.06);
+  --sdkwork-model-picker-menu-bg: #1c1c20;
+  --sdkwork-model-picker-menu-bg-flat: #242428;
+  --sdkwork-model-picker-trigger-bg: #1a1a1a;
+  --sdkwork-model-picker-trigger-bg-flat: rgb(32 32 36 / 0.7);
+  --sdkwork-model-picker-trigger-hover-bg-flat: #24242a;
+  --sdkwork-model-picker-trigger-border: rgb(255 255 255 / 0.05);
+  --sdkwork-model-picker-trigger-hover-border: rgb(99 102 241 / 0.5);
+  --sdkwork-model-picker-trigger-text: #f1f5f9;
+  --sdkwork-model-picker-vendors-bg: #141418;
+  --sdkwork-model-picker-models-bg: #1c1c20;
+  --sdkwork-model-picker-head-bg: #1c1c20;
+  --sdkwork-model-picker-head-bg-flat: #242428;
+  --sdkwork-model-picker-border: rgb(255 255 255 / 0.12);
+  --sdkwork-model-picker-border-subtle: rgb(255 255 255 / 0.08);
+  --sdkwork-model-picker-border-head: rgb(255 255 255 / 0.06);
+  --sdkwork-model-picker-text: #e2e8f0;
+  --sdkwork-model-picker-text-muted: #94a3b8;
+  --sdkwork-model-picker-text-subtle: #64748b;
+  --sdkwork-model-picker-vendor-hover-bg: rgb(255 255 255 / 0.05);
+  --sdkwork-model-picker-vendor-hover-text: #e2e8f0;
+  --sdkwork-model-picker-vendor-active-bg: rgb(34 211 238 / 0.12);
+  --sdkwork-model-picker-vendor-active-text: #cffafe;
+  --sdkwork-model-picker-vendor-active-accent: #22d3ee;
+  --sdkwork-model-picker-vendor-count-bg: rgb(255 255 255 / 0.08);
+  --sdkwork-model-picker-vendor-count-active-bg: rgb(34 211 238 / 0.18);
+  --sdkwork-model-picker-model-hover-bg: rgb(255 255 255 / 0.05);
+  --sdkwork-model-picker-model-active-bg: rgb(79 70 229 / 0.16);
+  --sdkwork-model-picker-model-name: #cbd5e1;
+  --sdkwork-model-picker-model-name-active: #a5b4fc;
+  --sdkwork-model-picker-check: #22d3ee;
+  --sdkwork-model-picker-shadow: 0 24px 64px rgb(0 0 0 / 0.58);
+}
+
+.playground-image-canvas {
+  background-color: var(--theme-aware-image-canvas);
+  background-image:
+    linear-gradient(45deg, var(--theme-aware-image-canvas-alt) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--theme-aware-image-canvas-alt) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--theme-aware-image-canvas-alt) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--theme-aware-image-canvas-alt) 75%);
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  background-size: 16px 16px;
+}
+
+.playground-image-preview-stage {
+  background-color: var(--theme-aware-image-preview-stage);
 }
 
 html:not(.dark) .theme-aware-dark-surface {
@@ -274,6 +4451,282 @@ html:not(.dark) .theme-aware-dark-surface {
   --theme-aware-chart-grid: rgba(100, 116, 139, 0.18);
   --theme-aware-tooltip: #ffffff;
   --theme-aware-tooltip-cursor: rgba(15, 23, 42, 0.05);
+  --theme-aware-image-canvas: #eef2f6;
+  --theme-aware-image-canvas-alt: #e2e8f0;
+  --theme-aware-image-frame: rgba(15, 23, 42, 0.1);
+  --theme-aware-image-preview-stage: #f1f5f9;
+  --theme-aware-image-overlay: rgba(15, 23, 42, 0.12);
+  --sdkwork-playground-rail-bg: var(--theme-aware-surface);
+  --sdkwork-playground-rail-border: var(--theme-aware-border);
+  --sdkwork-playground-rail-divider: var(--theme-aware-border);
+  --sdkwork-playground-rail-item-color: var(--theme-aware-text-muted);
+  --sdkwork-playground-rail-item-hover-color: var(--theme-aware-text);
+  --sdkwork-playground-rail-item-hover-bg: var(--theme-aware-panel-strong);
+  --sdkwork-playground-rail-item-hover-border: var(--theme-aware-border);
+  --sdkwork-playground-rail-item-active-color: rgb(var(--sdkwork-sidebar-accent-rgb));
+  --sdkwork-playground-rail-tooltip-bg: var(--theme-aware-panel);
+  --sdkwork-playground-rail-tooltip-border: var(--theme-aware-border);
+  --sdkwork-playground-rail-tooltip-text: var(--theme-aware-text);
+  --sdkwork-playground-rail-tooltip-shadow: rgb(15 23 42 / 0.12);
+  --sdkwork-playground-rail-active-icon-color: var(--theme-aware-text);
+  --sdkwork-playground-chat-sidebar-bg: var(--theme-aware-panel);
+  --sdkwork-playground-chat-sidebar-border: var(--theme-aware-border);
+  --sdkwork-playground-chat-new-text: var(--theme-aware-text);
+  --sdkwork-playground-chat-new-border: var(--theme-aware-border);
+  --sdkwork-playground-chat-new-hover-bg: var(--theme-aware-panel-strong);
+  --sdkwork-playground-chat-new-hover-border: var(--theme-aware-border);
+  --sdkwork-playground-chat-new-hover-text: var(--theme-aware-text);
+  --sdkwork-playground-chat-label: var(--theme-aware-text-muted);
+  --sdkwork-playground-chat-empty-bg: var(--theme-aware-panel-strong);
+  --sdkwork-playground-chat-empty-text: var(--theme-aware-text-muted);
+  --sdkwork-playground-chat-skeleton: var(--theme-aware-panel-muted);
+  --sdkwork-playground-chat-session-color: var(--theme-aware-text-muted);
+  --sdkwork-playground-chat-session-hover-color: var(--theme-aware-text);
+  --sdkwork-playground-chat-session-hover-bg: var(--theme-aware-panel-strong);
+  --sdkwork-playground-chat-session-active-color: var(--theme-aware-text);
+  --sdkwork-playground-chat-session-active-bg: var(--theme-aware-panel-muted);
+  --sdkwork-playground-chat-session-active-border: var(--theme-aware-border);
+  --sdkwork-playground-chat-session-badge-bg: var(--theme-aware-panel-strong);
+  --sdkwork-playground-chat-session-badge-color: var(--theme-aware-text-muted);
+  --sdkwork-playground-chat-page-bg: var(--theme-aware-panel);
+  --sdkwork-playground-chat-page-text: var(--theme-aware-text);
+  --sdkwork-playground-chat-composer-bg: var(--theme-aware-panel-muted);
+  --sdkwork-playground-chat-composer-field-bg: var(--theme-aware-panel-strong);
+  --sdkwork-playground-chat-composer-field-focus-bg: var(--theme-aware-panel);
+  --sdkwork-playground-chat-composer-text: var(--theme-aware-text);
+  --sdkwork-playground-chat-composer-placeholder: var(--theme-aware-text-muted);
+  --sdkwork-playground-chat-user-bubble-bg: var(--theme-aware-panel-strong);
+  --sdkwork-playground-chat-user-bubble-text: var(--theme-aware-text);
+  --sdkwork-playground-chat-assistant-text: var(--theme-aware-text);
+  --sdkwork-playground-chat-empty-icon-bg: var(--sdkwork-studio-accent-soft);
+  --sdkwork-playground-chat-empty-icon-color: var(--sdkwork-studio-accent-text);
+  --sdkwork-playground-chat-empty-title: var(--theme-aware-text);
+  --sdkwork-playground-chat-loading-banner-bg: var(--theme-aware-panel-strong);
+  --sdkwork-playground-chat-loading-banner-text: var(--theme-aware-text-muted);
+  --sdkwork-playground-chat-loading-text: var(--theme-aware-text-muted);
+  --sdkwork-playground-chat-status-chip-bg: var(--theme-aware-panel-strong);
+  --sdkwork-playground-chat-status-chip-text: var(--theme-aware-text-muted);
+  --sdkwork-playground-chat-warning-chip-bg: rgb(251 191 36 / 0.14);
+  --sdkwork-playground-chat-warning-chip-text: rgb(180 83 9);
+  --sdkwork-playground-chat-submit-bg: var(--sdkwork-studio-accent);
+  --sdkwork-playground-chat-submit-hover-bg: var(--sdkwork-studio-accent-hover);
+  --sdkwork-playground-chat-submit-text: #ffffff;
+  --sdkwork-playground-chat-submit-disabled-bg: var(--theme-aware-panel-muted);
+  --sdkwork-playground-chat-submit-disabled-text: var(--theme-aware-text-muted);
+  --sdkwork-playground-chat-stop-bg: #e11d48;
+  --sdkwork-playground-chat-stop-hover-bg: #f43f5e;
+  --sdkwork-playground-chat-typing-text: var(--theme-aware-text-muted);
+  --sdkwork-playground-chat-meta-text: var(--theme-aware-text-muted);
+  --sdkwork-playground-chat-copy-hover-bg: var(--theme-aware-panel-strong);
+  --sdkwork-playground-chat-copy-hover-text: var(--theme-aware-text);
+  --sdkwork-playground-chat-error-divider: rgb(248 113 113 / 0.25);
+  --sdkwork-playground-chat-error-panel-bg: rgb(254 226 226);
+  --sdkwork-playground-chat-error-icon: rgb(220 38 38);
+  --sdkwork-playground-chat-input-attach-bg: var(--theme-aware-panel-strong);
+  --sdkwork-playground-chat-input-attach-text: var(--theme-aware-text);
+  --sdkwork-playground-chat-input-attach-hover-bg: var(--theme-aware-panel-muted);
+  --sdkwork-playground-chat-input-placeholder: var(--theme-aware-text-muted);
+  --sdkwork-playground-chat-input-submit-idle-bg: var(--theme-aware-panel-strong);
+  --sdkwork-playground-chat-input-submit-idle-text: var(--theme-aware-text-muted);
+  --sdkwork-playground-chat-input-text: var(--theme-aware-text);
+  --sdkwork-playground-chat-input-text-placeholder: var(--theme-aware-text-muted);
+  --sdkwork-playground-chat-input-chip-chevron: var(--theme-aware-text-muted);
+  --sdkwork-playground-chat-input-menu-label: var(--theme-aware-text-muted);
+  --sdkwork-playground-chat-input-menu-item-text: var(--theme-aware-text);
+  --sdkwork-playground-chat-input-menu-item-hover-bg: var(--theme-aware-panel-strong);
+  --sdkwork-playground-chat-input-menu-item-check: var(--sdkwork-studio-accent-text);
+  --sdkwork-playground-chat-error-border: rgb(248 113 113 / 0.35);
+  --sdkwork-playground-chat-error-bg: rgb(254 226 226);
+  --sdkwork-playground-chat-error-text: rgb(127 29 29);
+  --sdkwork-playground-code-bg: #f1f5f9;
+  --sdkwork-playground-code-header-bg: var(--theme-aware-panel-muted);
+  --sdkwork-playground-chat-code-bg: var(--sdkwork-playground-code-bg);
+  --sdkwork-playground-chat-code-user-bg: #eef2ff;
+  --sdkwork-playground-chat-code-danger-bg: #fef2f2;
+  --sdkwork-playground-chat-code-text: var(--theme-aware-text);
+  --sdkwork-playground-chat-code-border: var(--theme-aware-border);
+  --sdkwork-playground-chat-code-header-border: var(--theme-aware-border);
+  --sdkwork-playground-chat-code-language: var(--theme-aware-text-muted);
+  --sdkwork-playground-chat-code-copy: var(--theme-aware-text-muted);
+  --sdkwork-playground-chat-code-copy-hover-bg: var(--theme-aware-panel-strong);
+  --sdkwork-playground-chat-code-copy-hover-text: var(--theme-aware-text);
+  --sdkwork-playground-chat-code-token-comment: #64748b;
+  --sdkwork-playground-chat-code-token-string: #059669;
+  --sdkwork-playground-chat-code-token-number: #d97706;
+  --sdkwork-playground-chat-code-token-keyword: #0284c7;
+  --sdkwork-playground-chat-code-token-builtin: #7c3aed;
+  --sdkwork-playground-chat-code-token-punct: #64748b;
+  --sdkwork-playground-chat-markdown-text: var(--theme-aware-text);
+  --sdkwork-playground-chat-markdown-blockquote-border: var(--theme-aware-border);
+  --sdkwork-playground-chat-markdown-blockquote-bg: var(--theme-aware-panel-strong);
+  --sdkwork-playground-chat-markdown-blockquote-text: var(--theme-aware-text);
+  --sdkwork-playground-chat-markdown-divider: var(--theme-aware-border);
+  --sdkwork-playground-chat-markdown-inline-code-bg: var(--theme-aware-panel-muted);
+  --sdkwork-playground-chat-markdown-inline-code-text: var(--theme-aware-text);
+  --sdkwork-playground-chat-markdown-math-border: var(--theme-aware-border);
+  --sdkwork-playground-chat-markdown-math-bg: var(--theme-aware-panel-strong);
+  --sdkwork-playground-preview-text-header-border: var(--theme-aware-border);
+  --sdkwork-playground-preview-text-header-text: var(--theme-aware-text-muted);
+  --sdkwork-playground-preview-text-header-icon: var(--sdkwork-studio-accent-text);
+  --sdkwork-playground-preview-text-body-text: var(--theme-aware-text);
+  --sdkwork-playground-filter-icon: var(--theme-aware-text-muted);
+  --sdkwork-playground-filter-icon-hover-text: var(--theme-aware-text);
+  --sdkwork-playground-filter-icon-active-bg: var(--theme-aware-panel-strong);
+  --sdkwork-playground-filter-icon-active-text: var(--theme-aware-text);
+  --sdkwork-playground-filter-divider: var(--theme-aware-border);
+  --sdkwork-playground-filter-input-text: var(--theme-aware-text);
+  --sdkwork-playground-filter-input-placeholder: var(--theme-aware-text-muted);
+  --sdkwork-playground-filter-field-text: var(--theme-aware-text-muted);
+  --sdkwork-playground-filter-field-separator: var(--theme-aware-text-muted);
+  --sdkwork-playground-preview-meta-label: var(--theme-aware-text-muted);
+  --sdkwork-playground-preview-meta-body: var(--theme-aware-text);
+  --sdkwork-playground-preview-meta-details: var(--theme-aware-text-muted);
+  --sdkwork-playground-preview-meta-footer-border: var(--theme-aware-border);
+  --sdkwork-playground-preview-empty-hint: var(--theme-aware-text-muted);
+  --sdkwork-playground-preview-audio-icon: var(--sdkwork-studio-accent-text);
+  --sdkwork-playground-preview-thumb-active-border: var(--sdkwork-studio-accent);
+  --sdkwork-playground-preview-thumb-hover-border: var(--theme-aware-border);
+  --sdkwork-playground-preview-thumb-badge-text: var(--theme-aware-text);
+  --sdkwork-playground-preview-sidebar-bg: var(--theme-aware-panel);
+  --sdkwork-playground-sfx-sidebar-bg: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
+  --sdkwork-playground-sfx-sidebar-accent: rgb(249 115 22 / 0.12);
+  --sdkwork-playground-sfx-sidebar-border: var(--theme-aware-border);
+  --sdkwork-model-picker-menu-bg: #ffffff;
+  --sdkwork-model-picker-menu-bg-flat: #ffffff;
+  --sdkwork-model-picker-trigger-bg: var(--theme-aware-panel);
+  --sdkwork-model-picker-trigger-bg-flat: var(--theme-aware-panel-muted);
+  --sdkwork-model-picker-trigger-hover-bg-flat: var(--theme-aware-panel-strong);
+  --sdkwork-model-picker-trigger-border: var(--theme-aware-border);
+  --sdkwork-model-picker-trigger-hover-border: rgb(var(--sdkwork-sidebar-accent-rgb) / 0.45);
+  --sdkwork-model-picker-trigger-text: var(--theme-aware-text);
+  --sdkwork-model-picker-vendors-bg: #f8fafc;
+  --sdkwork-model-picker-models-bg: #ffffff;
+  --sdkwork-model-picker-head-bg: #ffffff;
+  --sdkwork-model-picker-head-bg-flat: #ffffff;
+  --sdkwork-model-picker-border: var(--theme-aware-border);
+  --sdkwork-model-picker-border-subtle: rgba(148, 163, 184, 0.2);
+  --sdkwork-model-picker-border-head: rgba(148, 163, 184, 0.18);
+  --sdkwork-model-picker-text: var(--theme-aware-text);
+  --sdkwork-model-picker-text-muted: var(--theme-aware-text-muted);
+  --sdkwork-model-picker-text-subtle: #64748b;
+  --sdkwork-model-picker-vendor-hover-bg: var(--theme-aware-panel-strong);
+  --sdkwork-model-picker-vendor-hover-text: var(--theme-aware-text);
+  --sdkwork-model-picker-vendor-active-bg: rgb(var(--sdkwork-sidebar-accent-rgb) / 0.12);
+  --sdkwork-model-picker-vendor-active-text: rgb(var(--sdkwork-sidebar-accent-rgb));
+  --sdkwork-model-picker-vendor-active-accent: rgb(var(--sdkwork-sidebar-accent-rgb));
+  --sdkwork-model-picker-vendor-count-bg: var(--theme-aware-panel-muted);
+  --sdkwork-model-picker-vendor-count-active-bg: rgb(var(--sdkwork-sidebar-accent-rgb) / 0.16);
+  --sdkwork-model-picker-model-hover-bg: var(--theme-aware-panel-strong);
+  --sdkwork-generation-workspace-bg: var(--theme-aware-surface);
+  --sdkwork-generation-workspace-text: var(--theme-aware-text);
+  --sdkwork-generation-workspace-border: var(--theme-aware-border);
+  --sdkwork-generation-workspace-tab-color: var(--theme-aware-text-muted);
+  --sdkwork-generation-workspace-tab-hover-color: var(--theme-aware-text);
+  --sdkwork-generation-workspace-tab-hover-bg: var(--theme-aware-panel-strong);
+  --sdkwork-generation-workspace-tab-active-color: var(--sdkwork-segmented-tab-active-color);
+  --sdkwork-generation-workspace-tab-active-bg: var(--sdkwork-segmented-tab-active-bg);
+  --sdkwork-generation-history-date-color: var(--theme-aware-text);
+  --sdkwork-generation-history-type-color: var(--theme-aware-text);
+  --sdkwork-generation-history-divider: var(--theme-aware-border);
+  --sdkwork-generation-history-chip-bg: var(--theme-aware-panel-strong);
+  --sdkwork-generation-history-chip-border: var(--theme-aware-border);
+  --sdkwork-generation-history-chip-color: var(--theme-aware-text-muted);
+  --sdkwork-generation-history-prompt-color: var(--theme-aware-text-muted);
+  --sdkwork-generation-history-output-bg: var(--theme-aware-panel-strong);
+  --sdkwork-generation-history-output-border: var(--theme-aware-border);
+  --sdkwork-generation-history-output-color: var(--theme-aware-text);
+  --sdkwork-generation-history-card-bg: var(--theme-aware-panel);
+  --sdkwork-generation-history-card-border: var(--theme-aware-border);
+  --sdkwork-generation-history-card-hover-border: rgb(99 102 241 / 0.45);
+  --sdkwork-generation-history-audio-gradient-from: var(--theme-aware-panel);
+  --sdkwork-generation-history-audio-gradient-to: var(--theme-aware-panel-strong);
+  --sdkwork-generation-history-wave-bg: var(--theme-aware-text-muted);
+  --sdkwork-generation-history-play-bg: var(--theme-aware-panel-muted);
+  --sdkwork-generation-history-play-hover-bg: var(--theme-aware-panel-strong);
+  --sdkwork-generation-history-duration-color: var(--theme-aware-text-muted);
+  --sdkwork-generation-history-media-hover-overlay: var(--theme-aware-image-overlay);
+  --sdkwork-generation-history-video-hover-overlay: color-mix(in srgb, var(--theme-aware-text) 18%, transparent);
+  --sdkwork-generation-history-placeholder-bg: var(--theme-aware-panel);
+  --sdkwork-generation-history-placeholder-border: var(--theme-aware-border);
+  --sdkwork-generation-history-placeholder-color: var(--theme-aware-text-muted);
+  --sdkwork-generation-history-placeholder-icon-color: var(--theme-aware-text-muted);
+  --sdkwork-generation-history-empty-bg: var(--theme-aware-panel);
+  --sdkwork-generation-history-empty-border: var(--theme-aware-border);
+  --sdkwork-generation-history-empty-color: var(--theme-aware-text-muted);
+  --sdkwork-generation-history-image-overlay: rgb(15 23 42 / 0.35);
+  --sdkwork-segmented-track-bg: #e2e8f0;
+  --sdkwork-segmented-tab-color: #64748b;
+  --sdkwork-segmented-tab-icon-color: #64748b;
+  --sdkwork-segmented-tab-hover-color: #334155;
+  --sdkwork-segmented-tab-hover-bg: rgb(15 23 42 / 0.06);
+  --sdkwork-segmented-tab-active-color: #0f172a;
+  --sdkwork-segmented-tab-active-bg: #ffffff;
+  --sdkwork-segmented-tab-active-icon-color: #6366f1;
+  --sdkwork-studio-bg: var(--theme-aware-surface);
+  --sdkwork-studio-sidebar-bg: var(--theme-aware-surface);
+  --sdkwork-studio-surface: #f1f5f9;
+  --sdkwork-studio-surface-hover: #e2e8f0;
+  --sdkwork-studio-surface-focus: #ffffff;
+  --sdkwork-studio-control-bg: #e2e8f0;
+  --sdkwork-studio-control-hover: #cbd5e1;
+  --sdkwork-studio-control-disabled: #f1f5f9;
+  --sdkwork-studio-text: #0f172a;
+  --sdkwork-studio-text-muted: #64748b;
+  --sdkwork-studio-text-subtle: #94a3b8;
+  --sdkwork-studio-text-secondary: #475569;
+  --sdkwork-studio-text-emphasis: #334155;
+  --sdkwork-studio-empty-icon-bg: #e2e8f0;
+  --sdkwork-studio-settings-bg: #ffffff;
+  --sdkwork-studio-settings-option-bg: #f1f5f9;
+  --sdkwork-studio-settings-option-hover-bg: #e2e8f0;
+  --sdkwork-studio-settings-option-active-bg: #ffffff;
+  --sdkwork-studio-settings-option-active-text: #0f172a;
+  --sdkwork-studio-settings-option-active-icon: #6366f1;
+  --sdkwork-studio-error-text: #dc2626;
+  --sdkwork-image-generation-warning-text: #d97706;
+  --sdkwork-image-generation-reference-overlay-text: #e2e8f0;
+  --sdkwork-studio-border: var(--theme-aware-border);
+  --sdkwork-studio-accent: #6366f1;
+  --sdkwork-studio-accent-hover: #4f46e5;
+  --sdkwork-studio-accent-soft: rgb(99 102 241 / 0.12);
+  --sdkwork-studio-accent-text: #4338ca;
+  --sdkwork-studio-generate-btn-disabled-bg: var(--theme-aware-panel-muted);
+  --sdkwork-studio-generate-btn-disabled-text: var(--theme-aware-text-muted);
+  --sdkwork-studio-border-subtle: rgba(148, 163, 184, 0.18);
+  --sdkwork-studio-border-strong: rgba(148, 163, 184, 0.32);
+  --sdkwork-studio-control-hover-bg: var(--theme-aware-panel-strong);
+  --sdkwork-generation-mode-vip-text: #d97706;
+  --sdkwork-playground-preview-nav-shadow: 0 20px 25px rgb(15 23 42 / 0.12);
+  --sdkwork-image-generation-bg: var(--sdkwork-studio-bg);
+  --sdkwork-image-generation-sidebar-bg: var(--sdkwork-studio-sidebar-bg);
+  --sdkwork-image-generation-surface: var(--sdkwork-studio-surface);
+  --sdkwork-image-generation-surface-hover: var(--sdkwork-studio-surface-hover);
+  --sdkwork-image-generation-surface-focus: var(--sdkwork-studio-surface-focus);
+  --sdkwork-image-generation-control-bg: var(--sdkwork-studio-control-bg);
+  --sdkwork-image-generation-control-hover: var(--sdkwork-studio-control-hover);
+  --sdkwork-image-generation-control-disabled: var(--sdkwork-studio-control-disabled);
+  --sdkwork-image-generation-text: var(--sdkwork-studio-text);
+  --sdkwork-image-generation-text-muted: var(--sdkwork-studio-text-muted);
+  --sdkwork-image-generation-text-subtle: var(--sdkwork-studio-text-subtle);
+  --sdkwork-image-generation-text-secondary: var(--sdkwork-studio-text-secondary);
+  --sdkwork-image-generation-text-emphasis: var(--sdkwork-studio-text-emphasis);
+  --sdkwork-image-generation-empty-icon-bg: var(--sdkwork-studio-empty-icon-bg);
+  --sdkwork-image-generation-settings-bg: var(--sdkwork-studio-settings-bg);
+  --sdkwork-image-generation-settings-option-bg: var(--sdkwork-studio-settings-option-bg);
+  --sdkwork-image-generation-settings-option-hover-bg: var(--sdkwork-studio-settings-option-hover-bg);
+  --sdkwork-image-generation-settings-option-active-bg: var(--sdkwork-studio-settings-option-active-bg);
+  --sdkwork-image-generation-settings-option-active-text: var(--sdkwork-studio-settings-option-active-text);
+  --sdkwork-image-generation-settings-option-active-icon: var(--sdkwork-studio-settings-option-active-icon);
+  --sdkwork-image-generation-error-text: var(--sdkwork-studio-error-text);
+  --sdkwork-image-generation-border: var(--sdkwork-studio-border);
+  --sdkwork-playground-workspace-sidebar-bg: var(--theme-aware-panel);
+  --sdkwork-playground-workspace-sidebar-border: var(--theme-aware-border);
+  --sdkwork-generation-workspace-view-bg: var(--theme-aware-surface);
+  --sdkwork-model-picker-model-active-bg: rgb(79 70 229 / 0.1);
+  --sdkwork-model-picker-model-name: #334155;
+  --sdkwork-model-picker-model-name-active: #4338ca;
+  --sdkwork-model-picker-check: rgb(var(--sdkwork-sidebar-accent-rgb));
+  --sdkwork-model-picker-shadow: 0 24px 64px rgb(15 23 42 / 0.12);
   background-color: var(--theme-aware-surface) !important;
   color: var(--theme-aware-text) !important;
 }
@@ -335,22 +4788,51 @@ html:not(.dark) .theme-aware-dark-surface [class~="hover:bg-black/90"]:hover {
   background-color: rgb(15 23 42 / 0.78) !important;
 }
 
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#0f0f0f]"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#101013]"],
 html:not(.dark) .theme-aware-dark-surface [class~="bg-[#111]"],
 html:not(.dark) .theme-aware-dark-surface [class~="bg-[#111111]"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#121216]"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#121216]/95"],
 html:not(.dark) .theme-aware-dark-surface [class~="bg-[#151515]"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#151515]/95"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#151519]"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#181818]"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#19191e]"],
 html:not(.dark) .theme-aware-dark-surface [class~="bg-[#1a1a1a]"],
 html:not(.dark) .theme-aware-dark-surface [class~="bg-[#1c1c1e]"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#1c1c20]"],
 html:not(.dark) .theme-aware-dark-surface [class~="bg-[#1e1e1e]"],
 html:not(.dark) .theme-aware-dark-surface [class~="bg-[#1e1e1e]/50"],
 html:not(.dark) .theme-aware-dark-surface [class~="bg-[#1f1f1f]"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#202020]"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#202024]/70"],
 html:not(.dark) .theme-aware-dark-surface [class~="bg-[#222]"],
 html:not(.dark) .theme-aware-dark-surface [class~="bg-[#242424]"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#242428]"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#24242a]"],
 html:not(.dark) .theme-aware-dark-surface [class~="bg-[#252525]"],
 html:not(.dark) .theme-aware-dark-surface [class~="bg-[#252528]"],
 html:not(.dark) .theme-aware-dark-surface [class~="bg-[#2a2a2a]"],
-html:not(.dark) .theme-aware-dark-surface [class~="bg-[#2a2a2d]"] {
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#2a2a2d]"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#2a2a30]"] {
   background-color: var(--theme-aware-panel) !important;
   background-image: none !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface .playground-image-canvas {
+  background-color: var(--theme-aware-image-canvas) !important;
+  background-image:
+    linear-gradient(45deg, var(--theme-aware-image-canvas-alt) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--theme-aware-image-canvas-alt) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--theme-aware-image-canvas-alt) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--theme-aware-image-canvas-alt) 75%) !important;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0 !important;
+  background-size: 16px 16px !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface .playground-image-preview-stage {
+  background-color: var(--theme-aware-image-preview-stage) !important;
 }
 
 html:not(.dark) .theme-aware-dark-surface [class~="bg-white/5"],
@@ -361,12 +4843,16 @@ html:not(.dark) .theme-aware-dark-surface [class~="bg-white/[0.02]"] {
 }
 
 html:not(.dark) .theme-aware-dark-surface [class~="hover:bg-[#1a1a1a]"]:hover,
+html:not(.dark) .theme-aware-dark-surface [class~="hover:bg-[#19191e]"]:hover,
+html:not(.dark) .theme-aware-dark-surface [class~="hover:bg-[#24242a]"]:hover,
 html:not(.dark) .theme-aware-dark-surface [class~="hover:bg-[#2a2a2a]"]:hover,
 html:not(.dark) .theme-aware-dark-surface [class~="hover:bg-[#2a2a2d]"]:hover,
+html:not(.dark) .theme-aware-dark-surface [class~="focus-within:bg-[#19191e]"]:focus-within,
 html:not(.dark) .theme-aware-dark-surface [class~="hover:bg-white/5"]:hover,
 html:not(.dark) .theme-aware-dark-surface [class~="hover:bg-white/10"]:hover,
 html:not(.dark) .theme-aware-dark-surface [class~="hover:bg-white/20"]:hover,
-html:not(.dark) .theme-aware-dark-surface [class~="hover:bg-white/[0.02]"]:hover {
+html:not(.dark) .theme-aware-dark-surface [class~="hover:bg-white/[0.02]"]:hover,
+html:not(.dark) .theme-aware-dark-surface [class~="hover:bg-white/15"]:hover {
   background-color: var(--theme-aware-panel-muted) !important;
   background-image: none !important;
 }
@@ -377,6 +4863,15 @@ html:not(.dark) .theme-aware-dark-surface [class~="bg-gradient-to-tr"][class~="f
 
 html:not(.dark) .theme-aware-dark-surface [class~="bg-gradient-to-br"][class~="from-[#111]"][class~="to-[#1a1a1a]"] {
   background-image: linear-gradient(to bottom right, var(--theme-aware-panel), var(--theme-aware-panel-strong)) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class*="from-gray-800"][class*="to-gray-900"] {
+  background-color: var(--theme-aware-image-canvas) !important;
+  background-image: linear-gradient(
+    to bottom right,
+    var(--theme-aware-image-canvas),
+    var(--theme-aware-image-canvas-alt)
+  ) !important;
 }
 
 html:not(.dark) .theme-aware-dark-surface [class~="bg-gradient-to-t"][class~="from-[#111]"][class~="via-[#111]/80"][class~="to-transparent"] {
@@ -419,10 +4914,67 @@ html:not(.dark) .theme-aware-dark-surface [class~="bg-black/40"] [class~="text-w
   color: #ffffff !important;
 }
 
+html:not(.dark) .theme-aware-dark-surface [class~="bg-gray-700"] {
+  background-color: var(--theme-aware-panel-muted) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="bg-slate-50"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-slate-100"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-slate-200"] {
+  background-color: var(--theme-aware-panel-strong) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="bg-white/95"] {
+  background-color: color-mix(in srgb, var(--theme-aware-panel) 95%, transparent) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="hover:bg-slate-100"]:hover {
+  background-color: var(--theme-aware-panel-muted) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="border-slate-200"],
+html:not(.dark) .theme-aware-dark-surface [class~="border-slate-200/80"],
+html:not(.dark) .theme-aware-dark-surface [class~="border-slate-300"] {
+  border-color: var(--theme-aware-border) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="text-slate-600"],
+html:not(.dark) .theme-aware-dark-surface [class~="text-slate-700"],
+html:not(.dark) .theme-aware-dark-surface [class~="text-slate-800"],
+html:not(.dark) .theme-aware-dark-surface [class~="text-slate-900"] {
+  color: var(--theme-aware-text) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="hover:text-slate-700"]:hover,
+html:not(.dark) .theme-aware-dark-surface [class~="hover:text-slate-900"]:hover {
+  color: var(--theme-aware-text) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="bg-black/65"] {
+  background-color: var(--theme-aware-image-overlay) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="text-gray-200"],
+html:not(.dark) .theme-aware-dark-surface [class~="text-gray-300"],
+html:not(.dark) .theme-aware-dark-surface [class~="text-slate-100"] {
+  color: var(--theme-aware-text) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="text-gray-400"],
+html:not(.dark) .theme-aware-dark-surface [class~="text-gray-500"],
 html:not(.dark) .theme-aware-dark-surface [class~="text-slate-400"],
 html:not(.dark) .theme-aware-dark-surface [class~="text-slate-500"],
-html:not(.dark) .theme-aware-dark-surface [class~="text-slate-600"] {
+html:not(.dark) .theme-aware-dark-surface [class~="text-slate-600"],
+html:not(.dark) .theme-aware-dark-surface [class~="text-slate-700"] {
   color: var(--theme-aware-text-muted) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="hover:text-gray-200"]:hover {
+  color: var(--theme-aware-text) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="ring-offset-[#0a0a0a]"] {
+  --tw-ring-offset-color: var(--theme-aware-surface) !important;
 }
 
 html:not(.dark) .theme-aware-dark-surface [class~="hover:text-white"]:hover,
@@ -456,6 +5008,71 @@ html:not(.dark) .theme-aware-dark-surface [class~="hover:border-white/10"]:hover
 html:not(.dark) .theme-aware-dark-surface [class~="hover:border-white/20"]:hover,
 html:not(.dark) .theme-aware-dark-surface .group:hover [class~="group-hover:border-white/40"] {
   border-color: var(--theme-aware-border) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#0d1117]"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#0f1117]"] {
+  background-color: var(--sdkwork-playground-code-bg, #f1f5f9) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#1c1c20]/95"] {
+  background-color: rgb(255 255 255 / 0.95) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#151519]"] {
+  background-color: var(--theme-aware-panel-strong) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#19191e]"],
+html:not(.dark) .theme-aware-dark-surface [class~="focus-within:bg-[#19191e]"]:focus-within {
+  background-color: var(--theme-aware-panel-muted) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="bg-[#121216]"] {
+  background-color: var(--theme-aware-surface) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="bg-slate-800/80"] {
+  background-color: var(--theme-aware-panel-muted) !important;
+  border-color: var(--theme-aware-border) !important;
+  color: var(--theme-aware-text) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="bg-white/6"] {
+  background-color: rgb(148 163 184 / 0.16) !important;
+  color: var(--theme-aware-text-muted) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="bg-white/[0.03]"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-white/[0.035]"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-white/[0.04]"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-white/[0.06]"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-white/[0.07]"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-white/[0.055]"],
+html:not(.dark) .theme-aware-dark-surface [class~="bg-white/12"] {
+  background-color: var(--theme-aware-panel-strong) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="border-white/12"],
+html:not(.dark) .theme-aware-dark-surface [class~="border-white/15"],
+html:not(.dark) .theme-aware-dark-surface [class~="border-white/20"] {
+  border-color: var(--theme-aware-border) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="bg-white/[0.07]"] {
+  background-color: var(--sdkwork-playground-code-header-bg, var(--theme-aware-panel-muted)) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="shadow-[0_8px_30px_rgba(0,0,0,0.5)]"] {
+  box-shadow: 0 8px 30px rgb(15 23 42 / 0.08) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="shadow-[0_14px_34px_rgba(0,0,0,0.22)]"] {
+  box-shadow: 0 14px 34px rgb(15 23 42 / 0.08) !important;
+}
+
+html:not(.dark) .theme-aware-dark-surface [class~="shadow-[0_8px_24px_rgba(255,255,255,0.18)]"] {
+  box-shadow: 0 8px 24px rgb(15 23 42 / 0.12) !important;
 }
 
 * {

@@ -15,6 +15,7 @@ mod payment_intent_runtime;
 mod payment_provider_account_resolver;
 mod payment_provider_registry;
 mod payment_provider_runtime_assembler;
+mod payment_provider_runtime_bootstrap;
 mod payment_provider_runtime_snapshot;
 mod payment_reconciliation_runtime;
 mod payment_refund_runtime;
@@ -109,7 +110,12 @@ pub use payment_provider_account_resolver::{
     PaymentProviderSecretResolver, PaymentProviderSecretValue,
 };
 pub use payment_provider_registry::{
-    default_payment_provider_registry, PaymentProviderRegistry, PaymentProviderRegistryError,
+    default_payment_provider_registry, production_payment_provider_registry,
+    resolve_payment_provider_registry_for_deployment, sandbox_payment_provider_registry,
+    PaymentProviderRegistry, PaymentProviderRegistryError,
+};
+pub use payment_provider_runtime_bootstrap::{
+    bootstrap_payment_provider_registry, payment_runtime_environment,
 };
 pub use payment_provider_runtime_assembler::{
     ConfigurablePaymentProviderAdapterFactory, DefaultPaymentProviderAdapterFactory,

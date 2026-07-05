@@ -4,9 +4,9 @@ use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    AdminAnnouncementCommandFuture, AdminAnnouncementItem, AdminAnnouncementStore,
-    CreateAdminAnnouncementCommand, DeleteAdminAnnouncementCommand, ListAdminAnnouncementsQuery,
-    UpdateAdminAnnouncementCommand,
+    AdminAnnouncementCommandFuture, AdminAnnouncementItem, AdminAnnouncementListPage,
+    AdminAnnouncementStore, CreateAdminAnnouncementCommand, DeleteAdminAnnouncementCommand,
+    ListAdminAnnouncementsQuery, UpdateAdminAnnouncementCommand,
 };
 
 const ANNOUNCEMENT_TARGET_TYPE: i32 = 21;
@@ -32,7 +32,7 @@ impl AdminAnnouncementStore for PostgresAdminAnnouncementStore {
     fn list_announcements<'a>(
         &'a self,
         query: ListAdminAnnouncementsQuery,
-    ) -> AdminAnnouncementCommandFuture<'a, Vec<AdminAnnouncementItem>> {
+    ) -> AdminAnnouncementCommandFuture<'a, AdminAnnouncementListPage> {
         Box::pin(async move { list_announcements(&self.pool, query).await })
     }
 
@@ -175,7 +175,11 @@ impl AdminAnnouncementStore for PostgresAdminAnnouncementStore {
 async fn list_announcements(
     pool: &PgPool,
     query: ListAdminAnnouncementsQuery,
-) -> DomainResult<Vec<AdminAnnouncementItem>> {
+) -> DomainResult<AdminAnnouncementListPage> {
+    let search = query
+        .q
+        .as_ref()
+        .map(|value| format!("%{}%", value.to_lowercase()));
     let rows = sqlx::query(
         r#"
         SELECT
@@ -191,7 +195,8 @@ async fn list_announcements(
             CAST(m.deleted_at AS TEXT) AS deleted_at,
             r.recipient_type AS recipient_type,
             r.recipient_value AS recipient_value,
-            r.recipient_role_code
+            r.recipient_role_code,
+            COUNT(*) OVER() AS total
         FROM ops_notification_message m
         LEFT JOIN ops_notification_recipient r
             ON r.message_id = m.id
@@ -204,18 +209,36 @@ async fn list_announcements(
           AND m.scope_type = $3
           AND m.message_code = ('announcement:' || m.id::text)
           AND m.deleted_at IS NULL
+          AND (
+              $4 IS NULL
+              OR LOWER(COALESCE(m.title, '')) LIKE $4
+              OR LOWER(COALESCE(m.content, '')) LIKE $4
+          )
         ORDER BY COALESCE(m.published_at, m.updated_at, m.created_at) DESC NULLS LAST, m.id DESC
-        LIMIT 200
+        LIMIT $5 OFFSET $6
         "#,
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(SCOPE_GLOBAL)
+    .bind(search.as_deref())
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list announcements", error))?;
 
-    rows.iter().map(item_from_row).collect()
+    let total = rows
+        .first()
+        .and_then(|row| row.try_get::<i64, _>("total").ok())
+        .unwrap_or(0);
+    let items = rows.iter().map(item_from_row).collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminAnnouncementListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn insert_notification_message(

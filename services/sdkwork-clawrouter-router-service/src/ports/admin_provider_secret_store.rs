@@ -35,8 +35,20 @@ pub struct AdminProviderSecretItem {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListAdminProviderSecretsQuery {
     pub subject: AdminProviderSecretSubject,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
     pub provider_code: Option<String>,
     pub status: Option<String>,
+    pub q: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminProviderSecretListPage {
+    pub items: Vec<AdminProviderSecretItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -86,7 +98,7 @@ pub trait AdminProviderSecretStore {
     fn list_provider_secrets<'a>(
         &'a self,
         query: ListAdminProviderSecretsQuery,
-    ) -> AdminProviderSecretCommandFuture<'a, Vec<AdminProviderSecretItem>>;
+    ) -> AdminProviderSecretCommandFuture<'a, AdminProviderSecretListPage>;
 
     fn create_provider_secret<'a>(
         &'a self,

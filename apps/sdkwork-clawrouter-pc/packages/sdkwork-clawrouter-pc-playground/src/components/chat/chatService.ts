@@ -93,7 +93,7 @@ export class ChatSendFailureError extends Error {
 
 export class ChatService {
   static async fetchSessions(): Promise<ChatSessionSummary[]> {
-    const result = await listChatConversations({ pageSize: 100 });
+    const result = await listChatConversations({ pageSize: 20 });
     ensureSdkworkApiSuccess(result, 'Failed to fetch chat conversations');
     return readRequiredApiItems(result, 'Chat conversations response missing items')
       .filter(isRecord)
@@ -103,7 +103,7 @@ export class ChatService {
 
   static async fetchMessages(input: { completionId: string }): Promise<ChatMessage[]> {
     const result = await listChatMessages(input.completionId, {
-      limit: 100,
+      limit: 20,
       order: 'asc',
     });
     ensureSdkworkApiSuccess(result, 'Failed to fetch chat messages');
@@ -973,7 +973,7 @@ function parseEmbeddedJsonObject(message: string): Record<string, unknown> | nul
   if (start < 0) {
     return null;
   }
-  return parseJsonObject(message.slice(start).trim());
+  return parseJsonObject(message.substring(start).trim());
 }
 
 function parseJsonObject(value: string): Record<string, unknown> | null {

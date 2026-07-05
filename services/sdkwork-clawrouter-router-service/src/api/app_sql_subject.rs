@@ -15,6 +15,8 @@ use sdkwork_iam_bootstrap::{
 use sdkwork_web_core::{TenantAppContext, WebRequestContext};
 use sdkwork_claw_http::TrustedRequestSubject;
 
+use sdkwork_claw_http::TenantIsolationViolation;
+
 use sdkwork_clawrouter_app_providers_repository_sqlx::AppProvidersSubject;
 
 use crate::api::response::{problem_from_wire_code, success_envelope};
@@ -77,6 +79,14 @@ impl SqlScopedSubject {
     /// App-api command audit fields map the authenticated user id to operator id.
     pub fn operator_id(self) -> i64 {
         self.user_id
+    }
+
+    pub fn ensure_row_tenant(
+        self,
+        table: &str,
+        row_tenant_id: i64,
+    ) -> Result<(), TenantIsolationViolation> {
+        sdkwork_claw_http::ensure_row_tenant_matches(table, "app-sql", self.tenant_id, row_tenant_id)
     }
 
     pub fn operator_type() -> i32 {

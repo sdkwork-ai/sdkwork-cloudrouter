@@ -6,7 +6,7 @@
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "dependencies": {
-    "@sdkwork/app-topology": "file:../sdkwork-app-topology"
+    "@sdkwork/app-topology": "workspace:*"
   },
   "scripts": {
     "install:deps:ensure": "node scripts/lib/ensure-claw-router-node-deps.mjs",
@@ -153,17 +153,51 @@
     "packageExtensions": {
       "@sdkwork/models-pc-admin-catalog": {
         "dependencies": {
-          "@sdkwork/clawrouter-pc-commons": "workspace:*"
+          "@sdkwork/clawroutes-pc-commons": "workspace:*"
         }
       },
       "@sdkwork/models-pc-admin-resource": {
         "dependencies": {
-          "@sdkwork/clawrouter-pc-commons": "workspace:*"
+          "@sdkwork/clawroutes-pc-commons": "workspace:*"
         }
       },
       "@sdkwork/image-pc-generation": {
         "dependencies": {
+          "@sdkwork/assets-pc-assets": "workspace:*",
+          "@sdkwork/generations-pc-studio": "workspace:*",
+          "@sdkwork/generations-pc-workspace": "workspace:*",
           "@sdkwork/ui-pc-react": "workspace:*"
+        }
+      },
+      "@sdkwork/generations-pc-studio": {
+        "dependencies": {
+          "@sdkwork/utils": "workspace:*"
+        }
+      },
+      "@sdkwork/video-pc-generation": {
+        "dependencies": {
+          "@sdkwork/assets-pc-assets": "workspace:*",
+          "@sdkwork/generations-pc-studio": "workspace:*",
+          "@sdkwork/ui-pc-react": "workspace:*"
+        }
+      },
+      "@sdkwork/music-pc-generation": {
+        "dependencies": {
+          "@sdkwork/assets-pc-assets": "workspace:*",
+          "@sdkwork/generations-pc-studio": "workspace:*",
+          "@sdkwork/ui-pc-react": "workspace:*"
+        }
+      },
+      "@sdkwork/audio-pc-generation": {
+        "dependencies": {
+          "@sdkwork/assets-pc-assets": "workspace:*",
+          "@sdkwork/generations-pc-studio": "workspace:*",
+          "@sdkwork/ui-pc-react": "workspace:*"
+        }
+      },
+      "@sdkwork/assets-pc-assets": {
+        "dependencies": {
+          "@sdkwork/models-pc-picker": "workspace:*"
         }
       },
       "@sdkwork/image-pc": {
@@ -175,10 +209,18 @@
     "peerDependencyRules": {
       "allowAny": [
         "@sdkwork/ui-pc-react",
+        "@sdkwork/clawroutes-pc-commons",
         "@sdkwork/clawrouter-pc-commons",
         "@sdkwork/appbase-pc-react",
         "@sdkwork/core-pc-react"
       ]
+    }
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
     }
   }
 }

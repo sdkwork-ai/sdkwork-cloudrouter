@@ -8,8 +8,9 @@ use crate::infrastructure::sql::routing_config_change::{
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    AdminFirewallRuleCommandFuture, AdminFirewallRuleItem, AdminFirewallRuleStore,
-    CreateAdminFirewallRuleCommand, DeleteAdminFirewallRuleCommand, ListAdminFirewallRulesQuery,
+    AdminFirewallRuleCommandFuture, AdminFirewallRuleItem, AdminFirewallRuleListPage,
+    AdminFirewallRuleStore, CreateAdminFirewallRuleCommand, DeleteAdminFirewallRuleCommand,
+    ListAdminFirewallRulesQuery,
 };
 
 const FIREWALL_AUDIT_TARGET_TYPE: i32 = 43;
@@ -42,7 +43,7 @@ impl AdminFirewallRuleStore for SqliteAdminFirewallRuleStore {
     fn list_firewall_rules<'a>(
         &'a self,
         query: ListAdminFirewallRulesQuery,
-    ) -> AdminFirewallRuleCommandFuture<'a, Vec<AdminFirewallRuleItem>> {
+    ) -> AdminFirewallRuleCommandFuture<'a, AdminFirewallRuleListPage> {
         Box::pin(async move { list_firewall_rules(&self.pool, query).await })
     }
 
@@ -203,26 +204,50 @@ impl AdminFirewallRuleStore for SqliteAdminFirewallRuleStore {
 async fn list_firewall_rules(
     pool: &SqlitePool,
     query: ListAdminFirewallRulesQuery,
-) -> DomainResult<Vec<AdminFirewallRuleItem>> {
+) -> DomainResult<AdminFirewallRuleListPage> {
+    let search = query
+        .q
+        .as_ref()
+        .map(|value| format!("%{}%", value.to_lowercase()));
     let sql = firewall_rule_select_sql(
         r#"
         WHERE tenant_id = ?
           AND organization_id = ?
           AND rule_category = ?
           AND deleted_at IS NULL
+          AND (
+              ? IS NULL
+              OR LOWER(COALESCE(target_value, '')) LIKE ?
+              OR LOWER(COALESCE(reason, '')) LIKE ?
+          )
         ORDER BY priority ASC, updated_at DESC, id DESC
-        LIMIT 200
+        LIMIT ? OFFSET ?
         "#,
     );
     let rows = sqlx::query(&sql)
         .bind(query.subject.tenant_id)
         .bind(query.subject.organization_id)
         .bind(FIREWALL_RULE_CATEGORY)
+        .bind(search.as_deref())
+        .bind(search.as_deref())
+        .bind(search.as_deref())
+        .bind(query.page_size)
+        .bind(query.offset)
         .fetch_all(pool)
         .await
         .map_err(|error| store_error("failed to list firewall rules", error))?;
 
-    rows.into_iter().map(item_from_row).collect()
+    let total = rows
+        .first()
+        .and_then(|row| row.try_get::<i64, _>("total").ok())
+        .unwrap_or(0);
+    let items = rows.into_iter().map(item_from_row).collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminFirewallRuleListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn upsert_firewall_rule(
@@ -522,7 +547,8 @@ fn firewall_rule_select_sql(predicate: &str) -> String {
             COALESCE(target_value, '') AS value,
             COALESCE(reason, '') AS reason,
             CAST(created_at AS TEXT) AS time,
-            CAST(deleted_at AS TEXT) AS deleted_at
+            CAST(deleted_at AS TEXT) AS deleted_at,
+            COUNT(*) OVER() AS total
         FROM iam_gateway_risk_rule
         {predicate}
         "#

@@ -12,7 +12,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, offset_page_info, parse_offset_list_query, problem_from_wire_code,
+    success_envelope,
+};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::ports::{
@@ -44,6 +47,14 @@ struct AdminSiteState {
 #[derive(Debug, Deserialize)]
 struct ListSitesParams {
     q: Option<String>,
+    page: Option<i64>,
+    page_size: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ListSiteChannelsParams {
+    page: Option<i64>,
+    page_size: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -137,12 +148,6 @@ struct SiteResponse {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct SiteChannelsResponse {
-    items: Vec<SiteChannelResponse>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
 struct SiteChannelResponse {
     id: String,
     channel_code: String,
@@ -206,18 +211,30 @@ async fn fetch_sites(
     _headers: HeaderMap,
 ) -> Response {
     let subject = scoped.into();
+    let pagination = match parse_offset_list_query(params.page, params.page_size) {
+        Ok(value) => value,
+        Err(message) => return bad_request(message),
+    };
     match state
         .store
         .list_sites(ListAdminSitesQuery {
             subject,
             search: normalize_optional(params.q, MAX_NAME_LEN),
+            page_no: pagination.page_no,
+            page_size: pagination.page_size,
+            offset: pagination.offset,
         })
         .await
     {
-        Ok(items) => Json(success_envelope(SiteListResponse {
-            items: items.into_iter().map(to_site_response).collect(),
-        }))
-        .into_response(),
+        Ok(page) => json_success_list_response(
+            None,
+            page
+                .items
+                .into_iter()
+                .map(to_site_response)
+                .collect::<Vec<_>>(),
+            offset_page_info(page.page_no, page.page_size, page.total),
+        ),
         Err(error) => system_response("Site read model is unavailable", error),
     }
 }
@@ -303,6 +320,7 @@ async fn delete_site(
 async fn fetch_site_channels(
     State(state): State<AdminSiteState>,
     Path(site_id): Path<String>,
+    Query(params): Query<ListSiteChannelsParams>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
 ) -> Response {
@@ -311,15 +329,30 @@ async fn fetch_site_channels(
         Ok(site_id) => site_id,
         Err(message) => return bad_request(message),
     };
+    let pagination = match parse_offset_list_query(params.page, params.page_size) {
+        Ok(value) => value,
+        Err(message) => return bad_request(message),
+    };
     match state
         .store
-        .list_site_channels(ListAdminSiteChannelsQuery { subject, site_id })
+        .list_site_channels(ListAdminSiteChannelsQuery {
+            subject,
+            site_id,
+            page_no: pagination.page_no,
+            page_size: pagination.page_size,
+            offset: pagination.offset,
+        })
         .await
     {
-        Ok(items) => Json(success_envelope(SiteChannelsResponse {
-            items: items.into_iter().map(to_site_channel_response).collect(),
-        }))
-        .into_response(),
+        Ok(page) => json_success_list_response(
+            None,
+            page
+                .items
+                .into_iter()
+                .map(to_site_channel_response)
+                .collect::<Vec<_>>(),
+            offset_page_info(page.page_no, page.page_size, page.total),
+        ),
         Err(error) => system_response("Site channel read model is unavailable", error),
     }
 }

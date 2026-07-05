@@ -191,7 +191,7 @@ test("admin group create modal uses a two-column resource access layout with reu
     "data-admin-group-resource-access",
     "data-admin-group-resource-access-tabs",
     "ResourceGroupSelectorModal",
-    "AiResourceSelectorModal",
+    "PaginatedAiResourceSelectorModal",
     "selectionMode=\"multiple\"",
     "resourceAccessTab",
     "resourceGroupCodes",
@@ -233,35 +233,31 @@ test("admin group resource selectors provide searchable modal lists with selecte
     new URL("./packages/sdkwork-clawrouter-pc-admin-group/src/index.tsx", import.meta.url),
     "utf8",
   );
-  const sharedSource = readFileSync(
-    new URL("./packages/sdkwork-clawroutes-pc-commons/src/components/AiResourceSelectorModal.tsx", import.meta.url),
-    "utf8",
-  );
 
   for (const expected of [
     "data-admin-group-resource-group-selector-search",
     "data-admin-group-resource-selector-search",
-    "resourceGroupSearchQuery",
-    "filteredResourceGroupOptions",
+    "resourceGroupPickerSearch",
+    "resourceGroupPickerOptions",
+    "resourcePickerSearch",
+    "resourcePickerOptions",
+    "GroupService.fetchAssignableResourceGroups",
+    "GroupService.fetchAssignableResources",
     "admin.group.resourceAccess.search.resourceGroupsPlaceholder",
     "admin.group.resourceAccess.search.resourcesPlaceholder",
     "admin.group.resourceAccess.emptyResourceGroupsSearch",
     "admin.group.resourceAccess.emptyResourcesSearch",
+    "data-admin-group-resource-group-selector-pagination",
+    "data-admin-group-resource-selector-pagination",
   ]) {
     assert.ok(source.includes(expected), `missing resource selector search marker: ${expected}`);
   }
 
-  for (const expected of [
-    "resourceSearchQuery",
-    "filteredResourceOptions",
-    "matchesAiResourceSelectorSearch",
-  ]) {
-    assert.ok(sharedSource.includes(expected), `missing shared resource selector marker: ${expected}`);
-  }
+  assert.doesNotMatch(source, /filteredResourceGroupOptions/);
+  assert.match(source, /function PaginatedAiResourceSelectorModal\(/);
 
   assert.match(source, /<SelectorFooter[\s\S]*count=\{selectedCodes\.length\}[\s\S]*onClose=\{onClose\}/);
-  assert.match(sharedSource, /labels\.selectedCount\(selectedCodes\.length\)/);
-  assert.match(sharedSource, /searchDataAttribute = 'data-admin-ai-resource-selector-search'/);
+  assert.match(source, /selectedCount: count => t\('admin\.group\.resourceAccess\.selectedCount', \{ count \}\)/);
   assert.match(source, /function SelectorFooter\(\{\s*count,\s*onClose,\s*t,\s*\}/);
   assert.match(source, /selectedCount: count => t\('admin\.group\.resourceAccess\.selectedCount', \{ count \}\)/);
   assert.match(source, /done: t\('common\.actions\.done'\)/);
@@ -360,9 +356,6 @@ test("admin group table actions are wired to real supported workflows", () => {
   assert.match(source, /GroupService\.updateGroup/);
   assert.match(source, /onClick=\{\(\) => openEditModal\(group\)\}/);
   assert.match(source, /onClick=\{\(\) => \{ void loadGroups\(\); \}\}/);
-  assert.match(source, /value=\{platformFilter\}/);
-  assert.match(source, /value=\{statusFilter\}/);
-  assert.match(source, /value=\{typeFilter\}/);
   assert.match(source, /setSortDirection/);
   assert.doesNotMatch(source, /\u6d93\u64b3\u7758\u934a\u5d87\u5dfc/u);
 });
@@ -438,7 +431,9 @@ test("admin group channel binding drawer manages only current group accounts by 
     "addSelectedChannelBindings",
     "removeChannelBindingDraft",
     "visibleBindingRows",
-    "pickerChannelOptions",
+    "pickerChannels",
+    "pickerTotal",
+    "loadPickerChannels",
     "w-[90vw]",
     "h-full",
   ]) {
@@ -464,7 +459,7 @@ test("admin group channel picker shows already added accounts without allowing d
   );
 
   for (const expected of [
-    "pickerChannelOptions",
+    "pickerChannels",
     "addableChannelCount",
     "isChannelAlreadyBound",
     "data-admin-group-channel-picker-bound",
@@ -485,6 +480,10 @@ test("admin group channel picker paginates channel choices in a wider dialog", (
     new URL("./packages/sdkwork-clawrouter-pc-admin-group/src/index.tsx", import.meta.url),
     "utf8",
   );
+  const serviceSource = readFileSync(
+    new URL("./packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts", import.meta.url),
+    "utf8",
+  );
   const messages = readFileSync(
     new URL("./packages/sdkwork-clawrouter-pc-i18n/src/resources/admin/group-user.ts", import.meta.url),
     "utf8",
@@ -494,18 +493,22 @@ test("admin group channel picker paginates channel choices in a wider dialog", (
     "CHANNEL_PICKER_PAGE_SIZE",
     "pickerPage",
     "pickerTotalPages",
-    "paginatedPickerChannelOptions",
+    "pickerChannels",
+    "loadPickerChannels",
+    "GroupService.fetchAssignableChannels({",
     "data-admin-group-channel-picker-pagination",
     "admin.group.channelBindings.pagination",
   ]) {
-    assert.ok(source.includes(expected) || messages.includes(expected), `missing picker pagination marker: ${expected}`);
+    assert.ok(source.includes(expected) || serviceSource.includes(expected) || messages.includes(expected), `missing picker pagination marker: ${expected}`);
   }
 
   assert.match(source, /w-\[92vw\]\s+max-w-7xl/);
   assert.match(source, /setPickerPage\(1\)/);
-  assert.match(source, /Math\.ceil\(pickerChannelOptions\.length \/ CHANNEL_PICKER_PAGE_SIZE\)/);
-  assert.match(source, /pickerChannelOptions\.slice\(\s*\(pickerPage - 1\) \* CHANNEL_PICKER_PAGE_SIZE,\s*pickerPage \* CHANNEL_PICKER_PAGE_SIZE,\s*\)/s);
-  assert.match(source, /paginatedPickerChannelOptions\.map\(channel =>/);
+  assert.match(source, /Math\.ceil\(pickerTotal \/ CHANNEL_PICKER_PAGE_SIZE\)/);
+  assert.match(source, /pickerChannels\.map\(channel =>/);
+  assert.doesNotMatch(source, /pickerChannels\.slice\(/);
+  assert.doesNotMatch(source, /paginatedPickerChannelOptions/);
+  assert.match(serviceSource, /integration\.channels\.list\(\s*toAssignableChannelListQueryParams/);
 });
 
 test("admin group channel picker keeps search controls inside the modal header", () => {
@@ -637,7 +640,7 @@ test("admin group service calls generated backend SDK paths and normalizes ai ch
       throw new Error(`Unexpected SDK request ${method} ${url}`);
     },
     async (captured) => {
-      const groups = await GroupService.fetchGroups() as unknown as ExpectedChannelGroupRecord[];
+      const { groups } = await GroupService.fetchGroups() as unknown as { groups: ExpectedChannelGroupRecord[] };
       const created = await GroupService.addGroup({
         groupName: " Created Group ",
         priceReferenceMode: "multiplier",
@@ -712,7 +715,7 @@ test("admin group service normalizes assignable resource group and resource opti
   await withBackendSdkFetch(
     (url, init) => {
       const method = init?.method ?? "GET";
-      if (url === "/backend/v3/api/ai/resource_groups" && method === "GET") {
+      if (url.startsWith("/backend/v3/api/ai/resource_groups") && method === "GET") {
         return {
           items: [
             {
@@ -726,9 +729,10 @@ test("admin group service normalizes assignable resource group and resource opti
               status: "active",
             },
           ],
+          pageInfo: { totalItems: 1 },
         };
       }
-      if (url === "/backend/v3/api/ai/resources" && method === "GET") {
+      if (url.startsWith("/backend/v3/api/ai/resources") && method === "GET") {
         return {
           items: [
             {
@@ -745,13 +749,19 @@ test("admin group service normalizes assignable resource group and resource opti
               status: "active",
             },
           ],
+          pageInfo: { totalItems: 1 },
         };
       }
       throw new Error(`Unexpected SDK request ${method} ${url}`);
     },
     async (captured) => {
-      const resourceGroups = await GroupService.fetchAssignableResourceGroups();
-      const resources = await GroupService.fetchAssignableResources();
+      const resourceGroupPage = await GroupService.fetchAssignableResourceGroups({ page: 1, pageSize: 200 });
+      const resourcePage = await GroupService.fetchAssignableResources({ page: 1, pageSize: 200 });
+      const resourceGroups = resourceGroupPage.resourceGroups;
+      const resources = resourcePage.resources;
+
+      assert.equal(resourceGroupPage.total, 1);
+      assert.equal(resourcePage.total, 1);
 
       assert.deepEqual(resourceGroups[0], {
         id: "resource-group-1",
@@ -776,12 +786,53 @@ test("admin group service normalizes assignable resource group and resource opti
         providerNativeModel: "gpt-5",
         status: "active",
       });
+      assert.equal(captured.length, 2);
+      assert.match(captured[0].url, /\/backend\/v3\/api\/ai\/resource_groups(?:\?|$)/);
+      assert.match(captured[1].url, /\/backend\/v3\/api\/ai\/resources(?:\?|$)/);
+    },
+  );
+});
+
+test("admin group service paginates assignable channels through generated backend SDK", async () => {
+  await withBackendSdkFetch(
+    (url, init) => {
+      const method = init?.method ?? "GET";
+      if (url.startsWith("/backend/v3/api/integration/channels") && method === "GET") {
+        const parsed = new URL(url, "http://localhost");
+        assert.equal(parsed.searchParams.get("page"), "2");
+        assert.equal(parsed.searchParams.get("page_size"), "12");
+        assert.equal(parsed.searchParams.get("q"), "openai");
+        return {
+          items: [
+            {
+              id: "channel-2",
+              name: "OpenAI backup",
+              providerCode: "openai",
+              providerName: "OpenAI",
+              channelCode: "openai-backup",
+              resourceCodes: ["api.openai.chat_completions"],
+              apiScope: ["openai.chat_completions"],
+              capabilities: ["llm"],
+              status: "active",
+            },
+          ],
+          pageInfo: { totalItems: 13 },
+        };
+      }
+      throw new Error(`Unexpected SDK request ${method} ${url}`);
+    },
+    async (captured) => {
+      const page = await GroupService.fetchAssignableChannels({
+        page: 2,
+        pageSize: 12,
+        q: "openai",
+      });
+
+      assert.equal(page.total, 13);
+      assert.equal(page.channels[0].id, "channel-2");
       assert.deepEqual(
         captured.map((request) => `${request.method} ${request.url}`),
-        [
-          "GET /backend/v3/api/ai/resource_groups",
-          "GET /backend/v3/api/ai/resources",
-        ],
+        ["GET /backend/v3/api/integration/channels?page=2&page_size=12&q=openai"],
       );
     },
   );
@@ -1675,7 +1726,7 @@ test("admin group list keeps named groups visible when optional display fields a
       throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);
     },
     async () => {
-      const groups = await GroupService.fetchGroups();
+      const { groups } = await GroupService.fetchGroups();
 
       assert.equal(groups[0].groupName, "Default Enterprise");
       assert.equal(groups[0].providerCode, "unknown");
@@ -1726,8 +1777,9 @@ test("admin group table paginates filtered rows inside the adaptive shell", () =
     "data-admin-group-pagination",
     "const [page, setPage] = useState(1)",
     "const [pageSize, setPageSize] = useState(20)",
-    "const paginatedGroups = filteredGroups.slice(",
-    "paginatedGroups.map(group =>",
+    "GroupService.fetchGroups({",
+    "setTotalGroups(data.total)",
+    "visibleGroups.map(group =>",
     "pageSizeOptions={[10, 20, 50, 100]}",
     "admin.group.pagination.showing",
     "admin.group.pagination.page",
@@ -1737,9 +1789,23 @@ test("admin group table paginates filtered rows inside the adaptive shell", () =
     assert.ok(source.includes(expected), `missing admin group pagination marker: ${expected}`);
   }
 
-  assert.match(source, /hasNextPage=\{page \* pageSize < filteredGroups\.length\}/);
-  assert.match(source, /useEffect\(\(\) => \{\s*setPage\(1\);\s*\}, \[searchQuery, platformFilter, statusFilter, typeFilter, sortDirection\]\);/);
-  assert.doesNotMatch(source, /filteredGroups\.map\(group =>/);
+  assert.match(source, /hasNextPage=\{page \* pageSize < totalGroups\}/);
+  assert.match(source, /useEffect\(\(\) => \{\s*setPage\(1\);\s*\}, \[searchQuery, sortDirection\]\);/);
+  assert.match(source, /itemCount=\{totalGroups\}/);
+  assert.doesNotMatch(source, /filteredGroups\.slice\(/);
+  assert.doesNotMatch(source, /paginatedGroups/);
+  assert.doesNotMatch(source, /platformFilter/);
+});
+
+test("admin group service reads SdkWork list totals from pageInfo.totalItems", () => {
+  const serviceSource = readFileSync(
+    new URL("./packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(serviceSource, /readGroupListPageTotal/);
+  assert.match(serviceSource, /totalItems', 'total_items'/);
+  assert.match(serviceSource, /ai\.channelGroups\.list\(toGroupListQueryParams/);
 });
 
 test("admin group list fails closed when backend returns unsupported group enums", async () => {

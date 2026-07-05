@@ -2,7 +2,7 @@ import {
   createSdkworkAppbasePcAuthRuntime,
   type SdkworkAppbasePcAuthRuntimeComposition,
   type SdkworkAppbasePcAuthRuntimeSdkClient,
-} from '@sdkwork/auth-runtime-pc-react';
+} from '@sdkwork/auth-runtime-pc-react/appbasePcAuthRuntime';
 import {
   wrapCredentialEntryClient,
 } from '@sdkwork/iam-credential-entry';

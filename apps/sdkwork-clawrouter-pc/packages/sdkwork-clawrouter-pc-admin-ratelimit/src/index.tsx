@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Globe, Key, Database, X, Lock, Gauge, Trash2, Loader2, AlertTriangle } from 'lucide-react';
-import { AdminTableShell, BusinessStateTableRow, ConfirmDialog } from '@sdkwork/clawroutes-pc-commons';
-import { RateLimitService, IpLimitRule, TokenLimitRule, ModelLimitRule, FirewallRule } from './ratelimitService';
+import { AdminTableShell, BottomPagination, BusinessStateTableRow, ConfirmDialog } from '@sdkwork/clawroutes-pc-commons';
+import { RateLimitService, FirewallRule } from './ratelimitService';
 import {
   rateLimitQueryKeys,
   useFirewallRulesQuery,
@@ -29,7 +29,13 @@ const RATELIMIT_TABS = [
   { id: 'firewall', label: (t: TranslationFunction) => t("admin.ratelimit.index.text.1tmo5ay", "黑白名单(WAF)"), icon: <Lock className="w-4 h-4" /> },
 ];
 
-function RateLimitTableShell({ children }: { children: React.ReactNode }) {
+function RateLimitTableShell({
+  children,
+  footer,
+}: {
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+}) {
   return (
     <div className="min-h-0 flex-1 p-5">
       <AdminTableShell
@@ -37,6 +43,7 @@ function RateLimitTableShell({ children }: { children: React.ReactNode }) {
         className="flex-1 min-h-0 rounded-lg shadow-none"
         viewportClassName="min-h-0 flex-1 relative"
         viewportProps={{ 'data-admin-ratelimit-table-viewport': true }}
+        footer={footer}
       >
         {children}
       </AdminTableShell>
@@ -44,23 +51,78 @@ function RateLimitTableShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function usePaginatedListFilters(searchQuery: string, page: number, pageSize: number) {
+  return useMemo(() => ({
+    page,
+    pageSize,
+    q: searchQuery.trim() || undefined,
+  }), [page, pageSize, searchQuery]);
+}
+
+function usePaginatedPageBounds(total: number, pageSize: number, setPage: React.Dispatch<React.SetStateAction<number>>) {
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    setPage(current => Math.min(Math.max(current, 1), totalPages));
+  }, [total, pageSize, setPage]);
+}
+
+function RateLimitPaginationFooter({
+  page,
+  pageSize,
+  total,
+  loading,
+  setPage,
+  setPageSize,
+}: {
+  page: number;
+  pageSize: number;
+  total: number;
+  loading: boolean;
+  setPage: React.Dispatch<React.SetStateAction<number>>;
+  setPageSize: React.Dispatch<React.SetStateAction<number>>;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div data-admin-ratelimit-pagination>
+      <BottomPagination
+        page={page}
+        pageSize={pageSize}
+        itemCount={total}
+        hasNextPage={page * pageSize < total}
+        disabled={loading}
+        showingLabel={t('admin.group.pagination.showing')}
+        pageLabel={t('admin.group.pagination.page', { page })}
+        pageSizeLabel={t('admin.group.pagination.pageSize')}
+        previousLabel={t('common.actions.previousPage')}
+        nextLabel={t('common.actions.nextPage')}
+        pageSizeOptions={[10, 20, 50, 100]}
+        onPreviousPage={() => setPage(current => Math.max(1, current - 1))}
+        onNextPage={() => setPage(current => current + 1)}
+        onPageSizeChange={(nextPageSize) => {
+          setPageSize(nextPageSize);
+          setPage(1);
+        }}
+      />
+    </div>
+  );
+}
+
 export function RateLimitAdmin() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('ip');
-  const [search, setSearch] = useState('');
 
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
         return <RiskDashboardView />;
       case 'ip':
-        return <IpRateLimitView search={search} setSearch={setSearch} />;
+        return <IpRateLimitView />;
       case 'token':
-        return <TokenRateLimitView search={search} setSearch={setSearch} />;
+        return <TokenRateLimitView />;
       case 'model':
-        return <ModelRateLimitView search={search} setSearch={setSearch} />;
+        return <ModelRateLimitView />;
       case 'firewall':
-        return <FirewallView search={search} setSearch={setSearch} />;
+        return <FirewallView />;
       default:
         return null;
     }
@@ -75,10 +137,7 @@ export function RateLimitAdmin() {
           {RATELIMIT_TABS.map(tab => (
             <button
               key={tab.id}
-              onClick={() => {
-                setActiveTab(tab.id);
-                setSearch('');
-              }}
+              onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === tab.id
                 ? 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400'
@@ -141,8 +200,11 @@ function RiskDashboardView() {
   const activeIpLimits = ipLimits.filter(rule => rule.status === 'active').length;
   const exhaustedTokenLimits = tokenLimits.filter(rule => rule.status === 'exhausted').length;
   const activeModelLimits = modelLimits.filter(rule => rule.status === 'active').length;
-  const totalFirewallRules = firewallRules.length;
-  const totalConfiguredRules = ipLimits.length + tokenLimits.length + modelLimits.length + firewallRules.length;
+  const totalFirewallRules = snapshot?.firewallRulesTotal ?? firewallRules.length;
+  const totalConfiguredRules = (snapshot?.ipLimitsTotal ?? ipLimits.length)
+    + (snapshot?.tokenLimitsTotal ?? tokenLimits.length)
+    + (snapshot?.modelLimitsTotal ?? modelLimits.length)
+    + totalFirewallRules;
 
   return (
     <div className="flex-1 overflow-auto p-5 space-y-5">
@@ -155,9 +217,9 @@ function RiskDashboardView() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { title: t("admin.ratelimit.index.text.1hlr3sa", "生效 IP 限流"), value: activeIpLimits, detail: t("admin.ratelimit.index.text.ipRuleCount", "{{count}} 条 IP 规则", { count: ipLimits.length }), icon: Globe, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-500/10' },
-          { title: t("admin.ratelimit.index.text.s7fzhe", "耗尽令牌限额"), value: exhaustedTokenLimits, detail: t("admin.ratelimit.index.text.apiKeyRuleCount", "{{count}} 条 API Key 规则", { count: tokenLimits.length }), icon: Key, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-500/10' },
-          { title: t("admin.ratelimit.index.text.10f9m11", "强制模型频控"), value: activeModelLimits, detail: t("admin.ratelimit.index.text.modelRuleCount", "{{count}} 条模型规则", { count: modelLimits.length }), icon: Database, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-500/10' },
+          { title: t("admin.ratelimit.index.text.1hlr3sa", "生效 IP 限流"), value: activeIpLimits, detail: t("admin.ratelimit.index.text.ipRuleCount", "{{count}} 条 IP 规则", { count: snapshot?.ipLimitsTotal ?? ipLimits.length }), icon: Globe, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-500/10' },
+          { title: t("admin.ratelimit.index.text.s7fzhe", "耗尽令牌限额"), value: exhaustedTokenLimits, detail: t("admin.ratelimit.index.text.apiKeyRuleCount", "{{count}} 条 API Key 规则", { count: snapshot?.tokenLimitsTotal ?? tokenLimits.length }), icon: Key, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-500/10' },
+          { title: t("admin.ratelimit.index.text.10f9m11", "强制模型频控"), value: activeModelLimits, detail: t("admin.ratelimit.index.text.modelRuleCount", "{{count}} 条模型规则", { count: snapshot?.modelLimitsTotal ?? modelLimits.length }), icon: Database, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-500/10' },
           { title: t("admin.ratelimit.index.text.z0wwym", "WAF 名单规则"), value: totalFirewallRules, detail: t("admin.ratelimit.index.text.totalRuleCount", "{{count}} 条总规则", { count: totalConfiguredRules }), icon: Lock, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-500/10' },
         ].map(item => (
           <div key={item.title} className="bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-white/10 rounded-xl p-5 shadow-sm flex items-center justify-between">
@@ -215,27 +277,34 @@ function getLoadErrorMessage(error: unknown, fallback: string): string {
 }
 
 // 2. IP访问限流
-function IpRateLimitView({ search, setSearch }: { search: string, setSearch: (s: string) => void }) {
+function IpRateLimitView() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { data: limits = [], error, isLoading, refetch, isFetching } = useIpRateLimitsQuery();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const filters = usePaginatedListFilters(searchQuery, page, pageSize);
+  const { data, error, isLoading, refetch, isFetching } = useIpRateLimitsQuery(filters);
+  const limits = data?.items ?? [];
+  const total = data?.total ?? 0;
   const loadError = error ? getLoadErrorMessage(error, 'Failed to load IP limit rules.') : null;
   const loading = isLoading || isFetching;
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
+
+  usePaginatedPageBounds(total, pageSize, setPage);
 
   const handleAddRule = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    const added = await RateLimitService.addIpLimit(createIpLimitInputFromForm(formData));
-    queryClient.setQueryData(rateLimitQueryKeys.ipLimits(), (current: IpLimitRule[] | undefined) => [
-      added,
-      ...(current ?? []),
-    ]);
+    await RateLimitService.addIpLimit(createIpLimitInputFromForm(formData));
+    await queryClient.invalidateQueries({ queryKey: [...rateLimitQueryKeys.all, 'ip-limits'] });
     await queryClient.invalidateQueries({ queryKey: rateLimitQueryKeys.dashboard() });
     setIsModalOpen(false);
   };
-
-  const filteredLimits = limits.filter(r => r.ruleName.toLowerCase().includes(search.toLowerCase()) || r.targetIp.includes(search));
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -246,13 +315,24 @@ function IpRateLimitView({ search, setSearch }: { search: string, setSearch: (s:
         <div className="flex gap-3">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input type="text" placeholder={t("admin.ratelimit.index.text.16hm29t", "搜索规则或IP网段...")} value={search} onChange={e => setSearch(e.target.value)} className="bg-white dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 rounded-lg pl-9 pr-4 py-1.5 text-sm focus:outline-none focus:border-red-500 w-64 text-slate-900 dark:text-white" />
+            <input type="text" placeholder={t("admin.ratelimit.index.text.16hm29t", "搜索规则或IP网段...")} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="bg-white dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 rounded-lg pl-9 pr-4 py-1.5 text-sm focus:outline-none focus:border-red-500 w-64 text-slate-900 dark:text-white" />
           </div>
           <button onClick={() => setIsModalOpen(true)} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
             <Plus className="w-4 h-4" /> {t("admin.ratelimit.index.text.50zgee", "新增IP限流规则")}</button>
         </div>
       </div>
-      <RateLimitTableShell>
+      <RateLimitTableShell
+        footer={(
+          <RateLimitPaginationFooter
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            loading={loading}
+            setPage={setPage}
+            setPageSize={setPageSize}
+          />
+        )}
+      >
         <table className="w-full text-left text-sm text-slate-600 dark:text-slate-400">
           <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-[#121212] border-b border-slate-200 dark:border-white/10">
             <tr>
@@ -275,7 +355,7 @@ function IpRateLimitView({ search, setSearch }: { search: string, setSearch: (s:
                 description={loadError}
                 onRetry={() => void refetch()}
               />
-            ) : filteredLimits.length === 0 ? (
+            ) : limits.length === 0 ? (
               <BusinessStateTableRow
                 colSpan={6}
                 kind="empty"
@@ -283,7 +363,7 @@ function IpRateLimitView({ search, setSearch }: { search: string, setSearch: (s:
                 description="Create a rule to control request rates for an IP address or CIDR range."
                 action={{ label: 'Add IP rule', onClick: () => setIsModalOpen(true) }}
               />
-            ) : filteredLimits.map(rule => (
+            ) : limits.map(rule => (
               <tr key={rule.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
                 <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-200">{rule.ruleName}</td>
                 <td className="px-4 py-3 font-mono text-blue-600 dark:text-blue-400"><span className="bg-slate-100 dark:bg-white/10 px-2 py-1 rounded">{rule.targetIp}</span></td>
@@ -349,27 +429,34 @@ function IpRateLimitView({ search, setSearch }: { search: string, setSearch: (s:
 }
 
 // 3. 令牌与API Key限流
-function TokenRateLimitView({ search, setSearch }: { search: string, setSearch: (s: string) => void }) {
+function TokenRateLimitView() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { data: limits = [], error, isLoading, refetch, isFetching } = useTokenRateLimitsQuery();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const filters = usePaginatedListFilters(searchQuery, page, pageSize);
+  const { data, error, isLoading, refetch, isFetching } = useTokenRateLimitsQuery(filters);
+  const limits = data?.items ?? [];
+  const total = data?.total ?? 0;
   const loadError = error ? getLoadErrorMessage(error, 'Failed to load token limit rules.') : null;
   const loading = isLoading || isFetching;
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
+
+  usePaginatedPageBounds(total, pageSize, setPage);
 
   const handleAddTokenLimit = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    const added = await RateLimitService.addTokenLimit(createTokenLimitInputFromForm(formData));
-    queryClient.setQueryData(rateLimitQueryKeys.tokenLimits(), (current: TokenLimitRule[] | undefined) => [
-      added,
-      ...(current ?? []),
-    ]);
+    await RateLimitService.addTokenLimit(createTokenLimitInputFromForm(formData));
+    await queryClient.invalidateQueries({ queryKey: [...rateLimitQueryKeys.all, 'token-limits'] });
     await queryClient.invalidateQueries({ queryKey: rateLimitQueryKeys.dashboard() });
     setIsModalOpen(false);
   };
-
-  const filteredLimits = limits.filter(t => t.user.toLowerCase().includes(search.toLowerCase()) || t.keyPrefix.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -380,13 +467,24 @@ function TokenRateLimitView({ search, setSearch }: { search: string, setSearch: 
         <div className="flex gap-3">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input type="text" placeholder={t("admin.ratelimit.index.text.wh25hh", "搜索 API 密钥或账户...")} value={search} onChange={e => setSearch(e.target.value)} className="bg-white dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 rounded-lg pl-9 pr-4 py-1.5 text-sm focus:outline-none focus:border-red-500 w-64 text-slate-900 dark:text-white" />
+            <input type="text" placeholder={t("admin.ratelimit.index.text.wh25hh", "搜索 API 密钥或账户...")} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="bg-white dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 rounded-lg pl-9 pr-4 py-1.5 text-sm focus:outline-none focus:border-red-500 w-64 text-slate-900 dark:text-white" />
           </div>
           <button onClick={() => setIsModalOpen(true)} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
             <Plus className="w-4 h-4" /> {t("admin.ratelimit.index.text.1lq4o49", "自定义限速")}</button>
         </div>
       </div>
-      <RateLimitTableShell>
+      <RateLimitTableShell
+        footer={(
+          <RateLimitPaginationFooter
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            loading={loading}
+            setPage={setPage}
+            setPageSize={setPageSize}
+          />
+        )}
+      >
         <table className="w-full text-left text-sm text-slate-600 dark:text-slate-400">
           <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-[#121212] border-b border-slate-200 dark:border-white/10">
             <tr>
@@ -409,7 +507,7 @@ function TokenRateLimitView({ search, setSearch }: { search: string, setSearch: 
                 description={loadError}
                 onRetry={() => void refetch()}
               />
-            ) : filteredLimits.length === 0 ? (
+            ) : limits.length === 0 ? (
               <BusinessStateTableRow
                 colSpan={6}
                 kind="empty"
@@ -417,7 +515,7 @@ function TokenRateLimitView({ search, setSearch }: { search: string, setSearch: 
                 description="Create a token rule to control per-key request rates and daily quotas."
                 action={{ label: 'Add token rule', onClick: () => setIsModalOpen(true) }}
               />
-            ) : filteredLimits.map(token => (
+            ) : limits.map(token => (
               <tr key={token.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
                 <td className="px-4 py-3 font-mono text-xs">{token.keyPrefix}</td>
                 <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-200">{token.user}</td>
@@ -482,27 +580,34 @@ function TokenRateLimitView({ search, setSearch }: { search: string, setSearch: 
 }
 
 // 4. 特定模型频控 (TPM/RPM)
-function ModelRateLimitView({ search, setSearch }: { search: string, setSearch: (s: string) => void }) {
+function ModelRateLimitView() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { data: limits = [], error, isLoading, refetch, isFetching } = useModelRateLimitsQuery();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const filters = usePaginatedListFilters(searchQuery, page, pageSize);
+  const { data, error, isLoading, refetch, isFetching } = useModelRateLimitsQuery(filters);
+  const limits = data?.items ?? [];
+  const total = data?.total ?? 0;
   const loadError = error ? getLoadErrorMessage(error, 'Failed to load model limit rules.') : null;
   const loading = isLoading || isFetching;
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
+
+  usePaginatedPageBounds(total, pageSize, setPage);
 
   const handleAddModelLimit = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    const added = await RateLimitService.addModelLimit(createModelLimitInputFromForm(formData));
-    queryClient.setQueryData(rateLimitQueryKeys.modelLimits(), (current: ModelLimitRule[] | undefined) => [
-      added,
-      ...(current ?? []),
-    ]);
+    await RateLimitService.addModelLimit(createModelLimitInputFromForm(formData));
+    await queryClient.invalidateQueries({ queryKey: [...rateLimitQueryKeys.all, 'model-limits'] });
     await queryClient.invalidateQueries({ queryKey: rateLimitQueryKeys.dashboard() });
     setIsModalOpen(false);
   };
-
-  const filteredLimits = limits.filter(m => m.model.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -513,13 +618,24 @@ function ModelRateLimitView({ search, setSearch }: { search: string, setSearch: 
         <div className="flex gap-3">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input type="text" placeholder={t("admin.ratelimit.index.text.ikz3s0", "搜索模型名称...")} value={search} onChange={e => setSearch(e.target.value)} className="bg-white dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 rounded-lg pl-9 pr-4 py-1.5 text-sm focus:outline-none focus:border-red-500 w-64 text-slate-900 dark:text-white" />
+            <input type="text" placeholder={t("admin.ratelimit.index.text.ikz3s0", "搜索模型名称...")} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="bg-white dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 rounded-lg pl-9 pr-4 py-1.5 text-sm focus:outline-none focus:border-red-500 w-64 text-slate-900 dark:text-white" />
           </div>
           <button onClick={() => setIsModalOpen(true)} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
             <Plus className="w-4 h-4" /> {t("admin.ratelimit.index.text.1yr25uc", "覆盖默认限速")}</button>
         </div>
       </div>
-      <RateLimitTableShell>
+      <RateLimitTableShell
+        footer={(
+          <RateLimitPaginationFooter
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            loading={loading}
+            setPage={setPage}
+            setPageSize={setPageSize}
+          />
+        )}
+      >
         <table className="w-full text-left text-sm text-slate-600 dark:text-slate-400">
           <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-[#121212] border-b border-slate-200 dark:border-white/10">
             <tr>
@@ -541,7 +657,7 @@ function ModelRateLimitView({ search, setSearch }: { search: string, setSearch: 
                  description={loadError}
                  onRetry={() => void refetch()}
                />
-             ) : filteredLimits.length === 0 ? (
+             ) : limits.length === 0 ? (
                <BusinessStateTableRow
                  colSpan={5}
                  kind="empty"
@@ -549,7 +665,7 @@ function ModelRateLimitView({ search, setSearch }: { search: string, setSearch: 
                  description="Create a model rule to control RPM and TPM limits for a model and group."
                  action={{ label: 'Add model rule', onClick: () => setIsModalOpen(true) }}
                />
-             ) : filteredLimits.map(m => (
+             ) : limits.map(m => (
                <tr key={m.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
                  <td className="px-4 py-3 font-medium font-mono text-slate-900 dark:text-slate-200"><span className="bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 px-2 py-1 rounded text-xs">{m.model}</span></td>
                  <td className="px-4 py-3">{m.channelGroupName ?? m.channelGroup}</td>
@@ -609,24 +725,33 @@ function ModelRateLimitView({ search, setSearch }: { search: string, setSearch: 
 }
 
 // 5. WAF
-function FirewallView({ search, setSearch }: { search: string, setSearch: (s: string) => void }) {
+function FirewallView() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { data: rules = [], error, isLoading, refetch, isFetching } = useFirewallRulesQuery();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const filters = usePaginatedListFilters(searchQuery, page, pageSize);
+  const { data, error, isLoading, refetch, isFetching } = useFirewallRulesQuery(filters);
+  const rules = data?.items ?? [];
+  const total = data?.total ?? 0;
   const loadError = error ? getLoadErrorMessage(error, 'Failed to load firewall rules.') : null;
   const loading = isLoading || isFetching;
   const [removeTarget, setRemoveTarget] = useState<FirewallRule | null>(null);
   const [removingFirewallId, setRemovingFirewallId] = useState<string | null>(null);
 
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
+
+  usePaginatedPageBounds(total, pageSize, setPage);
+
   const handleAddFirewall = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    const added = await RateLimitService.addFirewall(createFirewallInputFromForm(formData));
-    queryClient.setQueryData(rateLimitQueryKeys.firewalls(), (current: FirewallRule[] | undefined) => [
-      added,
-      ...(current ?? []),
-    ]);
+    await RateLimitService.addFirewall(createFirewallInputFromForm(formData));
+    await queryClient.invalidateQueries({ queryKey: [...rateLimitQueryKeys.all, 'firewalls'] });
     await queryClient.invalidateQueries({ queryKey: rateLimitQueryKeys.dashboard() });
     setIsModalOpen(false);
   };
@@ -647,9 +772,7 @@ function FirewallView({ search, setSearch }: { search: string, setSearch: (s: st
     try {
       const ok = await RateLimitService.removeFirewall(id);
       if (ok) {
-        queryClient.setQueryData(rateLimitQueryKeys.firewalls(), (current: FirewallRule[] | undefined) =>
-          (current ?? []).filter(r => r.id !== id),
-        );
+        await queryClient.invalidateQueries({ queryKey: [...rateLimitQueryKeys.all, 'firewalls'] });
         await queryClient.invalidateQueries({ queryKey: rateLimitQueryKeys.dashboard() });
       }
       setRemoveTarget(null);
@@ -657,8 +780,6 @@ function FirewallView({ search, setSearch }: { search: string, setSearch: (s: st
       setRemovingFirewallId(null);
     }
   };
-
-  const filteredRules = rules.filter(f => f.value.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -669,13 +790,24 @@ function FirewallView({ search, setSearch }: { search: string, setSearch: (s: st
         <div className="flex gap-3">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input type="text" placeholder={t("admin.ratelimit.index.text.r2w8k5", "搜索拦截对象...")} value={search} onChange={e => setSearch(e.target.value)} className="bg-white dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 rounded-lg pl-9 pr-4 py-1.5 text-sm focus:outline-none focus:border-red-500 w-64 text-slate-900 dark:text-white" />
+            <input type="text" placeholder={t("admin.ratelimit.index.text.r2w8k5", "搜索拦截对象...")} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="bg-white dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 rounded-lg pl-9 pr-4 py-1.5 text-sm focus:outline-none focus:border-red-500 w-64 text-slate-900 dark:text-white" />
           </div>
           <button onClick={() => setIsModalOpen(true)} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
             <Plus className="w-4 h-4" /> {t("admin.ratelimit.index.text.12fbvrj", "封禁新对象")}</button>
         </div>
       </div>
-      <RateLimitTableShell>
+      <RateLimitTableShell
+        footer={(
+          <RateLimitPaginationFooter
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            loading={loading}
+            setPage={setPage}
+            setPageSize={setPageSize}
+          />
+        )}
+      >
         <table className="w-full text-left text-sm text-slate-600 dark:text-slate-400">
           <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-[#121212] border-b border-slate-200 dark:border-white/10">
             <tr>
@@ -697,7 +829,7 @@ function FirewallView({ search, setSearch }: { search: string, setSearch: (s: st
                  description={loadError}
                  onRetry={() => void refetch()}
                />
-             ) : filteredRules.length === 0 ? (
+             ) : rules.length === 0 ? (
                <BusinessStateTableRow
                  colSpan={5}
                  kind="empty"
@@ -705,7 +837,7 @@ function FirewallView({ search, setSearch }: { search: string, setSearch: (s: st
                  description="Create a firewall rule to block or allow a specific IP, range, or identity."
                  action={{ label: 'Add firewall rule', onClick: () => setIsModalOpen(true) }}
                />
-             ) : filteredRules.map(f => (
+             ) : rules.map(f => (
                <tr key={f.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-200">{f.type}</td>
                  <td className="px-4 py-3 font-mono font-medium text-red-600 dark:text-red-400">{f.value}</td>

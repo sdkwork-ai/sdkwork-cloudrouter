@@ -11,6 +11,7 @@ export const MODEL_CATEGORIES = ['Recommended', 'Open Source', 'Proprietary', 'F
 
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
 
+/** UI-only fold for long provider filter lists; not server pagination. */
 export const MODEL_PROVIDER_DEFAULT_DISPLAY_LIMIT = 5;
 
 export const MODEL_CATALOG_FILTER_FIELDS = [

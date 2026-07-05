@@ -48,13 +48,13 @@ test('portal workspace declares appbase app and backend generated SDK packages',
     ['@sdkwork/iam-app-sdk', 'sdkwork-iam-app-sdk'],
     ['@sdkwork/iam-backend-sdk', 'sdkwork-iam-backend-sdk'],
   ]) {
-    const generatedPath = `../../../sdkwork-iam/sdks/${sdkFamily}/${sdkFamily}-typescript/generated/server-openapi/src/index.ts`;
-    assert.ok(tsconfigSource.includes(`"${packageName}"`), `${packageName} must be present in tsconfig paths`);
-    assert.ok(typecheckSource.includes(`"${packageName}"`), `${packageName} must be present in typecheck paths`);
-    assert.ok(tsconfigSource.includes(generatedPath), `${packageName} tsconfig path must point at generated server-openapi`);
-    assert.ok(viteConfigSource.includes(`find: '${packageName}'`), `${packageName} must be present in Vite aliases`);
-    assert.ok(viteConfigSource.includes(`sdks/${sdkFamily}/${sdkFamily}-typescript/generated/server-openapi/src/index.ts`));
+    assert.equal(packageJson.dependencies[packageName], 'workspace:*');
+    assert.ok(workspaceSource.includes(`sdks/${sdkFamily}/${sdkFamily}-typescript/generated/server-openapi`)
+      || workspaceSource.includes(`sdks/${sdkFamily}/*-typescript/generated/server-openapi`));
   }
+
+  assert.match(viteConfigSource, /clawrouter-portal-pnpm-workspace-resolver/);
+  assert.doesNotMatch(viteConfigSource, /find: '@sdkwork\//);
 
   assert.doesNotMatch(
     typecheckSource,
@@ -80,8 +80,8 @@ test('portal workspace composes commerce capabilities through clawrouter SDK cli
   assert.equal(commonsPackageJson.dependencies['@sdkwork/clawrouter-pc-core'], 'workspace:*');
   assert.equal(pcCorePackageJson.dependencies['sdkwork-commerce-app-sdk-generated-typescript'], undefined);
   assert.equal(pcCorePackageJson.dependencies['sdkwork-commerce-backend-sdk-generated-typescript'], undefined);
-  assert.equal(pcCorePackageJson.dependencies['clawrouter-app-domain-transport-generated-typescript'], 'workspace:*');
-  assert.equal(pcCorePackageJson.dependencies['clawrouter-backend-domain-transport-generated-typescript'], 'workspace:*');
+  assert.equal(pcCorePackageJson.dependencies['@sdkwork/clawrouter-app-sdk'], 'workspace:*');
+  assert.equal(pcCorePackageJson.dependencies['@sdkwork/clawrouter-backend-sdk'], 'workspace:*');
 
   assert.doesNotMatch(workspaceSource, /packages\/common\/commerce/);
   assert.doesNotMatch(workspaceSource, /sdks\/sdkwork-commerce-app-sdk/);
@@ -91,12 +91,10 @@ test('portal workspace composes commerce capabilities through clawrouter SDK cli
   assert.doesNotMatch(typecheckSource, /sdkwork-commerce-app-sdk-generated-typescript/);
   assert.doesNotMatch(viteConfigSource, /sdkwork-commerce-app-sdk-generated-typescript/);
   assert.doesNotMatch(viteConfigSource, /sdkwork-commerce-backend-sdk-generated-typescript/);
-  assert.match(viteConfigSource, /clawrouter-app-domain-transport-generated-typescript/);
-  assert.match(viteConfigSource, /clawrouter-backend-domain-transport-generated-typescript/);
-  assert.match(
-    viteConfigSource,
-    /source\.startsWith\('clawrouter-'\) && source\.endsWith\('-generated-typescript'\)/,
-  );
+  assert.match(viteConfigSource, /shouldResolvePortalPnpmWorkspaceSpecifier/);
+  assert.match(viteConfigSource, /clawrouter-portal-pnpm-workspace-resolver/);
+  assert.doesNotMatch(viteConfigSource, /find: 'clawrouter-app-domain-transport-generated-typescript'/);
+  assert.doesNotMatch(viteConfigSource, /find: '@sdkwork\/clawrouter-app-sdk'/);
   assert.doesNotMatch(sdkClientsSource, /readonly commerce:/);
   assert.match(sdkClientsSource, /getClawRouterAppDomainTransportSdkClient/);
   assert.match(sdkClientsSource, /getClawRouterBackendDomainTransportSdkClient/);
@@ -150,17 +148,17 @@ test('clawrouter SDK families declare domain capabilities and exclude domain tra
   }
 
   assert.equal(
-    existsSync(new URL('../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/api/commerce.ts', portalRoot)),
+    existsSync(new URL('../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts/api/commerce.ts', portalRoot)),
     false,
     'ClawRouter app generated SDK must not contain a Commerce API module',
   );
   assert.equal(
-    existsSync(new URL('../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/api/commerce.ts', portalRoot)),
+    existsSync(new URL('../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/api/commerce.ts', portalRoot)),
     false,
     'ClawRouter backend generated SDK must not contain a Commerce API module',
   );
 
-  const backendSystemApi = source('../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/api/system.ts');
+  const backendSystemApi = source('../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/api/system.ts');
   assert.doesNotMatch(
     backendSystemApi,
     /SystemPromotions(?:Offers|CouponStocks|UserCoupons|DiscountApplications|DiscountAllocations|CouponLedgerEntries)/,

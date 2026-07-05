@@ -1,6 +1,7 @@
 {
-  "name": "@sdkwork/clawrouter-app-sdk",
+  "name": "sdkwork-clawrouter-app-sdk-generated-typescript",
   "version": "0.1.0",
+  "sdkworkRole": "transport",
   "description": "Generator-owned TypeScript transport SDK for sdkwork-clawrouter-app-sdk.",
   "author": "SDKWork Team",
   "license": "MIT",

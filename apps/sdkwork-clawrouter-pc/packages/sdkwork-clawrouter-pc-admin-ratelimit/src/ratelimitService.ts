@@ -2,16 +2,22 @@ import {
   ensureSdkworkApiSuccess,
   getClawRouterBackendSdkClient,
   isRecord,
+  optionalBoundedPositiveInteger as optionalQueryPageSize,
+  optionalPositiveInteger as optionalQueryPage,
+  optionalText as optionalQueryText,
+  pruneUndefinedQueryParams,
   readApiRecord,
   readBoolean,
   readRequiredApiItems,
   readRequiredApiItem,
+  readRequiredNonNegativeNumber,
   readRequiredNumber,
   requiredSafePathSegment,
   readRequiredString,
   readString,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
+import { backendApiPath } from '@sdkwork/clawrouter-backend-sdk';
 import type {
   AdminFirewallRuleCreateRequest,
   AdminIpLimitCreateRequest,
@@ -87,12 +93,31 @@ export type FirewallCreateInput = {
   reason: string;
 };
 
+export type RateLimitListFilters = {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  searchQuery?: string;
+};
+
+export type RateLimitListPage<T> = {
+  items: T[];
+  total: number;
+};
+
+export const RATE_LIMIT_DASHBOARD_SAMPLE_PAGE_SIZE = 200;
+
+const MAX_RATE_LIMIT_LIST_PAGE_SIZE = 200;
+const MAX_RATE_LIMIT_LIST_QUERY_TEXT_LENGTH = 128;
+
 export class RateLimitService {
-  static async fetchIpLimits(): Promise<IpLimitRule[]> {
-    const result = await getClawRouterBackendSdkClient().system.rateLimits.ip.list();
-    ensureSdkworkApiSuccess(result, 'Failed to fetch IP limits');
-    return readRequiredApiItems(result, 'Failed to fetch IP limits')
-      .map(normalizeIpLimit);
+  static async fetchIpLimits(filters: RateLimitListFilters = {}): Promise<RateLimitListPage<IpLimitRule>> {
+    return fetchOffsetListPage(
+      '/system/rate_limits/ip',
+      filters,
+      normalizeIpLimit,
+      'Failed to fetch IP limits',
+    );
   }
 
   static async addIpLimit(rule: IpLimitCreateInput): Promise<IpLimitRule> {
@@ -103,11 +128,13 @@ export class RateLimitService {
     return normalizeIpLimit(readRequiredApiItem(result, 'Created IP limit response is missing data'));
   }
 
-  static async fetchTokenLimits(): Promise<TokenLimitRule[]> {
-    const result = await getClawRouterBackendSdkClient().system.rateLimits.apiKeys.list();
-    ensureSdkworkApiSuccess(result, 'Failed to fetch token limits');
-    return readRequiredApiItems(result, 'Failed to fetch token limits')
-      .map(normalizeTokenLimit);
+  static async fetchTokenLimits(filters: RateLimitListFilters = {}): Promise<RateLimitListPage<TokenLimitRule>> {
+    return fetchOffsetListPage(
+      '/system/rate_limits/api_keys',
+      filters,
+      normalizeTokenLimit,
+      'Failed to fetch token limits',
+    );
   }
 
   static async addTokenLimit(rule: TokenLimitCreateInput): Promise<TokenLimitRule> {
@@ -118,11 +145,13 @@ export class RateLimitService {
     return normalizeTokenLimit(readRequiredApiItem(result, 'Created token limit response is missing data'));
   }
 
-  static async fetchModelLimits(): Promise<ModelLimitRule[]> {
-    const result = await getClawRouterBackendSdkClient().system.rateLimits.models.list();
-    ensureSdkworkApiSuccess(result, 'Failed to fetch model limits');
-    return readRequiredApiItems(result, 'Failed to fetch model limits')
-      .map(normalizeModelLimit);
+  static async fetchModelLimits(filters: RateLimitListFilters = {}): Promise<RateLimitListPage<ModelLimitRule>> {
+    return fetchOffsetListPage(
+      '/system/rate_limits/models',
+      filters,
+      normalizeModelLimit,
+      'Failed to fetch model limits',
+    );
   }
 
   static async addModelLimit(rule: ModelLimitCreateInput): Promise<ModelLimitRule> {
@@ -133,11 +162,13 @@ export class RateLimitService {
     return normalizeModelLimit(readRequiredApiItem(result, 'Created model limit response is missing data'));
   }
 
-  static async fetchFirewalls(): Promise<FirewallRule[]> {
-    const result = await getClawRouterBackendSdkClient().system.firewalls.rules.list();
-    ensureSdkworkApiSuccess(result, 'Failed to fetch firewall rules');
-    return readRequiredApiItems(result, 'Failed to fetch firewall rules')
-      .map(normalizeFirewall);
+  static async fetchFirewalls(filters: RateLimitListFilters = {}): Promise<RateLimitListPage<FirewallRule>> {
+    return fetchOffsetListPage(
+      '/system/firewalls/rules',
+      filters,
+      normalizeFirewall,
+      'Failed to fetch firewall rules',
+    );
   }
 
   static async addFirewall(rule: FirewallCreateInput): Promise<FirewallRule> {
@@ -155,6 +186,64 @@ export class RateLimitService {
     ensureDeleteResult(result, 'Firewall rule delete confirmation is required');
     return true;
   }
+}
+
+async function fetchOffsetListPage<T>(
+  path: string,
+  filters: RateLimitListFilters,
+  mapItem: (value: unknown) => T,
+  errorMessage: string,
+): Promise<RateLimitListPage<T>> {
+  const result = await getClawRouterBackendSdkClient().http.get<unknown>(
+    backendApiPath(path),
+    toOffsetListHttpParams(filters),
+  );
+  ensureSdkworkApiSuccess(result, errorMessage);
+  const data = readApiRecord(result);
+  return {
+    items: readRequiredApiItems(result, errorMessage).map(mapItem),
+    total: readListPageTotal(data, `${errorMessage}: total is required`),
+  };
+}
+
+function toOffsetListHttpParams(filters: RateLimitListFilters = {}): Record<string, string> | undefined {
+  const page = optionalQueryPage(filters.page, 'page');
+  const pageSize = optionalQueryPageSize(filters.pageSize, 'pageSize', MAX_RATE_LIMIT_LIST_PAGE_SIZE);
+  const q = optionalQueryText(filters.q ?? filters.searchQuery, 'q', MAX_RATE_LIMIT_LIST_QUERY_TEXT_LENGTH);
+  const params = pruneUndefinedQueryParams({
+    page,
+    page_size: pageSize,
+    q,
+  });
+  return Object.keys(params).length > 0 ? params : undefined;
+}
+
+function readListPageTotal(data: ApiRecord, message: string): number {
+  if (data.total !== undefined && data.total !== null && data.total !== '') {
+    return readRequiredNonNegativeNumber(data, 'total', message);
+  }
+
+  const pageInfo = data.pageInfo;
+  if (isRecord(pageInfo)) {
+    for (const key of ['totalItems', 'total_items'] as const) {
+      const value = pageInfo[key];
+      if (value === undefined || value === null || value === '') {
+        continue;
+      }
+      const parsed = typeof value === 'number' ? value : Number(String(value).trim());
+      if (Number.isFinite(parsed) && parsed >= 0) {
+        return parsed;
+      }
+      throw new Error(`${message.replace(/ is required$/, '')} must be a non-negative number`);
+    }
+  }
+
+  const items = data.items;
+  if (Array.isArray(items)) {
+    return items.length;
+  }
+
+  throw new Error(message);
 }
 
 function toCreateIpLimitRequest(rule: IpLimitCreateInput): AdminIpLimitCreateRequest {

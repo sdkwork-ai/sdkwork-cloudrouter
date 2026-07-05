@@ -1,14 +1,17 @@
 import { OPEN_API_BASE_URL } from '@sdkwork/clawroutes-pc-commons/utils/env';
+import {
+  type GatewayEndpointKind,
+  resolveGatewayEndpoint,
+  resolveGatewayEndpoints,
+} from '@sdkwork/utils/gatewayEndpoint';
+import {
+  buildSharedGatewayToolSnippets,
+  type SharedGatewayToolId,
+} from '@sdkwork/utils/gatewayToolSnippets';
 
-export type ApiKeyUsageToolId =
-  | 'codex'
-  | 'claude-code'
-  | 'gemini'
-  | 'opencode'
-  | 'openclaw'
-  | 'hermes-agent';
+export type ApiKeyUsageToolId = SharedGatewayToolId;
 
-export type GatewayEndpointKind = 'openai' | 'anthropic' | 'gemini';
+export type { GatewayEndpointKind };
 
 export interface ApiKeyUsageToolProfile {
   id: ApiKeyUsageToolId;
@@ -86,168 +89,33 @@ export const API_KEY_USAGE_TOOL_PROFILES: ApiKeyUsageToolProfile[] = [
     labelKey: 'console.apiKeys.usageDetails.tools.openclaw',
     fallbackLabel: 'openclaw',
     summaryKey: 'console.apiKeys.usageDetails.tools.openclawSummary',
-    fallbackSummary: 'OpenAI-compatible environment variables for OpenClaw CLI compatible mode.',
+    fallbackSummary: 'OpenAI-compatible provider in ~/.openclaw/config.yaml.',
     endpointKind: 'openai',
     configPathKey: 'console.apiKeys.usageDetails.tools.openclawPath',
-    fallbackConfigPath: 'Shell environment',
+    fallbackConfigPath: '~/.openclaw/config.yaml',
     referenceKey: 'console.apiKeys.usageDetails.tools.openclawReference',
-    fallbackReference: 'OpenClaw CLI compatible OpenAI provider environment.',
+    fallbackReference: 'OpenClaw config: openai-compatible provider block under providers.',
   },
   {
     id: 'hermes-agent',
     labelKey: 'console.apiKeys.usageDetails.tools.hermesAgent',
     fallbackLabel: 'Hermes Agent',
     summaryKey: 'console.apiKeys.usageDetails.tools.hermesAgentSummary',
-    fallbackSummary: 'OpenAI-compatible environment template for Hermes Agent integrations.',
+    fallbackSummary: 'OpenAI-compatible provider in ~/.hermes/agent.yaml.',
     endpointKind: 'openai',
     configPathKey: 'console.apiKeys.usageDetails.tools.hermesAgentPath',
-    fallbackConfigPath: 'Shell environment',
+    fallbackConfigPath: '~/.hermes/agent.yaml',
     referenceKey: 'console.apiKeys.usageDetails.tools.hermesAgentReference',
-    fallbackReference: 'Generic OpenAI-compatible provider environment.',
+    fallbackReference: 'Hermes Agent provider block with protocol openai, baseUrl, and apiKey credentials.',
   },
 ];
 
 export function buildApiKeyUsageToolSnippets(input: ApiKeyUsageSnippetInput): ApiKeyUsageSnippetMap {
-  const apiKey = input.apiKeyPlaceholder;
-  return {
-    codex: [
-      `export CLAW_ROUTER_API_KEY="${apiKey}"`,
-      '',
-      '# ~/.codex/config.toml',
-      'model_provider = "clawrouter"',
-      'model = "gpt-4o-mini"',
-      '',
-      '[model_providers.clawrouter]',
-      'name = "Claw Router"',
-      `base_url = "${input.openAiBaseUrl}"`,
-      'env_key = "CLAW_ROUTER_API_KEY"',
-      'wire_api = "responses"',
-    ].join('\n'),
-    'claude-code': [
-      `export ANTHROPIC_BASE_URL="${input.anthropicBaseUrl}"`,
-      `export ANTHROPIC_AUTH_TOKEN="${apiKey}"`,
-      '',
-      'claude',
-    ].join('\n'),
-    gemini: [
-      `export GEMINI_API_KEY="${apiKey}"`,
-      `export GOOGLE_GEMINI_BASE_URL="${input.geminiBaseUrl}"`,
-      '',
-      'gemini',
-    ].join('\n'),
-    opencode: [
-      '{',
-      '  "$schema": "https://opencode.ai/config.json",',
-      '  "provider": {',
-      '    "clawrouter": {',
-      '      "npm": "@ai-sdk/openai-compatible",',
-      '      "name": "Claw Router",',
-      '      "options": {',
-      `        "baseURL": "${input.openAiBaseUrl}",`,
-      '        "apiKey": "{env:CLAW_ROUTER_API_KEY}"',
-      '      },',
-      '      "models": {',
-      '        "gpt-4o-mini": {}',
-      '      }',
-      '    }',
-      '  }',
-      '}',
-      '',
-      `export CLAW_ROUTER_API_KEY="${apiKey}"`,
-      'opencode',
-    ].join('\n'),
-    openclaw: [
-      '# ~/.openclaw/config.yaml',
-      'providers:',
-      '  clawrouter:',
-      '    type: openai-compatible',
-      `    base_url: ${input.openAiBaseUrl}`,
-      '    api_key: ${CLAW_ROUTER_API_KEY}',
-      '',
-      `export CLAW_ROUTER_API_KEY="${apiKey}"`,
-      '',
-      'openclaw',
-    ].join('\n'),
-    'hermes-agent': [
-      `export OPENAI_API_KEY="${apiKey}"`,
-      `export OPENAI_BASE_URL="${input.openAiBaseUrl}"`,
-      '',
-      'hermes-agent',
-    ].join('\n'),
-  };
+  return buildSharedGatewayToolSnippets(input);
 }
 
-export function resolveGatewayEndpoint(baseUrl: string, kind: GatewayEndpointKind): string {
-  const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
-  if (kind === 'anthropic') {
-    return replaceGatewaySuffix(normalizedBaseUrl, ['anthropic']);
-  }
-  if (kind === 'gemini') {
-    return replaceGatewaySuffix(normalizedBaseUrl, ['google', 'v1beta']);
-  }
-  return normalizedBaseUrl || '/v1';
-}
+export { resolveGatewayEndpoint };
 
 export function resolveCurrentGatewayEndpoints(baseUrl = OPEN_API_BASE_URL) {
-  return {
-    openAiBaseUrl: resolveGatewayEndpoint(baseUrl, 'openai'),
-    anthropicBaseUrl: resolveGatewayEndpoint(baseUrl, 'anthropic'),
-    geminiBaseUrl: resolveGatewayEndpoint(baseUrl, 'gemini'),
-  };
-}
-
-function normalizeBaseUrl(baseUrl: string): string {
-  const trimmed = baseUrl.trim().replace(/\/+$/, '');
-  if (!trimmed) {
-    return '/v1';
-  }
-  return trimmed.startsWith('/') || /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
-    ? trimmed
-    : `/${trimmed}`;
-}
-
-function replaceGatewaySuffix(baseUrl: string, suffix: string[]): string {
-  const segments = splitUrlSegments(baseUrl);
-  const baseSegments = stripProviderGatewaySuffix(segments.pathSegments);
-  return buildUrlFromSegments(segments.prefix, [...baseSegments, ...suffix]);
-}
-
-function splitUrlSegments(value: string): { prefix: string; pathSegments: string[] } {
-  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(value)) {
-    try {
-      const url = new URL(value);
-      return {
-        prefix: `${url.protocol}//${url.host}`,
-        pathSegments: url.pathname.split('/').filter(Boolean),
-      };
-    } catch {
-      return { prefix: '', pathSegments: value.split('/').filter(Boolean) };
-    }
-  }
-  return { prefix: '', pathSegments: value.split('/').filter(Boolean) };
-}
-
-function stripProviderGatewaySuffix(pathSegments: string[]): string[] {
-  if (endsWithSegments(pathSegments, ['google', 'v1beta'])) {
-    return pathSegments.slice(0, -2);
-  }
-  if (endsWithSegments(pathSegments, ['anthropic'])) {
-    return pathSegments.slice(0, -1);
-  }
-  if (endsWithSegments(pathSegments, ['v1'])) {
-    return pathSegments.slice(0, -1);
-  }
-  return pathSegments;
-}
-
-function endsWithSegments(value: string[], suffix: string[]): boolean {
-  if (suffix.length > value.length) {
-    return false;
-  }
-  return suffix.every((segment, index) => value[value.length - suffix.length + index] === segment);
-}
-
-function buildUrlFromSegments(prefix: string, pathSegments: string[]): string {
-  const path = pathSegments.length > 0 ? `/${pathSegments.join('/')}` : '';
-  return prefix ? `${prefix}${path}` : path || '/';
+  return resolveGatewayEndpoints(baseUrl);
 }

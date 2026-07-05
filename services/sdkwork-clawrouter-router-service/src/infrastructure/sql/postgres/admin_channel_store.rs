@@ -13,10 +13,10 @@ use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     AdminChannelCommandFuture, AdminChannelCredentialInput, AdminChannelCredentialItem,
-    AdminChannelItem, AdminChannelStore, AdminChannelTestOutcome, CreateAdminChannelCommand,
-    DeleteAdminChannelCommand, ListAdminChannelsQuery, ProviderHealthProbe,
-    ProviderHealthProbeOutcome, ProviderHealthProbeRequest, TestAdminChannelCommand,
-    UnconfiguredProviderHealthProbe, UpdateAdminChannelCommand,
+    AdminChannelItem, AdminChannelListPage, AdminChannelStore, AdminChannelTestOutcome,
+    CreateAdminChannelCommand, DeleteAdminChannelCommand, ListAdminChannelsQuery,
+    ProviderHealthProbe, ProviderHealthProbeOutcome, ProviderHealthProbeRequest,
+    TestAdminChannelCommand, UnconfiguredProviderHealthProbe, UpdateAdminChannelCommand,
 };
 
 const CHANNEL_TARGET_TYPE: i32 = 10;
@@ -85,7 +85,7 @@ impl AdminChannelStore for PostgresAdminChannelStore {
     fn list_channels<'a>(
         &'a self,
         query: ListAdminChannelsQuery,
-    ) -> AdminChannelCommandFuture<'a, Vec<AdminChannelItem>> {
+    ) -> AdminChannelCommandFuture<'a, AdminChannelListPage> {
         Box::pin(async move {
             list_channels(&self.pool, query, self.api_key_secret_codec.as_deref()).await
         })
@@ -610,7 +610,11 @@ async fn list_channels(
     pool: &PgPool,
     query: ListAdminChannelsQuery,
     api_key_secret_codec: Option<&(dyn ApiKeySecretCodec + Send + Sync)>,
-) -> DomainResult<Vec<AdminChannelItem>> {
+) -> DomainResult<AdminChannelListPage> {
+    let search = query
+        .q
+        .as_ref()
+        .map(|value| format!("%{}%", value.to_lowercase()));
     let rows = sqlx::query(
         r#"
         SELECT
@@ -670,7 +674,8 @@ async fn list_channels(
             c.upstream_balance_amount::text AS balance_amount,
             c.upstream_balance_currency,
             h.health_status AS snapshot_health_status,
-            c.deleted_at::text AS deleted_at
+            c.deleted_at::text AS deleted_at,
+            COUNT(*) OVER() AS total
         FROM ai_channel c
         LEFT JOIN ai_provider p
             ON p.provider_code = c.provider_code
@@ -688,16 +693,28 @@ async fn list_channels(
         WHERE c.tenant_id = $1
           AND c.organization_id = $2
           AND c.deleted_at IS NULL
+          AND (
+              $3 IS NULL
+              OR LOWER(COALESCE(NULLIF(c.channel_name, ''), p.display_name, c.provider_code, '')) LIKE $3
+              OR LOWER(COALESCE(NULLIF(p.display_name, ''), c.provider_code, '')) LIKE $3
+          )
         ORDER BY c.priority ASC NULLS LAST, c.weight DESC NULLS LAST, c.id DESC
-        LIMIT 500
+        LIMIT $4 OFFSET $5
         "#,
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
+    .bind(search.as_deref())
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list channels", error))?;
 
+    let total = rows
+        .first()
+        .and_then(|row| row.try_get::<i64, _>("total").ok())
+        .unwrap_or(0);
     let ai_resources =
         load_resources_for_channels(pool, query.subject.tenant_id, query.subject.organization_id)
             .await?;
@@ -708,9 +725,16 @@ async fn list_channels(
         api_key_secret_codec,
     )
     .await?;
-    rows.into_iter()
+    let items = rows
+        .into_iter()
         .map(|row| item_from_postgres_row(row, &ai_resources, &credentials))
-        .collect()
+        .collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminChannelListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn insert_channel(

@@ -13,12 +13,23 @@ function portalFileExists(relativePath: string): boolean {
 test("console business host mounts T1 domain wallet, membership, coupon, checkout, and payment routes", () => {
   const appSource = readPortalFile("./src/App.tsx");
   const mountSource = readPortalFile("./src/console-business/consoleBusinessHostMount.tsx");
+  const navbarSource = readPortalFile("./src/console-business/consoleBusinessNavbar.tsx");
+  const tokenPlanPageSource = readPortalFile("./src/token-plan/ClawRouterTokenPlanPage.tsx");
+  const shellSource = readPortalFile("./packages/sdkwork-clawrouter-pc-shell/src/AppShellLayout.tsx");
+  const publicNavbarSource = readPortalFile("./packages/sdkwork-clawroutes-pc-commons/src/components/Navbar.tsx");
   const packageJson = JSON.parse(readPortalFile("./package.json")) as { dependencies: Record<string, string> };
 
   assert.match(appSource, /ClawRouterConsoleBusinessHostRoutes/);
   assert.match(appSource, /ClawRouterConsoleBusinessNavbarActions/);
-  assert.match(mountSource, /@sdkwork\/account-pc-wallet/);
-  assert.match(mountSource, /@sdkwork\/membership-pc-membership/);
+  assert.match(appSource, /ClawRouterTokenPlanPage/);
+  assert.match(tokenPlanPageSource, /@sdkwork\/membership-pc-subscription/);
+  assert.match(shellSource, /path="\/token-plan"/);
+  assert.match(publicNavbarSource, /\/token-plan/);
+  assert.match(publicNavbarSource, /nav\.tokenPlan/);
+  assert.doesNotMatch(navbarSource, /ClawRouterNavbarTokenPlanEntry/);
+  assert.doesNotMatch(navbarSource, /SdkworkTokenPlanHeaderEntry/);
+  assert.match(readPortalFile("./src/console-business/ClawRouterWalletPage.tsx"), /@sdkwork\/account-pc-wallet/);
+  assert.match(readPortalFile("./src/console-business/ClawRouterMembershipPage.tsx"), /@sdkwork\/membership-pc-membership/);
   assert.match(mountSource, /@sdkwork\/promotion-pc-coupon/);
   assert.match(mountSource, /@sdkwork\/payment-pc-payment/);
   assert.doesNotMatch(appSource, /from '@sdkwork\/commerce-pc-host'/);

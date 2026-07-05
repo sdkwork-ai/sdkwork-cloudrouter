@@ -664,17 +664,8 @@ pub fn sign_trusted_request_subject(
     method: &str,
     path_and_query: &str,
 ) -> String {
-    let mut mac = hmac_for_config(config).unwrap_or_else(|error| {
-        tracing::error!(
-            error = %error,
-            "signing trusted request subject failed (unreachable for HMAC-SHA256); using zero-key fallback signature"
-        );
-        // SAFETY: `Mac::new` is the infallible constructor (takes a fixed-size key).
-        // HMAC-SHA256 accepts any key length, so the error branch above is unreachable.
-        // The zero-key fallback only runs in the unreachable case; the produced
-        // signature will be invalid but the process will not panic.
-        HmacSha256::new(&Default::default())
-    });
+    let mut mac = hmac_for_config(config)
+        .expect("HMAC-SHA256 signing key must be derivable from configured trusted subject secret");
     mac.update(trusted_subject_payload(subject, timestamp, method, path_and_query).as_bytes());
     hex::encode(mac.finalize().into_bytes())
 }
@@ -686,13 +677,8 @@ pub fn sign_app_session_token(
     expires_at: i64,
 ) -> String {
     let payload = app_session_payload(subject, issued_at, expires_at);
-    let mut mac = app_session_hmac_for_config(config).unwrap_or_else(|error| {
-        tracing::error!(
-            error = %error,
-            "signing app session token failed (unreachable for HMAC-SHA256); using zero-key fallback signature"
-        );
-        HmacSha256::new(&Default::default())
-    });
+    let mut mac = app_session_hmac_for_config(config)
+        .expect("HMAC-SHA256 signing key must be derivable from configured app session secret");
     mac.update(payload.as_bytes());
     format!(
         "{}.{}.{}",
@@ -724,13 +710,8 @@ pub fn sign_app_session_token_with_claims_and_secret(
         }
     };
     let encoded_payload = URL_SAFE_NO_PAD.encode(payload.as_bytes());
-    let mut mac = app_session_hmac_for_secret(signing_secret).unwrap_or_else(|error| {
-        tracing::error!(
-            error = %error,
-            "signing app session token with claims failed (unreachable for HMAC-SHA256); using zero-key fallback signature"
-        );
-        HmacSha256::new(&Default::default())
-    });
+    let mut mac = app_session_hmac_for_secret(signing_secret)
+        .expect("HMAC-SHA256 signing key must be derivable from app session signing secret");
     mac.update(encoded_payload.as_bytes());
     format!(
         "{}.{}.{}",

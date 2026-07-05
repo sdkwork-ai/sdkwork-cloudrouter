@@ -1182,5 +1182,53 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
                 self.assertFalse((base / "dist" / "api" / f"{stale_name}.d.ts.map").exists())
 
 
+class ClawRouterAppSdkIamOwnerOperationsTest(unittest.TestCase):
+    def test_owner_only_openapi_keeps_clawrouter_user_settings_operations(self) -> None:
+        from tools.clawrouter_sdk_runtime_standardizer import (
+            CLAWROUTER_APP_SDK_IAM_OWNER_OPERATION_PREFIXES,
+            SdkRuntimeStandardizer,
+        )
+
+        self.assertIn("users.", CLAWROUTER_APP_SDK_IAM_OWNER_OPERATION_PREFIXES)
+
+        root = Path(__file__).resolve().parents[1]
+        authority = json.loads(
+            (
+                root
+                / "sdks"
+                / "clawrouter-app-sdk"
+                / "openapi"
+                / "clawrouter-app-sdk.openapi.json"
+            ).read_text(encoding="utf-8")
+        )
+        paths = authority.get("paths")
+        self.assertIsInstance(paths, dict)
+        settings_path = paths.get("/app/v3/api/iam/users/settings")
+        self.assertIsInstance(settings_path, dict)
+        self.assertIn("get", settings_path)
+        self.assertIn("put", settings_path)
+        self.assertEqual(
+            settings_path["get"].get("operationId"),
+            "users.settings.retrieve",
+        )
+        self.assertEqual(
+            settings_path["put"].get("operationId"),
+            "users.settings.update",
+        )
+
+        generated = json.loads(
+            (
+                root / "generated" / "openapi" / "clawrouter-app-openapi.json"
+            ).read_text(encoding="utf-8")
+        )
+        owner_only = SdkRuntimeStandardizer(root=root)._owner_only_openapi_payload(
+            "clawrouter-app-sdk",
+            generated,
+        )
+        owner_paths = owner_only.get("paths")
+        self.assertIsInstance(owner_paths, dict)
+        self.assertIn("/app/v3/api/iam/users/settings", owner_paths)
+
+
 if __name__ == "__main__":
     unittest.main()

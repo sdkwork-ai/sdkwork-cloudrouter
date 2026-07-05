@@ -47,9 +47,9 @@
     "vite": "^6.2.0"
   },
   "dependencies": {
-    "clawrouter-app-domain-transport-generated-typescript": "workspace:*",
-    "clawrouter-backend-domain-transport-generated-typescript": "workspace:*",
-    "sdkwork-drive-backend-sdk-generated-typescript": "workspace:*",
-    "sdkwork-generations-app-sdk-generated-typescript": "workspace:*"
+    "@sdkwork/clawrouter-app-sdk": "workspace:*",
+    "@sdkwork/clawrouter-backend-sdk": "workspace:*",
+    "@sdkwork/drive-backend-sdk": "workspace:*",
+    "@sdkwork/generations-app-sdk": "workspace:*"
   }
 }

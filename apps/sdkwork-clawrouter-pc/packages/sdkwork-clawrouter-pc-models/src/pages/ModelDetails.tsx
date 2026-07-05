@@ -4,7 +4,7 @@ import { ArrowLeft, MessageSquare, Check, Info, FileText, ExternalLink, Zap, Cpu
 import { useTranslation } from 'react-i18next';
 import { CopyButton } from '@sdkwork/clawroutes-pc-commons';
 import type { Model } from '../data/models';
-import { findModelByCatalogRouteId, ModelService } from '../modelService';
+import { ModelService } from '../modelService';
 import { deriveModelCatalogDetailView, type ModelCatalogModalityTone } from '../modelCatalog';
 
 export function ModelDetails() {
@@ -17,12 +17,11 @@ export function ModelDetails() {
   useEffect(() => {
     let cancelled = false;
 
-    ModelService.fetchModels()
-      .then((models) => {
+    ModelService.fetchModelByCatalogRouteId(routeModelId)
+      .then((runtimeModel) => {
         if (cancelled) {
           return;
         }
-        const runtimeModel = findModelByCatalogRouteId(models, routeModelId);
         if (runtimeModel) {
           setModel(runtimeModel);
           return;

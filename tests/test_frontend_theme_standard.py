@@ -159,6 +159,10 @@ class FrontendThemeStandardTest(unittest.TestCase):
         self.assertIn('[class*="bg-indigo-"] [class~="text-white"]', css_source)
         self.assertIn('[class*="from-emerald-"][class~="text-white"]', css_source)
         self.assertIn('[class~="bg-black/60"] [class~="text-white"]', css_source)
+        self.assertIn("--sdkwork-playground-rail-bg", css_source)
+        self.assertIn("--sdkwork-playground-rail-bg", css_source)
+        self.assertIn("--sdkwork-playground-chat-sidebar-bg", css_source)
+        self.assertIn("--sdkwork-model-picker-menu-bg", css_source)
 
         for source_path in adaptive_pages:
             if not source_path.exists():
@@ -190,9 +194,13 @@ class FrontendThemeStandardTest(unittest.TestCase):
             "bg-[#0a0a0a]",
             "bg-[#111]",
             "bg-[#111111]",
+            "bg-[#121216]",
             "bg-[#151515]",
+            "bg-[#151519]",
+            "bg-[#19191e]",
             "bg-[#1a1a1a]",
             "bg-[#1c1c1e]",
+            "bg-[#1c1c20]/95",
             "bg-[#1f1f1f]",
             "bg-[#222]",
             "bg-[#242424]",
@@ -200,6 +208,7 @@ class FrontendThemeStandardTest(unittest.TestCase):
             "bg-[#252528]",
             "bg-[#2a2a2a]",
             "bg-[#2a2a2d]",
+            "bg-white/6",
             "from-[#111]",
             "via-[#111]/80",
             "to-[#1a1a24]",

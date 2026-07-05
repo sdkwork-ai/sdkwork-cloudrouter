@@ -1,16 +1,18 @@
 use std::sync::Arc;
 
-use axum::extract::State;
-use axum::http::StatusCode;
+use axum::extract::{Query, State};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
-use axum::{Json, Router};
+use axum::Router;
+use serde::Deserialize;
 
 use crate::api::app_sql_subject::{map_optional_app_sql_subject, ResolvedAppSqlScopedSubject};
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, normalize_list_search_query, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, success_envelope,
+};
 use crate::ports::{
-    AppRoutingApiKeyItem, AppRoutingChannelItem, AppRoutingItems, AppRoutingReadFuture,
-    AppRoutingReadStore, AppRoutingRequestTraceItem, AppRoutingSubject, AppRoutingUsageSnapshot,
+    AppRoutingListQuery, AppRoutingReadStore, AppRoutingSubject,
 };
 
 #[derive(Clone)]
@@ -19,35 +21,66 @@ struct AppRoutingState {
     require_subject: bool,
 }
 
+#[derive(Debug, Deserialize)]
+struct AppRoutingListQueryRequest {
+    page: Option<i64>,
+    page_size: Option<i64>,
+    q: Option<String>,
+}
+
 struct EmptyAppRoutingReadStore;
 
 impl AppRoutingReadStore for EmptyAppRoutingReadStore {
     fn load_routing_channels<'a>(
         &'a self,
         _subject: Option<AppRoutingSubject>,
-    ) -> AppRoutingReadFuture<'a, Vec<AppRoutingChannelItem>> {
-        Box::pin(async { Ok(Vec::new()) })
+        query: AppRoutingListQuery,
+    ) -> crate::ports::AppRoutingReadFuture<'a, crate::ports::AppRoutingChannelListPage> {
+        Box::pin(async move {
+            Ok(crate::ports::AppRoutingChannelListPage {
+                items: Vec::new(),
+                total: 0,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
+        })
     }
 
     fn load_routing_api_keys<'a>(
         &'a self,
         _subject: Option<AppRoutingSubject>,
-    ) -> AppRoutingReadFuture<'a, Vec<AppRoutingApiKeyItem>> {
-        Box::pin(async { Ok(Vec::new()) })
+        query: AppRoutingListQuery,
+    ) -> crate::ports::AppRoutingReadFuture<'a, crate::ports::AppRoutingApiKeyListPage> {
+        Box::pin(async move {
+            Ok(crate::ports::AppRoutingApiKeyListPage {
+                items: Vec::new(),
+                total: 0,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
+        })
     }
 
     fn load_routing_request_traces<'a>(
         &'a self,
         _subject: Option<AppRoutingSubject>,
-    ) -> AppRoutingReadFuture<'a, Vec<AppRoutingRequestTraceItem>> {
-        Box::pin(async { Ok(Vec::new()) })
+        query: AppRoutingListQuery,
+    ) -> crate::ports::AppRoutingReadFuture<'a, crate::ports::AppRoutingRequestTraceListPage> {
+        Box::pin(async move {
+            Ok(crate::ports::AppRoutingRequestTraceListPage {
+                items: Vec::new(),
+                total: 0,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
+        })
     }
 
     fn load_routing_usage<'a>(
         &'a self,
         _subject: Option<AppRoutingSubject>,
-    ) -> AppRoutingReadFuture<'a, AppRoutingUsageSnapshot> {
-        Box::pin(async { Ok(AppRoutingUsageSnapshot::default()) })
+    ) -> crate::ports::AppRoutingReadFuture<'a, crate::ports::AppRoutingUsageSnapshot> {
+        Box::pin(async { Ok(crate::ports::AppRoutingUsageSnapshot::default()) })
     }
 }
 
@@ -88,6 +121,7 @@ fn app_routing_router_with_state(
 async fn fetch_routing_channels(
     State(state): State<AppRoutingState>,
     ResolvedAppSqlScopedSubject(subject): ResolvedAppSqlScopedSubject,
+    Query(request): Query<AppRoutingListQueryRequest>,
 ) -> Response {
     let subject = match map_optional_app_sql_subject(subject, state.require_subject, |scoped| {
         scoped.into()
@@ -95,9 +129,17 @@ async fn fetch_routing_channels(
         Ok(subject) => subject,
         Err(response) => return response,
     };
+    let query = match build_routing_list_query(request) {
+        Ok(query) => query,
+        Err(message) => return bad_request(message),
+    };
 
-    match state.read_store.load_routing_channels(subject).await {
-        Ok(items) => Json(success_envelope(AppRoutingItems::new(items))).into_response(),
+    match state.read_store.load_routing_channels(subject, query).await {
+        Ok(page) => json_success_list_response(
+            None,
+            page.items,
+            offset_page_info(page.page_no, page.page_size, page.total),
+        ),
         Err(error) => app_routing_read_model_error(error),
     }
 }
@@ -105,6 +147,7 @@ async fn fetch_routing_channels(
 async fn fetch_routing_api_keys(
     State(state): State<AppRoutingState>,
     ResolvedAppSqlScopedSubject(subject): ResolvedAppSqlScopedSubject,
+    Query(request): Query<AppRoutingListQueryRequest>,
 ) -> Response {
     let subject = match map_optional_app_sql_subject(subject, state.require_subject, |scoped| {
         scoped.into()
@@ -112,9 +155,17 @@ async fn fetch_routing_api_keys(
         Ok(subject) => subject,
         Err(response) => return response,
     };
+    let query = match build_routing_list_query(request) {
+        Ok(query) => query,
+        Err(message) => return bad_request(message),
+    };
 
-    match state.read_store.load_routing_api_keys(subject).await {
-        Ok(items) => Json(success_envelope(AppRoutingItems::new(items))).into_response(),
+    match state.read_store.load_routing_api_keys(subject, query).await {
+        Ok(page) => json_success_list_response(
+            None,
+            page.items,
+            offset_page_info(page.page_no, page.page_size, page.total),
+        ),
         Err(error) => app_routing_read_model_error(error),
     }
 }
@@ -122,6 +173,7 @@ async fn fetch_routing_api_keys(
 async fn fetch_routing_request_traces(
     State(state): State<AppRoutingState>,
     ResolvedAppSqlScopedSubject(subject): ResolvedAppSqlScopedSubject,
+    Query(request): Query<AppRoutingListQueryRequest>,
 ) -> Response {
     let subject = match map_optional_app_sql_subject(subject, state.require_subject, |scoped| {
         scoped.into()
@@ -129,9 +181,21 @@ async fn fetch_routing_request_traces(
         Ok(subject) => subject,
         Err(response) => return response,
     };
+    let query = match build_routing_list_query(request) {
+        Ok(query) => query,
+        Err(message) => return bad_request(message),
+    };
 
-    match state.read_store.load_routing_request_traces(subject).await {
-        Ok(items) => Json(success_envelope(AppRoutingItems::new(items))).into_response(),
+    match state
+        .read_store
+        .load_routing_request_traces(subject, query)
+        .await
+    {
+        Ok(page) => json_success_list_response(
+            None,
+            page.items,
+            offset_page_info(page.page_no, page.page_size, page.total),
+        ),
         Err(error) => app_routing_read_model_error(error),
     }
 }
@@ -148,14 +212,32 @@ async fn fetch_routing_usage(
     };
 
     match state.read_store.load_routing_usage(subject).await {
-        Ok(snapshot) => Json(success_envelope(snapshot)).into_response(),
+        Ok(snapshot) => axum::Json(success_envelope(snapshot)).into_response(),
         Err(error) => app_routing_read_model_error(error),
     }
 }
 
+fn build_routing_list_query(
+    request: AppRoutingListQueryRequest,
+) -> Result<AppRoutingListQuery, String> {
+    let parsed = parse_offset_list_query(request.page, request.page_size)?;
+    let q = normalize_list_search_query(request.q, "q")?;
+    Ok(AppRoutingListQuery {
+        page_no: parsed.page_no,
+        page_size: parsed.page_size,
+        offset: parsed.offset,
+        q,
+    })
+}
+
+fn bad_request(message: String) -> Response {
+    problem_from_wire_code("4001", message).into_response()
+}
+
 fn app_routing_read_model_error(error: impl std::fmt::Display) -> Response {
     problem_from_wire_code(
-            "5000",
-            format!("app routing read model is unavailable: {error}"),
-        ).into_response()
+        "5000",
+        format!("app routing read model is unavailable: {error}"),
+    )
+    .into_response()
 }

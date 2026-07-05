@@ -2410,13 +2410,33 @@
       "read_sources": [
         "system"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "PromotionsCodesRedemptionsCreateRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
+          "properties": {
+            "channel": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "code": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          },
+          "required": [
+            "code"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "PromotionsCodesRedemptionsCreateResult",
+        "schema": {
+          "additionalProperties": false,
+          "name": "PromotionsCodesRedemptionsCreateResult",
           "properties": {},
           "type": "object"
         }

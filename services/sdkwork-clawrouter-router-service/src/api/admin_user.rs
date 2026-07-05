@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
@@ -13,7 +12,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, normalize_list_search_query, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, success_envelope,
+};
 use crate::application::{ApiKeySecretGenerator, ApiKeySecretHasher};
 use crate::domain::{DecimalValue, DomainError, GatewayApiKey};
 use crate::ports::{
@@ -32,31 +34,9 @@ const MAX_USERNAME_LEN: usize = 168;
 const MAX_EMAIL_LEN: usize = 255;
 const MAX_GROUP_LEN: usize = 64;
 const MAX_API_KEY_NAME_LEN: usize = 128;
-const DEFAULT_USERS_PAGE_SIZE: i64 = 200;
-const MAX_USERS_PAGE_SIZE: i64 = 500;
 const DEFAULT_CHANNEL_GROUP_CODE: &str = "default";
 const DEFAULT_CHANNEL_GROUP_NAME: &str = "Default";
 const DEFAULT_PRICING_PLAN_CODE: &str = "standard";
-
-#[derive(Clone)]
-struct AdminUserState {
-    store: Arc<dyn AdminUserStore + Send + Sync>,
-    api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
-    secret_generator: Arc<dyn ApiKeySecretGenerator + Send + Sync>,
-}
-
-#[derive(Clone)]
-struct AdminApiKeyCommandState {
-    command_store: Arc<dyn GatewayApiKeyCommandStore + Send + Sync>,
-    api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
-    secret_generator: Arc<dyn ApiKeySecretGenerator + Send + Sync>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct AdminUserListResponse {
-    items: Vec<AdminUserItem>,
-}
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -109,10 +89,38 @@ struct CreateApiKeyRequest {
     name: Option<String>,
 }
 
+#[derive(Clone)]
+struct AdminUserState {
+    store: Arc<dyn AdminUserStore + Send + Sync>,
+    api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
+    secret_generator: Arc<dyn ApiKeySecretGenerator + Send + Sync>,
+}
+
+#[derive(Clone)]
+struct AdminApiKeyCommandState {
+    command_store: Arc<dyn GatewayApiKeyCommandStore + Send + Sync>,
+    api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
+    secret_generator: Arc<dyn ApiKeySecretGenerator + Send + Sync>,
+}
+
 #[derive(Debug, Deserialize)]
 struct UsersListQuery {
     #[serde(default)]
     q: Option<String>,
+    #[serde(default)]
+    page: Option<i64>,
+    #[serde(default)]
+    page_no: Option<i64>,
+    #[serde(default)]
+    page_size: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ApiKeysListQuery {
+    #[serde(default)]
+    page: Option<i64>,
+    #[serde(default)]
+    page_no: Option<i64>,
     #[serde(default)]
     page_size: Option<i64>,
 }
@@ -172,36 +180,62 @@ async fn fetch_users(
 ) -> Response {
     let subject: AdminUserSubject = scoped.into();
 
-    let q = normalize_query_text(query.q.as_deref());
-    let page_size = normalize_users_page_size(query.page_size);
+    let pagination = match parse_offset_list_query(query.page.or(query.page_no), query.page_size) {
+        Ok(value) => value,
+        Err(message) => return bad_request(message),
+    };
+    let q = match normalize_list_search_query(query.q, "q") {
+        Ok(value) => value,
+        Err(message) => return bad_request(message),
+    };
 
     match state
         .store
         .list_users(ListAdminUsersQuery {
             subject,
             q,
-            page_size,
+            page_no: pagination.page_no,
+            page_size: pagination.page_size,
+            offset: pagination.offset,
         })
         .await
     {
-        Ok(items) => Json(success_envelope(AdminUserListResponse { items })).into_response(),
+        Ok(page) => json_success_list_response(
+            None,
+            page.items,
+            offset_page_info(page.page_no, page.page_size, page.total),
+        ),
         Err(error) => admin_user_system_response("admin user read model is unavailable", error),
     }
 }
 
 async fn fetch_api_keys_map(
     State(state): State<AdminUserState>,
+    Query(query): Query<ApiKeysListQuery>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
 ) -> Response {
     let subject: AdminUserSubject = scoped.into();
+    let pagination = match parse_offset_list_query(query.page.or(query.page_no), query.page_size) {
+        Ok(value) => value,
+        Err(message) => return bad_request(message),
+    };
 
     match state
         .store
-        .list_api_keys(ListAdminUserApiKeysQuery { subject })
+        .list_api_keys(ListAdminUserApiKeysQuery {
+            subject,
+            page_no: pagination.page_no,
+            page_size: pagination.page_size,
+            offset: pagination.offset,
+        })
         .await
     {
-        Ok(items) => Json(success_envelope(api_key_map(items))).into_response(),
+        Ok(page) => json_success_list_response(
+            None,
+            page.items,
+            offset_page_info(page.page_no, page.page_size, page.total),
+        ),
         Err(error) => admin_user_system_response("admin api key read model is unavailable", error),
     }
 }
@@ -741,32 +775,6 @@ fn admin_api_key_item_from_gateway(api_key: GatewayApiKey) -> AdminUserApiKeyIte
         used: "0.000000".to_owned(),
         status: api_key.status_label().to_owned(),
     }
-}
-
-
-fn normalize_query_text(value: Option<&str>) -> Option<String> {
-    value
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(|value| value.chars().take(128).collect::<String>())
-}
-
-fn normalize_users_page_size(value: Option<i64>) -> i64 {
-    match value {
-        Some(value) if value > 0 => value.min(MAX_USERS_PAGE_SIZE),
-        _ => DEFAULT_USERS_PAGE_SIZE,
-    }
-}
-
-fn api_key_map(items: Vec<AdminUserApiKeyItem>) -> BTreeMap<String, Vec<AdminUserApiKeyItem>> {
-    let mut result: BTreeMap<String, Vec<AdminUserApiKeyItem>> = BTreeMap::new();
-    for item in items {
-        result
-            .entry(item.user_id.to_string())
-            .or_default()
-            .push(item);
-    }
-    result
 }
 
 fn parse_json_body<T>(body: &[u8], empty_message: &str) -> Result<T, String>

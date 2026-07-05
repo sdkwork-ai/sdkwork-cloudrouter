@@ -7,7 +7,7 @@ import {
   Terminal,
   type LucideIcon,
 } from "lucide-react";
-import { isBlank } from "@sdkwork/utils";
+import { isBlank } from "@sdkwork/utils/string";
 import type { MouseEvent } from "react";
 import type {
   SdkworkDownloadAction,

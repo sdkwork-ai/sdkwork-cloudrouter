@@ -135,6 +135,70 @@ test("playground asset generation maps image text and reference submissions to s
   ]);
 });
 
+test("playground asset generation maps image reference modes to sdkwork-generations image commands", async () => {
+  const textMode = await runAssetGeneration({
+    prompt: "Create image",
+    targetType: "image",
+    referenceMode: "text_to_image",
+  });
+  assert.equal(textMode.commands[0]?.operationType, "text_to_image");
+  assert.equal(textMode.commands[0]?.parameters?.referenceMode, "text_to_image");
+
+  const imageToImage = await runAssetGeneration({
+    prompt: "Restyle image",
+    targetType: "image",
+    referenceMode: "image_to_image",
+    referenceImages: [
+      {
+        name: "reference.png",
+        mimeType: "image/png",
+        resource: {
+          id: "reference-image-id",
+          kind: "image",
+          publicUrl: "https://cdn.example/reference.png",
+          source: "external_url",
+          url: "https://cdn.example/reference.png",
+        },
+        sizeBytes: 1024,
+      },
+    ],
+  });
+  assert.equal(imageToImage.commands[0]?.operationType, "image_edit");
+  assert.equal(imageToImage.commands[0]?.parameters?.referenceMode, "image_to_image");
+
+  const multiReference = await runAssetGeneration({
+    prompt: "Keep subject consistent",
+    targetType: "image",
+    referenceMode: "multi_reference",
+    referenceImages: [
+      {
+        name: "reference-a.png",
+        mimeType: "image/png",
+        resource: {
+          id: "reference-a",
+          kind: "image",
+          publicUrl: "https://cdn.example/a.png",
+          source: "external_url",
+          url: "https://cdn.example/a.png",
+        },
+      },
+      {
+        name: "reference-b.png",
+        mimeType: "image/png",
+        resource: {
+          id: "reference-b",
+          kind: "image",
+          publicUrl: "https://cdn.example/b.png",
+          source: "external_url",
+          url: "https://cdn.example/b.png",
+        },
+      },
+    ],
+  });
+  assert.equal(multiReference.commands[0]?.operationType, "image_edit");
+  assert.equal(multiReference.commands[0]?.parameters?.referenceMode, "multi_reference");
+});
+
 test("playground asset generation maps every video reference mode to sdkwork-generations video commands", async () => {
   const textOnly = await runAssetGeneration({
     prompt: "Create video",

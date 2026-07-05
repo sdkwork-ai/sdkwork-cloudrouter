@@ -7,8 +7,9 @@ use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     AdminServiceNodeCommandFuture, AdminServiceNodeDeleteOutcome, AdminServiceNodeItem,
-    AdminServiceNodeStore, CreateAdminServiceNodeCommand, DeleteAdminServiceNodeCommand,
-    ListAdminServiceNodesQuery, UpdateAdminServiceNodeCommand, UpdateAdminServiceNodeStatusCommand,
+    AdminServiceNodeListPage, AdminServiceNodeStore, CreateAdminServiceNodeCommand,
+    DeleteAdminServiceNodeCommand, ListAdminServiceNodesQuery, UpdateAdminServiceNodeCommand,
+    UpdateAdminServiceNodeStatusCommand,
 };
 
 #[derive(Debug, Clone)]
@@ -26,7 +27,7 @@ impl AdminServiceNodeStore for PostgresAdminServiceNodeStore {
     fn list_service_nodes<'a>(
         &'a self,
         query: ListAdminServiceNodesQuery,
-    ) -> AdminServiceNodeCommandFuture<'a, Vec<AdminServiceNodeItem>> {
+    ) -> AdminServiceNodeCommandFuture<'a, AdminServiceNodeListPage> {
         Box::pin(async move { list_service_nodes(&self.pool, query).await })
     }
 
@@ -62,7 +63,7 @@ impl AdminServiceNodeStore for PostgresAdminServiceNodeStore {
 async fn list_service_nodes(
     pool: &PgPool,
     query: ListAdminServiceNodesQuery,
-) -> DomainResult<Vec<AdminServiceNodeItem>> {
+) -> DomainResult<AdminServiceNodeListPage> {
     let status = optional_status_int(query.status.as_deref())?;
     let rows = sqlx::query(
         r#"
@@ -74,7 +75,8 @@ async fn list_service_nodes(
             COALESCE(metadata->>'remark', '') AS remark,
             status,
             health_status,
-            COALESCE(updated_at::text, created_at::text, '') AS updated_at
+            COALESCE(updated_at::text, created_at::text, '') AS updated_at,
+            COUNT(*) OVER() AS total
         FROM ops_gateway_instance
         WHERE (tenant_id = $1 OR tenant_id = 0 OR tenant_id IS NULL)
           AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
@@ -87,18 +89,30 @@ async fn list_service_nodes(
                OR LOWER(COALESCE(metadata::text, '')) LIKE '%' || LOWER($3::text) || '%')
           AND ($4::bigint IS NULL OR status = $4)
         ORDER BY updated_at DESC, id DESC
-        LIMIT 500
+        LIMIT $5 OFFSET $6
         "#,
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.search)
     .bind(status)
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list service nodes", error))?;
 
-    rows.into_iter().map(item_from_row).collect()
+    let total = rows
+        .first()
+        .and_then(|row| row.try_get::<i64, _>("total").ok())
+        .unwrap_or(0);
+    let items = rows.into_iter().map(item_from_row).collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminServiceNodeListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn create_service_node(

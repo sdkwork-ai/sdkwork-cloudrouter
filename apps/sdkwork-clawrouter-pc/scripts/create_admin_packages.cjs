@@ -30,7 +30,7 @@ for (const pkg of packages) {
       "react": "^19.0.0",
       "react-dom": "^19.0.0",
       "lucide-react": "^0.546.0",
-      "sdkwork-clawrouter-pc-commons": "file:../sdkwork-clawrouter-pc-commons"
+      "sdkwork-clawroutes-pc-commons": "file:../sdkwork-clawroutes-pc-commons"
     }
   };
 

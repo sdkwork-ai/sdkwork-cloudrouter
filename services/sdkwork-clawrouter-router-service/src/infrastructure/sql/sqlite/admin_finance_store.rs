@@ -5,8 +5,8 @@ use sqlx::{Row, SqlitePool};
 
 use crate::domain::{DecimalValue, DomainError};
 use crate::ports::{
-    AdminBillingRecordItem, AdminFinanceReadFuture, AdminFinanceStore, AdminTransactionRecordItem,
-    ListAdminBillingRecordsQuery, ListAdminTransactionsQuery,
+    AdminBillingRecordItem, AdminFinanceCollection, AdminFinanceReadFuture, AdminFinanceStore,
+    AdminTransactionRecordItem, ListAdminBillingRecordsQuery, ListAdminTransactionsQuery,
 };
 
 const LIST_ADMIN_TRANSACTIONS: &str = r#"
@@ -95,7 +95,7 @@ filtered_entries AS (
       AND (?5 IS NULL OR occurred_at >= ?5)
       AND (?6 IS NULL OR occurred_at <= ?6)
 )
-SELECT id, occurred_at, user_id, normalized_type, amount, balance, description, source_type, source_id, status_source, transaction_status, payment_status, refund_status, order_status, normalized_status
+SELECT id, occurred_at, user_id, normalized_type, amount, balance, description, source_type, source_id, status_source, transaction_status, payment_status, refund_status, order_status, normalized_status, COUNT(*) OVER() AS total
 FROM filtered_entries
 ORDER BY occurred_at DESC, id DESC
 LIMIT ?7 OFFSET ?8
@@ -168,7 +168,7 @@ filtered_entries AS (
       AND (?5 IS NULL OR sort_time >= ?5)
       AND (?6 IS NULL OR sort_time <= ?6)
 )
-SELECT id, user_id, period, total_tokens, total_cost, payment_status_code, statement_status_code, invoice_id, invoice_status_code, normalized_status, due_date
+SELECT id, user_id, period, total_tokens, total_cost, payment_status_code, statement_status_code, invoice_id, invoice_status_code, normalized_status, due_date, COUNT(*) OVER() AS total
 FROM filtered_entries
 ORDER BY sort_time DESC, id DESC
 LIMIT ?7 OFFSET ?8
@@ -189,14 +189,14 @@ impl AdminFinanceStore for SqliteAdminFinanceStore {
     fn list_transactions<'a>(
         &'a self,
         query: ListAdminTransactionsQuery,
-    ) -> AdminFinanceReadFuture<'a, Vec<AdminTransactionRecordItem>> {
+    ) -> AdminFinanceReadFuture<'a, AdminFinanceCollection<AdminTransactionRecordItem>> {
         Box::pin(async move { list_transactions(&self.pool, query).await })
     }
 
     fn list_billing_records<'a>(
         &'a self,
         query: ListAdminBillingRecordsQuery,
-    ) -> AdminFinanceReadFuture<'a, Vec<AdminBillingRecordItem>> {
+    ) -> AdminFinanceReadFuture<'a, AdminFinanceCollection<AdminBillingRecordItem>> {
         Box::pin(async move { list_billing_records(&self.pool, query).await })
     }
 }
@@ -204,7 +204,7 @@ impl AdminFinanceStore for SqliteAdminFinanceStore {
 async fn list_transactions(
     pool: &SqlitePool,
     query: ListAdminTransactionsQuery,
-) -> Result<Vec<AdminTransactionRecordItem>, DomainError> {
+) -> Result<AdminFinanceCollection<AdminTransactionRecordItem>, DomainError> {
     let rows = sqlx::query(LIST_ADMIN_TRANSACTIONS)
         .bind(query.subject.tenant_id)
         .bind(query.subject.organization_id)
@@ -218,13 +218,24 @@ async fn list_transactions(
         .await
         .map_err(sql_error)?;
 
-    rows.into_iter().map(row_to_transaction).collect()
+    let total = rows
+        .first()
+        .map(|row| integer_cell(row, "total"))
+        .unwrap_or(0);
+    let items = rows.into_iter().map(row_to_transaction).collect::<Result<Vec<_>, _>>()?;
+
+    Ok(AdminFinanceCollection {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn list_billing_records(
     pool: &SqlitePool,
     query: ListAdminBillingRecordsQuery,
-) -> Result<Vec<AdminBillingRecordItem>, DomainError> {
+) -> Result<AdminFinanceCollection<AdminBillingRecordItem>, DomainError> {
     let rows = sqlx::query(LIST_ADMIN_BILLING_RECORDS)
         .bind(query.subject.tenant_id)
         .bind(query.subject.organization_id)
@@ -238,7 +249,21 @@ async fn list_billing_records(
         .await
         .map_err(sql_error)?;
 
-    rows.into_iter().map(row_to_billing_record).collect()
+    let total = rows
+        .first()
+        .map(|row| integer_cell(row, "total"))
+        .unwrap_or(0);
+    let items = rows
+        .into_iter()
+        .map(row_to_billing_record)
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(AdminFinanceCollection {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 fn row_to_transaction(

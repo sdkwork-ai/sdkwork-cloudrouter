@@ -16,9 +16,21 @@ pub struct AdminMonitorSubject {
     pub operator_type: i32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AdminMonitorQuery {
     pub subject: AdminMonitorSubject,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+    pub q: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminMonitorCollection<T> {
+    pub items: Vec<T>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -59,15 +71,15 @@ pub trait AdminMonitorReadStore {
     fn list_monitor_nodes<'a>(
         &'a self,
         query: AdminMonitorQuery,
-    ) -> AdminMonitorReadFuture<'a, Vec<AdminMonitorNode>>;
+    ) -> AdminMonitorReadFuture<'a, AdminMonitorCollection<AdminMonitorNode>>;
 
     fn list_monitor_alerts<'a>(
         &'a self,
         query: AdminMonitorQuery,
-    ) -> AdminMonitorReadFuture<'a, Vec<AdminMonitorAlert>>;
+    ) -> AdminMonitorReadFuture<'a, AdminMonitorCollection<AdminMonitorAlert>>;
 
     fn list_monitor_performance<'a>(
         &'a self,
         query: AdminMonitorQuery,
-    ) -> AdminMonitorReadFuture<'a, Vec<AdminMonitorPerformanceDatum>>;
+    ) -> AdminMonitorReadFuture<'a, AdminMonitorCollection<AdminMonitorPerformanceDatum>>;
 }

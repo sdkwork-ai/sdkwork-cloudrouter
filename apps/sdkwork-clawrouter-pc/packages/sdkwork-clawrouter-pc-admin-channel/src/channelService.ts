@@ -3,6 +3,10 @@ import {
   getClawRouterBackendSdkClient,
   getModelsBackendSdkClient,
   isRecord,
+  optionalBoundedPositiveInteger as optionalQueryPageSize,
+  optionalPositiveInteger as optionalQueryPage,
+  optionalText as optionalQueryText,
+  pruneUndefinedQueryParams,
   readApiRecord,
   readRequiredApiItems,
   readRequiredApiItem,
@@ -10,6 +14,7 @@ import {
   readNumber,
   readRequiredNumber,
   requiredSafePathSegment,
+  readRequiredNonNegativeNumber,
   readRequiredString,
   readString,
   readStringArray,
@@ -271,12 +276,51 @@ export type ProviderSecretUpdateInput = {
   status?: 'active' | 'disabled';
 };
 
+const MAX_CHANNEL_LIST_PAGE_SIZE = 200;
+const MAX_CHANNEL_LIST_QUERY_TEXT_LENGTH = 128;
+const MAX_AI_RESOURCE_LIST_PAGE_SIZE = 200;
+const MAX_AI_RESOURCE_GROUP_LIST_PAGE_SIZE = 200;
+const MAX_AI_RESOURCE_LIST_QUERY_TEXT_LENGTH = 128;
+const MAX_MODEL_CATALOG_PAGE_SIZE = 200;
+const MAX_MODEL_CATALOG_QUERY_TEXT_LENGTH = 128;
+const DEFAULT_MODEL_CATALOG_PAGE_SIZE = 20;
+
+type AiResourceListFilters = Record<string, unknown>;
+type AiResourceGroupListFilters = Record<string, unknown>;
+type ModelCatalogListFilters = Record<string, unknown>;
+
+export type ChannelAiResourceListPage = {
+  resources: AiResource[];
+  total: number;
+};
+
+export type ChannelAiResourceGroupListPage = {
+  resourceGroups: AiResourceGroup[];
+  total: number;
+};
+
+export type ChannelModelCatalogListPage = {
+  models: ChannelModelCatalogItem[];
+  total: number;
+};
+
+type ChannelListFilters = Record<string, unknown>;
+
+type ChannelListPage = {
+  channels: ChannelItem[];
+  total: number;
+};
+
 export class ChannelService {
-  static async fetchChannels(): Promise<ChannelItem[]> {
-    const result = await channelBackendClient().integration.channels.list();
+  static async fetchChannels(filters: ChannelListFilters = {}): Promise<ChannelListPage> {
+    const result = await channelBackendClient().integration.channels.list(toChannelListQueryParams(filters));
     ensureSdkworkApiSuccess(result, 'Failed to fetch channels');
-    return readRequiredApiItems(result, 'Failed to fetch channels')
-      .map(normalizeChannel);
+    const data = readApiRecord(result);
+    return {
+      channels: readRequiredApiItems(result, 'Failed to fetch channels')
+        .map(normalizeChannel),
+      total: readChannelListPageTotal(data),
+    };
   }
 
   static async addChannel(channel: ChannelCreateInput): Promise<ChannelItem> {
@@ -320,28 +364,57 @@ export class ChannelService {
 }
 
 export class ChannelModelCatalogService {
-  static async fetchModels(): Promise<ChannelModelCatalogItem[]> {
-    const result = await modelsBackendClient().ai.models.list();
+  static async fetchModelsPage(
+    filters: ModelCatalogListFilters = {},
+  ): Promise<ChannelModelCatalogListPage> {
+    const { limit, offset, q } = toModelCatalogListQueryParams(filters);
+    const result = await modelsBackendClient().ai.models.list(
+      pruneUndefinedQueryParams({
+        limit: String(limit),
+        offset: String(offset),
+        q,
+      }),
+    );
     ensureSdkworkApiSuccess(result, 'Failed to fetch model catalog');
-    return readRequiredApiItems(result, 'Failed to fetch model catalog')
-      .map(normalizeModelCatalogItem)
-      .filter((item): item is ChannelModelCatalogItem => item !== null);
+    const data = readApiRecord(result);
+    return {
+      models: readRequiredApiItems(result, 'Failed to fetch model catalog')
+        .map(normalizeModelCatalogItem)
+        .filter((item): item is ChannelModelCatalogItem => item !== null),
+      total: readListPageTotal(data, 'Model catalog list total is required'),
+    };
   }
 }
 
 export class ChannelAiResourceService {
-  static async fetchAiResources(): Promise<AiResource[]> {
-    const result = await modelsBackendClient().ai.aiResources.list();
+  static async fetchAiResourcesPage(
+    filters: AiResourceListFilters = {},
+  ): Promise<ChannelAiResourceListPage> {
+    const result = await modelsBackendClient().ai.aiResources.list(
+      toAiResourceListQueryParams(filters),
+    );
     ensureSdkworkApiSuccess(result, 'Failed to fetch AI resources');
-    return readRequiredApiItems(result, 'Failed to fetch AI resources')
-      .map(normalizeAiResource);
+    const data = readApiRecord(result);
+    return {
+      resources: readRequiredApiItems(result, 'Failed to fetch AI resources')
+        .map(normalizeAiResource),
+      total: readListPageTotal(data, 'AI resource list total is required'),
+    };
   }
 
-  static async fetchAiResourceGroups(): Promise<AiResourceGroup[]> {
-    const result = await modelsBackendClient().ai.aiResourceGroups.list();
+  static async fetchAiResourceGroupsPage(
+    filters: AiResourceGroupListFilters = {},
+  ): Promise<ChannelAiResourceGroupListPage> {
+    const result = await modelsBackendClient().ai.aiResourceGroups.list(
+      toAiResourceGroupListQueryParams(filters),
+    );
     ensureSdkworkApiSuccess(result, 'Failed to fetch AI resource groups');
-    return readRequiredApiItems(result, 'Failed to fetch AI resource groups')
-      .map(normalizeAiResourceGroup);
+    const data = readApiRecord(result);
+    return {
+      resourceGroups: readRequiredApiItems(result, 'Failed to fetch AI resource groups')
+        .map(normalizeAiResourceGroup),
+      total: readListPageTotal(data, 'AI resource group list total is required'),
+    };
   }
 
   static async createAiResource(input: AiResourceCreateInput): Promise<AiResource> {
@@ -1096,6 +1169,174 @@ function optionalNullableText(value: string | null | undefined): string | null |
 
 function pruneUndefined<T extends object>(value: T): T {
   return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as T;
+}
+
+function toChannelListQueryParams(filters: ChannelListFilters = {}): {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+} {
+  const page = optionalQueryPage(filters.page, 'page');
+  const pageSize = optionalQueryPageSize(filters.pageSize, 'pageSize', MAX_CHANNEL_LIST_PAGE_SIZE);
+  const q = optionalQueryText(filters.q ?? filters.searchQuery, 'q', MAX_CHANNEL_LIST_QUERY_TEXT_LENGTH);
+
+  return pruneUndefinedQueryParams({
+    page,
+    pageSize,
+    q,
+  });
+}
+
+function readChannelListPageTotal(data: ApiRecord): number {
+  return readListPageTotal(data, 'Channel list total is required');
+}
+
+function readListPageTotal(data: ApiRecord, message: string): number {
+  if (data.total !== undefined && data.total !== null && data.total !== '') {
+    return readRequiredNonNegativeNumber(data, 'total', message);
+  }
+
+  const pageInfo = data.pageInfo;
+  if (isRecord(pageInfo)) {
+    for (const key of ['totalItems', 'total_items'] as const) {
+      const value = pageInfo[key];
+      if (value === undefined || value === null || value === '') {
+        continue;
+      }
+      const parsed = typeof value === 'number' ? value : Number(String(value).trim());
+      if (Number.isFinite(parsed) && parsed >= 0) {
+        return parsed;
+      }
+      throw new Error(`${message.replace(/ is required$/, '')} must be a non-negative number`);
+    }
+  }
+
+  const itemsCount = readListItemsCount(data);
+  if (itemsCount !== undefined) {
+    return itemsCount;
+  }
+
+  throw new Error(message);
+}
+
+function readListItemsCount(data: ApiRecord): number | undefined {
+  const items = data.items;
+  if (Array.isArray(items)) {
+    return items.length;
+  }
+  return undefined;
+}
+
+function toAiResourceListQueryParams(filters: AiResourceListFilters = {}): {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+} {
+  return toListQueryParams(
+    filters,
+    MAX_AI_RESOURCE_LIST_PAGE_SIZE,
+    MAX_AI_RESOURCE_LIST_QUERY_TEXT_LENGTH,
+  );
+}
+
+function toAiResourceGroupListQueryParams(filters: AiResourceGroupListFilters = {}): {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+} {
+  return toListQueryParams(
+    filters,
+    MAX_AI_RESOURCE_GROUP_LIST_PAGE_SIZE,
+    MAX_AI_RESOURCE_LIST_QUERY_TEXT_LENGTH,
+  );
+}
+
+function toModelCatalogListQueryParams(filters: ModelCatalogListFilters = {}): {
+  limit: number;
+  offset: number;
+  q?: string;
+} {
+  const directLimit = readOptionalBoundedPageSize(filters.limit, 'limit', MAX_MODEL_CATALOG_PAGE_SIZE);
+  const directOffset = readOptionalNonNegativeIntegerFilter(filters.offset, 'offset');
+  if (directLimit !== undefined || directOffset !== undefined) {
+    const limit = directLimit ?? DEFAULT_MODEL_CATALOG_PAGE_SIZE;
+    const offset = directOffset ?? 0;
+    return {
+      limit,
+      offset,
+      q: optionalQueryText(filters.q ?? filters.searchQuery, 'q', MAX_MODEL_CATALOG_QUERY_TEXT_LENGTH),
+    };
+  }
+
+  const page = optionalQueryPage(filters.page, 'page') ?? 1;
+  const pageSize = optionalQueryPageSize(
+    filters.pageSize,
+    'pageSize',
+    MAX_MODEL_CATALOG_PAGE_SIZE,
+  ) ?? DEFAULT_MODEL_CATALOG_PAGE_SIZE;
+
+  return {
+    limit: pageSize,
+    offset: (page - 1) * pageSize,
+    q: optionalQueryText(filters.q ?? filters.searchQuery, 'q', MAX_MODEL_CATALOG_QUERY_TEXT_LENGTH),
+  };
+}
+
+function toListQueryParams(
+  filters: Record<string, unknown>,
+  maxPageSize: number,
+  maxQueryTextLength: number,
+): {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+} {
+  const page = optionalQueryPage(filters.page, 'page');
+  const pageSize = optionalQueryPageSize(filters.pageSize, 'pageSize', maxPageSize);
+  const q = optionalQueryText(filters.q ?? filters.searchQuery, 'q', maxQueryTextLength);
+
+  return pruneUndefinedQueryParams({
+    page,
+    pageSize,
+    q,
+  });
+}
+
+function readOptionalBoundedPageSize(
+  value: unknown,
+  fieldName: string,
+  maxValue: number,
+): number | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+  const parsed = typeof value === 'number'
+    ? value
+    : typeof value === 'string' && value.trim()
+      ? Number(value.trim())
+      : Number.NaN;
+  if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > maxValue) {
+    throw new Error(`${fieldName} must be between 1 and ${maxValue}`);
+  }
+  return parsed;
+}
+
+function readOptionalNonNegativeIntegerFilter(
+  value: unknown,
+  fieldName: string,
+): number | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+  const parsed = typeof value === 'number'
+    ? value
+    : typeof value === 'string' && value.trim()
+      ? Number(value.trim())
+      : Number.NaN;
+  if (!Number.isSafeInteger(parsed) || parsed < 0) {
+    throw new Error(`${fieldName} must be a non-negative integer`);
+  }
+  return parsed;
 }
 
 function ensureDeleteResult(result: unknown, message: string): void {

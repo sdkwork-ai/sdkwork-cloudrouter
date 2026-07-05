@@ -4,7 +4,7 @@ use crate::error::{store_error, RepositoryError, RepositoryResult};
 use crate::modality;
 use crate::snapshot::{
     build_snapshot, vendor_from_catalog_key, AnalyticsModelRankRow, AnalyticsPieRow,
-    AnalyticsSummaryRow, AnalyticsTrendRow, AnalyticsUserRankRow,
+    AnalyticsSummaryRow, AnalyticsTrendRow, AnalyticsUserRankRow, PI_LIMIT, USER_MODEL_LIMIT,
 };
 use crate::types::{
     AdminAnalyticsQuery, AdminAnalyticsReadFuture, AdminAnalyticsReadStore, AdminAnalyticsSnapshot,
@@ -56,51 +56,143 @@ const MODEL_TOKENS_ORDER: &str = "total_tokens_sort DESC, request_count DESC, mo
 const MODEL_REQUESTS_ORDER: &str =
     "request_count DESC, total_tokens_sort DESC, points_sort DESC, model ASC";
 
-const LOAD_USER_MODEL_DISTRIBUTION: &str = r#"
-SELECT
-    COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown') AS user_id,
-    COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), 'unknown') AS name,
-    CAST(COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS TEXT) AS value
-FROM ai_usage_fact
-WHERE status = 1
-  AND tenant_id = $1
-  AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
-  AND ($3::text IS NULL OR occurred_at >= $3::timestamptz)
-  AND ($4::text IS NULL OR occurred_at <= $4::timestamptz)
-GROUP BY COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown'), COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), 'unknown')
-HAVING COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) > 0
-ORDER BY user_id ASC, COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) DESC, name ASC
-"#;
+fn user_model_distribution_sql() -> String {
+    format!(
+        r#"
+WITH agg AS (
+    SELECT
+        COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown') AS user_id,
+        COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), 'unknown') AS name,
+        COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS value
+    FROM ai_usage_fact
+    WHERE status = 1
+      AND tenant_id = $1
+      AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
+      AND ($3::text IS NULL OR occurred_at >= $3::timestamptz)
+      AND ($4::text IS NULL OR occurred_at <= $4::timestamptz)
+    GROUP BY COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown'), COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), 'unknown')
+    HAVING COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) > 0
+),
+ordered AS (
+    SELECT
+        user_id,
+        name,
+        value,
+        ROW_NUMBER() OVER (
+            PARTITION BY user_id
+            ORDER BY value DESC, name ASC
+        ) AS rn
+    FROM agg
+),
+top_rows AS (
+    SELECT user_id, name, value
+    FROM ordered
+    WHERE rn <= {USER_MODEL_LIMIT}
+),
+others AS (
+    SELECT user_id, 'Others' AS name, COALESCE(SUM(value), 0) AS value
+    FROM ordered
+    WHERE rn > {USER_MODEL_LIMIT}
+    GROUP BY user_id
+    HAVING COALESCE(SUM(value), 0) > 0
+)
+SELECT user_id, name, CAST(value AS TEXT) AS value
+FROM top_rows
+UNION ALL
+SELECT user_id, name, CAST(value AS TEXT) AS value
+FROM others
+ORDER BY user_id ASC, value DESC, name ASC
+"#
+    )
+}
 
-const LOAD_MODEL_DISTRIBUTION: &str = r#"
-SELECT
-    COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), 'unknown') AS name,
-    CAST(COALESCE(SUM(COALESCE(request_count, 1)), 0) AS TEXT) AS value
-FROM ai_usage_fact
-WHERE status = 1
-  AND tenant_id = $1
-  AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
-  AND ($3::text IS NULL OR occurred_at >= $3::timestamptz)
-  AND ($4::text IS NULL OR occurred_at <= $4::timestamptz)
-GROUP BY COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), 'unknown')
-HAVING COALESCE(SUM(COALESCE(request_count, 1)), 0) > 0
-ORDER BY COALESCE(SUM(COALESCE(request_count, 1)), 0) DESC, name ASC
-"#;
+fn model_distribution_sql() -> String {
+    format!(
+        r#"
+WITH agg AS (
+    SELECT
+        COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), 'unknown') AS name,
+        COALESCE(SUM(COALESCE(request_count, 1)), 0) AS value
+    FROM ai_usage_fact
+    WHERE status = 1
+      AND tenant_id = $1
+      AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
+      AND ($3::text IS NULL OR occurred_at >= $3::timestamptz)
+      AND ($4::text IS NULL OR occurred_at <= $4::timestamptz)
+    GROUP BY COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), 'unknown')
+    HAVING COALESCE(SUM(COALESCE(request_count, 1)), 0) > 0
+),
+ordered AS (
+    SELECT
+        name,
+        value,
+        ROW_NUMBER() OVER (ORDER BY value DESC, name ASC) AS rn
+    FROM agg
+),
+top_rows AS (
+    SELECT name, value
+    FROM ordered
+    WHERE rn <= {PI_LIMIT}
+),
+others AS (
+    SELECT 'Others' AS name, COALESCE(SUM(value), 0) AS value
+    FROM ordered
+    WHERE rn > {PI_LIMIT}
+)
+SELECT name, CAST(value AS TEXT) AS value
+FROM top_rows
+UNION ALL
+SELECT name, CAST(value AS TEXT) AS value
+FROM others
+WHERE value > 0
+ORDER BY value DESC, name ASC
+"#
+    )
+}
 
-const LOAD_MODALITY_DISTRIBUTION: &str = r#"
-SELECT
-    COALESCE(modality, 0) AS modality,
-    CAST(COALESCE(SUM(COALESCE(request_count, 1)), 0) AS TEXT) AS value
-FROM ai_usage_fact
-WHERE status = 1
-  AND tenant_id = $1
-  AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
-  AND ($3::text IS NULL OR occurred_at >= $3::timestamptz)
-  AND ($4::text IS NULL OR occurred_at <= $4::timestamptz)
-GROUP BY COALESCE(modality, 0)
-HAVING COALESCE(SUM(COALESCE(request_count, 1)), 0) > 0
-ORDER BY COALESCE(SUM(COALESCE(request_count, 1)), 0) DESC, modality ASC
-"#;
+fn modality_distribution_sql() -> String {
+    format!(
+        r#"
+WITH agg AS (
+    SELECT
+        COALESCE(modality, 0) AS modality,
+        COALESCE(SUM(COALESCE(request_count, 1)), 0) AS value
+    FROM ai_usage_fact
+    WHERE status = 1
+      AND tenant_id = $1
+      AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
+      AND ($3::text IS NULL OR occurred_at >= $3::timestamptz)
+      AND ($4::text IS NULL OR occurred_at <= $4::timestamptz)
+    GROUP BY COALESCE(modality, 0)
+    HAVING COALESCE(SUM(COALESCE(request_count, 1)), 0) > 0
+),
+ordered AS (
+    SELECT
+        modality,
+        value,
+        ROW_NUMBER() OVER (ORDER BY value DESC, modality ASC) AS rn
+    FROM agg
+),
+top_rows AS (
+    SELECT modality, value
+    FROM ordered
+    WHERE rn <= {PI_LIMIT}
+),
+others AS (
+    SELECT -1 AS modality, COALESCE(SUM(value), 0) AS value
+    FROM ordered
+    WHERE rn > {PI_LIMIT}
+)
+SELECT modality, CAST(value AS TEXT) AS value
+FROM top_rows
+UNION ALL
+SELECT modality, CAST(value AS TEXT) AS value
+FROM others
+WHERE value > 0
+ORDER BY value DESC, modality ASC
+"#
+    )
+}
 
 #[derive(Debug, Clone)]
 pub struct PostgresAdminAnalyticsReadStore {
@@ -207,7 +299,7 @@ async fn load_snapshot(
             .await?;
     let model_distribution_rows = load_pie_rows(
         pool,
-        LOAD_MODEL_DISTRIBUTION,
+        &model_distribution_sql(),
         tenant_id,
         organization_id,
         start_time,
@@ -470,7 +562,7 @@ async fn load_user_model_distributions(
     start_time: Option<&str>,
     end_time: Option<&str>,
 ) -> RepositoryResult<Vec<(String, Vec<AnalyticsPieRow>)>> {
-    let rows = sqlx::query(LOAD_USER_MODEL_DISTRIBUTION)
+    let rows = sqlx::query(&user_model_distribution_sql())
         .bind(tenant_id)
         .bind(organization_id)
         .bind(start_time)
@@ -528,7 +620,7 @@ async fn load_modality_distribution(
     start_time: Option<&str>,
     end_time: Option<&str>,
 ) -> RepositoryResult<Vec<AnalyticsPieRow>> {
-    let rows = sqlx::query(LOAD_MODALITY_DISTRIBUTION)
+    let rows = sqlx::query(&modality_distribution_sql())
         .bind(tenant_id)
         .bind(organization_id)
         .bind(start_time)
@@ -539,8 +631,13 @@ async fn load_modality_distribution(
 
     rows.into_iter()
         .map(|row| {
+            let modality_value = optional_integer_cell(&row, "modality");
             Ok(AnalyticsPieRow {
-                name: modality::label(optional_integer_cell(&row, "modality")).to_owned(),
+                name: if modality_value == Some(-1) {
+                    "Others".to_owned()
+                } else {
+                    modality::label(modality_value).to_owned()
+                },
                 value: decimal_cell(&row, "value")?,
             })
         })

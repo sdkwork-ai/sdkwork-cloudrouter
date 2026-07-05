@@ -8,10 +8,12 @@ use sdkwork_clawrouter_router_service::domain::{
     ChannelGroup, DecimalValue, DomainResult, GatewayApiKey, QuotaPolicy,
 };
 use sdkwork_clawrouter_router_service::ports::{
-    ApiKeyCommandStoreFuture, ApiKeyManagementReadFuture, CreateGatewayApiKeyCommand,
-    CreatedGatewayApiKey, DeleteGatewayApiKeyCommand, DeleteGatewayApiKeyForOrganizationCommand,
-    EnsureDefaultChannelGroupCommand, GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore,
-    GatewayApiKeyManagementSnapshot, UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
+    ApiKeyCommandStoreFuture, ApiKeyManagementReadFuture, AppChannelGroupListPage,
+    CreateGatewayApiKeyCommand, CreatedGatewayApiKey, DeleteGatewayApiKeyCommand,
+    DeleteGatewayApiKeyForOrganizationCommand, EnsureDefaultChannelGroupCommand,
+    GatewayApiKeyCommandStore, GatewayApiKeyListPage, GatewayApiKeyManagementReadStore,
+    GatewayApiKeyManagementSnapshot, ListAppChannelGroupsQuery, ListGatewayApiKeysQuery,
+    UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -147,11 +149,7 @@ async fn app_api_key_list_returns_persisted_copyable_key_for_owner() {
         "Default customers",
         payload["data"]["items"][0]["channelGroupName"]
     );
-    assert_eq!("premium", payload["data"]["groups"][0]["code"].as_i64().unwrap());
-    assert_eq!("Premium customers", payload["data"]["groups"][0]["name"]);
-    assert_eq!("default", payload["data"]["groups"][1]["code"].as_i64().unwrap());
-    assert_eq!("Default customers", payload["data"]["groups"][1]["name"]);
-    assert_eq!(2, payload["data"]["groups"].as_array().unwrap().len());
+    assert!(payload["data"]["pageInfo"].is_object());
 }
 
 #[tokio::test]
@@ -173,11 +171,12 @@ async fn app_channel_group_list_returns_owner_groups_with_display_names() {
     assert_eq!(StatusCode::OK, response.status());
     let payload = json_payload(response).await;
     assert_eq!(0, payload["code"].as_i64().unwrap());
-    assert_eq!("premium", payload["data"]["items"][0]["code"].as_i64().unwrap());
+    assert_eq!("premium", payload["data"]["items"][0]["code"].as_str().unwrap());
     assert_eq!("Premium customers", payload["data"]["items"][0]["name"]);
-    assert_eq!("default", payload["data"]["items"][1]["code"].as_i64().unwrap());
+    assert_eq!("default", payload["data"]["items"][1]["code"].as_str().unwrap());
     assert_eq!("Default customers", payload["data"]["items"][1]["name"]);
     assert_eq!(2, payload["data"]["items"].as_array().unwrap().len());
+    assert!(payload["data"]["pageInfo"].is_object());
 }
 
 #[tokio::test]
@@ -334,6 +333,84 @@ impl GatewayApiKeyManagementReadStore for TestApiKeyReadStore {
                 ));
             }
             Ok(snapshot)
+        })
+    }
+
+    fn list_gateway_api_keys<'a>(
+        &'a self,
+        query: ListGatewayApiKeysQuery,
+    ) -> ApiKeyManagementReadFuture<'a, GatewayApiKeyListPage> {
+        Box::pin(async move {
+            let snapshot = self.load_gateway_api_key_management_snapshot().await?;
+            let scoped = snapshot.for_subject(query.tenant_id, query.organization_id, query.user_id);
+            let mut items: Vec<_> = scoped
+                .api_keys
+                .into_iter()
+                .filter(|api_key| {
+                    query.q.as_ref().is_none_or(|search| {
+                        let search = search.to_lowercase();
+                        api_key.name.to_lowercase().contains(&search)
+                            || api_key.key_prefix.to_lowercase().contains(&search)
+                            || api_key
+                                .key_display_masked
+                                .to_lowercase()
+                                .contains(&search)
+                    })
+                })
+                .collect();
+            let total = items.len() as i64;
+            let offset = query.offset.max(0) as usize;
+            let page_size = query.page_size.max(0) as usize;
+            if offset >= items.len() {
+                items.clear();
+            } else {
+                items = items.into_iter().skip(offset).take(page_size).collect();
+            }
+            Ok(GatewayApiKeyListPage {
+                items,
+                total,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
+        })
+    }
+
+    fn list_app_channel_groups<'a>(
+        &'a self,
+        query: ListAppChannelGroupsQuery,
+    ) -> ApiKeyManagementReadFuture<'a, AppChannelGroupListPage> {
+        Box::pin(async move {
+            let snapshot = self.load_gateway_api_key_management_snapshot().await?;
+            let mut items: Vec<_> = snapshot
+                .channel_groups
+                .into_iter()
+                .filter(|group| {
+                    (group.tenant_id == 0 || group.tenant_id == query.tenant_id)
+                        && (group.organization_id == 0
+                            || group.organization_id == query.organization_id)
+                })
+                .filter(|group| {
+                    query.q.as_ref().is_none_or(|search| {
+                        let search = search.to_lowercase();
+                        group.name.to_lowercase().contains(&search)
+                            || group.code.to_lowercase().contains(&search)
+                    })
+                })
+                .collect();
+            let total = items.len() as i64;
+            let offset = query.offset.max(0) as usize;
+            let page_size = query.page_size.max(0) as usize;
+            if offset >= items.len() {
+                items.clear();
+            } else {
+                items = items.into_iter().skip(offset).take(page_size).collect();
+            }
+            Ok(AppChannelGroupListPage {
+                items,
+                total,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
         })
     }
 }

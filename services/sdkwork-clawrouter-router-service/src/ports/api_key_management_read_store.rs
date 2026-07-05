@@ -10,6 +10,43 @@ use crate::ports::PricingCatalog;
 pub type ApiKeyManagementReadFuture<'a, T> =
     Pin<Box<dyn Future<Output = DomainResult<T>> + Send + 'a>>;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ListGatewayApiKeysQuery {
+    pub tenant_id: i64,
+    pub organization_id: i64,
+    pub user_id: i64,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+    pub q: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GatewayApiKeyListPage {
+    pub items: Vec<GatewayApiKey>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ListAppChannelGroupsQuery {
+    pub tenant_id: i64,
+    pub organization_id: i64,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+    pub q: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AppChannelGroupListPage {
+    pub items: Vec<ChannelGroup>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct GatewayApiKeyManagementSnapshot {
     pub api_keys: Vec<GatewayApiKey>,
@@ -225,6 +262,16 @@ pub trait GatewayApiKeyManagementReadStore {
     fn load_gateway_api_key_management_snapshot<'a>(
         &'a self,
     ) -> ApiKeyManagementReadFuture<'a, GatewayApiKeyManagementSnapshot>;
+
+    fn list_gateway_api_keys<'a>(
+        &'a self,
+        query: ListGatewayApiKeysQuery,
+    ) -> ApiKeyManagementReadFuture<'a, GatewayApiKeyListPage>;
+
+    fn list_app_channel_groups<'a>(
+        &'a self,
+        query: ListAppChannelGroupsQuery,
+    ) -> ApiKeyManagementReadFuture<'a, AppChannelGroupListPage>;
 }
 
 fn collect_access_policies<C>(catalog: &C, api_keys: &[GatewayApiKey]) -> Vec<GatewayAccessPolicy>

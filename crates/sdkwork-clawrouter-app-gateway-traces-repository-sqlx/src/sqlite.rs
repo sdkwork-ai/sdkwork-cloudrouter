@@ -2,11 +2,12 @@ use sqlx::{Row, SqlitePool};
 
 use crate::error::{sql_error, RepositoryError, RepositoryResult};
 use crate::types::{
-    AppGatewayTraceItem, AppGatewayTracesReadFuture, AppGatewayTracesReadStore,
-    AppGatewayTracesSubject,
+    AppGatewayTraceItem, AppGatewayTracesListPage, AppGatewayTracesListQuery,
+    AppGatewayTracesReadFuture, AppGatewayTracesReadStore, AppGatewayTracesSubject,
 };
 
-const LOAD_GATEWAY_TRACES: &str = r#"
+fn gateway_traces_select_sql() -> &'static str {
+    r#"
 WITH current_gateway AS (
     SELECT
         id AS gateway_id,
@@ -40,7 +41,8 @@ SELECT
     COALESCE(NULLIF(cg.region, ''), '') AS region,
     COALESCE(NULLIF(cg.node_name, ''), '') AS node_name,
     cg.health_status AS health_status,
-    CAST(cg.last_heartbeat_at AS TEXT) AS last_heartbeat_at
+    CAST(cg.last_heartbeat_at AS TEXT) AS last_heartbeat_at,
+    COUNT(*) OVER() AS total
 FROM ai_request_trace t
 LEFT JOIN current_gateway cg ON 1 = 1
 WHERE t.status = 1
@@ -48,9 +50,13 @@ WHERE t.status = 1
   AND t.organization_id = ?2
   AND t.user_id = ?3
   AND t.started_at IS NOT NULL
+  AND (?4 IS NULL OR lower(COALESCE(t.trace_id, t.request_id, CAST(t.id AS TEXT), '')) LIKE lower(?4)
+       OR lower(COALESCE(t.request_path, t.endpoint, '')) LIKE lower(?4)
+       OR lower(COALESCE(t.channel_name_snapshot, '')) LIKE lower(?4))
 ORDER BY t.started_at DESC, t.id DESC
-LIMIT 100
-"#;
+LIMIT ?5 OFFSET ?6
+"#
+}
 
 #[derive(Debug, Clone)]
 pub struct SqliteAppGatewayTracesReadStore {
@@ -67,24 +73,43 @@ impl AppGatewayTracesReadStore for SqliteAppGatewayTracesReadStore {
     fn load_gateway_traces<'a>(
         &'a self,
         subject: Option<AppGatewayTracesSubject>,
-    ) -> AppGatewayTracesReadFuture<'a, Vec<AppGatewayTraceItem>> {
-        Box::pin(async move { load_gateway_traces(&self.pool, subject).await })
+        query: AppGatewayTracesListQuery,
+    ) -> AppGatewayTracesReadFuture<'a, AppGatewayTracesListPage> {
+        Box::pin(async move { load_gateway_traces(&self.pool, subject, query).await })
     }
 }
 
 async fn load_gateway_traces(
     pool: &SqlitePool,
     subject: Option<AppGatewayTracesSubject>,
-) -> RepositoryResult<Vec<AppGatewayTraceItem>> {
+    query: AppGatewayTracesListQuery,
+) -> RepositoryResult<AppGatewayTracesListPage> {
     let subject = require_subject(subject)?;
-    let rows = sqlx::query(LOAD_GATEWAY_TRACES)
+    let search = query.q.as_deref().map(|value| format!("%{value}%"));
+    let rows = sqlx::query(gateway_traces_select_sql())
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(subject.user_id)
+        .bind(search)
+        .bind(query.page_size.max(1))
+        .bind(query.offset.max(0))
         .fetch_all(pool)
         .await
         .map_err(sql_error)?;
-    rows.into_iter().map(row_to_gateway_trace).collect()
+    let total = rows
+        .first()
+        .and_then(|row| optional_integer_cell(row, "total"))
+        .unwrap_or(0);
+    let items = rows
+        .into_iter()
+        .map(row_to_gateway_trace)
+        .collect::<RepositoryResult<Vec<_>>>()?;
+    Ok(AppGatewayTracesListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 fn row_to_gateway_trace(row: sqlx::sqlite::SqliteRow) -> RepositoryResult<AppGatewayTraceItem> {

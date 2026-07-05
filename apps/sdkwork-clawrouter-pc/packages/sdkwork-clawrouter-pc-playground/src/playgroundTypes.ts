@@ -37,6 +37,8 @@ export type PlaygroundReferenceAssetRole =
   | 'reference_video';
 
 export type PlaygroundReferenceAssetMode =
+  | 'text_to_image'
+  | 'image_to_image'
   | 'text_to_video'
   | 'first_frame'
   | 'first_last_frame'

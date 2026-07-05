@@ -3416,6 +3416,26 @@
         ],
         "type": "object"
       },
+      "PromotionsCodesRedemptionsCreateRequest": {
+        "additionalProperties": false,
+        "description": "Promotions codes redemptions create request schema exposed by Claw Router.",
+        "properties": {
+          "channel": {
+            "description": "Channel field on promotions codes redemptions create request.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "code": {
+            "description": "Code field on promotions codes redemptions create request.",
+            "maxLength": 128,
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "type": "object"
+      },
       "PromotionsCodesRedemptionsCreateResult": {
         "additionalProperties": false,
         "description": "Promotions codes redemptions create result schema exposed by Claw Router.",
@@ -3427,10 +3447,10 @@
           "data": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/NoData"
+                "$ref": "#/components/schemas/PromotionsCodesRedemptionsCreateResult"
               }
             ],
-            "description": "No business data returned by this operation."
+            "description": "Data field on promotions codes redemptions create result."
           },
           "msg": {
             "description": "Human-readable response message.",
@@ -18266,6 +18286,17 @@
         "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "promotions.codes.redemptions.create",
         "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromotionsCodesRedemptionsCreateRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for create.",
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {

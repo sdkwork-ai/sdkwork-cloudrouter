@@ -11,10 +11,10 @@ use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     AdminChannelGroupChannelBindingItem, AdminChannelGroupCommandFuture, AdminChannelGroupItem,
-    AdminChannelGroupStore, AdminChannelGroupSubject, CreateAdminChannelGroupCommand,
-    DeleteAdminChannelGroupCommand, ListAdminChannelGroupChannelBindingsQuery,
-    ListAdminChannelGroupsQuery, ReplaceAdminChannelGroupChannelBindingsCommand,
-    UpdateAdminChannelGroupCommand,
+    AdminChannelGroupListPage, AdminChannelGroupStore, AdminChannelGroupSubject,
+    CreateAdminChannelGroupCommand, DeleteAdminChannelGroupCommand,
+    ListAdminChannelGroupChannelBindingsQuery, ListAdminChannelGroupsQuery,
+    ReplaceAdminChannelGroupChannelBindingsCommand, UpdateAdminChannelGroupCommand,
 };
 
 const ACCESS_GROUP_TARGET_TYPE: i32 = 41;
@@ -39,7 +39,7 @@ impl AdminChannelGroupStore for PostgresAdminChannelGroupStore {
     fn list_channel_groups<'a>(
         &'a self,
         query: ListAdminChannelGroupsQuery,
-    ) -> AdminChannelGroupCommandFuture<'a, Vec<AdminChannelGroupItem>> {
+    ) -> AdminChannelGroupCommandFuture<'a, AdminChannelGroupListPage> {
         Box::pin(async move { list_channel_groups(&self.pool, query).await })
     }
 
@@ -1056,24 +1056,48 @@ async fn upsert_group_resource_access(
 async fn list_channel_groups(
     pool: &PgPool,
     query: ListAdminChannelGroupsQuery,
-) -> DomainResult<Vec<AdminChannelGroupItem>> {
+) -> DomainResult<AdminChannelGroupListPage> {
+    let search = query
+        .q
+        .as_ref()
+        .map(|value| format!("%{}%", value.to_lowercase()));
     let sql = channel_group_select_sql(
         r#"
         WHERE g.tenant_id = $1
           AND g.organization_id = $2
           AND g.deleted_at IS NULL
+          AND ($3 IS NULL OR g.id = $3)
+          AND (
+              $4 IS NULL
+              OR LOWER(COALESCE(g.group_name, g.group_code, '')) LIKE $4
+              OR LOWER(COALESCE(g.group_code, '')) LIKE $4
+          )
         ORDER BY g.updated_at DESC NULLS LAST, g.id DESC
-        LIMIT 200
+        LIMIT $5 OFFSET $6
         "#,
     );
     let rows = sqlx::query(&sql)
         .bind(query.subject.tenant_id)
         .bind(query.subject.organization_id)
+        .bind(query.group_id)
+        .bind(search.as_deref())
+        .bind(query.page_size)
+        .bind(query.offset)
         .fetch_all(pool)
         .await
         .map_err(|error| store_error("failed to list channel groups", error))?;
 
-    rows.into_iter().map(item_from_row).collect()
+    let total = rows
+        .first()
+        .and_then(|row| row.try_get::<i64, _>("total").ok())
+        .unwrap_or(0);
+    let items = rows.into_iter().map(item_from_row).collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminChannelGroupListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn find_default_pricing_plan(
@@ -1735,7 +1759,8 @@ fn channel_group_select_sql(predicate: &str) -> String {
                 '[]'
             ) AS resource_codes_json,
             g.status,
-            g.deleted_at::text AS deleted_at
+            g.deleted_at::text AS deleted_at,
+            COUNT(*) OVER() AS total
         FROM ai_channel_group g
         LEFT JOIN LATERAL (
             SELECT latest.*

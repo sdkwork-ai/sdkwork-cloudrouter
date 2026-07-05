@@ -26,12 +26,10 @@ pub struct ListAdminRecordLogsQuery {
     pub model: Option<String>,
 }
 
-#[derive(Debug, Clone, Default, Serialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct AdminRecordLogsPage {
-    pub logs: Vec<AdminRecordLogItem>,
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct AdminRecordListPage {
+    pub items: Vec<AdminRecordLogItem>,
     pub total: i64,
-    #[serde(rename = "page")]
     pub page_no: i64,
     pub page_size: i64,
 }
@@ -78,5 +76,5 @@ pub trait AdminRecordStore {
     fn list_logs<'a>(
         &'a self,
         query: ListAdminRecordLogsQuery,
-    ) -> AdminRecordReadFuture<'a, AdminRecordLogsPage>;
+    ) -> AdminRecordReadFuture<'a, AdminRecordListPage>;
 }

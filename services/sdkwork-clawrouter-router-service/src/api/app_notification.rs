@@ -12,18 +12,20 @@ use crate::api::app_sql_subject::{
     map_optional_app_sql_subject, map_required_app_sql_subject, RequiredAppSqlScopedSubject,
     ResolvedAppSqlScopedSubject,
 };
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, offset_page_info, parse_offset_list_query, problem_from_wire_code,
+    success_envelope,
+};
 use crate::domain::DomainError;
 use crate::ports::{
-    AcknowledgeAppNotificationCommand, AppNotificationFuture, AppNotificationItems,
-    AppNotificationQuery, AppNotificationStore, AppNotificationSubject,
+    AcknowledgeAppNotificationCommand, AppNotificationFuture, AppNotificationItem,
+    AppNotificationItems, AppNotificationQuery, AppNotificationStore, AppNotificationSubject,
     MarkAppNotificationPopupSeenCommand,
 };
 
 const DEFAULT_APP_ID: &str = "default";
 const MAX_APP_ID_LEN: usize = 128;
 const MAX_NOTIFICATION_ID_LEN: usize = 128;
-const MAX_PAGE_SIZE: i64 = 100;
 
 #[derive(Clone)]
 struct AppNotificationState {
@@ -58,7 +60,14 @@ impl AppNotificationStore for EmptyAppNotificationStore {
         &'a self,
         _query: AppNotificationQuery,
     ) -> AppNotificationFuture<'a, AppNotificationItems> {
-        Box::pin(async { Ok(AppNotificationItems::new(Vec::new())) })
+        Box::pin(async move {
+            Ok(AppNotificationItems::new(
+                Vec::new(),
+                0,
+                _query.page,
+                _query.page_size,
+            ))
+        })
     }
 
     fn mark_popup_seen<'a>(
@@ -129,17 +138,21 @@ async fn list_notifications(
         Ok(subject) => subject,
         Err(response) => return response,
     };
+    let pagination = match parse_offset_list_query(query.page, query.page_size) {
+        Ok(value) => value,
+        Err(message) => return bad_request(&message),
+    };
     let Some(subject) = subject else {
-        return Json(success_envelope(
-            AppNotificationItems::new(Vec::new()),
-        ))
-        .into_response();
+        return json_success_list_response(
+            None,
+            Vec::<AppNotificationItem>::new(),
+            offset_page_info(pagination.page_no, pagination.page_size, 0),
+        );
     };
     let app_id = match normalized_app_id(query.app_id.as_deref()) {
         Ok(app_id) => app_id,
         Err(response) => return response,
     };
-    let (page, page_size) = normalize_page(&query);
     let include_archived = query.include_archived.unwrap_or(false);
 
     match state
@@ -148,12 +161,16 @@ async fn list_notifications(
             subject,
             app_id,
             include_archived,
-            page,
-            page_size,
+            page: pagination.page_no,
+            page_size: pagination.page_size,
         })
         .await
     {
-        Ok(items) => Json(success_envelope(items)).into_response(),
+        Ok(items) => json_success_list_response(
+            None,
+            items.items,
+            offset_page_info(items.page_no, items.page_size, items.total),
+        ),
         Err(error) => app_notification_error("app notifications are unavailable", error),
     }
 }
@@ -247,12 +264,6 @@ fn is_safe_identifier(value: &str) -> bool {
     value
         .bytes()
         .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.'))
-}
-
-fn normalize_page(query: &NotificationListQuery) -> (i64, i64) {
-    let page = query.page.unwrap_or(1).clamp(1, i64::MAX);
-    let page_size = query.page_size.unwrap_or(50).clamp(1, MAX_PAGE_SIZE);
-    (page, page_size)
 }
 
 fn mutation_success(state: &'static str) -> Response {

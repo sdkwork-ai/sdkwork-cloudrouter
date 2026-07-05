@@ -162,11 +162,11 @@ test('legacy sdkwork-commerce SDK family directories are removed', () => {
 
 test('domain transport lives under clawrouter SDK families', () => {
   assert.equal(
-    existsSync(new URL('../../sdks/clawrouter-app-sdk/clawrouter-app-domain-transport-typescript/generated/server-openapi/src/index.ts', import.meta.url)),
+    existsSync(new URL('../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/domains/index.ts', import.meta.url)),
     true,
   );
   assert.equal(
-    existsSync(new URL('../../sdks/clawrouter-backend-sdk/clawrouter-backend-domain-transport-typescript/generated/server-openapi/src/index.ts', import.meta.url)),
+    existsSync(new URL('../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/domains/index.ts', import.meta.url)),
     true,
   );
 
@@ -224,10 +224,10 @@ test('frontend field contract excludes retired relay-external admin operation ro
 
 test('backend SDK exposes typed system settings contracts for admin control-plane pages', () => {
   const systemApiSource = readRepoFile(
-    'sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/api/system.ts',
+    'sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/api/system.ts',
   );
   const typesIndexSource = readRepoFile(
-    'sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/types/index.ts',
+    'sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/types/index.ts',
   );
   const siteServiceSource = readPortalFile('./packages/sdkwork-clawrouter-pc-admin-site/src/SiteSettingsService.ts');
   const authServiceSource = readPortalFile('./packages/sdkwork-clawrouter-pc-admin-site/src/AuthSettingsService.ts');

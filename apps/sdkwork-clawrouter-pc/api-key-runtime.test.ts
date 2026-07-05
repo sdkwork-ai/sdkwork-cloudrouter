@@ -338,8 +338,8 @@ test("console api key service uses copyable keys returned by the backend on ever
       const fetched = await ApiKeyService.fetchKeys();
 
       assert.equal(created.key.copyableKey, "sk-live-created-secret");
-      assert.equal(fetched[0].copyableKey, "sk-live-created-secret");
-      assert.notEqual(fetched[0].copyableKey, fetched[0].maskedKey);
+      assert.equal(fetched.keys[0].copyableKey, "sk-live-created-secret");
+      assert.notEqual(fetched.keys[0].copyableKey, fetched.keys[0].maskedKey);
     },
   );
 });
@@ -433,6 +433,19 @@ test("console api key table keeps pagination visible while rows scroll inside th
   assert.match(source, /className="[^"]*sticky[^"]*top-0[^"]*z-10/);
   assert.match(source, /className="[^"]*shrink-0[^"]*border-t/);
   assert.doesNotMatch(source, /\{filteredKeys\.length > 0 && \(/);
+  assert.doesNotMatch(source, /\.slice\(/);
+  assert.match(source, /ApiKeyService\.fetchKeys\(\{/);
+  assert.match(source, /setTotalKeys\(data\.total\)/);
+});
+
+test("console api key service reads SdkWork list totals from pageInfo.totalItems", async () => {
+  const serviceSource = await import("node:fs/promises").then((fs) =>
+    fs.readFile(new URL("./packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts", import.meta.url), "utf8"),
+  );
+
+  assert.match(serviceSource, /readApiKeyListPageTotal/);
+  assert.match(serviceSource, /totalItems', 'total_items'/);
+  assert.match(serviceSource, /iam\.apiKeys\.list\(toApiKeyListQueryParams/);
 });
 
 test("console api key usage details profiles cover supported tool setup tabs", async () => {
@@ -464,7 +477,9 @@ test("console api key usage details profiles cover supported tool setup tabs", a
   assert.match(snippets.opencode, /"npm": "@ai-sdk\/openai-compatible"/);
   assert.match(snippets.opencode, /"options": \{/);
   assert.match(snippets.openclaw, /base_url: https:\/\/console\.example\.test\/v1/);
-  assert.match(snippets["hermes-agent"], /OPENAI_API_KEY="<YOUR_CLAW_ROUTER_API_KEY>"/);
+  assert.match(snippets["hermes-agent"], /baseUrl: "https:\/\/console\.example\.test\/v1"/);
+  assert.match(snippets["hermes-agent"], /protocol: openai/);
+  assert.doesNotMatch(snippets["hermes-agent"], /OPENAI_API_KEY/);
 });
 
 test("console api key usage details drawer exposes full-key copy when available", async () => {
@@ -549,9 +564,9 @@ test("console api key service fetches keys through the generated app SDK and nor
       assert.equal(captured.length, 1);
       assert.equal(captured[0].url, "/app/v3/api/iam/api_keys");
       assert.equal(captured[0].method, "GET");
-      assert.deepEqual(result.map((key) => key.id), ["key-1"]);
-      assert.equal(result[0].copyableKey, "sk-live-existing-secret");
-      assert.equal(result[0].channelGroupName, "Default group");
+      assert.deepEqual(result.keys.map((key) => key.id), ["key-1"]);
+      assert.equal(result.keys[0].copyableKey, "sk-live-existing-secret");
+      assert.equal(result.keys[0].channelGroupName, "Default group");
     },
   );
 });
@@ -576,7 +591,7 @@ test("console api key service fetches selectable channel groups through the gene
     },
     async (captured) => {
       const keys = await ApiKeyService.fetchKeys();
-      assert.deepEqual(keys, []);
+      assert.deepEqual(keys.keys, []);
       assert.equal(captured.length, 1);
       assert.equal(captured[0].url, "/app/v3/api/iam/api_keys");
 
@@ -616,10 +631,10 @@ test("console api key service still lists keys when copyable key material is una
     async () => {
       const result = await ApiKeyService.fetchKeys();
 
-      assert.deepEqual(result.map((key) => key.id), ["key-1"]);
-      assert.equal(result[0].maskedKey, "sk-****abcd");
-      assert.equal(result[0].copyableKey, null);
-      assert.notEqual(result[0].copyableKey, result[0].maskedKey);
+      assert.deepEqual(result.keys.map((key) => key.id), ["key-1"]);
+      assert.equal(result.keys[0].maskedKey, "sk-****abcd");
+      assert.equal(result.keys[0].copyableKey, null);
+      assert.notEqual(result.keys[0].copyableKey, result.keys[0].maskedKey);
     },
   );
 });

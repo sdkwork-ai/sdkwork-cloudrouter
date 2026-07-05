@@ -2,7 +2,7 @@ use std::sync::OnceLock;
 use std::time::Instant;
 
 use axum::extract::Request;
-use axum::http::{header, HeaderValue};
+use axum::http::{header, HeaderValue, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use prometheus::{HistogramVec, IntCounter, IntCounterVec, TextEncoder};
@@ -116,7 +116,32 @@ pub fn record_readiness_check(success: bool) {
     }
 }
 
-pub async fn metrics() -> Response {
+fn metrics_bearer_authorized(request: &Request) -> bool {
+    let Some(expected) = std::env::var("SDKWORK_CLAW_METRICS_BEARER_TOKEN")
+        .ok()
+        .map(|value| value.trim().to_owned())
+        .filter(|value| !value.is_empty())
+    else {
+        return true;
+    };
+
+    let provided = request
+        .headers()
+        .get(header::AUTHORIZATION)
+        .and_then(|value| value.to_str().ok())
+        .map(str::trim)
+        .and_then(|value| value.strip_prefix("Bearer "))
+        .map(str::trim)
+        .unwrap_or_default();
+
+    provided == expected
+}
+
+pub async fn metrics(request: Request) -> Response {
+    if !metrics_bearer_authorized(&request) {
+        return StatusCode::UNAUTHORIZED.into_response();
+    }
+
     let encoder = TextEncoder::new();
     let metric_families = prometheus::default_registry().gather();
     let body = encoder

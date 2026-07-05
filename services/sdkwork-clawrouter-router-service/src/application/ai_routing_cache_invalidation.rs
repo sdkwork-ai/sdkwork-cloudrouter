@@ -4,8 +4,10 @@ use crate::ports::{
     AdminAiResourceGroupItem, AdminAiResourceGroupResourceItem, AdminAiResourceItem,
     AdminAiResourceReadFuture, AdminAiResourceStore, AdminChannelCommandFuture,
     AdminChannelGroupChannelBindingItem, AdminChannelGroupCommandFuture, AdminChannelGroupItem,
-    AdminChannelGroupStore, AdminChannelItem, AdminChannelStore, AdminChannelTestOutcome,
-    AdminProviderSecretCommandFuture, AdminProviderSecretItem, AdminProviderSecretStore,
+    AdminChannelGroupListPage, AdminChannelGroupStore, AdminChannelItem, AdminChannelListPage,
+    AdminChannelStore, AdminChannelTestOutcome,
+    AdminProviderSecretCommandFuture, AdminProviderSecretItem, AdminProviderSecretListPage,
+    AdminProviderSecretStore,
     CreateAdminAiResourceCommand, CreateAdminAiResourceGroupCommand, CreateAdminChannelCommand,
     CreateAdminChannelGroupCommand, CreateAdminProviderSecretCommand,
     DeleteAdminAiResourceGroupCommand, DeleteAdminChannelCommand, DeleteAdminChannelGroupCommand,
@@ -53,6 +55,17 @@ impl AiRoutingCacheInvalidator {
         }
         Ok(())
     }
+
+    pub async fn invalidate_routing_binding_facts(&self) -> DomainResult<()> {
+        for namespace in [
+            ROUTING_SNAPSHOT_CACHE_NAMESPACE,
+            ROUTING_CONFIG_VERSION_CACHE_NAMESPACE,
+            ROUTING_DISABLED_CHANNEL_CACHE_NAMESPACE,
+        ] {
+            self.manager.delete_namespace(namespace).await?;
+        }
+        Ok(())
+    }
 }
 
 #[derive(Clone)]
@@ -77,7 +90,7 @@ impl AdminChannelStore for AiRoutingCacheInvalidatingAdminChannelStore {
     fn list_channels<'a>(
         &'a self,
         query: ListAdminChannelsQuery,
-    ) -> AdminChannelCommandFuture<'a, Vec<AdminChannelItem>> {
+    ) -> AdminChannelCommandFuture<'a, AdminChannelListPage> {
         self.inner.list_channels(query)
     }
 
@@ -392,7 +405,7 @@ impl AdminChannelGroupStore for AiRoutingCacheInvalidatingAdminChannelGroupStore
     fn list_channel_groups<'a>(
         &'a self,
         query: ListAdminChannelGroupsQuery,
-    ) -> AdminChannelGroupCommandFuture<'a, Vec<AdminChannelGroupItem>> {
+    ) -> AdminChannelGroupCommandFuture<'a, AdminChannelGroupListPage> {
         self.inner.list_channel_groups(query)
     }
 
@@ -446,7 +459,9 @@ impl AdminChannelGroupStore for AiRoutingCacheInvalidatingAdminChannelGroupStore
     ) -> AdminChannelGroupCommandFuture<'a, Vec<AdminChannelGroupChannelBindingItem>> {
         Box::pin(async move {
             let items = self.inner.replace_channel_bindings(command).await?;
-            self.invalidator.invalidate_routing_facts().await?;
+            self.invalidator
+                .invalidate_routing_binding_facts()
+                .await?;
             Ok(items)
         })
     }
@@ -474,7 +489,7 @@ impl AdminProviderSecretStore for AiRoutingCacheInvalidatingAdminProviderSecretS
     fn list_provider_secrets<'a>(
         &'a self,
         query: ListAdminProviderSecretsQuery,
-    ) -> AdminProviderSecretCommandFuture<'a, Vec<AdminProviderSecretItem>> {
+    ) -> AdminProviderSecretCommandFuture<'a, AdminProviderSecretListPage> {
         self.inner.list_provider_secrets(query)
     }
 

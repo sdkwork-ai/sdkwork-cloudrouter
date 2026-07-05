@@ -13,8 +13,8 @@ use sdkwork_clawrouter_router_service::application::{
 };
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
-    AdminChannelCommandFuture, AdminChannelCredentialItem, AdminChannelItem, AdminChannelStore,
-    CreateAdminChannelCommand, DeleteAdminChannelCommand, ListAdminChannelsQuery,
+    AdminChannelCommandFuture, AdminChannelCredentialItem, AdminChannelItem, AdminChannelListPage,
+    AdminChannelStore, CreateAdminChannelCommand, DeleteAdminChannelCommand, ListAdminChannelsQuery,
     TestAdminChannelCommand, UpdateAdminChannelCommand,
 };
 use serde_json::Value;
@@ -896,9 +896,9 @@ impl AdminChannelStore for TestChannelStore {
     fn list_channels<'a>(
         &'a self,
         query: ListAdminChannelsQuery,
-    ) -> AdminChannelCommandFuture<'a, Vec<AdminChannelItem>> {
+    ) -> AdminChannelCommandFuture<'a, AdminChannelListPage> {
         Box::pin(async move {
-            Ok(self
+            let mut items: Vec<_> = self
                 .items
                 .lock()
                 .unwrap()
@@ -908,8 +908,29 @@ impl AdminChannelStore for TestChannelStore {
                         && item.organization_id == query.subject.organization_id
                         && item.deleted_at.is_none()
                 })
+                .filter(|item| {
+                    query.q.as_ref().is_none_or(|search| {
+                        let search = search.to_lowercase();
+                        item.name.to_lowercase().contains(&search)
+                            || item.vendor.to_lowercase().contains(&search)
+                    })
+                })
                 .cloned()
-                .collect())
+                .collect();
+            let total = items.len() as i64;
+            let offset = query.offset.max(0) as usize;
+            let page_size = query.page_size.max(0) as usize;
+            if offset >= items.len() {
+                items.clear();
+            } else {
+                items = items.into_iter().skip(offset).take(page_size).collect();
+            }
+            Ok(AdminChannelListPage {
+                items,
+                total,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
         })
     }
 

@@ -14,11 +14,14 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, offset_page_info, parse_offset_list_query, problem_from_wire_code,
+    success_envelope, ParsedOffsetListQuery,
+};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::ports::{
-    AdminMarketingStore, AdminMarketingSubject, AdminRechargePackageStatus,
+    AdminMarketingListPage, AdminMarketingStore, AdminMarketingSubject, AdminRechargePackageStatus,
     CreateAdminRechargePackageCommand, CreatePromotionOfferCommand,
     DeleteAdminRechargePackageCommand, DeletePromotionOfferCommand,
     GeneratePromotionCouponStockCommand, ListAdminExchangeRulesQuery,
@@ -43,12 +46,6 @@ const CASH_ASSET_TYPE: &str = "CASH";
 struct AdminMarketingState {
     store: Arc<dyn AdminMarketingStore + Send + Sync>,
     entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct AdminMarketingListResponse<T> {
-    items: Vec<T>,
 }
 
 #[derive(Debug, Serialize)]
@@ -166,8 +163,17 @@ struct UpdatePromotionCodeStatusRequest {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct AdminMarketingListQueryRequest {
+    page: Option<i64>,
+    page_size: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct RechargePackageListQueryRequest {
     status: Option<String>,
+    page: Option<i64>,
+    page_size: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -193,6 +199,8 @@ struct ExchangeRuleListQueryRequest {
     source_asset_type: Option<String>,
     target_asset_type: Option<String>,
     status: Option<String>,
+    page: Option<i64>,
+    page_size: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -311,32 +319,52 @@ pub fn admin_marketing_router_with_store(
 
 async fn fetch_promotion_offers(
     State(state): State<AdminMarketingState>,
+    Query(params): Query<AdminMarketingListQueryRequest>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
 ) -> Response {
     let subject = scoped.into();
+    let parsed = match parse_marketing_list_query(params) {
+        Ok(parsed) => parsed,
+        Err(response) => return response,
+    };
     match state
         .store
-        .list_promotion_offers(ListPromotionOffersQuery { subject })
+        .list_promotion_offers(ListPromotionOffersQuery {
+            subject,
+            page_no: parsed.page_no,
+            page_size: parsed.page_size,
+            offset: parsed.offset,
+        })
         .await
     {
-        Ok(items) => list_response(items.into_iter().map(promotion_offer_item).collect()),
+        Ok(page) => marketing_list_response_mapped(page, promotion_offer_item),
         Err(error) => marketing_system_response("promotion offer read model is unavailable", error),
     }
 }
 
 async fn fetch_promotion_coupon_stocks(
     State(state): State<AdminMarketingState>,
+    Query(params): Query<AdminMarketingListQueryRequest>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
 ) -> Response {
     let subject = scoped.into();
+    let parsed = match parse_marketing_list_query(params) {
+        Ok(parsed) => parsed,
+        Err(response) => return response,
+    };
     match state
         .store
-        .list_promotion_coupon_stocks(ListPromotionCouponStocksQuery { subject })
+        .list_promotion_coupon_stocks(ListPromotionCouponStocksQuery {
+            subject,
+            page_no: parsed.page_no,
+            page_size: parsed.page_size,
+            offset: parsed.offset,
+        })
         .await
     {
-        Ok(items) => list_response(items.into_iter().map(promotion_coupon_stock_item).collect()),
+        Ok(page) => marketing_list_response_mapped(page, promotion_coupon_stock_item),
         Err(error) => {
             marketing_system_response("promotion coupon stock read model is unavailable", error)
         }
@@ -345,37 +373,52 @@ async fn fetch_promotion_coupon_stocks(
 
 async fn fetch_promotion_codes(
     State(state): State<AdminMarketingState>,
+    Query(params): Query<AdminMarketingListQueryRequest>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
 ) -> Response {
     let subject = scoped.into();
+    let parsed = match parse_marketing_list_query(params) {
+        Ok(parsed) => parsed,
+        Err(response) => return response,
+    };
     match state
         .store
-        .list_promotion_codes(ListPromotionCodesQuery { subject })
+        .list_promotion_codes(ListPromotionCodesQuery {
+            subject,
+            page_no: parsed.page_no,
+            page_size: parsed.page_size,
+            offset: parsed.offset,
+        })
         .await
     {
-        Ok(items) => list_response(items.into_iter().map(promotion_code_item).collect()),
+        Ok(page) => marketing_list_response_mapped(page, promotion_code_item),
         Err(error) => marketing_system_response("promotion code read model is unavailable", error),
     }
 }
 
 async fn fetch_promotion_code_redemptions(
     State(state): State<AdminMarketingState>,
+    Query(params): Query<AdminMarketingListQueryRequest>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
 ) -> Response {
     let subject = scoped.into();
+    let parsed = match parse_marketing_list_query(params) {
+        Ok(parsed) => parsed,
+        Err(response) => return response,
+    };
     match state
         .store
-        .list_promotion_code_redemptions(ListPromotionCodeRedemptionsQuery { subject })
+        .list_promotion_code_redemptions(ListPromotionCodeRedemptionsQuery {
+            subject,
+            page_no: parsed.page_no,
+            page_size: parsed.page_size,
+            offset: parsed.offset,
+        })
         .await
     {
-        Ok(items) => list_response(
-            items
-                .into_iter()
-                .map(promotion_code_redemption_item)
-                .collect(),
-        ),
+        Ok(page) => marketing_list_response_mapped(page, promotion_code_redemption_item),
         Err(error) => {
             marketing_system_response("promotion code redemption read model is unavailable", error)
         }
@@ -565,16 +608,26 @@ async fn update_promotion_code_status(
 
 async fn fetch_recharge_records(
     State(state): State<AdminMarketingState>,
+    Query(params): Query<AdminMarketingListQueryRequest>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
 ) -> Response {
     let subject = scoped.into();
+    let parsed = match parse_marketing_list_query(params) {
+        Ok(parsed) => parsed,
+        Err(response) => return response,
+    };
     match state
         .store
-        .list_recharge_records(ListAdminRechargeRecordsQuery { subject })
+        .list_recharge_records(ListAdminRechargeRecordsQuery {
+            subject,
+            page_no: parsed.page_no,
+            page_size: parsed.page_size,
+            offset: parsed.offset,
+        })
         .await
     {
-        Ok(items) => list_response(items),
+        Ok(page) => marketing_list_response(page),
         Err(error) => marketing_system_response("recharge read model is unavailable", error),
     }
 }
@@ -610,16 +663,29 @@ async fn fetch_recharge_packages(
     _headers: HeaderMap,
 ) -> Response {
     let subject = scoped.into();
+    let parsed = match parse_marketing_list_query(AdminMarketingListQueryRequest {
+        page: params.page,
+        page_size: params.page_size,
+    }) {
+        Ok(parsed) => parsed,
+        Err(response) => return response,
+    };
     let status = match normalize_optional_recharge_package_status(params.status.as_deref()) {
         Ok(status) => status,
         Err(error) => return command_build_error_response(error),
     };
     match state
         .store
-        .list_recharge_packages(ListAdminRechargePackagesQuery { subject, status })
+        .list_recharge_packages(ListAdminRechargePackagesQuery {
+            subject,
+            status,
+            page_no: parsed.page_no,
+            page_size: parsed.page_size,
+            offset: parsed.offset,
+        })
         .await
     {
-        Ok(items) => list_response(items),
+        Ok(page) => marketing_list_response(page),
         Err(error) => {
             marketing_system_response("recharge package read model is unavailable", error)
         }
@@ -766,16 +832,26 @@ async fn update_recharge_settings(
 
 async fn fetch_referral_stats(
     State(state): State<AdminMarketingState>,
+    Query(params): Query<AdminMarketingListQueryRequest>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
 ) -> Response {
     let subject = scoped.into();
+    let parsed = match parse_marketing_list_query(params) {
+        Ok(parsed) => parsed,
+        Err(response) => return response,
+    };
     match state
         .store
-        .list_referral_stats(ListAdminReferralStatsQuery { subject })
+        .list_referral_stats(ListAdminReferralStatsQuery {
+            subject,
+            page_no: parsed.page_no,
+            page_size: parsed.page_size,
+            offset: parsed.offset,
+        })
         .await
     {
-        Ok(items) => list_response(items),
+        Ok(page) => marketing_list_response(page),
         Err(error) => marketing_system_response("referral read model is unavailable", error),
     }
 }
@@ -801,6 +877,13 @@ async fn fetch_exchange_rules(
         Ok(value) => value,
         Err(error) => return command_build_error_response(error),
     };
+    let parsed = match parse_marketing_list_query(AdminMarketingListQueryRequest {
+        page: params.page,
+        page_size: params.page_size,
+    }) {
+        Ok(parsed) => parsed,
+        Err(response) => return response,
+    };
     match state
         .store
         .list_exchange_rules(ListAdminExchangeRulesQuery {
@@ -808,10 +891,13 @@ async fn fetch_exchange_rules(
             source_asset_type,
             target_asset_type,
             status,
+            page_no: parsed.page_no,
+            page_size: parsed.page_size,
+            offset: parsed.offset,
         })
         .await
     {
-        Ok(items) => Json(success_envelope(items)).into_response(),
+        Ok(page) => marketing_list_response(page),
         Err(error) => marketing_system_response("exchange rule read model is unavailable", error),
     }
 }
@@ -846,25 +932,58 @@ async fn update_exchange_rule(
 
 async fn fetch_payment_attempts(
     State(state): State<AdminMarketingState>,
+    Query(params): Query<AdminMarketingListQueryRequest>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
 ) -> Response {
     let subject = scoped.into();
+    let parsed = match parse_marketing_list_query(params) {
+        Ok(parsed) => parsed,
+        Err(response) => return response,
+    };
     match state
         .store
-        .list_payment_attempts(ListAdminPaymentAttemptsQuery { subject })
+        .list_payment_attempts(ListAdminPaymentAttemptsQuery {
+            subject,
+            page_no: parsed.page_no,
+            page_size: parsed.page_size,
+            offset: parsed.offset,
+        })
         .await
     {
-        Ok(items) => list_response(items),
+        Ok(page) => marketing_list_response(page),
         Err(error) => marketing_system_response("payment attempt read model is unavailable", error),
     }
 }
 
-fn list_response<T>(items: Vec<T>) -> Response
+fn parse_marketing_list_query(
+    params: AdminMarketingListQueryRequest,
+) -> Result<ParsedOffsetListQuery, Response> {
+    parse_offset_list_query(params.page, params.page_size).map_err(|message| bad_request(message))
+}
+
+fn marketing_list_response<T>(page: AdminMarketingListPage<T>) -> Response
 where
     T: Serialize,
 {
-    Json(success_envelope(AdminMarketingListResponse { items })).into_response()
+    json_success_list_response(
+        None,
+        page.items,
+        offset_page_info(page.page_no, page.page_size, page.total),
+    )
+}
+
+fn marketing_list_response_mapped<T, U, F>(page: AdminMarketingListPage<T>, map: F) -> Response
+where
+    T: Serialize,
+    U: Serialize,
+    F: FnMut(T) -> U,
+{
+    json_success_list_response(
+        None,
+        page.items.into_iter().map(map).collect(),
+        offset_page_info(page.page_no, page.page_size, page.total),
+    )
 }
 
 fn promotion_offer_item(item: PromotionOfferItem) -> PromotionOfferListItem {

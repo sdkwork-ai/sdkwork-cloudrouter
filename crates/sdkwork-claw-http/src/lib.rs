@@ -9,8 +9,10 @@ pub mod readiness;
 pub mod router;
 pub mod shutdown;
 pub mod signing_service;
+pub mod tenant_isolation;
 pub mod web_bridge;
 pub mod web_framework_compat;
+pub mod web_security;
 
 pub use sdkwork_iam_web_adapter::TenantSigningKeyResolver;
 pub use auth::{
@@ -38,6 +40,9 @@ pub use contract_routes::{
 pub use error::{not_implemented_response, NotImplementedData};
 pub use headers::{default_security_headers, redact_http_header};
 pub use metrics::{metrics, metrics_middleware, record_readiness_check};
+pub use tenant_isolation::{
+    ensure_row_tenant_matches, record_tenant_isolation_violation, TenantIsolationViolation,
+};
 pub use readiness::{combine_readiness_checks, ReadinessCheckFn};
 pub use router::{
     service_router, service_router_with_contract_routes,
@@ -68,4 +73,7 @@ pub use web_framework_compat::{
     merge_web_framework_scoped_app_read_router,
     merge_web_framework_scoped_app_router,
     project_trusted_subject_from_web_request_context,
+};
+pub use web_security::{
+    claw_service_security_policy, resolve_claw_web_environment_from_process_env,
 };

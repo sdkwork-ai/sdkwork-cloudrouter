@@ -164,10 +164,11 @@ test("admin ratelimit page does not expose unsupported row menus and dashboard l
   assert.doesNotMatch(source, /MoreVertical/);
   assert.doesNotMatch(source, /<button className="text-slate-400 hover:text-red-500"/);
   assert.match(source, /Promise\.all\(\[/);
-  assert.match(source, /RateLimitService\.fetchIpLimits\(\)/);
-  assert.match(source, /RateLimitService\.fetchTokenLimits\(\)/);
-  assert.match(source, /RateLimitService\.fetchModelLimits\(\)/);
-  assert.match(source, /RateLimitService\.fetchFirewalls\(\)/);
+  assert.match(source, /RateLimitService\.fetchIpLimits\(\{/);
+  assert.match(source, /RateLimitService\.fetchTokenLimits\(\{/);
+  assert.match(source, /RateLimitService\.fetchModelLimits\(\{/);
+  assert.match(source, /RateLimitService\.fetchFirewalls\(\{/);
+  assert.match(source, /BottomPagination/);
   assert.match(source, /activeIpLimits/);
   assert.match(source, /exhaustedTokenLimits/);
   assert.match(source, /activeModelLimits/);
@@ -216,7 +217,7 @@ test("admin ratelimit service calls generated backend SDK paths and normalizes r
   await withBackendSdkFetch(
     (url, init) => {
       const method = init?.method ?? "GET";
-      if (url === "/backend/v3/api/system/rate_limits/ip" && method === "GET") {
+      if (url.startsWith("/backend/v3/api/system/rate_limits/ip") && method === "GET") {
         return {
           items: [
             {
@@ -229,6 +230,7 @@ test("admin ratelimit service calls generated backend SDK paths and normalizes r
               status: "inactive",
             },
           ],
+          pageInfo: { totalItems: 1, mode: "offset" },
         };
       }
       if (url === "/backend/v3/api/system/rate_limits/ip" && method === "POST") {
@@ -244,7 +246,7 @@ test("admin ratelimit service calls generated backend SDK paths and normalizes r
           },
         };
       }
-      if (url === "/backend/v3/api/system/rate_limits/api_keys" && method === "GET") {
+      if (url.startsWith("/backend/v3/api/system/rate_limits/api_keys") && method === "GET") {
         return {
           items: [
             {
@@ -257,6 +259,7 @@ test("admin ratelimit service calls generated backend SDK paths and normalizes r
               status: "exhausted",
             },
           ],
+          pageInfo: { totalItems: 1, mode: "offset" },
         };
       }
       if (url === "/backend/v3/api/system/rate_limits/api_keys" && method === "POST") {
@@ -272,7 +275,7 @@ test("admin ratelimit service calls generated backend SDK paths and normalizes r
           },
         };
       }
-      if (url === "/backend/v3/api/system/rate_limits/models" && method === "GET") {
+      if (url.startsWith("/backend/v3/api/system/rate_limits/models") && method === "GET") {
         return {
           items: [
             {
@@ -286,6 +289,7 @@ test("admin ratelimit service calls generated backend SDK paths and normalizes r
               status: "inactive",
             },
           ],
+          pageInfo: { totalItems: 1, mode: "offset" },
         };
       }
       if (url === "/backend/v3/api/system/rate_limits/models" && method === "POST") {
@@ -302,7 +306,7 @@ test("admin ratelimit service calls generated backend SDK paths and normalizes r
           },
         };
       }
-      if (url === "/backend/v3/api/system/firewalls/rules" && method === "GET") {
+      if (url.startsWith("/backend/v3/api/system/firewalls/rules") && method === "GET") {
         return {
           items: [
             {
@@ -313,6 +317,7 @@ test("admin ratelimit service calls generated backend SDK paths and normalizes r
               time: "2026-05-05T08:00:00Z",
             },
           ],
+          pageInfo: { totalItems: 1, mode: "offset" },
         };
       }
       if (url === "/backend/v3/api/system/firewalls/rules" && method === "POST") {
@@ -332,7 +337,7 @@ test("admin ratelimit service calls generated backend SDK paths and normalizes r
       throw new Error(`Unexpected SDK request ${method} ${url}`);
     },
     async (captured) => {
-      const ipLimits = await RateLimitService.fetchIpLimits();
+      const ipLimits = await RateLimitService.fetchIpLimits({ page: 2, pageSize: 10, q: "edge" });
       const createdIp = await RateLimitService.addIpLimit({
         ruleName: "Created CIDR",
         targetIp: "192.0.2.0/24",
@@ -363,18 +368,22 @@ test("admin ratelimit service calls generated backend SDK paths and normalizes r
       });
       const removed = await RateLimitService.removeFirewall("firewall-2");
 
-      assert.equal(ipLimits[0].rps, 15);
-      assert.equal(ipLimits[0].status, "inactive");
+      assert.equal(ipLimits.items[0].rps, 15);
+      assert.equal(ipLimits.items[0].status, "inactive");
+      assert.equal(ipLimits.total, 1);
       assert.equal(createdIp.id, "ip-2");
-      assert.equal(tokenLimits[0].status, "exhausted");
+      assert.equal(tokenLimits.items[0].status, "exhausted");
       assert.equal(createdToken.burst, 10);
-      assert.equal(modelLimits[0].rpm, 60);
+      assert.equal(modelLimits.items[0].rpm, 60);
       assert.equal(createdModel.status, "active");
-      assert.equal(firewalls[0].value, "203.0.113.10");
+      assert.equal(firewalls.items[0].value, "203.0.113.10");
       assert.equal(createdFirewall.id, "firewall-2");
       assert.equal(removed, true);
+      assert.match(captured[0].url, /page=2/);
+      assert.match(captured[0].url, /page_size=10/);
+      assert.match(captured[0].url, /q=edge/);
       assert.deepEqual(
-        captured.map((request) => `${request.method} ${request.url}`),
+        captured.map((request) => `${request.method} ${request.url.split("?")[0]}`),
         [
           "GET /backend/v3/api/system/rate_limits/ip",
           "POST /backend/v3/api/system/rate_limits/ip",

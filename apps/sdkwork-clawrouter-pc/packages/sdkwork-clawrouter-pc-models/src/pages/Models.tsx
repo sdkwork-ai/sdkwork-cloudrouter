@@ -21,10 +21,13 @@ import {
   type ModelCatalogPricingCell,
 } from '../modelCatalog';
 import { ModelService, type ModelCatalogGroup } from '../modelService';
-import { FilterSidebar, CollapsibleSection, FilterCheckbox } from '@sdkwork/clawroutes-pc-commons';
+import { FilterSidebar, CollapsibleSection, FilterCheckbox, BottomPagination } from '@sdkwork/clawroutes-pc-commons';
 import { snakeCase } from '@sdkwork/clawroutes-pc-commons/sdkwork-utils';
 
 import { ModalityIcon } from '../components/ModalityIcon';
+
+const MODEL_CATALOG_PAGE_SIZE_OPTIONS = [20, 50, 100, 200];
+const DEFAULT_MODEL_CATALOG_UI_PAGE_SIZE = 20;
 
 
 export function Models() {
@@ -36,6 +39,11 @@ export function Models() {
   const [catalogModels, setCatalogModels] = useState<Model[]>([]);
   const [catalogGroups, setCatalogGroups] = useState<ModelCatalogGroup[]>([]);
   const [catalogLoadError, setCatalogLoadError] = useState<string | null>(null);
+  const [catalogPage, setCatalogPage] = useState(1);
+  const [catalogPageSize, setCatalogPageSize] = useState(DEFAULT_MODEL_CATALOG_UI_PAGE_SIZE);
+  const [catalogTotal, setCatalogTotal] = useState(0);
+  const [catalogHasMore, setCatalogHasMore] = useState(false);
+  const [catalogLoading, setCatalogLoading] = useState(false);
 
   const updateFilters = (updates: Partial<ModelCatalogFilters>) => {
     setFilters(prev => ({ ...prev, ...updates }));
@@ -96,8 +104,21 @@ export function Models() {
   const selectedGroupsKey = filters.selectedGroups.join(',');
 
   useEffect(() => {
+    setCatalogPage(1);
+  }, [
+    filters.searchQuery,
+    selectedProviderCodesKey,
+    selectedModalitiesKey,
+    selectedCapabilitiesKey,
+    selectedCategoriesKey,
+    selectedGroupsKey,
+    catalogPageSize,
+  ]);
+
+  useEffect(() => {
     let cancelled = false;
     setCatalogLoadError(null);
+    setCatalogLoading(true);
 
     ModelService.fetchModelCatalog({
       vendorCodes: selectedProviderCodes,
@@ -106,11 +127,15 @@ export function Models() {
       categories: filters.selectedCategories,
       groups: filters.selectedGroups,
       searchQuery: filters.searchQuery,
+      limit: catalogPageSize,
+      offset: (catalogPage - 1) * catalogPageSize,
     })
       .then((catalog) => {
         if (!cancelled) {
           setCatalogModels(catalog.models);
           setCatalogGroups(catalog.groups);
+          setCatalogTotal(catalog.pageInfo.total);
+          setCatalogHasMore(catalog.pageInfo.hasMore);
           setCatalogLoadError(null);
         }
       })
@@ -118,7 +143,14 @@ export function Models() {
         if (!cancelled) {
           setCatalogModels([]);
           setCatalogGroups([]);
+          setCatalogTotal(0);
+          setCatalogHasMore(false);
           setCatalogLoadError(error instanceof Error ? error.message : t('models.loadError', 'Failed to load models'));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setCatalogLoading(false);
         }
       });
 
@@ -132,6 +164,14 @@ export function Models() {
     selectedCapabilitiesKey,
     selectedCategoriesKey,
     selectedGroupsKey,
+    catalogPage,
+    catalogPageSize,
+    selectedProviderCodes,
+    filters.selectedModalities,
+    filters.selectedCapabilities,
+    filters.selectedCategories,
+    filters.selectedGroups,
+    t,
   ]);
 
   const filteredModels = useMemo(() => {
@@ -392,6 +432,33 @@ export function Models() {
             </div>
           )}
         </div>
+
+        {catalogTotal > 0 && (
+          <BottomPagination
+            className="mt-6 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0a0a0a]"
+            page={catalogPage}
+            pageSize={catalogPageSize}
+            itemCount={filteredModels.length}
+            hasNextPage={catalogHasMore}
+            disabled={catalogLoading}
+            showingLabel={t('models.pagination.showing', 'Showing')}
+            pageLabel={t('models.pagination.page', {
+              page: catalogPage,
+              totalPages: Math.max(1, Math.ceil(catalogTotal / catalogPageSize)),
+              defaultValue: `Page ${catalogPage} / ${Math.max(1, Math.ceil(catalogTotal / catalogPageSize))}`,
+            })}
+            pageSizeLabel={t('models.pagination.pageSize', 'Page size')}
+            previousLabel={t('common.actions.previousPage', 'Previous page')}
+            nextLabel={t('common.actions.nextPage', 'Next page')}
+            pageSizeOptions={MODEL_CATALOG_PAGE_SIZE_OPTIONS}
+            onPreviousPage={() => setCatalogPage(current => Math.max(1, current - 1))}
+            onNextPage={() => setCatalogPage(current => current + 1)}
+            onPageSizeChange={(nextPageSize) => {
+              setCatalogPageSize(nextPageSize);
+              setCatalogPage(1);
+            }}
+          />
+        )}
       </main>
     </div>
   );

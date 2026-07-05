@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { BusinessStatePanel } from '@sdkwork/clawrouter-pc-commons/components/BusinessState';
+import { BusinessStatePanel } from '@sdkwork/clawroutes-pc-commons/components/BusinessState';
 import {
   SdkworkWalletBalancePanel,
   SdkworkWalletIntlProvider,

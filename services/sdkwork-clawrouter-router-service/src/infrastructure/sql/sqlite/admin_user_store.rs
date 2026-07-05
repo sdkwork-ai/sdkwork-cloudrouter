@@ -8,8 +8,8 @@ use crate::infrastructure::sql::sql_admin_product_center::{
 };
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    AdjustAdminUserBalanceCommand, AdminUserApiKeyItem, AdminUserCommandFuture, AdminUserItem,
-    AdminUserStore, CreateAdminUserApiKeyCommand, CreateAdminUserCommand,
+    AdjustAdminUserBalanceCommand, AdminUserApiKeyItem, AdminUserApiKeyListPage,
+    AdminUserCommandFuture, AdminUserItem, AdminUserListPage, AdminUserStore, CreateAdminUserApiKeyCommand, CreateAdminUserCommand,
     DeleteAdminUserApiKeyCommand, ListAdminUserApiKeysQuery, ListAdminUsersQuery,
     UpdateAdminUserCommand,
 };
@@ -39,14 +39,14 @@ impl AdminUserStore for SqliteAdminUserStore {
     fn list_users<'a>(
         &'a self,
         query: ListAdminUsersQuery,
-    ) -> AdminUserCommandFuture<'a, Vec<AdminUserItem>> {
+    ) -> AdminUserCommandFuture<'a, AdminUserListPage> {
         Box::pin(async move { list_users(&self.pool, query).await })
     }
 
     fn list_api_keys<'a>(
         &'a self,
         query: ListAdminUserApiKeysQuery,
-    ) -> AdminUserCommandFuture<'a, Vec<AdminUserApiKeyItem>> {
+    ) -> AdminUserCommandFuture<'a, AdminUserApiKeyListPage> {
         Box::pin(async move { list_api_keys(&self.pool, query).await })
     }
 
@@ -338,9 +338,8 @@ impl AdminUserStore for SqliteAdminUserStore {
 async fn list_users(
     pool: &SqlitePool,
     query: ListAdminUsersQuery,
-) -> DomainResult<Vec<AdminUserItem>> {
+) -> DomainResult<AdminUserListPage> {
     let search = search_like_pattern(query.q.as_deref());
-    let page_size = normalized_page_size(query.page_size);
     let rows = sqlx::query(
         r#"
         SELECT
@@ -361,7 +360,8 @@ async fn list_users(
             CAST(COALESCE(le.last_active, u.updated_at, u.created_at, '') AS TEXT) AS last_active,
             CAST(COALESCE(k.last_used_at, '') AS TEXT) AS last_used,
             CAST(COALESCE(u.created_at, '') AS TEXT) AS created_at,
-            CAST(COALESCE(u.updated_at, '') AS TEXT) AS updated_at
+            CAST(COALESCE(u.updated_at, '') AS TEXT) AS updated_at,
+            COUNT(*) OVER() AS total
         FROM iam_user u
         LEFT JOIN (
             SELECT tenant_id,
@@ -417,7 +417,7 @@ async fn list_users(
               OR CAST(u.id AS TEXT) LIKE ?
           )
         ORDER BY u.created_at DESC, CAST(u.id AS INTEGER) DESC
-        LIMIT ?
+        LIMIT ? OFFSET ?
         "#,
     )
     .bind(query.subject.organization_id.to_string())
@@ -436,18 +436,29 @@ async fn list_users(
     .bind(search.as_deref())
     .bind(search.as_deref())
     .bind(search.as_deref())
-    .bind(page_size)
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list admin users", error))?;
 
-    rows.into_iter().map(user_from_row).collect()
+    let total = rows
+        .first()
+        .and_then(|row| row.try_get::<i64, _>("total").ok())
+        .unwrap_or(0);
+    let items = rows.into_iter().map(user_from_row).collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminUserListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn list_api_keys(
     pool: &SqlitePool,
     query: ListAdminUserApiKeysQuery,
-) -> DomainResult<Vec<AdminUserApiKeyItem>> {
+) -> DomainResult<AdminUserApiKeyListPage> {
     let rows = sqlx::query(
         r#"
         SELECT
@@ -455,7 +466,8 @@ async fn list_api_keys(
             user_id,
             COALESCE(name, '') AS name,
             COALESCE(NULLIF(key_display_masked, ''), COALESCE(key_prefix, '') || '********') AS key_display_masked,
-            status AS status
+            status AS status,
+            COUNT(*) OVER() AS total
         FROM iam_gateway_api_key
         WHERE tenant_id = ?
           AND organization_id = ?
@@ -463,16 +475,31 @@ async fn list_api_keys(
           AND revoked_at IS NULL
           AND status = 1
         ORDER BY updated_at DESC, id DESC
-        LIMIT 1000
+        LIMIT ? OFFSET ?
         "#,
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list admin api keys", error))?;
 
-    rows.into_iter().map(api_key_from_row).collect()
+    let total = rows
+        .first()
+        .and_then(|row| row.try_get::<i64, _>("total").ok())
+        .unwrap_or(0);
+    let items = rows
+        .into_iter()
+        .map(api_key_from_row)
+        .collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminUserApiKeyListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn ensure_user_identity_available(
@@ -1399,10 +1426,6 @@ fn search_like_pattern(value: Option<&str>) -> Option<String> {
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .map(|value| format!("%{}%", value.to_ascii_lowercase()))
-}
-
-fn normalized_page_size(value: i64) -> i64 {
-    value.clamp(1, 500)
 }
 
 fn integer_cell(row: &sqlx::sqlite::SqliteRow, column: &str) -> i64 {

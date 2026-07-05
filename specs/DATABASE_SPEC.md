@@ -539,7 +539,7 @@ SHOULD NOT：
 | `data` | 数据源、schema、table、column、向量库、知识库、记忆 | `data_datasource`、`data_vector_store` |
 | `ops` | 调度、通知、邮件、反馈、访问记录、短链、网络、爬取 | `ops_schedule_task`、`ops_notification` |
 | `integration` | 外部渠道、连接器、供应商账号、代理配置 | `ai_channel`、`ai_channel` |
-| `studio` | 工作空间、项目、应用、文档页、模板等设计时资产 | `studio_workspace`、`studio_project`、`studio_app` |
+| `studio` | 工作空间、项目、应用、文档页、模板等设计时资产 | `studio_workspace`、`studio_project`、`platform_app` |
 | `game` | 游戏、房间、比赛、积分、排行榜 | `game_room`、`game_leaderboard` |
 | `recruit` | 招聘、简历、职位、投递、人才池 | `recruit_resume`、`recruit_delivery` |
 
@@ -2599,7 +2599,7 @@ L3 表的 runbook MUST 至少每半年演练一次，并记录演练结果。
 | `plus_ai_model_info` | `ai_model_info` |
 | `plus_usage_record` | `ai_usage_record` |
 | `ai_channel` | `ai_channel` |
-| `plus_app` | `studio_app` |
+| `plus_app` | `platform_app` |
 | `plus_project` | `studio_project` |
 | `plus_workspace` | `studio_workspace` |
 | `plus_chat_message` | `comms_chat_message` |

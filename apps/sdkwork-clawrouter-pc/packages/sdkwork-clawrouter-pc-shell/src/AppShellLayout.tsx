@@ -19,6 +19,7 @@ export type AppShellLayoutProps = AppShellRouteProps & {
   ProductDocs: ComponentType;
   SdkReference: ComponentType;
   Playground: ComponentType;
+  TokenPlan: ComponentType;
   navbarAuthenticatedActionsStart?: ReactNode;
 };
 
@@ -44,8 +45,8 @@ export function RouteFallback() {
   return <div className="min-h-[40vh] bg-white dark:bg-slate-950" />;
 }
 
-const DOCUMENTS_HOST_OFFSET_ROUTE_PATTERN =
-  /^\/(?:product-docs|docs|api-reference)(?:\/|$)/;
+const PORTAL_HOST_OFFSET_ROUTE_PATTERN =
+  /^\/(?:product-docs|docs|api-reference|token-plan)(?:\/|$)/;
 
 export function AppShellLayout({
   isDark,
@@ -59,12 +60,13 @@ export function AppShellLayout({
   ProductDocs,
   SdkReference,
   Playground,
+  TokenPlan,
   navbarAuthenticatedActionsStart,
 }: AppShellLayoutProps) {
   const location = useLocation();
   const { t } = useTranslation();
   const isPlayground = location.pathname.startsWith('/playground') || location.pathname.startsWith('/c/');
-  const usesDocumentsHostOffset = DOCUMENTS_HOST_OFFSET_ROUTE_PATTERN.test(location.pathname);
+  const usesPortalHostOffset = PORTAL_HOST_OFFSET_ROUTE_PATTERN.test(location.pathname);
 
   return (
     <>
@@ -82,9 +84,11 @@ export function AppShellLayout({
       <div
         id="main-content"
         className={
-          usesDocumentsHostOffset
-            ? 'sdkwork-clawrouter-documents-host-offset flex-1'
-            : 'flex-1'
+          isPlayground
+            ? 'sdkwork-clawrouter-playground-host-offset flex-1'
+            : usesPortalHostOffset
+              ? 'sdkwork-clawrouter-documents-host-offset flex-1'
+              : 'flex-1'
         }
       >
         <Routes>
@@ -99,6 +103,7 @@ export function AppShellLayout({
           <Route path="/sdk-reference" element={<SdkReference />} />
           <Route path="/playground/*" element={<Playground />} />
           <Route path="/c/:conversationId" element={<Playground />} />
+          <Route path="/token-plan" element={<TokenPlan />} />
         </Routes>
       </div>
       {!isPlayground && <Footer />}

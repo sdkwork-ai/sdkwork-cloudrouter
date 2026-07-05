@@ -5,7 +5,7 @@ use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::model_catalog_import::stable_uuid;
 use crate::ports::{
     AdminMcpBindingItem, AdminMcpCommandFuture, AdminMcpDiscoveryResult, AdminMcpHealthCheckItem,
-    AdminMcpServerItem, AdminMcpServerRevisionItem, AdminMcpStore, AdminMcpSubject,
+    AdminMcpListPage, AdminMcpServerItem, AdminMcpServerRevisionItem, AdminMcpStore, AdminMcpSubject,
     AdminMcpToolItem, CreateAdminMcpBindingCommand, CreateAdminMcpServerCommand,
     CreateAdminMcpServerRevisionCommand, DiscoverAdminMcpToolsCommand, GetAdminMcpServerQuery,
     ListAdminMcpBindingsQuery, ListAdminMcpServerRevisionsQuery, ListAdminMcpServersQuery,
@@ -28,7 +28,7 @@ impl AdminMcpStore for PostgresAdminMcpStore {
     fn list_servers<'a>(
         &'a self,
         query: ListAdminMcpServersQuery,
-    ) -> AdminMcpCommandFuture<'a, Vec<AdminMcpServerItem>> {
+    ) -> AdminMcpCommandFuture<'a, AdminMcpListPage<AdminMcpServerItem>> {
         Box::pin(async move { list_servers(&self.pool, query).await })
     }
 
@@ -58,7 +58,7 @@ impl AdminMcpStore for PostgresAdminMcpStore {
     fn list_revisions<'a>(
         &'a self,
         query: ListAdminMcpServerRevisionsQuery,
-    ) -> AdminMcpCommandFuture<'a, Vec<AdminMcpServerRevisionItem>> {
+    ) -> AdminMcpCommandFuture<'a, AdminMcpListPage<AdminMcpServerRevisionItem>> {
         Box::pin(async move { list_revisions(&self.pool, query).await })
     }
 
@@ -93,7 +93,7 @@ impl AdminMcpStore for PostgresAdminMcpStore {
     fn list_tools<'a>(
         &'a self,
         query: ListAdminMcpToolsQuery,
-    ) -> AdminMcpCommandFuture<'a, Vec<AdminMcpToolItem>> {
+    ) -> AdminMcpCommandFuture<'a, AdminMcpListPage<AdminMcpToolItem>> {
         Box::pin(async move { list_tools(&self.pool, query).await })
     }
 
@@ -107,7 +107,7 @@ impl AdminMcpStore for PostgresAdminMcpStore {
     fn list_bindings<'a>(
         &'a self,
         query: ListAdminMcpBindingsQuery,
-    ) -> AdminMcpCommandFuture<'a, Vec<AdminMcpBindingItem>> {
+    ) -> AdminMcpCommandFuture<'a, AdminMcpListPage<AdminMcpBindingItem>> {
         Box::pin(async move { list_bindings(&self.pool, query).await })
     }
 
@@ -129,7 +129,7 @@ impl AdminMcpStore for PostgresAdminMcpStore {
 async fn list_servers(
     pool: &PgPool,
     query: ListAdminMcpServersQuery,
-) -> DomainResult<Vec<AdminMcpServerItem>> {
+) -> DomainResult<AdminMcpListPage<AdminMcpServerItem>> {
     let status = status_code(query.status.as_deref())?;
     let (category_id, category_code) = category_filter(query.category_id.as_deref())?;
     let rows = sqlx::query(
@@ -145,7 +145,8 @@ async fn list_servers(
             CAST(published_at AS TEXT) AS published_at,
             CAST(deprecated_at AS TEXT) AS deprecated_at,
             CAST(created_at AS TEXT) AS created_at,
-            CAST(updated_at AS TEXT) AS updated_at
+            CAST(updated_at AS TEXT) AS updated_at,
+            COUNT(*) OVER() AS total
         FROM ai_mcp_server
         WHERE tenant_id = $1
           AND organization_id = $2
@@ -174,7 +175,17 @@ async fn list_servers(
     .await
     .map_err(store_error)?;
 
-    rows.iter().map(row_to_server).collect()
+    let total = rows
+        .first()
+        .and_then(|row| row.try_get::<i64, _>("total").ok())
+        .unwrap_or(0);
+    let items = rows.iter().map(row_to_server).collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminMcpListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn create_server(
@@ -333,7 +344,7 @@ async fn update_server(
 async fn list_revisions(
     pool: &PgPool,
     query: ListAdminMcpServerRevisionsQuery,
-) -> DomainResult<Vec<AdminMcpServerRevisionItem>> {
+) -> DomainResult<AdminMcpListPage<AdminMcpServerRevisionItem>> {
     ensure_server_exists(pool, query.subject, query.server_id).await?;
     let rows = sqlx::query(
         r#"
@@ -346,23 +357,37 @@ async fn list_revisions(
             CAST(published_at AS TEXT) AS published_at,
             CAST(deprecated_at AS TEXT) AS deprecated_at,
             CAST(created_at AS TEXT) AS created_at,
-            CAST(updated_at AS TEXT) AS updated_at
+            CAST(updated_at AS TEXT) AS updated_at,
+            COUNT(*) OVER() AS total
         FROM ai_mcp_server_revision
         WHERE tenant_id = $1
           AND organization_id = $2
           AND server_id = $3
           AND deleted_at IS NULL
         ORDER BY created_at DESC NULLS LAST, id DESC
+        LIMIT $4 OFFSET $5
         "#,
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.server_id)
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(store_error)?;
 
-    rows.iter().map(row_to_revision).collect()
+    let total = rows
+        .first()
+        .and_then(|row| row.try_get::<i64, _>("total").ok())
+        .unwrap_or(0);
+    let items = rows.iter().map(row_to_revision).collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminMcpListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn create_revision(
@@ -488,14 +513,18 @@ async fn discover_tools(
     command: DiscoverAdminMcpToolsCommand,
 ) -> DomainResult<AdminMcpDiscoveryResult> {
     ensure_server_exists(pool, command.subject, command.server_id).await?;
-    let tools = list_tools(
+    let tools_page = list_tools(
         pool,
         ListAdminMcpToolsQuery {
             subject: command.subject,
             server_id: command.server_id,
+            page_no: 1,
+            page_size: 200,
+            offset: 0,
         },
     )
     .await?;
+    let tools = tools_page.items;
     let checked_at = tools
         .iter()
         .filter_map(|tool| tool.discovered_at.clone())
@@ -503,7 +532,7 @@ async fn discover_tools(
         .unwrap_or(current_timestamp(pool).await?);
     Ok(AdminMcpDiscoveryResult {
         server_id: command.server_id,
-        discovered_count: tools.len() as i64,
+        discovered_count: tools_page.total,
         tools,
         checked_at,
     })
@@ -561,7 +590,7 @@ async fn check_health(
 async fn list_tools(
     pool: &PgPool,
     query: ListAdminMcpToolsQuery,
-) -> DomainResult<Vec<AdminMcpToolItem>> {
+) -> DomainResult<AdminMcpListPage<AdminMcpToolItem>> {
     ensure_server_exists(pool, query.subject, query.server_id).await?;
     let rows = sqlx::query(
         r#"
@@ -576,23 +605,37 @@ async fn list_tools(
             CAST(last_invoked_at AS TEXT) AS last_invoked_at,
             sort_weight,
             CAST(created_at AS TEXT) AS created_at,
-            CAST(updated_at AS TEXT) AS updated_at
+            CAST(updated_at AS TEXT) AS updated_at,
+            COUNT(*) OVER() AS total
         FROM ai_mcp_tool
         WHERE tenant_id = $1
           AND organization_id = $2
           AND server_id = $3
           AND deleted_at IS NULL
         ORDER BY sort_weight ASC, id ASC
+        LIMIT $4 OFFSET $5
         "#,
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.server_id)
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(store_error)?;
 
-    rows.iter().map(row_to_tool).collect()
+    let total = rows
+        .first()
+        .and_then(|row| row.try_get::<i64, _>("total").ok())
+        .unwrap_or(0);
+    let items = rows.iter().map(row_to_tool).collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminMcpListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn update_tool(
@@ -711,7 +754,7 @@ async fn update_tool(
 async fn list_bindings(
     pool: &PgPool,
     query: ListAdminMcpBindingsQuery,
-) -> DomainResult<Vec<AdminMcpBindingItem>> {
+) -> DomainResult<AdminMcpListPage<AdminMcpBindingItem>> {
     ensure_server_exists(pool, query.subject, query.server_id).await?;
     let rows = sqlx::query(
         r#"
@@ -721,23 +764,37 @@ async fn list_bindings(
             CASE status WHEN 1 THEN 'enabled' WHEN 0 THEN 'disabled' ELSE CAST(status AS TEXT) END AS status,
             snapshot_json,
             CAST(created_at AS TEXT) AS created_at,
-            CAST(updated_at AS TEXT) AS updated_at
+            CAST(updated_at AS TEXT) AS updated_at,
+            COUNT(*) OVER() AS total
         FROM ai_mcp_binding
         WHERE tenant_id = $1
           AND organization_id = $2
           AND server_id = $3
           AND deleted_at IS NULL
         ORDER BY priority ASC, id ASC
+        LIMIT $4 OFFSET $5
         "#,
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.server_id)
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(store_error)?;
 
-    rows.iter().map(row_to_binding).collect()
+    let total = rows
+        .first()
+        .and_then(|row| row.try_get::<i64, _>("total").ok())
+        .unwrap_or(0);
+    let items = rows.iter().map(row_to_binding).collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminMcpListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn create_binding(

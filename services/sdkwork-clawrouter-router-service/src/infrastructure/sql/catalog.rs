@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use crate::domain::{
     AiModel, BillingMeter, ChannelGroup, ChannelGroupMetricSnapshot, DecimalValue, DomainResult,
@@ -71,6 +71,15 @@ pub struct SqlPricingCatalogSnapshot {
     channel_group_metric_snapshots: Vec<ChannelGroupMetricSnapshot>,
     prices: Vec<ModelPrice>,
     managed_provider_secrets: BTreeMap<String, String>,
+    // --- Indexes for O(1) hot-path lookups ---
+    models_by_key: HashMap<String, AiModel>,
+    api_keys_by_hash: HashMap<String, GatewayApiKey>,
+    api_keys_by_id: HashMap<i64, GatewayApiKey>,
+    channel_groups_by_id: HashMap<i64, ChannelGroup>,
+    pricing_plans_by_code: HashMap<String, PricingPlan>,
+    vendors_by_code: HashMap<String, ModelVendorDefinition>,
+    provider_routes_by_key: HashMap<String, Vec<ModelProviderRoute>>,
+    prices_by_key: HashMap<String, Vec<ModelPrice>>,
 }
 
 impl SqlPricingCatalogSnapshot {
@@ -86,7 +95,7 @@ impl SqlPricingCatalogSnapshot {
             rows.pricing_plans,
             PricingPlanRow::try_into_domain,
         )?)?;
-        Ok(Self {
+        let mut snapshot = Self {
             vendors: map_rows(rows.vendors, ModelVendorRow::try_into_domain)?,
             models: map_rows(rows.models, AiModelRow::try_into_domain)?,
             provider_routes: map_rows(
@@ -118,7 +127,71 @@ impl SqlPricingCatalogSnapshot {
             )?,
             prices: map_rows(rows.prices, ModelPriceRow::try_into_domain)?,
             managed_provider_secrets,
-        })
+            models_by_key: HashMap::new(),
+            api_keys_by_hash: HashMap::new(),
+            api_keys_by_id: HashMap::new(),
+            channel_groups_by_id: HashMap::new(),
+            pricing_plans_by_code: HashMap::new(),
+            vendors_by_code: HashMap::new(),
+            provider_routes_by_key: HashMap::new(),
+            prices_by_key: HashMap::new(),
+        };
+        snapshot.build_indexes();
+        Ok(snapshot)
+    }
+
+    /// Build HashMap indexes from the Vec collections for O(1) hot-path
+    /// lookups. Called once after snapshot creation; all subsequent
+    /// `find_*` calls use these indexes instead of linear scans.
+    fn build_indexes(&mut self) {
+        self.models_by_key = self
+            .models
+            .iter()
+            .map(|model| (model.catalog_key.clone(), model.clone()))
+            .collect();
+        self.api_keys_by_hash = self
+            .api_keys
+            .iter()
+            .map(|api_key| (api_key.key_hash.clone(), api_key.clone()))
+            .collect();
+        self.api_keys_by_id = self
+            .api_keys
+            .iter()
+            .map(|api_key| (api_key.id, api_key.clone()))
+            .collect();
+        self.channel_groups_by_id = self
+            .channel_groups
+            .iter()
+            .map(|group| (group.id, group.clone()))
+            .collect();
+        self.pricing_plans_by_code = self
+            .pricing_plans
+            .iter()
+            .map(|plan| (plan.plan_code.clone(), plan.clone()))
+            .collect();
+        self.vendors_by_code = self
+            .vendors
+            .iter()
+            .map(|vendor| (vendor.vendor_code.clone(), vendor.clone()))
+            .collect();
+        self.provider_routes_by_key = self
+            .provider_routes
+            .iter()
+            .fold(HashMap::new(), |mut acc, route| {
+                acc.entry(route.catalog_key.trim().to_owned())
+                    .or_default()
+                    .push(route.clone());
+                acc
+            });
+        self.prices_by_key = self
+            .prices
+            .iter()
+            .fold(HashMap::new(), |mut acc, price| {
+                acc.entry(price.catalog_key.trim().to_owned())
+                    .or_default()
+                    .push(price.clone());
+                acc
+            });
     }
 
     pub fn managed_provider_secrets(&self) -> BTreeMap<String, String> {
@@ -330,11 +403,10 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
     }
 
     fn list_provider_routes(&self, model: &str) -> Vec<ModelProviderRoute> {
-        self.provider_routes
-            .iter()
-            .filter(|route| catalog_key_matches_route_scope(&route.catalog_key, model))
+        self.provider_routes_by_key
+            .get(model.trim())
             .cloned()
-            .collect()
+            .unwrap_or_default()
     }
 
     fn list_provider_channel_routes(&self) -> Vec<ProviderChannelRoute> {
@@ -371,47 +443,43 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
         price_side: PriceSide,
         billing_meter: BillingMeter,
     ) -> Vec<ModelPrice> {
-        self.prices
-            .iter()
-            .filter(|price| {
-                catalog_key_matches_price_scope(&price.catalog_key, model)
-                    && price.price_side == price_side
-                    && price.billing_meter == billing_meter
+        self.prices_by_key
+            .get(model.trim())
+            .map(|prices| {
+                prices
+                    .iter()
+                    .filter(|price| {
+                        price.price_side == price_side && price.billing_meter == billing_meter
+                    })
+                    .cloned()
+                    .collect()
             })
-            .cloned()
-            .collect()
+            .unwrap_or_default()
     }
 
     fn list_model_prices_for_side(&self, model: &str, price_side: PriceSide) -> Vec<ModelPrice> {
-        self.prices
-            .iter()
-            .filter(|price| {
-                catalog_key_matches_price_scope(&price.catalog_key, model)
-                    && price.price_side == price_side
+        self.prices_by_key
+            .get(model.trim())
+            .map(|prices| {
+                prices
+                    .iter()
+                    .filter(|price| price.price_side == price_side)
+                    .cloned()
+                    .collect()
             })
-            .cloned()
-            .collect()
+            .unwrap_or_default()
     }
 
     fn find_api_key(&self, api_key_id: i64) -> Option<GatewayApiKey> {
-        self.api_keys
-            .iter()
-            .find(|api_key| api_key.id == api_key_id)
-            .cloned()
+        self.api_keys_by_id.get(&api_key_id).cloned()
     }
 
     fn find_api_key_by_hash(&self, key_hash: &str) -> Option<GatewayApiKey> {
-        self.api_keys
-            .iter()
-            .find(|api_key| api_key.key_hash == key_hash)
-            .cloned()
+        self.api_keys_by_hash.get(key_hash).cloned()
     }
 
     fn find_channel_group(&self, group_id: i64) -> Option<ChannelGroup> {
-        self.channel_groups
-            .iter()
-            .find(|group| group.id == group_id)
-            .cloned()
+        self.channel_groups_by_id.get(&group_id).cloned()
     }
 
     fn find_access_policy(&self, policy_id: i64) -> Option<GatewayAccessPolicy> {
@@ -443,25 +511,15 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
     }
 
     fn find_pricing_plan(&self, plan_code: &str) -> Option<PricingPlan> {
-        self.pricing_plans
-            .iter()
-            .find(|plan| plan.plan_code == plan_code)
-            .cloned()
+        self.pricing_plans_by_code.get(plan_code).cloned()
     }
 
     fn find_model(&self, model: &str) -> Option<AiModel> {
-        let model = model.trim();
-        self.models
-            .iter()
-            .find(|candidate| candidate.catalog_key == model)
-            .cloned()
+        self.models_by_key.get(model.trim()).cloned()
     }
 
     fn find_vendor(&self, vendor_code: &str) -> Option<ModelVendorDefinition> {
-        self.vendors
-            .iter()
-            .find(|vendor| vendor.vendor_code == vendor_code)
-            .cloned()
+        self.vendors_by_code.get(vendor_code).cloned()
     }
 
     fn resolve_model_mapping(
@@ -473,13 +531,14 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
     }
 
     fn find_provider_route(&self, model: &str, provider_code: &str) -> Option<ModelProviderRoute> {
-        self.provider_routes
-            .iter()
-            .find(|route| {
-                catalog_key_matches_route_scope(&route.catalog_key, model)
-                    && route.provider_code == provider_code
+        self.provider_routes_by_key
+            .get(model.trim())
+            .and_then(|routes| {
+                routes
+                    .iter()
+                    .find(|route| route.provider_code == provider_code)
+                    .cloned()
             })
-            .cloned()
     }
 
     fn find_model_price(
@@ -490,16 +549,22 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
         provider_code: Option<&str>,
         pricing_plan_code: Option<&str>,
     ) -> Option<ModelPrice> {
-        self.prices
-            .iter()
-            .find(|price| {
-                catalog_key_matches_price_scope(&price.catalog_key, model)
-                    && price.price_side == price_side
-                    && price.billing_meter == billing_meter
-                    && option_matches(price.provider_code.as_deref(), provider_code)
-                    && option_matches(price.pricing_plan_code.as_deref(), pricing_plan_code)
+        self.prices_by_key
+            .get(model.trim())
+            .and_then(|prices| {
+                prices
+                    .iter()
+                    .find(|price| {
+                        price.price_side == price_side
+                            && price.billing_meter == billing_meter
+                            && option_matches(price.provider_code.as_deref(), provider_code)
+                            && option_matches(
+                                price.pricing_plan_code.as_deref(),
+                                pricing_plan_code,
+                            )
+                    })
+                    .cloned()
             })
-            .cloned()
     }
 }
 
@@ -533,12 +598,4 @@ fn option_matches(actual: Option<&str>, expected: Option<&str>) -> bool {
         Some(expected) => actual == Some(expected),
         None => actual.is_none(),
     }
-}
-
-fn catalog_key_matches_route_scope(candidate: &str, model_key: &str) -> bool {
-    candidate.trim() == model_key.trim()
-}
-
-fn catalog_key_matches_price_scope(candidate: &str, model_key: &str) -> bool {
-    candidate.trim() == model_key.trim()
 }

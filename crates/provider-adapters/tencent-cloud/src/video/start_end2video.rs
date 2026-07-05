@@ -1,11 +1,10 @@
 use sdkwork_claw_provider_adapter_contract::{
-    AdapterError, AdapterInvocationRequest, AdapterInvocationResponse, AdapterInvocationShape,
-    AdapterUsageLine,
+    AdapterError, AdapterErrorKind, AdapterInvocationRequest, AdapterInvocationResponse,
+    AdapterInvocationShape,
 };
 use sdkwork_claw_provider_adapter::{
     AdapterInvocationContext, AdapterInvocationFuture, EndpointAdapter, ProviderAdapterEndpoint,
 };
-use serde_json::json;
 
 pub const ENDPOINT_KEY: &str = "video.start_end2video";
 pub const CAPABILITY: &str = "video_generation";
@@ -15,7 +14,7 @@ pub const STANDARD_PATH: &str = "/vidu/ent/v2/start-end2video";
 pub struct TencentCloudViduStartEnd2VideoAdapter;
 
 pub fn endpoint_manifest() -> ProviderAdapterEndpoint {
-    ProviderAdapterEndpoint::runtime_available(
+    ProviderAdapterEndpoint::definition_only(
         ENDPOINT_KEY,
         Some(CAPABILITY.to_owned()),
         "POST",
@@ -51,50 +50,11 @@ impl EndpointAdapter for TencentCloudViduStartEnd2VideoAdapter {
 }
 
 fn invoke_start_end2video(
-    request: AdapterInvocationRequest,
+    _request: AdapterInvocationRequest,
 ) -> Result<AdapterInvocationResponse, AdapterError> {
-    let provider_model = request.provider.provider_model;
-    let duration_seconds = video_duration_seconds(&request.body);
-    let provider_task_id = "tencent-cloud-vidu-task-1".to_owned();
-    let mut response = AdapterInvocationResponse::json_task(
-        200,
-        json!({
-            "id": provider_task_id,
-            "status": "queued"
-        }),
-    )
-    .with_provider_task_id(provider_task_id)
-    .with_billing_units(1)
-    .with_usage_line(
-        AdapterUsageLine::new("api_request", "1")
-            .with_request_count(1)
-            .with_provider_native_model(provider_model.clone()),
-    );
-    if let Some(duration_seconds) = duration_seconds {
-        response = response.with_usage_line(
-            AdapterUsageLine::new("video_output_second", duration_seconds.clone())
-                .with_video_seconds(duration_seconds)
-                .with_provider_native_model(provider_model),
-        );
-    }
-    Ok(response)
-}
-
-fn video_duration_seconds(body: &serde_json::Value) -> Option<String> {
-    body.get("durationSeconds")
-        .or_else(|| body.get("duration_seconds"))
-        .or_else(|| body.get("duration"))
-        .and_then(positive_json_number)
-        .map(|value| value.to_string())
-}
-
-fn positive_json_number(value: &serde_json::Value) -> Option<u64> {
-    if let Some(value) = value.as_u64() {
-        return (value > 0).then_some(value);
-    }
-    let value = value.as_f64()?;
-    if !value.is_finite() || value <= 0.0 {
-        return None;
-    }
-    Some(value.ceil() as u64)
+    Err(AdapterError::new(
+        AdapterErrorKind::AdapterNotConfigured,
+        "tencent_cloud_vidu_passthrough_required",
+        "Tencent Cloud Vidu start-end2video must be routed through provider passthrough relay; direct adapter invocation is not supported",
+    ))
 }

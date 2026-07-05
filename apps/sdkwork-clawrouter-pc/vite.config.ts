@@ -5,6 +5,13 @@ import fs from 'node:fs';
 import path from 'path';
 import ts from 'typescript';
 import {defineConfig, loadEnv, type Plugin, type ProxyOptions} from 'vite';
+import {
+  readPackageImportEntry,
+  readPackageJsonManifest,
+  resolvePortalPackageModule,
+  shouldResolvePortalPnpmWorkspaceSpecifier,
+} from './scripts/lib/portal-workspace-package-resolver.mjs';
+import { createPortalOptimizeDepsEsbuildPlugin } from './scripts/lib/portal-optimize-deps-esbuild-resolver.mjs';
 
 function readBootstrapLocalEnv(configDir: string, mode: string): Record<string, string> {
   const bootstrapPath = path.join(configDir, `.env.${mode}.bootstrap.local`);
@@ -47,7 +54,6 @@ const APP_API_PREFIX = '/app/v3/api';
 const BACKEND_API_PREFIX = '/backend/v3/api';
 const require = createRequire(import.meta.url);
 const localPortalPackageModuleCache = new Map<string, string | null>();
-const portalPackageModuleCache = new Map<string, string | null>();
 const LOCAL_PORTAL_PACKAGE_PREFIXES = [
   'sdkwork-clawrouter-pc-',
   'sdkwork-clawrouter-',
@@ -76,6 +82,16 @@ const PORTAL_OPTIMIZED_BARE_DEPENDENCIES = new Set([
   'i18next',
   'recharts',
 ]);
+
+const PORTAL_MARKDOWN_OPTIMIZE_DEPS = [
+  'hast-util-to-jsx-runtime',
+  'hast-util-sanitize',
+  'style-to-js',
+] as const;
+
+const PORTAL_MARKDOWN_NEEDS_INTEROP = [
+  'style-to-js',
+] as const;
 
 const PORTAL_SOURCE_OPTIMIZE_EXCLUDE = [
   '@sdkwork/clawrouter-app-sdk',
@@ -106,12 +122,13 @@ const PORTAL_SOURCE_OPTIMIZE_EXCLUDE = [
   '@sdkwork/auth-pc-react',
   '@sdkwork/iam-core-pc-react',
   '@sdkwork/iam-react',
+  '@sdkwork/ui-pc-react',
   '@sdkwork/clawrouter-app-sdk',
   '@sdkwork/clawrouter-backend-sdk',
-  'sdkwork-generations-app-sdk-generated-typescript',
-  'sdkwork-drive-backend-sdk-generated-typescript',
-  'clawrouter-app-domain-transport-generated-typescript',
-  'clawrouter-backend-domain-transport-generated-typescript',
+  '@sdkwork/generations-app-sdk',
+  '@sdkwork/drive-backend-sdk',
+  '@sdkwork/clawrouter-app-sdk/domains',
+  '@sdkwork/clawrouter-backend-sdk/domains',
 ];
 
 const PORTAL_RUNTIME_URL_ENV = [
@@ -251,6 +268,20 @@ function clawrouterPortalLocalPackageResolver(configDir: string): Plugin {
   };
 }
 
+function clawrouterPortalPnpmWorkspaceResolver(configDir: string): Plugin {
+  return {
+    name: 'clawrouter-portal-pnpm-workspace-resolver',
+    enforce: 'pre',
+    resolveId(source, importer) {
+      if (!shouldResolvePortalPnpmWorkspaceSpecifier(source)) {
+        return null;
+      }
+
+      return resolvePortalPackageModule(source, configDir, importer);
+    },
+  };
+}
+
 function clawrouterPortalWorkspaceDependencyResolver(
   configDir: string,
   workspaceDependencyRoots: string[],
@@ -263,7 +294,7 @@ function clawrouterPortalWorkspaceDependencyResolver(
         return null;
       }
 
-      return resolvePortalPackageModule(source, configDir);
+      return resolvePortalPackageModule(source, configDir, importer);
     },
   };
 }
@@ -367,11 +398,7 @@ function resolvePortalLocalPackageModule(specifier: string, configDir: string): 
     return null;
   }
 
-  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8')) as {
-    exports?: unknown;
-    module?: string;
-    main?: string;
-  };
+  const packageJson = readPackageJsonManifest(packageJsonPath);
   const entry = parsedSpecifier.subpath
     ? readPackageImportEntry(packageJson.exports, `./${parsedSpecifier.subpath}`)
       ?? parsedSpecifier.subpath
@@ -416,34 +443,6 @@ function resolvePortalWorkspaceDependencyRoot(
   return path.resolve(configDir, '../../..', dependencyId);
 }
 
-function resolvePortalPackageModule(specifier: string, configDir: string): string | null {
-  const cached = portalPackageModuleCache.get(specifier);
-  if (cached !== undefined) {
-    return cached;
-  }
-
-  const parsedSpecifier = parsePackageSpecifier(specifier);
-  const packageJsonPath = resolvePortalPackageJson(parsedSpecifier.packageName, configDir);
-  if (!packageJsonPath) {
-    portalPackageModuleCache.set(specifier, null);
-    return null;
-  }
-
-  const packageRoot = path.dirname(packageJsonPath);
-  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8')) as {
-    exports?: unknown;
-    module?: string;
-    main?: string;
-  };
-  const entry = parsedSpecifier.subpath
-    ? readPackageImportEntry(packageJson.exports, `./${parsedSpecifier.subpath}`)
-      ?? parsedSpecifier.subpath
-    : readPackageImportEntry(packageJson.exports) ?? packageJson.module ?? packageJson.main ?? 'index.js';
-  const resolved = path.resolve(packageRoot, entry);
-  portalPackageModuleCache.set(specifier, resolved);
-  return resolved;
-}
-
 function parsePackageSpecifier(specifier: string): { packageName: string; subpath: string } {
   const segments = specifier.split('/');
   if (specifier.startsWith('@')) {
@@ -458,66 +457,21 @@ function parsePackageSpecifier(specifier: string): { packageName: string; subpat
   };
 }
 
-function resolvePortalPackageJson(packageName: string, configDir: string): string | null {
-  const directPath = path.join(configDir, 'node_modules', ...packageName.split('/'), 'package.json');
-  if (fs.existsSync(directPath)) {
-    return directPath;
-  }
-
-  const pnpmRoot = path.join(configDir, 'node_modules', '.pnpm');
-  if (!fs.existsSync(pnpmRoot)) {
-    return null;
-  }
-
-  const encodedPrefix = packageName.replace('/', '+');
-  const candidates = fs.readdirSync(pnpmRoot)
-    .filter((entry) => entry.startsWith(encodedPrefix.slice(0, Math.min(encodedPrefix.length, 24))))
-    .sort();
-  for (const candidate of candidates) {
-    const packageJsonPath = path.join(pnpmRoot, candidate, 'node_modules', ...packageName.split('/'), 'package.json');
-    if (fs.existsSync(packageJsonPath)) {
-      return packageJsonPath;
-    }
-  }
-  for (const candidate of fs.readdirSync(pnpmRoot).sort()) {
-    const packageJsonPath = path.join(pnpmRoot, candidate, 'node_modules', ...packageName.split('/'), 'package.json');
-    if (fs.existsSync(packageJsonPath)) {
-      return packageJsonPath;
-    }
-  }
-  return null;
-}
-
-function readPackageImportEntry(exportsField: unknown, subpath = '.'): string | undefined {
-  if (!exportsField || typeof exportsField !== 'object') {
-    return undefined;
-  }
-
-  const rootExport = Object.prototype.hasOwnProperty.call(exportsField, subpath)
-    ? (exportsField as Record<string, unknown>)[subpath]
-    : exportsField;
-  if (typeof rootExport === 'string') {
-    return rootExport;
-  }
-  if (!rootExport || typeof rootExport !== 'object') {
-    return undefined;
-  }
-
-  const importExport = (rootExport as Record<string, unknown>).import;
-  if (typeof importExport === 'string') {
-    return importExport;
-  }
-  if (importExport && typeof importExport === 'object') {
-    const defaultExport = (importExport as Record<string, unknown>).default;
-    if (typeof defaultExport === 'string') {
-      return defaultExport;
-    }
-  }
-  const rootDefaultExport = (rootExport as Record<string, unknown>).default;
-  if (typeof rootDefaultExport === 'string') {
-    return rootDefaultExport;
-  }
-  return undefined;
+function resolvePortalMarkdownOptimizeEntries(
+  configDir: string,
+  sdkworkGenerationsRoot: string,
+): string[] {
+  return [
+    path.resolve(
+      sdkworkGenerationsRoot,
+      'apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/react.ts',
+    ),
+    path.resolve(configDir, 'packages/sdkwork-clawrouter-pc-playground/src/pages/Playground.tsx'),
+    path.resolve(
+      configDir,
+      'packages/sdkwork-clawrouter-pc-playground/src/components/chat/generationsMarkdown.ts',
+    ),
+  ];
 }
 
 export default defineConfig(({mode}) => {
@@ -532,6 +486,10 @@ export default defineConfig(({mode}) => {
   const sdkworkPromptsRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-prompts');
   const sdkworkModelsRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-models');
   const sdkworkImageRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-image');
+  const sdkworkAssetsRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-assets');
+  const sdkworkVideoRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-video');
+  const sdkworkMusicRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-music');
+  const sdkworkAudioRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-audio');
   const sdkworkCoreRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-core');
   const sdkworkUiRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-ui');
   const sdkworkDocumentsRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-documents');
@@ -541,6 +499,30 @@ export default defineConfig(({mode}) => {
   const sdkworkMembershipRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-membership');
   const sdkworkPaymentRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-payment');
   const sdkworkOrderRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-order');
+  const portalWorkspaceDependencyRoots = [
+    appbaseRoot,
+    iamRoot,
+    sdkworkDriveRoot,
+    sdkworkGenerationsRoot,
+    sdkworkMemoryRoot,
+    sdkworkAgentsRoot,
+    sdkworkPromptsRoot,
+    sdkworkModelsRoot,
+    sdkworkImageRoot,
+    sdkworkAssetsRoot,
+    sdkworkVideoRoot,
+    sdkworkMusicRoot,
+    sdkworkAudioRoot,
+    sdkworkCoreRoot,
+    sdkworkUiRoot,
+    sdkworkDocumentsRoot,
+    sdkworkUtilsRoot,
+    sdkworkAccountRoot,
+    sdkworkPromotionRoot,
+    sdkworkMembershipRoot,
+    sdkworkPaymentRoot,
+    sdkworkOrderRoot,
+  ];
 	  const env = loadEnv(mode, configDir, '');
   Object.assign(env, readBootstrapLocalEnv(configDir, mode));
   const bootstrapAccessTokenDefine = mode === 'development'
@@ -561,26 +543,8 @@ export default defineConfig(({mode}) => {
       clawrouterImportMetaHotTransform(),
       clawrouterTypeScriptTransform(),
       clawrouterPortalLocalPackageResolver(configDir),
-      clawrouterPortalWorkspaceDependencyResolver(configDir, [
-        appbaseRoot,
-        iamRoot,
-        sdkworkDriveRoot,
-        sdkworkGenerationsRoot,
-        sdkworkMemoryRoot,
-        sdkworkAgentsRoot,
-        sdkworkPromptsRoot,
-        sdkworkModelsRoot,
-        sdkworkImageRoot,
-        sdkworkCoreRoot,
-        sdkworkUiRoot,
-        sdkworkDocumentsRoot,
-        sdkworkUtilsRoot,
-        sdkworkAccountRoot,
-        sdkworkPromotionRoot,
-        sdkworkMembershipRoot,
-        sdkworkPaymentRoot,
-        sdkworkOrderRoot,
-      ]),
+      clawrouterPortalPnpmWorkspaceResolver(configDir),
+      clawrouterPortalWorkspaceDependencyResolver(configDir, portalWorkspaceDependencyRoots),
       tailwindcss(),
     ],
     esbuild: false,
@@ -605,99 +569,6 @@ export default defineConfig(({mode}) => {
         'react-i18next',
       ],
       alias: [
-        { find: '@sdkwork/appbase-pc-react', replacement: path.resolve(appbaseRoot, 'packages/pc-react/foundation/sdkwork-appbase-pc-react/src/index.ts') },
-        { find: '@sdkwork/auth-pc-react', replacement: path.resolve(iamRoot, 'apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/index.ts') },
-        { find: '@sdkwork/auth-runtime-pc-react', replacement: path.resolve(iamRoot, 'apps/sdkwork-iam-pc/packages/sdkwork-auth-runtime-pc-react/src/index.ts') },
-        { find: '@sdkwork/iam-app-sdk', replacement: path.resolve(iamRoot, 'sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/generated/server-openapi/src/index.ts') },
-        { find: '@sdkwork/iam-backend-sdk', replacement: path.resolve(iamRoot, 'sdks/sdkwork-iam-backend-sdk/sdkwork-iam-backend-sdk-typescript/generated/server-openapi/src/index.ts') },
-        { find: '@sdkwork/clawrouter-app-sdk', replacement: path.resolve(configDir, '../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/index.ts') },
-        { find: '@sdkwork/clawrouter-backend-sdk', replacement: path.resolve(configDir, '../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/index.ts') },
-        { find: '@sdkwork/clawrouter-open-sdk', replacement: path.resolve(configDir, '../../sdks/clawrouter-open-sdk/clawrouter-open-sdk-typescript/generated/server-openapi/src/index.ts') },
-        { find: '@sdkwork/documents-app-sdk', replacement: path.resolve(sdkworkDocumentsRoot, 'sdks/sdkwork-documents-app-sdk/sdkwork-documents-app-sdk-typescript/generated/server-openapi/src/index.ts') },
-        { find: '@sdkwork/documents-pc-commons/runtime', replacement: path.resolve(sdkworkDocumentsRoot, 'apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-commons/src/runtime.ts') },
-        { find: '@sdkwork/documents-pc-commons', replacement: path.resolve(sdkworkDocumentsRoot, 'apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-commons/src/index.ts') },
-        { find: '@sdkwork/documents-pc-i18n', replacement: path.resolve(sdkworkDocumentsRoot, 'apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-i18n/src/index.ts') },
-        { find: '@sdkwork/documents-pc-api-reference/openapiTypes', replacement: path.resolve(sdkworkDocumentsRoot, 'apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/openapiTypes.ts') },
-        { find: '@sdkwork/documents-pc-api-reference/apiReferenceSchemaTabs', replacement: path.resolve(sdkworkDocumentsRoot, 'apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/apiReferenceSchemaTabs.ts') },
-        { find: '@sdkwork/documents-pc-api-reference/openapiSchemaRuntime', replacement: path.resolve(sdkworkDocumentsRoot, 'apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/openapiSchemaRuntime.ts') },
-        { find: '@sdkwork/documents-pc-api-reference', replacement: path.resolve(sdkworkDocumentsRoot, 'apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/index.ts') },
-        { find: '@sdkwork/documents-pc-sdk-reference', replacement: path.resolve(sdkworkDocumentsRoot, 'apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-sdk-reference/src/index.ts') },
-        { find: '@sdkwork/account-pc-wallet', replacement: path.resolve(sdkworkAccountRoot, 'apps/sdkwork-account-pc/packages/sdkwork-account-pc-wallet/src/index.ts') },
-        { find: '@sdkwork/account-app-sdk', replacement: path.resolve(sdkworkAccountRoot, 'sdks/sdkwork-account-app-sdk/sdkwork-account-app-sdk-typescript/generated/server-openapi/src/index.ts') },
-        { find: '@sdkwork/account-backend-sdk', replacement: path.resolve(sdkworkAccountRoot, 'sdks/sdkwork-account-backend-sdk/sdkwork-account-backend-sdk-typescript/generated/server-openapi/src/index.ts') },
-        { find: '@sdkwork/account-contracts', replacement: path.resolve(sdkworkAccountRoot, 'apps/sdkwork-account-common/packages/sdkwork-account-contracts/src/index.ts') },
-        { find: '@sdkwork/account-sdk-ports', replacement: path.resolve(sdkworkAccountRoot, 'apps/sdkwork-account-common/packages/sdkwork-account-sdk-ports/src/index.ts') },
-        { find: '@sdkwork/account-service', replacement: path.resolve(sdkworkAccountRoot, 'apps/sdkwork-account-common/packages/sdkwork-account-service/src/index.ts') },
-        { find: '@sdkwork/promotion-pc-coupon', replacement: path.resolve(sdkworkPromotionRoot, 'apps/sdkwork-promotion-pc/packages/sdkwork-promotion-pc-coupon/src/index.ts') },
-        { find: '@sdkwork/promotion-contracts', replacement: path.resolve(sdkworkPromotionRoot, 'apps/sdkwork-promotion-common/packages/sdkwork-promotion-contracts/src/index.ts') },
-        { find: '@sdkwork/promotion-sdk-ports', replacement: path.resolve(sdkworkPromotionRoot, 'apps/sdkwork-promotion-common/packages/sdkwork-promotion-sdk-ports/src/index.ts') },
-        { find: '@sdkwork/promotion-service', replacement: path.resolve(sdkworkPromotionRoot, 'apps/sdkwork-promotion-common/packages/sdkwork-promotion-service/src/index.ts') },
-        { find: '@sdkwork/membership-pc-membership', replacement: path.resolve(sdkworkMembershipRoot, 'apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-membership/src/index.ts') },
-        { find: '@sdkwork/membership-pc-subscription', replacement: path.resolve(sdkworkMembershipRoot, 'apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-subscription/src/index.ts') },
-        { find: '@sdkwork/membership-contracts', replacement: path.resolve(sdkworkMembershipRoot, 'apps/sdkwork-membership-common/packages/sdkwork-membership-contracts/src/index.ts') },
-        { find: '@sdkwork/membership-sdk-ports', replacement: path.resolve(sdkworkMembershipRoot, 'apps/sdkwork-membership-common/packages/sdkwork-membership-sdk-ports/src/index.ts') },
-        { find: '@sdkwork/membership-service', replacement: path.resolve(sdkworkMembershipRoot, 'apps/sdkwork-membership-common/packages/sdkwork-membership-service/src/index.ts') },
-        { find: '@sdkwork/payment-pc-payment', replacement: path.resolve(sdkworkPaymentRoot, 'apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-payment/src/index.ts') },
-        { find: '@sdkwork/payment-contracts', replacement: path.resolve(sdkworkPaymentRoot, 'apps/sdkwork-payment-common/packages/sdkwork-payment-contracts/src/index.ts') },
-        { find: '@sdkwork/payment-sdk-ports', replacement: path.resolve(sdkworkPaymentRoot, 'apps/sdkwork-payment-common/packages/sdkwork-payment-sdk-ports/src/index.ts') },
-        { find: '@sdkwork/payment-service', replacement: path.resolve(sdkworkPaymentRoot, 'apps/sdkwork-payment-common/packages/sdkwork-payment-service/src/index.ts') },
-        { find: '@sdkwork/order-pc-order', replacement: path.resolve(sdkworkOrderRoot, 'apps/sdkwork-order-pc/packages/sdkwork-order-pc-order/src/index.ts') },
-        { find: '@sdkwork/order-app-sdk', replacement: path.resolve(sdkworkOrderRoot, 'sdks/sdkwork-order-app-sdk/sdkwork-order-app-sdk-typescript/generated/server-openapi/src/index.ts') },
-        { find: '@sdkwork/order-contracts', replacement: path.resolve(sdkworkOrderRoot, 'apps/sdkwork-order-common/packages/sdkwork-order-contracts/src/index.ts') },
-        { find: '@sdkwork/order-sdk-ports', replacement: path.resolve(sdkworkOrderRoot, 'apps/sdkwork-order-common/packages/sdkwork-order-sdk-ports/src/index.ts') },
-        { find: '@sdkwork/order-service', replacement: path.resolve(sdkworkOrderRoot, 'apps/sdkwork-order-common/packages/sdkwork-order-service/src/index.ts') },
-        { find: '@sdkwork/core-pc-react', replacement: path.resolve(sdkworkCoreRoot, 'sdkwork-core-pc-react/src/index.ts') },
-        { find: '@sdkwork/clawrouter-pc-downloads', replacement: path.resolve(configDir, 'packages/sdkwork-clawrouter-pc-downloads/src/index.ts') },
-        { find: '@sdkwork/drive-app-sdk', replacement: path.resolve(sdkworkDriveRoot, 'sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript/src/index.ts') },
-        { find: 'sdkwork-drive-backend-sdk-generated-typescript', replacement: path.resolve(sdkworkDriveRoot, 'sdks/sdkwork-drive-backend-sdk/sdkwork-drive-backend-sdk-typescript/generated/server-openapi/src/index.ts') },
-        { find: '@sdkwork/generations-pc-workspace/generation-asset-config', replacement: path.resolve(sdkworkGenerationsRoot, 'apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-workspace/src/generation-asset-config.ts') },
-        { find: '@sdkwork/generations-pc-workspace/generation-history', replacement: path.resolve(sdkworkGenerationsRoot, 'apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-workspace/src/generation-history.ts') },
-        { find: '@sdkwork/generations-pc-workspace/generation-service', replacement: path.resolve(sdkworkGenerationsRoot, 'apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-workspace/src/generation-service.ts') },
-        { find: '@sdkwork/generations-pc-workspace/react', replacement: path.resolve(sdkworkGenerationsRoot, 'apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-workspace/src/react.ts') },
-        { find: '@sdkwork/generations-pc-workspace', replacement: path.resolve(sdkworkGenerationsRoot, 'apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-workspace/src/index.ts') },
-        { find: '@sdkwork/image-pc-generation/react', replacement: path.resolve(sdkworkImageRoot, 'apps/sdkwork-image-pc/packages/sdkwork-image-pc-generation/src/react.ts') },
-        { find: '@sdkwork/image-pc-generation/generation-service', replacement: path.resolve(sdkworkImageRoot, 'apps/sdkwork-image-pc/packages/sdkwork-image-pc-generation/src/generation-service.ts') },
-        { find: '@sdkwork/image-pc-generation/generation-history', replacement: path.resolve(sdkworkImageRoot, 'apps/sdkwork-image-pc/packages/sdkwork-image-pc-generation/src/generation-history.ts') },
-        { find: '@sdkwork/image-contracts', replacement: path.resolve(sdkworkImageRoot, 'apps/sdkwork-image-common/packages/sdkwork-image-contracts/src/index.ts') },
-        { find: '@sdkwork/image-pc-generation', replacement: path.resolve(sdkworkImageRoot, 'apps/sdkwork-image-pc/packages/sdkwork-image-pc-generation/src/index.ts') },
-        { find: 'sdkwork-generations-app-sdk-generated-typescript', replacement: path.resolve(sdkworkGenerationsRoot, 'sdks/sdkwork-generations-app-sdk/sdkwork-generations-app-sdk-typescript/generated/server-openapi/src/index.ts') },
-        { find: 'clawrouter-app-domain-transport-generated-typescript', replacement: path.resolve(configDir, '../../sdks/clawrouter-app-sdk/clawrouter-app-domain-transport-typescript/generated/server-openapi/src/index.ts') },
-        { find: 'clawrouter-backend-domain-transport-generated-typescript', replacement: path.resolve(configDir, '../../sdks/clawrouter-backend-sdk/clawrouter-backend-domain-transport-typescript/generated/server-openapi/src/index.ts') },
-        { find: '@sdkwork/memory-app-sdk', replacement: path.resolve(sdkworkMemoryRoot, 'sdks/sdkwork-memory-app-sdk/sdkwork-memory-app-sdk-typescript/generated/server-openapi/src/index.ts') },
-        { find: '@sdkwork/agents-app-sdk', replacement: path.resolve(sdkworkAgentsRoot, 'sdks/sdkwork-agents-app-sdk/sdkwork-agents-app-sdk-typescript/generated/server-openapi/src/index.ts') },
-        { find: '@sdkwork/agents-backend-sdk', replacement: path.resolve(sdkworkAgentsRoot, 'sdks/sdkwork-agents-backend-sdk/sdkwork-agents-backend-sdk-typescript/generated/server-openapi/src/index.ts') },
-        { find: '@sdkwork/prompts-backend-sdk', replacement: path.resolve(sdkworkPromptsRoot, 'sdks/sdkwork-prompts-backend-sdk/generated/server-openapi/src/index.ts') },
-        { find: '@sdkwork/models-backend-sdk/api/ai', replacement: path.resolve(sdkworkModelsRoot, 'sdks/sdkwork-models-backend-sdk/sdkwork-models-backend-sdk-typescript/generated/server-openapi/src/api/ai.ts') },
-        { find: '@sdkwork/models-backend-sdk', replacement: path.resolve(sdkworkModelsRoot, 'sdks/sdkwork-models-backend-sdk/sdkwork-models-backend-sdk-typescript/generated/server-openapi/src/index.ts') },
-        { find: '@sdkwork/models-app-sdk', replacement: path.resolve(sdkworkModelsRoot, 'sdks/sdkwork-models-app-sdk/sdkwork-models-app-sdk-typescript/generated/server-openapi/src/index.ts') },
-        { find: '@sdkwork/models-pc-admin-catalog/modelService', replacement: path.resolve(sdkworkModelsRoot, 'apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts') },
-        { find: '@sdkwork/models-pc-admin-catalog/vendorPickerModal', replacement: path.resolve(sdkworkModelsRoot, 'apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/vendorPickerModal.tsx') },
-        { find: '@sdkwork/models-pc-admin-catalog', replacement: path.resolve(sdkworkModelsRoot, 'apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/index.tsx') },
-        { find: '@sdkwork/models-pc-admin-resource', replacement: path.resolve(sdkworkModelsRoot, 'apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/index.tsx') },
-        { find: '@sdkwork/host-pc-react', replacement: path.resolve(appbaseRoot, 'packages/pc-react/host/sdkwork-host-pc-react/src/index.ts') },
-        { find: '@sdkwork/host-tauri-pc-react', replacement: path.resolve(appbaseRoot, 'packages/pc-react/host/sdkwork-host-tauri-pc-react/src/index.ts') },
-        { find: '@sdkwork/i18n-pc-react', replacement: path.resolve(appbaseRoot, 'packages/pc-react/foundation/sdkwork-i18n-pc-react/src/index.ts') },
-        { find: '@sdkwork/notification-pc-react/service', replacement: path.resolve(appbaseRoot, 'packages/pc-react/notification/sdkwork-notification-pc-react/src/notificationService.ts') },
-        { find: '@sdkwork/notification-pc-react', replacement: path.resolve(appbaseRoot, 'packages/pc-react/notification/sdkwork-notification-pc-react/src/index.ts') },
-        { find: '@sdkwork/iam-contracts', replacement: path.resolve(iamRoot, 'apps/sdkwork-iam-common/packages/sdkwork-iam-contracts/src/index.ts') },
-        { find: '@sdkwork/iam-core-pc-react', replacement: path.resolve(iamRoot, 'apps/sdkwork-iam-pc/packages/sdkwork-iam-core-pc-react/src/index.ts') },
-        { find: '@sdkwork/iam-react', replacement: path.resolve(iamRoot, 'apps/sdkwork-iam-pc/packages/sdkwork-iam-react/src/index.tsx') },
-        { find: '@sdkwork/iam-runtime', replacement: path.resolve(iamRoot, 'apps/sdkwork-iam-common/packages/sdkwork-iam-runtime/src/index.ts') },
-        { find: '@sdkwork/iam-sdk-adapter', replacement: path.resolve(iamRoot, 'apps/sdkwork-iam-common/packages/sdkwork-iam-sdk-adapter/src/index.ts') },
-        { find: '@sdkwork/iam-sdk-ports', replacement: path.resolve(iamRoot, 'apps/sdkwork-iam-common/packages/sdkwork-iam-sdk-ports/src/index.ts') },
-        { find: '@sdkwork/iam-service', replacement: path.resolve(iamRoot, 'apps/sdkwork-iam-common/packages/sdkwork-iam-service/src/index.ts') },
-        { find: '@sdkwork/runtime-bootstrap', replacement: path.resolve(appbaseRoot, 'packages/common/foundation/sdkwork-runtime-bootstrap/src/index.ts') },
-        { find: '@sdkwork/sdk-common', replacement: path.resolve(configDir, 'node_modules/@sdkwork/sdk-common/dist/index.js') },
-        { find: '@sdkwork/ui-pc-react/components/ui/button', replacement: path.resolve(sdkworkUiRoot, 'sdkwork-ui-pc-react/src/components/ui/button.tsx') },
-        { find: '@sdkwork/ui-pc-react/components/ui/feedback/states', replacement: path.resolve(sdkworkUiRoot, 'sdkwork-ui-pc-react/src/components/ui/feedback/states.tsx') },
-        { find: '@sdkwork/ui-pc-react/theme', replacement: path.resolve(sdkworkUiRoot, 'sdkwork-ui-pc-react/src/theme/index.ts') },
-        { find: '@sdkwork/ui-pc-react', replacement: path.resolve(sdkworkUiRoot, 'sdkwork-ui-pc-react/src/index.ts') },
-        { find: '@sdkwork/utils/string', replacement: path.resolve(sdkworkUtilsRoot, 'packages/sdkwork-utils-typescript/dist/string.js') },
-        { find: '@sdkwork/utils/optional', replacement: path.resolve(sdkworkUtilsRoot, 'packages/sdkwork-utils-typescript/dist/optional.js') },
-        { find: '@sdkwork/utils/currency', replacement: path.resolve(sdkworkUtilsRoot, 'packages/sdkwork-utils-typescript/dist/currency.js') },
-        { find: '@sdkwork/utils/id', replacement: path.resolve(sdkworkUtilsRoot, 'packages/sdkwork-utils-typescript/dist/id.js') },
-        { find: '@sdkwork/utils/encoding', replacement: path.resolve(sdkworkUtilsRoot, 'packages/sdkwork-utils-typescript/dist/encoding.js') },
-        { find: '@sdkwork/utils', replacement: path.resolve(configDir, 'src/sdkwork-utils-browser.ts') },
         { find: 'qrcode', replacement: resolvePortalDependency('qrcode/lib/browser.js', configDir) },
         { find: 'use-sync-external-store/shim/with-selector', replacement: path.resolve(configDir, 'src/auth/useSyncExternalStoreWithSelectorCompat.ts') },
         { find: 'use-sync-external-store/shim', replacement: path.resolve(configDir, 'src/auth/useSyncExternalStoreShimCompat.ts') },
@@ -722,6 +593,10 @@ export default defineConfig(({mode}) => {
           sdkworkPromptsRoot,
 	          sdkworkModelsRoot,
 	          sdkworkImageRoot,
+	          sdkworkAssetsRoot,
+	          sdkworkVideoRoot,
+	          sdkworkMusicRoot,
+	          sdkworkAudioRoot,
 	          sdkworkUiRoot,
           sdkworkDocumentsRoot,
           sdkworkUtilsRoot,
@@ -874,6 +749,9 @@ export default defineConfig(({mode}) => {
               || normalizedId.includes('/node_modules/html-to-image/')
               || normalizedId.includes('/node_modules/html2canvas/')
               || normalizedId.includes('/node_modules/rehype-sanitize/')
+              || normalizedId.includes('/node_modules/hast-util-sanitize/')
+              || normalizedId.includes('/node_modules/react-markdown/')
+              || normalizedId.includes('/node_modules/remark-gfm/')
             ) {
               return 'vendor-rich-tools';
             }
@@ -902,6 +780,7 @@ export default defineConfig(({mode}) => {
     },
     optimizeDeps: {
       exclude: PORTAL_SOURCE_OPTIMIZE_EXCLUDE,
+      entries: resolvePortalMarkdownOptimizeEntries(configDir, sdkworkGenerationsRoot),
       include: [
         'react',
         'react/jsx-runtime',
@@ -920,6 +799,8 @@ export default defineConfig(({mode}) => {
         'framer-motion',
         'i18next',
         'recharts',
+        'lucide-react',
+        ...PORTAL_MARKDOWN_OPTIMIZE_DEPS,
       ],
       needsInterop: [
         'react',
@@ -928,11 +809,19 @@ export default defineConfig(({mode}) => {
         'react-dom',
         'cookie',
         'set-cookie-parser',
+        ...PORTAL_MARKDOWN_NEEDS_INTEROP,
       ],
       esbuildOptions: {
         target: 'esnext',
         jsx: 'automatic',
         jsxImportSource: 'react',
+        plugins: [
+          createPortalOptimizeDepsEsbuildPlugin(
+            configDir,
+            portalWorkspaceDependencyRoots,
+            PORTAL_OPTIMIZED_BARE_DEPENDENCIES,
+          ),
+        ],
       },
     },
   };

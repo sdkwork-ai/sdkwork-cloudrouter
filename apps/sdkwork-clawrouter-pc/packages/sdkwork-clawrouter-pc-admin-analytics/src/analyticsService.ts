@@ -119,7 +119,6 @@ const MIN_LIMIT = 3;
 const MAX_LIMIT = 50;
 const TIME_RANGES = new Set<AdminAnalyticsTimeRange>(['hourly', 'daily', 'weekly', 'monthly', 'yearly']);
 const INSIGHT_SEVERITIES = new Set<AdminAnalyticsInsightSeverity>(['info', 'warning', 'critical']);
-const DISPLAY_COLORS = ['#2563eb', '#10b981', '#f59e0b', '#7c3aed', '#ef4444', '#06b6d4'];
 
 export class AdminAnalyticsService {
   static async fetchOverview(query: AdminAnalyticsQuery = {}): Promise<AdminAnalyticsOverview> {
@@ -127,7 +126,7 @@ export class AdminAnalyticsService {
     const result = await getClawRouterBackendSdkClient().system.analytics.admin.overview.retrieve(params);
     ensureSdkworkApiSuccess(result, 'Failed to fetch admin analytics');
     const overview = normalizeOverview(readApiRecord(result));
-    return ensureDisplayReadyOverview(overview);
+    return overview;
   }
 }
 
@@ -154,7 +153,7 @@ function normalizeOverview(record: ApiRecord): AdminAnalyticsOverview {
     endTime: readNullableString(record, 'endTime'),
     limit: readLimit(record),
     summary: normalizeSummary(readRequiredRecord(record.summary, 'Analytics summary is required')),
-    trend: readRequiredRecordArray(record, 'trend', 'Analytics trend is required', 'Analytics trend point is required')
+    trend: readOptionalRecordArray(record, 'trend', 'Analytics trend point is required')
       .map(normalizeTrendPoint),
     userRankings: normalizeRankings(
       readRequiredRecord(record.userRankings, 'Analytics user rankings are required'),
@@ -166,19 +165,17 @@ function normalizeOverview(record: ApiRecord): AdminAnalyticsOverview {
       normalizeModelRankItem,
       'Analytics model ranking row is required',
     ),
-    modelDistribution: readRequiredRecordArray(
+    modelDistribution: readOptionalRecordArray(
       record,
       'modelDistribution',
-      'Analytics model distribution is required',
       'Analytics model distribution row is required',
     ).map(normalizePieChartData),
-    modalityDistribution: readRequiredRecordArray(
+    modalityDistribution: readOptionalRecordArray(
       record,
       'modalityDistribution',
-      'Analytics modality distribution is required',
       'Analytics modality distribution row is required',
     ).map(normalizePieChartData),
-    insights: readRequiredRecordArray(record, 'insights', 'Analytics insights are required', 'Analytics insight is required')
+    insights: readOptionalRecordArray(record, 'insights', 'Analytics insight is required')
       .map(normalizeInsight),
   };
 }
@@ -338,6 +335,17 @@ function readRequiredRecord(value: unknown, message: string): ApiRecord {
   return value;
 }
 
+function readOptionalRecordArray(record: ApiRecord, key: string, itemMessage: string): ApiRecord[] {
+  const value = record[key];
+  if (value === undefined || value === null) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    throw new Error(`${key} must be an array`);
+  }
+  return value.map((item) => readRequiredRecord(item, itemMessage));
+}
+
 function readRequiredRecordArray(record: ApiRecord, key: string, missingMessage: string, itemMessage: string): ApiRecord[] {
   const value = record[key];
   if (value === undefined || value === null) {
@@ -347,107 +355,6 @@ function readRequiredRecordArray(record: ApiRecord, key: string, missingMessage:
     throw new Error(`${key} must be an array`);
   }
   return value.map((item) => readRequiredRecord(item, itemMessage));
-}
-
-function ensureDisplayReadyOverview(overview: AdminAnalyticsOverview): AdminAnalyticsOverview {
-  return {
-    ...overview,
-    trend: overview.trend.length > 0 ? overview.trend : createTrendFromSummary(overview),
-    modelDistribution: overview.modelDistribution.length > 0
-      ? overview.modelDistribution
-      : createModelDistributionFromRankings(overview.modelRankings),
-    modalityDistribution: overview.modalityDistribution.length > 0
-      ? overview.modalityDistribution
-      : createModalityDistributionFromRankings(overview.modelRankings),
-    insights: overview.insights.length > 0 ? overview.insights : createInsightsFromSummary(overview.summary),
-  };
-}
-
-function createTrendFromSummary(overview: AdminAnalyticsOverview): AdminAnalyticsTrendPoint[] {
-  if (!hasUsageActivity(overview.summary)) {
-    return [];
-  }
-  return [
-    {
-      time: overview.endTime ?? overview.startTime ?? 'current',
-      requests: overview.summary.totalRequests,
-      tokens: overview.summary.totalTokens,
-      points: overview.summary.totalPoints,
-      users: overview.summary.activeUsers,
-    },
-  ];
-}
-
-function createModelDistributionFromRankings(
-  rankings: AdminAnalyticsRankings<AdminAnalyticsModelRankItem>,
-): PieChartData[] {
-  const rows = firstModelRankingRows(rankings);
-  return rows
-    .filter((item) => item.requestCount > 0)
-    .slice(0, MAX_LIMIT)
-    .map((item, index) => ({
-      name: item.model,
-      value: item.requestCount,
-      color: DISPLAY_COLORS[index % DISPLAY_COLORS.length],
-    }));
-}
-
-function createModalityDistributionFromRankings(
-  rankings: AdminAnalyticsRankings<AdminAnalyticsModelRankItem>,
-): PieChartData[] {
-  const totals = new Map<string, number>();
-  for (const row of firstModelRankingRows(rankings)) {
-    if (row.requestCount <= 0) {
-      continue;
-    }
-    totals.set(row.modality, (totals.get(row.modality) ?? 0) + row.requestCount);
-  }
-  const distribution = Array.from(totals.entries())
-    .sort(([, left], [, right]) => right - left)
-    .slice(0, MAX_LIMIT)
-    .map(([name, value], index) => ({
-      name,
-      value,
-      color: DISPLAY_COLORS[index % DISPLAY_COLORS.length],
-    }));
-  return distribution;
-}
-
-function createInsightsFromSummary(summary: AdminAnalyticsSummary): AdminAnalyticsInsight[] {
-  if (!hasUsageActivity(summary)) {
-    return [];
-  }
-  const successRate = summary.totalRequests > 0
-    ? (summary.successfulRequests / summary.totalRequests) * 100
-    : 100;
-  return [
-    {
-      key: 'request-success-rate',
-      title: 'admin.analytics.insights.requestSuccessRate.title',
-      value: `${formatInsightNumber(successRate)}%`,
-      severity: summary.errorRate >= 10 ? 'warning' : 'info',
-      detail: 'admin.analytics.insights.requestSuccessRate.detail',
-    },
-  ];
-}
-
-function firstModelRankingRows(rankings: AdminAnalyticsRankings<AdminAnalyticsModelRankItem>): AdminAnalyticsModelRankItem[] {
-  if (rankings.requests.length > 0) {
-    return rankings.requests;
-  }
-  if (rankings.points.length > 0) {
-    return rankings.points;
-  }
-  return rankings.tokens;
-}
-
-function hasUsageActivity(summary: AdminAnalyticsSummary): boolean {
-  return summary.totalRequests > 0 || summary.totalTokens > 0 || summary.totalPoints > 0;
-}
-
-function formatInsightNumber(value: number): string {
-  const rounded = Math.round(value * 10) / 10;
-  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
 }
 
 export function createEmptyAnalyticsOverview(timeRange: AdminAnalyticsTimeRange = DEFAULT_TIME_RANGE): AdminAnalyticsOverview {

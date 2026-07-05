@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::body::Body;
 use axum::http::Request;
 use axum::Router;
-use sdkwork_claw_config::{ProviderAdapterConfig, RedisConfig, RuntimeTomlConfig};
+use sdkwork_claw_config::{ProviderAdapterConfig, RedisConfig, RequestLimitsConfig, RuntimeTomlConfig};
 use sdkwork_clawrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_clawrouter_router_service::application::{
     AccountResolutionInterceptor, BillingPolicyInterceptor, CircuitBreakerConfig,
@@ -32,6 +32,7 @@ where
     pub(crate) pipeline: InvocationPipeline,
     pub(crate) invocation_policy_guard: Arc<GatewayInvocationPolicyGuard>,
     pub(crate) trust_forwarded_headers: bool,
+    pub(crate) body_limit_bytes: usize,
 }
 
 impl<C> Clone for InvocationRouterState<C>
@@ -45,6 +46,7 @@ where
             pipeline: self.pipeline.clone(),
             invocation_policy_guard: Arc::clone(&self.invocation_policy_guard),
             trust_forwarded_headers: self.trust_forwarded_headers,
+            body_limit_bytes: self.body_limit_bytes,
         }
     }
 }
@@ -91,6 +93,7 @@ fn invocation_router_state<C>(
     pipeline: InvocationPipeline,
     invocation_policy_guard: Arc<GatewayInvocationPolicyGuard>,
     trust_forwarded_headers: bool,
+    body_limit_bytes: usize,
 ) -> InvocationRouterState<C>
 where
     C: PricingCatalog + Send + Sync + 'static,
@@ -101,6 +104,7 @@ where
         pipeline,
         invocation_policy_guard,
         trust_forwarded_headers,
+        body_limit_bytes,
     }
 }
 
@@ -119,6 +123,7 @@ where
         invocation_pipeline(catalog, dispatcher, Some(secret_resolver), None, None, None),
         default_invocation_policy_guard(),
         false,
+        RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
     ))
 }
 
@@ -136,6 +141,7 @@ where
         invocation_pipeline(catalog, dispatcher, None, None, None, None),
         default_invocation_policy_guard(),
         false,
+        RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
     ))
 }
 
@@ -164,6 +170,7 @@ where
         ),
         default_invocation_policy_guard(),
         false,
+        RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
     ))
 }
 
@@ -191,6 +198,7 @@ where
         ),
         default_invocation_policy_guard(),
         false,
+        RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
     ))
 }
 
@@ -218,6 +226,7 @@ where
         invocation_policy_guard,
         None,
         None,
+        RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
     )
 }
 
@@ -240,6 +249,7 @@ pub fn invocation_router_with_full_pipeline_provider_adapter_and_tenant_inflight
     invocation_policy_guard: Option<Arc<GatewayInvocationPolicyGuard>>,
     tenant_inflight_config: Option<TenantInflightConfig>,
     redis_config: Option<&RedisConfig>,
+    body_limit_bytes: usize,
 ) -> Router
 where
     C: PricingCatalog + Send + Sync + 'static,
@@ -262,6 +272,7 @@ where
         ),
         invocation_policy_guard.unwrap_or_else(default_invocation_policy_guard),
         false,
+        body_limit_bytes,
     ))
 }
 
@@ -283,6 +294,7 @@ pub fn invocation_router_with_full_pipeline_and_trust_forwarded_headers<C>(
     invocation_policy_guard: Option<Arc<GatewayInvocationPolicyGuard>>,
     trust_forwarded_headers: bool,
     redis_config: Option<&sdkwork_claw_config::RedisConfig>,
+    body_limit_bytes: usize,
 ) -> Router
 where
     C: PricingCatalog + Send + Sync + 'static,
@@ -305,6 +317,7 @@ where
         ),
         invocation_policy_guard.unwrap_or_else(default_invocation_policy_guard),
         trust_forwarded_headers,
+        body_limit_bytes,
     ))
 }
 

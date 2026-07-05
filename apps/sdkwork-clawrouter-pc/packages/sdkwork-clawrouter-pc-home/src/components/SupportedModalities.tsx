@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { MessageSquare, Image as ImageIcon, Video, Mic, Sparkles, Music } from 'lucide-react';
+import { MessageSquare, Image as ImageIcon, Video, Mic, Sparkles, Music, ArrowUpRight } from 'lucide-react';
 
 import { useTranslation } from 'react-i18next';
 
@@ -57,15 +57,20 @@ export function SupportedModalities() {
   return (
     <section className="py-24 bg-slate-50 dark:bg-[#050505] border-y border-slate-200 dark:border-white/5 relative overflow-hidden">
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)] -z-10" />
+      {/* Soft ambient glow */}
+      <div className="pointer-events-none absolute left-1/2 top-10 h-72 w-[720px] -translate-x-1/2 rounded-full bg-lobster-500/8 blur-3xl" />
 
-      <div className="w-full mx-auto px-6 md:px-8 lg:px-12">
+      <div className="relative mx-auto w-full max-w-7xl px-6 md:px-8 lg:px-12">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-lobster-500/10 text-lobster-600 dark:text-lobster-400 text-sm font-medium mb-6 border border-lobster-500/20">
             <Sparkles className="w-4 h-4" />
             {t('modalities.badge')}
           </div>
           <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6 tracking-tight">
-            {t('modalities.title1')}<br />{t('modalities.title2')}
+            {t('modalities.title1')}
+            <span className="bg-gradient-to-r from-lobster-500 to-orange-500 bg-clip-text text-transparent">
+              {t('modalities.title2')}
+            </span>
           </h2>
           <p className="text-lg text-slate-600 dark:text-slate-400">
             {t('modalities.desc')}
@@ -80,16 +85,19 @@ export function SupportedModalities() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-white/10 rounded-2xl p-6 hover:border-slate-300 dark:hover:border-white/20 transition-colors shadow-sm"
+              className="group relative bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-white/10 rounded-2xl p-6 hover:border-slate-300 dark:hover:border-white/20 transition-all shadow-sm hover:shadow-xl hover:shadow-slate-900/5 dark:hover:shadow-black/20 hover:-translate-y-1"
             >
-              <div className={`w-12 h-12 rounded-xl ${modality.bg} ${modality.color} ${modality.border} border flex items-center justify-center mb-6`}>
+              <div className={`w-12 h-12 rounded-xl ${modality.bg} ${modality.color} ${modality.border} border flex items-center justify-center mb-6 transition-transform group-hover:scale-110`}>
                 {modality.icon}
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">{t(modality.titleKey)}</h3>
-              <ul className="space-y-3">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t(modality.titleKey)}</h3>
+                <ArrowUpRight className="w-4 h-4 text-slate-300 dark:text-slate-600 opacity-0 transition-all group-hover:opacity-100 group-hover:text-lobster-500" />
+              </div>
+              <ul className="space-y-2.5">
                 {modality.providers.map((provider, idx) => (
-                  <li key={idx} className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400 font-medium">
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
+                  <li key={idx} className="flex items-center gap-2.5 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 transition-colors group-hover:bg-lobster-400" />
                     {provider}
                   </li>
                 ))}

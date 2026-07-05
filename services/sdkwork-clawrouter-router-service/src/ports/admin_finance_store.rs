@@ -63,14 +63,22 @@ pub struct AdminBillingRecordItem {
     pub due_date: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminFinanceCollection<T> {
+    pub items: Vec<T>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
+}
+
 pub trait AdminFinanceStore {
     fn list_transactions<'a>(
         &'a self,
         query: ListAdminTransactionsQuery,
-    ) -> AdminFinanceReadFuture<'a, Vec<AdminTransactionRecordItem>>;
+    ) -> AdminFinanceReadFuture<'a, AdminFinanceCollection<AdminTransactionRecordItem>>;
 
     fn list_billing_records<'a>(
         &'a self,
         query: ListAdminBillingRecordsQuery,
-    ) -> AdminFinanceReadFuture<'a, Vec<AdminBillingRecordItem>>;
+    ) -> AdminFinanceReadFuture<'a, AdminFinanceCollection<AdminBillingRecordItem>>;
 }

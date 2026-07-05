@@ -358,17 +358,16 @@ workspace-local `data/sdkwork-models` directory as
 database on every server-mode startup. Default workspace commands
 (`pnpm dev`, `pnpm dev:server`) start the topology-aware integrated
 product server workspace. Gateway-backed client commands
-(`pnpm dev:desktop`, `pnpm dev:desktop`) start `sdkwork-api-cloud-gateway` plus
+(`pnpm dev:desktop`) start `sdkwork-api-cloud-gateway` plus
 the portal only and do not run installer or catalog refresh steps.
 
 Command intent:
 
-- `pnpm dev` (alias: `pnpm dev`, `pnpm dev:server`) starts the default
+- `pnpm dev` (alias: `pnpm dev:server`) starts the default
   integrated product server workspace (`standalone.unified-process.development`).
   See `docs/topology-standard.md` for the full command matrix and env keys.
 - `pnpm dev:browser:postgres:split-services:standalone` starts split-services internal validation layout.
-- `pnpm dev:desktop`  starts
-  the gateway-backed client workspace only.
+- `pnpm dev:desktop` starts the gateway-backed client workspace only.
 - `pnpm test` runs the launcher/tooling contract tests.
 - `pnpm build` builds production portal assets, builds the generated app
   and backend SDK runtime packages, creates SDK ZIP archives under
@@ -380,7 +379,7 @@ Command intent:
 - `pnpm release` validates the release environment, regenerates
   `.env.release` from the release host process environment, runs strict
   `release:preflight`, and then runs the full `verify` gate.
-- `pnpm dev:desktop` and `pnpm dev:desktop` is the canonical gateway-backed desktop client entrypoint.
+- `pnpm dev:desktop` is the canonical gateway-backed desktop client entrypoint.
 - `pnpm dev:server` is an alias of `pnpm dev`.
 - `pnpm smoke:dev` starts the explicit `pnpm dev:server` entrypoint on
   isolated random local ports, verifies the edge and portal OpenAPI/runtime
@@ -401,16 +400,15 @@ shells that block `pnpm.ps1`, call the package-manager shim through your shell
 or adjust the execution policy instead of changing committed scripts.
 
 Client development commands use `sdkwork-api-cloud-gateway` for API integration.
-Gateway-backed client commands (`pnpm dev:desktop`, `pnpm dev:desktop`) use
+Gateway-backed client commands (`pnpm dev:desktop`) use
 that gateway workspace. Explicit product server development commands use PostgreSQL for integration
 testing unless an explicit SQLite server profile is selected. Desktop packages and first-run local user data use SQLite under `~/.sdkwork/router/data`.
 On Windows, the equivalent path is `%USERPROFILE%/.sdkwork/router/data`.
 Use `pnpm dev:server:sqlite` when validating explicit product server SQLite
-behavior from the workspace. `pnpm dev:desktop:sqlite` and
-`pnpm dev:desktop:sqlite` is a client-mode entrypoint and does not start a product
-backend service.
+behavior from the workspace. `pnpm dev:desktop:sqlite` is a client-mode entrypoint
+and does not start a product backend service.
 
-Gateway-backed client startup (`pnpm dev:desktop`, `pnpm dev:desktop`) prints
+Gateway-backed client startup (`pnpm dev:desktop`) prints
 the browser and API access matrix before launching processes. With default
 ports, `sdkwork-api-cloud-gateway` listens on `3902` and the portal dev server
 listens on `3901`:
@@ -965,6 +963,7 @@ data_directory = "/var/lib/sdkwork/router"
 admin_app_json_body_max_bytes = 131072
 admin_skill_json_body_max_bytes = 65536
 payment_callback_body_max_bytes = 65536
+gateway_invocation_body_max_bytes = 1048576
 
 [install]
 # Optional override for externally mounted sdkwork-models catalog data.
@@ -1458,9 +1457,9 @@ configured but the normalized archive is missing, it returns
    with `python -B -m tools.frontend_static_source_manifest` after changing
    `docs/schema-registry/frontend-static-source-snapshots.yaml` or any
    referenced source file.
-7. Confirm no touched frontend business path bypasses generated SDK clients.
-8. Confirm production artifacts pass bundle budget and server smoke checks.
-9. Record command evidence in `CHECK_RESULT.md`.
+8. Confirm no touched frontend business path bypasses generated SDK clients.
+9. Confirm production artifacts pass bundle budget and server smoke checks.
+10. Record command evidence in `CHECK_RESULT.md`.
 
 ## Commercial Licensing
 

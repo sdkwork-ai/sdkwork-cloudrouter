@@ -7,8 +7,8 @@ use crate::infrastructure::sql::routing_config_change::{
 };
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    AdminProviderSecretCommandFuture, AdminProviderSecretItem, AdminProviderSecretStore,
-    CreateAdminProviderSecretCommand, DeleteAdminProviderSecretCommand,
+    AdminProviderSecretCommandFuture, AdminProviderSecretItem, AdminProviderSecretListPage,
+    AdminProviderSecretStore, CreateAdminProviderSecretCommand, DeleteAdminProviderSecretCommand,
     ListAdminProviderSecretsQuery, UpdateAdminProviderSecretCommand,
 };
 
@@ -29,7 +29,7 @@ impl AdminProviderSecretStore for SqliteAdminProviderSecretStore {
     fn list_provider_secrets<'a>(
         &'a self,
         query: ListAdminProviderSecretsQuery,
-    ) -> AdminProviderSecretCommandFuture<'a, Vec<AdminProviderSecretItem>> {
+    ) -> AdminProviderSecretCommandFuture<'a, AdminProviderSecretListPage> {
         Box::pin(async move { list_provider_secrets(&self.pool, query).await })
     }
 
@@ -277,8 +277,12 @@ impl AdminProviderSecretStore for SqliteAdminProviderSecretStore {
 async fn list_provider_secrets(
     pool: &SqlitePool,
     query: ListAdminProviderSecretsQuery,
-) -> DomainResult<Vec<AdminProviderSecretItem>> {
+) -> DomainResult<AdminProviderSecretListPage> {
     let status = query.status.as_ref().map(|status| status_code(status));
+    let search = query
+        .q
+        .as_ref()
+        .map(|value| format!("%{}%", value.to_lowercase()));
     let rows = sqlx::query(
         r#"
         SELECT
@@ -295,15 +299,21 @@ async fn list_provider_secrets(
             status,
             CAST(created_at AS TEXT) AS created_at,
             CAST(updated_at AS TEXT) AS updated_at,
-            CAST(deleted_at AS TEXT) AS deleted_at
+            CAST(deleted_at AS TEXT) AS deleted_at,
+            COUNT(*) OVER() AS total
         FROM integration_provider_account
         WHERE tenant_id = ?
           AND organization_id = ?
           AND deleted_at IS NULL
           AND (? IS NULL OR provider_code = ?)
           AND (? IS NULL OR status = ?)
+          AND (
+              ? IS NULL
+              OR LOWER(COALESCE(account_name, '')) LIKE ?
+              OR LOWER(COALESCE(provider_code, '')) LIKE ?
+          )
         ORDER BY updated_at DESC, id DESC
-        LIMIT 200
+        LIMIT ? OFFSET ?
         "#,
     )
     .bind(query.subject.tenant_id)
@@ -312,11 +322,26 @@ async fn list_provider_secrets(
     .bind(query.provider_code.as_deref())
     .bind(status)
     .bind(status)
+    .bind(search.as_deref())
+    .bind(search.as_deref())
+    .bind(search.as_deref())
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list provider secrets", error))?;
 
-    rows.into_iter().map(item_from_row).collect()
+    let total = rows
+        .first()
+        .and_then(|row| row.try_get::<i64, _>("total").ok())
+        .unwrap_or(0);
+    let items = rows.into_iter().map(item_from_row).collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminProviderSecretListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn insert_provider_secret(

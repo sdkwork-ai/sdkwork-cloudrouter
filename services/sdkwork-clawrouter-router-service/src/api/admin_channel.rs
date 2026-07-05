@@ -3,17 +3,21 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
 use axum::body::Bytes;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, get, post};
 use axum::{Json, Router};
+use serde::Deserialize;
 use serde::Serialize;
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, normalize_list_search_query, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, success_envelope,
+};
 use crate::application::EntityUuidGenerator;
 use crate::domain::{DomainError, ProviderCircuitBreakerPolicy, ProviderRetryPolicy};
 use crate::ports::{
@@ -23,6 +27,13 @@ use crate::ports::{
 };
 
 const MAX_NAME_LEN: usize = 128;
+
+#[derive(Debug, Default, Deserialize)]
+struct AdminChannelListQueryRequest {
+    page: Option<i64>,
+    page_size: Option<i64>,
+    q: Option<String>,
+}
 const MAX_VENDOR_LEN: usize = 64;
 const MAX_PROTOCOL_LEN: usize = 64;
 const MAX_ACCESS_TYPE_LEN: usize = 64;
@@ -221,20 +232,40 @@ async fn fetch_channels(
     State(state): State<AdminChannelState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
+    Query(request): Query<AdminChannelListQueryRequest>,
 ) -> Response {
     let subject = scoped.into();
+    let query = match build_list_query(subject, request) {
+        Ok(query) => query,
+        Err(message) => return bad_request(message),
+    };
 
-    match state
-        .store
-        .list_channels(ListAdminChannelsQuery { subject })
-        .await
-    {
-        Ok(items) => Json(success_envelope(AdminChannelListResponse {
-            items: items.into_iter().map(to_safe_item_response).collect(),
-        }))
-        .into_response(),
+    match state.store.list_channels(query).await {
+        Ok(page) => json_success_list_response(
+            None,
+            page
+                .items
+                .into_iter()
+                .map(to_safe_item_response)
+                .collect(),
+            offset_page_info(page.page_no, page.page_size, page.total),
+        ),
         Err(error) => channel_system_response("channel read model is unavailable", error),
     }
+}
+
+fn build_list_query(
+    subject: AdminChannelSubject,
+    request: AdminChannelListQueryRequest,
+) -> Result<ListAdminChannelsQuery, String> {
+    let pagination = parse_offset_list_query(request.page, request.page_size)?;
+    Ok(ListAdminChannelsQuery {
+        subject,
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
+        q: normalize_list_search_query(request.q, "q")?,
+    })
 }
 
 async fn create_channel(

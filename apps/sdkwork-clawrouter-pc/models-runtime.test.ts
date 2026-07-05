@@ -129,7 +129,7 @@ test("generated app model reference price contract includes regionCode", () => {
   const appOpenApi = JSON.parse(readFileSync(new URL("../../generated/openapi/clawrouter-app-openapi.json", import.meta.url), "utf8"));
   const referencePriceSchema = appOpenApi.components?.schemas?.AppModelCatalogReferencePrice;
   const appSdkReferencePriceType = readFileSync(
-    new URL("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/types/app-model-catalog-reference-price.ts", import.meta.url),
+    new URL("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts/types/app-model-catalog-reference-price.ts", import.meta.url),
     "utf8",
   );
 
@@ -1397,7 +1397,11 @@ test("model service sends sidebar filters through the generated app SDK query co
       assert.equal(requestUrl.searchParams.get("q"), "gpt");
       assert.equal(requestUrl.searchParams.has("search_query"), false);
       assert.equal(requestUrl.searchParams.get("limit"), "200");
-      return { items: [] };
+      assert.equal(requestUrl.searchParams.get("offset"), "40");
+      return {
+        items: [],
+        pageInfo: { totalItems: 42 },
+      };
     },
     async (captured) => {
       const models = await ModelService.fetchModels({
@@ -1409,12 +1413,53 @@ test("model service sends sidebar filters through the generated app SDK query co
         groups: ["enterprise", "vip"],
         searchQuery: "gpt",
         limit: 200,
+        offset: 40,
       });
 
       assert.deepEqual(models, []);
       assert.deepEqual(captured.map((request) => `${request.method} ${request.url}`), [
-        "GET /app/v3/api/ai/models?billing_meter=llm_input_token&vendor_codes=openai%2Canthropic&modalities=text%2Cimage&capabilities=tools%2Cjson%20mode&categories=Recommended%2CProprietary&groups=enterprise%2Cvip&q=gpt&limit=200",
+        "GET /app/v3/api/ai/models?billing_meter=llm_input_token&vendor_codes=openai%2Canthropic&modalities=text%2Cimage&capabilities=tools%2Cjson%20mode&categories=Recommended%2CProprietary&groups=enterprise%2Cvip&q=gpt&limit=200&offset=40",
       ]);
+      assert.equal(captured.length, 1);
+    },
+  );
+});
+
+test("model service fetches one catalog page and exposes pageInfo metadata", async () => {
+  await withAppSdkFetch(
+    (url) => {
+      const requestUrl = new URL(url, "http://localhost");
+      assert.equal(requestUrl.searchParams.get("limit"), "20");
+      assert.equal(requestUrl.searchParams.get("offset"), "0");
+      return {
+        items: [
+          {
+            model: "runtime-sdk-model",
+            catalogKey: "openai/runtime-sdk-model",
+            displayName: "Runtime SDK Model",
+            vendorCode: "openai",
+            vendor: "OpenAI",
+            capabilities: ["chat"],
+            groups: ["default"],
+            categories: ["Recommended"],
+            modalities: ["text"],
+            providerCodes: ["openai"],
+            officialReferencePrices: [],
+            priceAvailability: { status: "reference" },
+          },
+        ],
+        pageInfo: { totalItems: 42 },
+      };
+    },
+    async (captured) => {
+      const catalog = await ModelService.fetchModelCatalog();
+
+      assert.equal(catalog.models.length, 1);
+      assert.equal(catalog.pageInfo.total, 42);
+      assert.equal(catalog.pageInfo.offset, 0);
+      assert.equal(catalog.pageInfo.limit, 20);
+      assert.equal(catalog.pageInfo.hasMore, true);
+      assert.equal(captured.length, 1);
     },
   );
 });

@@ -8,8 +8,8 @@ import { initReactI18next } from "react-i18next";
 import {
   ChatMarkdownMessage,
   normalizeStreamingMarkdown,
-} from "./packages/sdkwork-clawrouter-pc-playground/src/components/chat/ChatMarkdownMessage.tsx";
-import { ChatCodeBlock } from "./packages/sdkwork-clawrouter-pc-playground/src/components/chat/ChatCodeBlock.tsx";
+  ChatCodeBlock,
+} from "./packages/sdkwork-clawrouter-pc-playground/src/components/chat/generationsMarkdown.ts";
 import { ChatMessageBubble } from "./packages/sdkwork-clawrouter-pc-playground/src/components/chat/ChatMessageBubble.tsx";
 import { ChatMessageList } from "./packages/sdkwork-clawrouter-pc-playground/src/components/chat/ChatMessageList.tsx";
 import {
@@ -22,14 +22,15 @@ import {
   saveStoredChatConversation,
   saveStoredChatInFlightStream,
 } from "./packages/sdkwork-clawrouter-pc-playground/src/components/chat/chatLocalStore.ts";
-import { resolveReferenceImageCapability } from "./packages/sdkwork-clawrouter-pc-playground/src/referenceImageCapability.ts";
+import { resolveImageReferenceCapability } from "../../../sdkwork-image/apps/sdkwork-image-pc/packages/sdkwork-image-pc-generation/src/image-reference-capability.ts";
 import {
   resolveVideoReferenceAssetRole,
   resolveVideoReferenceCapability,
   resolveVideoReferenceKindLimit,
   resolveVideoReferenceModeUpload,
-} from "./packages/sdkwork-clawrouter-pc-playground/src/videoReferenceCapability.ts";
+} from "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-workspace/src/generation-panel/videoReferenceCapability.ts";
 import { readRuntimeTextDelta } from "./packages/sdkwork-clawroutes-pc-commons/src/runtime.ts";
+import { buildMusicGenerationPrompt } from "../../../sdkwork-music/apps/sdkwork-music-pc/packages/sdkwork-music-pc-generation/src/music-generation-prompt.ts";
 
 await i18next
   .use(initReactI18next)
@@ -48,9 +49,40 @@ await i18next
       },
     },
   });
+const MODELS_PICKER = "../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-picker/src/ModelPicker.tsx";
+const GENERATIONS_WORKSPACE = "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-workspace/src";
+const GENERATIONS_GENERATION_PANEL = `${GENERATIONS_WORKSPACE}/generation-panel/AssetGenerationPanel.tsx`;
+const GENERATIONS_VIDEO_MODE_POPUP = `${GENERATIONS_WORKSPACE}/generation-panel/VideoGenerationModePopup.tsx`;
+const GENERATIONS_DOMAIN_SIDEBAR = `${GENERATIONS_WORKSPACE}/generation-playground/DomainGenerationWorkspaceSidebar.tsx`;
+const GENERATIONS_HISTORY_ITEMS = `${GENERATIONS_WORKSPACE}/generation-history-ui/GenerationHistoryMessageItems.tsx`;
+const GENERATIONS_HISTORY_PRESENTATION = `${GENERATIONS_WORKSPACE}/generation-playground/playgroundGenerationHistoryPresentation.tsx`;
+const IMAGE_GENERATION_PANEL = "../../../sdkwork-image/apps/sdkwork-image-pc/packages/sdkwork-image-pc-generation/src/components/ImageGenerationPanel.tsx";
+const IMAGE_IMAGE_MODE_POPUP = "../../../sdkwork-image/apps/sdkwork-image-pc/packages/sdkwork-image-pc-generation/src/components/ImageGenerationModePopup.tsx";
+const GENERATIONS_STUDIO = "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-studio/src";
+const GENERATIONS_STUDIO_MODE_POPUP_BASE = `${GENERATIONS_STUDIO}/GenerationModePopupBase.tsx`;
+const GENERATIONS_STUDIO_BOTTOM_BAR = `${GENERATIONS_STUDIO}/SdkworkStudioGenerationBottomBar.tsx`;
+const GENERATIONS_STUDIO_CREDIT_FORMAT = `${GENERATIONS_STUDIO}/formatGenerationCreditPoints.ts`;
+const ASSETS_GALLERY_VIEW = "../../../sdkwork-assets/apps/sdkwork-assets-pc/packages/sdkwork-assets-pc-assets/src/gallery/AssetGalleryView.tsx";
+const GENERATIONS_PLAYGROUND = "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src";
+const IMAGE_PANEL = "../../../sdkwork-image/apps/sdkwork-image-pc/packages/sdkwork-image-pc-generation/src/components/ImageGenerationPanel.tsx";
+const MUSIC_PANEL = "../../../sdkwork-music/apps/sdkwork-music-pc/packages/sdkwork-music-pc-generation/src/components/MusicGenerationPanel.tsx";
+const VIDEO_PANEL = "../../../sdkwork-video/apps/sdkwork-video-pc/packages/sdkwork-video-pc-generation/src/components/VideoGenerationPanel.tsx";
+const AUDIO_PANEL = "../../../sdkwork-audio/apps/sdkwork-audio-pc/packages/sdkwork-audio-pc-generation/src/components/AudioGenerationPanel.tsx";
+const SFX_PANEL = "../../../sdkwork-audio/apps/sdkwork-audio-pc/packages/sdkwork-audio-pc-generation/src/components/SfxGenerationPanel.tsx";
+const VIDEO_DOMAIN_MODE_POPUP = "../../../sdkwork-video/apps/sdkwork-video-pc/packages/sdkwork-video-pc-generation/src/components/VideoGenerationModePopup.tsx";
+
+function readAllDomainPanels(): string {
+  return [IMAGE_PANEL, MUSIC_PANEL, VIDEO_PANEL, AUDIO_PANEL, SFX_PANEL]
+    .map((path) => readPortalFile(path))
+    .join("\n");
+}
 
 function readPortalFile(relativePath: string): string {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8");
+}
+
+function readGenerationsPlaygroundFile(relativePath: string): string {
+  return readFileSync(new URL(`${GENERATIONS_PLAYGROUND}/${relativePath}`, import.meta.url), "utf8");
 }
 
 function readWorkspaceFile(relativePath: string): string {
@@ -491,7 +523,7 @@ test("chat playground leaves model visibility to the catalog instead of hiding u
 
 test("simple chat input keeps the selected model full name readable after selection", () => {
   const inputSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/chat/SimpleChatInput.tsx");
-  const pickerSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/PlaygroundModelPicker.tsx");
+  const pickerSource = readPortalFile(MODELS_PICKER);
 
   assert.doesNotMatch(inputSource, /max-w-\[\d+px\]/);
   assert.match(inputSource, /w-fit min-w-0 max-w-full flex-\[0_1_auto\]/);
@@ -666,8 +698,8 @@ test("simple chat input explains why the send button is disabled", () => {
 test("console API keys expose backend runtime default selection", () => {
   const serviceSource = readPortalFile("./packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts");
   const viewSource = readPortalFile("./packages/sdkwork-clawrouter-pc-console-api-keys/src/ApiKeysView.tsx");
-  const appSdkItem = readWorkspaceFile("sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/types/app-api-key-item.ts");
-  const appSdkUpdate = readWorkspaceFile("sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/types/update-api-key-request.ts");
+  const appSdkItem = readWorkspaceFile("sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts/types/app-api-key-item.ts");
+  const appSdkUpdate = readWorkspaceFile("sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts/types/update-api-key-request.ts");
 
   assert.match(appSdkItem, /defaultForRuntime: boolean;/);
   assert.match(appSdkUpdate, /defaultForRuntime\?: boolean;/);
@@ -682,7 +714,7 @@ test("console API keys expose backend runtime default selection", () => {
 
 test("runtime SSE event type comes directly from the generated app SDK contract", () => {
   const commonsRuntimeSource = readPortalFile("./packages/sdkwork-clawroutes-pc-commons/src/runtime.ts");
-  const runtimeEventItemSource = readWorkspaceFile("sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/types/runtime-event-item.ts");
+  const runtimeEventItemSource = readWorkspaceFile("sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts/types/runtime-event-item.ts");
 
   assert.match(runtimeEventItemSource, /payloadJson: Record<string, JsonValue>;/);
   assert.match(commonsRuntimeSource, /export type RuntimeStreamEvent = RuntimeEventItem;/);
@@ -812,7 +844,7 @@ test("user chat messages use a muted modern send bubble without an avatar", () =
     },
   }));
   const bubbleSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/chat/ChatMessageBubble.tsx");
-  const markdownSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/chat/ChatMarkdownMessage.tsx");
+  const markdownSource = readPortalFile("../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/markdown/ChatMarkdownMessage.tsx");
 
   assert.match(html, /bg-slate-800\/80/);
   assert.match(html, /border-white\/10/);
@@ -1021,9 +1053,9 @@ test("chat code block preserves escaped newlines inside string literals", () => 
 
 test("chat messages use a sanitized GFM markdown response surface", () => {
   const bubbleSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/chat/ChatMessageBubble.tsx");
-  const markdownSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/chat/ChatMarkdownMessage.tsx");
-  const codeBlockSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/chat/ChatCodeBlock.tsx");
-  const packageSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/package.json");
+  const markdownSource = readPortalFile("../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/markdown/ChatMarkdownMessage.tsx");
+  const codeBlockSource = readPortalFile("../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/markdown/ChatCodeBlock.tsx");
+  const packageSource = readPortalFile("../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/package.json");
 
   assert.match(markdownSource, /from 'react-markdown'/);
   assert.match(markdownSource, /from 'remark-gfm'/);
@@ -1037,7 +1069,7 @@ test("chat messages use a sanitized GFM markdown response surface", () => {
   assert.match(markdownSource, /rel="noreferrer noopener"/);
   assert.match(markdownSource, /isSafeMarkdownHref/);
   assert.match(codeBlockSource, /const displayCode = normalizeCodeBlockLineSeparators\(code\);/);
-  assert.match(codeBlockSource, /navigator\.clipboard\.writeText\(displayCode\)/);
+  assert.match(codeBlockSource, /copyTextWithNavigator/);
   assert.match(codeBlockSource, /overflow-x-auto/);
   assert.match(codeBlockSource, /languageLabel/);
   assert.doesNotMatch(bubbleSource, /dangerouslySetInnerHTML/);
@@ -1248,7 +1280,7 @@ test("chat markdown blockquotes and tables use response width without document-s
     ].join("\n"),
     tone: "assistant",
   }));
-  const markdownSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/chat/ChatMarkdownMessage.tsx");
+  const markdownSource = readPortalFile("../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/markdown/ChatMarkdownMessage.tsx");
 
   assert.match(html, /<blockquote/);
   assert.match(html, /bg-white\/\[0\.04\]/);
@@ -1260,20 +1292,24 @@ test("chat markdown blockquotes and tables use response width without document-s
 
 test("chat markdown surfaces stay constrained for wide code and tables", () => {
   const bubbleSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/chat/ChatMessageBubble.tsx");
-  const markdownSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/chat/ChatMarkdownMessage.tsx");
-  const codeBlockSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/chat/ChatCodeBlock.tsx");
+  const markdownSource = readPortalFile("../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/markdown/ChatMarkdownMessage.tsx");
+  const codeBlockSource = readPortalFile("../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/markdown/ChatCodeBlock.tsx");
 
-  assert.match(bubbleSource, /const responseFrameClassName = isUser/);
-  assert.match(bubbleSource, /'flex w-full min-w-0 flex-col gap-1 items-stretch'/);
-  assert.match(bubbleSource, /'select-text w-full min-w-0 px-0 py-0 text-sm leading-6 text-slate-100'/);
+  assert.match(bubbleSource, /sdkwork-playground-chat-message-bubble--assistant/);
+  assert.match(markdownSource, /sdkwork-playground-chat-markdown/);
+  assert.match(markdownSource, /sdkwork-playground-chat-markdown__inline-code/);
+  assert.doesNotMatch(markdownSource, /text-slate-100/);
+  assert.match(codeBlockSource, /sdkwork-playground-chat-code-block__copy/);
+  assert.match(codeBlockSource, /sdkwork-playground-chat-code-token--string/);
+  assert.doesNotMatch(codeBlockSource, /text-emerald-300/);
   assert.match(markdownSource, /tabIndex=\{0\}/);
   assert.match(codeBlockSource, /tabIndex=\{0\}/);
   assert.match(codeBlockSource, /whitespace-pre/);
 });
 
 test("playground agent history output uses the same markdown response surface as chat messages", () => {
-  const historySource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/ChatHistoryItem.tsx");
-  const playgroundSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/pages/Playground.tsx");
+  const historySource = readGenerationsPlaygroundFile("components/views/SharedHistoryView.tsx");
+  const playgroundSource = readGenerationsPlaygroundFile("pages/PlaygroundPage.tsx");
   const html = renderToStaticMarkup(React.createElement(ChatMarkdownMessage, {
     content: [
       "### Answer",
@@ -1287,12 +1323,12 @@ test("playground agent history output uses the same markdown response surface as
 
   assert.match(historySource, /ChatMarkdownMessage/);
   assert.match(playgroundSource, /ChatMarkdownMessage/);
-  assert.match(historySource, /<ChatMarkdownMessage content=\{item\.outputText\} tone="assistant"/);
+  assert.match(historySource, /content=\{outputText\}/);
   assert.match(playgroundSource, /content=\{previewText \|\| t\('playground\.preview\.noTextOutput'\)\}/);
   assert.match(html, /<h3/);
   assert.match(html, /Copy code/);
   assert.match(html, /const[\s\S]*value[\s\S]*42/);
-  assert.doesNotMatch(historySource, /<div[^>]*>\s*\{item\.outputText\}\s*<\/div>/);
+  assert.doesNotMatch(historySource, /<div[^>]*>\s*\{outputText\}\s*<\/div>/);
   assert.doesNotMatch(playgroundSource, /<div[^>]*>\s*\{previewText \|\| t\('playground\.preview\.noTextOutput'\)\}\s*<\/div>/);
 });
 
@@ -1448,7 +1484,7 @@ test("chat playground persists partial streamed output when a runtime stream fai
 });
 
 test("playground SSE runtime errors are translated before display", () => {
-  const playgroundSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/pages/Playground.tsx");
+  const playgroundSource = readGenerationsPlaygroundFile("pages/PlaygroundPage.tsx");
   const playgroundCoreI18nSource = readPortalFile("./packages/sdkwork-clawrouter-pc-i18n/src/resources/playground/core.ts");
   const playgroundChatI18nSource = readPortalFile("./packages/sdkwork-clawrouter-pc-i18n/src/resources/playground/chat.ts");
 
@@ -1462,8 +1498,8 @@ test("agent playground uses runtime SSE without legacy agent session APIs", () =
   const source = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationService.ts");
   const operationsSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts");
   const facadeSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/playgroundService.ts");
-  const pageSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/pages/Playground.tsx");
-  const itemSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/ChatHistoryItem.tsx");
+  const pageSource = readGenerationsPlaygroundFile("pages/PlaygroundPage.tsx");
+  const itemSource = readGenerationsPlaygroundFile("components/views/SharedHistoryView.tsx");
   const runtimeStreamSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/runtimeStream.ts");
   const commonsRuntimeSource = readPortalFile("./packages/sdkwork-clawroutes-pc-commons/src/runtime.ts");
 
@@ -1496,7 +1532,7 @@ test("agent playground uses runtime SSE without legacy agent session APIs", () =
   assert.match(facadeSource, /runPlaygroundGeneration\(input\)/);
   assert.match(pageSource, /onDelta:\s*\(delta\)/);
   assert.match(pageSource, /outputText:\s*`\$\{item\.outputText \|\| ''\}\$\{delta\}`/);
-  assert.match(itemSource, /item\.outputText/);
+  assert.match(itemSource, /outputText/);
 });
 
 test("playground generation orchestration is reusable across agent and modality panels", () => {
@@ -1504,7 +1540,7 @@ test("playground generation orchestration is reusable across agent and modality 
   const generationServiceSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationService.ts");
   const generationsServiceSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationsService.ts");
   const commonsSdkSource = readPortalFile("./packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts");
-  const pageSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/pages/Playground.tsx");
+  const pageSource = readGenerationsPlaygroundFile("pages/PlaygroundPage.tsx");
 
   assert.match(serviceSource, /runPlaygroundGeneration/);
   assert.match(serviceSource, /runPlaygroundAssetGeneration/);
@@ -1514,7 +1550,7 @@ test("playground generation orchestration is reusable across agent and modality 
   assert.match(serviceSource, /onDelta:\s*input\.onDelta/);
   assert.match(serviceSource, /onArtifact:\s*input\.onArtifact/);
   assert.match(serviceSource, /@sdkwork\/generations-pc-workspace/);
-  assert.match(commonsSdkSource, /sdkwork-generations-app-sdk-generated-typescript/);
+  assert.match(commonsSdkSource, /@sdkwork/generations-app-sdk/);
   assert.match(commonsSdkSource, /getSdkworkGenerationsAppSdkClient/);
   assert.match(commonsSdkSource, /VITE_SDKWORK_GENERATIONS_APP_API_BASE_URL/);
   assert.match(generationServiceSource, /export async function runPlaygroundGeneration/);
@@ -1537,7 +1573,7 @@ test("playground generation orchestration is reusable across agent and modality 
   assert.doesNotMatch(generationsServiceSource, /streamRuntimeEvents/);
   assert.doesNotMatch(generationsServiceSource, /\bfetch\s*\(/);
   assert.doesNotMatch(generationsServiceSource, /axios/);
-  assert.match(pageSource, /PlaygroundService\.runGeneration/);
+  assert.match(pageSource, /host\.runGeneration/);
   assert.doesNotMatch(pageSource, /runPlaygroundGeneration/);
   assert.doesNotMatch(pageSource, /playgroundGenerationService/);
   assert.match(pageSource, /onArtifact:\s*\(artifact\)/);
@@ -1560,7 +1596,7 @@ test("chat playground keeps conversation state scoped to the app session while A
 
 test("chat playground exposes each conversation as an addressable route", () => {
   const appSource = readPortalFile("./src/App.tsx");
-  const playgroundSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/pages/Playground.tsx");
+  const playgroundSource = readGenerationsPlaygroundFile("pages/PlaygroundPage.tsx");
   const pageSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/chat/ChatPage.tsx");
 
   assert.match(appSource, /path="\/playground\/\*"/);
@@ -1585,7 +1621,7 @@ test("chat playground exposes each conversation as an addressable route", () => 
 });
 
 test("playground sidebar items expose stable addressable routes", () => {
-  const playgroundSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/pages/Playground.tsx");
+  const playgroundSource = readGenerationsPlaygroundFile("pages/PlaygroundPage.tsx");
 
   assert.match(playgroundSource, /const PLAYGROUND_MODALITY_ROUTES/);
   assert.match(playgroundSource, /agent:\s*'\/playground\/agent'/);
@@ -1605,7 +1641,7 @@ test("playground sidebar items expose stable addressable routes", () => {
 });
 
 test("asset view maps history items from real history fields", () => {
-  const source = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/views/AssetView.tsx");
+  const source = readPortalFile("../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/views/AssetView.tsx");
 
   assert.doesNotMatch(source, /item\.(thumbnail|previewUrl|duration|timestamp|size)\b/);
   assert.match(source, /item\.asset/);
@@ -1620,7 +1656,7 @@ test("asset view maps history items from real history fields", () => {
 });
 
 test("asset gallery applies the chosen sort order before rendering", () => {
-  const source = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/views/AssetGalleryView.tsx");
+  const source = readPortalFile(ASSETS_GALLERY_VIEW);
 
   assert.match(source, /const sortedAssets = useMemo\(/);
   assert.match(source, /sortBy === 'date'/);
@@ -1630,7 +1666,7 @@ test("asset gallery applies the chosen sort order before rendering", () => {
 });
 
 test("asset gallery hides unavailable batch actions instead of rendering dead controls", () => {
-  const source = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/views/AssetGalleryView.tsx");
+  const source = readPortalFile(ASSETS_GALLERY_VIEW);
 
   assert.match(source, /\{onDelete && \(/);
   assert.match(source, /\{onExport && \(/);
@@ -1638,60 +1674,63 @@ test("asset gallery hides unavailable batch actions instead of rendering dead co
   assert.doesNotMatch(source, /onExport\?\./);
 });
 
-test("image generation reference images sit above the prompt and follow model capacity", () => {
-  const panelSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/AssetGenerationPanel.tsx");
+test("image generation reference images sit above the prompt and follow model mode capacity", () => {
+  const panelSource = readPortalFile(IMAGE_GENERATION_PANEL);
   const assetMessages = readPortalFile("./packages/sdkwork-clawrouter-pc-i18n/src/resources/playground/assets.ts");
-  const uploaderPosition = panelSource.indexOf("<ReferenceImageUploader");
+  const uploaderPosition = panelSource.indexOf("<ImageReferenceWorkspace");
   const promptPosition = panelSource.indexOf("<textarea");
 
-  assert(uploaderPosition >= 0, "Reference image uploader should be rendered by AssetGenerationPanel");
-  assert(promptPosition >= 0, "Prompt textarea should be rendered by AssetGenerationPanel");
-  assert(uploaderPosition < promptPosition, "Reference image uploader should sit above the prompt textarea");
+  assert(uploaderPosition >= 0, "Image reference workspace should be rendered by ImageGenerationPanel");
+  assert(promptPosition >= 0, "Prompt textarea should be rendered by ImageGenerationPanel");
+  assert(uploaderPosition < promptPosition, "Image reference workspace should sit above the prompt textarea");
   assert.match(panelSource, /const \[referenceImages, setReferenceImages\] = useState<ReferenceImagePreview\[\]>\(\[\]\);/);
-  assert.match(panelSource, /referenceImages:\s*referenceImages\.map\(\(referenceImage\) => referenceImage\.metadata\)/);
-  assert.match(panelSource, /multiple=\{referenceImageCapacity\.maxImages > 1\}/);
+  assert.match(panelSource, /const \[imageReferenceMode, setImageReferenceMode\]/);
+  assert.match(panelSource, /referenceImages: referenceImages\.map\(\(item\) => item\.metadata\)/);
+  assert.match(panelSource, /referenceMode: activeImageReferenceMode/);
+  assert.match(panelSource, /ImageReferenceModeTabs/);
+  assert.match(panelSource, /multiple=\{modeUpload\.maxFiles > 1\}/);
   assert.match(panelSource, /Array\.from\(event\.currentTarget\.files \?\? \[\]\)/);
-  assert.doesNotMatch(panelSource, /referenceImageMetadata \? \[referenceImageMetadata\] : \[\]/);
   assert.match(assetMessages, /playground\.referenceImage\.capacity/);
-  assert.match(assetMessages, /playground\.referenceImage\.unsupported/);
-  assert.match(assetMessages, /playground\.referenceImage\.tooMany/);
+  assert.match(assetMessages, /playground\.imageReference\.mode\.textToImage/);
+  assert.match(assetMessages, /playground\.imageReference\.mode\.imageToImage/);
+  assert.match(assetMessages, /playground\.imageReference\.mode\.multiReference/);
 
-  assert.deepEqual(resolveReferenceImageCapability("image", createSampleChatModel({
+  assert.deepEqual(resolveImageReferenceCapability("image", createSampleChatModel({
     capabilities: ["image_generation"],
     inputModalities: ["text"],
     outputModalities: ["image"],
-  })), { enabled: false, maxImages: 0 });
+  })), { enabled: false, maxImages: 0, supportedModes: ["text_to_image"] });
 
-  assert.deepEqual(resolveReferenceImageCapability("image", createSampleChatModel({
+  assert.deepEqual(resolveImageReferenceCapability("image", createSampleChatModel({
     capabilities: ["reference_image"],
     inputModalities: ["image"],
     outputModalities: ["image"],
-  })), { enabled: true, maxImages: 1 });
+  })), { enabled: true, maxImages: 1, supportedModes: ["text_to_image", "image_to_image"] });
 
-  assert.deepEqual(resolveReferenceImageCapability("image", createSampleChatModel({
+  assert.deepEqual(resolveImageReferenceCapability("image", createSampleChatModel({
     capabilities: ["image_edit", "multi_image_reference"],
     inputModalities: ["image"],
     outputModalities: ["image"],
-  })), { enabled: true, maxImages: 4 });
+  })), { enabled: true, maxImages: 4, supportedModes: ["text_to_image", "image_to_image", "multi_reference"] });
 
-  assert.deepEqual(resolveReferenceImageCapability("video", createSampleChatModel({
+  assert.deepEqual(resolveImageReferenceCapability("video", createSampleChatModel({
     capabilities: ["multi_image_reference"],
     inputModalities: ["image"],
     outputModalities: ["image"],
-  })), { enabled: false, maxImages: 0 });
+  })), { enabled: false, maxImages: 0, supportedModes: ["text_to_image"] });
 });
 
 test("video generation reference assets sit above the prompt and follow model mode capacity", () => {
-  const panelSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/AssetGenerationPanel.tsx");
+  const panelSource = readPortalFile(VIDEO_PANEL);
   const typeSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/playgroundTypes.ts");
   const serviceSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationService.ts");
-  const videoPopupSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/VideoGenerationModePopup.tsx");
+  const videoPopupSource = readPortalFile(VIDEO_DOMAIN_MODE_POPUP);
   const assetMessages = readPortalFile("./packages/sdkwork-clawrouter-pc-i18n/src/resources/playground/assets.ts");
   const uploaderPosition = panelSource.indexOf("<VideoReferenceAssetUploader");
   const promptPosition = panelSource.indexOf("<textarea");
 
-  assert(uploaderPosition >= 0, "Video reference asset uploader should be rendered by AssetGenerationPanel");
-  assert(promptPosition >= 0, "Prompt textarea should be rendered by AssetGenerationPanel");
+  assert(uploaderPosition >= 0, "Video reference asset uploader should be rendered by VideoGenerationPanel");
+  assert(promptPosition >= 0, "Prompt textarea should be rendered by VideoGenerationPanel");
   assert(uploaderPosition < promptPosition, "Video reference asset uploader should sit above the prompt textarea");
   assert.match(typeSource, /export interface PlaygroundReferenceAssetInput/);
   assert.match(typeSource, /import type \{ ClawRouterMediaResource \} from '@sdkwork\/clawroutes-pc-commons\/runtime';/);
@@ -1705,10 +1744,10 @@ test("video generation reference assets sit above the prompt and follow model mo
   assert.match(typeSource, /referenceMode\?: PlaygroundReferenceAssetMode;/);
   assert.match(panelSource, /const \[referenceAssets, setReferenceAssets\] = useState<ReferenceAssetPreview\[\]>\(\[\]\);/);
   assert.match(panelSource, /previewSrc: string;/);
-  assert.match(panelSource, /function createUploadedReferenceMediaResource\([\s\S]*?\): ClawRouterMediaResource \{/);
+  assert.match(panelSource, /function createUploadedReferenceMediaResource\(/);
   assert.match(panelSource, /resource: createUploadedReferenceMediaResource\(/);
-  assert.match(panelSource, /referenceAssets:\s*referenceAssets\.map\(\(referenceAsset\) => referenceAsset\.metadata\)/);
-  assert.match(panelSource, /referenceMode:\s*modality === 'video' \? activeVideoReferenceMode : undefined/);
+  assert.match(panelSource, /referenceAssets:\s*referenceAssets\.map\(/);
+  assert.match(panelSource, /referenceMode:\s*activeVideoReferenceMode/);
   assert.match(panelSource, /accept=\{modeUpload\.accept\}/);
   assert.match(panelSource, /multiple=\{modeUpload\.maxFiles > 1\}/);
   assert.match(panelSource, /Array\.from\(event\.currentTarget\.files \?\? \[\]\)/);
@@ -1775,45 +1814,144 @@ test("video generation reference assets sit above the prompt and follow model mo
 });
 
 test("generation mode popups reuse appbase popup and mode config primitives", () => {
-  const imageSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/ImageGenerationModePopup.tsx");
-  const videoSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/VideoGenerationModePopup.tsx");
-  const baseSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/GenerationModePopupBase.tsx");
+  const imageSource = readPortalFile(IMAGE_IMAGE_MODE_POPUP);
+  const videoSource = readPortalFile(VIDEO_DOMAIN_MODE_POPUP);
+  const baseSource = readPortalFile(GENERATIONS_STUDIO_MODE_POPUP_BASE);
+  const imageModePopupSource = readPortalFile(IMAGE_IMAGE_MODE_POPUP);
 
-  assert.match(baseSource, /@sdkwork\/image-pc-generation\/react/);
-  assert.doesNotMatch(baseSource, /useState/);
-  assert.doesNotMatch(baseSource, /document\.addEventListener/);
-  assert.doesNotMatch(baseSource, /function ConfigSectionRenderer/);
+  assert.match(baseSource, /export function SdkworkGenerationModePopupBase/);
+  assert.match(imageModePopupSource, /@sdkwork\/generations-pc-studio\/react/);
   assert.match(imageSource, /SdkworkGenerationImageModeConfig/);
   assert.match(imageSource, /DEFAULT_SDKWORK_GENERATION_IMAGE_MODE_CONFIG/);
-  assert.match(videoSource, /@sdkwork\/generations-pc-workspace\/generation-asset-config/);
+  assert.match(videoSource, /generation-asset-config/);
   assert.match(videoSource, /SdkworkGenerationVideoModeConfig/);
   assert.match(videoSource, /DEFAULT_SDKWORK_GENERATION_VIDEO_MODE_CONFIG/);
   assert.doesNotMatch(imageSource, /as ImageGenerationConfig/);
   assert.doesNotMatch(videoSource, /as VideoGenerationConfig/);
 });
 
+test("shared model picker canonical implementation lives only in sdkwork-models", () => {
+  const modelsPickerIndex = readPortalFile("../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-picker/src/index.ts");
+  const modelsPickerSource = readPortalFile(MODELS_PICKER);
+  const usePopoverDismissSource = readPortalFile("../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-picker/src/usePopoverDismiss.ts");
+  const typesSource = readPortalFile("../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-picker/src/model-picker-types.ts");
+
+  const consumers = [
+    ["GenerationChatInput", "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/GenerationChatInput.tsx"],
+    ["SimpleChatInput", "./packages/sdkwork-clawrouter-pc-playground/src/components/chat/SimpleChatInput.tsx"],
+    ["DomainGenerationWorkspaceSidebar", GENERATIONS_DOMAIN_SIDEBAR],
+  ] as const;
+
+  assert.match(modelsPickerIndex, /export \* from '\.\/ModelPicker'/);
+  assert.match(modelsPickerIndex, /export \* from '\.\/model-picker-types'/);
+  assert.match(modelsPickerIndex, /export \* from '\.\/modelPickerVendorLayout'/);
+  assert.match(modelsPickerIndex, /export \* from '\.\/usePopoverDismiss'/);
+  assert.match(modelsPickerSource, /export function ModelPicker/);
+  assert.match(modelsPickerSource, /export function createFallbackModel/);
+  assert.match(modelsPickerSource, /export interface ModelPickerProps/);
+  assert.match(modelsPickerSource, /menuPlacement\?: ModelPickerMenuPlacement/);
+  assert.match(modelsPickerSource, /menuPlacement = 'auto'/);
+  assert.match(modelsPickerSource, /useModelPickerMenuLayout/);
+  assert.match(modelsPickerSource, /resolveModelPickerMenuLayout/);
+  assert.match(modelsPickerSource, /variant\?: 'default' \| 'flat'/);
+  assert.match(modelsPickerSource, /disabled\?: boolean/);
+  assert.match(modelsPickerSource, /theme-aware-dark-surface sdkwork-model-picker-menu/);
+  assert.match(modelsPickerSource, /gridTemplateColumns/);
+  assert.match(modelsPickerSource, /showModelDescription\?: boolean/);
+  assert.match(modelsPickerSource, /showModelDescription = false/);
+  assert.match(modelsPickerSource, /resolveModelPickerVendorColumnWidth/);
+  assert.match(modelsPickerSource, /sdkwork-model-picker-vendor-name/);
+  assert.match(modelsPickerSource, /sdkwork-model-picker-vendor-list/);
+  assert.match(modelsPickerSource, /playground\.modelPicker\.vendorSection/);
+  assert.match(modelsPickerSource, /sdkwork-model-picker-vendors/);
+  assert.match(modelsPickerSource, /sdkwork-model-picker-models/);
+  assert.match(modelsPickerSource, /sdkwork-model-picker-vendor-button/);
+  assert.match(modelsPickerSource, /sdkwork-model-picker-model-button/);
+  assert.match(usePopoverDismissSource, /export function usePopoverDismiss/);
+  assert.match(typesSource, /export type ModelsPickerBucket/);
+  assert.match(typesSource, /export interface ModelsPickerGroup/);
+  assert.match(typesSource, /export interface ModelsPickerOption/);
+
+  for (const [label, consumerPath] of consumers) {
+    const source = readPortalFile(consumerPath);
+    assert.match(source, /@sdkwork\/models-pc-picker/, `${label} must import shared model picker`);
+    assert.match(source, /ModelPicker/, `${label} must render ModelPicker`);
+    assert.doesNotMatch(source, /PlaygroundModelPicker/, `${label} must not use legacy PlaygroundModelPicker`);
+    assert.doesNotMatch(source, /ImageGenerationModelPicker/, `${label} must not use image-local picker`);
+    assert.doesNotMatch(source, /export function ModelPicker/, `${label} must not define ModelPicker locally`);
+    assert.doesNotMatch(source, /activeVendorCode/, `${label} must not duplicate picker state machine`);
+  }
+
+  const domainSidebarSource = readPortalFile(GENERATIONS_DOMAIN_SIDEBAR);
+  const imageViewSource = readPortalFile(`${GENERATIONS_PLAYGROUND}/components/views/ImageView.tsx`);
+  const videoViewSource = readPortalFile(`${GENERATIONS_PLAYGROUND}/components/views/VideoView.tsx`);
+  const musicViewSource = readPortalFile(`${GENERATIONS_PLAYGROUND}/components/views/MusicView.tsx`);
+  const audioViewSource = readPortalFile(`${GENERATIONS_PLAYGROUND}/components/views/AudioView.tsx`);
+  const sfxViewSource = readPortalFile(`${GENERATIONS_PLAYGROUND}/components/views/SfxView.tsx`);
+  const generationInputSource = readPortalFile("../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/GenerationChatInput.tsx");
+  const simpleChatInputSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/chat/SimpleChatInput.tsx");
+
+  assert.match(domainSidebarSource, /bucket={bucket}/);
+  assert.match(imageViewSource, /bucket="images"/);
+  assert.match(videoViewSource, /bucket="videos"/);
+  assert.match(musicViewSource, /bucket="music"/);
+  assert.match(audioViewSource, /bucket="audios"/);
+  assert.match(sfxViewSource, /bucket="sfx"/);
+  assert.match(generationInputSource, /bucket={selectedBucket}/);
+  assert.match(simpleChatInputSource, /bucket="llms"/);
+});
+
+test("media generation views delegate workspace UI to domain packages", () => {
+  const domainSidebarSource = readPortalFile(GENERATIONS_DOMAIN_SIDEBAR);
+  const modelsPickerSource = readPortalFile(MODELS_PICKER);
+  const migratedViews = [
+    ["ImageView", `${GENERATIONS_PLAYGROUND}/components/views/ImageView.tsx`, /@sdkwork\/image-pc-generation\/react/, /ImageGenerationPanel/],
+    ["VideoView", `${GENERATIONS_PLAYGROUND}/components/views/VideoView.tsx`, /@sdkwork\/video-pc-generation\/react/, /VideoGenerationPanel/],
+    ["MusicView", `${GENERATIONS_PLAYGROUND}/components/views/MusicView.tsx`, /@sdkwork\/music-pc-generation\/react/, /MusicGenerationPanel/],
+    ["AudioView", `${GENERATIONS_PLAYGROUND}/components/views/AudioView.tsx`, /@sdkwork\/audio-pc-generation\/react/, /AudioGenerationPanel/],
+    ["SfxView", `${GENERATIONS_PLAYGROUND}/components/views/SfxView.tsx`, /@sdkwork\/audio-pc-generation\/react/, /SfxGenerationPanel/],
+  ] as const;
+
+  assert.match(domainSidebarSource, /@sdkwork\/models-pc-picker/);
+  assert.match(domainSidebarSource, /<ModelPicker/);
+  assert.match(modelsPickerSource, /export function ModelPicker/);
+
+  for (const [label, viewPath, packagePattern, workspacePattern] of migratedViews) {
+    const viewSource = readPortalFile(viewPath);
+    assert.match(viewSource, packagePattern, `${label} must import domain generation package`);
+    assert.match(viewSource, workspacePattern, `${label} must render domain workspace view`);
+    assert.match(viewSource, /createFallbackModel/, `${label} must provide localized fallback model`);
+    assert.match(viewSource, /@sdkwork\/models-pc-picker/, `${label} must use shared model picker helpers`);
+    assert.doesNotMatch(viewSource, /<AssetGenerationPanel/, `${label} must not embed generation panel locally`);
+    assert.doesNotMatch(viewSource, /SharedHistoryView/, `${label} must not embed playground history view`);
+    assert.doesNotMatch(viewSource, /ModelPicker/, `${label} must not render ModelPicker locally`);
+  }
+});
+
 test("asset generation panel serializes appbase asset config for runtime payloads", () => {
-  const panelSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/AssetGenerationPanel.tsx");
+  const domainPanelsSource = readAllDomainPanels();
   const typeSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/playgroundTypes.ts");
 
-  assert.match(panelSource, /@sdkwork\/generations-pc-workspace\/generation-asset-config/);
-  assert.match(panelSource, /createDefaultSdkworkGenerationAssetConfig/);
-  assert.match(panelSource, /reconcileSdkworkGenerationAssetConfig/);
-  assert.match(panelSource, /serializeSdkworkGenerationAssetConfig\(config, modality\)/);
-  assert.match(panelSource, /updateSdkworkGenerationImageModeConfig/);
-  assert.match(panelSource, /updateSdkworkGenerationVideoModeConfig/);
-  assert.doesNotMatch(panelSource, /videoGenerationConfig/);
-  assert.doesNotMatch(panelSource, /imageGenerationConfig/);
-  assert.doesNotMatch(panelSource, /function createGenerationConfig/);
+  assert.match(domainPanelsSource, /generation-asset-config/);
+  assert.match(domainPanelsSource, /createDefaultSdkworkGenerationAssetConfig/);
+  assert.match(domainPanelsSource, /reconcileSdkworkGenerationAssetConfig/);
+  assert.match(domainPanelsSource, /serializeSdkworkGenerationAssetConfig\(config,/);
+  assert.match(domainPanelsSource, /updateSdkworkGenerationImageModeConfig/);
+  assert.match(domainPanelsSource, /updateSdkworkGenerationVideoModeConfig/);
+  assert.match(domainPanelsSource, /sdkwork-(studio-panel|image-generation-panel|sfx-generation-panel)/);
+  assert.doesNotMatch(domainPanelsSource, /bg-\[#1a1a1a\]/);
+  assert.doesNotMatch(domainPanelsSource, /videoGenerationConfig/);
+  assert.doesNotMatch(domainPanelsSource, /imageGenerationConfig/);
+  assert.doesNotMatch(domainPanelsSource, /function createGenerationConfig/);
   assert.match(typeSource, /SdkworkGenerationSerializedAssetConfig/);
 });
 
 test("asset generation requires a real catalog model before submitting", () => {
-  const panelSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/AssetGenerationPanel.tsx");
+  const domainPanelsSource = readAllDomainPanels();
 
-  assert.match(panelSource, /const canSubmit = normalizedPrompt\.length > 0 && !submitting && Boolean\(selectedModel\);/);
-  assert.match(panelSource, /selectedModel:\s*selectedModel\?\.id \|\| undefined/);
-  assert.doesNotMatch(panelSource, /selectedModel\?\.id \|\| selectedModelId/);
+  assert.match(domainPanelsSource, /const canSubmit = normalizedPrompt\.length > 0 && !submitting && Boolean\(selectedModel\);/);
+  assert.match(domainPanelsSource, /selectedModel:\s*selectedModel\?\.id \|\| undefined/);
+  assert.doesNotMatch(domainPanelsSource, /selectedModel\?\.id \|\| selectedModelId/);
 });
 
 test("runtime usage reader follows gateway and provider event envelopes for generated assets", () => {
@@ -1843,32 +1981,32 @@ test("playground generation DTOs alias appbase history and artifact primitives",
 });
 
 test("asset generation panel delegates planning and credit estimation to appbase", () => {
-  const panelSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/AssetGenerationPanel.tsx");
+  const domainPanelsSource = readAllDomainPanels();
   const appbaseSource = readWorkspaceFile("../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-workspace/src/generation-asset-config.ts");
 
-  assert.match(panelSource, /estimateSdkworkGenerationCredits/);
-  assert.match(panelSource, /findFirstSdkworkGenerationModelForModality/);
-  assert.match(panelSource, /findSdkworkGenerationModelById/);
-  assert.match(panelSource, /getSdkworkGenerationDurationOptions/);
-  assert.doesNotMatch(panelSource, /function estimatePlaygroundGenerationCredits/);
-  assert.doesNotMatch(panelSource, /function selectReferencePrice/);
-  assert.doesNotMatch(panelSource, /function estimateMeterQuantity/);
-  assert.doesNotMatch(panelSource, /function metersForModality/);
-  assert.doesNotMatch(panelSource, /function durationOptionsForModality/);
+  assert.match(domainPanelsSource, /estimateSdkworkGenerationCredits/);
+  assert.match(domainPanelsSource, /findFirstSdkworkGenerationModelForModality/);
+  assert.match(domainPanelsSource, /findSdkworkGenerationModelById/);
+  assert.match(domainPanelsSource, /getSdkworkGenerationDurationOptions/);
+  assert.doesNotMatch(domainPanelsSource, /function estimatePlaygroundGenerationCredits/);
+  assert.doesNotMatch(domainPanelsSource, /function selectReferencePrice/);
+  assert.doesNotMatch(domainPanelsSource, /function estimateMeterQuantity/);
+  assert.doesNotMatch(domainPanelsSource, /function metersForModality/);
+  assert.doesNotMatch(domainPanelsSource, /function durationOptionsForModality/);
   assert.match(appbaseSource, /export function estimateSdkworkGenerationCredits/);
   assert.match(appbaseSource, /export function getSdkworkGenerationDurationOptions/);
 });
 
 test("asset generation panel exposes speech synthesis controls through appbase config", () => {
-  const panelSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/AssetGenerationPanel.tsx");
+  const audioPanelSource = readPortalFile(AUDIO_PANEL);
   const appbaseSource = readWorkspaceFile("../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-workspace/src/generation-asset-config.ts");
 
-  assert.match(panelSource, /updateSdkworkGenerationSpeechModeConfig/);
-  assert.match(panelSource, /modality === 'audio' && config\.speechMode/);
-  assert.match(panelSource, /playground\.speech\.voice/);
-  assert.match(panelSource, /playground\.speech\.format/);
-  assert.match(panelSource, /playground\.speech\.speed/);
-  assert.match(panelSource, /onChange\(updateSdkworkGenerationSpeechModeConfig\(config,/);
+  assert.match(audioPanelSource, /updateSdkworkGenerationSpeechModeConfig/);
+  assert.match(audioPanelSource, /config\.speechMode/);
+  assert.match(audioPanelSource, /playground\.speech\.voice/);
+  assert.match(audioPanelSource, /playground\.speech\.format/);
+  assert.match(audioPanelSource, /playground\.speech\.speed/);
+  assert.match(audioPanelSource, /onChange\(updateSdkworkGenerationSpeechModeConfig\(config,/);
   assert.match(appbaseSource, /export interface SdkworkGenerationSpeechModeConfig/);
   assert.match(appbaseSource, /speechMode\?: SdkworkGenerationSpeechModeConfig/);
   assert.match(appbaseSource, /responseFormat\?: SdkworkGenerationSpeechModeConfig\["responseFormat"\]/);
@@ -1879,15 +2017,16 @@ test("asset generation panel exposes speech synthesis controls through appbase c
 });
 
 test("asset generation panel exposes sound effect controls through appbase config", () => {
-  const panelSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/AssetGenerationPanel.tsx");
+  const sfxPanelSource = readPortalFile(SFX_PANEL);
   const appbaseSource = readWorkspaceFile("../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-workspace/src/generation-asset-config.ts");
 
-  assert.match(panelSource, /updateSdkworkGenerationSfxModeConfig/);
-  assert.match(panelSource, /modality === 'sfx' && config\.sfxMode/);
-  assert.match(panelSource, /playground\.sfx\.format/);
-  assert.match(panelSource, /playground\.sfx\.promptInfluence/);
-  assert.match(panelSource, /playground\.sfx\.loop/);
-  assert.match(panelSource, /onChange\(updateSdkworkGenerationSfxModeConfig\(config,/);
+  assert.match(sfxPanelSource, /SfxGenerationControls/);
+  assert.match(sfxPanelSource, /updateSdkworkGenerationSfxModeConfig/);
+  assert.match(sfxPanelSource, /playground\.sfx\.format/);
+  assert.match(sfxPanelSource, /playground\.sfx\.promptInfluence/);
+  assert.match(sfxPanelSource, /playground\.sfx\.loop/);
+  assert.match(sfxPanelSource, /sdkwork-sfx-generation-panel/);
+  assert.match(sfxPanelSource, /sdkwork-studio-bottom-bar/);
   assert.match(appbaseSource, /export interface SdkworkGenerationSfxModeConfig/);
   assert.match(appbaseSource, /sfxMode\?: SdkworkGenerationSfxModeConfig/);
   assert.match(appbaseSource, /promptInfluence\?: number/);
@@ -1896,9 +2035,98 @@ test("asset generation panel exposes sound effect controls through appbase confi
   assert.match(appbaseSource, /result\.loop = reconciled\.sfxMode\.loop/);
 });
 
+test("generation studio UI uses shared theming primitives across modalities", () => {
+  const domainSidebarSource = readPortalFile(GENERATIONS_DOMAIN_SIDEBAR);
+  const domainViewSource = readPortalFile(`${GENERATIONS_WORKSPACE}/generation-playground/DomainGenerationWorkspaceView.tsx`);
+  const bottomBarSource = readPortalFile(GENERATIONS_STUDIO_BOTTOM_BAR);
+  const creditFormatSource = readPortalFile(GENERATIONS_STUDIO_CREDIT_FORMAT);
+  const chatPageSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/chat/ChatPage.tsx");
+  const chatInputSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/chat/SimpleChatInput.tsx");
+  const chatBubbleSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/chat/ChatMessageBubble.tsx");
+  const musicPromptSource = readPortalFile("../../../sdkwork-music/apps/sdkwork-music-pc/packages/sdkwork-music-pc-generation/src/music-generation-prompt.ts");
+  const videoModePopupSource = readPortalFile(VIDEO_DOMAIN_MODE_POPUP);
+  const indexCssSource = readPortalFile("./src/index.css");
+  const modalityViews = [
+    `${GENERATIONS_PLAYGROUND}/components/views/ImageView.tsx`,
+    `${GENERATIONS_PLAYGROUND}/components/views/VideoView.tsx`,
+    `${GENERATIONS_PLAYGROUND}/components/views/MusicView.tsx`,
+    `${GENERATIONS_PLAYGROUND}/components/views/AudioView.tsx`,
+    `${GENERATIONS_PLAYGROUND}/components/views/SfxView.tsx`,
+  ] as const;
+
+  assert.match(domainSidebarSource, /sdkwork-playground-workspace-sidebar--image/);
+  assert.match(domainSidebarSource, /sdkwork-playground-workspace-sidebar--video/);
+  assert.match(domainSidebarSource, /sdkwork-playground-workspace-sidebar--music/);
+  assert.match(domainSidebarSource, /sdkwork-playground-workspace-sidebar--audio/);
+  assert.match(domainSidebarSource, /sdkwork-playground-workspace-sidebar--sfx/);
+  assert.doesNotMatch(domainSidebarSource, /bg-\[#151515\]/);
+
+  assert.match(domainViewSource, /sdkwork-generation-workspace-view/);
+  assert.doesNotMatch(domainViewSource, /bg-\[#121216\]/);
+
+  assert.match(bottomBarSource, /formatGenerationCreditPoints/);
+  assert.match(bottomBarSource, /@sdkwork\/utils/);
+  assert.match(creditFormatSource, /formatNumberLocale/);
+
+  assert.match(readPortalFile(MUSIC_PANEL), /@sdkwork\/generations-pc-studio\/react/);
+  assert.match(readPortalFile(AUDIO_PANEL), /@sdkwork\/generations-pc-studio\/react/);
+  assert.match(readPortalFile(SFX_PANEL), /@sdkwork\/generations-pc-studio\/react/);
+  assert.match(readPortalFile(VIDEO_PANEL), /sdkwork-studio-panel/);
+  assert.match(videoModePopupSource, /sdkwork-studio-bottom-bar/);
+  assert.match(videoModePopupSource, /sdkwork-studio-settings-popup/);
+  assert.match(videoModePopupSource, /@sdkwork\/generations-pc-studio\/react/);
+
+  assert.match(chatPageSource, /sdkwork-playground-chat-page/);
+  assert.doesNotMatch(chatPageSource, /bg-\[#151515\]/);
+  assert.match(chatInputSource, /sdkwork-playground-chat-composer__submit/);
+  assert.doesNotMatch(chatInputSource, /shadow-\[0_8px/);
+  assert.match(chatBubbleSource, /sdkwork-playground-chat-message-meta/);
+  assert.match(chatBubbleSource, /sdkwork-playground-chat-message-bubble--failed/);
+  assert.doesNotMatch(chatBubbleSource, /text-slate-500/);
+
+  assert.match(musicPromptSource, /buildMusicGenerationPrompt/);
+  assert.match(musicPromptSource, /instrumental, no vocals/);
+  assert.equal(
+    buildMusicGenerationPrompt({
+      prompt: "dreamy night drive",
+      styleKeys: ["playground.music.style.pop", "playground.music.style.electronic"],
+      instrumental: true,
+    }),
+    "instrumental, no vocals. pop, electronic. dreamy night drive",
+  );
+
+  assert.match(indexCssSource, /--sdkwork-segmented-track-bg/);
+  assert.match(indexCssSource, /--sdkwork-studio-accent/);
+  assert.match(indexCssSource, /\.sdkwork-studio-panel/);
+
+  assert.match(readPortalFile(GENERATIONS_HISTORY_ITEMS), /sdkwork-generation-history-media--video/);
+  assert.match(readPortalFile(GENERATIONS_HISTORY_ITEMS), /sdkwork-generation-history-card--music/);
+
+  const chatListSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/chat/ChatMessageList.tsx");
+  assert.match(chatListSource, /sdkwork-playground-chat-empty/);
+  assert.doesNotMatch(chatListSource, /text-slate-100/);
+
+  const markdownSource = readGenerationsPlaygroundFile("components/markdown/ChatMarkdownMessage.tsx");
+  const codeBlockSource = readGenerationsPlaygroundFile("components/markdown/ChatCodeBlock.tsx");
+  const playgroundPageSource = readGenerationsPlaygroundFile("pages/PlaygroundPage.tsx");
+  assert.match(markdownSource, /sdkwork-playground-chat-markdown/);
+  assert.match(codeBlockSource, /sdkwork-playground-chat-code-token--keyword/);
+  assert.match(playgroundPageSource, /sdkwork-playground-preview-text-body/);
+  assert.match(playgroundPageSource, /sdkwork-playground-filter-search/);
+  assert.doesNotMatch(playgroundPageSource, /text-slate-500/);
+
+  assert.match(indexCssSource, /\.sdkwork-playground-chat-markdown/);
+  assert.match(indexCssSource, /--sdkwork-playground-chat-markdown-text/);
+
+  for (const viewPath of modalityViews) {
+    const viewSource = readPortalFile(viewPath);
+    assert.match(viewSource, /PlaygroundModalityEmptyState/, `${viewPath} must use shared empty state`);
+  }
+});
+
 test("playground model bucket routing reuses appbase asset modality mapping", () => {
-  const pageSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/pages/Playground.tsx");
-  const inputSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/GenerationChatInput.tsx");
+  const pageSource = readGenerationsPlaygroundFile("pages/PlaygroundPage.tsx");
+  const inputSource = readGenerationsPlaygroundFile("components/GenerationChatInput.tsx");
 
   assert.match(pageSource, /@sdkwork\/generations-pc-workspace\/generation-asset-config/);
   assert.match(inputSource, /@sdkwork\/generations-pc-workspace\/generation-asset-config/);
@@ -1913,8 +2141,8 @@ test("playground model bucket routing reuses appbase asset modality mapping", ()
 });
 
 test("agent generation input sends appbase default config for selected asset modalities", () => {
-  const inputSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/GenerationChatInput.tsx");
-  const agentViewSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/views/AgentView.tsx");
+  const inputSource = readPortalFile("../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/GenerationChatInput.tsx");
+  const agentViewSource = readPortalFile("../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/views/AgentView.tsx");
 
   assert.match(inputSource, /@sdkwork\/generations-pc-workspace\/generation-asset-config/);
   assert.match(inputSource, /createDefaultSdkworkGenerationAssetConfig/);
@@ -1929,7 +2157,7 @@ test("agent generation input sends appbase default config for selected asset mod
 });
 
 test("generation chat input keeps the focused composer compact", () => {
-  const inputSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/GenerationChatInput.tsx");
+  const inputSource = readPortalFile("../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/GenerationChatInput.tsx");
 
   assert.match(inputSource, /transition-colors duration-200/);
   assert.match(inputSource, /shadow-\[0_12px_32px_rgba\(0,0,0,0\.58\)\]/);
@@ -1943,7 +2171,7 @@ test("generation chat input keeps the focused composer compact", () => {
 
 test("playground regeneration preserves appbase generation config from history items", () => {
   const typeSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/playgroundTypes.ts");
-  const pageSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/pages/Playground.tsx");
+  const pageSource = readGenerationsPlaygroundFile("pages/PlaygroundPage.tsx");
   const generationServiceSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationService.ts");
 
   assert.match(typeSource, /generationConfig\?: PlaygroundGenerationConfig;/);
@@ -1958,11 +2186,11 @@ test("playground regeneration preserves appbase generation config from history i
 });
 
 test("playground history and preview mapping reuse appbase generation history helpers", () => {
-  const pageSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/pages/Playground.tsx");
+  const pageSource = readGenerationsPlaygroundFile("pages/PlaygroundPage.tsx");
   const historyMapperSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/historyMapper.ts");
   const generationServiceSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationService.ts");
   const generationsServiceSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationsService.ts");
-  const assetPanelSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/AssetGenerationPanel.tsx");
+  const assetPanelSource = readAllDomainPanels();
   const viteConfigSource = readPortalFile("./vite.config.ts");
   const tsconfigSource = readPortalFile("./tsconfig.json");
   const tsconfigTypecheckSource = readPortalFile("./tsconfig.typecheck.json");
@@ -1986,7 +2214,7 @@ test("playground history and preview mapping reuse appbase generation history he
   assert.doesNotMatch(generationServiceSource, /function mapArtifactsToHistoryMedia/);
   assert.doesNotMatch(generationServiceSource, /function mapHistoryType/);
   assert.match(generationsServiceSource, /@sdkwork\/generations-pc-workspace\/generation-history/);
-  assert.match(assetPanelSource, /@sdkwork\/generations-pc-workspace\/generation-asset-config/);
+  assert.match(assetPanelSource, /generation-asset-config/);
   assert.match(viteConfigSource, /@sdkwork\/generations-pc-workspace\/generation-history/);
   assert.match(viteConfigSource, /@sdkwork\/generations-pc-workspace\/generation-asset-config/);
   assert.match(tsconfigSource, /"@sdkwork\/generations-pc-workspace\/generation-history"/);
@@ -1999,11 +2227,11 @@ test("playground history and preview mapping reuse appbase generation history he
 });
 
 test("playground asset history views reuse appbase history media helpers", () => {
-  const assetViewSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/views/AssetView.tsx");
-  const assetGallerySource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/views/AssetGalleryView.tsx");
-  const sharedHistorySource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/views/SharedHistoryView.tsx");
-  const chatHistorySource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/ChatHistoryItem.tsx");
-  const messageItemsSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/MessageItems.tsx");
+  const assetViewSource = readPortalFile("../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/views/AssetView.tsx");
+  const assetGallerySource = readPortalFile(ASSETS_GALLERY_VIEW);
+  const sharedHistorySource = readPortalFile("../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/views/SharedHistoryView.tsx");
+  const messageItemsSource = readPortalFile(GENERATIONS_HISTORY_ITEMS);
+  const presentationSource = readPortalFile(GENERATIONS_HISTORY_PRESENTATION);
 
   assert.match(assetViewSource, /isSdkworkGenerationImageHistoryType/);
   assert.match(assetViewSource, /item\.asset/);
@@ -2020,8 +2248,8 @@ test("playground asset history views reuse appbase history media helpers", () =>
   assert.match(sharedHistorySource, /isSdkworkGenerationImageHistoryType/);
   assert.doesNotMatch(sharedHistorySource, /item\.type === 'images' \|\| item\.type === 'image'/);
 
-  assert.match(chatHistorySource, /getSdkworkGenerationPreviewKind/);
-  assert.doesNotMatch(chatHistorySource, /item\.type === 'images' \|\| item\.type === 'image'/);
+  assert.match(presentationSource, /getSdkworkGenerationPreviewKind/);
+  assert.doesNotMatch(presentationSource, /item\.type === 'images' \|\| item\.type === 'image'/);
 
   assert.match(messageItemsSource, /readSdkworkGenerationMediaThumb/);
   assert.doesNotMatch(messageItemsSource, /typeof vid === 'string' \? vid : vid\.thumb \|\| vid\.url/);
@@ -2029,7 +2257,7 @@ test("playground asset history views reuse appbase history media helpers", () =>
 
 test("app OpenAPI and SDK expose AgentRunStep terminal submit", () => {
   const openapi = JSON.parse(readWorkspaceFile("generated/openapi/clawrouter-app-openapi.json"));
-  const agentSdkSource = readWorkspaceFile("sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/api/agents.ts");
+  const agentSdkSource = readWorkspaceFile("sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts/api/agents.ts");
 
   assert(openapi.paths["/app/v3/api/agents/runs/{runId}/steps/{stepId}/complete"]);
   assert.equal(
@@ -2042,7 +2270,7 @@ test("app OpenAPI and SDK expose AgentRunStep terminal submit", () => {
 
 test("generation history contract preserves runtime output text after reload", () => {
   const openapi = JSON.parse(readWorkspaceFile("generated/openapi/clawrouter-app-openapi.json"));
-  const generationHistoryItemSource = readWorkspaceFile("sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/types/generation-history-item.ts");
+  const generationHistoryItemSource = readWorkspaceFile("sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts/types/generation-history-item.ts");
   const historyMapperSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/historyMapper.ts");
 
   assert.equal(openapi.components.schemas.GenerationHistoryItem.properties.outputText.type, "string");
@@ -2059,9 +2287,10 @@ test("generation history contract preserves runtime output text after reload", (
 });
 
 test("agent generation keeps text-only output on agent history instead of pretending it is image media", () => {
-  const pageSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/pages/Playground.tsx");
+  const pageSource = readGenerationsPlaygroundFile("pages/PlaygroundPage.tsx");
   const typeSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/playgroundTypes.ts");
-  const itemSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/components/ChatHistoryItem.tsx");
+  const itemSource = readPortalFile(GENERATIONS_HISTORY_ITEMS);
+  const presentationSource = readPortalFile(GENERATIONS_HISTORY_PRESENTATION);
   const generationServiceSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationService.ts");
   const appbaseHistorySource = readWorkspaceFile("../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-workspace/src/generation-history.ts");
 
@@ -2077,10 +2306,10 @@ test("agent generation keeps text-only output on agent history instead of preten
   assert.match(pageSource, /mapSdkworkGenerationHistoryTypeToModality\(previewItem\.type\) \?\? 'agent'/);
   assert.match(pageSource, /const isText = previewItem\?\.type === 'text'/);
   assert.match(pageSource, /previewKind === 'text'/);
-  assert.match(itemSource, /const previewKind = getSdkworkGenerationPreviewKind\(item\.type\)/);
-  assert.match(itemSource, /const isText = previewKind === 'text'/);
-  assert.match(itemSource, /playground\.input\.type\.agent/);
-  assert.match(itemSource, /!\(isText\) && \(/);
+  assert.match(itemSource, /const isText = item\.type === 'text'/);
+  assert.match(itemSource, /!\(isText\) \?/);
+  assert.match(presentationSource, /getSdkworkGenerationPreviewKind\(item\.type\)/);
+  assert.match(presentationSource, /playground\.input\.type\.agent/);
   assert.match(generationServiceSource, /return artifacts\[0\]\?\.modality;/);
   assert.match(generationServiceSource, /type:\s*mapSdkworkGenerationModalityToHistoryType\(targetType\)/);
 });
@@ -2107,7 +2336,7 @@ test("app OpenAPI exposes product Chat and Runtime routes without legacy ai pref
 test("playground memory operations use sdkwork-memory app SDK instead of clawrouter app SDK", () => {
   const operationsSource = readPortalFile("./packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts");
   const commonsSdkSource = readPortalFile("./packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts");
-  const memorySdkSource = readWorkspaceFile("../sdkwork-memory/sdks/sdkwork-memory-app-sdk/sdkwork-memory-app-sdk-typescript/generated/server-openapi/src/api/memory.ts");
+  const memorySdkSource = readWorkspaceFile("../sdkwork-memory/sdks/sdkwork-memory-app-sdk/sdkwork-memory-app-sdk-typescript/src/index.ts/api/memory.ts");
 
   assert.match(operationsSource, /getSdkworkMemoryAppSdkClient/);
   assert.match(operationsSource, /client\.memory\.spaces\.list/);
@@ -2124,8 +2353,8 @@ test("playground memory operations use sdkwork-memory app SDK instead of clawrou
 });
 
 test("app SDK sends JSON bodies for product Runtime mutations", () => {
-  const runtimeSource = readWorkspaceFile("sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/api/runtime.ts");
-  const runtimeEventItemSource = readWorkspaceFile("sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/types/runtime-event-item.ts");
+  const runtimeSource = readWorkspaceFile("sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts/api/runtime.ts");
+  const runtimeEventItemSource = readWorkspaceFile("sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts/types/runtime-event-item.ts");
   const openapi = JSON.parse(readWorkspaceFile("generated/openapi/clawrouter-app-openapi.json"));
 
   assert.match(runtimeSource, /async create\(body: RuntimeInvocationCreateRequest, params: RuntimeInvocationsCreateParams\)/);

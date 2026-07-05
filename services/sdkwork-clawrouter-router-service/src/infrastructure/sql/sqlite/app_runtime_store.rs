@@ -29,10 +29,12 @@ impl AppRuntimeStore for SqliteAppRuntimeStore {
         query: AppRuntimeInvocationQuery,
     ) -> AppRuntimeFuture<'a, AppRuntimeInvocationList> {
         Box::pin(async move {
-            let offset = (query.page.max(1) - 1) * query.page_size.max(1);
+            let page = query.page.max(1);
+            let page_size = query.page_size.max(1);
+            let offset = (page - 1) * page_size;
             let rows = sqlx::query(
                 r#"
-                SELECT *
+                SELECT *, COUNT(*) OVER() AS total
                 FROM ai_runtime_invocation
                 WHERE tenant_id = ?1
                   AND organization_id = ?2
@@ -54,15 +56,25 @@ impl AppRuntimeStore for SqliteAppRuntimeStore {
             .bind(&query.agent_session_id)
             .bind(&query.runtime)
             .bind(&query.status)
-            .bind(query.page_size.max(1))
+            .bind(page_size)
             .bind(offset)
             .fetch_all(&self.pool)
             .await
             .map_err(sql_error)?;
-            rows.into_iter()
+            let total = rows
+                .first()
+                .and_then(|row| row.try_get::<i64, _>("total").ok())
+                .unwrap_or(0);
+            let items = rows
+                .into_iter()
                 .map(row_to_invocation)
-                .collect::<DomainResult<Vec<_>>>()
-                .map(|items| AppRuntimeInvocationList { items })
+                .collect::<DomainResult<Vec<_>>>()?;
+            Ok(AppRuntimeInvocationList {
+                items,
+                total,
+                page_no: page,
+                page_size,
+            })
         })
     }
 
@@ -252,13 +264,15 @@ impl AppRuntimeStore for SqliteAppRuntimeStore {
         page_size: i64,
     ) -> AppRuntimeFuture<'a, AppRuntimeEventList> {
         Box::pin(async move {
-            let offset = (page.max(1) - 1) * page_size.max(1);
+            let page = page.max(1);
+            let page_size = page_size.max(1);
+            let offset = (page - 1) * page_size;
             let invocation = load_invocation_row_by_uuid(&self.pool, subject, &invocation_id)
                 .await?
                 .ok_or_else(|| DomainError::not_found("runtime invocation was not found"))?;
             let rows = sqlx::query(
                 r#"
-                SELECT e.*, i.uuid AS invocation_uuid
+                SELECT e.*, i.uuid AS invocation_uuid, COUNT(*) OVER() AS total
                 FROM ai_runtime_invocation_event e
                 INNER JOIN ai_runtime_invocation i
                   ON i.id = e.invocation_id
@@ -276,15 +290,25 @@ impl AppRuntimeStore for SqliteAppRuntimeStore {
             .bind(subject.organization_id)
             .bind(integer_cell(&invocation, "id"))
             .bind(subject.user_id)
-            .bind(page_size.max(1))
+            .bind(page_size)
             .bind(offset)
             .fetch_all(&self.pool)
             .await
             .map_err(sql_error)?;
-            rows.into_iter()
+            let total = rows
+                .first()
+                .and_then(|row| row.try_get::<i64, _>("total").ok())
+                .unwrap_or(0);
+            let items = rows
+                .into_iter()
                 .map(row_to_event)
-                .collect::<DomainResult<Vec<_>>>()
-                .map(|items| AppRuntimeEventList { items })
+                .collect::<DomainResult<Vec<_>>>()?;
+            Ok(AppRuntimeEventList {
+                items,
+                total,
+                page_no: page,
+                page_size,
+            })
         })
     }
 
@@ -328,7 +352,15 @@ impl AppRuntimeStore for SqliteAppRuntimeStore {
             rows.into_iter()
                 .map(row_to_event)
                 .collect::<DomainResult<Vec<_>>>()
-                .map(|items| AppRuntimeEventList { items })
+                .map(|items| {
+                    let total = items.len() as i64;
+                    AppRuntimeEventList {
+                        items,
+                        total,
+                        page_no: 1,
+                        page_size: limit.max(1),
+                    }
+                })
         })
     }
 
@@ -416,13 +448,15 @@ impl AppRuntimeStore for SqliteAppRuntimeStore {
         page_size: i64,
     ) -> AppRuntimeFuture<'a, AppRuntimeArtifactList> {
         Box::pin(async move {
-            let offset = (page.max(1) - 1) * page_size.max(1);
+            let page = page.max(1);
+            let page_size = page_size.max(1);
+            let offset = (page - 1) * page_size;
             load_invocation_row_by_uuid(&self.pool, subject, &invocation_id)
                 .await?
                 .ok_or_else(|| DomainError::not_found("runtime invocation was not found"))?;
             let rows = sqlx::query(
                 r#"
-                SELECT *
+                SELECT *, COUNT(*) OVER() AS total
                 FROM ai_runtime_artifact
                 WHERE tenant_id = ?1
                   AND organization_id = ?2
@@ -436,15 +470,25 @@ impl AppRuntimeStore for SqliteAppRuntimeStore {
             .bind(subject.organization_id)
             .bind(subject.user_id)
             .bind(&invocation_id)
-            .bind(page_size.max(1))
+            .bind(page_size)
             .bind(offset)
             .fetch_all(&self.pool)
             .await
             .map_err(sql_error)?;
-            rows.into_iter()
+            let total = rows
+                .first()
+                .and_then(|row| row.try_get::<i64, _>("total").ok())
+                .unwrap_or(0);
+            let items = rows
+                .into_iter()
                 .map(row_to_artifact)
-                .collect::<DomainResult<Vec<_>>>()
-                .map(|items| AppRuntimeArtifactList { items })
+                .collect::<DomainResult<Vec<_>>>()?;
+            Ok(AppRuntimeArtifactList {
+                items,
+                total,
+                page_no: page,
+                page_size,
+            })
         })
     }
 

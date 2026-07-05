@@ -29,9 +29,21 @@ pub struct AdminIpRateLimitItem {
     pub deleted_at: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListAdminIpRateLimitsQuery {
     pub subject: AdminIpRateLimitSubject,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+    pub q: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminIpRateLimitListPage {
+    pub items: Vec<AdminIpRateLimitItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -56,7 +68,7 @@ pub trait AdminIpRateLimitStore {
     fn list_ip_rate_limits<'a>(
         &'a self,
         query: ListAdminIpRateLimitsQuery,
-    ) -> AdminIpRateLimitCommandFuture<'a, Vec<AdminIpRateLimitItem>>;
+    ) -> AdminIpRateLimitCommandFuture<'a, AdminIpRateLimitListPage>;
 
     fn create_ip_rate_limit<'a>(
         &'a self,

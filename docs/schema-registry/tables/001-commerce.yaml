@@ -321,6 +321,19 @@ tables:
   - worker
   columns:
     id: int64
+    tenant_id: int64
+    account_id: int64
+    entry_type: enum_int32
+    amount: decimal
+    currency: string(10)
+    direction: enum_int32
+    reference_type: enum_int32
+    reference_id: string(128)
+    settled_at: instant
+    settlement_status: enum_int32
+    metadata: json
+    created_at: instant
+    updated_at: instant
 - table: commerce_billing_prehold
   domain: commerce
   profile: commerce_entity
@@ -335,6 +348,18 @@ tables:
   - worker
   columns:
     id: int64
+    tenant_id: int64
+    account_id: int64
+    prehold_amount: decimal
+    currency: string(10)
+    reason: enum_int32
+    reference_id: string(128)
+    expire_at: instant
+    released_at: instant
+    status: enum_int32
+    metadata: json
+    created_at: instant
+    updated_at: instant
 - table: commerce_billing_history
   domain: commerce
   profile: commerce_entity
@@ -769,6 +794,17 @@ tables:
   - worker
   columns:
     id: int64
+    tenant_id: int64
+    package_code: string(64)
+    face_value: decimal
+    currency: string(10)
+    bonus: decimal
+    validity_days: int32
+    status: enum_int32
+    display_name: string(128)
+    metadata: json
+    created_at: instant
+    updated_at: instant
 - table: commerce_inventory_stock
   domain: commerce
   profile: commerce_entity

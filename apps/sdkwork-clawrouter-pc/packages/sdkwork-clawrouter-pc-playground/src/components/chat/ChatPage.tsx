@@ -936,7 +936,7 @@ export function ChatPage() {
   }
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col bg-[#111] text-white lg:flex-row">
+    <div className="sdkwork-playground-chat-page relative flex h-full min-h-0 flex-col overflow-hidden lg:flex-row">
       <ChatSessionList
         sessions={sessions}
         selectedSessionId={selectedSessionId}

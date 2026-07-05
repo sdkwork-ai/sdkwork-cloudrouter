@@ -15,6 +15,22 @@ pub struct AppGenerationHistorySubject {
     pub user_id: i64,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AppGenerationHistoryListQuery {
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+    pub q: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct AppGenerationHistoryListPage {
+    pub items: Vec<AppGenerationHistoryItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
+}
+
 #[derive(Debug, Clone, Default, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AppGenerationHistoryItems {
@@ -43,5 +59,6 @@ pub trait AppGenerationHistoryReadStore {
     fn load_generation_history<'a>(
         &'a self,
         subject: Option<AppGenerationHistorySubject>,
-    ) -> AppGenerationHistoryReadFuture<'a, Vec<AppGenerationHistoryItem>>;
+        query: AppGenerationHistoryListQuery,
+    ) -> AppGenerationHistoryReadFuture<'a, AppGenerationHistoryListPage>;
 }

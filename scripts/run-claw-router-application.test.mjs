@@ -4583,6 +4583,7 @@ test('install package builder emits service and container deployment packages fr
     assert.ok(serviceConfigTemplate.includes('admin_app_json_body_max_bytes = 131072'));
     assert.ok(serviceConfigTemplate.includes('admin_skill_json_body_max_bytes = 65536'));
     assert.ok(serviceConfigTemplate.includes('payment_callback_body_max_bytes = 65536'));
+    assert.ok(serviceConfigTemplate.includes('gateway_invocation_body_max_bytes = 1048576'));
     assert.ok(serviceConfigTemplate.includes('# models_catalog_root = "/usr/lib/sdkwork/router/catalog"'));
     assert.ok(serviceConfigTemplate.includes('[services.gateway]'));
     assert.ok(serviceConfigTemplate.includes('[services.admin_api]'));
@@ -4660,6 +4661,7 @@ test('install package builder emits service and container deployment packages fr
     assert.ok(serviceInstallGuide.includes('Request body limits are configured in [request_limits].'));
     assert.ok(serviceInstallGuide.includes('Admin app JSON defaults to 131072 bytes'));
     assert.ok(serviceInstallGuide.includes('Payment callback payloads default to 65536 bytes'));
+    assert.ok(serviceInstallGuide.includes('Gateway invocation bodies default to 1048576 bytes'));
     assert.ok(serviceInstallGuide.includes('Version: 0.1.0'));
     assert.ok(serviceInstallGuide.includes('password_file'));
     assert.ok(serviceInstallGuide.includes('Linux service packages run initialization automatically from systemd'));
@@ -4684,10 +4686,12 @@ test('install package builder emits service and container deployment packages fr
       adminAppJsonBodyMaxBytes: 131072,
       adminSkillJsonBodyMaxBytes: 65536,
       paymentCallbackBodyMaxBytes: 65536,
+      gatewayInvocationBodyMaxBytes: 1048576,
       envOverrides: [
         'SDKWORK_CLAW_ADMIN_APP_JSON_BODY_MAX_BYTES',
         'SDKWORK_CLAW_ADMIN_SKILL_JSON_BODY_MAX_BYTES',
         'SDKWORK_CLAW_PAYMENT_CALLBACK_BODY_MAX_BYTES',
+        'SDKWORK_CLAW_GATEWAY_INVOCATION_BODY_MAX_BYTES',
       ],
     });
     assert.equal(serviceResult.manifest.installConfiguration.observability.logFilter, 'info');
@@ -4813,6 +4817,7 @@ test('install package builder emits service and container deployment packages fr
     assert.ok(desktopConfigTemplate.includes('~/.sdkwork/router/data/clawrouter.sqlite'));
     assert.ok(desktopConfigTemplate.includes('[request_limits]'));
     assert.ok(desktopConfigTemplate.includes('admin_app_json_body_max_bytes = 131072'));
+    assert.ok(desktopConfigTemplate.includes('gateway_invocation_body_max_bytes = 1048576'));
     assert.equal(desktopMetadata.database.defaultEngine, 'sqlite');
     assert.equal(desktopMetadata.redis.enabledByDefault, false);
     assert.equal(desktopMetadata.requestLimits.paymentCallbackBodyMaxBytes, 65536);

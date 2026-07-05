@@ -3,6 +3,7 @@ pub struct RequestLimitsConfig {
     admin_app_json_body_max_bytes: usize,
     admin_skill_json_body_max_bytes: usize,
     payment_callback_body_max_bytes: usize,
+    gateway_invocation_body_max_bytes: usize,
 }
 
 impl RequestLimitsConfig {
@@ -12,10 +13,18 @@ impl RequestLimitsConfig {
         "SDKWORK_CLAW_ADMIN_SKILL_JSON_BODY_MAX_BYTES";
     pub const ENV_PAYMENT_CALLBACK_BODY_MAX_BYTES: &'static str =
         "SDKWORK_CLAW_PAYMENT_CALLBACK_BODY_MAX_BYTES";
+    pub const ENV_GATEWAY_INVOCATION_BODY_MAX_BYTES: &'static str =
+        "SDKWORK_CLAW_GATEWAY_INVOCATION_BODY_MAX_BYTES";
 
     pub const DEFAULT_ADMIN_APP_JSON_BODY_MAX_BYTES: usize = 128 * 1024;
     pub const DEFAULT_ADMIN_SKILL_JSON_BODY_MAX_BYTES: usize = 64 * 1024;
     pub const DEFAULT_PAYMENT_CALLBACK_BODY_MAX_BYTES: usize = 64 * 1024;
+    /// Default maximum request body size for gateway invocation endpoints
+    /// (`/v1/*`). 1 MiB is generous for OpenAI-compatible JSON payloads
+    /// (chat completions, embeddings, etc.) while preventing a single
+    /// oversized request from consuming excessive server memory under
+    /// concurrent load.
+    pub const DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES: usize = 1024 * 1024;
 
     pub fn from_env() -> Result<Self, String> {
         Self::from_env_or_runtime_toml(None)
@@ -42,6 +51,12 @@ impl RequestLimitsConfig {
                     .and_then(|config| config.request_limits.payment_callback_body_max_bytes),
                 Self::DEFAULT_PAYMENT_CALLBACK_BODY_MAX_BYTES,
             )?,
+            gateway_invocation_body_max_bytes: configured_usize_limit(
+                Self::ENV_GATEWAY_INVOCATION_BODY_MAX_BYTES,
+                runtime_toml
+                    .and_then(|config| config.request_limits.gateway_invocation_body_max_bytes),
+                Self::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
+            )?,
         })
     }
 
@@ -56,6 +71,10 @@ impl RequestLimitsConfig {
     pub fn payment_callback_body_max_bytes(&self) -> usize {
         self.payment_callback_body_max_bytes
     }
+
+    pub fn gateway_invocation_body_max_bytes(&self) -> usize {
+        self.gateway_invocation_body_max_bytes
+    }
 }
 
 impl Default for RequestLimitsConfig {
@@ -64,6 +83,7 @@ impl Default for RequestLimitsConfig {
             admin_app_json_body_max_bytes: Self::DEFAULT_ADMIN_APP_JSON_BODY_MAX_BYTES,
             admin_skill_json_body_max_bytes: Self::DEFAULT_ADMIN_SKILL_JSON_BODY_MAX_BYTES,
             payment_callback_body_max_bytes: Self::DEFAULT_PAYMENT_CALLBACK_BODY_MAX_BYTES,
+            gateway_invocation_body_max_bytes: Self::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
         }
     }
 }

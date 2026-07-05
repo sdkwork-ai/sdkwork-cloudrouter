@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the Rust-side SDKWork app system as a first-class, installable PlusApp-compatible catalog with seed data, installer import, SDK-backed APIs, and frontend service integration.
+**Goal:** Build the Rust-side SDKWork app system as a first-class, installable platform_app-compatible catalog with seed data, installer import, SDK-backed APIs, and frontend service integration.
 
-**Architecture:** `sdkwork.app.config.json` remains the app source of truth; `data/app/sdkwork-apps.json` is the installable seed projection; Rust installer owns database schema creation and idempotent seed import into `plus_app` and app catalog projections. Public AppCenter reads remain `/app/v3/api/app/store`; management surfaces are added through schema registry -> OpenAPI -> generated SDKs before frontend services consume them.
+**Architecture:** `sdkwork.app.config.json` remains the app source of truth; `data/app/sdkwork-apps.json` is the installable seed projection; Rust installer owns database schema creation and idempotent seed import into `appstore_app` and app catalog projections. Public AppCenter reads remain `/app/v3/api/app/store`; management surfaces are added through schema registry -> OpenAPI -> generated SDKs before frontend services consume them.
 
 **Tech Stack:** Rust, sqlx, axum, SQLite/Postgres, Python unittest quality gates, Node ESM app-standard scripts, generated TypeScript SDKs.
 
@@ -20,7 +20,7 @@
 
 - [ ] **Step 1: Write the failing Python test**
 
-Add a test that asserts `data/app/sdkwork-apps.json` exists, has `kind=sdkwork.plus_app.seed`, contains at least `sdkwork-clawrouter`, stores `plusApp` fields matching Java `PlusApp`, and has no duplicate `appKey`.
+Add a test that asserts `data/app/sdkwork-apps.json` exists, has `kind=sdkwork.appstore_app.seed`, contains at least `sdkwork-clawrouter`, stores `platform_app` fields matching Java `platform_app`, and has no duplicate `appKey`.
 
 - [ ] **Step 2: Run the test to verify RED**
 
@@ -47,7 +47,7 @@ Expected: PASS.
 
 - [ ] **Step 1: Write the failing Rust installer test**
 
-Assert `ensure_installed()` creates `plus_app`, `plus_category`, `studio_catalog_asset`, `studio_catalog_artifact`, and imports at least one active app from `data/app`.
+Assert `ensure_installed()` creates `appstore_app`, `plus_category`, `studio_catalog_asset`, `studio_catalog_artifact`, and imports at least one active app from `data/app`.
 
 - [ ] **Step 2: Run the test to verify RED**
 

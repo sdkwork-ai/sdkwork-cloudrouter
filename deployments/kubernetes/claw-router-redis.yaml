@@ -22,10 +22,10 @@ metadata:
     component: redis
 type: Opaque
 stringData:
-  # IMPORTANT: override these in production via sealed-secrets or external-secrets.
-  redis-password: "clawrouter-redis-change-me"
+  # Production: replace via ExternalSecret (see claw-router-redis-external-secret.example.yaml).
+  redis-password: "REPLACE_WITH_EXTERNAL_SECRET"
   # redis-url is consumed by gateway/admin-api/app-api/edge via SDKWORK_CLAW_REDIS_URL.
-  redis-url: "redis://:clawrouter-redis-change-me@sdkwork-clawrouter-redis:6379/0"
+  redis-url: "rediss://:REPLACE_WITH_EXTERNAL_SECRET@sdkwork-clawrouter-redis:6379/0"
 ---
 apiVersion: v1
 kind: ConfigMap

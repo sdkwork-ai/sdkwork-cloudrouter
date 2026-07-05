@@ -107,6 +107,11 @@ where
     let redis_config = sdkwork_claw_config::RedisConfig::from_env_or_runtime_toml(runtime_toml)
         .ok()
         .flatten();
+    let body_limit_bytes = sdkwork_claw_config::RequestLimitsConfig::from_env_or_runtime_toml(
+        runtime_toml,
+    )
+    .map(|config| config.gateway_invocation_body_max_bytes())
+    .unwrap_or(sdkwork_claw_config::RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES);
     base_router.merge(
         crate::invocation_router::invocation_router_with_full_pipeline_provider_adapter_and_tenant_inflight(
             catalog,
@@ -122,6 +127,7 @@ where
             )),
             tenant_inflight_config,
             redis_config.as_ref(),
+            body_limit_bytes,
         ),
     )
 }

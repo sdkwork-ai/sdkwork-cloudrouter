@@ -194,6 +194,7 @@ admin_app_json_body_max_bytes = 131072
 admin_skill_json_body_max_bytes = 65536
 forum_json_body_max_bytes = 262144
 payment_callback_body_max_bytes = 65536
+gateway_invocation_body_max_bytes = 1048576
 
 [runtime]
 deployment_mode = "server"

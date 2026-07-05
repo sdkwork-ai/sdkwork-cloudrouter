@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUp, Square } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { PlaygroundModelPicker, createFallbackModel } from '../PlaygroundModelPicker';
+import { ModelPicker, createFallbackModel } from '@sdkwork/models-pc-picker';
 import {
   findCallableChatModel,
   findChatModel,
@@ -14,7 +14,7 @@ import type { PlaygroundModelGroup, PlaygroundModelOption } from '../../playgrou
 
 const FALLBACK_CHAT_MODEL = createFallbackModel('Chat model', 'Chat model catalog is being prepared', 'AI', 'llms', 'Claw Router');
 const SIMPLE_CHAT_SELECTED_MODEL_STORAGE_KEY = 'sdkwork-clawrouter.playground.chat.selectedModelId';
-const flatComposer = 'rounded-[26px] bg-[#1c1c20]/95 p-3 backdrop-blur-xl';
+const flatComposer = 'sdkwork-playground-chat-composer';
 
 interface StoredSimpleChatModelPreference {
   id: string;
@@ -168,7 +168,7 @@ export function SimpleChatInput({
 
   return (
     <div ref={composerRef} className={flatComposer}>
-      <div className="rounded-[20px] bg-[#151519] px-4 py-3 transition-colors focus-within:bg-[#19191e]">
+      <div className="sdkwork-playground-chat-composer__field">
         <textarea
           ref={textareaRef}
           value={prompt}
@@ -183,7 +183,7 @@ export function SimpleChatInput({
               void handleSubmit();
             }
           }}
-          className="min-h-[88px] w-full resize-none overflow-hidden border-none bg-transparent text-[15px] leading-6 text-slate-100 outline-none placeholder:text-slate-500"
+          className="sdkwork-playground-chat-composer__textarea"
           placeholder={t('playground.chat.input.placeholder')}
         />
       </div>
@@ -191,7 +191,7 @@ export function SimpleChatInput({
       <div className="mt-2 flex flex-col gap-2 px-0.5 pb-0.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
           <div className="w-fit min-w-0 max-w-full flex-[0_1_auto]">
-            <PlaygroundModelPicker
+            <ModelPicker
               bucket="llms"
               modelGroups={modelGroups}
               selectedModelId={displaySelectedModel?.id ?? ''}
@@ -199,7 +199,6 @@ export function SimpleChatInput({
               showModelMenu={showModelMenu}
               setShowModelMenu={setShowModelMenu}
               fallback={FALLBACK_CHAT_MODEL}
-              menuPlacement="top"
               compact
               variant="flat"
               disabled={submitting}
@@ -207,13 +206,13 @@ export function SimpleChatInput({
           </div>
 
           {loadingHistory && (
-            <div className="flex h-10 items-center rounded-full bg-white/5 px-3 text-[11px] text-slate-500">
+            <div className="sdkwork-playground-chat-composer__status-chip">
               {t('playground.chat.messagesLoading')}
             </div>
           )}
           {!submitting && submitBlockReason && submitBlockReason !== 'playground.chat.input.disabled.emptyPrompt' && (
             <div
-              className="min-h-10 min-w-0 rounded-full bg-amber-400/10 px-3 py-2 text-[11px] leading-4 text-amber-200"
+              className="sdkwork-playground-chat-composer__warning-chip"
               title={sendButtonTooltip}
             >
               <span className="line-clamp-2">{sendButtonTooltip}</span>
@@ -234,13 +233,14 @@ export function SimpleChatInput({
               }
               void handleSubmit();
             }}
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all ${
+            className="sdkwork-playground-chat-composer__submit"
+            data-state={
               submitting && canStop
-                ? 'bg-rose-500 text-white shadow-[0_8px_24px_rgba(244,63,94,0.22)] hover:bg-rose-400 active:scale-95'
+                ? 'stop'
                 : canSubmit
-                  ? 'bg-white text-slate-950 shadow-[0_8px_24px_rgba(255,255,255,0.18)] hover:bg-slate-200 active:scale-95'
-                  : 'cursor-not-allowed bg-white/6 text-slate-600 disabled:pointer-events-none'
-            }`}
+                  ? 'active'
+                  : 'disabled'
+            }
           >
             {submitting ? <Square className="h-3.5 w-3.5 fill-current" /> : <ArrowUp className="h-4 w-4" />}
           </button>

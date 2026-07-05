@@ -27,11 +27,19 @@ pub struct AppNotificationQuery {
 #[serde(rename_all = "camelCase")]
 pub struct AppNotificationItems {
     pub items: Vec<AppNotificationItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 impl AppNotificationItems {
-    pub fn new(items: Vec<AppNotificationItem>) -> Self {
-        Self { items }
+    pub fn new(items: Vec<AppNotificationItem>, total: i64, page_no: i64, page_size: i64) -> Self {
+        Self {
+            items,
+            total,
+            page_no,
+            page_size,
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 
 use crate::application::ApiKeySecretCodec;
 use crate::domain::{
@@ -14,7 +14,9 @@ use crate::infrastructure::sql::routing_config_change::AI_ROUTING_CONFIG_SCOPE;
 use crate::infrastructure::sql::rows::GatewayApiKeyRow;
 use crate::infrastructure::sql::PricingCatalogSql;
 use crate::ports::{
-    ApiKeyManagementReadFuture, GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot,
+    ApiKeyManagementReadFuture, AppChannelGroupListPage, GatewayApiKeyListPage,
+    GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot, ListAppChannelGroupsQuery,
+    ListGatewayApiKeysQuery,
 };
 
 pub struct PostgresPricingCatalogLoader {
@@ -274,10 +276,105 @@ impl GatewayApiKeyManagementReadStore for PostgresPricingCatalogLoader {
             ))
         })
     }
+
+    fn list_gateway_api_keys<'a>(
+        &'a self,
+        query: ListGatewayApiKeysQuery,
+    ) -> ApiKeyManagementReadFuture<'a, GatewayApiKeyListPage> {
+        Box::pin(async move {
+            let search = query
+                .q
+                .as_ref()
+                .map(|value| format!("%{}%", value.to_lowercase()));
+            let base_sql = gateway_api_keys_base_sql();
+            let rows = row_mapping::load_api_keys_paginated(
+                &self.pool,
+                &base_sql,
+                query.tenant_id,
+                query.organization_id,
+                query.user_id,
+                search.as_deref(),
+                query.page_size,
+                query.offset,
+            )
+            .await
+            .map_err(sqlx_load_error)?;
+            let total = row_mapping::count_api_keys_paginated(
+                &self.pool,
+                &base_sql,
+                query.tenant_id,
+                query.organization_id,
+                query.user_id,
+                search.as_deref(),
+            )
+            .await
+            .map_err(sqlx_load_error)?;
+            let items = rows
+                .into_iter()
+                .map(|row| {
+                    decode_api_key_row_copyable_key(row, self.api_key_secret_codec.as_deref())
+                        .and_then(|row| row.try_into_domain())
+                })
+                .collect::<DomainResult<Vec<_>>>()?;
+            Ok(GatewayApiKeyListPage {
+                items,
+                total,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
+        })
+    }
+
+    fn list_app_channel_groups<'a>(
+        &'a self,
+        query: ListAppChannelGroupsQuery,
+    ) -> ApiKeyManagementReadFuture<'a, AppChannelGroupListPage> {
+        Box::pin(async move {
+            let search = query
+                .q
+                .as_ref()
+                .map(|value| format!("%{}%", value.to_lowercase()));
+            let rows = row_mapping::load_paginated_channel_groups(
+                &self.pool,
+                query.tenant_id,
+                query.organization_id,
+                search.as_deref(),
+                query.page_size,
+                query.offset,
+            )
+            .await
+            .map_err(sqlx_load_error)?;
+            let total = rows
+                .first()
+                .and_then(|row| row.try_get::<i64, _>("total").ok())
+                .unwrap_or(0);
+            let items = rows
+                .into_iter()
+                .map(|row| row_mapping::channel_group_from_row(&row))
+                .collect::<DomainResult<Vec<_>>>()?;
+            Ok(AppChannelGroupListPage {
+                items,
+                total,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
+        })
+    }
 }
 
 fn postgres_load_error(error: PostgresCatalogLoadError) -> DomainError {
     DomainError::new(error.to_string())
+}
+
+fn sqlx_load_error(error: sqlx::Error) -> DomainError {
+    DomainError::new(error.to_string())
+}
+
+fn gateway_api_keys_base_sql() -> String {
+    let base = PricingCatalogSql::load_api_keys().trim();
+    base.strip_suffix("ORDER BY updated_at DESC, id DESC")
+        .unwrap_or(base)
+        .to_owned()
 }
 
 fn decode_api_key_row_copyable_key(

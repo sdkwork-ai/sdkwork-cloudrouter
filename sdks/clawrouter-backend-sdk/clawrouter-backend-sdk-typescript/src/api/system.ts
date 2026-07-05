@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { AdminAuthSettingsUpdateRequest, AdminRuntimeRegionSettingsUpdateRequest, AdminSiteSettingsUpdateRequest, AfterSalesReviewsCreateResult, AnalyticsAdminOverviewRetrieveResult, AuthSettingsRetrieveResult, AuthSettingsUpdateResult, CacheInstancesRefreshCreateResult, CacheNamespacesRefreshCreateResult, CacheOverviewRetrieveResult, CacheRefreshCreateResult, DashboardAdminOverviewRetrieveResult, FirewallsRulesCreateResult, InstallationStatusRetrieveResult, RateLimitsApiKeysCreateResult, RateLimitsIpCreateResult, RateLimitsModelsCreateResult, RuntimeRegionSettingsRetrieveResult, RuntimeRegionSettingsUpdateResult, SdkWorkCommandData, SdkWorkPageData, ServiceNodesCreateResult, ServiceNodesStatusUpdateResult, ServiceNodesUpdateResult, ShopsApproveResult, ShopsBrandAuthorizationsUpsertResult, ShopsBusinessHoursUpdateResult, ShopsCategoryBindingsUpsertResult, ShopsChannelsCreateResult, ShopsChannelsUpdateResult, ShopsCloseResult, ShopsCreateResult, ShopsCustomerServicesUpsertResult, ShopsDepositAccountReviewResult, ShopsDepositAccountUpdateResult, ShopsFulfillmentProfileUpdateResult, ShopsPoliciesCreateResult, ShopsPoliciesUpdateResult, ShopsQualificationsUpsertResult, ShopsRejectResult, ShopsResumeResult, ShopsReturnAddressesUpsertResult, ShopsRiskSignalsCreateResult, ShopsRiskSignalsResolveResult, ShopsServiceAreasCreateResult, ShopsServiceAreasUpdateResult, ShopsSettlementProfileApproveResult, ShopsSettlementProfileRejectResult, ShopsSettlementProfileUpdateResult, ShopsShippingTemplatesUpsertResult, ShopsSubmitReviewResult, ShopsSuspendResult, ShopsUpdateResult, ShopsVerificationsUpdateResult, SiteSettingsRetrieveResult, SiteSettingsUpdateResult } from '../types';
+import type { AfterSalesReviewsCreateResult, AnalyticsAdminOverviewRetrieveResult, AuthSettingsRetrieveResult, AuthSettingsUpdateResult, CacheInstancesRefreshCreateResult, CacheNamespacesRefreshCreateResult, CacheOverviewRetrieveResult, CacheRefreshCreateResult, DashboardAdminOverviewRetrieveResult, FirewallsRulesCreateResult, InstallationStatusRetrieveResult, RateLimitsApiKeysCreateResult, RateLimitsIpCreateResult, RateLimitsModelsCreateResult, RuntimeRegionSettingsRetrieveResult, RuntimeRegionSettingsUpdateResult, SdkWorkCommandData, SdkWorkPageData, ServiceNodesCreateResult, ServiceNodesStatusUpdateResult, ServiceNodesUpdateResult, ShopsApproveResult, ShopsBrandAuthorizationsUpsertResult, ShopsBusinessHoursUpdateResult, ShopsCategoryBindingsUpsertResult, ShopsChannelsCreateResult, ShopsChannelsUpdateResult, ShopsCloseResult, ShopsCreateResult, ShopsCustomerServicesUpsertResult, ShopsDepositAccountReviewResult, ShopsDepositAccountUpdateResult, ShopsFulfillmentProfileUpdateResult, ShopsPoliciesCreateResult, ShopsPoliciesUpdateResult, ShopsQualificationsUpsertResult, ShopsRejectResult, ShopsResumeResult, ShopsReturnAddressesUpsertResult, ShopsRiskSignalsCreateResult, ShopsRiskSignalsResolveResult, ShopsServiceAreasCreateResult, ShopsServiceAreasUpdateResult, ShopsSettlementProfileApproveResult, ShopsSettlementProfileRejectResult, ShopsSettlementProfileUpdateResult, ShopsShippingTemplatesUpsertResult, ShopsSubmitReviewResult, ShopsSuspendResult, ShopsUpdateResult, ShopsVerificationsUpdateResult, SiteSettingsRetrieveResult, SiteSettingsUpdateResult } from '../types';
 
 
 export class SystemSiteSettingsApi {
@@ -18,8 +18,8 @@ export class SystemSiteSettingsApi {
   }
 
 /** Update */
-  async update(body: AdminSiteSettingsUpdateRequest): Promise<SiteSettingsUpdateResult> {
-    return this.client.patch<SiteSettingsUpdateResult>(backendApiPath(`/system/site/settings`), body, undefined, undefined, 'application/json');
+  async update(): Promise<SiteSettingsUpdateResult> {
+    return this.client.patch<SiteSettingsUpdateResult>(backendApiPath(`/system/site/settings`));
   }
 }
 
@@ -417,8 +417,8 @@ export class SystemRuntimeRegionSettingsApi {
   }
 
 /** Update */
-  async update(body: AdminRuntimeRegionSettingsUpdateRequest): Promise<RuntimeRegionSettingsUpdateResult> {
-    return this.client.patch<RuntimeRegionSettingsUpdateResult>(backendApiPath(`/system/runtime_region/settings`), body, undefined, undefined, 'application/json');
+  async update(): Promise<RuntimeRegionSettingsUpdateResult> {
+    return this.client.patch<RuntimeRegionSettingsUpdateResult>(backendApiPath(`/system/runtime_region/settings`));
   }
 }
 
@@ -837,8 +837,8 @@ export class SystemAuthSettingsApi {
   }
 
 /** Update */
-  async update(body: AdminAuthSettingsUpdateRequest): Promise<AuthSettingsUpdateResult> {
-    return this.client.patch<AuthSettingsUpdateResult>(backendApiPath(`/system/auth/settings`), body, undefined, undefined, 'application/json');
+  async update(): Promise<AuthSettingsUpdateResult> {
+    return this.client.patch<AuthSettingsUpdateResult>(backendApiPath(`/system/auth/settings`));
   }
 }
 

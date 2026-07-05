@@ -6,6 +6,9 @@ use crate::types::{
 };
 use sdkwork_models_catalog_service::domain::parse_model_catalog_identity;
 
+pub(crate) const PI_LIMIT: usize = 8;
+pub(crate) const USER_MODEL_LIMIT: usize = 5;
+
 const COLORS: [&str; 10] = [
     "#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#7c3aed", "#0891b2", "#db2777", "#65a30d",
     "#ea580c", "#475569",

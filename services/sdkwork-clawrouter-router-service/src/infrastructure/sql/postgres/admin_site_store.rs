@@ -9,9 +9,10 @@ use crate::infrastructure::sql::sql_admin_site::{
 };
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    AdminSiteChannelItem, AdminSiteConnectionCheckItem, AdminSiteFuture, AdminSiteItem,
-    AdminSiteStore, CreateAdminSiteCommand, DeleteAdminSiteCommand, ListAdminSiteChannelsQuery,
-    ListAdminSitesQuery, TestAdminSiteConnectionCommand, UpdateAdminSiteCommand,
+    AdminSiteChannelItem, AdminSiteChannelListPage, AdminSiteConnectionCheckItem, AdminSiteFuture,
+    AdminSiteItem, AdminSiteListPage, AdminSiteStore, CreateAdminSiteCommand, DeleteAdminSiteCommand,
+    ListAdminSiteChannelsQuery, ListAdminSitesQuery, TestAdminSiteConnectionCommand,
+    UpdateAdminSiteCommand,
 };
 
 const SITE_TARGET_TYPE: i32 = 93;
@@ -31,7 +32,7 @@ impl AdminSiteStore for PostgresAdminSiteStore {
     fn list_sites<'a>(
         &'a self,
         query: ListAdminSitesQuery,
-    ) -> AdminSiteFuture<'a, Vec<AdminSiteItem>> {
+    ) -> AdminSiteFuture<'a, AdminSiteListPage> {
         Box::pin(async move { list_sites(&self.pool, query).await })
     }
 
@@ -56,7 +57,7 @@ impl AdminSiteStore for PostgresAdminSiteStore {
     fn list_site_channels<'a>(
         &'a self,
         query: ListAdminSiteChannelsQuery,
-    ) -> AdminSiteFuture<'a, Vec<AdminSiteChannelItem>> {
+    ) -> AdminSiteFuture<'a, AdminSiteChannelListPage> {
         Box::pin(async move { list_site_channels(&self.pool, query).await })
     }
 
@@ -68,7 +69,7 @@ impl AdminSiteStore for PostgresAdminSiteStore {
     }
 }
 
-async fn list_sites(pool: &PgPool, query: ListAdminSitesQuery) -> DomainResult<Vec<AdminSiteItem>> {
+async fn list_sites(pool: &PgPool, query: ListAdminSitesQuery) -> DomainResult<AdminSiteListPage> {
     let search = query.search.as_ref().map(|value| format!("%{}%", value));
     let rows = sqlx::query(
         r#"
@@ -76,11 +77,13 @@ async fn list_sites(pool: &PgPool, query: ListAdminSitesQuery) -> DomainResult<V
                website_url, docs_url, COALESCE(logo_resource_snapshot::text, '') AS logo_resource_snapshot,
                COALESCE(metadata::text, '{}') AS metadata, site_type, owner_kind, region_code, environment, health_status,
                last_latency_ms, consecutive_error_count, last_checked_at::text AS last_checked_at,
-               last_sync_at::text AS last_sync_at, sort_order, status
+               last_sync_at::text AS last_sync_at, sort_order, status,
+               COUNT(*) OVER() AS total
         FROM ai_site
         WHERE tenant_id = $1 AND organization_id = $2 AND deleted_at IS NULL
           AND ($3 IS NULL OR site_code ILIKE $4 OR site_name ILIKE $5 OR display_name ILIKE $6)
         ORDER BY sort_order ASC NULLS LAST, id ASC
+        LIMIT $7 OFFSET $8
         "#,
     )
     .bind(query.subject.tenant_id)
@@ -89,10 +92,22 @@ async fn list_sites(pool: &PgPool, query: ListAdminSitesQuery) -> DomainResult<V
     .bind(search.as_deref())
     .bind(search.as_deref())
     .bind(search.as_deref())
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list sites", error))?;
-    rows.into_iter().map(site_from_row).collect()
+    let total = rows
+        .first()
+        .and_then(|row| row.try_get::<i64, _>("total").ok())
+        .unwrap_or(0);
+    let items = rows.into_iter().map(site_from_row).collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminSiteListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn create_site(
@@ -397,23 +412,40 @@ async fn delete_site(pool: &PgPool, command: DeleteAdminSiteCommand) -> DomainRe
 async fn list_site_channels(
     pool: &PgPool,
     query: ListAdminSiteChannelsQuery,
-) -> DomainResult<Vec<AdminSiteChannelItem>> {
+) -> DomainResult<AdminSiteChannelListPage> {
     let rows = sqlx::query(
         r#"
         SELECT id, channel_code, channel_name, provider_code, site_code, site_service_code,
-               site_channel_role, health_status, status
+               site_channel_role, health_status, status,
+               COUNT(*) OVER() AS total
         FROM ai_channel
         WHERE tenant_id = $1 AND organization_id = $2 AND site_id = $3 AND deleted_at IS NULL
         ORDER BY priority ASC NULLS LAST, weight DESC NULLS LAST, id ASC
+        LIMIT $4 OFFSET $5
         "#,
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.site_id)
+    .bind(query.page_size)
+    .bind(query.offset)
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list site channels", error))?;
-    rows.into_iter().map(site_channel_from_row).collect()
+    let total = rows
+        .first()
+        .and_then(|row| row.try_get::<i64, _>("total").ok())
+        .unwrap_or(0);
+    let items = rows
+        .into_iter()
+        .map(site_channel_from_row)
+        .collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminSiteChannelListPage {
+        items,
+        total,
+        page_no: query.page_no,
+        page_size: query.page_size,
+    })
 }
 
 async fn test_site_connection(

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "workspace": "file-backend-sdk",
+  "generationInputSpec": "openapi/file-backend-sdk.openapi.json",
+  "derivedSpecs": {},
+  "languages": [
+    {
+      "clientName": "SdkworkFileBackendClient",
+      "language": "typescript",
+      "packageName": "@sdkwork/file-backend-sdk",
+      "packageRoot": "file-backend-sdk-typescript",
+      "consumerPackageName": "@sdkwork/file-backend-sdk",
+      "transportPackageName": "file-backend-sdk-generated-typescript"
+    }
+  ],
+  "sdkOwner": "sdkwork-clawrouter",
+  "apiAuthority": "file-backend-api",
+  "sdkDependencies": [],
+  "sdkFamily": "file-backend-sdk",
+  "sdkName": "file-backend-sdk",
+  "packageName": "@sdkwork/file-backend-sdk",
+  "transportPackageName": "file-backend-sdk-generated-typescript"
+}

@@ -2,7 +2,7 @@ use std::net::IpAddr;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, patch};
@@ -11,7 +11,10 @@ use crate::api::app_sql_subject::{RequiredAppSqlScopedSubject, SqlScopedSubject}
 use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, normalize_list_search_query, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, success_envelope,
+};
 use crate::application::{ApiKeySecretGenerator, ApiKeySecretHasher};
 use crate::domain::{
     ChannelGroup, ChannelGroupMetricSnapshot, DecimalValue, DomainError, GatewayAccessPolicy,
@@ -20,10 +23,17 @@ use crate::domain::{
 use crate::ports::{
     CreateGatewayApiKeyCommand, DeleteGatewayApiKeyCommand, EnsureDefaultChannelGroupCommand,
     GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot,
-    PricingCatalog, UpdateGatewayApiKeyCommand,
+    ListAppChannelGroupsQuery, ListGatewayApiKeysQuery, PricingCatalog, UpdateGatewayApiKeyCommand,
 };
 
 const DEFAULT_CHANNEL_GROUP: &str = "default";
+
+#[derive(Debug, Default, Deserialize)]
+struct AppApiKeyListQueryRequest {
+    page: Option<i64>,
+    page_size: Option<i64>,
+    q: Option<String>,
+}
 const DEFAULT_CHANNEL_GROUP_NAME: &str = "Default";
 const DEFAULT_PRICING_PLAN_CODE: &str = "standard";
 const UNRESTRICTED_MODALITIES: [&str; 5] = ["text", "image", "video", "audio", "music"];
@@ -209,48 +219,105 @@ where
 async fn fetch_keys(
     State(state): State<AppApiKeyState>,
     RequiredAppSqlScopedSubject(scope): RequiredAppSqlScopedSubject,
+    Query(request): Query<AppApiKeyListQueryRequest>,
 ) -> Response {
-    let scope = scope;
-    match state
-        .read_store
-        .load_gateway_api_key_management_snapshot()
-        .await
-    {
-        Ok(snapshot) => {
-            let scoped_snapshot =
-                snapshot.for_subject(scope.tenant_id, scope.organization_id, scope.user_id);
-            Json(success_envelope(list_response(&scoped_snapshot))).into_response()
+    let query = match build_api_key_list_query(scope, request) {
+        Ok(query) => query,
+        Err(message) => {
+            return problem_from_wire_code("4001", message).into_response();
+        }
+    };
+    let tenant_id = query.tenant_id;
+    let organization_id = query.organization_id;
+    let user_id = query.user_id;
+    match state.read_store.list_gateway_api_keys(query).await {
+        Ok(page) => {
+            let snapshot = match state
+                .read_store
+                .load_gateway_api_key_management_snapshot()
+                .await
+            {
+                Ok(snapshot) => snapshot.for_subject(tenant_id, organization_id, user_id),
+                Err(error) => {
+                    return problem_from_wire_code(
+                        "5000",
+                        format!("api key read model is unavailable: {error}"),
+                    )
+                    .into_response();
+                }
+            };
+            json_success_list_response(
+                None,
+                page
+                    .items
+                    .into_iter()
+                    .map(|api_key| to_item_response(&snapshot, api_key))
+                    .collect(),
+                offset_page_info(page.page_no, page.page_size, page.total),
+            )
         }
         Err(error) => problem_from_wire_code(
-                "5000",
-                format!("api key read model is unavailable: {error}"),
-            )
-            .into_response(),
+            "5000",
+            format!("api key read model is unavailable: {error}"),
+        )
+        .into_response(),
     }
 }
 
 async fn fetch_key_groups(
     State(state): State<AppApiKeyState>,
     RequiredAppSqlScopedSubject(scope): RequiredAppSqlScopedSubject,
+    Query(request): Query<AppApiKeyListQueryRequest>,
 ) -> Response {
-    let scope = scope;
-    match state
-        .read_store
-        .load_gateway_api_key_management_snapshot()
-        .await
-    {
-        Ok(snapshot) => {
-            let scoped_snapshot =
-                snapshot.for_subject(scope.tenant_id, scope.organization_id, scope.user_id);
-            Json(success_envelope(group_list_response(
-                &scoped_snapshot,
-            ))).into_response()
+    let list_query = match build_channel_group_list_query(scope, request) {
+        Ok(query) => query,
+        Err(message) => {
+            return problem_from_wire_code("4001", message).into_response();
         }
+    };
+    match state.read_store.list_app_channel_groups(list_query).await {
+        Ok(page) => json_success_list_response(
+            None,
+            page.items.into_iter().map(to_group_response).collect(),
+            offset_page_info(page.page_no, page.page_size, page.total),
+        ),
         Err(error) => problem_from_wire_code(
-                "5000",
-                format!("channel group read model is unavailable: {error}"),
-            ).into_response(),
+            "5000",
+            format!("channel group read model is unavailable: {error}"),
+        )
+        .into_response(),
     }
+}
+
+fn build_api_key_list_query(
+    scope: SqlScopedSubject,
+    request: AppApiKeyListQueryRequest,
+) -> Result<ListGatewayApiKeysQuery, String> {
+    let pagination = parse_offset_list_query(request.page, request.page_size)?;
+    Ok(ListGatewayApiKeysQuery {
+        tenant_id: scope.tenant_id,
+        organization_id: scope.organization_id,
+        user_id: scope.user_id,
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
+        q: normalize_list_search_query(request.q, "q")?,
+    })
+}
+
+fn build_channel_group_list_query(
+    scope: SqlScopedSubject,
+    request: AppApiKeyListQueryRequest,
+) -> Result<ListAppChannelGroupsQuery, String> {
+    let pagination = parse_offset_list_query(request.page, request.page_size)?;
+    Ok(ListAppChannelGroupsQuery {
+        tenant_id: scope.tenant_id,
+        organization_id: scope.organization_id,
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
+        q: normalize_list_search_query(request.q, "q")?,
+    })
 }
 
 async fn create_key(

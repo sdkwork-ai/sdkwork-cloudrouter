@@ -15,6 +15,14 @@ pub struct AppGatewayTracesSubject {
     pub user_id: i64,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AppGatewayTracesListQuery {
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+    pub q: Option<String>,
+}
+
 #[derive(Debug, Clone, Default, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AppGatewayTraceItems<T> {
@@ -25,6 +33,14 @@ impl<T> AppGatewayTraceItems<T> {
     pub fn new(items: Vec<T>) -> Self {
         Self { items }
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct AppGatewayTracesListPage {
+    pub items: Vec<AppGatewayTraceItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 #[derive(Debug, Clone, Default, Serialize, PartialEq)]
@@ -44,5 +60,6 @@ pub trait AppGatewayTracesReadStore {
     fn load_gateway_traces<'a>(
         &'a self,
         subject: Option<AppGatewayTracesSubject>,
-    ) -> AppGatewayTracesReadFuture<'a, Vec<AppGatewayTraceItem>>;
+        query: AppGatewayTracesListQuery,
+    ) -> AppGatewayTracesReadFuture<'a, AppGatewayTracesListPage>;
 }

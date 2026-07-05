@@ -43,6 +43,7 @@ const CACHE_SCOPES: [&str; 6] = [
 const CACHE_SENSITIVITIES: [&str; 5] = ["public", "internal", "private", "sensitive", "credential"];
 const CACHE_KEY_LIST_CURSOR_VERSION: u8 = 1;
 const DEFAULT_CACHE_KEY_LIST_CURSOR_TTL: Duration = Duration::from_secs(300);
+pub const DEFAULT_CACHE_KEY_LIST_LIMIT: usize = 200;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -530,16 +531,18 @@ impl CacheBackend for LocalCacheBackend {
                 .skip(start_offset)
                 .take(
                     limit
+                        .or(Some(DEFAULT_CACHE_KEY_LIST_LIMIT))
                         .map(|value| value.saturating_add(1))
-                        .unwrap_or(usize::MAX),
+                        .unwrap_or(DEFAULT_CACHE_KEY_LIST_LIMIT.saturating_add(1)),
                 )
                 .collect();
             let has_more = limit
+                .or(Some(DEFAULT_CACHE_KEY_LIST_LIMIT))
                 .map(|value| matched_items.len() > value)
                 .unwrap_or(false);
             let items: Vec<CacheBackendKeyMetadata> = matched_items
                 .into_iter()
-                .take(limit.unwrap_or(usize::MAX))
+                .take(limit.unwrap_or(DEFAULT_CACHE_KEY_LIST_LIMIT))
                 .collect();
             let next_cursor = if has_more {
                 Some(CacheBackendCursor::Local {
@@ -1563,6 +1566,7 @@ impl RuntimeCacheManager {
         limit: Option<usize>,
         cursor: Option<&str>,
     ) -> DomainResult<CacheNamespaceKeyList> {
+        let limit = Some(limit.unwrap_or(DEFAULT_CACHE_KEY_LIST_LIMIT));
         let (instance, policy) = match self.resolve_namespace(namespace) {
             Ok(resolved) => resolved,
             Err(error) => {

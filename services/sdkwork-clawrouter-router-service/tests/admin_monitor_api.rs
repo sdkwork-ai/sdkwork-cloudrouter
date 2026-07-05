@@ -5,8 +5,8 @@ use std::sync::Arc;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::ports::{
-    AdminMonitorAlert, AdminMonitorNode, AdminMonitorPerformanceDatum, AdminMonitorQuery,
-    AdminMonitorReadFuture, AdminMonitorReadStore,
+    AdminMonitorAlert, AdminMonitorCollection, AdminMonitorNode, AdminMonitorPerformanceDatum,
+    AdminMonitorQuery, AdminMonitorReadFuture, AdminMonitorReadStore,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -108,50 +108,65 @@ impl AdminMonitorReadStore for TestAdminMonitorReadStore {
     fn list_monitor_nodes<'a>(
         &'a self,
         query: AdminMonitorQuery,
-    ) -> AdminMonitorReadFuture<'a, Vec<AdminMonitorNode>> {
+    ) -> AdminMonitorReadFuture<'a, AdminMonitorCollection<AdminMonitorNode>> {
         Box::pin(async move {
             assert_eq!(10, query.subject.tenant_id);
-            Ok(vec![AdminMonitorNode {
-                id: "1".to_owned(),
-                name: "gw-shanghai-01".to_owned(),
-                region: "cn-shanghai".to_owned(),
-                status: "warning".to_owned(),
-                cpu: 72.5,
-                memory: 63.0,
-                uptime: "5d 4h".to_owned(),
-                ip: "10.***.0.8".to_owned(),
-            }])
+            Ok(AdminMonitorCollection {
+                items: vec![AdminMonitorNode {
+                    id: "1".to_owned(),
+                    name: "gw-shanghai-01".to_owned(),
+                    region: "cn-shanghai".to_owned(),
+                    status: "warning".to_owned(),
+                    cpu: 72.5,
+                    memory: 63.0,
+                    uptime: "5d 4h".to_owned(),
+                    ip: "10.***.0.8".to_owned(),
+                }],
+                total: 1,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
         })
     }
 
     fn list_monitor_alerts<'a>(
         &'a self,
-        _query: AdminMonitorQuery,
-    ) -> AdminMonitorReadFuture<'a, Vec<AdminMonitorAlert>> {
+        query: AdminMonitorQuery,
+    ) -> AdminMonitorReadFuture<'a, AdminMonitorCollection<AdminMonitorAlert>> {
         Box::pin(async move {
-            Ok(vec![AdminMonitorAlert {
-                id: "alert-1".to_owned(),
-                severity: "critical".to_owned(),
-                title: "High error rate".to_owned(),
-                message: "5xx error rate exceeded threshold".to_owned(),
-                time: "2026-04-29 09:00:00".to_owned(),
-                status: "active".to_owned(),
-                source: "gateway".to_owned(),
-            }])
+            Ok(AdminMonitorCollection {
+                items: vec![AdminMonitorAlert {
+                    id: "alert-1".to_owned(),
+                    severity: "critical".to_owned(),
+                    title: "High error rate".to_owned(),
+                    message: "5xx error rate exceeded threshold".to_owned(),
+                    time: "2026-04-29 09:00:00".to_owned(),
+                    status: "active".to_owned(),
+                    source: "gateway".to_owned(),
+                }],
+                total: 1,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
         })
     }
 
     fn list_monitor_performance<'a>(
         &'a self,
-        _query: AdminMonitorQuery,
-    ) -> AdminMonitorReadFuture<'a, Vec<AdminMonitorPerformanceDatum>> {
+        query: AdminMonitorQuery,
+    ) -> AdminMonitorReadFuture<'a, AdminMonitorCollection<AdminMonitorPerformanceDatum>> {
         Box::pin(async move {
-            Ok(vec![AdminMonitorPerformanceDatum {
-                time: "09:00".to_owned(),
-                cpu: 41.0,
-                memory: 58.0,
-                network: 122.0,
-            }])
+            Ok(AdminMonitorCollection {
+                items: vec![AdminMonitorPerformanceDatum {
+                    time: "09:00".to_owned(),
+                    cpu: 41.0,
+                    memory: 58.0,
+                    network: 122.0,
+                }],
+                total: 1,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
         })
     }
 }

@@ -14,6 +14,38 @@ pub struct AppRoutingSubject {
     pub user_id: i64,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AppRoutingListQuery {
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+    pub q: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct AppRoutingChannelListPage {
+    pub items: Vec<AppRoutingChannelItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct AppRoutingApiKeyListPage {
+    pub items: Vec<AppRoutingApiKeyItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct AppRoutingRequestTraceListPage {
+    pub items: Vec<AppRoutingRequestTraceItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
+}
+
 #[derive(Debug, Clone, Default, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AppRoutingItems<T> {
@@ -159,17 +191,20 @@ pub trait AppRoutingReadStore {
     fn load_routing_channels<'a>(
         &'a self,
         subject: Option<AppRoutingSubject>,
-    ) -> AppRoutingReadFuture<'a, Vec<AppRoutingChannelItem>>;
+        query: AppRoutingListQuery,
+    ) -> AppRoutingReadFuture<'a, AppRoutingChannelListPage>;
 
     fn load_routing_api_keys<'a>(
         &'a self,
         subject: Option<AppRoutingSubject>,
-    ) -> AppRoutingReadFuture<'a, Vec<AppRoutingApiKeyItem>>;
+        query: AppRoutingListQuery,
+    ) -> AppRoutingReadFuture<'a, AppRoutingApiKeyListPage>;
 
     fn load_routing_request_traces<'a>(
         &'a self,
         subject: Option<AppRoutingSubject>,
-    ) -> AppRoutingReadFuture<'a, Vec<AppRoutingRequestTraceItem>>;
+        query: AppRoutingListQuery,
+    ) -> AppRoutingReadFuture<'a, AppRoutingRequestTraceListPage>;
 
     fn load_routing_usage<'a>(
         &'a self,

@@ -3,7 +3,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
 use axum::body::Bytes;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, patch};
@@ -11,7 +11,10 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, normalize_list_search_query, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, success_envelope,
+};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::ports::{
@@ -27,6 +30,13 @@ const MAX_CONTENT_LEN: usize = 20_000;
 struct AdminAnnouncementState {
     store: Arc<dyn AdminAnnouncementStore + Send + Sync>,
     entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct AdminAnnouncementListQueryRequest {
+    page: Option<i64>,
+    page_size: Option<i64>,
+    q: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -68,12 +78,6 @@ struct NormalizedUpdateRequest {
 enum AnnouncementCommandBuildError {
     BadRequest(String),
     System(DomainError),
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct AdminAnnouncementListResponse {
-    items: Vec<AdminAnnouncementItemResponse>,
 }
 
 #[derive(Debug, Serialize)]
@@ -123,20 +127,36 @@ async fn fetch_announcements(
     State(state): State<AdminAnnouncementState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
+    Query(request): Query<AdminAnnouncementListQueryRequest>,
 ) -> Response {
     let subject = scoped.into();
+    let query = match build_list_query(subject, request) {
+        Ok(query) => query,
+        Err(message) => return bad_request(message),
+    };
 
-    match state
-        .store
-        .list_announcements(ListAdminAnnouncementsQuery { subject })
-        .await
-    {
-        Ok(items) => Json(success_envelope(AdminAnnouncementListResponse {
-            items: items.into_iter().map(to_item_response).collect(),
-        }))
-        .into_response(),
+    match state.store.list_announcements(query).await {
+        Ok(page) => json_success_list_response(
+            None,
+            page.items.into_iter().map(to_item_response).collect(),
+            offset_page_info(page.page_no, page.page_size, page.total),
+        ),
         Err(error) => announcement_system_response("announcement read model is unavailable", error),
     }
+}
+
+fn build_list_query(
+    subject: AdminAnnouncementSubject,
+    request: AdminAnnouncementListQueryRequest,
+) -> Result<ListAdminAnnouncementsQuery, String> {
+    let pagination = parse_offset_list_query(request.page, request.page_size)?;
+    Ok(ListAdminAnnouncementsQuery {
+        subject,
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
+        q: normalize_list_search_query(request.q, "q")?,
+    })
 }
 
 async fn create_announcement(

@@ -19,12 +19,8 @@ import {
 
 const ADMIN_SIDEBAR_GROUPS_DEFAULT_OPEN = true;
 
-function sidebarItemClassName(isActive: boolean): string {
-  return `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-    isActive
-      ? 'bg-lobster-50 text-lobster-600 dark:bg-lobster-500/10 dark:text-lobster-400'
-      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
-  }`;
+function sidebarItemClassName(): string {
+  return 'sdkwork-portal-sidebar-item';
 }
 
 function SidebarGroup({
@@ -44,11 +40,8 @@ function SidebarGroup({
     <div className="mb-1">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex w-full items-center justify-between px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${
-          hasActiveChild
-            ? 'text-lobster-500 dark:text-lobster-400'
-            : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-        }`}
+        data-active={hasActiveChild ? 'true' : 'false'}
+        className="sdkwork-portal-sidebar-group-label"
         type="button"
       >
         <span>{t(group.groupKey)}</span>
@@ -67,10 +60,11 @@ function SidebarGroup({
               <Link
                 key={item.path}
                 to={item.path}
+                data-active={isActive ? 'true' : 'false'}
                 aria-current={isActive ? 'page' : undefined}
-                className={sidebarItemClassName(isActive)}
+                className={sidebarItemClassName()}
               >
-                <item.icon className={`w-4 h-4 ${item.iconColor ?? ''}`} />
+                <item.icon className={`sdkwork-portal-sidebar-item__icon w-4 h-4 ${item.iconColor ?? ''}`} />
                 {t(item.labelKey)}
               </Link>
             );
@@ -96,10 +90,11 @@ function SidebarItem({
     <Link
       key={item.path}
       to={item.path}
+      data-active={isActive ? 'true' : 'false'}
       aria-current={isActive ? 'page' : undefined}
-      className={sidebarItemClassName(isActive)}
+      className={sidebarItemClassName()}
     >
-      <item.icon className={`w-4 h-4 ${item.iconColor ?? ''}`} />
+      <item.icon className={`sdkwork-portal-sidebar-item__icon w-4 h-4 ${item.iconColor ?? ''}`} />
       {t(item.labelKey)}
     </Link>
   );

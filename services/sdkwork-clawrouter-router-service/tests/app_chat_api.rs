@@ -8,7 +8,7 @@ use sdkwork_clawrouter_router_service::application::EntityUuidGenerator;
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
     AppChatConversationItem, AppChatConversationList, AppChatFuture, AppChatMessageItem,
-    AppChatStore, AppChatSubject, AppChatTurnItem, AppChatTurnOutcome, AppChatUsageSnapshot,
+    AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnItem, AppChatTurnOutcome, AppChatUsageSnapshot,
     CompleteAppChatTurnCommand, CreateAppChatConversationCommand, CreateAppChatTurnCommand,
 };
 use serde_json::Value;
@@ -95,8 +95,8 @@ async fn app_chat_list_conversations_uses_trusted_subject_and_returns_items() {
     let subjects = store.list_subjects.lock().unwrap();
     assert_eq!(
         vec![AppChatSubject {
-            tenant_id: 100001,
-            organization_id: 0,
+            tenant_id: 10,
+            organization_id: 20,
             user_id: 30
         }],
         *subjects
@@ -396,6 +396,9 @@ impl AppChatStore for TestAppChatStore {
             self.list_subjects.lock().unwrap().push(subject);
             Ok(AppChatConversationList {
                 items: vec![sample_conversation()],
+                total: 1,
+                page_no: _page.max(1),
+                page_size: _page_size.max(1),
             })
         })
     }
@@ -425,9 +428,12 @@ impl AppChatStore for TestAppChatStore {
         &'a self,
         _subject: AppChatSubject,
         _conversation_id: String,
-    ) -> AppChatFuture<'a, Vec<AppChatMessageItem>> {
+        _page: i64,
+        _page_size: i64,
+    ) -> AppChatFuture<'a, AppChatMessageList> {
         Box::pin(async {
-            Ok(vec![AppChatMessageItem {
+            Ok(AppChatMessageList {
+                items: vec![AppChatMessageItem {
                 id: "chat-message-user-1".to_owned(),
                 conversation_id: "chat-conversation-1".to_owned(),
                 turn_id: Some("chat-turn-1".to_owned()),
@@ -442,7 +448,11 @@ impl AppChatStore for TestAppChatStore {
                 usage_link_id: None,
                 usage: None,
                 created_at: "2026-05-18T00:00:00Z".to_owned(),
-            }])
+            }],
+                total: 1,
+                page_no: 1,
+                page_size: 100,
+            })
         })
     }
 

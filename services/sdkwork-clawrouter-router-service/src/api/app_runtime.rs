@@ -21,7 +21,10 @@ use serde_json::{Map, Value};
 use tokio::time::sleep;
 
 use crate::api::openai_runtime::resolve_openai_provider_route_plan;
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, offset_page_info, parse_offset_list_query, problem_from_wire_code,
+    success_envelope,
+};
 use crate::application::{
     AuthenticatedApiKeyContext, EntityUuidGenerator, InMemoryRuntimeStreamBus,
     ProviderRouteSelector, RuntimeStreamBus, SelectProviderRouteQuery,
@@ -38,7 +41,7 @@ use crate::ports::{
     CreateAppRuntimeInvocationCommand, PricingCatalog,
 };
 
-const MAX_PAGE_SIZE: i64 = 100;
+const RUNTIME_EVENTS_FETCH_PAGE_SIZE: i64 = 100;
 const MAX_ID_LEN: usize = 128;
 const MAX_KIND_LEN: usize = 128;
 const MAX_RUNTIME_LEN: usize = 128;
@@ -91,6 +94,8 @@ struct GatewayRuntimeExecutor<C> {
 }
 
 type BoxedByteStream = Pin<Box<dyn Stream<Item = Result<Bytes, axum::Error>> + Send>>;
+
+const RUNTIME_SSE_BUFFER_MAX_BYTES: usize = 4 * 1024 * 1024;
 
 struct RuntimeEventSseStreamState {
     provider_stream: BoxedByteStream,
@@ -280,7 +285,12 @@ impl AppRuntimeStore for EmptyAppRuntimeStore {
         _subject: AppRuntimeSubject,
         _query: AppRuntimeInvocationQuery,
     ) -> AppRuntimeFuture<'a, AppRuntimeInvocationList> {
-        Box::pin(async { Ok(AppRuntimeInvocationList { items: Vec::new() }) })
+        Box::pin(async move { Ok(AppRuntimeInvocationList {
+            items: Vec::new(),
+            total: 0,
+            page_no: _query.page.max(1),
+            page_size: _query.page_size.max(1),
+        }) })
     }
 
     fn get_invocation<'a>(
@@ -328,7 +338,12 @@ impl AppRuntimeStore for EmptyAppRuntimeStore {
         _page: i64,
         _page_size: i64,
     ) -> AppRuntimeFuture<'a, AppRuntimeEventList> {
-        Box::pin(async { Ok(AppRuntimeEventList { items: Vec::new() }) })
+        Box::pin(async move { Ok(AppRuntimeEventList {
+            items: Vec::new(),
+            total: 0,
+            page_no: _page.max(1),
+            page_size: _page_size.max(1),
+        }) })
     }
 
     fn list_events_after<'a>(
@@ -338,7 +353,12 @@ impl AppRuntimeStore for EmptyAppRuntimeStore {
         _after_event_no: i64,
         _limit: i64,
     ) -> AppRuntimeFuture<'a, AppRuntimeEventList> {
-        Box::pin(async { Ok(AppRuntimeEventList { items: Vec::new() }) })
+        Box::pin(async move { Ok(AppRuntimeEventList {
+            items: Vec::new(),
+            total: 0,
+            page_no: 1,
+            page_size: _limit.max(1),
+        }) })
     }
 
     fn has_terminal_event<'a>(
@@ -375,7 +395,12 @@ impl AppRuntimeStore for EmptyAppRuntimeStore {
         _page: i64,
         _page_size: i64,
     ) -> AppRuntimeFuture<'a, AppRuntimeArtifactList> {
-        Box::pin(async { Ok(AppRuntimeArtifactList { items: Vec::new() }) })
+        Box::pin(async move { Ok(AppRuntimeArtifactList {
+            items: Vec::new(),
+            total: 0,
+            page_no: _page.max(1),
+            page_size: _page_size.max(1),
+        }) })
     }
 
     fn create_artifact<'a>(
@@ -591,7 +616,11 @@ async fn list_invocations(
         Err(message) => return bad_request(message),
     };
     match state.store.list_invocations(subject, query).await {
-        Ok(list) => Json(success_envelope(list)).into_response(),
+        Ok(list) => json_success_list_response(
+            None,
+            list.items,
+            offset_page_info(list.page_no, list.page_size, list.total),
+        ),
         Err(error) => app_runtime_system_response("app runtime invocations are unavailable", error),
     }
 }
@@ -758,13 +787,20 @@ async fn list_events(
         Ok(value) => value,
         Err(message) => return bad_request(message),
     };
-    let (page, page_size) = normalize_page(query.page, query.page_size);
+    let pagination = match parse_offset_list_query(query.page, query.page_size) {
+        Ok(value) => value,
+        Err(message) => return bad_request(message),
+    };
     match state
         .store
-        .list_events(subject, invocation_id, page, page_size)
+        .list_events(subject, invocation_id, pagination.page_no, pagination.page_size)
         .await
     {
-        Ok(list) => Json(success_envelope(list)).into_response(),
+        Ok(list) => json_success_list_response(
+            None,
+            list.items,
+            offset_page_info(list.page_no, list.page_size, list.total),
+        ),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) => app_runtime_system_response("app runtime events are unavailable", error),
     }
@@ -948,10 +984,13 @@ async fn list_artifacts(
         Ok(value) => value,
         Err(message) => return bad_request(message),
     };
-    let (page, page_size) = normalize_page(query.page, query.page_size);
+    let pagination = match parse_offset_list_query(query.page, query.page_size) {
+        Ok(value) => value,
+        Err(message) => return bad_request(message),
+    };
     match state
         .store
-        .list_artifacts(subject, invocation_id, page, page_size)
+        .list_artifacts(subject, invocation_id, pagination.page_no, pagination.page_size)
         .await
     {
         Ok(list) => Json(success_envelope(list)).into_response(),
@@ -5016,6 +5055,16 @@ async fn next_runtime_sse_chunk(
     loop {
         match state.provider_stream.next().await {
             Some(Ok(chunk)) => {
+                let chunk_len = chunk.len();
+                if state.buffer.len().saturating_add(chunk_len) > RUNTIME_SSE_BUFFER_MAX_BYTES {
+                    state.done = true;
+                    return Some((
+                        Err(axum_error(DomainError::conflict(
+                            "runtime SSE buffer exceeded maximum allowed size",
+                        ))),
+                        state,
+                    ));
+                }
                 state.buffer.push_str(&String::from_utf8_lossy(&chunk));
                 while let Some((boundary, boundary_len)) = next_sse_event_boundary(&state.buffer) {
                     let event = state.buffer[..boundary].to_owned();
@@ -5177,7 +5226,7 @@ async fn list_runtime_events_from_event_no(
                 subject,
                 invocation_id.to_owned(),
                 after_event_no,
-                MAX_PAGE_SIZE,
+                RUNTIME_EVENTS_FETCH_PAGE_SIZE,
             )
             .await?
             .items;
@@ -5190,7 +5239,7 @@ async fn list_runtime_events_from_event_no(
         }
         after_event_no = next_after_event_no;
         items.append(&mut page);
-        if page_len < MAX_PAGE_SIZE as usize {
+        if page_len < RUNTIME_EVENTS_FETCH_PAGE_SIZE as usize {
             break;
         }
     }
@@ -5465,10 +5514,10 @@ fn normalize_optional_stream_text(
 fn normalize_invocation_query(
     query: AppRuntimeListQuery,
 ) -> Result<AppRuntimeInvocationQuery, String> {
-    let (page, page_size) = normalize_page(query.page, query.page_size);
+    let pagination = parse_offset_list_query(query.page, query.page_size)?;
     Ok(AppRuntimeInvocationQuery {
-        page,
-        page_size,
+        page: pagination.page_no,
+        page_size: pagination.page_size,
         conversation_id: normalize_optional_id(query.conversation_id.as_deref(), "conversationId")?,
         chat_turn_id: normalize_optional_id(query.chat_turn_id.as_deref(), "chatTurnId")?,
         agent_session_id: normalize_optional_id(
@@ -5479,12 +5528,6 @@ fn normalize_invocation_query(
         status: normalize_optional_text(query.status.as_deref(), "status", MAX_KIND_LEN)?,
     })
 }
-fn normalize_page(page: Option<i64>, page_size: Option<i64>) -> (i64, i64) {
-    let page = page.unwrap_or(1).max(1);
-    let page_size = page_size.unwrap_or(30).max(1).min(MAX_PAGE_SIZE);
-    (page, page_size)
-}
-
 fn normalize_stream_next_event_no(query: &AppRuntimeListQuery) -> i64 {
     query.after_event_no.unwrap_or(0).max(0).saturating_add(1)
 }

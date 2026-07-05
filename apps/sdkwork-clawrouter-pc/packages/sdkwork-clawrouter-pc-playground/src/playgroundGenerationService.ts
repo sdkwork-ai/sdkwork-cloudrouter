@@ -310,7 +310,7 @@ async function appendRuntimeArtifactListOutput(
   callbacks: Pick<GenerationAgentRunCreateInput, 'onArtifact' | 'targetType'>,
   artifacts: PlaygroundGenerationArtifact[],
 ): Promise<void> {
-  const result = await listRuntimeArtifacts(invocationId, { pageSize: 100 });
+  const result = await listRuntimeArtifacts(invocationId, { pageSize: 20 });
   ensureSdkworkApiSuccess(result, 'Failed to list playground runtime artifacts');
   const eventArtifacts = readRequiredApiItems(result, 'Playground runtime artifact list response missing items')
     .map((artifact) => readGenerationArtifact(artifact, callbacks.targetType))

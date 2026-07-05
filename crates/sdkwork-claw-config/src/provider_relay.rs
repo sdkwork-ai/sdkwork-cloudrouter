@@ -1,4 +1,7 @@
 use std::fmt;
+use std::net::{IpAddr, ToSocketAddrs};
+
+use url::Url;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct ProviderRelayConfig {
@@ -328,6 +331,7 @@ impl OpenAiRelayConfig {
                 ProviderRelayConfig::ENV_OPENAI_RELAY_BASE_URL
             ));
         }
+        validate_base_url_ssrf(&base_url)?;
         let bearer_token = bearer_token.into().trim().to_owned();
         if bearer_token.is_empty() {
             return Err(format!(
@@ -385,6 +389,7 @@ impl ProviderPassthroughRelayConfig {
         if base_url.is_empty() {
             return Err("provider passthrough base URL must not be blank".to_owned());
         }
+        validate_base_url_ssrf(&base_url)?;
         Ok(Self {
             provider,
             base_url,
@@ -712,5 +717,92 @@ impl fmt::Debug for ProviderPassthroughHeader {
             .field("name", &self.name)
             .field("value", &"[REDACTED]")
             .finish()
+    }
+}
+
+
+/// Validate that `base_url` is an absolute HTTPS URL whose host does not
+/// resolve to a private, loopback, link-local, carrier-grade NAT, or
+/// unspecified address. IP literals are checked directly; domain names are
+/// resolved and each resolved IP is checked. DNS resolution failures are
+/// allowed because the connector layer re-validates at request time
+/// (defense-in-depth per OWASP SSRF Prevention Cheat Sheet).
+fn validate_base_url_ssrf(base_url: &str) -> Result<(), String> {
+    let url = Url::parse(base_url).map_err(|error| {
+        format!("provider relay base URL must be a valid absolute URL: {error}")
+    })?;
+    if url.scheme() != "https" {
+        return Err(format!(
+            "provider relay base URL must use https scheme (got `{}`)",
+            url.scheme()
+        ));
+    }
+    let host = url
+        .host_str()
+        .ok_or_else(|| "provider relay base URL must have a host".to_owned())?;
+    if host.is_empty() {
+        return Err("provider relay base URL must have a host".to_owned());
+    }
+    let addresses: Vec<IpAddr> = match url.host() {
+        Some(url::Host::Ipv4(ip)) => vec![IpAddr::V4(ip)],
+        Some(url::Host::Ipv6(ip)) => vec![IpAddr::V6(ip)],
+        _ => format!("{host}:443")
+            .to_socket_addrs()
+            .map(|addrs| addrs.map(|a| a.ip()).collect())
+            .unwrap_or_default(),
+    };
+    for ip in addresses {
+        if let Some(reason) = ssrf_block_reason(&ip) {
+            return Err(format!(
+                "provider relay base URL host `{host}` resolves to {reason} ({ip})"
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Return the human-readable block reason for an IP, or `None` if the IP is
+/// publicly routable and therefore allowed.
+fn ssrf_block_reason(ip: &IpAddr) -> Option<&'static str> {
+    match ip {
+        IpAddr::V4(v4) => {
+            if v4.is_loopback() {
+                return Some("loopback address 127.0.0.0/8");
+            }
+            if v4.is_private() {
+                return Some("private address 10.0.0.0/8, 172.16.0.0/12 or 192.168.0.0/16");
+            }
+            if v4.is_link_local() {
+                // 169.254.0.0/16 includes the cloud metadata service.
+                return Some("link-local address 169.254.0.0/16");
+            }
+            if v4.is_unspecified() {
+                return Some("unspecified address 0.0.0.0/8");
+            }
+            let octets = v4.octets();
+            // Carrier-grade NAT 100.64.0.0/10 (not covered by std is_private).
+            if octets[0] == 100 && (octets[1] & 0xc0) == 64 {
+                return Some("carrier-grade NAT address 100.64.0.0/10");
+            }
+            None
+        }
+        IpAddr::V6(v6) => {
+            if v6.is_loopback() {
+                return Some("IPv6 loopback address ::1/128");
+            }
+            if v6.is_unspecified() {
+                return Some("IPv6 unspecified address ::/128");
+            }
+            let segments = v6.segments();
+            // IPv6 unique local addresses fc00::/7.
+            if (segments[0] & 0xfe00) == 0xfc00 {
+                return Some("IPv6 unique local address fc00::/7");
+            }
+            // IPv6 link-local addresses fe80::/10.
+            if (segments[0] & 0xffc0) == 0xfe80 {
+                return Some("IPv6 link-local address fe80::/10");
+            }
+            None
+        }
     }
 }

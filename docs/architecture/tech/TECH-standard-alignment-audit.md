@@ -1,12 +1,15 @@
 # SDKWork Claw Router 标准对齐审计
 
-最后更新：2026-06-26
+最后更新：2026-07-05
 
 审计命令：
 
 ```bash
 pnpm check:alignment:audit
 pnpm check:alignment
+node ../sdkwork-specs/tools/check-api-response-envelope.mjs --workspace .
+node ../sdkwork-specs/tools/check-app-sdk-consumer-imports.mjs --workspace .
+node ../sdkwork-specs/tools/check-pagination.mjs --workspace .
 python tools/sdkwork_standard_alignment_guardian.py --strict
 ```
 
@@ -15,15 +18,16 @@ python tools/sdkwork_standard_alignment_guardian.py --strict
 | 维度 | 状态 | 说明 |
 | --- | --- | --- |
 | sdkwork-specs 字典与目录结构 | 已对齐 | `AGENTS.md`、标准根目录、`apis/`、`sdks/`、`deployments/`、`specs/topology.spec.json` 已就位 |
-| 部署与打包 | 已对齐 | `sdkwork.workflow.json` + 薄 GitHub workflow + 多平台安装包矩阵 |
-| 前端 SDK 接入 | 已对齐 | Portal 通过 `@sdkwork/clawrouter-app-sdk` / backend SDK 消费，守卫禁止 raw HTTP |
-| API 契约元数据 | 已对齐 | OpenAPI 已补充 `x-sdkwork-request-context` / `x-sdkwork-api-surface`；`sdks/_route-manifests/` 已生成 |
+| 部署与打包 | 已对齐 | `sdkwork.workflow.json` + 薄 GitHub workflow + 多平台安装包矩阵；K8s egress/Redis 外部密钥模板已补充 |
+| 前端 SDK 接入 | 已对齐 | Portal 通过 `@sdkwork/clawrouter-app-sdk` / backend SDK 消费；兑换码已接入 federated promotion API |
+| API 契约元数据 | 已对齐 | OpenAPI 已补充 `x-sdkwork-request-context` / `x-sdkwork-api-surface`；promotions redeem 请求体已定义 |
+| 商业化安全基线 | 已对齐（私测） | 租户隔离 metric、metrics bearer、OOM 上限、支付生产 bootstrap、结算 worker 租户 scope |
 | sdkwork-database | 已对齐（迁移中） | PoolBuilder 已统一；存量 `*_store.rs` 按 manifest 分批迁移 repository-sqlx |
 | sdkwork-web-framework | 已对齐 | 默认 `WebFrameworkLayer`；app-api 与 backend-api 全量使用 `TenantAppContext` → `SqlScopedSubject` / `SqlScopedAdminSubject` |
 | sdkwork-discovery | 不适用 | 当前无 gRPC/RPC 服务，后续引入 RPC 再接入 |
 | Rust 服务命名 | 治理例外 | 遗留 crate 已登记 `specs/naming-migration.manifest.json` |
 
-**当前 blocking 检查：0 项失败。** 存量 SQL store 迁移 repository-sqlx 为持续治理项。
+**当前 blocking 检查：0 项失败。** 详见 [2026-07-05 商业化就绪审计](../../engineering/reviews/2026-07-05-commercial-readiness-audit.md)。
 
 ## 1. sdkwork-web-framework（HTTP 认证与上下文）
 
@@ -123,7 +127,9 @@ IAM JWT (Authorization + Access-Token)
 | 优先级 | 项 | 建议 |
 | --- | --- | --- |
 | P1 | database repository 存量迁移 | 按 manifest 分批迁移剩余 `*_store.rs` |
+| P1 | 多租户 GA | 全量 SQL 热路径调用 `ensure_row_tenant_matches`；Redis TLS 启动校验 |
 | P2 | sdkwork-utils 扩展采纳 | 继续替换重复 helper |
+| P2 | i18n | 7 语种完整翻译（en/zh 已完整） |
 | P3 | Rust 服务重命名 | 按 `specs/naming-migration.manifest.json` 在 2026-12-31 前完成 |
 
 ## 5. 验证命令
@@ -137,6 +143,7 @@ cargo test -p sdkwork-clawrouter-router-service app_sql_subject
 cargo test -p sdkwork-clawrouter-router-service --test app_dashboard_api
 cargo test -p sdkwork-routes-clawrouter-app-api claw_router_app_domain_injector
 cargo test -p sdkwork-clawrouter-standalone-gateway database_config_dashboard_scopes_metrics_to_app_session_subject
-cargo check -p sdkwork-routes-clawrouter-app-api -p sdkwork-routes-clawrouter-backend-api -p sdkwork-clawrouter-cloud-gateway
-pnpm verify
+cargo check -p sdkwork-routes-clawrouter-app-api -p sdkwork-routes-clawrouter-backend-api -p sdkwork-clawrouter-cloud-gateway -p sdkwork-clawrouter-router-service
+cargo test -p sdkwork-claw-http --test tenant_isolation
+pnpm verify:fast
 ```

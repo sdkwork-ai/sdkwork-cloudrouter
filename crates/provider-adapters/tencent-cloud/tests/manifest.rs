@@ -1,17 +1,14 @@
-use sdkwork_claw_provider_adapter_contract::{
-    AdapterInvocationMetadata, AdapterInvocationRequest, AdapterInvocationShape,
-    AdapterProviderContext, AdapterSecret, AdapterSubject,
-};
-use serde_json::json;
+use sdkwork_claw_provider_adapter_contract::AdapterEndpointRuntimeState;
 
 #[test]
-fn tencent_cloud_adapter_exposes_provider_family_and_vidu_standard_endpoint_mapping() {
+fn tencent_cloud_adapter_exposes_definition_only_vidu_standard_endpoint_mapping() {
     let adapter = sdkwork_provider_adapter_tencent_cloud::provider_adapter();
 
     assert_eq!("tencent-cloud", adapter.package());
     assert_eq!("tencent-cloud", adapter.provider_family());
     assert!(adapter.provider_codes().contains(&"tencent-cloud"));
     assert!(adapter.provider_codes().contains(&"tencent-hunyuan"));
+
     let endpoints = adapter.endpoints();
     let start_end2video = endpoints
         .iter()
@@ -26,6 +23,11 @@ fn tencent_cloud_adapter_exposes_provider_family_and_vidu_standard_endpoint_mapp
         "/vidu/ent/v2/start-end2video",
         start_end2video.standard_path_pattern
     );
+    assert_eq!(
+        AdapterEndpointRuntimeState::DefinitionOnly,
+        start_end2video.runtime_state
+    );
+    assert!(adapter.resolve_endpoint(&sample_request()).is_none());
 }
 
 #[test]
@@ -43,10 +45,14 @@ fn tc3_credentials_debug_redacts_secret_key() {
     assert!(debug.contains("[REDACTED]"));
 }
 
-#[tokio::test]
-async fn start_end2video_adapter_returns_standard_video_usage_lines() {
-    let adapter = sdkwork_provider_adapter_tencent_cloud::provider_adapter();
-    let request = AdapterInvocationRequest {
+fn sample_request() -> sdkwork_claw_provider_adapter_contract::AdapterInvocationRequest {
+    use sdkwork_claw_provider_adapter_contract::{
+        AdapterInvocationMetadata, AdapterInvocationShape, AdapterProviderContext, AdapterSecret,
+        AdapterSubject,
+    };
+    use serde_json::json;
+
+    sdkwork_claw_provider_adapter_contract::AdapterInvocationRequest {
         invocation: AdapterInvocationMetadata {
             id: "inv-1".to_owned(),
             endpoint_key: "video.start_end2video".to_owned(),
@@ -77,41 +83,5 @@ async fn start_end2video_adapter_returns_standard_video_usage_lines() {
         },
         secret: AdapterSecret::GatewayResolved(json!({"token": "redacted"})),
         body: json!({"model": "vidu2.0", "duration": 8, "prompt": "adapter route"}),
-    };
-    let endpoint = adapter
-        .resolve_endpoint(&request)
-        .expect("Tencent Cloud Vidu start-end2video endpoint should resolve");
-
-    let response = endpoint
-        .invoke(Default::default(), request)
-        .await
-        .expect("Tencent Cloud Vidu adapter should produce a response");
-    let serialized = serde_json::to_value(response).unwrap();
-
-    assert_eq!(
-        serialized["usage"]["usageLines"][0]["meterCode"],
-        "api_request"
-    );
-    assert_eq!(
-        serialized["usage"]["usageLines"][0]["billableQuantity"],
-        "1"
-    );
-    assert_eq!(serialized["usage"]["usageLines"][0]["requestCount"], 1);
-    assert_eq!(
-        serialized["usage"]["usageLines"][0]["providerNativeModel"],
-        "vidu2.0"
-    );
-    assert_eq!(
-        serialized["usage"]["usageLines"][1]["meterCode"],
-        "video_output_second"
-    );
-    assert_eq!(
-        serialized["usage"]["usageLines"][1]["billableQuantity"],
-        "8"
-    );
-    assert_eq!(serialized["usage"]["usageLines"][1]["videoSeconds"], "8");
-    assert_eq!(
-        serialized["usage"]["usageLines"][1]["providerNativeModel"],
-        "vidu2.0"
-    );
+    }
 }

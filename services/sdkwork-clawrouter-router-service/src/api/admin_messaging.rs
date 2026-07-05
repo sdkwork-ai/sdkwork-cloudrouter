@@ -10,7 +10,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, normalize_list_search_query, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, success_envelope,
+};
 use crate::domain::DomainError;
 use crate::ports::{
     AdminMessagingCollection, AdminMessagingCommandFuture, AdminMessagingRouteSimulationCommand,
@@ -22,9 +25,6 @@ use crate::ports::{
     PublishMessagingTemplateVersionCommand, UpdateVerificationPolicyCommand,
 };
 
-const DEFAULT_PAGE_NO: i64 = 1;
-const DEFAULT_PAGE_SIZE: i64 = 100;
-const MAX_PAGE_SIZE: i64 = 200;
 const MAX_Q_LEN: usize = 128;
 const MAX_STATUS_LEN: usize = 32;
 const MAX_CHANNEL_LEN: usize = 32;
@@ -596,13 +596,11 @@ where
 }
 
 fn collection_response(collection: AdminMessagingCollection) -> Response {
-    Json(success_envelope(MessagingCollectionResponse {
-        items: collection.items,
-        total: collection.total,
-        page: collection.page_no,
-        page_size: collection.page_size,
-    }))
-    .into_response()
+    json_success_list_response(
+        None,
+        collection.items,
+        offset_page_info(collection.page_no, collection.page_size, collection.total),
+    )
 }
 
 fn validated_list_query(
@@ -610,22 +608,14 @@ fn validated_list_query(
     query: AdminMessagingListRequestQuery,
 ) -> Result<ListAdminMessagingRecordsQuery, Response> {
     let subject = scoped.into();
-    let page_no = query.page.unwrap_or(DEFAULT_PAGE_NO);
-    if page_no < 1 {
-        return Err(bad_request("page must be greater than or equal to 1"));
-    }
-    let page_size = query.page_size.unwrap_or(DEFAULT_PAGE_SIZE);
-    if !(1..=MAX_PAGE_SIZE).contains(&page_size) {
-        return Err(bad_request(format!(
-            "page_size must be between 1 and {MAX_PAGE_SIZE}"
-        )));
-    }
+    let pagination = parse_offset_list_query(query.page, query.page_size)
+        .map_err(bad_request)?;
     Ok(ListAdminMessagingRecordsQuery {
         subject,
-        page_no,
-        page_size,
-        offset: (page_no - 1) * page_size,
-        q: normalize_optional_text(query.q, "q", MAX_Q_LEN)?,
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
+        q: normalize_list_search_query(query.q, "q").map_err(bad_request)?,
         status: normalize_optional_text(query.status, "status", MAX_STATUS_LEN)?
             .map(|value| value.to_ascii_lowercase()),
         channel: normalize_optional_channel(query.channel)?,

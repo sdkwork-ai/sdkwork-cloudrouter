@@ -19,8 +19,19 @@ pub struct AdminServiceNodeSubject {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListAdminServiceNodesQuery {
     pub subject: AdminServiceNodeSubject,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
     pub search: Option<String>,
     pub status: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminServiceNodeListPage {
+    pub items: Vec<AdminServiceNodeItem>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -79,7 +90,7 @@ pub trait AdminServiceNodeStore {
     fn list_service_nodes<'a>(
         &'a self,
         query: ListAdminServiceNodesQuery,
-    ) -> AdminServiceNodeCommandFuture<'a, Vec<AdminServiceNodeItem>>;
+    ) -> AdminServiceNodeCommandFuture<'a, AdminServiceNodeListPage>;
 
     fn create_service_node<'a>(
         &'a self,

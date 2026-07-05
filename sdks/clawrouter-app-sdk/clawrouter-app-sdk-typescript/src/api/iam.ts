@@ -1,8 +1,38 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { ApiKeysCreateResult, ApiKeysUpdateResult, SdkWorkCommandData, SdkWorkPageData } from '../types';
+import type { ApiKeysCreateResult, ApiKeysUpdateResult, SdkWorkCommandData, SdkWorkPageData, UsersSettingsRetrieveResult, UsersSettingsUpdateResult } from '../types';
 
+
+export class IamUsersSettingsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Retrieve */
+  async retrieve(): Promise<UsersSettingsRetrieveResult> {
+    return this.client.get<UsersSettingsRetrieveResult>(appApiPath(`/iam/users/settings`));
+  }
+
+/** Update */
+  async update(): Promise<UsersSettingsUpdateResult> {
+    return this.client.put<UsersSettingsUpdateResult>(appApiPath(`/iam/users/settings`));
+  }
+}
+
+export class IamUsersApi {
+  private client: HttpClient;
+  public readonly settings: IamUsersSettingsApi;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+    this.settings = new IamUsersSettingsApi(client);
+  }
+
+}
 
 export class IamApiKeysApi {
   private client: HttpClient;
@@ -36,10 +66,12 @@ export class IamApiKeysApi {
 export class IamApi {
   private client: HttpClient;
   public readonly apiKeys: IamApiKeysApi;
+  public readonly users: IamUsersApi;
 
   constructor(client: HttpClient) {
     this.client = client;
     this.apiKeys = new IamApiKeysApi(client);
+    this.users = new IamUsersApi(client);
   }
 
 }

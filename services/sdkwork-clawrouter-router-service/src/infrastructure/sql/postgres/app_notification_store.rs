@@ -29,7 +29,8 @@ SELECT
     read_at,
     popup_seen_at,
     archived_at,
-    action_url
+    action_url,
+    COUNT(*) OVER() AS total
 FROM (
     SELECT
         CAST(m.id AS TEXT) AS id,
@@ -210,7 +211,7 @@ impl AppNotificationStore for PostgresAppNotificationStore {
     ) -> AppNotificationFuture<'a, AppNotificationItems> {
         Box::pin(async move {
             let page = query.page.max(1);
-            let page_size = query.page_size.clamp(1, 100);
+            let page_size = query.page_size.clamp(1, 200);
             let offset = (page - 1) * page_size;
             let rows = sqlx::query(LIST_NOTIFICATIONS)
                 .bind(query.subject.tenant_id)
@@ -229,11 +230,15 @@ impl AppNotificationStore for PostgresAppNotificationStore {
                 .fetch_all(&self.pool)
                 .await
                 .map_err(sql_error)?;
+            let total = rows
+                .first()
+                .and_then(|row| row.try_get::<i64, _>("total").ok())
+                .unwrap_or(0);
             let items = rows
                 .into_iter()
                 .map(row_to_notification)
                 .collect::<DomainResult<Vec<_>>>()?;
-            Ok(AppNotificationItems::new(items))
+            Ok(AppNotificationItems::new(items, total, page, page_size))
         })
     }
 

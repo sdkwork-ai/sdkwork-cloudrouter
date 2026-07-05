@@ -140,6 +140,76 @@ jobs:
       - name: pnpm audit (npm vulnerabilities)
         run: pnpm audit --audit-level=high
 
+  supply-chain:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Generate multi-ecosystem SBOM with syft (cargo + npm + pnpm)
+        uses: anchore/syft-action@v1
+        with:
+          path: .
+          format: spdx-json
+          output-file: /tmp/sbom-ci.spdx.json
+
+      - name: Verify syft SBOM covers cargo and npm ecosystems
+        run: |
+          node -e "
+          const fs = require('fs');
+          const sbom = JSON.parse(fs.readFileSync('/tmp/sbom-ci.spdx.json', 'utf8'));
+          let cargo = 0, npm = 0;
+          for (const p of sbom.packages || []) {
+            for (const r of p.externalRefs || []) {
+              if (r.referenceCategory === 'PACKAGE-MANAGER') {
+                if (r.referenceLocator.startsWith('pkg:cargo')) cargo++;
+                if (r.referenceLocator.startsWith('pkg:npm')) npm++;
+              }
+            }
+          }
+          console.log('syft SBOM ecosystem coverage: ' + cargo + ' cargo, ' + npm + ' npm packages');
+          if (cargo < 1) { console.error('FAIL: syft SBOM has no cargo packages'); process.exit(1); }
+          if (npm < 1) { console.error('FAIL: syft SBOM has no npm packages; frontend dependencies missing'); process.exit(1); }
+          console.log('syft multi-ecosystem SBOM verification OK');
+          "
+
+      - name: Validate committed sbom.spdx.json (inputHashes + npm coverage)
+        run: |
+          node -e "
+          const sbom = require('./deployments/artifacts/sbom.spdx.json');
+          const h = (sbom.provenance && sbom.provenance.inputHashes) || {};
+          if (!h.cargoLock) throw new Error('sbom.spdx.json: cargoLock hash missing');
+          if (!h.rootPnpmLock) throw new Error('sbom.spdx.json: rootPnpmLock hash missing');
+          if (!h.pcPnpmLock) throw new Error('sbom.spdx.json: pcPnpmLock is null; PC workspace lockfile hash must be populated');
+          const cargo = (sbom.packages || []).filter(p => p.packageType === 'cargo').length;
+          const npm = (sbom.packages || []).filter(p => p.packageType === 'npm').length;
+          console.log('committed SBOM: ' + cargo + ' cargo, ' + npm + ' npm packages');
+          if (npm < 1) throw new Error('committed SBOM has no npm packages; frontend dependencies missing');
+          console.log('sbom.spdx.json validation OK');
+          "
+
+      - name: Validate committed checksums.json (5 install packages)
+        run: |
+          node -e "
+          const cs = require('./deployments/artifacts/checksums.json');
+          const arts = cs.artifacts || [];
+          if (arts.length !== 5) throw new Error('expected 5 install package artifacts, got ' + arts.length);
+          for (const a of arts) {
+            for (const f of ['name', 'path', 'sha256', 'reproducible']) {
+              if (!(f in a)) throw new Error('artifact missing required field \"' + f + '\": ' + JSON.stringify(a));
+            }
+          }
+          console.log('checksums.json validation OK: ' + arts.length + ' artifacts');
+          "
+
+      - name: SBOM generator dry-run check
+        run: node scripts/generate-release-sbom.mjs --check
+
   e2e:
     runs-on: ubuntu-24.04
     continue-on-error: true

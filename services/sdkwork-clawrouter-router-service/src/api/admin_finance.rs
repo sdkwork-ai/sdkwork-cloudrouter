@@ -5,19 +5,19 @@ use axum::extract::{Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
-use axum::{Json, Router};
-use serde::{Deserialize, Serialize};
+use axum::Router;
+use serde::Deserialize;
 
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, normalize_list_search_query, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code,
+};
 use crate::domain::DomainError;
 use crate::ports::{
     AdminFinanceStore, AdminFinanceSubject, ListAdminBillingRecordsQuery,
     ListAdminTransactionsQuery,
 };
 
-const DEFAULT_PAGE_NO: i64 = 1;
-const DEFAULT_PAGE_SIZE: i64 = 100;
-const MAX_PAGE_SIZE: i64 = 200;
 const MAX_KEYWORD_LEN: usize = 128;
 const MAX_STATUS_LEN: usize = 32;
 const MAX_TIME_LEN: usize = 64;
@@ -37,17 +37,12 @@ struct AdminFinanceRequestQuery {
     end_time: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct AdminFinanceListResponse<T> {
-    items: Vec<T>,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct ValidatedFinanceListQuery {
     subject: AdminFinanceSubject,
     page_no: i64,
     page_size: i64,
+    offset: i64,
     keyword: Option<String>,
     status: Option<String>,
     start_time: Option<String>,
@@ -90,7 +85,11 @@ async fn fetch_transactions(
         })
         .await
     {
-        Ok(items) => list_response(items),
+        Ok(collection) => json_success_list_response(
+            None,
+            collection.items,
+            offset_page_info(collection.page_no, collection.page_size, collection.total),
+        ),
         Err(error) => finance_system_response("finance ledger read model is unavailable", error),
     }
 }
@@ -118,7 +117,11 @@ async fn fetch_billing_records(
         })
         .await
     {
-        Ok(items) => list_response(items),
+        Ok(collection) => json_success_list_response(
+            None,
+            collection.items,
+            offset_page_info(collection.page_no, collection.page_size, collection.total),
+        ),
         Err(error) => {
             finance_system_response("finance usage statement read model is unavailable", error)
         }
@@ -131,29 +134,21 @@ fn validated_query(
     query: AdminFinanceRequestQuery,
 ) -> Result<ValidatedFinanceListQuery, Response> {
     let subject = scoped.into();
-    let page_no = query.page.unwrap_or(DEFAULT_PAGE_NO);
-    if page_no < 1 {
-        return Err(bad_request("page must be greater than or equal to 1"));
-    }
-    let page_size = query.page_size.unwrap_or(DEFAULT_PAGE_SIZE);
-    if !(1..=MAX_PAGE_SIZE).contains(&page_size) {
-        return Err(bad_request(format!(
-            "page_size must be between 1 and {MAX_PAGE_SIZE}"
-        )));
-    }
+    let pagination = parse_offset_list_query(query.page, query.page_size)
+        .map_err(bad_request)?;
 
     Ok(ValidatedFinanceListQuery {
         subject,
-        page_no,
-        page_size,
-        keyword: normalize_optional_text(query.q, "q", MAX_KEYWORD_LEN)?,
+        page_no: pagination.page_no,
+        page_size: pagination.page_size,
+        offset: pagination.offset,
+        keyword: normalize_list_search_query(query.q, "q").map_err(bad_request)?,
         status: normalize_optional_text(query.status, "status", MAX_STATUS_LEN)?
             .map(|value| value.to_ascii_lowercase()),
         start_time: normalize_optional_text(query.start_time, "start_time", MAX_TIME_LEN)?,
         end_time: normalize_optional_text(query.end_time, "end_time", MAX_TIME_LEN)?,
     })
 }
-
 
 fn normalize_optional_text(
     value: Option<String>,
@@ -173,13 +168,6 @@ fn normalize_optional_text(
         )));
     }
     Ok(Some(value.to_owned()))
-}
-
-fn list_response<T>(items: Vec<T>) -> Response
-where
-    T: Serialize,
-{
-    Json(success_envelope(AdminFinanceListResponse { items })).into_response()
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
