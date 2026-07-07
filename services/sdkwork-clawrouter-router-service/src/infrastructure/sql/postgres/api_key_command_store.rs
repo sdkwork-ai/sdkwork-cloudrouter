@@ -6,6 +6,7 @@ use crate::application::ApiKeySecretCodec;
 use crate::domain::{
     ChannelGroup, DomainError, DomainResult, GatewayAccessPolicy, GatewayApiKey, QuotaPolicy,
 };
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     ApiKeyCommandStoreFuture, CreateGatewayApiKeyCommand, CreatedGatewayApiKey,
@@ -149,12 +150,13 @@ async fn ensure_default_channel_group(
     command: &EnsureDefaultChannelGroupCommand,
 ) -> DomainResult<ChannelGroup> {
     let pricing_plan_id = find_pricing_plan_id(tx, command).await?;
+    let group_id = next_claw_runtime_id("default channel group creation")?;
     let group = sqlx::query(
         r#"
         INSERT INTO ai_channel_group
-            (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, group_name, group_code, description, group_type, environment, pricing_plan_id, pricing_plan_code, rate_multiplier, official_price_multiplier, billing_type, capacity_limit, allowed_origin, metadata)
+            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, group_name, group_code, description, group_type, environment, pricing_plan_id, pricing_plan_code, rate_multiplier, official_price_multiplier, billing_type, capacity_limit, allowed_origin, metadata)
         VALUES
-            ($1, $2, $3, 1, 1, $4::timestamptz, $5::timestamptz, 0, $6, $7, '', 'default', 1, $8, $9, $10::numeric, $11::numeric, 1, 0, '{}'::jsonb, '{}'::jsonb)
+            ($1, $2, $3, $4, 1, 1, $5::timestamptz, $6::timestamptz, 0, $7, $8, '', 'default', 1, $9, $10, $11::numeric, $12::numeric, 1, 0, '{}'::jsonb, '{}'::jsonb)
         ON CONFLICT (tenant_id, organization_id, group_code)
         DO UPDATE SET
             status = 1,
@@ -171,11 +173,12 @@ async fn ensure_default_channel_group(
             COALESCE(organization_id, 0) AS organization_id,
             COALESCE(NULLIF(group_name, ''), COALESCE(group_code, '')) AS name,
             COALESCE(group_code, '') AS code,
-            COALESCE(NULLIF(pricing_plan_code, ''), $9) AS pricing_plan_code,
+            COALESCE(NULLIF(pricing_plan_code, ''), $10) AS pricing_plan_code,
             COALESCE(rate_multiplier::text, '1.000000') AS rate_multiplier,
             COALESCE(official_price_multiplier::text, '1.000000') AS official_price_multiplier
         "#,
     )
+    .bind(group_id)
     .bind(&command.group_uuid)
     .bind(command.tenant_id)
     .bind(command.organization_id)
@@ -318,21 +321,27 @@ async fn insert_quota_policy(
     let Some(quota_limit) = command.quota_limit else {
         return Ok(None);
     };
-    let id: i64 = sqlx::query_scalar(
+    let id = next_claw_runtime_id("api key quota policy creation")?;
+    sqlx::query(
         r#"
         INSERT INTO ai_quota_policy
-            (uuid, name, quota_period, quota_unit, quota_limit, status, effective_from)
+            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, name, quota_period, quota_unit, quota_limit, effective_from)
         VALUES
-            ($1, $2, $3, $4, $5::numeric, 1, CURRENT_TIMESTAMP)
-        RETURNING id
+            ($1, $2, $3, $4, 1, 1, $5::timestamptz, $6::timestamptz, 0, $7, $8, $9, $10::numeric, $11::timestamptz)
         "#,
     )
+    .bind(id)
     .bind(&command.quota_policy_uuid)
+    .bind(command.tenant_id)
+    .bind(command.organization_id)
+    .bind(&command.created_at)
+    .bind(&command.created_at)
     .bind(format!("{} quota policy", command.name))
     .bind(0_i32)
     .bind(0_i32)
     .bind(quota_limit.to_fixed_string(6))
-    .fetch_one(&mut **tx)
+    .bind(&command.created_at)
+    .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to create api key quota policy", error))?;
 
@@ -849,21 +858,27 @@ async fn upsert_update_quota_policy(
         .map_err(|error| store_error("failed to update api key quota policy", error))?;
         return Ok(Some(QuotaPolicy::new(policy_id, Some(quota_limit))));
     }
-    let id: i64 = sqlx::query_scalar(
+    let id = next_claw_runtime_id("api key quota policy update creation")?;
+    sqlx::query(
         r#"
         INSERT INTO ai_quota_policy
-            (uuid, name, quota_period, quota_unit, quota_limit, status, effective_from)
+            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, name, quota_period, quota_unit, quota_limit, effective_from)
         VALUES
-            ($1, $2, $3, $4, $5::numeric, 1, CURRENT_TIMESTAMP)
-        RETURNING id
+            ($1, $2, $3, $4, 1, 1, $5::timestamptz, $6::timestamptz, 0, $7, $8, $9, $10::numeric, $11::timestamptz)
         "#,
     )
+    .bind(id)
     .bind(&command.quota_policy_uuid)
+    .bind(command.tenant_id)
+    .bind(command.organization_id)
+    .bind(&command.requested_at)
+    .bind(&command.requested_at)
     .bind(format!("api key {} quota policy", command.api_key_id))
     .bind(0_i32)
     .bind(0_i32)
     .bind(quota_limit.to_fixed_string(6))
-    .fetch_one(&mut **tx)
+    .bind(&command.requested_at)
+    .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to create api key quota policy", error))?;
     Ok(Some(QuotaPolicy::new(id, Some(quota_limit))))

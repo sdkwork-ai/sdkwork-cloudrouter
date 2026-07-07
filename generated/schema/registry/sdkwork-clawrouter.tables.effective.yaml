@@ -11,20 +11,27 @@ schema_registry:
     - uuid
     - tenant_id
     - organization_id
+    - data_scope
     - status
     - created_at
     - updated_at
     - version
+    - deleted_at
+    - deleted_by
     - metadata
     relation_entity:
     - id
     - uuid
     - tenant_id
     - organization_id
+    - data_scope
     - status
     - created_at
     - updated_at
     - version
+    - deleted_at
+    - deleted_by
+    - metadata
     event_log:
     - id
     - uuid
@@ -44,52 +51,80 @@ schema_registry:
     - uuid
     - tenant_id
     - organization_id
+    - data_scope
     - status
     - created_at
     - updated_at
     - version
+    - deleted_at
+    - deleted_by
     - metadata
     projection:
     - id
     - uuid
     - tenant_id
     - organization_id
+    - source_type
+    - source_id
+    - source_version
     - status
     - created_at
+    - updated_at
+    - rebuild_version
     - metadata
     quota_policy:
     - id
     - uuid
     - tenant_id
     - organization_id
+    - data_scope
     - status
     - created_at
     - updated_at
     - version
+    - deleted_at
+    - deleted_by
+    - metadata
     runtime_binding:
     - id
     - uuid
     - tenant_id
     - organization_id
+    - data_scope
     - status
     - created_at
     - updated_at
     - version
+    - deleted_at
+    - deleted_by
+    - metadata
     runtime_coordination:
     - id
     - uuid
     - tenant_id
     - organization_id
+    - data_scope
     - status
     - created_at
+    - updated_at
     - version
+    - deleted_at
+    - deleted_by
+    - metadata
     runtime_coordination_event:
     - id
     - uuid
     - tenant_id
     - organization_id
+    - user_id
+    - request_id
+    - trace_id
+    - payload_hash
     - status
     - created_at
+    - retention_until
+    - legal_hold
+    - metadata
     ledger_source_fact:
     - id
     - uuid
@@ -98,6 +133,7 @@ schema_registry:
     - user_id
     - request_id
     - trace_id
+    - payload_hash
     - idempotency_key
     - status
     - created_at
@@ -109,93 +145,68 @@ schema_registry:
     - uuid
     - tenant_id
     - organization_id
+    - data_scope
     - status
     - created_at
     - updated_at
     - version
+    - deleted_at
+    - deleted_by
     - metadata
-description: 'Claw Router Schema Registry - 积木架构设计
-
-
-  设计原则:
-
-  1. 单一所有权 - Claw Router只定义自己的16张本地表
-
-  2. 高内聚低耦合 - 模块内部表聚合，模块间通过引用组合
-
-  3. 积木架构 - 各模块独立管理自己的schema
-
-  4. 解耦部署 - 各模块可独立部署、独立升级
-
-
-  Claw Router本地表（16张）:
-
-  - ai-routing模块: 12张表（路由决策）
-
-  - ai-metering模块: 2张表（用量计量）⭐ 核心价值
-
-  - ai-pricing模块: 2张表（计费定价）
-
-
-  组合模块表（45张）:
-
-  - 不在claw-router中定义，由各模块自己管理
-
-  - Claw Router通过registry_dependencies引用
-
-  - 各模块有自己的schema registry、DDL、migrations
-
-
-  表前缀规范（符合DATABASE_SPEC.md）:
-
-  - ai_: AI路由、计量、定价（Claw Router本地）
-
-  - iam_: 身份密钥（sdkwork-iam）
-
-  - commerce_: 账户订单支付（sdkwork-account/order/payment/invoice）
-
-  - integration_: 供应商集成（sdkwork-integration）
-
-  - ops_: 监控审计（sdkwork-ops）
-
-  '
+description: Claw Router Schema Registry. Machine-readable source of truth for Claw
+  Router-owned runtime tables; generated SQL, manifests, OpenAPI snapshots, SDKs,
+  services, and frontends must align to this contract.
 modules:
   ai-routing:
     owner: claw-router-platform
-    description: AI路由决策、渠道管理、供应商路由
+    description: AI routing, channel, provider, policy, site, quota, and runtime coordination
+      tables.
     compliance_level: L2
-    tables_count: 12
+    tables_count: 21
     tables:
     - ai_channel
-    - ai_channel_binding
-    - ai_channel_metric
-    - ai_channel_quota
-    - ai_group
-    - ai_group_resource
-    - ai_provider_route
-    - ai_routing_policy
-    - ai_routing_rule
-    - ai_routing_log
+    - ai_channel_credential
+    - ai_channel_group
+    - ai_channel_group_member
+    - ai_channel_group_metric_snapshot
+    - ai_channel_group_resource
+    - ai_channel_resource
     - ai_config_version
-    - ai_config_change
+    - ai_config_change_event
+    - ai_model_mapping_rule
+    - ai_model_mapping_rule_binding
+    - ai_model_mapping_rule_item
+    - ai_provider
+    - ai_provider_object_route
+    - ai_quota_policy
+    - ai_routing_decision_log
+    - ai_routing_policy
+    - ai_routing_profile
+    - ai_routing_rule
+    - ai_site
+    - ai_site_service
     ddl_location: database/migrations/ai-routing.sql
   ai-metering:
     owner: claw-router-platform
-    description: AI用量计量、请求追踪（核心价值表）
+    description: AI usage facts, service-provider usage edges, and request traces.
     compliance_level: L3
-    tables_count: 2
+    tables_count: 3
     tables:
     - ai_usage
+    - ai_usage_service_provider_edge
     - ai_request_trace
     ddl_location: database/migrations/ai-metering.sql
   ai-pricing:
     owner: claw-router-platform
-    description: AI计费定价、价格规则
+    description: AI pricing plans, bindings, rules, tiers, and import snapshots.
     compliance_level: L2
-    tables_count: 2
+    tables_count: 5
     tables:
-    - ai_pricing
+    - ai_pricing_import_snapshot
+    - ai_pricing_plan
+    - ai_pricing_plan_binding
     - ai_pricing_rule
+    - ai_pricing_tier
     ddl_location: database/migrations/ai-pricing.sql
 data_flow:
   usage_to_account:
@@ -219,11 +230,11 @@ data_flow:
     - sdkwork-ops-sdk调用
     - ops_metric写入（sdkwork-ops本地）
 statistics:
-  claw_router_local_tables: 16
+  claw_router_local_tables: 29
   combined_module_tables: 45
-  total_tables: 61
+  total_tables: 74
   table_prefix_distribution:
-    ai_: 20
+    ai_: 33
     iam_: 5
     commerce_: 18
     integration_: 17
@@ -232,7 +243,7 @@ statistics:
     catalog_: 1
     system_: 2
   module_distribution:
-    claw-router: 16
+    claw-router: 29
     sdkwork-iam: 5
     sdkwork-account: 3
     sdkwork-order: 2
@@ -252,7 +263,8 @@ compliance:
   - ai_usage
   security_tables: []
   audit_tables:
-  - ai_routing_log
+  - ai_request_trace
+  - ai_routing_decision_log
   retention_policy:
     financial_data:
       online_retention: 12mo
@@ -408,99 +420,96 @@ tables:
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
-  description: '渠道表 - 供应商API通道
-
-
-    行业对标:
-
-    - Stripe Payment Methods (支付方式)
-
-    - AWS API Gateway Integrations (API集成)
-
-    - OpenAI API Providers (API供应商)
-
-
-    职责:
-
-    - 定义上游账号/渠道的运行时配置
-
-    - 连接provider、site、认证方式、区域和调度权重
-
-    - 支持健康检查和熔断器
-
-
-    关键特性:
-
-    - 凭据引用: 不存储明文凭据，只引用secret
-
-    - 权重调度: 支持基于权重的负载均衡
-
-    - 健康检查: 支持健康状态监控和熔断器
-
-    - 区域配置: 支持多region部署
-
-    '
   common_columns: credential_ref
-  frontend_routes:
-  - /admin/channels
-  - /admin/channels/dashboard
   api_surfaces:
+  - app
   - backend
   - worker
   columns:
-    id: int64
-    uuid: string(64)
-    tenant_id: int64
-    organization_id: int64
-    channel_code: string(64)
-    idempotency_key: string(128)
     provider_id: int64
     provider_code: string(64)
     site_id: int64
+    site_service_id: int64
     site_code: string(64)
-    channel_name: string(128)
-    channel_type: enum_int32
-    auth_type: enum_int32
-    auth_secret_ref: string(256)
-    upstream_region: string(64)
-    client_region: string(64)
-    weight: int32
-    priority: int32
-    health_check_enabled: bool
-    health_check_interval_seconds: int32
-    health_check_timeout_seconds: int32
-    health_status: enum_int32
-    last_health_check_at: instant
-    circuit_breaker_enabled: bool
-    circuit_breaker_threshold: int32
-    circuit_breaker_timeout_seconds: int32
-    circuit_state: enum_int32
-    rate_limit_enabled: bool
-    requests_per_second: int64
-    requests_per_minute: int64
-    quota_enabled: bool
-    daily_quota: int64
-    monthly_quota: int64
-    cost_multiplier: decimal
-    markup_amount: decimal
-    created_at: instant
-    updated_at: instant
-    version: int64
-    status: enum_int32
-    metadata: json
+    site_service_code: string(64)
+    site_channel_role: string(32)
+    channel_code:
+      type: string(64)
+      constraints: NOT NULL
+    channel_name:
+      type: string(128)
+      constraints: NOT NULL
+    channel_type:
+      type: string(32)
+      constraints: NOT NULL
+    protocol_code: string(64)
+    auth_type: int32
+    credential_profile: int32
+    external_channel_id: string(128)
+    base_url: string(512)
+    auth_config: json
+    credential_ref: string(256)
+    credential_hash: string(128)
+    credential_version: int64
+    credential_rotation_policy: json
+    credential_rotation_strategy:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'default'
+    masked_label: string(128)
+    environment: int32
+    region_code: string(64)
+    quota_unit: int32
+    quota_limit: decimal
+    quota_used: decimal
+    upstream_balance_amount: decimal
+    upstream_balance_currency: string(10)
+    last_balance_checked_at: instant
+    last_rotated_at: instant
+    next_rotate_at: instant
+    last_verified_at: instant
+    last_used_at: instant
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    weight:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    rpm_limit: int64
+    timeout_ms: int32
+    retry_policy: json
+    circuit_breaker_policy: json
+    health_status:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    last_latency_ms: int32
+    consecutive_error_count: int64
+    proxy_id: int64
+    risk_level: int32
   unique_constraints:
-  - name: uk_ai_channel_code
+  - name: uk_ai_channel_uuid
+    columns:
+    - uuid
+  - name: uk_ai_channel_tenant_code
     columns:
     - tenant_id
     - organization_id
     - channel_code
   indexes:
-  - name: idx_ai_channel_provider_status
+  - name: idx_ai_channel_provider_type_status
     columns:
     - tenant_id
     - organization_id
-    - provider_id
+    - provider_code
+    - channel_type
     - status
+    - id
+  - name: idx_ai_channel_health_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - health_status
+    - priority
     - weight
     - id
   - name: idx_ai_channel_site_status
@@ -509,97 +518,218 @@ tables:
     - organization_id
     - site_id
     - status
-    - weight
+    - health_status
     - id
-  - name: idx_ai_channel_health_status
+  - name: idx_ai_channel_site_service_status
     columns:
     - tenant_id
     - organization_id
+    - site_service_id
+    - status
     - health_status
-    - circuit_state
     - id
-  security:
-    sensitivity: SECRET_REF
-    stores_secret_plaintext: false
-    audit_required: true
+  - name: idx_ai_channel_site_code
+    columns:
+    - tenant_id
+    - organization_id
+    - site_code
+    - site_service_code
+    - status
+    - id
   imported: false
-- table: ai_channel_binding
+- table: ai_channel_credential
+  domain: ai
+  profile: credential_ref
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: credential_ref
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    channel_id:
+      type: int64
+      constraints: NOT NULL
+    provider_code: string(64)
+    channel_code: string(64)
+    credential_name:
+      type: string(128)
+      constraints: NOT NULL
+    base_url:
+      type: string(512)
+      constraints: NOT NULL
+    auth_config:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    credential_ref:
+      type: string(256)
+      constraints: NOT NULL
+    credential_hash:
+      type: string(128)
+      constraints: NOT NULL
+    masked_label: string(128)
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    weight:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    health_status:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    last_latency_ms: int32
+    consecutive_error_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    last_verified_at: instant
+    last_used_at: instant
+  unique_constraints:
+  - name: uk_ai_channel_credential_uuid
+    columns:
+    - uuid
+  indexes:
+  - name: idx_ai_channel_credential_channel
+    columns:
+    - tenant_id
+    - organization_id
+    - channel_id
+    - status
+    - priority
+    - weight
+    - id
+  - name: idx_ai_channel_credential_ref
+    columns:
+    - tenant_id
+    - organization_id
+    - credential_ref
+  imported: false
+- table: ai_channel_group
+  domain: ai
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    group_code:
+      type: string(64)
+      constraints: NOT NULL
+    group_name:
+      type: string(128)
+      constraints: NOT NULL
+    description: string(512)
+    provider_code: string(64)
+    group_type: string(32)
+    routing_policy_id: int64
+    quota_policy_id: int64
+    rate_limit_policy_id: int64
+    environment: int32
+    pricing_plan_id: int64
+    pricing_plan_code: string(64)
+    rate_multiplier: decimal
+    price_reference_mode: int32
+    official_price_multiplier: decimal
+    billing_type: int32
+    capacity_limit: int64
+    allowed_origin: json
+  unique_constraints:
+  - name: uk_ai_channel_group_uuid
+    columns:
+    - uuid
+  - name: uk_ai_channel_group_tenant_code
+    columns:
+    - tenant_id
+    - organization_id
+    - group_code
+  indexes:
+  - name: idx_ai_channel_group_provider_status
+    columns:
+    - tenant_id
+    - organization_id
+    - provider_code
+    - status
+    - updated_at
+    - id
+  - name: idx_ai_channel_group_tenant_status_updated
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - updated_at
+    - id
+  - name: idx_ai_channel_group_pricing
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_plan_id
+    - status
+    - updated_at
+    - id
+  imported: false
+- table: ai_channel_group_member
   domain: ai
   profile: relation_entity
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
-  description: '渠道绑定表 - 渠道与组关联
-
-
-    行业对标:
-
-    - Stripe API Key Restrictions (API Key限制)
-
-    - AWS IAM Role Policies (角色策略)
-
-
-    职责:
-
-    - 维护渠道与渠道组的关联关系
-
-    - 支持优先级和权重配置
-
-    - 支持启用/禁用状态
-
-
-    关键特性:
-
-    - 多对多关系: 渠道可以绑定多个组，组可以包含多个渠道
-
-    - 优先级排序: 支持基于优先级的路由选择
-
-    - 权重分配: 支持基于权重的负载均衡
-
-    '
   common_columns: relation_entity
-  frontend_routes:
-  - /admin/groups
-  - /admin/groups/bindings
   api_surfaces:
+  - app
   - backend
   - worker
   columns:
-    id: int64
-    uuid: string(64)
-    tenant_id: int64
-    organization_id: int64
-    idempotency_key: string(128)
-    channel_id: int64
-    channel_code: string(64)
-    group_id: int64
-    group_code: string(64)
-    binding_priority: int32
-    binding_weight: int32
-    enabled: bool
+    channel_group_id:
+      type: int64
+      constraints: NOT NULL
+    channel_id:
+      type: int64
+      constraints: NOT NULL
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    weight:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    enabled:
+      type: bool
+      constraints: NOT NULL DEFAULT TRUE
     effective_from: instant
     effective_to: instant
-    created_at: instant
-    updated_at: instant
-    version: int64
-    status: enum_int32
   unique_constraints:
-  - name: uk_ai_channel_binding_group_channel
+  - name: uk_ai_channel_group_member_uuid
+    columns:
+    - uuid
+  - name: uk_ai_channel_group_member
     columns:
     - tenant_id
     - organization_id
-    - group_id
+    - channel_group_id
     - channel_id
   indexes:
-  - name: idx_ai_channel_binding_group
+  - name: idx_ai_channel_group_member_status
     columns:
     - tenant_id
     - organization_id
-    - group_id
-    - binding_priority
     - status
+    - channel_group_id
+    - priority
     - id
-  - name: idx_ai_channel_binding_channel
+  - name: idx_ai_channel_group_member_group
+    columns:
+    - tenant_id
+    - organization_id
+    - channel_group_id
+    - status
+    - priority
+    - weight
+    - id
+  - name: idx_ai_channel_group_member_channel
     columns:
     - tenant_id
     - organization_id
@@ -607,256 +737,226 @@ tables:
     - status
     - id
   imported: false
-- table: ai_channel_metric
+- table: ai_channel_group_metric_snapshot
   domain: ai
   profile: projection
   compliance_level: L2
-  system_of_record: false
-  write_owner: metrics-worker
-  description: '渠道指标表 - 健康状态快照
-
-
-    行业对标:
-
-    - Datadog Metrics (监控指标)
-
-    - Prometheus Metrics (性能指标)
-
-    - AWS CloudWatch Metrics (云监控)
-
-
-    职责:
-
-    - 记录渠道的健康状态快照
-
-    - 支持容量、额度和用量的指标监控
-
-    - 提供实时监控和告警数据
-
-
-    关键特性:
-
-    - 快照模式: 定时生成快照，不实时更新
-
-    - 轻量级: 只存储关键指标，不存储详细数据
-
-    - 时效性: 短期存储（在线保留3个月）
-
-    '
+  system_of_record: true
+  write_owner: ai-routing-service
   common_columns: projection
-  frontend_routes:
-  - /admin/channels/metrics
-  - /admin/channels/dashboard
   api_surfaces:
+  - app
   - backend
   - worker
   columns:
-    id: int64
-    uuid: string(64)
-    tenant_id: int64
-    organization_id: int64
-    channel_id: int64
-    channel_code: string(64)
+    channel_group_id: int64
+    group_code: string(64)
+    provider_code: string(64)
+    channel_available_count: int64
+    channel_total_count: int64
+    capacity_used: decimal
+    capacity_limit: decimal
+    request_count_today: int64
+    request_count_total: int64
+    usage_amount_today: decimal
+    usage_amount_total: decimal
+    health_status: int32
     snapshot_at: instant
-    health_status: enum_int32
-    circuit_state: enum_int32
-    avg_latency_ms: int32
-    p50_latency_ms: int32
-    p95_latency_ms: int32
-    p99_latency_ms: int32
-    total_requests: int64
-    success_requests: int64
-    failed_requests: int64
-    success_rate: decimal
-    daily_quota_used: int64
-    daily_quota_remaining: int64
-    monthly_quota_used: int64
-    monthly_quota_remaining: int64
-    total_cost: decimal
-    avg_cost_per_request: decimal
-    created_at: instant
-    status: enum_int32
   unique_constraints:
-  - name: uk_ai_channel_metric_snapshot
+  - name: uk_ai_channel_group_metric_snapshot_uuid
+    columns:
+    - uuid
+  - name: uk_ai_channel_group_metric_snapshot
     columns:
     - tenant_id
     - organization_id
-    - channel_id
+    - channel_group_id
     - snapshot_at
   indexes:
-  - name: idx_ai_channel_metric_channel_time
+  - name: idx_ai_channel_group_metric_tenant_status
     columns:
     - tenant_id
     - organization_id
-    - channel_id
+    - status
     - snapshot_at
     - id
-  - name: idx_ai_channel_metric_time
+  - name: idx_ai_channel_group_metric_status
     columns:
     - tenant_id
     - organization_id
+    - provider_code
+    - health_status
     - snapshot_at
     - id
-  lifecycle:
-    partition_by: created_at_month
-    online_retention: 3mo
-    archive_retention: 1y
   imported: false
-- table: ai_channel_quota
+- table: ai_channel_group_resource
   domain: ai
-  profile: quota_policy
+  profile: relation_entity
   compliance_level: L2
   system_of_record: true
-  write_owner: quota-service
-  description: '渠道配额表 - 使用量限制
-
-
-    行业对标:
-
-    - Stripe Rate Limits (速率限制)
-
-    - AWS Service Quotas (服务配额)
-
-
-    职责:
-
-    - 定义渠道的使用量限制策略
-
-    - 支持按时间维度配额（日/月/年）
-
-    - 支持按资源类型配额（tokens/requests/cost）
-
-
-    关键特性:
-
-    - 多维度配额: 支持时间、资源、金额等多维度限制
-
-    - 灵活策略: 支持硬限制、软限制、告警限制
-
-    - 自动重置: 支持配额周期自动重置
-
-    '
-  common_columns: quota_policy
-  frontend_routes:
-  - /admin/channels/quota
+  write_owner: ai-routing-service
+  common_columns: relation_entity
   api_surfaces:
+  - app
   - backend
   - worker
   columns:
-    id: int64
-    uuid: string(64)
-    tenant_id: int64
-    organization_id: int64
-    channel_id: int64
-    channel_code: string(64)
-    quota_code: string(64)
-    idempotency_key: string(128)
-    quota_type: enum_int32
-    quota_period: enum_int32
-    quota_limit: int64
-    quota_warning_threshold: int64
-    quota_hard_limit: int64
-    quota_used: int64
-    quota_remaining: int64
-    quota_status: enum_int32
-    reset_at: instant
-    created_at: instant
-    updated_at: instant
-    version: int64
-    status: enum_int32
+    channel_group_id:
+      type: int64
+      constraints: NOT NULL
+    resource_id: int64
+    resource_code:
+      type: string(192)
+      constraints: NOT NULL DEFAULT ''
+    resource_group_id: int64
+    resource_group_code:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    grant_type:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'allow'
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    effective_from: instant
+    effective_to: instant
   unique_constraints:
-  - name: uk_ai_channel_quota_code
+  - name: uk_ai_channel_group_resource_uuid
+    columns:
+    - uuid
+  - name: uk_ai_channel_group_resource
     columns:
     - tenant_id
     - organization_id
-    - quota_code
+    - channel_group_id
+    - resource_code
+    - resource_group_code
   indexes:
-  - name: idx_ai_channel_quota_channel
+  - name: idx_ai_channel_group_resource_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - channel_group_id
+    - grant_type
+    - priority
+    - id
+  - name: idx_ai_channel_group_resource_lookup
+    columns:
+    - tenant_id
+    - organization_id
+    - channel_group_id
+    - status
+    - grant_type
+    - priority
+    - id
+  imported: false
+- table: ai_channel_resource
+  domain: ai
+  profile: relation_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: relation_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    channel_id:
+      type: int64
+      constraints: NOT NULL
+    provider_code: string(64)
+    channel_code: string(64)
+    resource_id: int64
+    resource_code:
+      type: string(192)
+      constraints: NOT NULL DEFAULT ''
+    resource_group_id: int64
+    resource_group_code:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    grant_type:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'allow'
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    weight:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    effective_from: instant
+    effective_to: instant
+  unique_constraints:
+  - name: uk_ai_channel_resource_uuid
+    columns:
+    - uuid
+  - name: uk_ai_channel_resource
     columns:
     - tenant_id
     - organization_id
     - channel_id
-    - quota_type
+    - resource_code
+    - resource_group_code
+  indexes:
+  - name: idx_ai_channel_resource_lookup
+    columns:
+    - tenant_id
+    - organization_id
     - status
+    - channel_id
+    - grant_type
+    - priority
     - id
   imported: false
-- table: ai_config_change
+- table: ai_config_change_event
   domain: ai
   profile: runtime_coordination_event
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
-  description: '配置变更表 - 变更事件
-
-
-    行业对标:
-
-    - AWS Config Change Events (配置变更事件)
-
-    - Kubernetes ConfigMap Updates (配置更新)
-
-
-    职责:
-
-    - AI配置变更事件记录
-
-    - 用于触发运行时缓存和路由快照刷新
-
-    - 支持配置变更审计
-
-
-    关键特性:
-
-    - 变更通知: 支持配置变更事件通知
-
-    - 缓存刷新: 触发运行时缓存刷新
-
-    - 审计追踪: 支持配置变更审计
-
-    '
   common_columns: runtime_coordination_event
-  frontend_routes:
-  - /admin/config/changes
   api_surfaces:
+  - app
   - backend
   - worker
   columns:
-    id: int64
-    uuid: string(64)
-    tenant_id: int64
-    organization_id: int64
-    version_id: int64
-    version_number: int64
-    change_type: enum_int32
-    change_scope: enum_int32
-    change_target: string(256)
-    before_snapshot: json
-    after_snapshot: json
-    change_reason: string(512)
-    changed_by: int64
-    created_at: instant
-    status: enum_int32
-  unique_constraints: []
+    config_scope:
+      type: string(64)
+      constraints: NOT NULL
+    changed_object_type: string(64)
+    changed_object_id: int64
+    config_version:
+      type: int64
+      constraints: NOT NULL
+    event_status:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'pending'
+    event_payload: json
+    published_at: instant
+    publish_attempts:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    last_error_message: string(512)
+  unique_constraints:
+  - name: uk_ai_config_change_event_uuid
+    columns:
+    - uuid
   indexes:
-  - name: idx_ai_config_change_version
+  - name: idx_ai_config_change_event_pending
     columns:
     - tenant_id
     - organization_id
-    - version_id
+    - event_status
     - created_at
     - id
-  - name: idx_ai_config_change_type_time
+  - name: idx_ai_config_change_event_scope_version
     columns:
     - tenant_id
     - organization_id
-    - change_type
-    - change_scope
-    - created_at
+    - config_scope
+    - config_version
     - id
-  lifecycle:
-    partition_by: created_at_month
-    online_retention: 12mo
-    archive_retention: 3y
   imported: false
 - table: ai_config_version
   domain: ai
@@ -864,227 +964,43 @@ tables:
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
-  description: '配置版本表 - 版本控制
-
-
-    行业对标:
-
-    - AWS Config Versions (配置版本)
-
-    - Kubernetes ConfigMap Versions (配置版本)
-
-
-    职责:
-
-    - AI路由配置版本管理
-
-    - 用于快照缓存刷新和分布式实例协调
-
-    - 支持配置回滚和审计
-
-
-    关键特性:
-
-    - 版本管理: 支持配置版本化管理
-
-    - 分布式协调: 支持多实例配置同步
-
-    - 回滚支持: 支持配置回滚和审计
-
-    '
   common_columns: runtime_coordination
-  frontend_routes:
-  - /admin/config/versions
-  api_surfaces:
-  - backend
-  - worker
-  columns:
-    id: int64
-    uuid: string(64)
-    tenant_id: int64
-    organization_id: int64
-    version_number: int64
-    version_hash: string(128)
-    config_type: enum_int32
-    config_snapshot: json
-    change_type: enum_int32
-    change_reason: string(512)
-    created_at: instant
-    status: enum_int32
-  unique_constraints:
-  - name: uk_ai_config_version_number
-    columns:
-    - tenant_id
-    - organization_id
-    - config_type
-    - version_number
-  indexes:
-  - name: idx_ai_config_version_type_time
-    columns:
-    - tenant_id
-    - organization_id
-    - config_type
-    - created_at
-    - version_number
-    - id
-  imported: false
-- table: ai_group
-  domain: ai
-  profile: tenant_entity
-  compliance_level: L2
-  system_of_record: true
-  write_owner: ai-routing-service
-  description: '渠道组表 - 供应商组合策略
-
-
-    行业对标:
-
-    - Stripe API Key Restrictions (API Key限制)
-
-    - AWS IAM Role Trust Policies (信任策略)
-
-
-    职责:
-
-    - 定义中转站面向用户/API Key的路由与计费分组
-
-    - 绑定价格计划和倍率
-
-    - 支持多渠道组合和fallback策略
-
-
-    关键特性:
-
-    - 分组策略: 支持基于用户/API Key/组织的分组
-
-    - 价格绑定: 支持绑定定价方案和倍率
-
-    - Fallback: 支持降级和fallback策略
-
-    '
-  common_columns: tenant_entity
-  frontend_routes:
-  - /admin/groups
-  - /console/groups
   api_surfaces:
   - app
   - backend
   - worker
   columns:
-    id: int64
-    uuid: string(64)
-    tenant_id: int64
-    organization_id: int64
-    group_code: string(64)
-    idempotency_key: string(128)
-    group_name: string(128)
-    group_type: enum_int32
-    pricing_id: int64
-    pricing_code: string(64)
-    quota_policy_id: int64
-    quota_policy_code: string(64)
-    routing_policy_id: int64
-    routing_policy_code: string(64)
-    fallback_enabled: bool
-    fallback_group_id: int64
-    sticky_session_enabled: bool
-    sticky_session_ttl_seconds: int32
-    created_at: instant
-    updated_at: instant
-    version: int64
-    status: enum_int32
-    metadata: json
+    config_scope:
+      type: string(64)
+      constraints: NOT NULL
+    config_version:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    changed_object_type: string(64)
+    changed_object_id: int64
+    published_at: instant
   unique_constraints:
-  - name: uk_ai_group_code
+  - name: uk_ai_config_version_uuid
+    columns:
+    - uuid
+  - name: uk_ai_config_version_scope
     columns:
     - tenant_id
     - organization_id
-    - group_code
+    - config_scope
   indexes:
-  - name: idx_ai_group_tenant_status
+  - name: idx_ai_config_version_scope_updated
     columns:
     - tenant_id
     - organization_id
-    - group_type
-    - status
+    - config_scope
     - updated_at
     - id
-  imported: false
-- table: ai_group_resource
-  domain: ai
-  profile: relation_entity
-  compliance_level: L2
-  system_of_record: true
-  write_owner: ai-routing-service
-  description: '组资源授权表 - 模型/能力访问控制
-
-
-    行业对标:
-
-    - Stripe API Key Permissions (API Key权限)
-
-    - AWS IAM Policy Statements (策略声明)
-
-
-    职责:
-
-    - 维护分组可访问的资源或资源组
-
-    - 是API Key到资源授权的核心边
-
-    - 支持白名单/黑名单模式
-
-
-    关键特性:
-
-    - 资源授权: 控制组可访问的模型/能力
-
-    - 灵活模式: 支持允许/拒绝模式
-
-    - 资源组: 支持资源组批量授权
-
-    '
-  common_columns: relation_entity
-  frontend_routes:
-  - /admin/groups/resources
-  api_surfaces:
-  - backend
-  - worker
-  columns:
-    id: int64
-    uuid: string(64)
-    tenant_id: int64
-    organization_id: int64
-    idempotency_key: string(128)
-    group_id: int64
-    group_code: string(64)
-    resource_type: enum_int32
-    resource_id: int64
-    resource_code: string(128)
-    resource_group_id: int64
-    permission_mode: enum_int32
-    effective_from: instant
-    effective_to: instant
-    created_at: instant
-    updated_at: instant
-    version: int64
-    status: enum_int32
-  unique_constraints:
-  - name: uk_ai_group_resource_group_resource
+  - name: idx_ai_config_version_scope_status
     columns:
-    - tenant_id
-    - organization_id
-    - group_id
-    - resource_type
-    - resource_id
-  indexes:
-  - name: idx_ai_group_resource_group
-    columns:
-    - tenant_id
-    - organization_id
-    - group_id
-    - permission_mode
+    - config_scope
     - status
+    - deleted_at
     - id
   imported: false
 - table: ai_modality
@@ -1761,6 +1677,214 @@ tables:
   generated_by_this_project: false
   imported: true
   imported_from_module: sdkwork-models
+- table: ai_model_mapping_rule
+  domain: ai
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    source_vendor_id: int64
+    source_vendor_code:
+      type: string(64)
+      constraints: NOT NULL DEFAULT ''
+    target_vendor_id: int64
+    target_vendor_code:
+      type: string(64)
+      constraints: NOT NULL DEFAULT ''
+    mapping_mode:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'alias'
+    match_type:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'exact'
+    enabled:
+      type: bool
+      constraints: NOT NULL DEFAULT TRUE
+  unique_constraints:
+  - name: uk_ai_model_mapping_rule_uuid
+    columns:
+    - uuid
+  indexes:
+  - name: idx_ai_model_mapping_rule_source_vendor
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - enabled
+    - source_vendor_code
+    - id
+  - name: idx_ai_model_mapping_rule_target_vendor
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - enabled
+    - target_vendor_code
+    - id
+  - name: idx_ai_model_mapping_rule_enabled
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - enabled
+    - id
+  imported: false
+- table: ai_model_mapping_rule_binding
+  domain: ai
+  profile: relation_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: relation_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    rule_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    rule_uuid: string(128)
+    binding_type:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'global'
+    binding_id: int64
+    binding_code: string(128)
+    binding_name_snapshot: string(256)
+    sort_order:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    enabled:
+      type: bool
+      constraints: NOT NULL DEFAULT TRUE
+  unique_constraints:
+  - name: uk_ai_model_mapping_rule_binding_uuid
+    columns:
+    - uuid
+  - name: uk_ai_model_mapping_rule_binding_target
+    columns:
+    - tenant_id
+    - organization_id
+    - rule_id
+    - binding_type
+    - binding_id
+    - binding_code
+  indexes:
+  - name: idx_ai_model_mapping_rule_binding_rule_lookup
+    columns:
+    - tenant_id
+    - organization_id
+    - rule_id
+    - status
+    - enabled
+    - sort_order
+    - id
+  - name: idx_ai_model_mapping_rule_binding_target_lookup
+    columns:
+    - tenant_id
+    - organization_id
+    - binding_type
+    - binding_id
+    - binding_code
+    - status
+    - enabled
+    - id
+  - name: idx_ai_model_mapping_rule_binding_channel_group_lookup
+    columns:
+    - tenant_id
+    - organization_id
+    - binding_type
+    - binding_code
+    - status
+    - enabled
+    - id
+  - name: idx_ai_model_mapping_rule_binding_vendor_lookup
+    columns:
+    - tenant_id
+    - organization_id
+    - binding_type
+    - binding_code
+    - status
+    - enabled
+    - id
+  - name: idx_ai_model_mapping_rule_binding_global_lookup
+    columns:
+    - tenant_id
+    - organization_id
+    - binding_type
+    - status
+    - enabled
+    - id
+  imported: false
+- table: ai_model_mapping_rule_item
+  domain: ai
+  profile: relation_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: relation_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    rule_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    rule_uuid: string(128)
+    source_model:
+      type: string(256)
+      constraints: NOT NULL DEFAULT ''
+    source_catalog_key: string(256)
+    target_model:
+      type: string(256)
+      constraints: NOT NULL DEFAULT ''
+    target_catalog_key: string(256)
+    target_provider_model: string(256)
+    target_provider_native_model: string(256)
+    sort_order:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    enabled:
+      type: bool
+      constraints: NOT NULL DEFAULT TRUE
+  unique_constraints:
+  - name: uk_ai_model_mapping_rule_item_uuid
+    columns:
+    - uuid
+  indexes:
+  - name: idx_ai_model_mapping_rule_item_rule_lookup
+    columns:
+    - tenant_id
+    - organization_id
+    - rule_id
+    - status
+    - enabled
+    - sort_order
+    - id
+  - name: idx_ai_model_mapping_rule_item_source_lookup
+    columns:
+    - tenant_id
+    - organization_id
+    - source_model
+    - status
+    - enabled
+    - id
+  - name: idx_ai_model_mapping_rule_item_target_lookup
+    columns:
+    - tenant_id
+    - organization_id
+    - target_catalog_key
+    - target_model
+    - status
+    - id
+  imported: false
 - table: ai_model_modality
   domain: ai
   profile: relation_entity
@@ -2222,324 +2346,592 @@ tables:
   generated_by_this_project: false
   imported: true
   imported_from_module: sdkwork-models
-- table: ai_pricing
+- table: ai_pricing_import_snapshot
   domain: ai
-  profile: pricing
+  profile: event_log
   compliance_level: L2
   system_of_record: true
-  write_owner: pricing-service
-  description: '定价方案表 - 价格策略
-
-
-    行业对标:
-
-    - Stripe Pricing Tables (定价表)
-
-    - AWS Pricing Plans (定价方案)
-
-    - OpenAI Model Pricing (模型定价)
-
-
-    职责:
-
-    - 定义价格计划主表
-
-    - 定义默认倍率、加价和价格基准
-
-    - 支持多种定价模式（倍率、固定价格、阶梯价）
-
-
-    关键特性:
-
-    - 多定价模式: 支持倍率、固定价格、阶梯价、表达式计费
-
-    - 灵活绑定: 支持绑定账号、分组、租户或SKU
-
-    - 价格基准: 支持官方参考价、接入成本价、销售价
-
-
-    数据流向:
-
-    1. pricing-service定义定价方案
-
-    2. ai_usage通过pricing_code关联定价方案
-
-    3. ai_pricing_rule提供具体计费规则
-
-    4. 计算最终收费金额
-
-    '
-  common_columns: pricing
-  frontend_routes:
-  - /admin/pricing
-  - /console/pricing
+  write_owner: ai-pricing-service
+  common_columns: event_log
   api_surfaces:
   - app
   - backend
   - worker
   columns:
-    id: int64
-    uuid: string(64)
-    tenant_id: int64
-    organization_id: int64
-    pricing_code: string(64)
-    idempotency_key: string(128)
-    pricing_name: string(128)
-    pricing_type: enum_int32
-    base_price_source: enum_int32
-    base_price_type: enum_int32
-    pricing_mode: enum_int32
+    import_source:
+      type: int32
+      constraints: NOT NULL
+    source_name:
+      type: string(128)
+      constraints: NOT NULL
+    source_url: string(1024)
+    source_version: string(128)
+    source_hash:
+      type: string(128)
+      constraints: NOT NULL
+    upstream_commit: string(128)
+    data_format: string(64)
+    row_count: int64
+    accepted_count: int64
+    rejected_count: int64
+    currency: string(10)
+    published_at: instant
+    observed_at:
+      type: instant
+      constraints: NOT NULL
+    raw_payload_ref: string(512)
+    normalized_payload_hash: string(128)
+    schema_version: string(32)
+    error_message_masked: string(1024)
+  unique_constraints:
+  - name: uk_ai_pricing_import_snapshot_uuid
+    columns:
+    - uuid
+  - name: uk_ai_pricing_import_snapshot_hash
+    columns:
+    - tenant_id
+    - organization_id
+    - import_source
+    - source_hash
+  indexes:
+  - name: idx_ai_pricing_import_snapshot_tenant_latest
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - import_source
+    - observed_at
+    - id
+  imported: false
+- table: ai_pricing_plan
+  domain: ai
+  profile: pricing
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-pricing-service
+  common_columns: pricing
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    plan_code:
+      type: string(64)
+      constraints: NOT NULL
+    plan_name:
+      type: string(128)
+      constraints: NOT NULL
+    description: string(512)
+    plan_scope: int32
+    base_price_side:
+      type: int32
+      constraints: NOT NULL
+    base_pricing_scope: int32
+    default_reference_price_id: int64
     default_multiplier: decimal
     default_markup_amount: decimal
-    default_markup_type: enum_int32
-    currency: string(10)
-    minimum_charge: decimal
-    rounding_mode: enum_int32
-    effective_from: instant
+    currency:
+      type: string(10)
+      constraints: NOT NULL
+    billing_mode: int32
+    rounding_mode: int32
+    min_charge_amount: decimal
+    fallback_mode: int32
+    priority: int32
+    price_version: string(64)
+    effective_from:
+      type: instant
+      constraints: NOT NULL
     effective_to: instant
-    binding_scope_type: enum_int32
-    binding_scope_id: int64
-    created_at: instant
-    updated_at: instant
-    version: int64
-    status: enum_int32
-    metadata: json
   unique_constraints:
-  - name: uk_ai_pricing_code
+  - name: uk_ai_pricing_plan_uuid
+    columns:
+    - uuid
+  - name: uk_ai_pricing_plan_tenant_code
     columns:
     - tenant_id
     - organization_id
-    - pricing_code
+    - plan_code
   indexes:
-  - name: idx_ai_pricing_tenant_status
+  - name: idx_ai_pricing_plan_scope_status
     columns:
     - tenant_id
     - organization_id
-    - pricing_type
+    - plan_scope
+    - status
+    - priority
+    - id
+  - name: idx_ai_pricing_plan_effective
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - effective_from
+    - effective_to
+    - id
+  imported: false
+- table: ai_pricing_plan_binding
+  domain: ai
+  profile: relation_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-pricing-service
+  common_columns: relation_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    pricing_plan_id:
+      type: int64
+      constraints: NOT NULL
+    pricing_plan_code: string(64)
+    subject_type:
+      type: int32
+      constraints: NOT NULL
+    subject_id: int64
+    subject_code: string(128)
+    binding_source: int32
+    multiplier_override: decimal
+    rpm_override: int64
+    tpm_override: int64
+    quota_policy_id: int64
+    priority:
+      type: int32
+      constraints: NOT NULL
+    effective_from:
+      type: instant
+      constraints: NOT NULL
+    effective_to: instant
+  unique_constraints:
+  - name: uk_ai_pricing_plan_binding_uuid
+    columns:
+    - uuid
+  - name: uk_ai_pricing_plan_binding_subject
+    columns:
+    - tenant_id
+    - organization_id
+    - subject_type
+    - subject_id
+    - pricing_plan_id
+  indexes:
+  - name: idx_ai_pricing_plan_binding_tenant_status_effective
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - effective_from
+    - priority
+    - id
+  - name: idx_ai_pricing_plan_binding_subject_effective
+    columns:
+    - tenant_id
+    - organization_id
+    - subject_type
+    - subject_id
     - status
     - effective_from
     - id
-  - name: idx_ai_pricing_binding
+  - name: idx_ai_pricing_plan_binding_plan
     columns:
     - tenant_id
     - organization_id
-    - binding_scope_type
-    - binding_scope_id
+    - pricing_plan_id
     - status
+    - priority
     - id
-  security:
-    sensitivity: INTERNAL
-    stores_secret_plaintext: false
-    audit_required: true
   imported: false
 - table: ai_pricing_rule
   domain: ai
   profile: pricing
   compliance_level: L2
   system_of_record: true
-  write_owner: pricing-service
-  description: '定价规则表 - 具体计费规则
-
-
-    行业对标:
-
-    - Stripe Pricing Rules (定价规则)
-
-    - AWS Pricing Dimensions (定价维度)
-
-    - OpenAI Token Pricing (Token定价)
-
-
-    职责:
-
-    - 定义价格规则表
-
-    - 支持倍率、固定价格、阶梯价和表达式计费
-
-    - 支持按模型、能力、region等维度定价
-
-
-    关键特性:
-
-    - 多维度定价: 支持模型、能力、meter、region等维度
-
-    - 规则优先级: 支持基于优先级的规则匹配
-
-    - 阶梯定价: 支持分段计费阈值和单价
-
-
-    数据流向:
-
-    1. pricing-service定义定价规则
-
-    2. ai_usage匹配定价规则
-
-    3. 根据规则计算最终价格
-
-    4. 写入customer_charge到ai_usage
-
-    '
+  write_owner: ai-pricing-service
   common_columns: pricing
-  frontend_routes:
-  - /admin/pricing/rules
   api_surfaces:
+  - app
   - backend
   - worker
   columns:
-    id: int64
-    uuid: string(64)
-    tenant_id: int64
-    organization_id: int64
-    rule_code: string(64)
-    idempotency_key: string(128)
-    pricing_id: int64
-    pricing_code: string(64)
+    pricing_plan_id:
+      type: int64
+      constraints: NOT NULL
+    pricing_plan_code: string(64)
+    rule_code:
+      type: string(64)
+      constraints: NOT NULL
     rule_name: string(128)
-    rule_type: enum_int32
-    rule_priority: int32
-    match_model_vendor: string(64)
-    match_model_code: string(128)
-    match_model_family: string(64)
-    match_capability_type: enum_int32
-    match_billing_meter: string(64)
-    match_token_kind: string(64)
-    match_upstream_region: string(64)
-    match_client_region: string(64)
-    pricing_mode: enum_int32
-    multiplier: decimal
-    fixed_price: decimal
-    fixed_price_unit: string(64)
-    tier_enabled: bool
-    tier_config: json
-    expression_enabled: bool
-    expression_formula: string(512)
-    currency: string(10)
-    unit_price: decimal
+    match_type: int32
+    vendor_code: string(64)
+    family_code: string(64)
+    model_id: int64
+    model: string(256)
+    provider_code: string(64)
+    channel_id: int64
+    provider_model: string(256)
+    capability_code: string(64)
+    platform_code: string(64)
+    service_tier: string(64)
+    region: string(64)
+    price_side: int32
+    reference_price_side: int32
+    reference_pricing_id: int64
+    reference_pricing_scope: int32
+    price_item_type: int32
+    billing_type: int32
+    billing_mode: int32
+    billing_meter_id: int64
+    billing_meter_code:
+      type: string(64)
+      constraints: NOT NULL
+    unit: int32
     unit_size: decimal
-    minimum_charge: decimal
-    rounding_mode: enum_int32
-    effective_from: instant
+    metering_mode: int32
+    quantity_source: int32
+    quantity_formula: text
+    result_selector: string(256)
+    minimum_quantity: decimal
+    quantity_step: decimal
+    included_quantity: decimal
+    formula_mode:
+      type: int32
+      constraints: NOT NULL
+    multiplier: decimal
+    markup_amount: decimal
+    unit_price_override: decimal
+    expression: text
+    expression_hash: string(128)
+    fallback_mode: int32
+    priority:
+      type: int32
+      constraints: NOT NULL
+    effective_from:
+      type: instant
+      constraints: NOT NULL
     effective_to: instant
-    created_at: instant
-    updated_at: instant
-    version: int64
-    status: enum_int32
-    metadata: json
   unique_constraints:
-  - name: uk_ai_pricing_rule_code
+  - name: uk_ai_pricing_rule_uuid
+    columns:
+    - uuid
+  - name: uk_ai_pricing_rule_plan_code
     columns:
     - tenant_id
     - organization_id
+    - pricing_plan_id
     - rule_code
   indexes:
-  - name: idx_ai_pricing_rule_pricing_priority
+  - name: idx_ai_pricing_rule_tenant_status_priority
     columns:
     - tenant_id
     - organization_id
-    - pricing_id
-    - rule_priority
     - status
+    - priority
+    - effective_from
     - id
-  - name: idx_ai_pricing_rule_model_meter
+  - name: idx_ai_pricing_rule_model_lookup
     columns:
     - tenant_id
     - organization_id
-    - match_model_code
-    - match_billing_meter
-    - match_token_kind
+    - pricing_plan_id
+    - model
+    - provider_code
+    - channel_id
+    - billing_meter_code
     - status
-    - rule_priority
+    - priority
     - id
-  - name: idx_ai_pricing_rule_capability_meter
+  - name: idx_ai_pricing_rule_meter_lookup
     columns:
     - tenant_id
     - organization_id
-    - match_capability_type
-    - match_billing_meter
-    - match_token_kind
+    - pricing_plan_id
+    - billing_meter_code
+    - match_type
     - status
-    - rule_priority
+    - priority
     - id
-  security:
-    sensitivity: INTERNAL
-    stores_secret_plaintext: false
-    audit_required: true
+  - name: idx_ai_pricing_rule_reference
+    columns:
+    - tenant_id
+    - organization_id
+    - reference_price_side
+    - reference_pricing_id
+    - status
+    - id
   imported: false
-- table: ai_provider_route
+- table: ai_pricing_tier
+  domain: ai
+  profile: pricing
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-pricing-service
+  common_columns: pricing
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    pricing_rule_id: int64
+    model_pricing_id: int64
+    tier_code:
+      type: string(64)
+      constraints: NOT NULL
+    tier_label: string(64)
+    price_item_type: int32
+    billing_mode: int32
+    billing_meter_id: int64
+    billing_meter_code:
+      type: string(64)
+      constraints: NOT NULL
+    min_quantity: decimal
+    max_quantity: decimal
+    quantity_unit: int32
+    quantity_step: decimal
+    included_quantity: decimal
+    result_selector: string(256)
+    input_unit_price: decimal
+    output_unit_price: decimal
+    cache_write_unit_price: decimal
+    cache_read_unit_price: decimal
+    image_unit_price: decimal
+    audio_unit_price: decimal
+    video_unit_price: decimal
+    per_request_price: decimal
+    multiplier: decimal
+    currency: string(10)
+    sort_order:
+      type: int32
+      constraints: NOT NULL
+    effective_from:
+      type: instant
+      constraints: NOT NULL
+    effective_to: instant
+  unique_constraints:
+  - name: uk_ai_pricing_tier_uuid
+    columns:
+    - uuid
+  - name: uk_ai_pricing_tier_rule_code
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_rule_id
+    - tier_code
+  indexes:
+  - name: idx_ai_pricing_tier_tenant_status_effective
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - effective_from
+    - sort_order
+    - id
+  - name: idx_ai_pricing_tier_rule_range
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_rule_id
+    - billing_meter_code
+    - min_quantity
+    - max_quantity
+    - sort_order
+    - id
+  - name: idx_ai_pricing_tier_model_pricing
+    columns:
+    - tenant_id
+    - organization_id
+    - model_pricing_id
+    - price_item_type
+    - sort_order
+    - id
+  imported: false
+- table: ai_provider
+  domain: ai
+  profile: credential_ref
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: credential_ref
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    provider_code:
+      type: string(64)
+      constraints: NOT NULL
+    display_name:
+      type: string(128)
+      constraints: NOT NULL
+    description: string(512)
+    icon_drive_uri: string(512)
+    icon_resource_snapshot: json
+    color_token: string(64)
+    docs_url: string(512)
+    website_url: string(512)
+    default_vendor_code: string(64)
+    provider_type: string(32)
+    protocol_code: string(64)
+    base_url: string(512)
+    auth_type: int32
+    resource_schema: json
+    metadata_schema_version: string(32)
+    sort_order: int32
+  unique_constraints:
+  - name: uk_ai_provider_uuid
+    columns:
+    - uuid
+  - name: uk_ai_provider_tenant_code
+    columns:
+    - tenant_id
+    - organization_id
+    - provider_code
+  indexes:
+  - name: idx_ai_provider_status_sort
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - sort_order
+    - id
+  imported: false
+- table: ai_provider_object_route
   domain: ai
   profile: runtime_binding
   compliance_level: L2
   system_of_record: true
-  write_owner: gateway-runtime
-  description: '供应商路由表 - 对象路径映射
-
-
-    行业对标:
-
-    - OpenAI Model Routing (模型路由)
-
-    - AWS API Gateway Mapping (API映射)
-
-
-    职责:
-
-    - 对象类或非模型API的运行时路由绑定
-
-    - 支持无模型参数的API调用
-
-    - 支持对象路径映射
-
-
-    关键特性:
-
-    - 对象路由: 支持非模型API的路由
-
-    - 路径映射: 支持对象路径到实际URL的映射
-
-    - 动态绑定: 支持运行时动态路由
-
-    '
+  write_owner: ai-routing-service
   common_columns: runtime_binding
-  frontend_routes:
-  - /admin/routes
   api_surfaces:
+  - app
   - backend
   - worker
   columns:
-    id: int64
-    uuid: string(64)
-    tenant_id: int64
-    organization_id: int64
-    route_code: string(64)
-    idempotency_key: string(128)
-    provider_id: int64
+    api_key_id: int64
+    channel_group_id: int64
+    object_type:
+      type: string(64)
+      constraints: NOT NULL
+    object_id:
+      type: string(256)
+      constraints: NOT NULL
+    object_key_hash:
+      type: string(128)
+      constraints: NOT NULL
+    parent_object_type: string(64)
+    parent_object_id: string(256)
     provider_code: string(64)
-    object_type: string(64)
-    object_path: string(256)
-    target_url: string(512)
-    target_method: string(16)
-    match_mode: enum_int32
-    priority: int32
-    created_at: instant
-    updated_at: instant
-    version: int64
-    status: enum_int32
+    channel_id:
+      type: int64
+      constraints: NOT NULL
+    vendor_code: string(64)
+    api_code: string(128)
+    catalog_key: string(256)
+    provider_model: string(256)
+    region_code: string(64)
+    sticky_scope: string(64)
+    expires_at: instant
+    last_seen_at: instant
   unique_constraints:
-  - name: uk_ai_provider_route_code
+  - name: uk_ai_provider_object_route_uuid
+    columns:
+    - uuid
+  - name: uk_ai_provider_object_route_object
     columns:
     - tenant_id
     - organization_id
-    - route_code
-  indexes:
-  - name: idx_ai_provider_route_provider_object
-    columns:
-    - tenant_id
-    - organization_id
-    - provider_id
     - object_type
-    - object_path
+    - object_id
+  indexes:
+  - name: idx_ai_provider_object_route_fast
+    columns:
+    - tenant_id
+    - organization_id
+    - object_key_hash
     - status
     - id
+  - name: idx_ai_provider_object_route_parent
+    columns:
+    - tenant_id
+    - organization_id
+    - parent_object_type
+    - parent_object_id
+    - status
+    - id
+  - name: idx_ai_provider_object_route_channel
+    columns:
+    - tenant_id
+    - organization_id
+    - channel_group_id
+    - channel_id
+    - status
+    - id
+  - name: idx_ai_provider_object_route_expiry
+    columns:
+    - tenant_id
+    - organization_id
+    - expires_at
+    - status
+    - id
+  imported: false
+- table: ai_quota_policy
+  domain: ai
+  profile: quota_policy
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: quota_policy
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    policy_code: string(64)
+    name: string(128)
+    subject_type: int32
+    subject_id: int64
+    subject_ref_hash: string(128)
+    subject_ref_masked: string(128)
+    scope_type: int32
+    scope_id: int64
+    channel_group_id: int64
+    model: string(256)
+    quota_period: int32
+    quota_unit: int32
+    quota_limit: decimal
+    requests_per_second: int64
+    requests_per_minute: int64
+    requests_per_day: int64
+    tokens_per_minute: int64
+    burst_limit: decimal
+    block_duration_seconds: int64
+    reset_mode: int32
+    exhausted_at: instant
+    effective_from: instant
+    effective_to: instant
+  unique_constraints:
+  - name: uk_ai_quota_policy_tenant_subject
+    columns:
+    - tenant_id
+    - organization_id
+    - subject_type
+    - subject_id
+    - quota_period
+    - quota_unit
+  indexes:
+  - name: idx_ai_quota_policy_subject_ref
+    columns:
+    - tenant_id
+    - organization_id
+    - subject_type
+    - subject_ref_hash
+    - status
+  - name: idx_ai_quota_policy_model_channel_group
+    columns:
+    - tenant_id
+    - organization_id
+    - model
+    - channel_group_id
+    - status
   imported: false
 - table: ai_request_trace
   domain: ai
@@ -2547,67 +2939,12 @@ tables:
   compliance_level: L2
   system_of_record: true
   write_owner: router-service
-  description: '用量追踪表 - 请求链路日志
-
-
-    行业对标:
-
-    - AWS X-Ray (分布式追踪)
-
-    - Datadog APM (应用性能监控)
-
-    - Jaeger Tracing (链路追踪)
-
-
-    职责:
-
-    - 记录请求的完整链路信息
-
-    - 支持问题排查和性能分析
-
-    - 提供可观测性数据
-
-
-    数据流向:
-
-    1. router-service写入ai_request_trace
-
-    2. 关联ai_usage.request_id
-
-    3. 支持trace_id链路追踪
-
-
-    关键特性:
-
-    - 可观测性: 支持链路追踪和性能分析
-
-    - 关联性: 通过trace_id关联完整链路
-
-    - 时效性: 短期存储（在线保留3个月）
-
-    '
   common_columns: event_log
-  frontend_routes:
-  - /console/usage
-  - /admin/usage/traces
   api_surfaces:
   - app
   - backend
   - worker
   columns:
-    id: int64
-    uuid: string(64)
-    tenant_id: int64
-    organization_id: int64
-    user_id: int64
-    request_id: string(128)
-    trace_id: string(128)
-    payload_hash: string(128)
-    status: enum_int32
-    created_at: instant
-    retention_until: instant
-    legal_hold: bool
-    metadata: json
     attempt_no: int32
     decision_log_id: int64
     api_key_id: int64
@@ -2615,7 +2952,7 @@ tables:
     api_key_name_snapshot: string(128)
     channel_group_id: int64
     channel_group_snapshot: string(128)
-    owner_type: enum_int32
+    owner_type: int32
     owner_id: int64
     owner_name_snapshot: string(128)
     provider_id: int64
@@ -2631,7 +2968,7 @@ tables:
     http_method: string(16)
     http_status: int32
     provider_error_code: string(128)
-    error_type: enum_int32
+    error_type: int32
     started_at: instant
     ended_at: instant
     latency_ms: int32
@@ -2687,16 +3024,6 @@ tables:
     - id
   lifecycle:
     partition_by: created_at_month
-    online_retention: 3mo
-    archive_retention: 1y
-  security:
-    sensitivity: INTERNAL
-    stores_secret_plaintext: false
-    audit_required: true
-  serialization:
-    int64: string
-    decimal: string
-    instant: iso8601_utc
   imported: false
 - table: ai_resource
   domain: ai
@@ -2897,243 +3224,311 @@ tables:
   generated_by_this_project: false
   imported: true
   imported_from_module: sdkwork-models
-- table: ai_routing_log
+- table: ai_routing_decision_log
   domain: ai
   profile: event_log
   compliance_level: L2
   system_of_record: true
-  write_owner: gateway-runtime
-  description: '路由日志表 - 决策记录
-
-
-    行业对标:
-
-    - Stripe Routing Decision Logs (路由决策日志)
-
-    - AWS CloudTrail Events (云审计事件)
-
-
-    职责:
-
-    - 记录运行时路由决策日志
-
-    - 记录请求选择了哪个上游账号及原因
-
-    - 支持路由决策分析和优化
-
-
-    关键特性:
-
-    - 决策透明: 记录路由决策的完整信息
-
-    - 可追溯: 支持路由决策的追溯和分析
-
-    - 时效性: 短期存储（在线保留3个月）
-
-    '
+  write_owner: ai-routing-service
   common_columns: event_log
-  frontend_routes:
-  - /admin/routing/logs
   api_surfaces:
+  - app
   - backend
   - worker
   columns:
-    id: int64
-    uuid: string(64)
-    tenant_id: int64
-    organization_id: int64
-    request_id: string(128)
-    usage_id: int64
+    api_key_id: int64
+    legacy_api_key_id: int64
     policy_id: int64
+    profile_id: int64
     rule_id: int64
-    group_id: int64
+    requested_model: string(256)
+    resolved_model: string(256)
+    capability: int32
+    selected_provider_id: int64
     selected_channel_id: int64
-    selected_channel_code: string(64)
-    selection_reason: string(512)
-    candidate_channels: json
-    matched_conditions: json
-    decision_at: instant
-    decision_duration_ms: int32
-    created_at: instant
-    status: enum_int32
+    selected_account_id: int64
+    decision_mode: int32
+    decision_reason: json
+    candidate_snapshot: json
+    fallback_chain: json
+    decision_latency_ms: int32
   unique_constraints:
-  - name: uk_ai_routing_log_request
+  - name: uk_ai_routing_decision_log_request
     columns:
     - tenant_id
     - organization_id
     - request_id
   indexes:
-  - name: idx_ai_routing_log_policy_time
+  - name: idx_ai_routing_decision_tenant_model_created
     columns:
     - tenant_id
     - organization_id
-    - policy_id
-    - created_at
-    - id
-  - name: idx_ai_routing_log_channel_time
-    columns:
-    - tenant_id
-    - organization_id
-    - selected_channel_id
+    - requested_model
     - created_at
     - id
   lifecycle:
     partition_by: created_at_month
-    online_retention: 3mo
-    archive_retention: 1y
   imported: false
 - table: ai_routing_policy
   domain: ai
   profile: tenant_entity
   compliance_level: L2
   system_of_record: true
-  write_owner: routing-policy-service
-  description: '路由策略表 - 粘性/降级/权重等
-
-
-    行业对标:
-
-    - Stripe Routing Rules (路由规则)
-
-    - AWS Route53 Routing Policies (路由策略)
-
-
-    职责:
-
-    - 定义全局、租户、组织、API Key或分组作用域的路由策略
-
-    - 支持粘性会话、降级、权重等策略
-
-    - 支持基于条件的路由规则
-
-
-    关键特性:
-
-    - 多作用域: 支持全局/租户/组织/API Key/分组作用域
-
-    - 灵活策略: 支持粘性/降级/权重/优先级等策略
-
-    - 条件路由: 支持基于条件表达式路由
-
-    '
+  write_owner: ai-routing-service
   common_columns: tenant_entity
-  frontend_routes:
-  - /admin/routing/policies
   api_surfaces:
+  - app
   - backend
   - worker
   columns:
-    id: int64
-    uuid: string(64)
-    tenant_id: int64
-    organization_id: int64
     policy_code: string(64)
-    idempotency_key: string(128)
-    policy_name: string(128)
-    policy_type: enum_int32
-    scope_type: enum_int32
-    scope_id: int64
-    routing_mode: enum_int32
-    sticky_session_enabled: bool
-    sticky_session_ttl_seconds: int32
-    fallback_enabled: bool
-    fallback_policy_id: int64
-    weight_based_enabled: bool
-    priority_based_enabled: bool
-    created_at: instant
-    updated_at: instant
-    version: int64
-    status: enum_int32
-    metadata: json
+    name: string(128)
+    policy_scope: int32
+    subject_id: int64
+    capability: int32
+    default_profile_id: int64
+    fallback_mode: int32
+    slo_latency_ms: int32
+    slo_success_rate: decimal
+    cost_ceiling: decimal
+    currency: string(10)
   unique_constraints:
-  - name: uk_ai_routing_policy_code
+  - name: uk_ai_routing_policy_tenant_code
     columns:
     - tenant_id
     - organization_id
     - policy_code
-  indexes:
-  - name: idx_ai_routing_policy_scope
+  indexes: []
+  imported: false
+- table: ai_routing_profile
+  domain: ai
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    policy_id: int64
+    profile_version: int64
+    profile_name: string(128)
+    release_status: int32
+    traffic_percent: decimal
+    config_hash: string(128)
+    published_at: instant
+    published_by: int64
+    rollback_from_profile_id: int64
+  unique_constraints:
+  - name: uk_ai_routing_profile_policy_version
     columns:
-    - tenant_id
-    - organization_id
-    - scope_type
-    - scope_id
-    - status
-    - id
+    - policy_id
+    - profile_version
+  indexes: []
   imported: false
 - table: ai_routing_rule
   domain: ai
   profile: tenant_entity
   compliance_level: L2
   system_of_record: true
-  write_owner: routing-policy-service
-  description: '路由规则表 - 具体匹配规则
-
-
-    行业对标:
-
-    - Stripe Routing Rule Conditions (路由条件)
-
-    - AWS Route53 Routing Rules (路由规则)
-
-
-    职责:
-
-    - 定义路由策略的具体匹配规则
-
-    - 支持基于模型、能力、region等条件的路由
-
-    - 支持候选账号、fallback和约束
-
-
-    关键特性:
-
-    - 条件匹配: 支持多维度条件匹配
-
-    - 候选账号: 定义路由候选账号列表
-
-    - Fallback: 支持降级和fallback规则
-
-    '
+  write_owner: ai-routing-service
   common_columns: tenant_entity
-  frontend_routes:
-  - /admin/routing/rules
   api_surfaces:
+  - app
   - backend
   - worker
   columns:
-    id: int64
-    uuid: string(64)
-    tenant_id: int64
-    organization_id: int64
+    profile_id: int64
     rule_code: string(64)
-    idempotency_key: string(128)
-    policy_id: int64
-    policy_code: string(64)
-    rule_name: string(128)
-    rule_priority: int32
-    match_conditions: json
+    priority: int32
+    match_expression: json
+    target_model: string(256)
     candidate_channels: json
-    fallback_channels: json
+    fallback_chain: json
     constraints: json
-    created_at: instant
-    updated_at: instant
-    version: int64
-    status: enum_int32
+    rate_limit_policy_id: int64
+    effective_from: instant
+    effective_to: instant
   unique_constraints:
-  - name: uk_ai_routing_rule_code
+  - name: uk_ai_routing_rule_profile_code
     columns:
-    - tenant_id
-    - organization_id
+    - profile_id
     - rule_code
   indexes:
-  - name: idx_ai_routing_rule_policy
+  - name: idx_ai_routing_rule_tenant_profile_priority
     columns:
     - tenant_id
     - organization_id
-    - policy_id
-    - rule_priority
+    - profile_id
+    - priority
     - status
+  imported: false
+- table: ai_site
+  domain: ai
+  profile: credential_ref
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: credential_ref
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    site_code:
+      type: string(64)
+      constraints: NOT NULL
+    site_name:
+      type: string(128)
+      constraints: NOT NULL
+    display_name:
+      type: string(128)
+      constraints: NOT NULL
+    description: string(1024)
+    base_url: string(512)
+    website_url: string(512)
+    docs_url: string(512)
+    logo_drive_uri: string(512)
+    logo_resource_snapshot: json
+    color_token: string(64)
+    site_type:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'relay'
+    owner_kind: string(32)
+    region_code: string(64)
+    environment:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    health_status:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    last_latency_ms: int32
+    consecutive_error_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    last_checked_at: instant
+    last_sync_at: instant
+    sort_order:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+  unique_constraints:
+  - name: uk_ai_site_uuid
+    columns:
+    - uuid
+  - name: uk_ai_site_tenant_code
+    columns:
+    - tenant_id
+    - organization_id
+    - site_code
+  indexes:
+  - name: idx_ai_site_status_sort
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - sort_order
+    - id
+  - name: idx_ai_site_health_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - health_status
+    - id
+  imported: false
+- table: ai_site_service
+  domain: ai
+  profile: credential_ref
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: credential_ref
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    site_id:
+      type: int64
+      constraints: NOT NULL
+    site_code:
+      type: string(64)
+      constraints: NOT NULL
+    service_code:
+      type: string(64)
+      constraints: NOT NULL
+    service_name:
+      type: string(128)
+      constraints: NOT NULL
+    service_type:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'ai_model_relay'
+    protocol_code: string(64)
+    base_url: string(512)
+    auth_type:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    credential_profile:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    auth_config:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    credential_ref: string(512)
+    credential_hash: string(128)
+    masked_label: string(128)
+    credential_version:
+      type: int64
+      constraints: NOT NULL DEFAULT 1
+    region_code: string(64)
+    environment:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    health_status:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    last_latency_ms: int32
+    consecutive_error_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    last_verified_at: instant
+    last_sync_at: instant
+    sort_order:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+  unique_constraints:
+  - name: uk_ai_site_service_uuid
+    columns:
+    - uuid
+  - name: uk_ai_site_service_site_code
+    columns:
+    - tenant_id
+    - organization_id
+    - site_id
+    - service_code
+  indexes:
+  - name: idx_ai_site_service_site_status
+    columns:
+    - tenant_id
+    - organization_id
+    - site_id
+    - status
+    - id
+  - name: idx_ai_site_service_type_status
+    columns:
+    - tenant_id
+    - organization_id
+    - service_type
+    - status
+    - id
+  - name: idx_ai_site_service_health_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - health_status
     - id
   imported: false
 - table: ai_usage
@@ -3142,189 +3537,191 @@ tables:
   compliance_level: L3
   system_of_record: true
   write_owner: router-service
-  description: 'AI用量事实表 - Claw Router的核心价值表
-
-
-    行业对标:
-
-    - Stripe Usage Records (用量记录)
-
-    - AWS CloudWatch Metrics (监控指标)
-
-    - OpenAI API Usage (API用量)
-
-
-    职责:
-
-    - 记录所有AI调用的用量事实
-
-    - 作为结算、计费、对账的事实来源
-
-    - 支持金融级别的合规要求（L3）
-
-
-    数据流向:
-
-    1. router-service写入ai_usage（Claw Router本地）
-
-    2. 发布UsageRecorded事件
-
-    3. sdkwork-account订阅事件 → commerce_account_ledger_entry
-
-
-    关键特性:
-
-    - 不可变性: append-only，只能追加不能修改
-
-    - 幂等性: 通过request_id保证幂等
-
-    - 完整性: 包含完整的请求、响应、计费信息
-
-    - 可追溯性: 包含trace_id支持链路追踪
-
-    '
   common_columns: ledger_source_fact
-  frontend_routes:
-  - /console/usage
-  - /admin/usage
-  - /admin/analytics
   api_surfaces:
   - app
   - backend
   - worker
   columns:
-    id: int64
-    uuid: string(64)
-    tenant_id: int64
-    organization_id: int64
-    user_id: int64
-    request_id: string(128)
-    trace_id: string(128)
-    idempotency_key: string(128)
-    group_id: int64
-    group_code: string(64)
-    channel_id: int64
-    channel_code: string(64)
-    provider_id: int64
-    provider_code: string(64)
-    model_vendor: string(64)
-    model_code: string(128)
-    model_family: string(64)
-    capability_type: enum_int32
-    operation_type: enum_int32
-    billing_mode: enum_int32
-    billing_meter: string(64)
-    input_tokens: int64
-    output_tokens: int64
-    total_tokens: int64
-    reasoning_tokens: int64
-    cache_read_tokens: int64
-    cache_write_tokens: int64
-    duration_ms: int64
-    ttft_ms: int32
-    upstream_latency_ms: int32
-    gateway_latency_ms: int32
-    upstream_cost: decimal
-    upstream_currency: string(10)
-    customer_charge: decimal
-    customer_currency: string(10)
-    settlement_amount: decimal
-    settlement_currency: string(10)
-    settlement_status: enum_int32
-    pricing_id: int64
-    pricing_code: string(64)
-    is_streaming: bool
-    is_idempotent: bool
-    is_fallback: bool
-    error_code: string(64)
-    error_type: string(64)
-    error_message: string(512)
-    request_snapshot: json
-    response_snapshot: json
-    routing_log_id: int64
-    sticky_key: string(128)
-    circuit_state: enum_int32
-    upstream_region: string(64)
-    client_region: string(64)
-    client_ip_hash: string(128)
-    user_agent_hash: string(128)
+    decision_log_id: int64
     api_key_id: int64
-    api_key_prefix: string(32)
-    created_at: instant
-    processed_at: instant
-    settled_at: instant
-    reconciled_at: instant
-    status: enum_int32
-    retention_until: instant
-    legal_hold: bool
-    metadata: json
+    legacy_api_key_id: int64
+    api_key_name_snapshot: string(128)
+    channel_group_id: int64
+    channel_group_snapshot: string(128)
+    owner_type: int32
+    owner_id: int64
+    owner_name_snapshot: string(128)
+    catalog_key:
+      type: string(256)
+      constraints: NOT NULL
+    requested_model_catalog_key: string(256)
+    model: string(256)
+    provider_native_model: string(256)
+    region_code: string(64)
+    provider_id: int64
+    channel_id: int64
+    modality: int32
+    usage_type: int32
+    billing_type: int32
+    billing_mode: int32
+    billing_meter_id: int64
+    billing_meter_code: string(64)
+    billing_tier: string(64)
+    billable_quantity: decimal
+    billable_unit: int32
+    prompt_tokens: int64
+    completion_tokens: int64
+    cached_tokens: int64
+    total_tokens: int64
+    request_count: int64
+    result_count: int64
+    item_count: int64
+    character_count: int64
+    image_count: int64
+    audio_seconds: decimal
+    video_seconds: decimal
+    storage_byte_hours: decimal
+    bandwidth_bytes: int64
+    unit_price_snapshot: decimal
+    base_input_unit_price: decimal
+    base_output_unit_price: decimal
+    cache_read_unit_price: decimal
+    rate_multiplier: decimal
+    reference_multiplier: decimal
+    official_reference_amount: decimal
+    upstream_cost_amount: decimal
+    customer_charge_amount: decimal
+    cost_amount: decimal
+    currency: string(10)
+    pricing_id: int64
+    pricing_plan_id: int64
+    pricing_plan_code: string(64)
+    pricing_rule_id: int64
+    pricing_tier_id: int64
+    pricing_snapshot: json
+    reasoning_effort: string(64)
+    occurred_at: instant
+    settlement_status: int32
+    settlement_id: int64
   unique_constraints:
   - name: uk_ai_usage_request
     columns:
     - tenant_id
     - organization_id
     - request_id
+    - usage_type
   indexes:
-  - name: idx_ai_usage_tenant_time
+  - name: idx_ai_usage_tenant_owner_occurred
     columns:
     - tenant_id
     - organization_id
-    - created_at
+    - owner_type
+    - owner_id
+    - occurred_at
     - id
-  - name: idx_ai_usage_group_time
-    columns:
-    - tenant_id
-    - organization_id
-    - group_id
-    - created_at
-    - id
-  - name: idx_ai_usage_provider_time
-    columns:
-    - tenant_id
-    - organization_id
-    - provider_code
-    - created_at
-    - id
-  - name: idx_ai_usage_model_time
-    columns:
-    - tenant_id
-    - organization_id
-    - model_code
-    - created_at
-    - id
-  - name: idx_ai_usage_api_key_time
+  - name: idx_ai_usage_api_key_occurred
     columns:
     - tenant_id
     - organization_id
     - api_key_id
-    - created_at
+    - occurred_at
     - id
-  - name: idx_ai_usage_user_time
+  - name: idx_ai_usage_model_occurred
     columns:
     - tenant_id
     - organization_id
-    - user_id
-    - created_at
+    - catalog_key
+    - occurred_at
+    - id
+  - name: idx_ai_usage_pricing_plan_occurred
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_plan_id
+    - occurred_at
+    - id
+  - name: idx_ai_usage_meter_occurred
+    columns:
+    - tenant_id
+    - organization_id
+    - billing_meter_code
+    - occurred_at
     - id
   - name: idx_ai_usage_settlement_status
     columns:
     - tenant_id
     - organization_id
     - settlement_status
-    - created_at
+    - occurred_at
     - id
   lifecycle:
     partition_by: created_at_month
-    online_retention: 12mo
-    archive_retention: 5y
-  security:
-    sensitivity: INTERNAL
-    stores_secret_plaintext: false
-    audit_required: true
-  serialization:
-    int64: string
-    decimal: string
-    instant: iso8601_utc
+  imported: false
+- table: ai_usage_service_provider_edge
+  domain: ai
+  profile: ledger_source_fact
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: ledger_source_fact
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    usage_fact_id:
+      type: int64
+      constraints: NOT NULL
+    edge_id:
+      type: int64
+      constraints: NOT NULL
+    edge_depth: int32
+    seller_provider_id: int64
+    buyer_provider_id: int64
+    amount_role: string(64)
+    pricing_plan_id: int64
+    pricing_rule_id: int64
+    billing_meter_code: string(64)
+    token_kind: string(64)
+    billable_quantity: decimal
+    unit_price: decimal
+    unit_size: decimal
+    charge_amount: decimal
+    currency: string(10)
+    fx_rate_snapshot: decimal
+    settlement_currency: string(10)
+    converted_charge_amount: decimal
+    seller_snapshot: json
+    buyer_snapshot: json
+    price_snapshot: json
+    occurred_at: instant
+    settlement_status: int32
+  unique_constraints:
+  - name: uk_ai_usage_service_provider_edge_usage_depth
+    columns:
+    - tenant_id
+    - organization_id
+    - usage_fact_id
+    - edge_depth
+    - amount_role
+  indexes:
+  - name: idx_ai_usage_service_provider_edge_seller_time
+    columns:
+    - tenant_id
+    - organization_id
+    - seller_provider_id
+    - occurred_at
+    - id
+  - name: idx_ai_usage_service_provider_edge_buyer_time
+    columns:
+    - tenant_id
+    - organization_id
+    - buyer_provider_id
+    - occurred_at
+    - id
+  lifecycle:
+    partition_by: created_at_month
   imported: false
 - table: ai_vendor_api_endpoint
   domain: ai
