@@ -2,31 +2,31 @@ package com.sdkwork.clawrouter.backend.model;
 
 
 public class ChannelsListResult {
-    private String code;
-    private AdminChannelsResponse data;
-    private String msg;
+    private Integer code;
+    private Object data;
+    private String traceId;
 
-    public String getCode() {
+    public Integer getCode() {
         return this.code;
     }
 
-    public void setCode(String code) {
+    public void setCode(Integer code) {
         this.code = code;
     }
 
-    public AdminChannelsResponse getData() {
+    public Object getData() {
         return this.data;
     }
 
-    public void setData(AdminChannelsResponse data) {
+    public void setData(Object data) {
         this.data = data;
     }
 
-    public String getMsg() {
-        return this.msg;
+    public String getTraceId() {
+        return this.traceId;
     }
 
-    public void setMsg(String msg) {
-        this.msg = msg;
+    public void setTraceId(String traceId) {
+        this.traceId = traceId;
     }
 }

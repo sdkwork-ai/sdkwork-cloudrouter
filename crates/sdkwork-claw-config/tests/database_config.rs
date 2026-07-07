@@ -558,7 +558,9 @@ fn server_runtime_validation_accepts_workspace_development_postgres_on_localhost
         let config = DatabaseConfig::from_url(url).unwrap();
         config
             .validate_for_runtime_profile_at(RuntimeConfigProfile::Server, &location)
-            .unwrap_or_else(|error| panic!("expected localhost dev acceptance for url: {url}: {error}"));
+            .unwrap_or_else(|error| {
+                panic!("expected localhost dev acceptance for url: {url}: {error}")
+            });
     }
 }
 

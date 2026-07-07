@@ -8,13 +8,11 @@ if TYPE_CHECKING:
 
 @dataclass
 class ProblemDetail:
-    """RFC 9457 problem details error response."""
+    code: int
     status: int
     title: str
+    trace_id: str
     type: str
-    code: Optional[str] = None
     detail: Optional[str] = None
     errors: Optional[List[FieldError]] = None
     instance: Optional[str] = None
-    request_id: Optional[str] = None
-    trace_id: Optional[str] = None

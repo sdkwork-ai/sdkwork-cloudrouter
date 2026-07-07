@@ -255,25 +255,37 @@ class ClawRouterOpenApiPrecisionAudit:
         if not isinstance(schema, dict):
             return [f"{surface} {context.operation_id} result schema is missing: {expected_component}"]
 
-        if schema.get("type") != "object":
-            messages.append(f"{surface} {context.operation_id} result schema type must be object")
-        if schema.get("additionalProperties") is not False:
-            messages.append(f"{surface} {context.operation_id} result schema must disable additionalProperties")
-        if schema.get("required") != ["code"]:
-            messages.append(f"{surface} {context.operation_id} result schema required fields must be ['code']")
         if schema.get("x-operation-id") != context.operation_id:
             messages.append(f"{surface} {context.operation_id} result schema x-operation-id must be {context.operation_id}")
 
-        properties = schema.get("properties", {})
-        if not isinstance(properties, dict):
-            messages.append(f"{surface} {context.operation_id} result schema properties must be an object")
+        actual_data_schema = self._result_data_schema(schema)
+        if actual_data_schema is None:
+            messages.append(f"{surface} {context.operation_id} result schema data must be declared in SdkWorkApiResponse allOf")
             return messages
 
         expected_data_schema = self._expected_data_schema(context)
-        actual_data_schema = properties.get("data")
         if not self._schema_matches(actual_data_schema, expected_data_schema):
             messages.append(f"{surface} {context.operation_id} data schema must be {expected_data_schema}")
         return messages
+
+    def _result_data_schema(self, schema: dict[str, Any]) -> Any:
+        all_of = schema.get("allOf")
+        if isinstance(all_of, list) and any(
+            isinstance(item, dict) and item.get("$ref") == "#/components/schemas/SdkWorkApiResponse"
+            for item in all_of
+        ):
+            for item in all_of:
+                if not isinstance(item, dict) or item.get("$ref") == "#/components/schemas/SdkWorkApiResponse":
+                    continue
+                properties = item.get("properties")
+                if isinstance(properties, dict) and "data" in properties:
+                    return properties["data"]
+            return None
+
+        properties = schema.get("properties", {})
+        if isinstance(properties, dict):
+            return properties.get("data")
+        return None
 
     def _validate_operation_result_orphans(
         self,
@@ -331,30 +343,53 @@ class ClawRouterOpenApiPrecisionAudit:
         record_ref = {"$ref": f"#/components/schemas/{context.record_component}"}
         if context.path_params:
             return record_ref
-        return {"type": "array", "items": record_ref}
+        return {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["items", "pageInfo"],
+            "properties": {
+                "items": {"type": "array", "items": record_ref},
+                "pageInfo": {"$ref": "#/components/schemas/PageInfo"},
+            },
+        }
 
     def _expected_success_response_ref(self, context: _OperationContext) -> str:
         expected_component = self._operation_result_component_name(context.operation_id)
         return f"#/components/schemas/{expected_component}"
 
     def _schema_matches(self, actual: Any, expected: dict[str, Any] | None) -> bool:
-        if actual == expected:
+        if self._without_descriptions(actual) == self._without_descriptions(expected):
             return True
         if expected is None:
             return False
         if self._schema_is_no_data(actual) and expected == {"$ref": "#/components/schemas/NoData"}:
             return True
-        if isinstance(actual, dict):
-            actual_without_description = {
-                key: value for key, value in actual.items() if key != "description"
-            }
-            if actual_without_description == expected:
-                return True
         expected_ref = expected.get("$ref")
         if isinstance(expected_ref, str) and isinstance(actual, dict):
             all_of = actual.get("allOf")
             return isinstance(all_of, list) and all_of == [{"$ref": expected_ref}]
         return False
+
+    def _without_descriptions(self, value: Any) -> Any:
+        if isinstance(value, list):
+            return [self._without_descriptions(item) for item in value]
+        if isinstance(value, dict):
+            normalized = {
+                key: self._without_descriptions(item)
+                for key, item in value.items()
+                if key != "description"
+            }
+            all_of = normalized.get("allOf")
+            if (
+                isinstance(all_of, list)
+                and len(all_of) == 1
+                and isinstance(all_of[0], dict)
+                and isinstance(all_of[0].get("$ref"), str)
+                and set(normalized.keys()) == {"allOf"}
+            ):
+                return {"$ref": all_of[0]["$ref"]}
+            return normalized
+        return value
 
     def _schema_is_no_data(self, schema: Any) -> bool:
         if not isinstance(schema, dict):

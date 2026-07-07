@@ -2,31 +2,31 @@ package com.sdkwork.clawrouter.backend.model;
 
 
 public class AuthSettingsRetrieveResult {
-    private String code;
-    private AdminAuthSettingsResponse data;
-    private String msg;
+    private Integer code;
+    private Object data;
+    private String traceId;
 
-    public String getCode() {
+    public Integer getCode() {
         return this.code;
     }
 
-    public void setCode(String code) {
+    public void setCode(Integer code) {
         this.code = code;
     }
 
-    public AdminAuthSettingsResponse getData() {
+    public Object getData() {
         return this.data;
     }
 
-    public void setData(AdminAuthSettingsResponse data) {
+    public void setData(Object data) {
         this.data = data;
     }
 
-    public String getMsg() {
-        return this.msg;
+    public String getTraceId() {
+        return this.traceId;
     }
 
-    public void setMsg(String msg) {
-        this.msg = msg;
+    public void setTraceId(String traceId) {
+        this.traceId = traceId;
     }
 }

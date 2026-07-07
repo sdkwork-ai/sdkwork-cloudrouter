@@ -221,7 +221,7 @@ class ClawRouterOpenApiPrecisionAuditTest(unittest.TestCase):
             self.assertIn("NoData", spec["components"]["schemas"])
             self.assertEqual(
                 [{"$ref": "#/components/schemas/NoData"}],
-                spec["components"]["schemas"]["ModelVendorsCreateResult"]["properties"]["data"]["allOf"],
+                spec["components"]["schemas"]["ModelVendorsCreateResult"]["allOf"][1]["properties"]["data"]["allOf"],
             )
 
             result = ClawRouterOpenApiPrecisionAudit(root=root).run()
@@ -302,7 +302,7 @@ class ClawRouterOpenApiPrecisionAuditTest(unittest.TestCase):
             self.write_generated_openapi(root)
             spec = self.read_app_spec(root)
             result_schema = spec["components"]["schemas"]["ModelVendorsRetrieveResult"]
-            result_schema["properties"]["data"] = {
+            result_schema["allOf"][1]["properties"]["data"] = {
                 "type": "array",
                 "items": {"$ref": "#/components/schemas/AiModelVendorRecord"},
             }

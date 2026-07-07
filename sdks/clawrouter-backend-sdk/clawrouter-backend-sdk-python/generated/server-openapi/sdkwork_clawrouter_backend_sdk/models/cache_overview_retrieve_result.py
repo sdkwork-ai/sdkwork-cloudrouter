@@ -3,12 +3,12 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 if TYPE_CHECKING:
-    from .admin_cache_overview_response import AdminCacheOverviewResponse
+    from .cache_overview import CacheOverview
 
 
 @dataclass
 class CacheOverviewRetrieveResult:
     """Cache overview retrieve result schema exposed by Claw Router."""
-    code: str
-    data: Optional[AdminCacheOverviewResponse] = None
-    msg: Optional[str] = None
+    code: int
+    data: Any
+    trace_id: str

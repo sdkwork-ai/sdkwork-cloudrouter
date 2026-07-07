@@ -1,8 +1,8 @@
 #[test]
 fn app_api_direct_http_tests_use_standard_query_names() {
     let tests_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests");
-    for entry in
-        std::fs::read_dir(&tests_dir).expect("sdkwork-clawrouter-standalone-gateway tests dir exists")
+    for entry in std::fs::read_dir(&tests_dir)
+        .expect("sdkwork-clawrouter-standalone-gateway tests dir exists")
     {
         let entry = entry.expect("sdkwork-clawrouter-standalone-gateway test entry is readable");
         let path = entry.path();

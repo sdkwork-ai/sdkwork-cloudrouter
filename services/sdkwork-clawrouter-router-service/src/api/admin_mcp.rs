@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
+use std::sync::Arc;
 
 use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
@@ -15,11 +15,12 @@ use crate::api::response::{
 };
 use crate::domain::DomainError;
 use crate::ports::{
-    AdminMcpListPage, AdminMcpStore, AdminMcpSubject, CreateAdminMcpBindingCommand, CreateAdminMcpServerCommand,
-    CreateAdminMcpServerRevisionCommand, DiscoverAdminMcpToolsCommand, GetAdminMcpServerQuery,
-    ListAdminMcpBindingsQuery, ListAdminMcpServerRevisionsQuery, ListAdminMcpServersQuery,
-    ListAdminMcpToolsQuery, PublishAdminMcpServerRevisionCommand, TestAdminMcpServerHealthCommand,
-    UpdateAdminMcpBindingCommand, UpdateAdminMcpServerCommand, UpdateAdminMcpToolCommand,
+    AdminMcpListPage, AdminMcpStore, AdminMcpSubject, CreateAdminMcpBindingCommand,
+    CreateAdminMcpServerCommand, CreateAdminMcpServerRevisionCommand, DiscoverAdminMcpToolsCommand,
+    GetAdminMcpServerQuery, ListAdminMcpBindingsQuery, ListAdminMcpServerRevisionsQuery,
+    ListAdminMcpServersQuery, ListAdminMcpToolsQuery, PublishAdminMcpServerRevisionCommand,
+    TestAdminMcpServerHealthCommand, UpdateAdminMcpBindingCommand, UpdateAdminMcpServerCommand,
+    UpdateAdminMcpToolCommand,
 };
 
 const MAX_KEY_LEN: usize = 128;
@@ -436,7 +437,8 @@ fn build_list_servers_query(
     request: ListServersRequest,
 ) -> Result<ListAdminMcpServersQuery, Response> {
     let subject = scoped.into();
-    let pagination = parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
+    let pagination =
+        parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
     Ok(ListAdminMcpServersQuery {
         subject,
         keyword: normalize_list_search_query(request.q, "q").map_err(bad_request)?,
@@ -523,7 +525,8 @@ fn build_list_revisions_query(
     server_id: &str,
     request: ListPaginationQuery,
 ) -> Result<ListAdminMcpServerRevisionsQuery, Response> {
-    let pagination = parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
+    let pagination =
+        parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
     Ok(ListAdminMcpServerRevisionsQuery {
         subject: scoped.into(),
         server_id: parse_positive_i64(server_id, "serverId")?,
@@ -597,7 +600,8 @@ fn build_list_tools_query(
     server_id: &str,
     request: ListPaginationQuery,
 ) -> Result<ListAdminMcpToolsQuery, Response> {
-    let pagination = parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
+    let pagination =
+        parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
     Ok(ListAdminMcpToolsQuery {
         subject: scoped.into(),
         server_id: parse_positive_i64(server_id, "serverId")?,
@@ -651,7 +655,8 @@ fn build_list_bindings_query(
     server_id: &str,
     request: ListPaginationQuery,
 ) -> Result<ListAdminMcpBindingsQuery, Response> {
-    let pagination = parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
+    let pagination =
+        parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
     Ok(ListAdminMcpBindingsQuery {
         subject: scoped.into(),
         server_id: parse_positive_i64(server_id, "serverId")?,
@@ -726,7 +731,6 @@ fn build_update_binding_command(
         status: normalize_optional_enum(request.status, "status")?,
     })
 }
-
 
 fn normalize_required_key(value: String, field_name: &str) -> Result<String, Response> {
     let value = normalize_required_text(value, field_name, MAX_KEY_LEN)?;

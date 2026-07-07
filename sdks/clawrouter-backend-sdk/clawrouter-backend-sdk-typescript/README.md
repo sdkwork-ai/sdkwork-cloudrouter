@@ -86,7 +86,7 @@ const result = await client.sites.siteCatalog.list();
 
 ```typescript
 // Retrieve
-const result = await client.system.analytics.admin.overview.retrieve();
+const result = await client.system.auth.settings.retrieve();
 ```
 
 ## Error Handling

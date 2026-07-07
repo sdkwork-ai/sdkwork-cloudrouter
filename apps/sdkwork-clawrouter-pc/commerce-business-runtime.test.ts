@@ -22,7 +22,10 @@ test("console business host mounts T1 domain wallet, membership, coupon, checkou
   assert.match(appSource, /ClawRouterConsoleBusinessHostRoutes/);
   assert.match(appSource, /ClawRouterConsoleBusinessNavbarActions/);
   assert.match(appSource, /ClawRouterTokenPlanPage/);
-  assert.match(tokenPlanPageSource, /@sdkwork\/membership-pc-subscription/);
+  assert.match(tokenPlanPageSource, /@sdkwork\/membership-pc-subscription\/catalog/);
+  assert.match(tokenPlanPageSource, /SdkworkSubscriptionCatalogPage/);
+  assert.match(tokenPlanPageSource, /ClawRouterTokenPlanCheckoutModal/);
+  assert.match(tokenPlanPageSource, /useTokenPlanMemberSummary/);
   assert.match(shellSource, /path="\/token-plan"/);
   assert.match(publicNavbarSource, /\/token-plan/);
   assert.match(publicNavbarSource, /nav\.tokenPlan/);

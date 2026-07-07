@@ -17,7 +17,7 @@ func NewAiApi(client *sdkhttp.Client) *AiApi {
     return &AiApi{client: client}
 }
 
-// List groups
+// List
 func (a *AiApi) ChannelGroupsList() (sdktypes.ChannelGroupsListResult, error) {
     raw, err := a.client.Get(AppApiPath("/ai/channel_groups"), nil, nil)
     if err != nil {
@@ -27,14 +27,9 @@ func (a *AiApi) ChannelGroupsList() (sdktypes.ChannelGroupsListResult, error) {
     return decodeResult[sdktypes.ChannelGroupsListResult](raw)
 }
 
-// List dashboard overview
-func (a *AiApi) DashboardOverviewRetrieve(timeRange *string, startTime *string, endTime *string) (sdktypes.DashboardOverviewRetrieveResult, error) {
-    query := BuildQueryString([]QueryParameterSpec{
-        {Name: "time_range", Value: func() interface{} { if timeRange == nil { return nil }; return *timeRange }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "start_time", Value: func() interface{} { if startTime == nil { return nil }; return *startTime }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "end_time", Value: func() interface{} { if endTime == nil { return nil }; return *endTime }(), Style: "form", Explode: true, AllowReserved: false},
-    })
-    raw, err := a.client.Get(AppendQueryString(AppApiPath("/ai/dashboard/overview"), query), nil, nil)
+// Retrieve
+func (a *AiApi) DashboardOverviewRetrieve() (sdktypes.DashboardOverviewRetrieveResult, error) {
+    raw, err := a.client.Get(AppApiPath("/ai/dashboard/overview"), nil, nil)
     if err != nil {
         var zero sdktypes.DashboardOverviewRetrieveResult
         return zero, err
@@ -42,7 +37,7 @@ func (a *AiApi) DashboardOverviewRetrieve(timeRange *string, startTime *string, 
     return decodeResult[sdktypes.DashboardOverviewRetrieveResult](raw)
 }
 
-// List traces
+// List
 func (a *AiApi) GatewayTracesList() (sdktypes.GatewayTracesListResult, error) {
     raw, err := a.client.Get(AppApiPath("/ai/gateway/traces"), nil, nil)
     if err != nil {
@@ -52,14 +47,14 @@ func (a *AiApi) GatewayTracesList() (sdktypes.GatewayTracesListResult, error) {
     return decodeResult[sdktypes.GatewayTracesListResult](raw)
 }
 
-// List model rankings
-func (a *AiApi) ModelRankingsList(rankScope *string, vendorCode *string, modality *string, q *string, limit *string) (sdktypes.ModelRankingsListResult, error) {
+// List
+func (a *AiApi) ModelRankingsList(rankScope *string, vendorCode *string, modality *string, q *string, pageSize *int) (sdktypes.ModelRankingsListResult, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "rank_scope", Value: func() interface{} { if rankScope == nil { return nil }; return *rankScope }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "vendor_code", Value: func() interface{} { if vendorCode == nil { return nil }; return *vendorCode }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "modality", Value: func() interface{} { if modality == nil { return nil }; return *modality }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "q", Value: func() interface{} { if q == nil { return nil }; return *q }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(AppApiPath("/ai/model_rankings"), query), nil, nil)
     if err != nil {
@@ -69,7 +64,7 @@ func (a *AiApi) ModelRankingsList(rankScope *string, vendorCode *string, modalit
     return decodeResult[sdktypes.ModelRankingsListResult](raw)
 }
 
-// List ranking vendor filters
+// List
 func (a *AiApi) ModelVendorsList() (sdktypes.ModelVendorsListResult, error) {
     raw, err := a.client.Get(AppApiPath("/ai/model_vendors"), nil, nil)
     if err != nil {
@@ -79,19 +74,18 @@ func (a *AiApi) ModelVendorsList() (sdktypes.ModelVendorsListResult, error) {
     return decodeResult[sdktypes.ModelVendorsListResult](raw)
 }
 
-// List model catalog for Playground
-func (a *AiApi) ModelsList(billingMeter *string, vendorCode *string, vendorCodes []string, modalities []string, capabilities []string, categories []string, groups []string, q *string, limit *string, offset *string) (sdktypes.ModelsListResult, error) {
+// List
+func (a *AiApi) ModelsList(page *int, pageSize *int, q *string, billingMeter *string, vendorCodes []string, modalities []string, capabilities []string, categories []string, groups []string) (sdktypes.ModelsListResult, error) {
     query := BuildQueryString([]QueryParameterSpec{
+        {Name: "page", Value: func() interface{} { if page == nil { return nil }; return *page }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "q", Value: func() interface{} { if q == nil { return nil }; return *q }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "billing_meter", Value: func() interface{} { if billingMeter == nil { return nil }; return *billingMeter }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "vendor_code", Value: func() interface{} { if vendorCode == nil { return nil }; return *vendorCode }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "vendor_codes", Value: func() interface{} { if vendorCodes == nil { return nil }; return *vendorCodes }(), Style: "form", Explode: false, AllowReserved: false},
         {Name: "modalities", Value: func() interface{} { if modalities == nil { return nil }; return *modalities }(), Style: "form", Explode: false, AllowReserved: false},
         {Name: "capabilities", Value: func() interface{} { if capabilities == nil { return nil }; return *capabilities }(), Style: "form", Explode: false, AllowReserved: false},
         {Name: "categories", Value: func() interface{} { if categories == nil { return nil }; return *categories }(), Style: "form", Explode: false, AllowReserved: false},
         {Name: "groups", Value: func() interface{} { if groups == nil { return nil }; return *groups }(), Style: "form", Explode: false, AllowReserved: false},
-        {Name: "q", Value: func() interface{} { if q == nil { return nil }; return *q }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "offset", Value: func() interface{} { if offset == nil { return nil }; return *offset }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(AppApiPath("/ai/models"), query), nil, nil)
     if err != nil {
@@ -101,7 +95,7 @@ func (a *AiApi) ModelsList(billingMeter *string, vendorCode *string, vendorCodes
     return decodeResult[sdktypes.ModelsListResult](raw)
 }
 
-// List routing API keys
+// List
 func (a *AiApi) RoutingApiKeysList() (sdktypes.RoutingApiKeysListResult, error) {
     raw, err := a.client.Get(AppApiPath("/ai/routing/api_keys"), nil, nil)
     if err != nil {
@@ -111,7 +105,7 @@ func (a *AiApi) RoutingApiKeysList() (sdktypes.RoutingApiKeysListResult, error) 
     return decodeResult[sdktypes.RoutingApiKeysListResult](raw)
 }
 
-// List routing channels
+// List
 func (a *AiApi) RoutingChannelsList() (sdktypes.RoutingChannelsListResult, error) {
     raw, err := a.client.Get(AppApiPath("/ai/routing/channels"), nil, nil)
     if err != nil {
@@ -121,7 +115,7 @@ func (a *AiApi) RoutingChannelsList() (sdktypes.RoutingChannelsListResult, error
     return decodeResult[sdktypes.RoutingChannelsListResult](raw)
 }
 
-// List routing request traces
+// List
 func (a *AiApi) RoutingRequestTracesList() (sdktypes.RoutingRequestTracesListResult, error) {
     raw, err := a.client.Get(AppApiPath("/ai/routing/request_traces"), nil, nil)
     if err != nil {
@@ -131,7 +125,7 @@ func (a *AiApi) RoutingRequestTracesList() (sdktypes.RoutingRequestTracesListRes
     return decodeResult[sdktypes.RoutingRequestTracesListResult](raw)
 }
 
-// List routing usage
+// List
 func (a *AiApi) RoutingUsageList() (sdktypes.RoutingUsageListResult, error) {
     raw, err := a.client.Get(AppApiPath("/ai/routing/usage"), nil, nil)
     if err != nil {
@@ -141,17 +135,9 @@ func (a *AiApi) RoutingUsageList() (sdktypes.RoutingUsageListResult, error) {
     return decodeResult[sdktypes.RoutingUsageListResult](raw)
 }
 
-// List logs
-func (a *AiApi) UsageLogsList(page *string, pageSize *string, q *string, status *string, startTime *string, endTime *string) (sdktypes.UsageLogsListResult, error) {
-    query := BuildQueryString([]QueryParameterSpec{
-        {Name: "page", Value: func() interface{} { if page == nil { return nil }; return *page }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "q", Value: func() interface{} { if q == nil { return nil }; return *q }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "status", Value: func() interface{} { if status == nil { return nil }; return *status }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "start_time", Value: func() interface{} { if startTime == nil { return nil }; return *startTime }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "end_time", Value: func() interface{} { if endTime == nil { return nil }; return *endTime }(), Style: "form", Explode: true, AllowReserved: false},
-    })
-    raw, err := a.client.Get(AppendQueryString(AppApiPath("/ai/usage/logs"), query), nil, nil)
+// List
+func (a *AiApi) UsageLogsList() (sdktypes.UsageLogsListResult, error) {
+    raw, err := a.client.Get(AppApiPath("/ai/usage/logs"), nil, nil)
     if err != nil {
         var zero sdktypes.UsageLogsListResult
         return zero, err

@@ -2,31 +2,31 @@ package com.sdkwork.clawrouter.backend.model;
 
 
 public class ModelsUpdateResult {
-    private String code;
-    private AdminAiModelMutationResponse data;
-    private String msg;
+    private Integer code;
+    private Object data;
+    private String traceId;
 
-    public String getCode() {
+    public Integer getCode() {
         return this.code;
     }
 
-    public void setCode(String code) {
+    public void setCode(Integer code) {
         this.code = code;
     }
 
-    public AdminAiModelMutationResponse getData() {
+    public Object getData() {
         return this.data;
     }
 
-    public void setData(AdminAiModelMutationResponse data) {
+    public void setData(Object data) {
         this.data = data;
     }
 
-    public String getMsg() {
-        return this.msg;
+    public String getTraceId() {
+        return this.traceId;
     }
 
-    public void setMsg(String msg) {
-        this.msg = msg;
+    public void setTraceId(String traceId) {
+        this.traceId = traceId;
     }
 }

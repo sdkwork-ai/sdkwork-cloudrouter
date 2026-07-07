@@ -2,11 +2,10 @@ package types
 
 
 type ProblemDetail struct {
-	Code string `json:"code"`
+	Code SdkWorkPlatformErrorCode `json:"code"`
 	Detail string `json:"detail"`
 	Errors []FieldError `json:"errors"`
 	Instance string `json:"instance"`
-	RequestId string `json:"requestId"`
 	Status int `json:"status"`
 	Title string `json:"title"`
 	TraceId string `json:"traceId"`

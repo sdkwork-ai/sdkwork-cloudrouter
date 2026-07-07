@@ -91,7 +91,7 @@ async fn admin_cache_route_returns_overview_and_supports_refresh_and_delete() {
         .clone()
         .oneshot(signed_request(
             "GET",
-            "/backend/v3/api/system/cache/namespaces/auth.qr.challenge/keys?limit=1",
+            "/backend/v3/api/system/cache/namespaces/auth.qr.challenge/keys?page_size=1",
         ))
         .await
         .unwrap();
@@ -102,8 +102,11 @@ async fn admin_cache_route_returns_overview_and_supports_refresh_and_delete() {
     assert_eq!("local-default", keys_payload["data"]["instanceName"]);
     assert_eq!(2, keys_payload["data"]["scannedItems"]);
     assert_eq!(1, keys_payload["data"]["returnedItems"]);
-    assert_eq!(1, keys_payload["data"]["limit"]);
-    assert_eq!(true, keys_payload["data"]["hasMore"]);
+    assert!(keys_payload["data"].get("limit").is_none());
+    assert_eq!("cursor", keys_payload["data"]["pageInfo"]["mode"]);
+    assert_eq!(1, keys_payload["data"]["pageInfo"]["pageSize"]);
+    assert_eq!(true, keys_payload["data"]["pageInfo"]["hasMore"]);
+    assert!(keys_payload["data"]["pageInfo"]["nextCursor"].is_string());
     assert_eq!(false, keys_payload["data"]["scanComplete"]);
     assert_eq!("qr-admin-cache-1", keys_payload["data"]["items"][0]["key"]);
     assert_eq!("active", keys_payload["data"]["items"][0]["status"]);
@@ -261,13 +264,13 @@ async fn admin_cache_key_route_accepts_cursor_for_next_page() {
         .clone()
         .oneshot(signed_request(
             "GET",
-            "/backend/v3/api/system/cache/namespaces/auth.qr.challenge/keys?limit=2",
+            "/backend/v3/api/system/cache/namespaces/auth.qr.challenge/keys?page_size=2",
         ))
         .await
         .unwrap();
     assert_eq!(StatusCode::OK, first_response.status());
     let first_payload = json_payload(first_response).await;
-    let cursor = first_payload["data"]["nextCursor"]
+    let cursor = first_payload["data"]["pageInfo"]["nextCursor"]
         .as_str()
         .expect("first page must include cursor");
 
@@ -275,7 +278,7 @@ async fn admin_cache_key_route_accepts_cursor_for_next_page() {
         .oneshot(signed_request(
             "GET",
             &format!(
-                "/backend/v3/api/system/cache/namespaces/auth.qr.challenge/keys?limit=2&cursor={cursor}"
+                "/backend/v3/api/system/cache/namespaces/auth.qr.challenge/keys?page_size=2&cursor={cursor}"
             ),
         ))
         .await
@@ -284,9 +287,11 @@ async fn admin_cache_key_route_accepts_cursor_for_next_page() {
     let second_payload = json_payload(second_response).await;
     assert_eq!(1, second_payload["data"]["scannedItems"]);
     assert_eq!(1, second_payload["data"]["returnedItems"]);
-    assert_eq!(false, second_payload["data"]["hasMore"]);
+    assert_eq!("cursor", second_payload["data"]["pageInfo"]["mode"]);
+    assert_eq!(2, second_payload["data"]["pageInfo"]["pageSize"]);
+    assert_eq!(false, second_payload["data"]["pageInfo"]["hasMore"]);
     assert_eq!(true, second_payload["data"]["scanComplete"]);
-    assert!(second_payload["data"]["nextCursor"].is_null());
+    assert!(second_payload["data"]["pageInfo"]["nextCursor"].is_null());
     assert_eq!(
         "qr-admin-cursor-3",
         second_payload["data"]["items"][0]["key"]
@@ -362,7 +367,10 @@ async fn admin_cache_route_reports_unknown_management_targets_as_not_found() {
         missing_instance_delete_response.status()
     );
     let missing_instance_delete_payload = json_payload(missing_instance_delete_response).await;
-    assert_eq!(40401, missing_instance_delete_payload["code"].as_i64().unwrap());
+    assert_eq!(
+        40401,
+        missing_instance_delete_payload["code"].as_i64().unwrap()
+    );
 
     let missing_namespace_response = router
         .clone()
@@ -389,7 +397,10 @@ async fn admin_cache_route_reports_unknown_management_targets_as_not_found() {
         missing_namespace_refresh_response.status()
     );
     let missing_namespace_refresh_payload = json_payload(missing_namespace_refresh_response).await;
-    assert_eq!(40401, missing_namespace_refresh_payload["code"].as_i64().unwrap());
+    assert_eq!(
+        40401,
+        missing_namespace_refresh_payload["code"].as_i64().unwrap()
+    );
 
     let missing_namespace_keys_response = router
         .clone()
@@ -404,19 +415,49 @@ async fn admin_cache_route_reports_unknown_management_targets_as_not_found() {
         missing_namespace_keys_response.status()
     );
     let missing_namespace_keys_payload = json_payload(missing_namespace_keys_response).await;
-    assert_eq!(40401, missing_namespace_keys_payload["code"].as_i64().unwrap());
+    assert_eq!(
+        40401,
+        missing_namespace_keys_payload["code"].as_i64().unwrap()
+    );
 
-    let invalid_limit_response = router
+    let legacy_limit_response = router
         .clone()
         .oneshot(signed_request(
             "GET",
-            "/backend/v3/api/system/cache/namespaces/auth.qr.challenge/keys?limit=0",
+            "/backend/v3/api/system/cache/namespaces/auth.qr.challenge/keys?limit=1",
         ))
         .await
         .unwrap();
-    assert_eq!(StatusCode::CONFLICT, invalid_limit_response.status());
-    let invalid_limit_payload = json_payload(invalid_limit_response).await;
-    assert_eq!(40901, invalid_limit_payload["code"].as_i64().unwrap());
+    assert_eq!(StatusCode::BAD_REQUEST, legacy_limit_response.status());
+    let legacy_limit_payload = json_payload(legacy_limit_response).await;
+    assert_eq!(40003, legacy_limit_payload["code"].as_i64().unwrap());
+
+    let invalid_page_size_response = router
+        .clone()
+        .oneshot(signed_request(
+            "GET",
+            "/backend/v3/api/system/cache/namespaces/auth.qr.challenge/keys?page_size=0",
+        ))
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::BAD_REQUEST, invalid_page_size_response.status());
+    let invalid_page_size_payload = json_payload(invalid_page_size_response).await;
+    assert_eq!(40003, invalid_page_size_payload["code"].as_i64().unwrap());
+
+    let oversized_page_size_response = router
+        .clone()
+        .oneshot(signed_request(
+            "GET",
+            "/backend/v3/api/system/cache/namespaces/auth.qr.challenge/keys?page_size=201",
+        ))
+        .await
+        .unwrap();
+    assert_eq!(
+        StatusCode::BAD_REQUEST,
+        oversized_page_size_response.status()
+    );
+    let oversized_page_size_payload = json_payload(oversized_page_size_response).await;
+    assert_eq!(40003, oversized_page_size_payload["code"].as_i64().unwrap());
 
     let oversized_cursor = "a".repeat(2_049);
     let invalid_cursor_response = router
@@ -428,9 +469,9 @@ async fn admin_cache_route_reports_unknown_management_targets_as_not_found() {
         ))
         .await
         .unwrap();
-    assert_eq!(StatusCode::CONFLICT, invalid_cursor_response.status());
+    assert_eq!(StatusCode::BAD_REQUEST, invalid_cursor_response.status());
     let invalid_cursor_payload = json_payload(invalid_cursor_response).await;
-    assert_eq!(40901, invalid_cursor_payload["code"].as_i64().unwrap());
+    assert_eq!(40003, invalid_cursor_payload["code"].as_i64().unwrap());
     assert!(invalid_cursor_payload["detail"]
         .as_str()
         .unwrap()
@@ -527,7 +568,7 @@ fn signed_request(method: &str, path: &str) -> Request<Body> {
     Request::builder()
         .method(method)
         .uri(path)
-        .internal_trusted_subject(10, 20, 30)
+        .internal_trusted_subject(100001, 0, 30)
         .body(Body::empty())
         .unwrap()
 }

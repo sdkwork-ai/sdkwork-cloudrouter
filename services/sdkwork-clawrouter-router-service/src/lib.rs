@@ -20,7 +20,9 @@ pub struct CatalogScopeCountSnapshot {
 }
 
 #[doc(hidden)]
-pub fn catalog_scope_count_snapshot(catalog: &sdkwork_models::ModelCatalog) -> CatalogScopeCountSnapshot {
+pub fn catalog_scope_count_snapshot(
+    catalog: &sdkwork_models::ModelCatalog,
+) -> CatalogScopeCountSnapshot {
     let counts = infrastructure::sql::model_catalog_import::catalog_scope_counts(catalog);
     CatalogScopeCountSnapshot {
         meter_count: counts.meter_count as i64,

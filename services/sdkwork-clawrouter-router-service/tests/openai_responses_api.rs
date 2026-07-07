@@ -245,7 +245,10 @@ async fn openai_responses_authenticates_validates_price_and_returns_honest_not_i
     let body = String::from_utf8(body.to_vec()).unwrap();
     let payload: serde_json::Value = serde_json::from_str(&body).unwrap();
 
-    assert_eq!("responses_relay_not_configured", payload["error"]["code"].as_i64().unwrap());
+    assert_eq!(
+        "responses_relay_not_configured",
+        payload["error"]["code"].as_i64().unwrap()
+    );
     assert_eq!("server_error", payload["error"]["type"]);
     assert!(!body.contains("sk-live-secret"));
 }
@@ -285,7 +288,10 @@ async fn openai_responses_rejects_api_key_without_billing_subject_before_relay()
     let body = String::from_utf8(body.to_vec()).unwrap();
     let payload: serde_json::Value = serde_json::from_str(&body).unwrap();
 
-    assert_eq!("billing_subject_missing", payload["error"]["code"].as_i64().unwrap());
+    assert_eq!(
+        "billing_subject_missing",
+        payload["error"]["code"].as_i64().unwrap()
+    );
     assert_eq!("server_error", payload["error"]["type"]);
     let message = payload["error"]["message"].as_str().unwrap();
     assert!(message.contains("tenant"));
@@ -326,7 +332,10 @@ async fn openai_responses_rejects_unknown_model_after_authentication() {
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("model_not_found", payload["error"]["code"].as_i64().unwrap());
+    assert_eq!(
+        "model_not_found",
+        payload["error"]["code"].as_i64().unwrap()
+    );
 }
 
 #[derive(Debug)]
@@ -806,7 +815,10 @@ async fn openai_responses_rejects_usage_recording_when_success_response_omits_us
         .await
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
-    assert_eq!("provider_usage_record_failed", payload["error"]["code"].as_i64().unwrap());
+    assert_eq!(
+        "provider_usage_record_failed",
+        payload["error"]["code"].as_i64().unwrap()
+    );
     assert!(usage_captured.lock().unwrap().is_empty());
 }
 
@@ -860,7 +872,10 @@ async fn openai_responses_rejects_chat_only_model_before_fake_success() {
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("model_capability_not_supported", payload["error"]["code"].as_i64().unwrap());
+    assert_eq!(
+        "model_capability_not_supported",
+        payload["error"]["code"].as_i64().unwrap()
+    );
 }
 
 #[tokio::test]
@@ -894,5 +909,8 @@ async fn openai_responses_rejects_streaming_before_fake_chunks() {
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("streaming_relay_not_configured", payload["error"]["code"].as_i64().unwrap());
+    assert_eq!(
+        "streaming_relay_not_configured",
+        payload["error"]["code"].as_i64().unwrap()
+    );
 }

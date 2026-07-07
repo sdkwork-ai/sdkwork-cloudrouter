@@ -3,12 +3,12 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 if TYPE_CHECKING:
-    from .admin_model_mappings_response import AdminModelMappingsResponse
+    from .no_data import NoData
 
 
 @dataclass
 class ModelMappingsListResult:
     """Model mappings list result schema exposed by Claw Router."""
-    code: str
-    data: Optional[AdminModelMappingsResponse] = None
-    msg: Optional[str] = None
+    code: int
+    data: Any
+    trace_id: str

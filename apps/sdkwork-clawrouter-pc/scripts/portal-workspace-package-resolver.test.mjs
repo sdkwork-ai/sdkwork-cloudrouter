@@ -18,10 +18,16 @@ test('resolver falls back to generated server-openapi source when SDK dist is mi
   assert.match(resolved ?? '', /[\\/]src[\\/]index\.ts$/u);
 });
 
+test('resolver resolves clawrouter app SDK domains subpath to composed facade source', () => {
+  const resolved = resolvePortalPackageModule('@sdkwork/clawrouter-app-sdk/domains', portalRoot);
+
+  assert.match(resolved ?? '', /[\\/]src[\\/]domains[\\/]index\.ts$/u);
+});
+
 test('resolver returns built SDK dist when present', () => {
   const resolved = resolvePortalPackageModule('@sdkwork/agents-app-sdk', portalRoot);
 
-  assert.match(resolved ?? '', /[\\/]dist[\\/]index\.js$/u);
+  assert.match(resolved ?? '', /[\\/](?:dist[\\/]index\.js|src[\\/]index\.ts)$/u);
 });
 
 test('resolver falls back to ui-pc-react TSX source for deep component imports', () => {
@@ -59,4 +65,30 @@ test('resolver finds order SDK packages from workspace dependency node_modules',
   const resolved = resolvePortalPackageModule('@sdkwork/order-app-sdk', portalRoot, importer);
 
   assert.match(resolved ?? '', /[\\/]src[\\/]index\.ts$/u);
+});
+
+test('resolver finds assets-core from sdkwork-assets workspace packages', () => {
+  const importer = path.resolve(
+    portalRoot,
+    '../../../sdkwork-assets/apps/sdkwork-assets-pc/packages/sdkwork-assets-pc-assets/src/gallery/mapGenerationHistoryToGallery.ts',
+  );
+  const resolved = resolvePortalPackageModule('@sdkwork/assets-core', portalRoot, importer);
+
+  assert.match(resolved ?? '', /[\\/]sdkwork-assets-core[\\/]src[\\/]index\.ts$/u);
+});
+
+test('resolver finds assets-core from image-contracts transitive imports', () => {
+  const importer = path.resolve(
+    portalRoot,
+    '../../../sdkwork-image/apps/sdkwork-image-pc/packages/sdkwork-image-pc-generation/node_modules/@sdkwork/image-contracts/src/index.ts',
+  );
+  const resolved = resolvePortalPackageModule('@sdkwork/assets-core', portalRoot, importer);
+
+  assert.match(resolved ?? '', /[\\/]sdkwork-assets-core[\\/]src[\\/]index\.ts$/u);
+});
+
+test('resolver finds workspace packages declared only in root pnpm-workspace.yaml', () => {
+  const resolved = resolvePortalPackageModule('@sdkwork/assets-core', portalRoot);
+
+  assert.match(resolved ?? '', /[\\/]sdkwork-assets-core[\\/]src[\\/]index\.ts$/u);
 });

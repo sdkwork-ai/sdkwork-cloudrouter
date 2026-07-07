@@ -8,101 +8,87 @@ import com.sdkwork.clawrouter.app.http.HttpClient
 
 class AiApi(private val client: HttpClient) {
 
-    /** List groups */
+    /** List */
     suspend fun channelGroupsList(): ChannelGroupsListResult? {
         val raw = client.get(ApiPaths.appPath("/ai/channel_groups"))
         return client.convertValue(raw, object : TypeReference<ChannelGroupsListResult>() {})
     }
 
-    /** List dashboard overview */
-    suspend fun dashboardOverviewRetrieve(timeRange: String? = null, startTime: String? = null, endTime: String? = null): DashboardOverviewRetrieveResult? {
-        val query = buildQueryString(listOf(
-            QueryParameterSpec("time_range", timeRange, "form", true, false, null),
-            QueryParameterSpec("start_time", startTime, "form", true, false, null),
-            QueryParameterSpec("end_time", endTime, "form", true, false, null)
-        ))
-        val raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/ai/dashboard/overview"), query))
+    /** Retrieve */
+    suspend fun dashboardOverviewRetrieve(): DashboardOverviewRetrieveResult? {
+        val raw = client.get(ApiPaths.appPath("/ai/dashboard/overview"))
         return client.convertValue(raw, object : TypeReference<DashboardOverviewRetrieveResult>() {})
     }
 
-    /** List traces */
+    /** List */
     suspend fun gatewayTracesList(): GatewayTracesListResult? {
         val raw = client.get(ApiPaths.appPath("/ai/gateway/traces"))
         return client.convertValue(raw, object : TypeReference<GatewayTracesListResult>() {})
     }
 
-    /** List model rankings */
-    suspend fun modelRankingsList(rankScope: String? = null, vendorCode: String? = null, modality: String? = null, q: String? = null, limit: String? = null): ModelRankingsListResult? {
+    /** List */
+    suspend fun modelRankingsList(rankScope: String? = null, vendorCode: String? = null, modality: String? = null, q: String? = null, pageSize: Int? = null): ModelRankingsListResult? {
         val query = buildQueryString(listOf(
             QueryParameterSpec("rank_scope", rankScope, "form", true, false, null),
             QueryParameterSpec("vendor_code", vendorCode, "form", true, false, null),
             QueryParameterSpec("modality", modality, "form", true, false, null),
             QueryParameterSpec("q", q, "form", true, false, null),
-            QueryParameterSpec("limit", limit, "form", true, false, null)
+            QueryParameterSpec("page_size", pageSize, "form", true, false, null)
         ))
         val raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/ai/model_rankings"), query))
         return client.convertValue(raw, object : TypeReference<ModelRankingsListResult>() {})
     }
 
-    /** List ranking vendor filters */
+    /** List */
     suspend fun modelVendorsList(): ModelVendorsListResult? {
         val raw = client.get(ApiPaths.appPath("/ai/model_vendors"))
         return client.convertValue(raw, object : TypeReference<ModelVendorsListResult>() {})
     }
 
-    /** List model catalog for Playground */
-    suspend fun modelsList(billingMeter: String? = null, vendorCode: String? = null, vendorCodes: List<String>? = null, modalities: List<String>? = null, capabilities: List<String>? = null, categories: List<String>? = null, groups: List<String>? = null, q: String? = null, limit: String? = null, offset: String? = null): ModelsListResult? {
+    /** List */
+    suspend fun modelsList(page: Int? = null, pageSize: Int? = null, q: String? = null, billingMeter: String? = null, vendorCodes: List<String>? = null, modalities: List<String>? = null, capabilities: List<String>? = null, categories: List<String>? = null, groups: List<String>? = null): ModelsListResult? {
         val query = buildQueryString(listOf(
+            QueryParameterSpec("page", page, "form", true, false, null),
+            QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+            QueryParameterSpec("q", q, "form", true, false, null),
             QueryParameterSpec("billing_meter", billingMeter, "form", true, false, null),
-            QueryParameterSpec("vendor_code", vendorCode, "form", true, false, null),
             QueryParameterSpec("vendor_codes", vendorCodes, "form", false, false, null),
             QueryParameterSpec("modalities", modalities, "form", false, false, null),
             QueryParameterSpec("capabilities", capabilities, "form", false, false, null),
             QueryParameterSpec("categories", categories, "form", false, false, null),
-            QueryParameterSpec("groups", groups, "form", false, false, null),
-            QueryParameterSpec("q", q, "form", true, false, null),
-            QueryParameterSpec("limit", limit, "form", true, false, null),
-            QueryParameterSpec("offset", offset, "form", true, false, null)
+            QueryParameterSpec("groups", groups, "form", false, false, null)
         ))
         val raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/ai/models"), query))
         return client.convertValue(raw, object : TypeReference<ModelsListResult>() {})
     }
 
-    /** List routing API keys */
+    /** List */
     suspend fun routingApiKeysList(): RoutingApiKeysListResult? {
         val raw = client.get(ApiPaths.appPath("/ai/routing/api_keys"))
         return client.convertValue(raw, object : TypeReference<RoutingApiKeysListResult>() {})
     }
 
-    /** List routing channels */
+    /** List */
     suspend fun routingChannelsList(): RoutingChannelsListResult? {
         val raw = client.get(ApiPaths.appPath("/ai/routing/channels"))
         return client.convertValue(raw, object : TypeReference<RoutingChannelsListResult>() {})
     }
 
-    /** List routing request traces */
+    /** List */
     suspend fun routingRequestTracesList(): RoutingRequestTracesListResult? {
         val raw = client.get(ApiPaths.appPath("/ai/routing/request_traces"))
         return client.convertValue(raw, object : TypeReference<RoutingRequestTracesListResult>() {})
     }
 
-    /** List routing usage */
+    /** List */
     suspend fun routingUsageList(): RoutingUsageListResult? {
         val raw = client.get(ApiPaths.appPath("/ai/routing/usage"))
         return client.convertValue(raw, object : TypeReference<RoutingUsageListResult>() {})
     }
 
-    /** List logs */
-    suspend fun usageLogsList(page: String? = null, pageSize: String? = null, q: String? = null, status: String? = null, startTime: String? = null, endTime: String? = null): UsageLogsListResult? {
-        val query = buildQueryString(listOf(
-            QueryParameterSpec("page", page, "form", true, false, null),
-            QueryParameterSpec("page_size", pageSize, "form", true, false, null),
-            QueryParameterSpec("q", q, "form", true, false, null),
-            QueryParameterSpec("status", status, "form", true, false, null),
-            QueryParameterSpec("start_time", startTime, "form", true, false, null),
-            QueryParameterSpec("end_time", endTime, "form", true, false, null)
-        ))
-        val raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/ai/usage/logs"), query))
+    /** List */
+    suspend fun usageLogsList(): UsageLogsListResult? {
+        val raw = client.get(ApiPaths.appPath("/ai/usage/logs"))
         return client.convertValue(raw, object : TypeReference<UsageLogsListResult>() {})
     }
 

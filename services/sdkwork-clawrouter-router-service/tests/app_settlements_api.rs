@@ -24,7 +24,7 @@ async fn app_settlements_dashboard_billing_route_matches_app_sdk_contract() {
         .oneshot(
             Request::builder()
                 .uri("/app/v3/api/billing/settlements/dashboard?year=2026")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )

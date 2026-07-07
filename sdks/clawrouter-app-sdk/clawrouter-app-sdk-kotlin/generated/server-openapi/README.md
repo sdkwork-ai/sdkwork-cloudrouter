@@ -53,19 +53,27 @@ val client = SdkworkAppClient(config)
 
 ## API Modules
 
+- `client.system` - system API
 - `client.ai` - ai API
 - `client.chat` - chat API
 - `client.iam` - iam API
 - `client.notification` - notification API
 - `client.runtime` - runtime API
-- `client.system` - system API
 
 ## Usage Examples
+
+### system
+
+```kotlin
+// List
+val result = client.system.afterSalesRequestsList()
+println(result)
+```
 
 ### ai
 
 ```kotlin
-// List groups
+// List
 val result = client.ai.channelGroupsList()
 println(result)
 ```
@@ -73,19 +81,15 @@ println(result)
 ### chat
 
 ```kotlin
-// List product chat conversations
-val params = linkedMapOf<String, Any>(
-    "page" to "page",
-    "page_size" to "page-size"
-)
-val result = client.chat.conversationsList(params)
+// List
+val result = client.chat.conversationsList()
 println(result)
 ```
 
 ### iam
 
 ```kotlin
-// List keys
+// List
 val result = client.iam.apiKeysList()
 println(result)
 ```
@@ -93,42 +97,16 @@ println(result)
 ### notification
 
 ```kotlin
-// List portal notifications
-val params = linkedMapOf<String, Any>(
-    "include_archived" to true,
-    "page" to "page",
-    "page_size" to "page-size"
-)
-val result = client.notification.notificationsList(params)
+// List
+val result = client.notification.notificationsList()
 println(result)
 ```
 
 ### runtime
 
 ```kotlin
-// List runtime invocations
-val params = linkedMapOf<String, Any>(
-    "page" to "page",
-    "page_size" to "page-size",
-    "conversation_id" to "1",
-    "chat_turn_id" to "1",
-    "agent_session_id" to "1",
-    "runtime" to "runtime",
-    "status" to "status"
-)
-val result = client.runtime.invocationsList(params)
-println(result)
-```
-
-### system
-
-```kotlin
-// Retrieve public site runtime branding settings
-val params = linkedMapOf<String, Any>(
-    "tenant_code" to "ok",
-    "organization_code" to "ok"
-)
-val result = client.system.siteRuntimeRetrieve(params)
+// List
+val result = client.runtime.invocationsList()
 println(result)
 ```
 

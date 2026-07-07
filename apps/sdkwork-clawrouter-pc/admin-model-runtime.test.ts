@@ -707,7 +707,7 @@ test("admin model service calls generated backend SDK paths and normalizes model
           ],
         };
       }
-      if (url === "/backend/v3/api/ai/model_rankings?limit=200" && method === "GET") {
+      if (url === "/backend/v3/api/ai/model_rankings?page_size=200" && method === "GET") {
         return {
           items: [
             {
@@ -894,7 +894,7 @@ test("admin model service calls generated backend SDK paths and normalizes model
         [
           "GET /backend/v3/api/ai/model_vendors",
           "GET /backend/v3/api/ai/models",
-          "GET /backend/v3/api/ai/model_rankings?limit=200",
+          "GET /backend/v3/api/ai/model_rankings?page_size=200",
           "POST /backend/v3/api/ai/models/refresh",
           "POST /backend/v3/api/ai/model_vendors",
           "POST /backend/v3/api/ai/models",
@@ -978,7 +978,7 @@ test("admin model service initializes empty catalog through generated backend SD
       if (url === "/backend/v3/api/ai/models" && method === "GET") {
         return { items: [] };
       }
-      if (url === "/backend/v3/api/ai/model_rankings?limit=200" && method === "GET") {
+      if (url === "/backend/v3/api/ai/model_rankings?page_size=200" && method === "GET") {
         return { items: [] };
       }
       if (url === "/backend/v3/api/ai/models/refresh" && method === "POST") {
@@ -1036,7 +1036,7 @@ test("admin model service initializes empty catalog through generated backend SD
         [
           "GET /backend/v3/api/ai/model_vendors",
           "GET /backend/v3/api/ai/models",
-          "GET /backend/v3/api/ai/model_rankings?limit=200",
+          "GET /backend/v3/api/ai/model_rankings?page_size=200",
           "POST /backend/v3/api/ai/models/refresh",
         ],
       );
@@ -1090,7 +1090,7 @@ test("admin model service keeps initialized catalog rows when returned models ha
           ],
         };
       }
-      if (url === "/backend/v3/api/ai/model_rankings?limit=200" && method === "GET") {
+      if (url === "/backend/v3/api/ai/model_rankings?page_size=200" && method === "GET") {
         return { items: [] };
       }
       throw new Error(`Unexpected SDK request ${method} ${url}`);
@@ -1109,7 +1109,7 @@ test("admin model service keeps initialized catalog rows when returned models ha
         [
           "GET /backend/v3/api/ai/model_vendors",
           "GET /backend/v3/api/ai/models",
-          "GET /backend/v3/api/ai/model_rankings?limit=200",
+          "GET /backend/v3/api/ai/model_rankings?page_size=200",
         ],
       );
     },
@@ -1220,7 +1220,7 @@ test("admin model ranking refresh status rejects fractional counters", async () 
 test("admin model service reads model ranking refresh job history through generated backend SDK", async () => {
   await withBackendSdkFetch(
     (url, init) => {
-      if (url === "/backend/v3/api/ai/model_rankings/jobs?limit=20" && (init?.method ?? "GET") === "GET") {
+      if (url === "/backend/v3/api/ai/model_rankings/jobs?page_size=20" && (init?.method ?? "GET") === "GET") {
         return {
           items: [
             {
@@ -1261,7 +1261,7 @@ test("admin model service reads model ranking refresh job history through genera
       assert.equal(page.items[0].failureReason, "usage aggregate failed");
       assert.deepEqual(
         captured.map((request) => `${request.method} ${request.url}`),
-        ["GET /backend/v3/api/ai/model_rankings/jobs?limit=20"],
+        ["GET /backend/v3/api/ai/model_rankings/jobs?page_size=20"],
       );
     },
   );
@@ -1408,7 +1408,7 @@ test("admin model list remains usable when model ranking enhancement fails", asy
           ],
         };
       }
-      if (url === "/backend/v3/api/ai/model_rankings?limit=200" && method === "GET") {
+      if (url === "/backend/v3/api/ai/model_rankings?page_size=200" && method === "GET") {
         throw new Error("ranking store unavailable");
       }
       throw new Error(`Unexpected SDK request ${method} ${url}`);
@@ -1423,7 +1423,7 @@ test("admin model list remains usable when model ranking enhancement fails", asy
       assert.equal(capturedRequests[0], "GET /backend/v3/api/ai/models");
       assert.equal(capturedRequests.length >= 2, true);
       assert.equal(
-        capturedRequests.slice(1).every((request) => request === "GET /backend/v3/api/ai/model_rankings?limit=200"),
+        capturedRequests.slice(1).every((request) => request === "GET /backend/v3/api/ai/model_rankings?page_size=200"),
         true,
       );
     },
@@ -1434,7 +1434,7 @@ test("admin model ranking summary rejects fractional request counters", async ()
   await withBackendSdkFetch(
     (url, init) => {
       const method = init?.method ?? "GET";
-      if (url === "/backend/v3/api/ai/model_rankings?limit=200" && method === "GET") {
+      if (url === "/backend/v3/api/ai/model_rankings?page_size=200" && method === "GET") {
         return {
           items: [
             {
@@ -1483,7 +1483,7 @@ test("admin model list keeps backend calls when ranking summary is malformed", a
           ],
         };
       }
-      if (url === "/backend/v3/api/ai/model_rankings?limit=200" && method === "GET") {
+      if (url === "/backend/v3/api/ai/model_rankings?page_size=200" && method === "GET") {
         return {
           items: [
             {
@@ -1549,7 +1549,7 @@ test("admin model list preserves regional prices and rejects missing region pric
           ],
         };
       }
-      if (url === "/backend/v3/api/ai/model_rankings?limit=200" && method === "GET") {
+      if (url === "/backend/v3/api/ai/model_rankings?page_size=200" && method === "GET") {
         return { items: [] };
       }
       throw new Error(`Unexpected SDK request ${method} ${url}`);
@@ -1591,7 +1591,7 @@ test("admin model list preserves regional prices and rejects missing region pric
           ],
         };
       }
-      if (url === "/backend/v3/api/ai/model_rankings?limit=200" && method === "GET") {
+      if (url === "/backend/v3/api/ai/model_rankings?page_size=200" && method === "GET") {
         return { items: [] };
       }
       throw new Error(`Unexpected SDK request ${method} ${url}`);
@@ -1617,7 +1617,7 @@ test("admin model list preserves regional prices and rejects missing region pric
           ],
         };
       }
-      if (url === "/backend/v3/api/ai/model_rankings?limit=200" && method === "GET") {
+      if (url === "/backend/v3/api/ai/model_rankings?page_size=200" && method === "GET") {
         return { items: [] };
       }
       throw new Error(`Unexpected SDK request ${method} ${url}`);
@@ -1652,7 +1652,7 @@ test("admin model list keeps catalog rows when one pricing side is not available
           ],
         };
       }
-      if (url === "/backend/v3/api/ai/model_rankings?limit=200" && method === "GET") {
+      if (url === "/backend/v3/api/ai/model_rankings?page_size=200" && method === "GET") {
         return { items: [] };
       }
       throw new Error(`Unexpected SDK request ${method} ${url}`);
@@ -1997,7 +1997,7 @@ test("admin model list fails closed when backend omits required model fields", a
             ],
           };
         }
-        if (url === "/backend/v3/api/ai/model_rankings?limit=200" && (init?.method ?? "GET") === "GET") {
+        if (url === "/backend/v3/api/ai/model_rankings?page_size=200" && (init?.method ?? "GET") === "GET") {
           return { items: [] };
         }
         throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);
@@ -2024,7 +2024,7 @@ test("admin model list fails closed when backend returns unsupported model statu
           ],
         };
       }
-      if (url === "/backend/v3/api/ai/model_rankings?limit=200" && (init?.method ?? "GET") === "GET") {
+      if (url === "/backend/v3/api/ai/model_rankings?page_size=200" && (init?.method ?? "GET") === "GET") {
         return { items: [] };
       }
       throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);
@@ -2068,7 +2068,7 @@ test("admin model list fails closed when backend returns malformed model field c
             ],
           };
         }
-        if (url === "/backend/v3/api/ai/model_rankings?limit=200" && (init?.method ?? "GET") === "GET") {
+        if (url === "/backend/v3/api/ai/model_rankings?page_size=200" && (init?.method ?? "GET") === "GET") {
           return { items: [] };
         }
         throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);

@@ -464,8 +464,8 @@ Example installer output:
   "changed": true,
   "bootstrapAdmin": {
     "status": "created",
-    "tenantId": "10",
-    "organizationId": "20",
+    "tenantId": "100001",
+    "organizationId": "0",
     "userId": "1",
     "username": "admin",
     "displayName": "Administrator",

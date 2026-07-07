@@ -1,9 +1,6 @@
 import { backendApiPath } from './paths';
 import type { HttpClient } from '../http/client';
-
-import type { AiResourceGroupsCreateResult, AiResourceGroupsUpdateResult, AiResourcesCreateResult, AiResourcesUpdateResult, ChannelGroupsChannelBindingsUpdateResult, ChannelGroupsCreateResult, ChannelGroupsRouteExplainRetrieveResult, ChannelGroupsUpdateResult, ModelMappingsCreateResult, ModelMappingsReplaceResult, ModelMappingsResolveCreateResult, ModelMappingsUpdateResult, ModelRankingsRefreshResult, ModelRankingsStatusRetrieveResult, ModelsCreateResult, ModelsRefreshResult, ModelsUpdateResult, ModelVendorsCreateResult, RouteExplainCreateResult, SdkWorkCommandData, SdkWorkPageData } from '../types';
-
-
+import type { AiResourceGroupResourcesPage, AiResourcesPage, ModelCatalogPage, ModelRankingRefreshJobHistoryPage, ModelRankingsPage } from '../types';
 export class AiRouteExplainApi {
   private client: HttpClient;
 
@@ -13,9 +10,15 @@ export class AiRouteExplainApi {
 
 
 /** Create */
-  async create(): Promise<RouteExplainCreateResult> {
-    return this.client.post<RouteExplainCreateResult>(backendApiPath(`/ai/route_explain`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/ai/route_explain`));
   }
+}
+
+export interface AiAiResourcesListParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
 }
 
 export class AiAiResourcesApi {
@@ -27,19 +30,30 @@ export class AiAiResourcesApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/ai/resources`));
+  async list(params?: AiAiResourcesListParams): Promise<AiResourcesPage> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<AiResourcesPage>(appendQueryString(backendApiPath(`/ai/resources`), query));
   }
 
 /** Create */
-  async create(): Promise<AiResourcesCreateResult> {
-    return this.client.post<AiResourcesCreateResult>(backendApiPath(`/ai/resources`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/ai/resources`));
   }
 
 /** Update */
-  async update(resourceId: string): Promise<AiResourcesUpdateResult> {
-    return this.client.put<AiResourcesUpdateResult>(backendApiPath(`/ai/resources/${serializePathParameter(resourceId, { name: 'resourceId', style: 'simple', explode: false })}`));
+  async update(resourceId: string): Promise<Record<string, never>> {
+    return this.client.put<Record<string, never>>(backendApiPath(`/ai/resources/${serializePathParameter(resourceId, { name: 'resourceId', style: 'simple', explode: false })}`));
   }
+}
+
+export interface AiAiResourceGroupsResourcesListParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
 }
 
 export class AiAiResourceGroupsResourcesApi {
@@ -51,8 +65,13 @@ export class AiAiResourceGroupsResourcesApi {
 
 
 /** List */
-  async list(groupIdOrCode: string): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/ai/resource_groups/${serializePathParameter(groupIdOrCode, { name: 'groupIdOrCode', style: 'simple', explode: false })}/resources`));
+  async list(groupIdOrCode: string, params?: AiAiResourceGroupsResourcesListParams): Promise<AiResourceGroupResourcesPage> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<AiResourceGroupResourcesPage>(appendQueryString(backendApiPath(`/ai/resource_groups/${serializePathParameter(groupIdOrCode, { name: 'groupIdOrCode', style: 'simple', explode: false })}/resources`), query));
   }
 }
 
@@ -67,24 +86,36 @@ export class AiAiResourceGroupsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/ai/resource_groups`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/ai/resource_groups`));
   }
 
 /** Create */
-  async create(): Promise<AiResourceGroupsCreateResult> {
-    return this.client.post<AiResourceGroupsCreateResult>(backendApiPath(`/ai/resource_groups`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/ai/resource_groups`));
   }
 
 /** Delete */
-  async delete(groupId: string): Promise<SdkWorkCommandData> {
-    return this.client.delete<SdkWorkCommandData>(backendApiPath(`/ai/resource_groups/${serializePathParameter(groupId, { name: 'groupId', style: 'simple', explode: false })}`));
+  async delete(groupId: string): Promise<Record<string, never>> {
+    return this.client.delete<Record<string, never>>(backendApiPath(`/ai/resource_groups/${serializePathParameter(groupId, { name: 'groupId', style: 'simple', explode: false })}`));
   }
 
 /** Update */
-  async update(groupId: string): Promise<AiResourceGroupsUpdateResult> {
-    return this.client.patch<AiResourceGroupsUpdateResult>(backendApiPath(`/ai/resource_groups/${serializePathParameter(groupId, { name: 'groupId', style: 'simple', explode: false })}`));
+  async update(groupId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(backendApiPath(`/ai/resource_groups/${serializePathParameter(groupId, { name: 'groupId', style: 'simple', explode: false })}`));
   }
+}
+
+export interface AiModelsListParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  billingMeter?: string;
+  vendorCodes?: string[];
+  modalities?: string[];
+  capabilities?: string[];
+  categories?: string[];
+  groups?: string[];
 }
 
 export class AiModelsApi {
@@ -96,28 +127,39 @@ export class AiModelsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/ai/models`));
+  async list(params?: AiModelsListParams): Promise<ModelCatalogPage> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+      { name: 'billing_meter', value: params?.billingMeter, style: 'form', explode: true, allowReserved: false },
+      { name: 'vendor_codes', value: params?.vendorCodes, style: 'form', explode: false, allowReserved: false },
+      { name: 'modalities', value: params?.modalities, style: 'form', explode: false, allowReserved: false },
+      { name: 'capabilities', value: params?.capabilities, style: 'form', explode: false, allowReserved: false },
+      { name: 'categories', value: params?.categories, style: 'form', explode: false, allowReserved: false },
+      { name: 'groups', value: params?.groups, style: 'form', explode: false, allowReserved: false },
+    ]);
+    return this.client.get<ModelCatalogPage>(appendQueryString(backendApiPath(`/ai/models`), query));
   }
 
 /** Create */
-  async create(): Promise<ModelsCreateResult> {
-    return this.client.post<ModelsCreateResult>(backendApiPath(`/ai/models`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/ai/models`));
   }
 
 /** Refresh */
-  async refresh(): Promise<ModelsRefreshResult> {
-    return this.client.post<ModelsRefreshResult>(backendApiPath(`/ai/models/refresh`));
+  async refresh(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/ai/models/refresh`));
   }
 
 /** Delete */
-  async delete(modelId: string): Promise<SdkWorkCommandData> {
-    return this.client.delete<SdkWorkCommandData>(backendApiPath(`/ai/models/${serializePathParameter(modelId, { name: 'modelId', style: 'simple', explode: false })}`));
+  async delete(modelId: string): Promise<Record<string, never>> {
+    return this.client.delete<Record<string, never>>(backendApiPath(`/ai/models/${serializePathParameter(modelId, { name: 'modelId', style: 'simple', explode: false })}`));
   }
 
 /** Update */
-  async update(modelId: string): Promise<ModelsUpdateResult> {
-    return this.client.patch<ModelsUpdateResult>(backendApiPath(`/ai/models/${serializePathParameter(modelId, { name: 'modelId', style: 'simple', explode: false })}`));
+  async update(modelId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(backendApiPath(`/ai/models/${serializePathParameter(modelId, { name: 'modelId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -130,14 +172,26 @@ export class AiModelVendorsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/ai/model_vendors`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/ai/model_vendors`));
   }
 
 /** Create */
-  async create(): Promise<ModelVendorsCreateResult> {
-    return this.client.post<ModelVendorsCreateResult>(backendApiPath(`/ai/model_vendors`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/ai/model_vendors`));
   }
+}
+
+export interface AiModelRankingsStatusRetrieveParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  billingMeter?: string;
+  vendorCodes?: string[];
+  modalities?: string[];
+  capabilities?: string[];
+  categories?: string[];
+  groups?: string[];
 }
 
 export class AiModelRankingsStatusApi {
@@ -149,9 +203,25 @@ export class AiModelRankingsStatusApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<ModelRankingsStatusRetrieveResult> {
-    return this.client.get<ModelRankingsStatusRetrieveResult>(backendApiPath(`/ai/model_rankings/status`));
+  async retrieve(params?: AiModelRankingsStatusRetrieveParams): Promise<ModelCatalogPage> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+      { name: 'billing_meter', value: params?.billingMeter, style: 'form', explode: true, allowReserved: false },
+      { name: 'vendor_codes', value: params?.vendorCodes, style: 'form', explode: false, allowReserved: false },
+      { name: 'modalities', value: params?.modalities, style: 'form', explode: false, allowReserved: false },
+      { name: 'capabilities', value: params?.capabilities, style: 'form', explode: false, allowReserved: false },
+      { name: 'categories', value: params?.categories, style: 'form', explode: false, allowReserved: false },
+      { name: 'groups', value: params?.groups, style: 'form', explode: false, allowReserved: false },
+    ]);
+    return this.client.get<ModelCatalogPage>(appendQueryString(backendApiPath(`/ai/model_rankings/status`), query));
   }
+}
+
+export interface AiModelRankingsJobsListParams {
+  rankScope?: string;
+  pageSize?: number;
 }
 
 export class AiModelRankingsJobsApi {
@@ -163,9 +233,21 @@ export class AiModelRankingsJobsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/ai/model_rankings/jobs`));
+  async list(params?: AiModelRankingsJobsListParams): Promise<ModelRankingRefreshJobHistoryPage> {
+    const query = buildQueryString([
+      { name: 'rank_scope', value: params?.rankScope, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<ModelRankingRefreshJobHistoryPage>(appendQueryString(backendApiPath(`/ai/model_rankings/jobs`), query));
   }
+}
+
+export interface AiModelRankingsListParams {
+  rankScope?: string;
+  vendorCode?: string;
+  modality?: string;
+  q?: string;
+  pageSize?: number;
 }
 
 export class AiModelRankingsApi {
@@ -181,13 +263,20 @@ export class AiModelRankingsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/ai/model_rankings`));
+  async list(params?: AiModelRankingsListParams): Promise<ModelRankingsPage> {
+    const query = buildQueryString([
+      { name: 'rank_scope', value: params?.rankScope, style: 'form', explode: true, allowReserved: false },
+      { name: 'vendor_code', value: params?.vendorCode, style: 'form', explode: true, allowReserved: false },
+      { name: 'modality', value: params?.modality, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<ModelRankingsPage>(appendQueryString(backendApiPath(`/ai/model_rankings`), query));
   }
 
 /** Refresh */
-  async refresh(): Promise<ModelRankingsRefreshResult> {
-    return this.client.post<ModelRankingsRefreshResult>(backendApiPath(`/ai/model_rankings/refresh`));
+  async refresh(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/ai/model_rankings/refresh`));
   }
 }
 
@@ -200,8 +289,8 @@ export class AiModelMappingsResolveApi {
 
 
 /** Create */
-  async create(): Promise<ModelMappingsResolveCreateResult> {
-    return this.client.post<ModelMappingsResolveCreateResult>(backendApiPath(`/ai/model_mappings/resolve`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/ai/model_mappings/resolve`));
   }
 }
 
@@ -216,28 +305,28 @@ export class AiModelMappingsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/ai/model_mappings`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/ai/model_mappings`));
   }
 
 /** Create */
-  async create(): Promise<ModelMappingsCreateResult> {
-    return this.client.post<ModelMappingsCreateResult>(backendApiPath(`/ai/model_mappings`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/ai/model_mappings`));
   }
 
 /** Replace */
-  async replace(): Promise<ModelMappingsReplaceResult> {
-    return this.client.put<ModelMappingsReplaceResult>(backendApiPath(`/ai/model_mappings`));
+  async replace(): Promise<Record<string, never>> {
+    return this.client.put<Record<string, never>>(backendApiPath(`/ai/model_mappings`));
   }
 
 /** Delete */
-  async delete(mappingId: string): Promise<SdkWorkCommandData> {
-    return this.client.delete<SdkWorkCommandData>(backendApiPath(`/ai/model_mappings/${serializePathParameter(mappingId, { name: 'mappingId', style: 'simple', explode: false })}`));
+  async delete(mappingId: string): Promise<Record<string, never>> {
+    return this.client.delete<Record<string, never>>(backendApiPath(`/ai/model_mappings/${serializePathParameter(mappingId, { name: 'mappingId', style: 'simple', explode: false })}`));
   }
 
 /** Update */
-  async update(mappingId: string): Promise<ModelMappingsUpdateResult> {
-    return this.client.patch<ModelMappingsUpdateResult>(backendApiPath(`/ai/model_mappings/${serializePathParameter(mappingId, { name: 'mappingId', style: 'simple', explode: false })}`));
+  async update(mappingId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(backendApiPath(`/ai/model_mappings/${serializePathParameter(mappingId, { name: 'mappingId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -250,8 +339,8 @@ export class AiModelMappingOptionsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/ai/model_mapping_options`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/ai/model_mapping_options`));
   }
 }
 
@@ -264,8 +353,8 @@ export class AiChannelGroupsRouteExplainApi {
 
 
 /** Retrieve */
-  async retrieve(channelGroupId: string): Promise<ChannelGroupsRouteExplainRetrieveResult> {
-    return this.client.get<ChannelGroupsRouteExplainRetrieveResult>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}/route_explain`));
+  async retrieve(channelGroupId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}/route_explain`));
   }
 }
 
@@ -278,20 +367,14 @@ export class AiChannelGroupsChannelBindingsApi {
 
 
 /** List */
-  async list(channelGroupId: string): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}/channel_bindings`));
+  async list(channelGroupId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}/channel_bindings`));
   }
 
 /** Update */
-  async update(channelGroupId: string): Promise<ChannelGroupsChannelBindingsUpdateResult> {
-    return this.client.put<ChannelGroupsChannelBindingsUpdateResult>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}/channel_bindings`));
+  async update(channelGroupId: string): Promise<Record<string, never>> {
+    return this.client.put<Record<string, never>>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}/channel_bindings`));
   }
-}
-
-export interface AiChannelGroupsListParams {
-  page?: number;
-  pageSize?: number;
-  q?: string;
 }
 
 export class AiChannelGroupsApi {
@@ -307,28 +390,23 @@ export class AiChannelGroupsApi {
 
 
 /** List */
-  async list(params?: AiChannelGroupsListParams): Promise<SdkWorkPageData> {
-    const query = buildQueryString([
-      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
-      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
-      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
-    ]);
-    return this.client.get<SdkWorkPageData>(appendQueryString(backendApiPath(`/ai/channel_groups`), query));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/ai/channel_groups`));
   }
 
 /** Create */
-  async create(): Promise<ChannelGroupsCreateResult> {
-    return this.client.post<ChannelGroupsCreateResult>(backendApiPath(`/ai/channel_groups`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/ai/channel_groups`));
   }
 
 /** Delete */
-  async delete(channelGroupId: string): Promise<SdkWorkCommandData> {
-    return this.client.delete<SdkWorkCommandData>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}`));
+  async delete(channelGroupId: string): Promise<Record<string, never>> {
+    return this.client.delete<Record<string, never>>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}`));
   }
 
 /** Update */
-  async update(channelGroupId: string): Promise<ChannelGroupsUpdateResult> {
-    return this.client.patch<ChannelGroupsUpdateResult>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}`));
+  async update(channelGroupId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -369,159 +447,6 @@ function appendQueryString(path: string, rawQueryString: string): string {
     return path;
   }
   return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
-}
-
-interface QueryParameterSpec {
-  name: string;
-  value: unknown;
-  style: string;
-  explode: boolean;
-  allowReserved: boolean;
-  contentType?: string;
-}
-
-function buildQueryString(parameters: QueryParameterSpec[]): string {
-  const pairs: string[] = [];
-  for (const parameter of parameters) {
-    appendSerializedParameter(pairs, parameter);
-  }
-  return pairs.join('&');
-}
-
-function appendSerializedParameter(pairs: string[], parameter: QueryParameterSpec): void {
-  if (parameter.value === undefined || parameter.value === null) {
-    return;
-  }
-
-  if (parameter.contentType) {
-    pairs.push(`${encodeQueryComponent(parameter.name)}=${encodeQueryValue(JSON.stringify(parameter.value), parameter.allowReserved)}`);
-    return;
-  }
-
-  const style = parameter.style || 'form';
-  if (style === 'deepObject') {
-    appendDeepObjectParameter(pairs, parameter.name, parameter.value, parameter.allowReserved);
-    return;
-  }
-
-  if (Array.isArray(parameter.value)) {
-    appendArrayParameter(pairs, parameter.name, parameter.value, style, parameter.explode, parameter.allowReserved);
-    return;
-  }
-
-  if (typeof parameter.value === 'object') {
-    appendObjectParameter(pairs, parameter.name, parameter.value as Record<string, unknown>, style, parameter.explode, parameter.allowReserved);
-    return;
-  }
-
-  pairs.push(`${encodeQueryComponent(parameter.name)}=${encodeQueryValue(serializeQueryPrimitive(parameter.value), parameter.allowReserved)}`);
-}
-
-function appendArrayParameter(
-  pairs: string[],
-  name: string,
-  value: unknown[],
-  style: string,
-  explode: boolean,
-  allowReserved: boolean,
-): void {
-  const values = value
-    .filter((item) => item !== undefined && item !== null)
-    .map((item) => serializeQueryPrimitive(item));
-  if (values.length === 0) {
-    return;
-  }
-
-  if (style === 'form' && explode) {
-    for (const item of values) {
-      pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(item, allowReserved)}`);
-    }
-    return;
-  }
-
-  pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(values.join(','), allowReserved)}`);
-}
-
-function appendObjectParameter(
-  pairs: string[],
-  name: string,
-  value: Record<string, unknown>,
-  style: string,
-  explode: boolean,
-  allowReserved: boolean,
-): void {
-  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== undefined && entryValue !== null);
-  if (entries.length === 0) {
-    return;
-  }
-
-  if (style === 'form' && explode) {
-    for (const [key, entryValue] of entries) {
-      pairs.push(`${encodeQueryComponent(key)}=${encodeQueryValue(serializeQueryPrimitive(entryValue), allowReserved)}`);
-    }
-    return;
-  }
-
-  const serialized = entries.flatMap(([key, entryValue]) => [key, serializeQueryPrimitive(entryValue)]).join(',');
-  pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(serialized, allowReserved)}`);
-}
-
-function appendDeepObjectParameter(
-  pairs: string[],
-  name: string,
-  value: unknown,
-  allowReserved: boolean,
-): void {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(serializeQueryPrimitive(value), allowReserved)}`);
-    return;
-  }
-
-  for (const [key, entryValue] of Object.entries(value as Record<string, unknown>)) {
-    if (entryValue === undefined || entryValue === null) {
-      continue;
-    }
-    pairs.push(`${encodeQueryComponent(`${name}[${key}]`)}=${encodeQueryValue(serializeQueryPrimitive(entryValue), allowReserved)}`);
-  }
-}
-
-function serializeQueryPrimitive(value: unknown): string {
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-  if (typeof value === 'object') {
-    return JSON.stringify(value);
-  }
-  return String(value);
-}
-
-function encodeQueryComponent(value: string): string {
-  return encodeURIComponent(value);
-}
-
-function encodeQueryValue(value: string, allowReserved: boolean): string {
-  const encoded = encodeURIComponent(value);
-  if (!allowReserved) {
-    return encoded;
-  }
-  return encoded.replace(/%3A/gi, ':')
-    .replace(/%2F/gi, '/')
-    .replace(/%3F/gi, '?')
-    .replace(/%23/gi, '#')
-    .replace(/%5B/gi, '[')
-    .replace(/%5D/gi, ']')
-    .replace(/%40/gi, '@')
-    .replace(/%21/gi, '!')
-    .replace(/%24/gi, '$')
-    .replace(/%26/gi, '&')
-    .replace(/%27/gi, "'")
-    .replace(/%28/gi, '(')
-    .replace(/%29/gi, ')')
-    .replace(/%2A/gi, '*')
-    .replace(/%2B/gi, '+')
-    .replace(/%2C/gi, ',')
-    .replace(/%3B/gi, ';')
-    .replace(/%3D/gi, '=');
 }
 
 interface PathParameterSpec {
@@ -594,4 +519,156 @@ function serializePathPrimitive(value: unknown): string {
     return JSON.stringify(value);
   }
   return String(value);
+}
+interface QueryParameterSpec {
+  name: string;
+  value: unknown;
+  style: string;
+  explode: boolean;
+  allowReserved: boolean;
+  contentType?: string;
+}
+
+function buildQueryString(parameters: QueryParameterSpec[]): string {
+  const pairs: string[] = [];
+  for (const parameter of parameters) {
+    appendSerializedParameter(pairs, parameter);
+  }
+  return pairs.join('&');
+}
+
+function appendSerializedParameter(pairs: string[], parameter: QueryParameterSpec): void {
+  if (parameter.value === undefined || parameter.value === null) {
+    return;
+  }
+
+  if (parameter.contentType) {
+    pairs.push(`${encodeQueryComponent(parameter.name)}=${encodeQueryValue(JSON.stringify(parameter.value), parameter.allowReserved)}`);
+    return;
+  }
+
+  const style = parameter.style || 'form';
+  if (style === 'deepObject') {
+    appendDeepObjectParameter(pairs, parameter.name, parameter.value, parameter.allowReserved);
+    return;
+  }
+
+  if (Array.isArray(parameter.value)) {
+    appendArrayParameter(pairs, parameter.name, parameter.value, style, parameter.explode, parameter.allowReserved);
+    return;
+  }
+
+  if (typeof parameter.value === 'object') {
+    appendObjectParameter(pairs, parameter.name, parameter.value as Record<string, unknown>, style, parameter.explode, parameter.allowReserved);
+    return;
+  }
+
+  pairs.push(`${encodeQueryComponent(parameter.name)}=${encodeQueryValue(serializePrimitive(parameter.value), parameter.allowReserved)}`);
+}
+
+function appendArrayParameter(
+  pairs: string[],
+  name: string,
+  value: unknown[],
+  style: string,
+  explode: boolean,
+  allowReserved: boolean,
+): void {
+  const values = value
+    .filter((item) => item !== undefined && item !== null)
+    .map((item) => serializePrimitive(item));
+  if (values.length === 0) {
+    return;
+  }
+
+  if (style === 'form' && explode) {
+    for (const item of values) {
+      pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(item, allowReserved)}`);
+    }
+    return;
+  }
+
+  pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(values.join(','), allowReserved)}`);
+}
+
+function appendObjectParameter(
+  pairs: string[],
+  name: string,
+  value: Record<string, unknown>,
+  style: string,
+  explode: boolean,
+  allowReserved: boolean,
+): void {
+  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== undefined && entryValue !== null);
+  if (entries.length === 0) {
+    return;
+  }
+
+  if (style === 'form' && explode) {
+    for (const [key, entryValue] of entries) {
+      pairs.push(`${encodeQueryComponent(key)}=${encodeQueryValue(serializePrimitive(entryValue), allowReserved)}`);
+    }
+    return;
+  }
+
+  const serialized = entries.flatMap(([key, entryValue]) => [key, serializePrimitive(entryValue)]).join(',');
+  pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(serialized, allowReserved)}`);
+}
+
+function appendDeepObjectParameter(
+  pairs: string[],
+  name: string,
+  value: unknown,
+  allowReserved: boolean,
+): void {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(serializePrimitive(value), allowReserved)}`);
+    return;
+  }
+
+  for (const [key, entryValue] of Object.entries(value as Record<string, unknown>)) {
+    if (entryValue === undefined || entryValue === null) {
+      continue;
+    }
+    pairs.push(`${encodeQueryComponent(`${name}[${key}]`)}=${encodeQueryValue(serializePrimitive(entryValue), allowReserved)}`);
+  }
+}
+
+function serializePrimitive(value: unknown): string {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
+function encodeQueryComponent(value: string): string {
+  return encodeURIComponent(value);
+}
+
+function encodeQueryValue(value: string, allowReserved: boolean): string {
+  const encoded = encodeURIComponent(value);
+  if (!allowReserved) {
+    return encoded;
+  }
+  return encoded.replace(/%3A/gi, ':')
+    .replace(/%2F/gi, '/')
+    .replace(/%3F/gi, '?')
+    .replace(/%23/gi, '#')
+    .replace(/%5B/gi, '[')
+    .replace(/%5D/gi, ']')
+    .replace(/%40/gi, '@')
+    .replace(/%21/gi, '!')
+    .replace(/%24/gi, '$')
+    .replace(/%26/gi, '&')
+    .replace(/%27/gi, "'")
+    .replace(/%28/gi, '(')
+    .replace(/%29/gi, ')')
+    .replace(/%2A/gi, '*')
+    .replace(/%2B/gi, '+')
+    .replace(/%2C/gi, ',')
+    .replace(/%3B/gi, ';')
+    .replace(/%3D/gi, '=');
 }

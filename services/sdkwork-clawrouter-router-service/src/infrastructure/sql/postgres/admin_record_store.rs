@@ -3,7 +3,7 @@ use sqlx::{PgPool, Row};
 use crate::domain::{DecimalValue, DomainError};
 use crate::infrastructure::sql::model_modality;
 use crate::ports::{
-    AdminRecordLogItem, AdminRecordListPage, AdminRecordReadFuture, AdminRecordStore,
+    AdminRecordListPage, AdminRecordLogItem, AdminRecordReadFuture, AdminRecordStore,
     ListAdminRecordLogsQuery,
 };
 

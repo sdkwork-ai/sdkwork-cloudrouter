@@ -136,7 +136,10 @@ async fn openai_models_route_rejects_missing_api_key() {
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("invalid_api_key", payload["error"]["code"].as_i64().unwrap());
+    assert_eq!(
+        "invalid_api_key",
+        payload["error"]["code"].as_i64().unwrap()
+    );
     assert_eq!("invalid_request_error", payload["error"]["type"]);
 }
 

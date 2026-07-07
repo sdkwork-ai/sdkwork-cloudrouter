@@ -296,7 +296,9 @@ impl CircuitBreakerInterceptor {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
-        let entry = circuits.entry(channel_id).or_insert_with(CircuitEntry::closed);
+        let entry = circuits
+            .entry(channel_id)
+            .or_insert_with(CircuitEntry::closed);
         match entry.state {
             CircuitState::Closed => true,
             CircuitState::Open => {
@@ -308,10 +310,7 @@ impl CircuitBreakerInterceptor {
                     entry.half_open_probes = 0;
                     entry.consecutive_successes = 0;
                     self.record_state_change(channel_id, CircuitState::HalfOpen);
-                    tracing::debug!(
-                        channel_id,
-                        "circuit breaker transitioned open -> half_open"
-                    );
+                    tracing::debug!(channel_id, "circuit breaker transitioned open -> half_open");
                     true
                 } else {
                     false
@@ -358,7 +357,9 @@ impl CircuitBreakerInterceptor {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
-        let entry = circuits.entry(channel_id).or_insert_with(CircuitEntry::closed);
+        let entry = circuits
+            .entry(channel_id)
+            .or_insert_with(CircuitEntry::closed);
         match entry.state {
             CircuitState::Closed => {
                 entry.consecutive_failures = entry.consecutive_failures.saturating_add(1);
@@ -398,15 +399,17 @@ impl CircuitBreakerInterceptor {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
-        let stat = stats.entry(channel_id).or_insert_with(|| CircuitBreakerStats {
-            channel_id,
-            state: CircuitState::Closed,
-            consecutive_failures: 0,
-            consecutive_successes: 0,
-            total_failures: 0,
-            total_successes: 0,
-            last_state_change: None,
-        });
+        let stat = stats
+            .entry(channel_id)
+            .or_insert_with(|| CircuitBreakerStats {
+                channel_id,
+                state: CircuitState::Closed,
+                consecutive_failures: 0,
+                consecutive_successes: 0,
+                total_failures: 0,
+                total_successes: 0,
+                last_state_change: None,
+            });
         stat.state = new_state;
         stat.last_state_change = Some(std::time::SystemTime::now());
     }
@@ -416,15 +419,17 @@ impl CircuitBreakerInterceptor {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
-        let stat = stats.entry(channel_id).or_insert_with(|| CircuitBreakerStats {
-            channel_id,
-            state: CircuitState::Closed,
-            consecutive_failures: 0,
-            consecutive_successes: 0,
-            total_failures: 0,
-            total_successes: 0,
-            last_state_change: None,
-        });
+        let stat = stats
+            .entry(channel_id)
+            .or_insert_with(|| CircuitBreakerStats {
+                channel_id,
+                state: CircuitState::Closed,
+                consecutive_failures: 0,
+                consecutive_successes: 0,
+                total_failures: 0,
+                total_successes: 0,
+                last_state_change: None,
+            });
         stat.total_successes = stat.total_successes.saturating_add(1);
         stat.consecutive_successes = stat.consecutive_successes.saturating_add(1);
         stat.consecutive_failures = 0;
@@ -435,15 +440,17 @@ impl CircuitBreakerInterceptor {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
-        let stat = stats.entry(channel_id).or_insert_with(|| CircuitBreakerStats {
-            channel_id,
-            state: CircuitState::Closed,
-            consecutive_failures: 0,
-            consecutive_successes: 0,
-            total_failures: 0,
-            total_successes: 0,
-            last_state_change: None,
-        });
+        let stat = stats
+            .entry(channel_id)
+            .or_insert_with(|| CircuitBreakerStats {
+                channel_id,
+                state: CircuitState::Closed,
+                consecutive_failures: 0,
+                consecutive_successes: 0,
+                total_failures: 0,
+                total_successes: 0,
+                last_state_change: None,
+            });
         stat.total_failures = stat.total_failures.saturating_add(1);
         stat.consecutive_failures = stat.consecutive_failures.saturating_add(1);
         stat.consecutive_successes = 0;

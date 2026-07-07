@@ -3,12 +3,12 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 if TYPE_CHECKING:
-    from .admin_site_channels_response import AdminSiteChannelsResponse
+    from .no_data import NoData
 
 
 @dataclass
 class SiteChannelsListResult:
     """Site channels list result schema exposed by Claw Router."""
-    code: str
-    data: Optional[AdminSiteChannelsResponse] = None
-    msg: Optional[str] = None
+    code: int
+    data: Any
+    trace_id: str

@@ -461,8 +461,8 @@ Example installer output:
   "changed": true,
   "bootstrapAdmin": {
     "status": "created",
-    "tenantId": "10",
-    "organizationId": "20",
+    "tenantId": "100001",
+    "organizationId": "0",
     "userId": "1",
     "username": "admin",
     "displayName": "Administrator",
@@ -499,4 +499,3 @@ pnpm admin:reset:release -- \
 Claw Router login methods, registration, QR login, verification-code policy, and recovery options are controlled by IAM runtime settings. `v0.3.0` keeps a strict default posture: password login is available by default, while QR login, code login, OAuth, and session bridge require explicit enablement.
 
 After first login, use the admin backend to configure IAM policy for login methods, QR login, registration verification, OAuth visibility, and account recovery.
-

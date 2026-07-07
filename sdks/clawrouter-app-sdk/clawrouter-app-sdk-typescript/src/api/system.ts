@@ -1,9 +1,6 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { AfterSalesRequestsCreateResult, AfterSalesRequestsRetrieveResult, AfterSalesRequestsUpdateResult, AfterSalesReturnShipmentsCreateResult, SdkWorkPageData, ShopsCurrentApplicationsCreateResult, ShopsCurrentBrandAuthorizationsUpsertResult, ShopsCurrentBusinessHoursRetrieveResult, ShopsCurrentBusinessHoursUpdateResult, ShopsCurrentCategoryBindingsUpsertResult, ShopsCurrentChannelsUpdateResult, ShopsCurrentCustomerServicesUpsertResult, ShopsCurrentDashboardRetrieveResult, ShopsCurrentDepositAccountRetrieveResult, ShopsCurrentFulfillmentProfileRetrieveResult, ShopsCurrentFulfillmentProfileUpdateResult, ShopsCurrentInventoryStocksAdjustmentsCreateResult, ShopsCurrentOrdersFulfillmentsCreateResult, ShopsCurrentOrdersRetrieveResult, ShopsCurrentPoliciesUpdateResult, ShopsCurrentProductsCreateResult, ShopsCurrentProductsPublishResult, ShopsCurrentProductsUnpublishResult, ShopsCurrentProductsUpdateResult, ShopsCurrentQualificationsUpsertResult, ShopsCurrentReadinessRetrieveResult, ShopsCurrentRetrieveResult, ShopsCurrentReturnAddressesUpsertResult, ShopsCurrentServiceAreasCreateResult, ShopsCurrentServiceAreasUpdateResult, ShopsCurrentSettlementProfileRetrieveResult, ShopsCurrentSettlementProfileUpdateResult, ShopsCurrentShippingTemplatesUpsertResult, ShopsRetrieveResult, SiteRuntimeRetrieveResult } from '../types';
-
-
 export class SystemSiteRuntimeApi {
   private client: HttpClient;
 
@@ -13,8 +10,8 @@ export class SystemSiteRuntimeApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<SiteRuntimeRetrieveResult> {
-    return this.client.get<SiteRuntimeRetrieveResult>(appApiPath(`/system/site/runtime`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/system/site/runtime`));
   }
 }
 
@@ -38,8 +35,8 @@ export class SystemShopsCurrentVerificationsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/verifications`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/verifications`));
   }
 }
 
@@ -52,8 +49,8 @@ export class SystemShopsCurrentStatusEventsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/status_events`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/status_events`));
   }
 }
 
@@ -66,13 +63,13 @@ export class SystemShopsCurrentShippingTemplatesApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/shipping_templates`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/shipping_templates`));
   }
 
 /** Upsert */
-  async upsert(): Promise<ShopsCurrentShippingTemplatesUpsertResult> {
-    return this.client.put<ShopsCurrentShippingTemplatesUpsertResult>(appApiPath(`/system/shops/current/shipping_templates`));
+  async upsert(): Promise<Record<string, never>> {
+    return this.client.put<Record<string, never>>(appApiPath(`/system/shops/current/shipping_templates`));
   }
 }
 
@@ -85,8 +82,8 @@ export class SystemShopsCurrentSettlementsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/settlements`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/settlements`));
   }
 }
 
@@ -99,13 +96,13 @@ export class SystemShopsCurrentSettlementProfileApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<ShopsCurrentSettlementProfileRetrieveResult> {
-    return this.client.get<ShopsCurrentSettlementProfileRetrieveResult>(appApiPath(`/shops/current/settlement_profile`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/settlement_profile`));
   }
 
 /** Update */
-  async update(): Promise<ShopsCurrentSettlementProfileUpdateResult> {
-    return this.client.patch<ShopsCurrentSettlementProfileUpdateResult>(appApiPath(`/system/shops/current/settlement_profile`));
+  async update(): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(appApiPath(`/system/shops/current/settlement_profile`));
   }
 }
 
@@ -118,18 +115,18 @@ export class SystemShopsCurrentServiceAreasApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/service_areas`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/service_areas`));
   }
 
 /** Create */
-  async create(): Promise<ShopsCurrentServiceAreasCreateResult> {
-    return this.client.post<ShopsCurrentServiceAreasCreateResult>(appApiPath(`/system/shops/current/service_areas`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/system/shops/current/service_areas`));
   }
 
 /** Update */
-  async update(serviceAreaId: string): Promise<ShopsCurrentServiceAreasUpdateResult> {
-    return this.client.patch<ShopsCurrentServiceAreasUpdateResult>(appApiPath(`/system/shops/current/service_areas/${serializePathParameter(serviceAreaId, { name: 'serviceAreaId', style: 'simple', explode: false })}`));
+  async update(serviceAreaId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(appApiPath(`/system/shops/current/service_areas/${serializePathParameter(serviceAreaId, { name: 'serviceAreaId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -142,8 +139,8 @@ export class SystemShopsCurrentRiskSignalsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/risk_signals`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/risk_signals`));
   }
 }
 
@@ -156,13 +153,13 @@ export class SystemShopsCurrentReturnAddressesApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/return_addresses`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/return_addresses`));
   }
 
 /** Upsert */
-  async upsert(): Promise<ShopsCurrentReturnAddressesUpsertResult> {
-    return this.client.put<ShopsCurrentReturnAddressesUpsertResult>(appApiPath(`/system/shops/current/return_addresses`));
+  async upsert(): Promise<Record<string, never>> {
+    return this.client.put<Record<string, never>>(appApiPath(`/system/shops/current/return_addresses`));
   }
 }
 
@@ -175,8 +172,8 @@ export class SystemShopsCurrentReadinessApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<ShopsCurrentReadinessRetrieveResult> {
-    return this.client.get<ShopsCurrentReadinessRetrieveResult>(appApiPath(`/shops/current/readiness`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/readiness`));
   }
 }
 
@@ -189,13 +186,13 @@ export class SystemShopsCurrentQualificationsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/qualifications`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/qualifications`));
   }
 
 /** Upsert */
-  async upsert(): Promise<ShopsCurrentQualificationsUpsertResult> {
-    return this.client.put<ShopsCurrentQualificationsUpsertResult>(appApiPath(`/system/shops/current/qualifications`));
+  async upsert(): Promise<Record<string, never>> {
+    return this.client.put<Record<string, never>>(appApiPath(`/system/shops/current/qualifications`));
   }
 }
 
@@ -208,28 +205,28 @@ export class SystemShopsCurrentProductsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/products`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/products`));
   }
 
 /** Create */
-  async create(): Promise<ShopsCurrentProductsCreateResult> {
-    return this.client.post<ShopsCurrentProductsCreateResult>(appApiPath(`/system/shops/current/products`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/system/shops/current/products`));
   }
 
 /** Update */
-  async update(productId: string): Promise<ShopsCurrentProductsUpdateResult> {
-    return this.client.patch<ShopsCurrentProductsUpdateResult>(appApiPath(`/system/shops/current/products/${serializePathParameter(productId, { name: 'productId', style: 'simple', explode: false })}`));
+  async update(productId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(appApiPath(`/system/shops/current/products/${serializePathParameter(productId, { name: 'productId', style: 'simple', explode: false })}`));
   }
 
 /** Publish */
-  async publish(productId: string): Promise<ShopsCurrentProductsPublishResult> {
-    return this.client.post<ShopsCurrentProductsPublishResult>(appApiPath(`/system/shops/current/products/${serializePathParameter(productId, { name: 'productId', style: 'simple', explode: false })}/publish`));
+  async publish(productId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/system/shops/current/products/${serializePathParameter(productId, { name: 'productId', style: 'simple', explode: false })}/publish`));
   }
 
 /** Unpublish */
-  async unpublish(productId: string): Promise<ShopsCurrentProductsUnpublishResult> {
-    return this.client.post<ShopsCurrentProductsUnpublishResult>(appApiPath(`/system/shops/current/products/${serializePathParameter(productId, { name: 'productId', style: 'simple', explode: false })}/unpublish`));
+  async unpublish(productId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/system/shops/current/products/${serializePathParameter(productId, { name: 'productId', style: 'simple', explode: false })}/unpublish`));
   }
 }
 
@@ -242,13 +239,13 @@ export class SystemShopsCurrentPoliciesApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/policies`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/policies`));
   }
 
 /** Update */
-  async update(policyId: string): Promise<ShopsCurrentPoliciesUpdateResult> {
-    return this.client.patch<ShopsCurrentPoliciesUpdateResult>(appApiPath(`/system/shops/current/policies/${serializePathParameter(policyId, { name: 'policyId', style: 'simple', explode: false })}`));
+  async update(policyId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(appApiPath(`/system/shops/current/policies/${serializePathParameter(policyId, { name: 'policyId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -261,8 +258,8 @@ export class SystemShopsCurrentOrdersFulfillmentsApi {
 
 
 /** Create */
-  async create(orderId: string): Promise<ShopsCurrentOrdersFulfillmentsCreateResult> {
-    return this.client.post<ShopsCurrentOrdersFulfillmentsCreateResult>(appApiPath(`/system/shops/current/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}/fulfillments`));
+  async create(orderId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/system/shops/current/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}/fulfillments`));
   }
 }
 
@@ -277,13 +274,13 @@ export class SystemShopsCurrentOrdersApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/orders`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/orders`));
   }
 
 /** Retrieve */
-  async retrieve(orderId: string): Promise<ShopsCurrentOrdersRetrieveResult> {
-    return this.client.get<ShopsCurrentOrdersRetrieveResult>(appApiPath(`/shops/current/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}`));
+  async retrieve(orderId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -296,8 +293,8 @@ export class SystemShopsCurrentInventoryStocksAdjustmentsApi {
 
 
 /** Create */
-  async create(stockId: string): Promise<ShopsCurrentInventoryStocksAdjustmentsCreateResult> {
-    return this.client.post<ShopsCurrentInventoryStocksAdjustmentsCreateResult>(appApiPath(`/system/shops/current/inventory/stocks/${serializePathParameter(stockId, { name: 'stockId', style: 'simple', explode: false })}/adjustments`));
+  async create(stockId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/system/shops/current/inventory/stocks/${serializePathParameter(stockId, { name: 'stockId', style: 'simple', explode: false })}/adjustments`));
   }
 }
 
@@ -312,8 +309,8 @@ export class SystemShopsCurrentInventoryStocksApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/inventory/stocks`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/inventory/stocks`));
   }
 }
 
@@ -337,13 +334,13 @@ export class SystemShopsCurrentFulfillmentProfileApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<ShopsCurrentFulfillmentProfileRetrieveResult> {
-    return this.client.get<ShopsCurrentFulfillmentProfileRetrieveResult>(appApiPath(`/shops/current/fulfillment_profile`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/fulfillment_profile`));
   }
 
 /** Update */
-  async update(): Promise<ShopsCurrentFulfillmentProfileUpdateResult> {
-    return this.client.patch<ShopsCurrentFulfillmentProfileUpdateResult>(appApiPath(`/system/shops/current/fulfillment_profile`));
+  async update(): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(appApiPath(`/system/shops/current/fulfillment_profile`));
   }
 }
 
@@ -356,8 +353,8 @@ export class SystemShopsCurrentDepositAccountApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<ShopsCurrentDepositAccountRetrieveResult> {
-    return this.client.get<ShopsCurrentDepositAccountRetrieveResult>(appApiPath(`/shops/current/deposit_account`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/deposit_account`));
   }
 }
 
@@ -370,8 +367,8 @@ export class SystemShopsCurrentDashboardApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<ShopsCurrentDashboardRetrieveResult> {
-    return this.client.get<ShopsCurrentDashboardRetrieveResult>(appApiPath(`/shops/current/dashboard`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/dashboard`));
   }
 }
 
@@ -384,13 +381,13 @@ export class SystemShopsCurrentCustomerServicesApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/customer_services`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/customer_services`));
   }
 
 /** Upsert */
-  async upsert(): Promise<ShopsCurrentCustomerServicesUpsertResult> {
-    return this.client.put<ShopsCurrentCustomerServicesUpsertResult>(appApiPath(`/system/shops/current/customer_services`));
+  async upsert(): Promise<Record<string, never>> {
+    return this.client.put<Record<string, never>>(appApiPath(`/system/shops/current/customer_services`));
   }
 }
 
@@ -403,13 +400,13 @@ export class SystemShopsCurrentChannelsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/channels`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/channels`));
   }
 
 /** Update */
-  async update(channelId: string): Promise<ShopsCurrentChannelsUpdateResult> {
-    return this.client.patch<ShopsCurrentChannelsUpdateResult>(appApiPath(`/system/shops/current/channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}`));
+  async update(channelId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(appApiPath(`/system/shops/current/channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -422,13 +419,13 @@ export class SystemShopsCurrentCategoryBindingsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/category_bindings`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/category_bindings`));
   }
 
 /** Upsert */
-  async upsert(): Promise<ShopsCurrentCategoryBindingsUpsertResult> {
-    return this.client.put<ShopsCurrentCategoryBindingsUpsertResult>(appApiPath(`/system/shops/current/category_bindings`));
+  async upsert(): Promise<Record<string, never>> {
+    return this.client.put<Record<string, never>>(appApiPath(`/system/shops/current/category_bindings`));
   }
 }
 
@@ -441,13 +438,13 @@ export class SystemShopsCurrentBusinessHoursApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<ShopsCurrentBusinessHoursRetrieveResult> {
-    return this.client.get<ShopsCurrentBusinessHoursRetrieveResult>(appApiPath(`/shops/current/business_hours`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/business_hours`));
   }
 
 /** Update */
-  async update(): Promise<ShopsCurrentBusinessHoursUpdateResult> {
-    return this.client.patch<ShopsCurrentBusinessHoursUpdateResult>(appApiPath(`/system/shops/current/business_hours`));
+  async update(): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(appApiPath(`/system/shops/current/business_hours`));
   }
 }
 
@@ -460,13 +457,13 @@ export class SystemShopsCurrentBrandAuthorizationsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/brand_authorizations`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/brand_authorizations`));
   }
 
 /** Upsert */
-  async upsert(): Promise<ShopsCurrentBrandAuthorizationsUpsertResult> {
-    return this.client.put<ShopsCurrentBrandAuthorizationsUpsertResult>(appApiPath(`/system/shops/current/brand_authorizations`));
+  async upsert(): Promise<Record<string, never>> {
+    return this.client.put<Record<string, never>>(appApiPath(`/system/shops/current/brand_authorizations`));
   }
 }
 
@@ -479,13 +476,13 @@ export class SystemShopsCurrentApplicationsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/shops/current/applications`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current/applications`));
   }
 
 /** Create */
-  async create(): Promise<ShopsCurrentApplicationsCreateResult> {
-    return this.client.post<ShopsCurrentApplicationsCreateResult>(appApiPath(`/system/shops/current/applications`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/system/shops/current/applications`));
   }
 }
 
@@ -544,8 +541,8 @@ export class SystemShopsCurrentApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<ShopsCurrentRetrieveResult> {
-    return this.client.get<ShopsCurrentRetrieveResult>(appApiPath(`/shops/current`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/current`));
   }
 }
 
@@ -560,13 +557,13 @@ export class SystemShopsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/shops`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops`));
   }
 
 /** Retrieve */
-  async retrieve(shopId: string): Promise<ShopsRetrieveResult> {
-    return this.client.get<ShopsRetrieveResult>(appApiPath(`/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}`));
+  async retrieve(shopId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -579,13 +576,13 @@ export class SystemAfterSalesReturnShipmentsApi {
 
 
 /** List */
-  async list(afterSalesRequestId: string): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}/return_shipments`));
+  async list(afterSalesRequestId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}/return_shipments`));
   }
 
 /** Create */
-  async create(afterSalesRequestId: string): Promise<AfterSalesReturnShipmentsCreateResult> {
-    return this.client.post<AfterSalesReturnShipmentsCreateResult>(appApiPath(`/system/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}/return_shipments`));
+  async create(afterSalesRequestId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/system/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}/return_shipments`));
   }
 }
 
@@ -598,8 +595,8 @@ export class SystemAfterSalesEventsApi {
 
 
 /** List */
-  async list(afterSalesRequestId: string): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}/events`));
+  async list(afterSalesRequestId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}/events`));
   }
 }
 
@@ -612,23 +609,23 @@ export class SystemAfterSalesRequestsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/after_sales/requests`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/after_sales/requests`));
   }
 
 /** Retrieve */
-  async retrieve(afterSalesRequestId: string): Promise<AfterSalesRequestsRetrieveResult> {
-    return this.client.get<AfterSalesRequestsRetrieveResult>(appApiPath(`/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}`));
+  async retrieve(afterSalesRequestId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}`));
   }
 
 /** Create */
-  async create(): Promise<AfterSalesRequestsCreateResult> {
-    return this.client.post<AfterSalesRequestsCreateResult>(appApiPath(`/system/after_sales/requests`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/system/after_sales/requests`));
   }
 
 /** Update */
-  async update(afterSalesRequestId: string): Promise<AfterSalesRequestsUpdateResult> {
-    return this.client.patch<AfterSalesRequestsUpdateResult>(appApiPath(`/system/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}`));
+  async update(afterSalesRequestId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(appApiPath(`/system/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}`));
   }
 }
 

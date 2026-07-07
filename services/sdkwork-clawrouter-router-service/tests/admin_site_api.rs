@@ -8,10 +8,10 @@ use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::EntityUuidGenerator;
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
-    AdminSiteChannelItem, AdminSiteChannelListPage, AdminSiteConnectionCheckItem, AdminSiteFuture, AdminSiteItem,
-    AdminSiteListPage, AdminSiteStore, CreateAdminSiteCommand, DeleteAdminSiteCommand,
-    ListAdminSiteChannelsQuery, ListAdminSitesQuery, TestAdminSiteConnectionCommand,
-    UpdateAdminSiteCommand,
+    AdminSiteChannelItem, AdminSiteChannelListPage, AdminSiteConnectionCheckItem, AdminSiteFuture,
+    AdminSiteItem, AdminSiteListPage, AdminSiteStore, CreateAdminSiteCommand,
+    DeleteAdminSiteCommand, ListAdminSiteChannelsQuery, ListAdminSitesQuery,
+    TestAdminSiteConnectionCommand, UpdateAdminSiteCommand,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -30,7 +30,7 @@ async fn admin_site_create_generates_site_code_when_portal_omits_it() {
                 .method("POST")
                 .uri("/backend/v3/api/sites")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"siteName":"OpenRouter CN","displayName":"OpenRouter CN","baseUrl":"https://openrouter.example.com/api/v1","domains":["openrouter.example.com"],"vendorCodes":["openai","anthropic"],"siteType":"relay","environment":"production","status":"active"}"#,
                 ))

@@ -405,7 +405,10 @@ impl AppRoutingReadStore for PostgresAppRoutingReadStore {
                 .first()
                 .and_then(|row| row.try_get::<i64, _>("total").ok())
                 .unwrap_or(0);
-            let items = rows.into_iter().map(row_to_channel).collect::<DomainResult<Vec<_>>>()?;
+            let items = rows
+                .into_iter()
+                .map(row_to_channel)
+                .collect::<DomainResult<Vec<_>>>()?;
             Ok(AppRoutingChannelListPage {
                 items,
                 total,
@@ -438,7 +441,10 @@ impl AppRoutingReadStore for PostgresAppRoutingReadStore {
                 .and_then(|row| row.try_get::<i64, _>("total").ok())
                 .unwrap_or(0);
             let row_to_api_key = |row| row_to_api_key(row, self.api_key_secret_codec.as_deref());
-            let items = rows.into_iter().map(row_to_api_key).collect::<DomainResult<Vec<_>>>()?;
+            let items = rows
+                .into_iter()
+                .map(row_to_api_key)
+                .collect::<DomainResult<Vec<_>>>()?;
             Ok(AppRoutingApiKeyListPage {
                 items,
                 total,

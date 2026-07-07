@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::api::{AiApi, ContentApi, IamApi, IntegrationApi, McpApi, MessagingApi, PromptsApi, ServiceProvidersApi, SitesApi, StorageApi, SystemApi};
+use crate::api::{AiApi, IntegrationApi, SitesApi, SystemApi};
 use crate::http::{SdkworkConfig, SdkworkError, SdkworkHttpClient};
 
 #[derive(Clone)]
@@ -41,40 +41,12 @@ impl SdkworkBackendClient {
             AiApi::new(Arc::clone(&self.http))
         }
 
-    pub fn content(&self) -> ContentApi {
-            ContentApi::new(Arc::clone(&self.http))
-        }
-
-    pub fn iam(&self) -> IamApi {
-            IamApi::new(Arc::clone(&self.http))
-        }
-
     pub fn integration(&self) -> IntegrationApi {
             IntegrationApi::new(Arc::clone(&self.http))
         }
 
-    pub fn mcp(&self) -> McpApi {
-            McpApi::new(Arc::clone(&self.http))
-        }
-
-    pub fn messaging(&self) -> MessagingApi {
-            MessagingApi::new(Arc::clone(&self.http))
-        }
-
-    pub fn prompts(&self) -> PromptsApi {
-            PromptsApi::new(Arc::clone(&self.http))
-        }
-
-    pub fn service_providers(&self) -> ServiceProvidersApi {
-            ServiceProvidersApi::new(Arc::clone(&self.http))
-        }
-
     pub fn sites(&self) -> SitesApi {
             SitesApi::new(Arc::clone(&self.http))
-        }
-
-    pub fn storage(&self) -> StorageApi {
-            StorageApi::new(Arc::clone(&self.http))
         }
 
     pub fn system(&self) -> SystemApi {

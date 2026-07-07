@@ -12,10 +12,7 @@ fn request_limits_config_uses_production_defaults_when_absent() {
     assert_eq!(128 * 1024, config.admin_app_json_body_max_bytes());
     assert_eq!(64 * 1024, config.admin_skill_json_body_max_bytes());
     assert_eq!(64 * 1024, config.payment_callback_body_max_bytes());
-    assert_eq!(
-        1024 * 1024,
-        config.gateway_invocation_body_max_bytes()
-    );
+    assert_eq!(1024 * 1024, config.gateway_invocation_body_max_bytes());
 }
 
 #[test]

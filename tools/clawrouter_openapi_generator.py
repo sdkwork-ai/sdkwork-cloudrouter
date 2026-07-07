@@ -1045,33 +1045,147 @@ class ClawRouterOpenApiGenerator:
                 "properties": {},
                 "description": "Closed empty payload for operations that complete without business data.",
             },
-            "PlusApiResult": {
+            "SdkWorkApiResponse": {
                 "type": "object",
                 "additionalProperties": False,
-                "description": "Base Claw Router response envelope. Operation-specific Result schemas carry concrete business data.",
-                "required": ["code"],
+                "required": ["code", "data", "traceId"],
                 "properties": {
-                    "code": {"type": "string", "description": "Business response code."},
-                    "msg": {"type": "string", "description": "Human-readable response message."},
-                    "message": {"type": "string", "description": "Human-readable response message."},
-                    "data": self._no_data_schema("Default empty data payload for the base response envelope."),
+                    "code": {
+                        "type": "integer",
+                        "format": "int32",
+                        "enum": [0],
+                        "default": 0,
+                        "minimum": 0,
+                        "maximum": 0,
+                        "description": "Numeric success result code. Must be 0 on HTTP 2xx.",
+                    },
+                    "data": {"description": "Operation-specific payload typed per response schema."},
+                    "traceId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Server-owned request correlation id.",
+                    },
                 },
+                "description": "Canonical SDKWork success response envelope.",
+            },
+            "SdkWorkResourceData": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["item"],
+                "properties": {
+                    "item": {
+                        "type": "object",
+                        "additionalProperties": {"$ref": "#/components/schemas/JsonValue"},
+                        "description": "Typed domain resource for the operation.",
+                    },
+                },
+                "description": "Canonical single-resource success data payload.",
+            },
+            "SdkWorkPageData": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["items", "pageInfo"],
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {"type": "object", "additionalProperties": {"$ref": "#/components/schemas/JsonValue"}},
+                        "description": "Page items returned by the operation.",
+                    },
+                    "pageInfo": {
+                        "$ref": "#/components/schemas/PageInfo",
+                        "description": "Server pagination metadata.",
+                    },
+                },
+                "description": "Canonical list/search success data payload.",
+            },
+            "SdkWorkCommandData": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["accepted"],
+                "properties": {
+                    "accepted": {"type": "boolean", "const": True, "description": "Whether the command was accepted."},
+                    "resourceId": {"type": "string", "description": "Affected resource id when available."},
+                    "status": {"type": "string", "description": "Command status when available."},
+                },
+                "description": "Canonical command success data payload.",
+            },
+            "PageInfo": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["mode"],
+                "properties": {
+                    "mode": {"type": "string", "enum": ["offset", "cursor"], "description": "Pagination mode."},
+                    "page": {"type": "integer", "minimum": 1, "description": "One-based page index for offset mode."},
+                    "pageSize": {"type": "integer", "minimum": 1, "maximum": 200, "description": "Effective page size."},
+                    "totalItems": {"type": "string", "pattern": "^[0-9]+$", "description": "Total matching items when available."},
+                    "totalPages": {"type": "integer", "minimum": 0, "description": "Total pages when available."},
+                    "nextCursor": {"type": ["string", "null"], "description": "Opaque cursor for the next page."},
+                    "hasMore": {"type": "boolean", "description": "Whether another page exists."},
+                },
+                "description": "SDKWork pagination metadata.",
+            },
+            "SdkWorkPlatformErrorCode": {
+                "type": "integer",
+                "format": "int32",
+                "minimum": 40001,
+                "maximum": 79999,
+                "description": "Platform or domain error code per API_SPEC.md section 15.3.",
+            },
+            "SdkWorkResourceResponse": {
+                "allOf": [
+                    {"$ref": "#/components/schemas/SdkWorkApiResponse"},
+                    {
+                        "type": "object",
+                        "required": ["data"],
+                        "properties": {"data": {"$ref": "#/components/schemas/SdkWorkResourceData"}},
+                    },
+                ],
+                "description": "Generic SDKWork resource success response.",
+            },
+            "SdkWorkListResponse": {
+                "allOf": [
+                    {"$ref": "#/components/schemas/SdkWorkApiResponse"},
+                    {
+                        "type": "object",
+                        "required": ["data"],
+                        "properties": {"data": {"$ref": "#/components/schemas/SdkWorkPageData"}},
+                    },
+                ],
+                "description": "Generic SDKWork list success response.",
+            },
+            "SdkWorkCommandResponse": {
+                "allOf": [
+                    {"$ref": "#/components/schemas/SdkWorkApiResponse"},
+                    {
+                        "type": "object",
+                        "required": ["data"],
+                        "properties": {"data": {"$ref": "#/components/schemas/SdkWorkCommandData"}},
+                    },
+                ],
+                "description": "Generic SDKWork command success response.",
             },
             "FieldError": {
                 "type": "object",
                 "additionalProperties": False,
                 "description": "Field-level validation problem detail.",
+                "required": ["field", "message"],
                 "properties": {
                     "field": {"type": "string", "description": "Problem field path."},
                     "message": {"type": "string", "description": "Human-readable field validation message."},
-                    "code": {"type": "string", "description": "Machine-readable field validation code."},
+                    "code": {
+                        "type": "integer",
+                        "format": "int32",
+                        "minimum": 40011,
+                        "maximum": 40099,
+                        "description": "Field-level validation subcode.",
+                    },
                 },
             },
             "ProblemDetail": {
                 "type": "object",
                 "additionalProperties": {"$ref": "#/components/schemas/JsonValue"},
                 "description": "RFC 9457 problem details error response.",
-                "required": ["type", "title", "status"],
+                "required": ["type", "title", "status", "code", "traceId"],
                 "properties": {
                     "type": {"type": "string", "format": "uri-reference", "description": "Problem type URI reference."},
                     "title": {"type": "string", "description": "Short human-readable problem title."},
@@ -1083,9 +1197,12 @@ class ClawRouterOpenApiGenerator:
                     },
                     "detail": {"type": "string", "description": "Human-readable explanation specific to this occurrence."},
                     "instance": {"type": "string", "description": "URI reference identifying this occurrence."},
-                    "requestId": {"type": "string", "description": "Request identifier for client support and log correlation."},
-                    "code": {"type": "string", "description": "SDKWork machine-readable error code."},
-                    "traceId": {"type": "string", "description": "Trace identifier for support and audit correlation."},
+                    "code": {"$ref": "#/components/schemas/SdkWorkPlatformErrorCode"},
+                    "traceId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Server-owned request correlation id.",
+                    },
                     "errors": {
                         "type": "array",
                         "items": {"$ref": "#/components/schemas/FieldError"},
@@ -1458,14 +1575,17 @@ class ClawRouterOpenApiGenerator:
                 data_schema = self._no_data_schema("No business data returned by this operation.")
             operation_id = operation_ids[id(operation)]
             result[self._operation_result_component_name(operation_id)] = {
-                "type": "object",
-                "additionalProperties": False,
-                "required": ["code"],
-                "properties": {
-                    "code": {"type": "string", "description": "Business response code."},
-                    "msg": {"type": "string", "description": "Human-readable response message."},
-                    "data": data_schema,
-                },
+                "allOf": [
+                    {"$ref": "#/components/schemas/SdkWorkApiResponse"},
+                    {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": ["data"],
+                        "properties": {
+                            "data": data_schema,
+                        },
+                    },
+                ],
                 "x-operation-id": operation_id,
             }
         return result
@@ -1497,11 +1617,15 @@ class ClawRouterOpenApiGenerator:
             }
         return result
 
-    def _operation_data_schema(self, operation: dict[str, Any], schema_components: dict[str, Any]) -> dict[str, str] | None:
+    def _operation_data_schema(self, operation: dict[str, Any], schema_components: dict[str, Any]) -> dict[str, Any] | None:
         response_schema = self._payload_schema(operation.get("response_schema"))
         if response_schema is not None:
             if response_schema[0] in {"PlusApiResult", "NoData"}:
                 return None
+            if self._operation_is_list(operation):
+                if self._schema_is_page_payload(response_schema[1]):
+                    return {"$ref": f"#/components/schemas/{response_schema[0]}"}
+                return self._page_data_schema(self._list_item_schema(response_schema))
             return {"$ref": f"#/components/schemas/{response_schema[0]}"}
         if self._string(operation.get("api_method")).upper() != "GET":
             return None
@@ -1514,7 +1638,48 @@ class ClawRouterOpenApiGenerator:
         record_ref = {"$ref": f"#/components/schemas/{component_name}"}
         if self._string_list(operation.get("path_params")):
             return record_ref
-        return {"type": "array", "items": record_ref}
+        return self._page_data_schema(record_ref)
+
+    def _operation_is_list(self, operation: dict[str, Any]) -> bool:
+        operation_id = self._string(operation.get("operation_id")) or self._string(operation.get("operation"))
+        if operation_id.endswith(".list") or operation_id.endswith(".search"):
+            return True
+        return self._string(operation.get("operation")).lower() in {"list", "search"}
+
+    def _schema_is_page_payload(self, schema: dict[str, Any]) -> bool:
+        properties = schema.get("properties")
+        return (
+            isinstance(properties, dict)
+            and isinstance(properties.get("items"), dict)
+            and isinstance(properties.get("pageInfo"), dict)
+        )
+
+    def _list_item_schema(self, response_schema: tuple[str, dict[str, Any]]) -> dict[str, Any]:
+        name, schema = response_schema
+        if schema.get("type") == "array" and isinstance(schema.get("items"), dict):
+            item_name = schema["items"].get("name")
+            if (
+                isinstance(item_name, str)
+                and item_name != name
+                and re.match(r"^[A-Z][A-Za-z0-9]*$", item_name)
+            ):
+                return {"$ref": f"#/components/schemas/{item_name}"}
+            return copy.deepcopy(schema["items"])
+        return {"$ref": f"#/components/schemas/{name}"}
+
+    def _page_data_schema(self, item_schema: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["items", "pageInfo"],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": item_schema,
+                },
+                "pageInfo": {"$ref": "#/components/schemas/PageInfo"},
+            },
+        }
 
     def _reachable_schema_component_names(
         self,

@@ -1,6 +1,6 @@
+use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
@@ -366,9 +366,7 @@ async fn delete_category(
         requested_at: current_timestamp_string(),
     };
     match state.store.delete_category(command).await {
-        Ok(deleted) => {
-            Json(success_envelope(CatalogDeleteResponse { deleted })).into_response()
-        }
+        Ok(deleted) => Json(success_envelope(CatalogDeleteResponse { deleted })).into_response(),
         Err(error) => domain_error_response("catalog category delete failed", error),
     }
 }
@@ -413,10 +411,9 @@ async fn initialize_category_seeds(
         requested_at: current_timestamp_string(),
     };
     match state.store.initialize_category_seeds(command).await {
-        Ok(items) => Json(success_envelope(CategorySeedInitializeResponse {
-            items,
-        }))
-        .into_response(),
+        Ok(items) => {
+            Json(success_envelope(CategorySeedInitializeResponse { items })).into_response()
+        }
         Err(error) => domain_error_response("category seed initialization failed", error),
     }
 }
@@ -487,9 +484,7 @@ async fn delete_product(
         requested_at: current_timestamp_string(),
     };
     match state.store.delete_product(command).await {
-        Ok(deleted) => {
-            Json(success_envelope(CatalogDeleteResponse { deleted })).into_response()
-        }
+        Ok(deleted) => Json(success_envelope(CatalogDeleteResponse { deleted })).into_response(),
         Err(error) => domain_error_response("catalog product delete failed", error),
     }
 }
@@ -560,9 +555,7 @@ async fn delete_sku(
         requested_at: current_timestamp_string(),
     };
     match state.store.delete_sku(command).await {
-        Ok(deleted) => {
-            Json(success_envelope(CatalogDeleteResponse { deleted })).into_response()
-        }
+        Ok(deleted) => Json(success_envelope(CatalogDeleteResponse { deleted })).into_response(),
         Err(error) => domain_error_response("catalog sku delete failed", error),
     }
 }
@@ -655,9 +648,7 @@ async fn delete_category_attribute(
         requested_at: current_timestamp_string(),
     };
     match state.store.delete_category_attribute(command).await {
-        Ok(deleted) => {
-            Json(success_envelope(CatalogDeleteResponse { deleted })).into_response()
-        }
+        Ok(deleted) => Json(success_envelope(CatalogDeleteResponse { deleted })).into_response(),
         Err(error) => domain_error_response("catalog category attribute delete failed", error),
     }
 }
@@ -718,8 +709,8 @@ fn validated_list_query(
     request: CatalogListQueryRequest,
 ) -> Result<ListAdminCatalogRecordsQuery, Response> {
     let subject = scoped.into();
-    let pagination = parse_offset_list_query(request.page, request.page_size)
-        .map_err(bad_request)?;
+    let pagination =
+        parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
     Ok(ListAdminCatalogRecordsQuery {
         subject,
         page_no: pagination.page_no,
@@ -977,7 +968,6 @@ fn price_list_command(
         requested_at: current_timestamp_string(),
     })
 }
-
 
 fn parse_json_body<T>(body: &Bytes, resource: &str) -> Result<T, String>
 where

@@ -239,7 +239,7 @@ fn trusted_request(method: &str, path: &str) -> Request<Body> {
         .method(method)
         .uri(path)
         .header("content-type", "application/json")
-        .internal_trusted_subject(10, 20, 30)
+        .internal_trusted_subject(100001, 0, 30)
         .body(Body::empty())
         .unwrap()
 }
@@ -249,7 +249,7 @@ fn trusted_json_request(method: &str, path: &str, body: &str) -> Request<Body> {
         .method(method)
         .uri(path)
         .header("content-type", "application/json")
-        .internal_trusted_subject(10, 20, 30)
+        .internal_trusted_subject(100001, 0, 30)
         .header("idempotency-key", "service-provider-sim-test")
         .header("x-request-id", "service-provider-sim-test")
         .body(Body::from(body.to_owned()))
@@ -261,7 +261,7 @@ fn trusted_json_request_without_idempotency(method: &str, path: &str, body: &str
         .method(method)
         .uri(path)
         .header("content-type", "application/json")
-        .internal_trusted_subject(10, 20, 30)
+        .internal_trusted_subject(100001, 0, 30)
         .body(Body::from(body.to_owned()))
         .unwrap()
 }

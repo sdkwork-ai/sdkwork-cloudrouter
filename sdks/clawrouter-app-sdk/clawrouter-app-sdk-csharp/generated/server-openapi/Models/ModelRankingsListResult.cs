@@ -6,8 +6,8 @@ namespace Sdkwork.ClawRouter.App.Models
 {
     public class ModelRankingsListResult
     {
-        public string Code { get; set; }
-        public ModelRankingsSnapshot? Data { get; set; }
-        public string? Msg { get; set; }
+        public int Code { get; set; }
+        public object Data { get; set; }
+        public string TraceId { get; set; }
     }
 }

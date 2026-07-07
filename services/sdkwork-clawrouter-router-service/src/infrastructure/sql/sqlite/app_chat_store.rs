@@ -5,8 +5,9 @@ use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::ports::{
     AppChatConversationItem, AppChatConversationList, AppChatFuture, AppChatMessageItem,
-    AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnItem, AppChatTurnOutcome, AppChatUsageSnapshot,
-    CompleteAppChatTurnCommand, CreateAppChatConversationCommand, CreateAppChatTurnCommand,
+    AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnItem, AppChatTurnOutcome,
+    AppChatUsageSnapshot, CompleteAppChatTurnCommand, CreateAppChatConversationCommand,
+    CreateAppChatTurnCommand,
 };
 
 #[derive(Debug, Clone)]
@@ -284,7 +285,8 @@ async fn create_turn(
     let conversation_pk = conversation.get::<i64, _>("id");
     let next_turn_no = next_count(&mut tx, ChatCountTable::AiChatTurn, conversation_pk).await?;
     let next_sequence_no = next_count(&mut tx, ChatCountTable::AiChatItem, conversation_pk).await?;
-    let next_message_no = next_count(&mut tx, ChatCountTable::AiChatMessage, conversation_pk).await?;
+    let next_message_no =
+        next_count(&mut tx, ChatCountTable::AiChatMessage, conversation_pk).await?;
 
     let turn_id = next_claw_runtime_id("ai_chat_turn")?;
     sqlx::query(
@@ -552,7 +554,8 @@ async fn complete_turn_response(
     let input_item = load_turn_input_item_row(&mut tx, command.subject, conversation_pk, turn_pk)
         .await?
         .ok_or_else(|| DomainError::conflict("chat turn input item was not found"))?;
-    let next_message_no = next_count(&mut tx, ChatCountTable::AiChatMessage, conversation_pk).await?;
+    let next_message_no =
+        next_count(&mut tx, ChatCountTable::AiChatMessage, conversation_pk).await?;
     let usage = command.usage.clone().unwrap_or_default();
     let usage_link_id = if command.usage.is_some()
         || command.runtime_invocation_id.is_some()
@@ -1626,9 +1629,8 @@ async fn next_count(
     conversation_pk: i64,
 ) -> DomainResult<i64> {
     let table_name = table.as_sql_identifier();
-    let sql = format!(
-        "SELECT COUNT(*) + 1 AS next_value FROM {table_name} WHERE conversation_id = ?1"
-    );
+    let sql =
+        format!("SELECT COUNT(*) + 1 AS next_value FROM {table_name} WHERE conversation_id = ?1");
     let row = sqlx::query(&sql)
         .bind(conversation_pk)
         .fetch_one(&mut **tx)

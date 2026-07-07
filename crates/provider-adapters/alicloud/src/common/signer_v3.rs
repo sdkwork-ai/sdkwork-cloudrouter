@@ -127,9 +127,7 @@ pub fn sign(
 
     // String to sign
     let canonical_request_hash = hex::encode(Sha256::digest(canonical_request.as_bytes()));
-    let string_to_sign = format!(
-        "ACS3-HMAC-SHA256\n{date}\n{canonical_request_hash}"
-    );
+    let string_to_sign = format!("ACS3-HMAC-SHA256\n{date}\n{canonical_request_hash}");
 
     // Signature: HMAC-SHA256(secret_key, string_to_sign)
     let mut mac = HmacSha256::new_from_slice(credentials.access_key_secret.as_bytes())
@@ -142,7 +140,10 @@ pub fn sign(
         credentials.access_key_id, signed_headers, signature
     );
 
-    SignedRequest { authorization, date }
+    SignedRequest {
+        authorization,
+        date,
+    }
 }
 
 /// Percent-encode per RFC 3986 (unreserved: A-Z a-z 0-9 - _ . ~).
@@ -221,7 +222,9 @@ mod tests {
             b"{\"model\":\"qwen-turbo\"}",
         );
 
-        assert!(signed.authorization.starts_with("ACS3-HMAC-SHA256 Credential=LTAI5tFakeKeyId,"));
+        assert!(signed
+            .authorization
+            .starts_with("ACS3-HMAC-SHA256 Credential=LTAI5tFakeKeyId,"));
         assert!(signed.authorization.contains("Signature="));
         assert!(signed.date.ends_with('Z'));
     }

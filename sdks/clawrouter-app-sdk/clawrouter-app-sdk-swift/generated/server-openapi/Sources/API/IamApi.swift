@@ -7,40 +7,34 @@ public class IamApi {
         self.client = client
     }
 
-    /// List keys
+    /// List
     public func apiKeysList() async throws -> ApiKeysListResult? {
         return try await client.get(ApiPaths.appPath("/iam/api_keys"), responseType: ApiKeysListResult.self)
     }
 
-    /// Create key
-    public func apiKeysCreate(body: CreateApiKeyRequest, idempotencyKey: String) async throws -> ApiKeysCreateResult? {
-        let requestHeaders = buildRequestHeaders(
-            [
-                "Idempotency-Key": HeaderParameterSpec(value: idempotencyKey, style: "simple", explode: false, contentType: nil),
-            ],
-            [:]
-        )
-        return try await client.post(ApiPaths.appPath("/iam/api_keys"), body: body, params: nil, headers: requestHeaders, contentType: "application/json", responseType: ApiKeysCreateResult.self)
+    /// Create
+    public func apiKeysCreate() async throws -> ApiKeysCreateResult? {
+        return try await client.post(ApiPaths.appPath("/iam/api_keys"), body: nil, responseType: ApiKeysCreateResult.self)
     }
 
-    /// Delete key
+    /// Delete
     public func apiKeysDelete(apiKeyId: String) async throws -> ApiKeysDeleteResult? {
         return try await client.delete(ApiPaths.appPath("/iam/api_keys/\(serializePathParameter(apiKeyId, PathParameterSpec(name: "apiKeyId", style: "simple", explode: false)))"), responseType: ApiKeysDeleteResult.self)
     }
 
-    /// Update key
-    public func apiKeysUpdate(apiKeyId: String, body: UpdateApiKeyRequest) async throws -> ApiKeysUpdateResult? {
-        return try await client.patch(ApiPaths.appPath("/iam/api_keys/\(serializePathParameter(apiKeyId, PathParameterSpec(name: "apiKeyId", style: "simple", explode: false)))"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: ApiKeysUpdateResult.self)
+    /// Update
+    public func apiKeysUpdate(apiKeyId: String) async throws -> ApiKeysUpdateResult? {
+        return try await client.patch(ApiPaths.appPath("/iam/api_keys/\(serializePathParameter(apiKeyId, PathParameterSpec(name: "apiKeyId", style: "simple", explode: false)))"), body: nil, responseType: ApiKeysUpdateResult.self)
     }
 
-    /// List settings
+    /// Retrieve
     public func usersSettingsRetrieve() async throws -> UsersSettingsRetrieveResult? {
         return try await client.get(ApiPaths.appPath("/iam/users/settings"), responseType: UsersSettingsRetrieveResult.self)
     }
 
-    /// Update settings
-    public func usersSettingsUpdate(body: UpdateSettingsRequest) async throws -> UsersSettingsUpdateResult? {
-        return try await client.put(ApiPaths.appPath("/iam/users/settings"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: UsersSettingsUpdateResult.self)
+    /// Update
+    public func usersSettingsUpdate() async throws -> UsersSettingsUpdateResult? {
+        return try await client.put(ApiPaths.appPath("/iam/users/settings"), body: nil, responseType: UsersSettingsUpdateResult.self)
     }
 
     private struct PathParameterSpec {
@@ -119,68 +113,4 @@ public class IamApi {
     }
 
 
-    private struct HeaderParameterSpec {
-        let value: Any?
-        let style: String
-        let explode: Bool
-        let contentType: String?
-    }
-
-    private func buildRequestHeaders(_ headers: [String: HeaderParameterSpec], _ cookies: [String: HeaderParameterSpec]) -> [String: String]? {
-        var requestHeaders: [String: String] = [:]
-        for (name, parameter) in headers {
-            if let serialized = serializeParameterValue(parameter) {
-                requestHeaders[name] = serialized
-            }
-        }
-
-        if let cookieHeader = buildCookieHeader(cookies), !cookieHeader.isEmpty {
-            requestHeaders["Cookie"] = requestHeaders["Cookie"].map { "\($0); \(cookieHeader)" } ?? cookieHeader
-        }
-
-        return requestHeaders.isEmpty ? nil : requestHeaders
-    }
-
-    private func buildCookieHeader(_ cookies: [String: HeaderParameterSpec]) -> String? {
-        let pairs = cookies.compactMap { name, parameter -> String? in
-            guard let serialized = serializeParameterValue(parameter) else { return nil }
-            return "\(urlEncode(name))=\(urlEncode(serialized))"
-        }
-        return pairs.isEmpty ? nil : pairs.joined(separator: "; ")
-    }
-
-    private func serializeParameterValue(_ parameter: HeaderParameterSpec?) -> String? {
-        guard let parameter, let value = parameter.value else { return nil }
-        if let contentType = parameter.contentType, !contentType.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            if JSONSerialization.isValidJSONObject(value),
-               let data = try? JSONSerialization.data(withJSONObject: value, options: []),
-               let json = String(data: data, encoding: .utf8) {
-                return json
-            }
-            return String(describing: value)
-        }
-        if let array = value as? [Any?] {
-            return array.compactMap { $0.map { String(describing: $0) } }.joined(separator: ",")
-        }
-        if let object = value as? [String: Any] {
-            var values: [String] = []
-            for (key, item) in object {
-                if parameter.explode {
-                    values.append("\(key)=\(item)")
-                } else {
-                    values.append(key)
-                    values.append(String(describing: item))
-                }
-            }
-            return values.joined(separator: ",")
-        }
-        if let date = value as? Date {
-            return ISO8601DateFormatter().string(from: date)
-        }
-        return String(describing: value)
-    }
-
-    private func urlEncode(_ value: String) -> String {
-        value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? value
-    }
 }

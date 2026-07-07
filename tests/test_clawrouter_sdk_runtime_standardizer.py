@@ -161,9 +161,10 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
             (generated / "package.json").write_text(
                 json.dumps(
                     {
-                        "name": "@sdkwork/clawrouter-backend-sdk",
+                        "name": "clawrouter-backend-sdk-generated-typescript",
                         "version": "0.1.0",
                         "private": True,
+                        "sdkworkRole": "transport",
                         "scripts": {"build": "node custom/build-runtime.mjs"},
                     }
                 )
@@ -172,7 +173,14 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
             )
             (generated / "README.md").write_text("fresh sdk readme\n", encoding="utf-8")
             (generated / "sdkwork-sdk.json").write_text(
-                json.dumps({"language": "typescript", "sdkType": "backend"}) + "\n",
+                json.dumps(
+                    {
+                        "language": "typescript",
+                        "sdkType": "backend",
+                        "packageName": "clawrouter-backend-sdk-generated-typescript",
+                    }
+                )
+                + "\n",
                 encoding="utf-8",
             )
             (generated / ".sdkwork" / "sdkwork-generator-manifest.json").write_text(
@@ -230,8 +238,19 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
             )
             self.assertIn("fresh sdk readme", (base / "README.md").read_text(encoding="utf-8"))
             package = json.loads((base / "package.json").read_text(encoding="utf-8"))
+            self.assertEqual("@sdkwork/clawrouter-backend-sdk", package["name"])
+            self.assertEqual("composed-facade", package["sdkworkRole"])
             self.assertFalse(package.get("private", False))
+            self.assertEqual("./dist/index.cjs", package["main"])
+            self.assertEqual("./dist/index.js", package["module"])
+            self.assertEqual("./dist/index.d.ts", package["types"])
+            self.assertEqual("./dist/index.d.ts", package["exports"]["."]["types"])
+            self.assertEqual("./dist/index.js", package["exports"]["."]["import"])
+            self.assertEqual("./dist/index.cjs", package["exports"]["."]["require"])
             self.assertEqual("node custom/build-runtime.mjs", package["scripts"]["build"])
+            root_metadata = json.loads((base / "sdkwork-sdk.json").read_text(encoding="utf-8"))
+            self.assertEqual("@sdkwork/clawrouter-backend-sdk", root_metadata["packageName"])
+            self.assertEqual("backend", root_metadata["sdkType"])
 
     def test_standardizes_app_multipart_methods_to_request_dto_body(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -340,7 +359,16 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
                     encoding="utf-8",
                 )
 
-            updated = self.standardizer(root).sync_openapi_snapshots()
+            standardizer = self.standardizer(root)
+            updated = standardizer.sync_openapi_snapshots()
+            expected_app_authority = standardizer._owner_only_openapi_payload(
+                "clawrouter-app-sdk",
+                app_authority,
+            )
+            expected_backend_authority = standardizer._owner_only_openapi_payload(
+                "clawrouter-backend-sdk",
+                backend_authority,
+            )
 
             self.assertEqual(
                 {
@@ -352,7 +380,7 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
                 set(updated),
             )
             self.assertEqual(
-                app_authority,
+                expected_app_authority,
                 json.loads(
                     (
                         root
@@ -364,7 +392,7 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
                 ),
             )
             self.assertEqual(
-                app_authority,
+                expected_app_authority,
                 json.loads(
                     (
                         root
@@ -372,6 +400,18 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
                         / "clawrouter-app-sdk"
                         / "openapi"
                         / "clawrouter-app-sdk.sdkgen.json"
+                    ).read_text(encoding="utf-8")
+                ),
+            )
+            self.assertEqual(
+                expected_backend_authority,
+                json.loads(
+                    (
+                        root
+                        / "sdks"
+                        / "clawrouter-backend-sdk"
+                        / "openapi"
+                        / "clawrouter-backend-sdk.openapi.json"
                     ).read_text(encoding="utf-8")
                 ),
             )
@@ -459,8 +499,12 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
             self.assertIn("'-i', sdkgenInputPath", strict_body)
             self.assertIn("'-i', sdkgenInputPath", generator_body)
             self.assertIn("rmSync", generate_script)
-            self.assertIn("language !== 'typescript'", generate_script)
-            self.assertIn("generated/server-openapi`), { recursive: true, force: true })", generate_script)
+            self.assertIn("function generatedOutputPath(language) {", generate_script)
+            self.assertIn("if (language === 'typescript') {", generate_script)
+            self.assertIn(
+                "rmSync(path.join(workspaceRoot, generatedOutputPath(language)), { recursive: true, force: true });",
+                generate_script,
+            )
 
     def test_standardizes_app_and_backend_typescript_generation_to_authority_openapi(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

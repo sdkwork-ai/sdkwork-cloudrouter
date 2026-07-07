@@ -1,7 +1,6 @@
 package api
 
 import (
-    "encoding/json"
     "fmt"
     "net/url"
     "strings"
@@ -17,13 +16,9 @@ func NewChatApi(client *sdkhttp.Client) *ChatApi {
     return &ChatApi{client: client}
 }
 
-// List product chat conversations
-func (a *ChatApi) ConversationsList(page *string, pageSize *string) (sdktypes.ConversationsListResult, error) {
-    query := BuildQueryString([]QueryParameterSpec{
-        {Name: "page", Value: func() interface{} { if page == nil { return nil }; return *page }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
-    })
-    raw, err := a.client.Get(AppendQueryString(AppApiPath("/chat/conversations"), query), nil, nil)
+// List
+func (a *ChatApi) ConversationsList() (sdktypes.ConversationsListResult, error) {
+    raw, err := a.client.Get(AppApiPath("/chat/conversations"), nil, nil)
     if err != nil {
         var zero sdktypes.ConversationsListResult
         return zero, err
@@ -31,13 +26,9 @@ func (a *ChatApi) ConversationsList(page *string, pageSize *string) (sdktypes.Co
     return decodeResult[sdktypes.ConversationsListResult](raw)
 }
 
-// Create product chat conversation
-func (a *ChatApi) ConversationsCreate(body sdktypes.ChatConversationCreateRequest, idempotencyKey string) (sdktypes.ConversationsCreateResult, error) {
-    headers := BuildRequestHeaders(
-        map[string]ParameterSpec{"Idempotency-Key": ParameterSpec{Value: idempotencyKey, Style: "simple", Explode: false},},
-        map[string]ParameterSpec{},
-    )
-    raw, err := a.client.Post(AppApiPath("/chat/conversations"), body, nil, headers, "application/json")
+// Create
+func (a *ChatApi) ConversationsCreate() (sdktypes.ConversationsCreateResult, error) {
+    raw, err := a.client.Post(AppApiPath("/chat/conversations"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ConversationsCreateResult
         return zero, err
@@ -45,7 +36,7 @@ func (a *ChatApi) ConversationsCreate(body sdktypes.ChatConversationCreateReques
     return decodeResult[sdktypes.ConversationsCreateResult](raw)
 }
 
-// Retrieve product chat conversation
+// Retrieve
 func (a *ChatApi) ConversationsRetrieve(conversationId string) (sdktypes.ConversationsRetrieveResult, error) {
     raw, err := a.client.Get(AppApiPath(fmt.Sprintf("/chat/conversations/%s", SerializePathParameter(conversationId, PathParameterSpec{Name: "conversationId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
@@ -55,13 +46,9 @@ func (a *ChatApi) ConversationsRetrieve(conversationId string) (sdktypes.Convers
     return decodeResult[sdktypes.ConversationsRetrieveResult](raw)
 }
 
-// List product chat messages
-func (a *ChatApi) ConversationMessagesList(conversationId string, limit *string, order *string) (sdktypes.ConversationMessagesListResult, error) {
-    query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
-    })
-    raw, err := a.client.Get(AppendQueryString(AppApiPath(fmt.Sprintf("/chat/conversations/%s/messages", SerializePathParameter(conversationId, PathParameterSpec{Name: "conversationId", Style: "simple", Explode: false}))), query), nil, nil)
+// List
+func (a *ChatApi) ConversationMessagesList(conversationId string) (sdktypes.ConversationMessagesListResult, error) {
+    raw, err := a.client.Get(AppApiPath(fmt.Sprintf("/chat/conversations/%s/messages", SerializePathParameter(conversationId, PathParameterSpec{Name: "conversationId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
         var zero sdktypes.ConversationMessagesListResult
         return zero, err
@@ -69,13 +56,9 @@ func (a *ChatApi) ConversationMessagesList(conversationId string, limit *string,
     return decodeResult[sdktypes.ConversationMessagesListResult](raw)
 }
 
-// Create product chat turn
-func (a *ChatApi) TurnsCreate(conversationId string, body sdktypes.ChatTurnCreateRequest, idempotencyKey string) (sdktypes.TurnsCreateResult, error) {
-    headers := BuildRequestHeaders(
-        map[string]ParameterSpec{"Idempotency-Key": ParameterSpec{Value: idempotencyKey, Style: "simple", Explode: false},},
-        map[string]ParameterSpec{},
-    )
-    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/chat/conversations/%s/turns", SerializePathParameter(conversationId, PathParameterSpec{Name: "conversationId", Style: "simple", Explode: false}))), body, nil, headers, "application/json")
+// Create
+func (a *ChatApi) TurnsCreate(conversationId string) (sdktypes.TurnsCreateResult, error) {
+    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/chat/conversations/%s/turns", SerializePathParameter(conversationId, PathParameterSpec{Name: "conversationId", Style: "simple", Explode: false}))), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.TurnsCreateResult
         return zero, err
@@ -83,13 +66,9 @@ func (a *ChatApi) TurnsCreate(conversationId string, body sdktypes.ChatTurnCreat
     return decodeResult[sdktypes.TurnsCreateResult](raw)
 }
 
-// Complete product chat turn response
-func (a *ChatApi) TurnResponsesCreate(conversationId string, turnId string, body sdktypes.ChatTurnResponseRequest, idempotencyKey string) (sdktypes.TurnResponsesCreateResult, error) {
-    headers := BuildRequestHeaders(
-        map[string]ParameterSpec{"Idempotency-Key": ParameterSpec{Value: idempotencyKey, Style: "simple", Explode: false},},
-        map[string]ParameterSpec{},
-    )
-    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/chat/conversations/%s/turns/%s/response", SerializePathParameter(conversationId, PathParameterSpec{Name: "conversationId", Style: "simple", Explode: false}), SerializePathParameter(turnId, PathParameterSpec{Name: "turnId", Style: "simple", Explode: false}))), body, nil, headers, "application/json")
+// Create
+func (a *ChatApi) TurnResponsesCreate(conversationId string, turnId string) (sdktypes.TurnResponsesCreateResult, error) {
+    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/chat/conversations/%s/turns/%s/response", SerializePathParameter(conversationId, PathParameterSpec{Name: "conversationId", Style: "simple", Explode: false}), SerializePathParameter(turnId, PathParameterSpec{Name: "turnId", Style: "simple", Explode: false}))), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.TurnResponsesCreateResult
         return zero, err
@@ -201,214 +180,8 @@ func PathPrefix(name string, style string) string {
     }
     return ""
 }
-type QueryParameterSpec struct {
-    Name          string
-    Value         interface{}
-    Style         string
-    Explode       bool
-    AllowReserved bool
-    ContentType   string
-}
-
-func BuildQueryString(parameters []QueryParameterSpec) string {
-    pairs := make([]string, 0)
-    for _, parameter := range parameters {
-        AppendSerializedParameter(&pairs, parameter)
-    }
-    return strings.Join(pairs, "&")
-}
-
-func AppendSerializedParameter(pairs *[]string, parameter QueryParameterSpec) {
-    if parameter.Value == nil {
-        return
-    }
-
-    if parameter.ContentType != "" {
-        encoded, _ := json.Marshal(parameter.Value)
-        *pairs = append(*pairs, url.QueryEscape(parameter.Name)+"="+EncodeQueryValue(string(encoded), parameter.AllowReserved))
-        return
-    }
-
-    style := parameter.Style
-    if style == "" {
-        style = "form"
-    }
-
-    switch value := parameter.Value.(type) {
-    case []string:
-        AppendArrayParameter(pairs, parameter.Name, stringSliceToInterface(value), style, parameter.Explode, parameter.AllowReserved)
-    case []int:
-        AppendArrayParameter(pairs, parameter.Name, intSliceToInterface(value), style, parameter.Explode, parameter.AllowReserved)
-    case []interface{}:
-        AppendArrayParameter(pairs, parameter.Name, value, style, parameter.Explode, parameter.AllowReserved)
-    case map[string]int:
-        AppendObjectParameter(pairs, parameter.Name, intMapToInterface(value), style, parameter.Explode, parameter.AllowReserved)
-    case map[string]string:
-        AppendObjectParameter(pairs, parameter.Name, stringMapToInterface(value), style, parameter.Explode, parameter.AllowReserved)
-    case map[string]interface{}:
-        if style == "deepObject" {
-            AppendDeepObjectParameter(pairs, parameter.Name, value, parameter.AllowReserved)
-        } else {
-            AppendObjectParameter(pairs, parameter.Name, value, style, parameter.Explode, parameter.AllowReserved)
-        }
-    default:
-        *pairs = append(*pairs, url.QueryEscape(parameter.Name)+"="+EncodeQueryValue(fmt.Sprint(value), parameter.AllowReserved))
-    }
-}
-
-func AppendArrayParameter(pairs *[]string, name string, value []interface{}, style string, explode bool, allowReserved bool) {
-    values := make([]string, 0, len(value))
-    for _, item := range value {
-        if item != nil {
-            values = append(values, fmt.Sprint(item))
-        }
-    }
-    if len(values) == 0 {
-        return
-    }
-    if style == "form" && explode {
-        for _, item := range values {
-            *pairs = append(*pairs, url.QueryEscape(name)+"="+EncodeQueryValue(item, allowReserved))
-        }
-        return
-    }
-    *pairs = append(*pairs, url.QueryEscape(name)+"="+EncodeQueryValue(strings.Join(values, ","), allowReserved))
-}
-
-func AppendObjectParameter(pairs *[]string, name string, value map[string]interface{}, style string, explode bool, allowReserved bool) {
-    entries := make([]string, 0, len(value)*2)
-    for key, item := range value {
-        if item == nil {
-            continue
-        }
-        if style == "form" && explode {
-            *pairs = append(*pairs, url.QueryEscape(key)+"="+EncodeQueryValue(fmt.Sprint(item), allowReserved))
-            continue
-        }
-        entries = append(entries, key, fmt.Sprint(item))
-    }
-    if len(entries) == 0 {
-        return
-    }
-    if !(style == "form" && explode) {
-        *pairs = append(*pairs, url.QueryEscape(name)+"="+EncodeQueryValue(strings.Join(entries, ","), allowReserved))
-    }
-}
-
-func AppendDeepObjectParameter(pairs *[]string, name string, value map[string]interface{}, allowReserved bool) {
-    for key, item := range value {
-        if item == nil {
-            continue
-        }
-        *pairs = append(*pairs, url.QueryEscape(fmt.Sprintf("%s[%s]", name, key))+"="+EncodeQueryValue(fmt.Sprint(item), allowReserved))
-    }
-}
-
-func EncodeQueryValue(value string, allowReserved bool) string {
-    encoded := url.QueryEscape(value)
-    if !allowReserved {
-        return encoded
-    }
-    replacements := map[string]string{
-        "%3A": ":", "%2F": "/", "%3F": "?", "%23": "#",
-        "%5B": "[", "%5D": "]", "%40": "@", "%21": "!",
-        "%24": "$", "%26": "&", "%27": "'", "%28": "(",
-        "%29": ")", "%2A": "*", "%2B": "+", "%2C": ",",
-        "%3B": ";", "%3D": "=",
-    }
-    for escaped, reserved := range replacements {
-        encoded = strings.ReplaceAll(encoded, escaped, reserved)
-    }
-    return encoded
-}
 
 
-type ParameterSpec struct {
-    Value       interface{}
-    Style       string
-    Explode     bool
-    ContentType string
-}
-
-func BuildRequestHeaders(headers map[string]ParameterSpec, cookies map[string]ParameterSpec) map[string]string {
-    requestHeaders := map[string]string{}
-    for name, parameter := range headers {
-        if serialized, ok := SerializeParameterValue(parameter); ok {
-            requestHeaders[name] = serialized
-        }
-    }
-
-    if cookieHeader := BuildCookieHeader(cookies); cookieHeader != "" {
-        if existing, ok := requestHeaders["Cookie"]; ok && existing != "" {
-            requestHeaders["Cookie"] = existing + "; " + cookieHeader
-        } else {
-            requestHeaders["Cookie"] = cookieHeader
-        }
-    }
-
-    if len(requestHeaders) == 0 {
-        return nil
-    }
-    return requestHeaders
-}
-
-func BuildCookieHeader(cookies map[string]ParameterSpec) string {
-    pairs := make([]string, 0, len(cookies))
-    for name, parameter := range cookies {
-        if serialized, ok := SerializeParameterValue(parameter); ok {
-            pairs = append(pairs, url.QueryEscape(name)+"="+url.QueryEscape(serialized))
-        }
-    }
-    return strings.Join(pairs, "; ")
-}
-
-func SerializeParameterValue(parameter ParameterSpec) (string, bool) {
-    value := parameter.Value
-    if value == nil {
-        return "", false
-    }
-    if parameter.ContentType != "" {
-        encoded, _ := json.Marshal(value)
-        return string(encoded), true
-    }
-    switch typed := value.(type) {
-    case string:
-        return typed, true
-    case fmt.Stringer:
-        return typed.String(), true
-    case []string:
-        return strings.Join(typed, ","), true
-    case []int:
-        values := make([]string, 0, len(typed))
-        for _, item := range typed {
-            values = append(values, fmt.Sprint(item))
-        }
-        return strings.Join(values, ","), true
-    case map[string]string:
-        return SerializeHeaderObject(stringMapToInterface(typed), parameter.Explode), true
-    case map[string]int:
-        return SerializeHeaderObject(intMapToInterface(typed), parameter.Explode), true
-    case map[string]interface{}:
-        return SerializeHeaderObject(typed, parameter.Explode), true
-    default:
-        return fmt.Sprint(value), true
-    }
-}
-
-func SerializeHeaderObject(values map[string]interface{}, explode bool) string {
-    serialized := make([]string, 0, len(values)*2)
-    for key, value := range values {
-        if value == nil {
-            continue
-        }
-        if explode {
-            serialized = append(serialized, key+"="+fmt.Sprint(value))
-        } else {
-            serialized = append(serialized, key, fmt.Sprint(value))
-        }
-    }
-    return strings.Join(serialized, ",")
-}
 func stringSliceToInterface(values []string) []interface{} {
     result := make([]interface{}, 0, len(values))
     for _, value := range values {

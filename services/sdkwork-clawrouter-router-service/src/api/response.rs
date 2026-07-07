@@ -146,7 +146,12 @@ pub struct ProblemResponse {
 
 impl ProblemResponse {
     pub fn from_legacy(wire_code: &str, detail: String, trace_id: String) -> Self {
-        Self::from_legacy_enriched(wire_code, detail, trace_id, SdkWorkProblemRouting::default())
+        Self::from_legacy_enriched(
+            wire_code,
+            detail,
+            trace_id,
+            SdkWorkProblemRouting::default(),
+        )
     }
 
     pub fn from_legacy_enriched(
@@ -157,7 +162,12 @@ impl ProblemResponse {
     ) -> Self {
         let result_code = legacy_wire_result_code(wire_code);
         Self {
-            problem: SdkWorkProblemDetail::platform_enriched(result_code, detail, trace_id, routing),
+            problem: SdkWorkProblemDetail::platform_enriched(
+                result_code,
+                detail,
+                trace_id,
+                routing,
+            ),
         }
     }
 
@@ -166,7 +176,12 @@ impl ProblemResponse {
         detail: impl Into<String>,
         trace_id: impl Into<String>,
     ) -> Self {
-        Self::platform_enriched(result_code, detail, trace_id, SdkWorkProblemRouting::default())
+        Self::platform_enriched(
+            result_code,
+            detail,
+            trace_id,
+            SdkWorkProblemRouting::default(),
+        )
     }
 
     pub fn platform_enriched(
@@ -189,8 +204,8 @@ impl ProblemResponse {
 impl IntoResponse for ProblemResponse {
     fn into_response(self) -> Response {
         let trace_id = self.problem.trace_id.clone();
-        let status = StatusCode::from_u16(self.problem.status)
-            .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let status =
+            StatusCode::from_u16(self.problem.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         let mut response = (
             status,
             [(header::CONTENT_TYPE, "application/problem+json")],
@@ -204,10 +219,9 @@ impl IntoResponse for ProblemResponse {
 
 pub fn attach_trace_header(response: &mut Response, trace_id: &str) {
     if let Ok(value) = HeaderValue::from_str(trace_id) {
-        response.headers_mut().insert(
-            HeaderName::from_static("x-sdkwork-trace-id"),
-            value,
-        );
+        response
+            .headers_mut()
+            .insert(HeaderName::from_static("x-sdkwork-trace-id"), value);
     }
 }
 
@@ -300,10 +314,8 @@ pub fn json_success_list_response<T: Serialize>(
     page_info: PageInfo,
 ) -> Response {
     let trace_id = resolve_trace_id(context);
-    let envelope = SdkWorkApiResponse::success(
-        SdkWorkPageData { items, page_info },
-        trace_id.clone(),
-    );
+    let envelope =
+        SdkWorkApiResponse::success(SdkWorkPageData { items, page_info }, trace_id.clone());
     let mut response = (StatusCode::OK, Json(envelope)).into_response();
     attach_trace_header(&mut response, &trace_id);
     response
@@ -374,7 +386,10 @@ mod tests {
         let payload: serde_json::Value = serde_json::from_slice(&bytes).expect("json");
         assert_eq!(0, payload["code"].as_i64().unwrap());
         assert_eq!(1, payload["data"]["items"].as_array().unwrap().len());
-        assert_eq!("offset", payload["data"]["pageInfo"]["mode"].as_str().unwrap());
+        assert_eq!(
+            "offset",
+            payload["data"]["pageInfo"]["mode"].as_str().unwrap()
+        );
         assert_eq!(1, payload["data"]["pageInfo"]["page"].as_i64().unwrap());
     }
 
@@ -408,7 +423,8 @@ mod tests {
             }),
             trace_id: Some("trace-item".to_owned()),
         };
-        let response = json_success_item_response(Some(&context), serde_json::json!({"summary": {}}));
+        let response =
+            json_success_item_response(Some(&context), serde_json::json!({"summary": {}}));
         let rt = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -470,6 +486,9 @@ mod tests {
             "wallet.transactions.list",
             payload["operationId"].as_str().unwrap()
         );
-        assert_eq!("An internal error occurred", payload["detail"].as_str().unwrap());
+        assert_eq!(
+            "An internal error occurred",
+            payload["detail"].as_str().unwrap()
+        );
     }
 }

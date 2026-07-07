@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use sdkwork_claw_provider_adapter_contract::AdapterInvocationShape;
 use sdkwork_claw_provider_adapter::{ProviderAdapter, ProviderAdapterEndpoint};
+use sdkwork_claw_provider_adapter_contract::AdapterInvocationShape;
 
 #[derive(Debug)]
 struct EchoProviderAdapter;

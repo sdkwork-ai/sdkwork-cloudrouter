@@ -904,11 +904,53 @@
       "request_body_required": false,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "CacheOperationOutcome",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "CacheOperationOutcome",
+          "properties": {
+            "cacheKey": {
+              "nullable": true,
+              "type": "string"
+            },
+            "deletedEntries": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "instanceName": {
+              "nullable": true,
+              "type": "string"
+            },
+            "namespace": {
+              "nullable": true,
+              "type": "string"
+            },
+            "operation": {
+              "type": "string"
+            },
+            "refreshedEntries": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "status": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "operation",
+            "instanceName",
+            "namespace",
+            "cacheKey",
+            "deletedEntries",
+            "refreshedEntries",
+            "status"
+          ],
           "type": "object"
         }
       },
@@ -947,11 +989,53 @@
       "request_body_required": false,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "CacheOperationOutcome",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "CacheOperationOutcome",
+          "properties": {
+            "cacheKey": {
+              "nullable": true,
+              "type": "string"
+            },
+            "deletedEntries": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "instanceName": {
+              "nullable": true,
+              "type": "string"
+            },
+            "namespace": {
+              "nullable": true,
+              "type": "string"
+            },
+            "operation": {
+              "type": "string"
+            },
+            "refreshedEntries": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "status": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "operation",
+            "instanceName",
+            "namespace",
+            "cacheKey",
+            "deletedEntries",
+            "refreshedEntries",
+            "status"
+          ],
           "type": "object"
         }
       },
@@ -988,11 +1072,53 @@
       "request_body_required": false,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "CacheOperationOutcome",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "CacheOperationOutcome",
+          "properties": {
+            "cacheKey": {
+              "nullable": true,
+              "type": "string"
+            },
+            "deletedEntries": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "instanceName": {
+              "nullable": true,
+              "type": "string"
+            },
+            "namespace": {
+              "nullable": true,
+              "type": "string"
+            },
+            "operation": {
+              "type": "string"
+            },
+            "refreshedEntries": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "status": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "operation",
+            "instanceName",
+            "namespace",
+            "cacheKey",
+            "deletedEntries",
+            "refreshedEntries",
+            "status"
+          ],
           "type": "object"
         }
       },
@@ -3730,11 +3856,53 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "CacheOperationOutcome",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "CacheOperationOutcome",
+          "properties": {
+            "cacheKey": {
+              "nullable": true,
+              "type": "string"
+            },
+            "deletedEntries": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "instanceName": {
+              "nullable": true,
+              "type": "string"
+            },
+            "namespace": {
+              "nullable": true,
+              "type": "string"
+            },
+            "operation": {
+              "type": "string"
+            },
+            "refreshedEntries": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "status": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "operation",
+            "instanceName",
+            "namespace",
+            "cacheKey",
+            "deletedEntries",
+            "refreshedEntries",
+            "status"
+          ],
           "type": "object"
         }
       },
@@ -3773,11 +3941,53 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "CacheOperationOutcome",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "CacheOperationOutcome",
+          "properties": {
+            "cacheKey": {
+              "nullable": true,
+              "type": "string"
+            },
+            "deletedEntries": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "instanceName": {
+              "nullable": true,
+              "type": "string"
+            },
+            "namespace": {
+              "nullable": true,
+              "type": "string"
+            },
+            "operation": {
+              "type": "string"
+            },
+            "refreshedEntries": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "status": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "operation",
+            "instanceName",
+            "namespace",
+            "cacheKey",
+            "deletedEntries",
+            "refreshedEntries",
+            "status"
+          ],
           "type": "object"
         }
       },
@@ -3817,11 +4027,53 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "CacheOperationOutcome",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "CacheOperationOutcome",
+          "properties": {
+            "cacheKey": {
+              "nullable": true,
+              "type": "string"
+            },
+            "deletedEntries": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "instanceName": {
+              "nullable": true,
+              "type": "string"
+            },
+            "namespace": {
+              "nullable": true,
+              "type": "string"
+            },
+            "operation": {
+              "type": "string"
+            },
+            "refreshedEntries": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "status": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "operation",
+            "instanceName",
+            "namespace",
+            "cacheKey",
+            "deletedEntries",
+            "refreshedEntries",
+            "status"
+          ],
           "type": "object"
         }
       },
@@ -4223,7 +4475,57 @@
       "operation": "list",
       "operation_id": "modelRankings.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "description": "Ranking snapshot scope.",
+          "in": "query",
+          "name": "rank_scope",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "description": "Vendor code filter.",
+          "in": "query",
+          "name": "vendor_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "description": "Model modality filter.",
+          "in": "query",
+          "name": "modality",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "description": "Free-text ranking search query.",
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "description": "Number of ranking rows returned in the current page.",
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 200,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai"
@@ -4231,11 +4533,39 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "ModelRankingsPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "ModelRankingsPage",
+          "properties": {
+            "history": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "items": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            },
+            "source": {
+              "additionalProperties": true,
+              "type": "object"
+            }
+          },
+          "required": [
+            "items",
+            "history",
+            "source",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -4262,7 +4592,30 @@
       "operation": "list",
       "operation_id": "modelRankings.jobs.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "description": "Ranking snapshot scope.",
+          "in": "query",
+          "name": "rank_scope",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "description": "Number of refresh jobs returned in the current page.",
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai"
@@ -4270,11 +4623,26 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "ModelRankingRefreshJobHistoryPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "ModelRankingRefreshJobHistoryPage",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -4340,7 +4708,121 @@
       "operation": "list",
       "operation_id": "models.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "description": "One-based page index.",
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Number of models returned in the current page.",
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Free-text model search query.",
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "description": "Billing meter code filter.",
+          "in": "query",
+          "name": "billing_meter",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "description": "Comma-separated vendor code filter.",
+          "explode": false,
+          "in": "query",
+          "name": "vendor_codes",
+          "required": false,
+          "schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "description": "Comma-separated modality filter.",
+          "explode": false,
+          "in": "query",
+          "name": "modalities",
+          "required": false,
+          "schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "description": "Comma-separated capability filter.",
+          "explode": false,
+          "in": "query",
+          "name": "capabilities",
+          "required": false,
+          "schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "description": "Comma-separated model category filter.",
+          "explode": false,
+          "in": "query",
+          "name": "categories",
+          "required": false,
+          "schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "description": "Comma-separated channel group filter.",
+          "explode": false,
+          "in": "query",
+          "name": "groups",
+          "required": false,
+          "schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "style": "form"
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai"
@@ -4348,11 +4830,54 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "ModelCatalogPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "ModelCatalogPage",
+          "properties": {
+            "groups": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "modelCount": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  }
+                },
+                "required": [
+                  "key",
+                  "label",
+                  "modelCount"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "items": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "groups",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -4420,7 +4945,42 @@
       "path_params": [
         "groupIdOrCode"
       ],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "description": "One-based page index.",
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Number of resources returned in the current page.",
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Free-text resource search query.",
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai"
@@ -4428,11 +4988,26 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AiResourceGroupResourcesPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AiResourceGroupResourcesPage",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -4459,7 +5034,42 @@
       "operation": "list",
       "operation_id": "aiResources.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "description": "One-based page index.",
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Number of resources returned in the current page.",
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Free-text resource search query.",
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai"
@@ -4467,11 +5077,26 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AiResourcesPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AiResourcesPage",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -4697,7 +5322,31 @@
       "path_params": [
         "namespace"
       ],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "description": "Number of cache keys returned in the current page.",
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 200,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Opaque cursor returned by pageInfo.nextCursor.",
+          "in": "query",
+          "name": "cursor",
+          "required": false,
+          "schema": {
+            "maxLength": 2048,
+            "type": "string"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "system"
@@ -4705,11 +5354,86 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "CacheNamespaceKeyPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "CacheNamespaceKeyPage",
+          "properties": {
+            "instanceName": {
+              "type": "string"
+            },
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "expiresInSeconds": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "instanceName": {
+                    "type": "string"
+                  },
+                  "key": {
+                    "type": "string"
+                  },
+                  "namespace": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "expired"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "key",
+                  "namespace",
+                  "instanceName",
+                  "status"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "namespace": {
+              "type": "string"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            },
+            "returnedItems": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "scanComplete": {
+              "type": "boolean"
+            },
+            "scannedItems": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            }
+          },
+          "required": [
+            "namespace",
+            "instanceName",
+            "scannedItems",
+            "returnedItems",
+            "scanComplete",
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -5364,7 +6088,57 @@
       "operation": "list",
       "operation_id": "modelRankings.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "description": "Ranking snapshot scope.",
+          "in": "query",
+          "name": "rank_scope",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "description": "Vendor code filter.",
+          "in": "query",
+          "name": "vendor_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "description": "Model modality filter.",
+          "in": "query",
+          "name": "modality",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "description": "Free-text ranking search query.",
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "description": "Number of ranking rows returned in the current page.",
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 200,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai"
@@ -5372,11 +6146,39 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "ModelRankingsPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "ModelRankingsPage",
+          "properties": {
+            "history": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "items": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            },
+            "source": {
+              "additionalProperties": true,
+              "type": "object"
+            }
+          },
+          "required": [
+            "items",
+            "history",
+            "source",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -5442,7 +6244,121 @@
       "operation": "list",
       "operation_id": "models.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "description": "One-based page index.",
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Number of models returned in the current page.",
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Free-text model search query.",
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "description": "Billing meter code filter.",
+          "in": "query",
+          "name": "billing_meter",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "description": "Comma-separated vendor code filter.",
+          "explode": false,
+          "in": "query",
+          "name": "vendor_codes",
+          "required": false,
+          "schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "description": "Comma-separated modality filter.",
+          "explode": false,
+          "in": "query",
+          "name": "modalities",
+          "required": false,
+          "schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "description": "Comma-separated capability filter.",
+          "explode": false,
+          "in": "query",
+          "name": "capabilities",
+          "required": false,
+          "schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "description": "Comma-separated model category filter.",
+          "explode": false,
+          "in": "query",
+          "name": "categories",
+          "required": false,
+          "schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "description": "Comma-separated channel group filter.",
+          "explode": false,
+          "in": "query",
+          "name": "groups",
+          "required": false,
+          "schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "style": "form"
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai"
@@ -5450,11 +6366,54 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "ModelCatalogPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "ModelCatalogPage",
+          "properties": {
+            "groups": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "modelCount": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  }
+                },
+                "required": [
+                  "key",
+                  "label",
+                  "modelCount"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "items": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "groups",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -8857,7 +9816,121 @@
       "operation": "retrieve",
       "operation_id": "modelRankings.status.retrieve",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "description": "One-based page index.",
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Number of models returned in the current page.",
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Free-text model search query.",
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "description": "Billing meter code filter.",
+          "in": "query",
+          "name": "billing_meter",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "description": "Comma-separated vendor code filter.",
+          "explode": false,
+          "in": "query",
+          "name": "vendor_codes",
+          "required": false,
+          "schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "description": "Comma-separated modality filter.",
+          "explode": false,
+          "in": "query",
+          "name": "modalities",
+          "required": false,
+          "schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "description": "Comma-separated capability filter.",
+          "explode": false,
+          "in": "query",
+          "name": "capabilities",
+          "required": false,
+          "schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "description": "Comma-separated model category filter.",
+          "explode": false,
+          "in": "query",
+          "name": "categories",
+          "required": false,
+          "schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "description": "Comma-separated channel group filter.",
+          "explode": false,
+          "in": "query",
+          "name": "groups",
+          "required": false,
+          "schema": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "style": "form"
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai"
@@ -8865,11 +9938,54 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "ModelCatalogPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "ModelCatalogPage",
+          "properties": {
+            "groups": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "modelCount": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  }
+                },
+                "required": [
+                  "key",
+                  "label",
+                  "modelCount"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "items": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "groups",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -8896,7 +10012,57 @@
       "operation": "retrieve",
       "operation_id": "analytics.admin.overview.retrieve",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "description": "Analytics aggregation time range.",
+          "in": "query",
+          "name": "time_range",
+          "required": false,
+          "schema": {
+            "enum": [
+              "hourly",
+              "daily",
+              "weekly",
+              "monthly",
+              "yearly"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "description": "Inclusive analytics window start time.",
+          "in": "query",
+          "name": "start_time",
+          "required": false,
+          "schema": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        {
+          "description": "Inclusive analytics window end time.",
+          "in": "query",
+          "name": "end_time",
+          "required": false,
+          "schema": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        {
+          "description": "Number of ranking rows returned for each ranking metric.",
+          "in": "query",
+          "name": "ranking_size",
+          "required": false,
+          "schema": {
+            "default": 10,
+            "format": "int32",
+            "maximum": 50,
+            "minimum": 3,
+            "type": "integer"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "system"
@@ -8904,11 +10070,727 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminAnalyticsOverview",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminAnalyticsOverview",
+          "properties": {
+            "endTime": {
+              "nullable": true,
+              "type": "string"
+            },
+            "insights": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "detail": {
+                    "type": "string"
+                  },
+                  "key": {
+                    "type": "string"
+                  },
+                  "severity": {
+                    "enum": [
+                      "info",
+                      "warning",
+                      "critical"
+                    ],
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "key",
+                  "title",
+                  "value",
+                  "severity",
+                  "detail"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "modalityDistribution": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "color": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "minimum": 0,
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "name",
+                  "value",
+                  "color"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "modelDistribution": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "color": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "minimum": 0,
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "name",
+                  "value",
+                  "color"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "modelRankings": {
+              "additionalProperties": false,
+              "properties": {
+                "points": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "averageTokensPerRequest": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "catalogKey": {
+                        "type": "string"
+                      },
+                      "errorRate": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "modality": {
+                        "type": "string"
+                      },
+                      "model": {
+                        "type": "string"
+                      },
+                      "points": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "rank": {
+                        "format": "int64",
+                        "pattern": "^[1-9][0-9]*$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "requestCount": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "totalTokens": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "upstreamCost": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "userCount": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "vendor": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "rank",
+                      "model",
+                      "catalogKey",
+                      "vendor",
+                      "modality",
+                      "requestCount",
+                      "totalTokens",
+                      "points",
+                      "upstreamCost",
+                      "userCount",
+                      "averageTokensPerRequest",
+                      "errorRate"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "requests": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "averageTokensPerRequest": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "catalogKey": {
+                        "type": "string"
+                      },
+                      "errorRate": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "modality": {
+                        "type": "string"
+                      },
+                      "model": {
+                        "type": "string"
+                      },
+                      "points": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "rank": {
+                        "format": "int64",
+                        "pattern": "^[1-9][0-9]*$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "requestCount": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "totalTokens": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "upstreamCost": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "userCount": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "vendor": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "rank",
+                      "model",
+                      "catalogKey",
+                      "vendor",
+                      "modality",
+                      "requestCount",
+                      "totalTokens",
+                      "points",
+                      "upstreamCost",
+                      "userCount",
+                      "averageTokensPerRequest",
+                      "errorRate"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "tokens": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "averageTokensPerRequest": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "catalogKey": {
+                        "type": "string"
+                      },
+                      "errorRate": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "modality": {
+                        "type": "string"
+                      },
+                      "model": {
+                        "type": "string"
+                      },
+                      "points": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "rank": {
+                        "format": "int64",
+                        "pattern": "^[1-9][0-9]*$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "requestCount": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "totalTokens": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "upstreamCost": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "userCount": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "vendor": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "rank",
+                      "model",
+                      "catalogKey",
+                      "vendor",
+                      "modality",
+                      "requestCount",
+                      "totalTokens",
+                      "points",
+                      "upstreamCost",
+                      "userCount",
+                      "averageTokensPerRequest",
+                      "errorRate"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": [
+                "points",
+                "tokens",
+                "requests"
+              ],
+              "type": "object"
+            },
+            "rankingSize": {
+              "format": "int32",
+              "maximum": 50,
+              "minimum": 3,
+              "type": "integer"
+            },
+            "startTime": {
+              "nullable": true,
+              "type": "string"
+            },
+            "summary": {
+              "additionalProperties": false,
+              "properties": {
+                "activeModels": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "activeUsers": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "averagePointsPerRequest": {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "averageTokensPerRequest": {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "errorRate": {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "failedRequests": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "successfulRequests": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "totalPoints": {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "totalRequests": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "totalTokens": {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "totalUsers": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "upstreamCost": {
+                  "minimum": 0,
+                  "type": "number"
+                }
+              },
+              "required": [
+                "totalUsers",
+                "activeUsers",
+                "activeModels",
+                "totalRequests",
+                "successfulRequests",
+                "failedRequests",
+                "totalTokens",
+                "totalPoints",
+                "upstreamCost",
+                "averageTokensPerRequest",
+                "averagePointsPerRequest",
+                "errorRate"
+              ],
+              "type": "object"
+            },
+            "timeRange": {
+              "enum": [
+                "hourly",
+                "daily",
+                "weekly",
+                "monthly",
+                "yearly"
+              ],
+              "type": "string"
+            },
+            "trend": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "points": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "requests": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "time": {
+                    "type": "string"
+                  },
+                  "tokens": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "users": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  }
+                },
+                "required": [
+                  "time",
+                  "requests",
+                  "tokens",
+                  "points",
+                  "users"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "userRankings": {
+              "additionalProperties": false,
+              "properties": {
+                "points": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "email": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "modelDistribution": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "color": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "minimum": 0,
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "value",
+                            "color"
+                          ],
+                          "type": "object"
+                        },
+                        "type": "array"
+                      },
+                      "points": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "rank": {
+                        "format": "int64",
+                        "pattern": "^[1-9][0-9]*$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "requestCount": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "totalTokens": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "userId": {
+                        "type": "string"
+                      },
+                      "userName": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "rank",
+                      "userId",
+                      "userName",
+                      "requestCount",
+                      "totalTokens",
+                      "points",
+                      "modelDistribution"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "requests": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "email": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "modelDistribution": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "color": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "minimum": 0,
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "value",
+                            "color"
+                          ],
+                          "type": "object"
+                        },
+                        "type": "array"
+                      },
+                      "points": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "rank": {
+                        "format": "int64",
+                        "pattern": "^[1-9][0-9]*$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "requestCount": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "totalTokens": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "userId": {
+                        "type": "string"
+                      },
+                      "userName": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "rank",
+                      "userId",
+                      "userName",
+                      "requestCount",
+                      "totalTokens",
+                      "points",
+                      "modelDistribution"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "tokens": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "email": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "modelDistribution": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "color": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "minimum": 0,
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "value",
+                            "color"
+                          ],
+                          "type": "object"
+                        },
+                        "type": "array"
+                      },
+                      "points": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "rank": {
+                        "format": "int64",
+                        "pattern": "^[1-9][0-9]*$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "requestCount": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "totalTokens": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "userId": {
+                        "type": "string"
+                      },
+                      "userName": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "rank",
+                      "userId",
+                      "userName",
+                      "requestCount",
+                      "totalTokens",
+                      "points",
+                      "modelDistribution"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": [
+                "points",
+                "tokens",
+                "requests"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "timeRange",
+            "rankingSize",
+            "summary",
+            "trend",
+            "userRankings",
+            "modelRankings",
+            "modelDistribution",
+            "modalityDistribution",
+            "insights"
+          ],
           "type": "object"
         }
       },
@@ -8982,11 +10864,331 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "CacheOverview",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "CacheOverview",
+          "properties": {
+            "instances": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "cacheDeletes": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "cacheErrors": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "cacheHits": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "cacheInspections": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "cacheMisses": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "cacheRefreshes": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "cacheWrites": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "connectionProfileName": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "defaultTtlSeconds": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "entryCount": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "expiredEntryCount": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "keyPrefix": {
+                    "type": "string"
+                  },
+                  "maxEntries": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "providerKind": {
+                    "enum": [
+                      "local_cache",
+                      "redis_cache"
+                    ],
+                    "type": "string"
+                  },
+                  "purpose": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "supportsDelete": {
+                    "type": "boolean"
+                  },
+                  "supportsInspect": {
+                    "type": "boolean"
+                  },
+                  "supportsRefresh": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name",
+                  "providerKind",
+                  "purpose",
+                  "keyPrefix",
+                  "defaultTtlSeconds",
+                  "maxEntries",
+                  "connectionProfileName",
+                  "supportsInspect",
+                  "supportsRefresh",
+                  "supportsDelete",
+                  "entryCount",
+                  "expiredEntryCount",
+                  "cacheHits",
+                  "cacheMisses",
+                  "cacheWrites",
+                  "cacheDeletes",
+                  "cacheRefreshes",
+                  "cacheInspections",
+                  "cacheErrors",
+                  "status"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "namespacePolicies": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "consistency": {
+                    "type": "string"
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "failureMode": {
+                    "type": "string"
+                  },
+                  "instanceName": {
+                    "type": "string"
+                  },
+                  "jitterPercent": {
+                    "format": "int32",
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "namespace": {
+                    "type": "string"
+                  },
+                  "scope": {
+                    "type": "string"
+                  },
+                  "sensitivity": {
+                    "type": "string"
+                  },
+                  "staleWhileRevalidateSeconds": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "tags": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "ttlSeconds": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  }
+                },
+                "required": [
+                  "namespace",
+                  "instanceName",
+                  "ttlSeconds",
+                  "scope",
+                  "sensitivity",
+                  "failureMode",
+                  "consistency",
+                  "jitterPercent",
+                  "staleWhileRevalidateSeconds",
+                  "tags",
+                  "enabled"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "summary": {
+              "additionalProperties": false,
+              "properties": {
+                "cacheDeletes": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "cacheErrors": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "cacheHits": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "cacheInspections": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "cacheMisses": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "cacheRefreshes": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "cacheWrites": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "expiredEntries": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "runtimeTarget": {
+                  "enum": [
+                    "desktop_packaged",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                "totalEntries": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "totalInstances": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "totalNamespaces": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                }
+              },
+              "required": [
+                "runtimeTarget",
+                "totalInstances",
+                "totalNamespaces",
+                "totalEntries",
+                "expiredEntries",
+                "cacheHits",
+                "cacheMisses",
+                "cacheWrites",
+                "cacheDeletes",
+                "cacheRefreshes",
+                "cacheInspections",
+                "cacheErrors"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "summary",
+            "instances",
+            "namespacePolicies"
+          ],
           "type": "object"
         }
       },

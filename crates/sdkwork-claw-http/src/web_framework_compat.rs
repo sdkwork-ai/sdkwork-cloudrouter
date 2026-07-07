@@ -54,8 +54,7 @@ pub async fn project_trusted_subject_from_web_request_context(
             TrustedRequestSubject::resolve_optional(request.headers(), request.extensions())
         {
             project_trusted_subject_for_legacy_handlers(&mut request, subject);
-        } else if authenticated_principal_failed_trusted_subject_projection(request.extensions())
-        {
+        } else if authenticated_principal_failed_trusted_subject_projection(request.extensions()) {
             return trusted_subject_projection_failed_response(&request);
         }
     }
@@ -117,10 +116,9 @@ fn trusted_subject_projection_failed_response(request: &Request<axum::body::Body
     )
         .into_response();
     if let Ok(value) = HeaderValue::from_str(&trace_id) {
-        response.headers_mut().insert(
-            HeaderName::from_static("x-sdkwork-trace-id"),
-            value,
-        );
+        response
+            .headers_mut()
+            .insert(HeaderName::from_static("x-sdkwork-trace-id"), value);
     }
     response
 }
@@ -181,12 +179,10 @@ pub fn merge_federated_app_capability_router(
     capability_router: Router,
     legacy_config: AppSubjectBoundaryConfig,
 ) -> Router {
-    router.merge(
-        capability_router.layer(from_fn_with_state(
-            legacy_config,
-            federated_app_request_subject_boundary,
-        )),
-    )
+    router.merge(capability_router.layer(from_fn_with_state(
+        legacy_config,
+        federated_app_request_subject_boundary,
+    )))
 }
 
 /// Merges federated commerce routers that include manifest-public routes such as
@@ -196,12 +192,10 @@ pub fn merge_federated_app_capability_router_with_optional_auth(
     capability_router: Router,
     legacy_config: AppSubjectBoundaryConfig,
 ) -> Router {
-    router.merge(
-        capability_router.layer(from_fn_with_state(
-            legacy_config,
-            optional_app_request_subject_boundary,
-        )),
-    )
+    router.merge(capability_router.layer(from_fn_with_state(
+        legacy_config,
+        optional_app_request_subject_boundary,
+    )))
 }
 
 #[cfg(test)]

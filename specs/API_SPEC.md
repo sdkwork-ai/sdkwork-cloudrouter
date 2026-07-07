@@ -1,8 +1,16 @@
-# SDKWork API Specification
+# SDKWork Claw Router API Specification
 
-This document is the canonical API contract standard for SDKWork application
-APIs, backend management APIs, OpenAPI documents, and generated SDKs. Product
-code must follow this standard before adding compatibility shims.
+This document is the Claw Router local API contract narrowing guide. The root
+SDKWork standards remain authoritative, especially:
+
+- `../sdkwork-specs/API_SPEC.md`
+- `../sdkwork-specs/PAGINATION_SPEC.md`
+- `../sdkwork-specs/SDK_SPEC.md`
+- `../sdkwork-specs/APP_SDK_INTEGRATION_SPEC.md`
+
+Local rules may narrow Claw Router behavior, but they must not redefine root
+SDKWork response envelopes, pagination input/output, error shapes, SDK
+generation ownership, or compatibility policies.
 
 ## Scope
 
@@ -51,15 +59,23 @@ Forbidden URL query aliases:
 
 | Forbidden | Required |
 | --- | --- |
+| `pageSize` | `page_size` |
+| `limit` | `page_size` |
 | `search_query` | `q` |
 | `keyword` | `q` |
 | `search` | `q` |
 | `size` | `page_size` |
 | `page_no` | `page` |
+| `pageNo` | `page` |
+| `per_page` | `page_size` |
 
 Search text must be `q` in URL/OpenAPI and may be exposed as `searchQuery` in
 generated SDK or service variables. Do not mechanically feed SDK variable names
 back into OpenAPI wire names.
+
+Claw Router is pre-launch. App API and backend API handlers must reject
+pagination aliases with `40003 INVALID_PARAMETER`; they must not dual-parse or
+silently map compatibility names.
 
 ## Media Resource Fields
 
@@ -288,8 +304,8 @@ values as opaque strings unless a domain-specific display formatter is used.
 
 ## Error Contract
 
-Errors use RFC 7807 compatible `ProblemDetail` payloads and
-`application/problem+json`.
+Errors use RFC 9457 compatible `ProblemDetail` payloads and
+`application/problem+json`, as defined by the root `API_SPEC.md`.
 
 Minimum fields:
 
@@ -298,15 +314,20 @@ Minimum fields:
 - `status`
 - `detail`
 - `instance`
-- `requestId`
 - `code`
+- `traceId`
 
 Validation errors should include a structured field error list. Do not return a
 successful HTTP status for a failed business operation.
 
+Response bodies and generated SDK errors must use server-owned `traceId`.
+`requestId`, `xRequestId`, and `X-Request-Id` are forbidden for Claw Router
+app/backend business APIs.
+
 ## Pagination
 
-Collection APIs that can grow must return explicit pagination metadata.
+Collection APIs that can grow must follow the root `PAGINATION_SPEC.md` and
+`API_SPEC.md` sections 14.1 and 16.
 
 Request:
 
@@ -318,16 +339,36 @@ Response:
 
 ```json
 {
-  "items": [],
-  "total": 0,
-  "page": 1,
-  "pageSize": 50
+  "code": 0,
+  "data": {
+    "items": [],
+    "pageInfo": {
+      "mode": "offset",
+      "page": 1,
+      "pageSize": 50,
+      "totalItems": "0",
+      "totalPages": 0,
+      "hasMore": false
+    }
+  },
+  "traceId": "0195f2a0-7c44-7b2e-9f3a-2a6f5d8e91ab"
 }
 ```
 
-Cursor pagination can be used for streaming or append-only feeds, but it must be
-documented in the operation schema and not mixed with page pagination on the
-same endpoint.
+Rules:
+
+- HTTP query input is `page`/`page_size` for offset mode or
+  `cursor`/`page_size` for cursor mode.
+- `page` and `cursor` must not be combined.
+- `page_size` defaults to `20` and must not exceed `200`.
+- `limit`, `pageSize`, `page_no`, `pageNo`, `per_page`, `size`, and numeric
+  cursor aliases are forbidden on app/backend SDKWork business APIs.
+- Response payloads are always `SdkWorkApiResponse.data.items` plus
+  `data.pageInfo`; bare `{ items, total, page, pageSize }` responses are
+  forbidden.
+- Store-level pagination is required. SQL-backed lists must use `LIMIT` or
+  keyset predicates; services and frontend code must not download all rows and
+  slice locally.
 
 ## Idempotency
 
@@ -335,10 +376,12 @@ Create/update/action endpoints that can cause billing, provisioning, publishing,
 or external side effects must require:
 
 - `Idempotency-Key`
-- optional `X-Request-Id`
 
 Idempotency keys are scoped by tenant, app, user, operation, and request body
 hash.
+
+Request correlation is server-owned and returned as `traceId`; clients do not
+send request correlation ids.
 
 ## SDK Generation
 
@@ -350,9 +393,10 @@ Generated SDK output is derived only from the contract chain:
 4. `generated/openapi/clawrouter-backend-openapi.json`
 5. `sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript`
 6. `sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript`
+7. `sdks/clawrouter-open-sdk/clawrouter-open-sdk-typescript`
 
-Never hand-edit generated files under `sdks/*/*-typescript/src`. Fix the
-contract, manifest generator, OpenAPI generator, or SDK generator input and
+Never hand-edit generated transport output under `sdks/**/generated/**`. Fix
+the contract, manifest generator, OpenAPI generator, or SDK generator input and
 regenerate.
 
 Generated SDKs must expose:
@@ -361,6 +405,7 @@ Generated SDKs must expose:
 - Public TypeScript params as lowerCamelCase.
 - Resource-tree method groups from `operationId`.
 - Array query filters as arrays, not pre-joined strings.
+- List results as `{ items, pageInfo }` after generated SDK unwrap.
 - App and backend clients that can be initialized with environment-specific
   base URLs and token managers.
 

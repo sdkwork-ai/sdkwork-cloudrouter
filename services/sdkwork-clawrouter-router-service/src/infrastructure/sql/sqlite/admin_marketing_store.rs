@@ -1,7 +1,9 @@
 use crate::infrastructure::sql::commerce_bootstrap::{
     commerce_recharge_package_seeds, commerce_recharge_settings_seeds,
 };
-use sdkwork_contract_service::{CommercePaymentStatus, CommerceRechargeStatus, PromotionCouponStatus};
+use sdkwork_contract_service::{
+    CommercePaymentStatus, CommerceRechargeStatus, PromotionCouponStatus,
+};
 use sqlx::{Row, Sqlite, SqlitePool, Transaction};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -14,11 +16,11 @@ use crate::infrastructure::sql::admin_marketing_recharge::{
 };
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    AdminExchangeRuleItem, AdminMarketingCommandFuture, AdminMarketingListPage, AdminMarketingStore,
-    AdminMarketingSubject,
-    AdminPaymentAttemptItem, AdminRechargePackageItem, AdminRechargePackageStatus,
-    AdminRechargeRecordItem, AdminReferralStatItem, CreateAdminRechargePackageCommand,
-    CreatePromotionOfferCommand, DeleteAdminRechargePackageCommand, DeletePromotionOfferCommand,
+    AdminExchangeRuleItem, AdminMarketingCommandFuture, AdminMarketingListPage,
+    AdminMarketingStore, AdminMarketingSubject, AdminPaymentAttemptItem, AdminRechargePackageItem,
+    AdminRechargePackageStatus, AdminRechargeRecordItem, AdminReferralStatItem,
+    CreateAdminRechargePackageCommand, CreatePromotionOfferCommand,
+    DeleteAdminRechargePackageCommand, DeletePromotionOfferCommand,
     GeneratePromotionCouponStockCommand, ListAdminExchangeRulesQuery,
     ListAdminPaymentAttemptsQuery, ListAdminRechargePackagesQuery, ListAdminRechargeRecordsQuery,
     ListAdminReferralStatsQuery, ListPromotionCodeRedemptionsQuery, ListPromotionCodesQuery,
@@ -651,7 +653,10 @@ async fn list_promotion_offers(
     .map_err(|error| store_error("failed to list promotion offers", error))?;
 
     let total = list_total(&rows);
-    let items = rows.iter().map(promotion_offer_from_row).collect::<DomainResult<Vec<_>>>()?;
+    let items = rows
+        .iter()
+        .map(promotion_offer_from_row)
+        .collect::<DomainResult<Vec<_>>>()?;
     Ok(AdminMarketingListPage {
         items,
         total,
@@ -1259,7 +1264,10 @@ async fn list_promotion_codes(
     .map_err(|error| store_error("failed to list promotion codes", error))?;
 
     let total = list_total(&rows);
-    let items = rows.iter().map(promotion_code_from_row).collect::<DomainResult<Vec<_>>>()?;
+    let items = rows
+        .iter()
+        .map(promotion_code_from_row)
+        .collect::<DomainResult<Vec<_>>>()?;
     Ok(AdminMarketingListPage {
         items,
         total,
@@ -1540,7 +1548,10 @@ async fn list_recharge_records(
     .map_err(|error| store_error("failed to list recharge records", error))?;
 
     let total = list_total(&rows);
-    let items = rows.iter().map(recharge_record_from_row).collect::<DomainResult<Vec<_>>>()?;
+    let items = rows
+        .iter()
+        .map(recharge_record_from_row)
+        .collect::<DomainResult<Vec<_>>>()?;
     Ok(AdminMarketingListPage {
         items,
         total,
@@ -1637,9 +1648,7 @@ async fn list_recharge_packages(
     if let Some(status) = query.status {
         query_builder = query_builder.bind(recharge_package_status_label(status));
     }
-    let query_builder = query_builder
-        .bind(query.page_size)
-        .bind(query.offset);
+    let query_builder = query_builder.bind(query.page_size).bind(query.offset);
     let rows = query_builder
         .fetch_all(pool)
         .await

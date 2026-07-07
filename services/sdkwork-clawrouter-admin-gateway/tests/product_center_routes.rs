@@ -15,10 +15,9 @@ async fn product_center_backend_routes_use_real_catalog_and_inventory_handlers()
     let pool = catalog.open_pool().await.unwrap();
     create_product_center_schema(&pool).await;
     seed_product_center_data(&pool).await;
-    let router =
-        sdkwork_clawrouter_admin_gateway::router_with_sqlite_product_catalog(pool.clone())
-            .await
-            .unwrap();
+    let router = sdkwork_clawrouter_admin_gateway::router_with_sqlite_product_catalog(pool.clone())
+        .await
+        .unwrap();
 
     let products = request_json(
         router.clone(),
@@ -242,10 +241,9 @@ async fn product_center_sku_delete_route_archives_only_the_sku() {
     let pool = catalog.open_pool().await.unwrap();
     create_product_center_schema(&pool).await;
     seed_product_center_data(&pool).await;
-    let router =
-        sdkwork_clawrouter_admin_gateway::router_with_sqlite_product_catalog(pool.clone())
-            .await
-            .unwrap();
+    let router = sdkwork_clawrouter_admin_gateway::router_with_sqlite_product_catalog(pool.clone())
+        .await
+        .unwrap();
 
     let deleted = request_json(
         router.clone(),
@@ -292,10 +290,9 @@ async fn product_center_product_create_route_persists_multiple_leaf_categories()
     .execute(&pool)
     .await
     .unwrap();
-    let router =
-        sdkwork_clawrouter_admin_gateway::router_with_sqlite_product_catalog(pool.clone())
-            .await
-            .unwrap();
+    let router = sdkwork_clawrouter_admin_gateway::router_with_sqlite_product_catalog(pool.clone())
+        .await
+        .unwrap();
 
     let created = request_json(
         router.clone(),
@@ -363,10 +360,9 @@ async fn product_center_product_delete_route_archives_product_and_child_skus() {
     let pool = catalog.open_pool().await.unwrap();
     create_product_center_schema(&pool).await;
     seed_product_center_data(&pool).await;
-    let router =
-        sdkwork_clawrouter_admin_gateway::router_with_sqlite_product_catalog(pool.clone())
-            .await
-            .unwrap();
+    let router = sdkwork_clawrouter_admin_gateway::router_with_sqlite_product_catalog(pool.clone())
+        .await
+        .unwrap();
 
     let deleted = request_json(
         router.clone(),
@@ -405,10 +401,9 @@ async fn product_center_category_routes_support_unicode_multi_level_crud_guards(
     let pool = catalog.open_pool().await.unwrap();
     create_product_center_schema(&pool).await;
     create_category_seed_schema(&pool).await;
-    let router =
-        sdkwork_clawrouter_admin_gateway::router_with_sqlite_product_catalog(pool.clone())
-            .await
-            .unwrap();
+    let router = sdkwork_clawrouter_admin_gateway::router_with_sqlite_product_catalog(pool.clone())
+        .await
+        .unwrap();
 
     let root = request_json(
         router.clone(),
@@ -570,10 +565,9 @@ async fn product_center_category_attribute_routes_manage_binding_lifecycle() {
     let pool = catalog.open_pool().await.unwrap();
     create_product_center_schema(&pool).await;
     seed_product_center_data(&pool).await;
-    let router =
-        sdkwork_clawrouter_admin_gateway::router_with_sqlite_product_catalog(pool.clone())
-            .await
-            .unwrap();
+    let router = sdkwork_clawrouter_admin_gateway::router_with_sqlite_product_catalog(pool.clone())
+        .await
+        .unwrap();
 
     let created = request_json(
         router.clone(),
@@ -698,10 +692,9 @@ async fn product_center_category_seed_initializer_imports_data_directories_idemp
     let pool = catalog.open_pool().await.unwrap();
     create_product_center_schema(&pool).await;
     create_category_seed_schema(&pool).await;
-    let router =
-        sdkwork_clawrouter_admin_gateway::router_with_sqlite_product_catalog(pool.clone())
-            .await
-            .unwrap();
+    let router = sdkwork_clawrouter_admin_gateway::router_with_sqlite_product_catalog(pool.clone())
+        .await
+        .unwrap();
 
     let first = request_json(
         router.clone(),

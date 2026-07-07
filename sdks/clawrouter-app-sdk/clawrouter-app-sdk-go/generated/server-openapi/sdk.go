@@ -7,12 +7,12 @@ import (
 
 type SdkworkAppClient struct {
     http *sdkhttp.Client
+    System *api.SystemApi
     Ai *api.AiApi
     Chat *api.ChatApi
     Iam *api.IamApi
     Notification *api.NotificationApi
     Runtime *api.RuntimeApi
-    System *api.SystemApi
 }
 
 func NewSdkworkAppClient(baseURL string) *SdkworkAppClient {
@@ -24,12 +24,12 @@ func NewSdkworkAppClientWithConfig(config sdkhttp.Config) *SdkworkAppClient {
     client := sdkhttp.NewClient(config)
     return &SdkworkAppClient{
         http: client,
+        System: api.NewSystemApi(client),
         Ai: api.NewAiApi(client),
         Chat: api.NewChatApi(client),
         Iam: api.NewIamApi(client),
         Notification: api.NewNotificationApi(client),
         Runtime: api.NewRuntimeApi(client),
-        System: api.NewSystemApi(client),
     }
 }
 

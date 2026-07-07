@@ -107,11 +107,12 @@ where
     let redis_config = sdkwork_claw_config::RedisConfig::from_env_or_runtime_toml(runtime_toml)
         .ok()
         .flatten();
-    let body_limit_bytes = sdkwork_claw_config::RequestLimitsConfig::from_env_or_runtime_toml(
-        runtime_toml,
-    )
-    .map(|config| config.gateway_invocation_body_max_bytes())
-    .unwrap_or(sdkwork_claw_config::RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES);
+    let body_limit_bytes =
+        sdkwork_claw_config::RequestLimitsConfig::from_env_or_runtime_toml(runtime_toml)
+            .map(|config| config.gateway_invocation_body_max_bytes())
+            .unwrap_or(
+                sdkwork_claw_config::RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
+            );
     base_router.merge(
         crate::invocation_router::invocation_router_with_full_pipeline_provider_adapter_and_tenant_inflight(
             catalog,
@@ -1041,7 +1042,10 @@ async fn finalize_all_in_one_route_surfaces(
     backend_router: Router,
     app_router: Router,
 ) -> (Router, Router) {
-    let postgres_pool = database_pool.as_postgres().cloned().map(std::sync::Arc::new);
+    let postgres_pool = database_pool
+        .as_postgres()
+        .cloned()
+        .map(std::sync::Arc::new);
     (
         sdkwork_routes_clawrouter_backend_api::maybe_wrap_router_with_web_framework_and_iam_pool(
             backend_router,
@@ -1063,20 +1067,21 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
     let gateway_router = build_gateway_router_from_all_in_one_context(&context)?;
     let (backend_router, app_router) = match &context.database_pool {
         DatabasePool::Sqlite(pool, _) => {
-            let backend_router = sdkwork_routes_clawrouter_backend_api::router_with_sqlite_shared_runtime(
-                context.database_config.clone(),
-                pool.clone(),
-                Arc::clone(&context.catalog),
-                context.api_key_security_config.clone(),
-                context.trusted_subject_config.clone(),
-                context.app_session_config.clone(),
-                Arc::clone(&context.provider_health_probe),
-                context.cache_manager.clone(),
-                Arc::clone(&context.database_installer),
-                context.request_limits_config.clone(),
-                context.models_catalog_root.clone(),
-            )
-            .map_err(anyhow::Error::new)?;
+            let backend_router =
+                sdkwork_routes_clawrouter_backend_api::router_with_sqlite_shared_runtime(
+                    context.database_config.clone(),
+                    pool.clone(),
+                    Arc::clone(&context.catalog),
+                    context.api_key_security_config.clone(),
+                    context.trusted_subject_config.clone(),
+                    context.app_session_config.clone(),
+                    Arc::clone(&context.provider_health_probe),
+                    context.cache_manager.clone(),
+                    Arc::clone(&context.database_installer),
+                    context.request_limits_config.clone(),
+                    context.models_catalog_root.clone(),
+                )
+                .map_err(anyhow::Error::new)?;
             let app_router = sdkwork_routes_clawrouter_app_api::router_with_sqlite_shared_runtime(
                 context.database_config.clone(),
                 pool.clone(),
@@ -1103,37 +1108,39 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
             .await
         }
         DatabasePool::Postgres(pool, _) => {
-            let backend_router = sdkwork_routes_clawrouter_backend_api::router_with_postgres_shared_runtime(
-                context.database_config.clone(),
-                pool.clone(),
-                Arc::clone(&context.catalog),
-                context.api_key_security_config.clone(),
-                context.trusted_subject_config.clone(),
-                context.app_session_config.clone(),
-                Arc::clone(&context.provider_health_probe),
-                context.cache_manager.clone(),
-                Arc::clone(&context.database_installer),
-                context.request_limits_config.clone(),
-                context.models_catalog_root.clone(),
-            )
-            .map_err(anyhow::Error::new)?;
-            let app_router = sdkwork_routes_clawrouter_app_api::router_with_postgres_shared_runtime(
-                context.database_config.clone(),
-                pool.clone(),
-                Arc::clone(&context.catalog),
-                context.api_key_security_config.clone(),
-                context.trusted_subject_config.clone(),
-                context.app_session_config.clone(),
-                context.payment_webhook_config.clone(),
-                Arc::clone(&context.provider_health_probe),
-                context.deployment_mode,
-                context.request_limits_config.clone(),
-                Arc::clone(&context.app_runtime_gateway_client),
-                Arc::clone(&context.app_runtime_stream_bus),
-                context.model_ranking_refresh_worker_config.clone(),
-            )
-            .await
-            .map_err(anyhow::Error::new)?;
+            let backend_router =
+                sdkwork_routes_clawrouter_backend_api::router_with_postgres_shared_runtime(
+                    context.database_config.clone(),
+                    pool.clone(),
+                    Arc::clone(&context.catalog),
+                    context.api_key_security_config.clone(),
+                    context.trusted_subject_config.clone(),
+                    context.app_session_config.clone(),
+                    Arc::clone(&context.provider_health_probe),
+                    context.cache_manager.clone(),
+                    Arc::clone(&context.database_installer),
+                    context.request_limits_config.clone(),
+                    context.models_catalog_root.clone(),
+                )
+                .map_err(anyhow::Error::new)?;
+            let app_router =
+                sdkwork_routes_clawrouter_app_api::router_with_postgres_shared_runtime(
+                    context.database_config.clone(),
+                    pool.clone(),
+                    Arc::clone(&context.catalog),
+                    context.api_key_security_config.clone(),
+                    context.trusted_subject_config.clone(),
+                    context.app_session_config.clone(),
+                    context.payment_webhook_config.clone(),
+                    Arc::clone(&context.provider_health_probe),
+                    context.deployment_mode,
+                    context.request_limits_config.clone(),
+                    Arc::clone(&context.app_runtime_gateway_client),
+                    Arc::clone(&context.app_runtime_stream_bus),
+                    context.model_ranking_refresh_worker_config.clone(),
+                )
+                .await
+                .map_err(anyhow::Error::new)?;
             finalize_all_in_one_route_surfaces(
                 &context.database_config,
                 &context.database_pool,
@@ -1199,7 +1206,8 @@ fn claw_router_product_iam_api_keys_dependency_surface() -> DependencyApiSurface
         runtime_mode: DependencyRuntimeMode::Embedded,
         same_origin_allowed: true,
         executable_export: Some(
-            "sdkwork_routes_clawrouter_app_api::build_sdkwork_claw_router_app_api_router".to_owned(),
+            "sdkwork_routes_clawrouter_app_api::build_sdkwork_claw_router_app_api_router"
+                .to_owned(),
         ),
         cargo_feature: None,
         cargo_dependency: Some("sdkwork-routes-clawrouter-app-api".to_owned()),
@@ -1365,15 +1373,21 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
         )
         .map_err(anyhow::Error::new)?;
     let cache_manager =
-        sdkwork_routes_clawrouter_backend_api::shared_cache_manager_from_runtime_toml(runtime_toml_ref)
-            .map_err(anyhow::Error::new)?;
+        sdkwork_routes_clawrouter_backend_api::shared_cache_manager_from_runtime_toml(
+            runtime_toml_ref,
+        )
+        .map_err(anyhow::Error::new)?;
     let request_limits_config = RequestLimitsConfig::from_env_or_runtime_toml(runtime_toml_ref)
         .map_err(anyhow::Error::msg)?;
     let models_catalog_root =
-        sdkwork_routes_clawrouter_backend_api::shared_models_catalog_root_from_runtime_toml(runtime_toml_ref);
+        sdkwork_routes_clawrouter_backend_api::shared_models_catalog_root_from_runtime_toml(
+            runtime_toml_ref,
+        );
     let app_runtime_gateway_client =
-        sdkwork_routes_clawrouter_app_api::shared_runtime_gateway_client_from_runtime_toml(runtime_toml_ref)
-            .map_err(anyhow::Error::msg)?;
+        sdkwork_routes_clawrouter_app_api::shared_runtime_gateway_client_from_runtime_toml(
+            runtime_toml_ref,
+        )
+        .map_err(anyhow::Error::msg)?;
     let app_runtime_stream_bus =
         sdkwork_routes_clawrouter_app_api::shared_runtime_stream_bus_from_runtime_toml(
             runtime_toml_ref,
@@ -1387,8 +1401,10 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
         )
         .map_err(anyhow::Error::msg)?;
     let app_catalog_refresh_interval =
-        sdkwork_routes_clawrouter_app_api::shared_runtime_catalog_refresh_interval_from_toml(runtime_toml_ref)
-            .map_err(anyhow::Error::msg)?;
+        sdkwork_routes_clawrouter_app_api::shared_runtime_catalog_refresh_interval_from_toml(
+            runtime_toml_ref,
+        )
+        .map_err(anyhow::Error::msg)?;
     let shared_catalog_refresh_interval = provider_runtime
         .catalog_refresh_interval
         .min(app_catalog_refresh_interval);
@@ -2086,14 +2102,16 @@ fn build_openai_runtime_relays(
         )
         .map_err(|error| GatewayRouterError::Config(error.to_string()))?;
         return Ok(OpenAiRuntimeRelays {
-            chat: Some(Arc::new(OpenAiCompatibleChatCompletionRelay::with_full_runtime(
-                endpoint.clone(),
-                provider_runtime.response_timeout,
-                provider_runtime.stream_response_timeout,
-                provider_runtime.response_max_bytes,
-                provider_runtime.default_retry_policy.clone(),
-                provider_runtime.http_pool_config,
-            ))),
+            chat: Some(Arc::new(
+                OpenAiCompatibleChatCompletionRelay::with_full_runtime(
+                    endpoint.clone(),
+                    provider_runtime.response_timeout,
+                    provider_runtime.stream_response_timeout,
+                    provider_runtime.response_max_bytes,
+                    provider_runtime.default_retry_policy.clone(),
+                    provider_runtime.http_pool_config,
+                ),
+            )),
             chat_stream: Some(Arc::new(
                 OpenAiCompatibleChatCompletionStreamRelay::with_full_runtime(
                     endpoint.clone(),
@@ -2104,14 +2122,16 @@ fn build_openai_runtime_relays(
                     provider_runtime.http_pool_config,
                 ),
             )),
-            embeddings: Some(Arc::new(OpenAiCompatibleEmbeddingsRelay::with_full_runtime(
-                endpoint.clone(),
-                provider_runtime.response_timeout,
-                provider_runtime.stream_response_timeout,
-                provider_runtime.response_max_bytes,
-                provider_runtime.default_retry_policy.clone(),
-                provider_runtime.http_pool_config,
-            ))),
+            embeddings: Some(Arc::new(
+                OpenAiCompatibleEmbeddingsRelay::with_full_runtime(
+                    endpoint.clone(),
+                    provider_runtime.response_timeout,
+                    provider_runtime.stream_response_timeout,
+                    provider_runtime.response_max_bytes,
+                    provider_runtime.default_retry_policy.clone(),
+                    provider_runtime.http_pool_config,
+                ),
+            )),
             responses: Some(Arc::new(OpenAiCompatibleResponsesRelay::with_full_runtime(
                 endpoint,
                 provider_runtime.response_timeout,
@@ -2382,8 +2402,7 @@ fn provider_relay_runtime_config_from_env_or_toml(
     runtime_toml: Option<&RuntimeTomlConfig>,
 ) -> Result<ProviderRelayRuntimeConfig, String> {
     const RESPONSE_TIMEOUT: &str = "SDKWORK_CLAW_PROVIDER_RESPONSE_TIMEOUT_MILLIS";
-    const STREAM_RESPONSE_TIMEOUT: &str =
-        "SDKWORK_CLAW_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS";
+    const STREAM_RESPONSE_TIMEOUT: &str = "SDKWORK_CLAW_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS";
     const RESPONSE_MAX_BYTES: &str = "SDKWORK_CLAW_PROVIDER_RESPONSE_MAX_BYTES";
     const RETRY_MAX_ATTEMPTS: &str = "SDKWORK_CLAW_PROVIDER_RETRY_MAX_ATTEMPTS";
     const RETRY_STATUS_CODES: &str = "SDKWORK_CLAW_PROVIDER_RETRYABLE_STATUS_CODES";
@@ -2396,8 +2415,7 @@ fn provider_relay_runtime_config_from_env_or_toml(
     const POOL_MAX_IDLE_PER_HOST: &str = "SDKWORK_CLAW_PROVIDER_HTTP_POOL_MAX_IDLE_PER_HOST";
     const HTTP2_KEEP_ALIVE_INTERVAL: &str =
         "SDKWORK_CLAW_PROVIDER_HTTP2_KEEP_ALIVE_INTERVAL_SECONDS";
-    const HTTP2_KEEP_ALIVE_TIMEOUT: &str =
-        "SDKWORK_CLAW_PROVIDER_HTTP2_KEEP_ALIVE_TIMEOUT_SECONDS";
+    const HTTP2_KEEP_ALIVE_TIMEOUT: &str = "SDKWORK_CLAW_PROVIDER_HTTP2_KEEP_ALIVE_TIMEOUT_SECONDS";
     const CONNECT_TIMEOUT: &str = "SDKWORK_CLAW_PROVIDER_HTTP_CONNECT_TIMEOUT_SECONDS";
     const ESTIMATED_INSTANCE_COUNT: &str =
         "SDKWORK_CLAW_PROVIDER_RATE_LIMIT_ESTIMATED_INSTANCE_COUNT";
@@ -2410,7 +2428,8 @@ fn provider_relay_runtime_config_from_env_or_toml(
     )?;
     let stream_response_timeout_millis = parse_positive_u64_config(
         STREAM_RESPONSE_TIMEOUT,
-        runtime_toml.and_then(|config| config.provider_relay.runtime.stream_response_timeout_millis),
+        runtime_toml
+            .and_then(|config| config.provider_relay.runtime.stream_response_timeout_millis),
         DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS,
     )?;
     let response_max_bytes = parse_positive_u64_config(
@@ -2638,8 +2657,7 @@ mod tests {
         let surfaces = claw_router_gateway_dependency_surfaces();
         assert_eq!(5, surfaces.len());
         assert_eq!(
-            surfaces[0].api_prefix,
-            "/app/v3/api/iam/api_keys",
+            surfaces[0].api_prefix, "/app/v3/api/iam/api_keys",
             "product-owned api_keys surface must be declared first for precedence"
         );
         assert_eq!(

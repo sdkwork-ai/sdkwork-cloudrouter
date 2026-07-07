@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::api::paths::backend_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{AdminAiModelCreateRequest, AdminAiModelUpdateRequest, AdminAiResourceCreateRequest, AdminAiResourceGroupCreateRequest, AdminAiResourceGroupUpdateRequest, AdminAiResourceUpdateRequest, AdminChannelGroupChannelBindingsReplaceRequest, AdminChannelGroupCreateRequest, AdminChannelGroupUpdateRequest, AdminModelCatalogSyncRequest, AdminModelMappingCreateRequest, AdminModelMappingResolveRequest, AdminModelMappingUpdateRequest, AdminModelVendorCreateRequest, AdminRuntimeRouteExplainRequest, AiResourceGroupsCreateResult, AiResourceGroupsDeleteResult, AiResourceGroupsListResult, AiResourceGroupsResourcesListResult, AiResourceGroupsUpdateResult, AiResourcesCreateResult, AiResourcesListResult, AiResourcesUpdateResult, ChannelGroupsChannelBindingsListResult, ChannelGroupsChannelBindingsUpdateResult, ChannelGroupsCreateResult, ChannelGroupsDeleteResult, ChannelGroupsListResult, ChannelGroupsRouteExplainRetrieveResult, ChannelGroupsUpdateResult, ModelMappingsCreateResult, ModelMappingsDeleteResult, ModelMappingsListResult, ModelMappingsResolveCreateResult, ModelMappingsUpdateResult, ModelRankingRefreshTriggerRequest, ModelRankingsJobsListResult, ModelRankingsListResult, ModelRankingsRefreshResult, ModelRankingsStatusRetrieveResult, ModelVendorsCreateResult, ModelVendorsListResult, ModelsCreateResult, ModelsDeleteResult, ModelsListResult, ModelsRefreshResult, ModelsUpdateResult, RouteExplainCreateResult};
+use crate::models::{AiResourceGroupsCreateResult, AiResourceGroupsDeleteResult, AiResourceGroupsListResult, AiResourceGroupsResourcesListResult, AiResourceGroupsUpdateResult, AiResourcesCreateResult, AiResourcesListResult, AiResourcesUpdateResult, ChannelGroupsChannelBindingsListResult, ChannelGroupsChannelBindingsUpdateResult, ChannelGroupsCreateResult, ChannelGroupsDeleteResult, ChannelGroupsListResult, ChannelGroupsRouteExplainRetrieveResult, ChannelGroupsUpdateResult, ModelMappingOptionsListResult, ModelMappingsCreateResult, ModelMappingsDeleteResult, ModelMappingsListResult, ModelMappingsReplaceResult, ModelMappingsResolveCreateResult, ModelMappingsUpdateResult, ModelRankingsJobsListResult, ModelRankingsListResult, ModelRankingsRefreshResult, ModelRankingsStatusRetrieveResult, ModelVendorsCreateResult, ModelVendorsListResult, ModelsCreateResult, ModelsDeleteResult, ModelsListResult, ModelsRefreshResult, ModelsUpdateResult, RouteExplainCreateResult};
 
 #[derive(Clone)]
 pub struct AiApi {
@@ -15,217 +15,241 @@ impl AiApi {
         Self { client }
     }
 
-    /// List groups
+    /// List
     pub async fn channel_groups_list(&self) -> Result<ChannelGroupsListResult, SdkworkError> {
         let path = backend_path(&"/ai/channel_groups".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// Create group
-    pub async fn channel_groups_create(&self, body: &AdminChannelGroupCreateRequest) -> Result<ChannelGroupsCreateResult, SdkworkError> {
+    /// Create
+    pub async fn channel_groups_create(&self) -> Result<ChannelGroupsCreateResult, SdkworkError> {
         let path = backend_path(&"/ai/channel_groups".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// Delete group
+    /// Delete
     pub async fn channel_groups_delete(&self, channel_group_id: &str) -> Result<ChannelGroupsDeleteResult, SdkworkError> {
         let path = backend_path(&format!("/ai/channel_groups/{}", serialize_path_parameter(channel_group_id, PathParameterSpec::new("channelGroupId", "simple", false))));
         self.client.delete(&path, None, None).await
     }
 
-    /// Update group
-    pub async fn channel_groups_update(&self, channel_group_id: &str, body: &AdminChannelGroupUpdateRequest) -> Result<ChannelGroupsUpdateResult, SdkworkError> {
+    /// Update
+    pub async fn channel_groups_update(&self, channel_group_id: &str) -> Result<ChannelGroupsUpdateResult, SdkworkError> {
         let path = backend_path(&format!("/ai/channel_groups/{}", serialize_path_parameter(channel_group_id, PathParameterSpec::new("channelGroupId", "simple", false))));
-        self.client.patch(&path, Some(body), None, None, Some("application/json")).await
+        self.client.patch(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// List group channel bindings
+    /// List
     pub async fn channel_groups_bindings_list(&self, channel_group_id: &str) -> Result<ChannelGroupsChannelBindingsListResult, SdkworkError> {
         let path = backend_path(&format!("/ai/channel_groups/{}/channel_bindings", serialize_path_parameter(channel_group_id, PathParameterSpec::new("channelGroupId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
-    /// Replace group channel bindings
-    pub async fn channel_groups_bindings_update(&self, channel_group_id: &str, body: &AdminChannelGroupChannelBindingsReplaceRequest) -> Result<ChannelGroupsChannelBindingsUpdateResult, SdkworkError> {
+    /// Update
+    pub async fn channel_groups_bindings_update(&self, channel_group_id: &str) -> Result<ChannelGroupsChannelBindingsUpdateResult, SdkworkError> {
         let path = backend_path(&format!("/ai/channel_groups/{}/channel_bindings", serialize_path_parameter(channel_group_id, PathParameterSpec::new("channelGroupId", "simple", false))));
-        self.client.put(&path, Some(body), None, None, Some("application/json")).await
+        self.client.put(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// List group route explain
+    /// Retrieve
     pub async fn channel_groups_route_explain_retrieve(&self, channel_group_id: &str) -> Result<ChannelGroupsRouteExplainRetrieveResult, SdkworkError> {
         let path = backend_path(&format!("/ai/channel_groups/{}/route_explain", serialize_path_parameter(channel_group_id, PathParameterSpec::new("channelGroupId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
-    /// List model mappings
-    pub async fn model_mappings_list(&self, binding_type: Option<&str>, vendor_code: Option<&str>, channel_id: Option<&str>, channel_code: Option<&str>, q: Option<&str>) -> Result<ModelMappingsListResult, SdkworkError> {
-        let query = build_query_string(&[
-            QueryParameterSpec::new("binding_type", binding_type, "form", true, false, None),
-            QueryParameterSpec::new("vendor_code", vendor_code, "form", true, false, None),
-            QueryParameterSpec::new("channel_id", channel_id, "form", true, false, None),
-            QueryParameterSpec::new("channel_code", channel_code, "form", true, false, None),
-            QueryParameterSpec::new("q", q, "form", true, false, None),
-        ]);
-        let path = append_query_string(backend_path(&"/ai/model_mappings".to_string()), &query);
+    /// List
+    pub async fn model_mapping_options_list(&self) -> Result<ModelMappingOptionsListResult, SdkworkError> {
+        let path = backend_path(&"/ai/model_mapping_options".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// Create model mapping
-    pub async fn model_mappings_create(&self, body: &AdminModelMappingCreateRequest) -> Result<ModelMappingsCreateResult, SdkworkError> {
+    /// List
+    pub async fn model_mappings_list(&self) -> Result<ModelMappingsListResult, SdkworkError> {
         let path = backend_path(&"/ai/model_mappings".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client.get(&path, None, None).await
     }
 
-    /// Resolve model mapping
-    pub async fn model_mappings_resolve_create(&self, body: &AdminModelMappingResolveRequest) -> Result<ModelMappingsResolveCreateResult, SdkworkError> {
+    /// Create
+    pub async fn model_mappings_create(&self) -> Result<ModelMappingsCreateResult, SdkworkError> {
+        let path = backend_path(&"/ai/model_mappings".to_string());
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Replace
+    pub async fn model_mappings_replace(&self) -> Result<ModelMappingsReplaceResult, SdkworkError> {
+        let path = backend_path(&"/ai/model_mappings".to_string());
+        self.client.put(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Create
+    pub async fn model_mappings_resolve_create(&self) -> Result<ModelMappingsResolveCreateResult, SdkworkError> {
         let path = backend_path(&"/ai/model_mappings/resolve".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// Delete model mapping
+    /// Delete
     pub async fn model_mappings_delete(&self, mapping_id: &str) -> Result<ModelMappingsDeleteResult, SdkworkError> {
         let path = backend_path(&format!("/ai/model_mappings/{}", serialize_path_parameter(mapping_id, PathParameterSpec::new("mappingId", "simple", false))));
         self.client.delete(&path, None, None).await
     }
 
-    /// Update model mapping
-    pub async fn model_mappings_update(&self, mapping_id: &str, body: &AdminModelMappingUpdateRequest) -> Result<ModelMappingsUpdateResult, SdkworkError> {
+    /// Update
+    pub async fn model_mappings_update(&self, mapping_id: &str) -> Result<ModelMappingsUpdateResult, SdkworkError> {
         let path = backend_path(&format!("/ai/model_mappings/{}", serialize_path_parameter(mapping_id, PathParameterSpec::new("mappingId", "simple", false))));
-        self.client.patch(&path, Some(body), None, None, Some("application/json")).await
+        self.client.patch(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// List model rankings
-    pub async fn model_rankings_list(&self, rank_scope: Option<&str>, vendor_code: Option<&str>, modality: Option<&str>, q: Option<&str>, limit: Option<&str>) -> Result<ModelRankingsListResult, SdkworkError> {
+    /// List
+    pub async fn model_rankings_list(&self, rank_scope: Option<&str>, vendor_code: Option<&str>, modality: Option<&str>, q: Option<&str>, page_size: Option<i64>) -> Result<ModelRankingsListResult, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("rank_scope", rank_scope, "form", true, false, None),
             QueryParameterSpec::new("vendor_code", vendor_code, "form", true, false, None),
             QueryParameterSpec::new("modality", modality, "form", true, false, None),
             QueryParameterSpec::new("q", q, "form", true, false, None),
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
         ]);
         let path = append_query_string(backend_path(&"/ai/model_rankings".to_string()), &query);
         self.client.get(&path, None, None).await
     }
 
-    /// List model ranking refresh jobs
-    pub async fn model_rankings_jobs_list(&self, rank_scope: Option<&str>, limit: Option<&str>) -> Result<ModelRankingsJobsListResult, SdkworkError> {
+    /// List
+    pub async fn model_rankings_jobs_list(&self, rank_scope: Option<&str>, page_size: Option<i64>) -> Result<ModelRankingsJobsListResult, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("rank_scope", rank_scope, "form", true, false, None),
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
         ]);
         let path = append_query_string(backend_path(&"/ai/model_rankings/jobs".to_string()), &query);
         self.client.get(&path, None, None).await
     }
 
-    /// Trigger model ranking refresh
-    pub async fn model_rankings_refresh(&self, body: &ModelRankingRefreshTriggerRequest) -> Result<ModelRankingsRefreshResult, SdkworkError> {
+    /// Refresh
+    pub async fn model_rankings_refresh(&self) -> Result<ModelRankingsRefreshResult, SdkworkError> {
         let path = backend_path(&"/ai/model_rankings/refresh".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// List model ranking refresh status
-    pub async fn model_rankings_status_retrieve(&self, rank_scope: Option<&str>) -> Result<ModelRankingsStatusRetrieveResult, SdkworkError> {
+    /// Retrieve
+    pub async fn model_rankings_status_retrieve(&self, page: Option<i64>, page_size: Option<i64>, q: Option<&str>, billing_meter: Option<&str>, vendor_codes: Option<&[String]>, modalities: Option<&[String]>, capabilities: Option<&[String]>, categories: Option<&[String]>, groups: Option<&[String]>) -> Result<ModelRankingsStatusRetrieveResult, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("rank_scope", rank_scope, "form", true, false, None),
+            QueryParameterSpec::new("page", page, "form", true, false, None),
+            QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
+            QueryParameterSpec::new("q", q, "form", true, false, None),
+            QueryParameterSpec::new("billing_meter", billing_meter, "form", true, false, None),
+            QueryParameterSpec::new("vendor_codes", vendor_codes, "form", false, false, None),
+            QueryParameterSpec::new("modalities", modalities, "form", false, false, None),
+            QueryParameterSpec::new("capabilities", capabilities, "form", false, false, None),
+            QueryParameterSpec::new("categories", categories, "form", false, false, None),
+            QueryParameterSpec::new("groups", groups, "form", false, false, None),
         ]);
         let path = append_query_string(backend_path(&"/ai/model_rankings/status".to_string()), &query);
         self.client.get(&path, None, None).await
     }
 
-    /// List vendors
+    /// List
     pub async fn model_vendors_list(&self) -> Result<ModelVendorsListResult, SdkworkError> {
         let path = backend_path(&"/ai/model_vendors".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// Create vendor
-    pub async fn model_vendors_create(&self, body: &AdminModelVendorCreateRequest) -> Result<ModelVendorsCreateResult, SdkworkError> {
+    /// Create
+    pub async fn model_vendors_create(&self) -> Result<ModelVendorsCreateResult, SdkworkError> {
         let path = backend_path(&"/ai/model_vendors".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// List models
-    pub async fn models_list(&self) -> Result<ModelsListResult, SdkworkError> {
-        let path = backend_path(&"/ai/models".to_string());
+    /// List
+    pub async fn models_list(&self, page: Option<i64>, page_size: Option<i64>, q: Option<&str>, billing_meter: Option<&str>, vendor_codes: Option<&[String]>, modalities: Option<&[String]>, capabilities: Option<&[String]>, categories: Option<&[String]>, groups: Option<&[String]>) -> Result<ModelsListResult, SdkworkError> {
+        let query = build_query_string(&[
+            QueryParameterSpec::new("page", page, "form", true, false, None),
+            QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
+            QueryParameterSpec::new("q", q, "form", true, false, None),
+            QueryParameterSpec::new("billing_meter", billing_meter, "form", true, false, None),
+            QueryParameterSpec::new("vendor_codes", vendor_codes, "form", false, false, None),
+            QueryParameterSpec::new("modalities", modalities, "form", false, false, None),
+            QueryParameterSpec::new("capabilities", capabilities, "form", false, false, None),
+            QueryParameterSpec::new("categories", categories, "form", false, false, None),
+            QueryParameterSpec::new("groups", groups, "form", false, false, None),
+        ]);
+        let path = append_query_string(backend_path(&"/ai/models".to_string()), &query);
         self.client.get(&path, None, None).await
     }
 
-    /// Create model
-    pub async fn models_create(&self, body: &AdminAiModelCreateRequest) -> Result<ModelsCreateResult, SdkworkError> {
+    /// Create
+    pub async fn models_create(&self) -> Result<ModelsCreateResult, SdkworkError> {
         let path = backend_path(&"/ai/models".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// Sync vendors and models
-    pub async fn models_refresh(&self, body: &AdminModelCatalogSyncRequest) -> Result<ModelsRefreshResult, SdkworkError> {
+    /// Refresh
+    pub async fn models_refresh(&self) -> Result<ModelsRefreshResult, SdkworkError> {
         let path = backend_path(&"/ai/models/refresh".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// Delete model
+    /// Delete
     pub async fn models_delete(&self, model_id: &str) -> Result<ModelsDeleteResult, SdkworkError> {
         let path = backend_path(&format!("/ai/models/{}", serialize_path_parameter(model_id, PathParameterSpec::new("modelId", "simple", false))));
         self.client.delete(&path, None, None).await
     }
 
-    /// Update model
-    pub async fn models_update(&self, model_id: &str, body: &AdminAiModelUpdateRequest) -> Result<ModelsUpdateResult, SdkworkError> {
+    /// Update
+    pub async fn models_update(&self, model_id: &str) -> Result<ModelsUpdateResult, SdkworkError> {
         let path = backend_path(&format!("/ai/models/{}", serialize_path_parameter(model_id, PathParameterSpec::new("modelId", "simple", false))));
-        self.client.patch(&path, Some(body), None, None, Some("application/json")).await
+        self.client.patch(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// List resource groups
+    /// List
     pub async fn get_resource_groups_list(&self) -> Result<AiResourceGroupsListResult, SdkworkError> {
         let path = backend_path(&"/ai/resource_groups".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// Create resource group
-    pub async fn resource_groups_create(&self, body: &AdminAiResourceGroupCreateRequest) -> Result<AiResourceGroupsCreateResult, SdkworkError> {
+    /// Create
+    pub async fn resource_groups_create(&self) -> Result<AiResourceGroupsCreateResult, SdkworkError> {
         let path = backend_path(&"/ai/resource_groups".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// List resource group resources
+    /// List
     pub async fn get_resource_groups_list_resource_groups(&self, group_id_or_code: &str) -> Result<AiResourceGroupsResourcesListResult, SdkworkError> {
         let path = backend_path(&format!("/ai/resource_groups/{}/resources", serialize_path_parameter(group_id_or_code, PathParameterSpec::new("groupIdOrCode", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
-    /// Delete resource group
+    /// Delete
     pub async fn resource_groups_delete(&self, group_id: &str) -> Result<AiResourceGroupsDeleteResult, SdkworkError> {
         let path = backend_path(&format!("/ai/resource_groups/{}", serialize_path_parameter(group_id, PathParameterSpec::new("groupId", "simple", false))));
         self.client.delete(&path, None, None).await
     }
 
-    /// Update resource group
-    pub async fn resource_groups_update(&self, group_id: &str, body: &AdminAiResourceGroupUpdateRequest) -> Result<AiResourceGroupsUpdateResult, SdkworkError> {
+    /// Update
+    pub async fn resource_groups_update(&self, group_id: &str) -> Result<AiResourceGroupsUpdateResult, SdkworkError> {
         let path = backend_path(&format!("/ai/resource_groups/{}", serialize_path_parameter(group_id, PathParameterSpec::new("groupId", "simple", false))));
-        self.client.patch(&path, Some(body), None, None, Some("application/json")).await
+        self.client.patch(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// List ai resources
+    /// List
     pub async fn resources_list(&self) -> Result<AiResourcesListResult, SdkworkError> {
         let path = backend_path(&"/ai/resources".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// Create ai resource
-    pub async fn resources_create(&self, body: &AdminAiResourceCreateRequest) -> Result<AiResourcesCreateResult, SdkworkError> {
+    /// Create
+    pub async fn resources_create(&self) -> Result<AiResourcesCreateResult, SdkworkError> {
         let path = backend_path(&"/ai/resources".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// Update ai resource
-    pub async fn resources_update(&self, resource_id: &str, body: &AdminAiResourceUpdateRequest) -> Result<AiResourcesUpdateResult, SdkworkError> {
+    /// Update
+    pub async fn resources_update(&self, resource_id: &str) -> Result<AiResourcesUpdateResult, SdkworkError> {
         let path = backend_path(&format!("/ai/resources/{}", serialize_path_parameter(resource_id, PathParameterSpec::new("resourceId", "simple", false))));
-        self.client.put(&path, Some(body), None, None, Some("application/json")).await
+        self.client.put(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// List runtime route explain
-    pub async fn route_explain_create(&self, body: &AdminRuntimeRouteExplainRequest) -> Result<RouteExplainCreateResult, SdkworkError> {
+    /// Create
+    pub async fn route_explain_create(&self) -> Result<RouteExplainCreateResult, SdkworkError> {
         let path = backend_path(&"/ai/route_explain".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
 }

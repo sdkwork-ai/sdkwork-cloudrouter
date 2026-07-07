@@ -1,7 +1,6 @@
 mod common;
 use axum::body::Body;
-use axum::http::{Request, StatusCode};
-use common::InternalTrustedSubjectHeaders;
+use axum::http::StatusCode;
 use sdkwork_clawrouter_router_service::domain::{DomainError, DomainResult};
 use sdkwork_clawrouter_router_service::ports::{
     ModelRankingRefreshAuditCommand, ModelRankingRefreshAuditFuture, ModelRankingRefreshCommand,
@@ -23,13 +22,14 @@ use tower::ServiceExt;
 async fn app_model_rankings_route_reports_service_unavailable_when_read_store_is_not_configured() {
     let router = sdkwork_clawrouter_router_service::api::app_model_rankings_router();
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/app/v3/api/ai/model_rankings")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(common::web_framework_app_request(
+            "GET",
+            "/app/v3/api/ai/model_rankings",
+            Body::empty(),
+            "100001",
+            Some("0"),
+            "30",
+        ))
         .await
         .unwrap();
 
@@ -40,23 +40,24 @@ async fn app_model_rankings_route_reports_service_unavailable_when_read_store_is
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
     assert_eq!(50301, payload["code"].as_i64().unwrap());
-    assert!(payload["detail"]
-        .as_str()
-        .unwrap()
-        .contains("database-backed model rankings store is not configured"));
+    assert_eq!(
+        "A required dependency is temporarily unavailable",
+        payload["detail"]
+    );
+    assert_eq!("Service unavailable", payload["title"]);
+    assert_eq!(503, payload["status"].as_i64().unwrap());
+    assert!(payload["traceId"].as_str().unwrap().len() >= 16);
 }
 
 #[tokio::test]
 async fn admin_model_rankings_route_requires_trusted_subject_before_unconfigured_read_store() {
     let router = sdkwork_clawrouter_router_service::api::admin_model_rankings_router();
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/backend/v3/api/ai/model_rankings")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(common::web_framework_backend_request_without_subject(
+            "GET",
+            "/backend/v3/api/ai/model_rankings",
+            Body::empty(),
+        ))
         .await
         .unwrap();
 
@@ -70,13 +71,11 @@ async fn admin_model_ranking_status_route_requires_trusted_subject() {
             Arc::new(StubModelRankingsReadStore),
         );
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/backend/v3/api/ai/model_rankings/status")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(common::web_framework_backend_request_without_subject(
+            "GET",
+            "/backend/v3/api/ai/model_rankings/status",
+            Body::empty(),
+        ))
         .await
         .unwrap();
 
@@ -90,14 +89,14 @@ async fn admin_model_ranking_status_route_returns_refresh_observability_snapshot
             Arc::new(StubModelRankingsReadStore),
         );
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/backend/v3/api/ai/model_rankings/status?rank_scope=commercial-default")
-                .internal_trusted_subject(10, 20, 30)
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(common::web_framework_backend_request(
+            "GET",
+            "/backend/v3/api/ai/model_rankings/status?rank_scope=commercial-default",
+            Body::empty(),
+            "100001",
+            Some("0"),
+            "30",
+        ))
         .await
         .unwrap();
 
@@ -109,8 +108,8 @@ async fn admin_model_ranking_status_route_returns_refresh_observability_snapshot
 
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("ready", payload["data"]["status"]);
-    assert_eq!(10, payload["data"]["tenantId"]);
-    assert_eq!(20, payload["data"]["organizationId"]);
+    assert_eq!(100001, payload["data"]["tenantId"]);
+    assert_eq!(0, payload["data"]["organizationId"]);
     assert_eq!("commercial-default", payload["data"]["rankScope"]);
     assert_eq!("2026-05-08", payload["data"]["snapshotDate"]);
     assert_eq!(2, payload["data"]["generatedCount"]);
@@ -130,16 +129,14 @@ async fn admin_model_ranking_jobs_route_returns_recent_refresh_execution_history
             Arc::new(StubModelRankingsReadStore),
         );
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri(
-                    "/backend/v3/api/ai/model_rankings/jobs?rank_scope=commercial-default&limit=20",
-                )
-                .internal_trusted_subject(10, 20, 30)
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(common::web_framework_backend_request(
+            "GET",
+            "/backend/v3/api/ai/model_rankings/jobs?rank_scope=commercial-default&page_size=20",
+            Body::empty(),
+            "100001",
+            Some("0"),
+            "30",
+        ))
         .await
         .unwrap();
 
@@ -159,8 +156,8 @@ async fn admin_model_ranking_jobs_route_returns_recent_refresh_execution_history
         "commercial-default",
         payload["data"]["items"][0]["rankScope"]
     );
-    assert_eq!(10, payload["data"]["items"][0]["tenantId"]);
-    assert_eq!(20, payload["data"]["items"][0]["organizationId"]);
+    assert_eq!(100001, payload["data"]["items"][0]["tenantId"]);
+    assert_eq!(0, payload["data"]["items"][0]["organizationId"]);
     assert_eq!(
         "usage aggregate failed",
         payload["data"]["items"][0]["failureReason"]
@@ -175,14 +172,11 @@ async fn admin_model_ranking_manual_refresh_route_requires_trusted_subject() {
             Arc::new(RecordingModelRankingRefreshStore::new()),
         );
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/backend/v3/api/ai/model_rankings/refresh")
-                .header("content-type", "application/json")
-                .body(Body::from(r#"{"rankScope":"commercial-default"}"#))
-                .unwrap(),
-        )
+        .oneshot(common::web_framework_backend_request_without_subject(
+            "POST",
+            "/backend/v3/api/ai/model_rankings/refresh",
+            Body::from(r#"{"rankScope":"commercial-default"}"#),
+        ))
         .await
         .unwrap();
 
@@ -198,32 +192,34 @@ async fn admin_model_ranking_manual_refresh_route_runs_worker_and_returns_result
             read_store.clone(),
             refresh_store.clone(),
         );
-    let response = router
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/backend/v3/api/ai/model_rankings/refresh")
-                .internal_trusted_subject(10, 20, 30)
-                .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{"rankScope":"Commercial-Default","snapshotPeriod":"daily","limit":5,"lookbackDays":3,"refreshIntervalSeconds":1800,"cacheMaxAgeSeconds":30}"#,
-                ))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
+    let mut request = common::web_framework_backend_request(
+        "POST",
+        "/backend/v3/api/ai/model_rankings/refresh",
+        Body::from(
+            r#"{"rankScope":"Commercial-Default","snapshotPeriod":"daily","limit":5,"lookbackDays":3,"refreshIntervalSeconds":1800,"cacheMaxAgeSeconds":30}"#,
+        ),
+        "100001",
+        Some("0"),
+        "30",
+    );
+    request
+        .headers_mut()
+        .insert("content-type", "application/json".parse().unwrap());
+    let response = router.oneshot(request).await.unwrap();
 
-    assert_eq!(StatusCode::OK, response.status());
+    let status = response.status();
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
+    assert_eq!(StatusCode::OK, status);
+
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!(true, payload["data"]["triggered"]);
     assert_eq!("succeeded", payload["data"]["status"]);
-    assert_eq!(10, payload["data"]["tenantId"]);
-    assert_eq!(20, payload["data"]["organizationId"]);
+    assert_eq!(100001, payload["data"]["tenantId"]);
+    assert_eq!(0, payload["data"]["organizationId"]);
     assert_eq!("commercial-default", payload["data"]["rankScope"]);
     assert_eq!(7, payload["data"]["generatedCount"]);
     assert_eq!(9, payload["data"]["sourceCount"]);
@@ -232,8 +228,8 @@ async fn admin_model_ranking_manual_refresh_route_runs_worker_and_returns_result
 
     let commands = refresh_store.commands.lock().unwrap();
     assert_eq!(1, commands.len());
-    assert_eq!(10, commands[0].tenant_id);
-    assert_eq!(20, commands[0].organization_id);
+    assert_eq!(100001, commands[0].tenant_id);
+    assert_eq!(0, commands[0].organization_id);
     assert_eq!("commercial-default", commands[0].rank_scope);
     assert_eq!("daily", commands[0].snapshot_period);
     assert_eq!(5, commands[0].limit);
@@ -249,8 +245,8 @@ async fn admin_model_ranking_manual_refresh_route_runs_worker_and_returns_result
 
     let invalidations = read_store.invalidations.lock().unwrap();
     assert_eq!(1, invalidations.len());
-    assert_eq!(10, invalidations[0].tenant_id);
-    assert_eq!(20, invalidations[0].organization_id);
+    assert_eq!(100001, invalidations[0].tenant_id);
+    assert_eq!(0, invalidations[0].organization_id);
     assert_eq!(
         Some("commercial-default".to_owned()),
         invalidations[0].rank_scope
@@ -267,33 +263,33 @@ async fn admin_model_ranking_manual_refresh_route_rejects_concurrent_refresh() {
         );
     let first_router = router.clone();
     let first = tokio::spawn(async move {
-        first_router
-            .oneshot(
-                Request::builder()
-                    .method("POST")
-                    .uri("/backend/v3/api/ai/model_rankings/refresh")
-                    .internal_trusted_subject(10, 20, 30)
-                    .header("content-type", "application/json")
-                    .body(Body::from(r#"{"rankScope":"commercial-default"}"#))
-                    .unwrap(),
-            )
-            .await
-            .unwrap()
+        let mut request = common::web_framework_backend_request(
+            "POST",
+            "/backend/v3/api/ai/model_rankings/refresh",
+            Body::from(r#"{"rankScope":"commercial-default"}"#),
+            "100001",
+            Some("0"),
+            "30",
+        );
+        request
+            .headers_mut()
+            .insert("content-type", "application/json".parse().unwrap());
+        first_router.oneshot(request).await.unwrap()
     });
     refresh_store.wait_until_started().await;
 
-    let second = router
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/backend/v3/api/ai/model_rankings/refresh")
-                .internal_trusted_subject(10, 20, 30)
-                .header("content-type", "application/json")
-                .body(Body::from(r#"{"rankScope":"commercial-default"}"#))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
+    let mut request = common::web_framework_backend_request(
+        "POST",
+        "/backend/v3/api/ai/model_rankings/refresh",
+        Body::from(r#"{"rankScope":"commercial-default"}"#),
+        "100001",
+        Some("0"),
+        "30",
+    );
+    request
+        .headers_mut()
+        .insert("content-type", "application/json".parse().unwrap());
+    let second = router.oneshot(request).await.unwrap();
 
     assert_eq!(StatusCode::CONFLICT, second.status());
     refresh_store.release();

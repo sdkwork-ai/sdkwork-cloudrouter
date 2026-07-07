@@ -1,9 +1,6 @@
 import { backendApiPath } from './paths';
 import type { HttpClient } from '../http/client';
-
-import type { AfterSalesReviewsCreateResult, AnalyticsAdminOverviewRetrieveResult, AuthSettingsRetrieveResult, AuthSettingsUpdateResult, CacheInstancesRefreshCreateResult, CacheNamespacesRefreshCreateResult, CacheOverviewRetrieveResult, CacheRefreshCreateResult, DashboardAdminOverviewRetrieveResult, FirewallsRulesCreateResult, InstallationStatusRetrieveResult, RateLimitsApiKeysCreateResult, RateLimitsIpCreateResult, RateLimitsModelsCreateResult, RuntimeRegionSettingsRetrieveResult, RuntimeRegionSettingsUpdateResult, SdkWorkCommandData, SdkWorkPageData, ServiceNodesCreateResult, ServiceNodesStatusUpdateResult, ServiceNodesUpdateResult, ShopsApproveResult, ShopsBrandAuthorizationsUpsertResult, ShopsBusinessHoursUpdateResult, ShopsCategoryBindingsUpsertResult, ShopsChannelsCreateResult, ShopsChannelsUpdateResult, ShopsCloseResult, ShopsCreateResult, ShopsCustomerServicesUpsertResult, ShopsDepositAccountReviewResult, ShopsDepositAccountUpdateResult, ShopsFulfillmentProfileUpdateResult, ShopsPoliciesCreateResult, ShopsPoliciesUpdateResult, ShopsQualificationsUpsertResult, ShopsRejectResult, ShopsResumeResult, ShopsReturnAddressesUpsertResult, ShopsRiskSignalsCreateResult, ShopsRiskSignalsResolveResult, ShopsServiceAreasCreateResult, ShopsServiceAreasUpdateResult, ShopsSettlementProfileApproveResult, ShopsSettlementProfileRejectResult, ShopsSettlementProfileUpdateResult, ShopsShippingTemplatesUpsertResult, ShopsSubmitReviewResult, ShopsSuspendResult, ShopsUpdateResult, ShopsVerificationsUpdateResult, SiteSettingsRetrieveResult, SiteSettingsUpdateResult } from '../types';
-
-
+import type { AdminAnalyticsOverview, CacheNamespaceKeyPage, CacheOperationOutcome, CacheOverview } from '../types';
 export class SystemSiteSettingsApi {
   private client: HttpClient;
 
@@ -13,13 +10,13 @@ export class SystemSiteSettingsApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<SiteSettingsRetrieveResult> {
-    return this.client.get<SiteSettingsRetrieveResult>(backendApiPath(`/system/site/settings`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/system/site/settings`));
   }
 
 /** Update */
-  async update(): Promise<SiteSettingsUpdateResult> {
-    return this.client.patch<SiteSettingsUpdateResult>(backendApiPath(`/system/site/settings`));
+  async update(): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(backendApiPath(`/system/site/settings`));
   }
 }
 
@@ -43,8 +40,8 @@ export class SystemShopsVerificationsApi {
 
 
 /** Update */
-  async update(shopId: string, verificationId: string): Promise<ShopsVerificationsUpdateResult> {
-    return this.client.patch<ShopsVerificationsUpdateResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/verifications/${serializePathParameter(verificationId, { name: 'verificationId', style: 'simple', explode: false })}`));
+  async update(shopId: string, verificationId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/verifications/${serializePathParameter(verificationId, { name: 'verificationId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -57,8 +54,8 @@ export class SystemShopsShippingTemplatesApi {
 
 
 /** Upsert */
-  async upsert(shopId: string): Promise<ShopsShippingTemplatesUpsertResult> {
-    return this.client.put<ShopsShippingTemplatesUpsertResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/shipping_templates`));
+  async upsert(shopId: string): Promise<Record<string, never>> {
+    return this.client.put<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/shipping_templates`));
   }
 }
 
@@ -71,18 +68,18 @@ export class SystemShopsSettlementProfileApi {
 
 
 /** Update */
-  async update(shopId: string): Promise<ShopsSettlementProfileUpdateResult> {
-    return this.client.patch<ShopsSettlementProfileUpdateResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/settlement_profile`));
+  async update(shopId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/settlement_profile`));
   }
 
 /** Approve */
-  async approve(shopId: string): Promise<ShopsSettlementProfileApproveResult> {
-    return this.client.post<ShopsSettlementProfileApproveResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/settlement_profile/approve`));
+  async approve(shopId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/settlement_profile/approve`));
   }
 
 /** Reject */
-  async reject(shopId: string): Promise<ShopsSettlementProfileRejectResult> {
-    return this.client.post<ShopsSettlementProfileRejectResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/settlement_profile/reject`));
+  async reject(shopId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/settlement_profile/reject`));
   }
 }
 
@@ -95,13 +92,13 @@ export class SystemShopsServiceAreasApi {
 
 
 /** Create */
-  async create(shopId: string): Promise<ShopsServiceAreasCreateResult> {
-    return this.client.post<ShopsServiceAreasCreateResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/service_areas`));
+  async create(shopId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/service_areas`));
   }
 
 /** Update */
-  async update(shopId: string, serviceAreaId: string): Promise<ShopsServiceAreasUpdateResult> {
-    return this.client.patch<ShopsServiceAreasUpdateResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/service_areas/${serializePathParameter(serviceAreaId, { name: 'serviceAreaId', style: 'simple', explode: false })}`));
+  async update(shopId: string, serviceAreaId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/service_areas/${serializePathParameter(serviceAreaId, { name: 'serviceAreaId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -114,13 +111,13 @@ export class SystemShopsRiskSignalsApi {
 
 
 /** Create */
-  async create(shopId: string): Promise<ShopsRiskSignalsCreateResult> {
-    return this.client.post<ShopsRiskSignalsCreateResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/risk_signals`));
+  async create(shopId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/risk_signals`));
   }
 
 /** Resolve */
-  async resolve(shopId: string, riskSignalId: string): Promise<ShopsRiskSignalsResolveResult> {
-    return this.client.post<ShopsRiskSignalsResolveResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/risk_signals/${serializePathParameter(riskSignalId, { name: 'riskSignalId', style: 'simple', explode: false })}/resolve`));
+  async resolve(shopId: string, riskSignalId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/risk_signals/${serializePathParameter(riskSignalId, { name: 'riskSignalId', style: 'simple', explode: false })}/resolve`));
   }
 }
 
@@ -133,8 +130,8 @@ export class SystemShopsReturnAddressesApi {
 
 
 /** Upsert */
-  async upsert(shopId: string): Promise<ShopsReturnAddressesUpsertResult> {
-    return this.client.put<ShopsReturnAddressesUpsertResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/return_addresses`));
+  async upsert(shopId: string): Promise<Record<string, never>> {
+    return this.client.put<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/return_addresses`));
   }
 }
 
@@ -147,8 +144,8 @@ export class SystemShopsQualificationsApi {
 
 
 /** Upsert */
-  async upsert(shopId: string): Promise<ShopsQualificationsUpsertResult> {
-    return this.client.put<ShopsQualificationsUpsertResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/qualifications`));
+  async upsert(shopId: string): Promise<Record<string, never>> {
+    return this.client.put<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/qualifications`));
   }
 }
 
@@ -161,13 +158,13 @@ export class SystemShopsPoliciesApi {
 
 
 /** Create */
-  async create(shopId: string): Promise<ShopsPoliciesCreateResult> {
-    return this.client.post<ShopsPoliciesCreateResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/policies`));
+  async create(shopId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/policies`));
   }
 
 /** Update */
-  async update(shopId: string, policyId: string): Promise<ShopsPoliciesUpdateResult> {
-    return this.client.patch<ShopsPoliciesUpdateResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/policies/${serializePathParameter(policyId, { name: 'policyId', style: 'simple', explode: false })}`));
+  async update(shopId: string, policyId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/policies/${serializePathParameter(policyId, { name: 'policyId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -180,8 +177,8 @@ export class SystemShopsFulfillmentProfileApi {
 
 
 /** Update */
-  async update(shopId: string): Promise<ShopsFulfillmentProfileUpdateResult> {
-    return this.client.patch<ShopsFulfillmentProfileUpdateResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/fulfillment_profile`));
+  async update(shopId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/fulfillment_profile`));
   }
 }
 
@@ -194,13 +191,13 @@ export class SystemShopsDepositAccountApi {
 
 
 /** Update */
-  async update(shopId: string): Promise<ShopsDepositAccountUpdateResult> {
-    return this.client.patch<ShopsDepositAccountUpdateResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/deposit_account`));
+  async update(shopId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/deposit_account`));
   }
 
 /** Review */
-  async review(shopId: string): Promise<ShopsDepositAccountReviewResult> {
-    return this.client.post<ShopsDepositAccountReviewResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/deposit_account/review`));
+  async review(shopId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/deposit_account/review`));
   }
 }
 
@@ -213,8 +210,8 @@ export class SystemShopsCustomerServicesApi {
 
 
 /** Upsert */
-  async upsert(shopId: string): Promise<ShopsCustomerServicesUpsertResult> {
-    return this.client.put<ShopsCustomerServicesUpsertResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/customer_services`));
+  async upsert(shopId: string): Promise<Record<string, never>> {
+    return this.client.put<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/customer_services`));
   }
 }
 
@@ -227,13 +224,13 @@ export class SystemShopsChannelsApi {
 
 
 /** Create */
-  async create(shopId: string): Promise<ShopsChannelsCreateResult> {
-    return this.client.post<ShopsChannelsCreateResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/channels`));
+  async create(shopId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/channels`));
   }
 
 /** Update */
-  async update(shopId: string, channelId: string): Promise<ShopsChannelsUpdateResult> {
-    return this.client.patch<ShopsChannelsUpdateResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}`));
+  async update(shopId: string, channelId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -246,8 +243,8 @@ export class SystemShopsCategoryBindingsApi {
 
 
 /** Upsert */
-  async upsert(shopId: string): Promise<ShopsCategoryBindingsUpsertResult> {
-    return this.client.put<ShopsCategoryBindingsUpsertResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/category_bindings`));
+  async upsert(shopId: string): Promise<Record<string, never>> {
+    return this.client.put<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/category_bindings`));
   }
 }
 
@@ -260,8 +257,8 @@ export class SystemShopsBusinessHoursApi {
 
 
 /** Update */
-  async update(shopId: string): Promise<ShopsBusinessHoursUpdateResult> {
-    return this.client.patch<ShopsBusinessHoursUpdateResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/business_hours`));
+  async update(shopId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/business_hours`));
   }
 }
 
@@ -274,8 +271,8 @@ export class SystemShopsBrandAuthorizationsApi {
 
 
 /** Upsert */
-  async upsert(shopId: string): Promise<ShopsBrandAuthorizationsUpsertResult> {
-    return this.client.put<ShopsBrandAuthorizationsUpsertResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/brand_authorizations`));
+  async upsert(shopId: string): Promise<Record<string, never>> {
+    return this.client.put<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/brand_authorizations`));
   }
 }
 
@@ -318,43 +315,43 @@ export class SystemShopsApi {
 
 
 /** Create */
-  async create(): Promise<ShopsCreateResult> {
-    return this.client.post<ShopsCreateResult>(backendApiPath(`/system/shops`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops`));
   }
 
 /** Update */
-  async update(shopId: string): Promise<ShopsUpdateResult> {
-    return this.client.patch<ShopsUpdateResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}`));
+  async update(shopId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}`));
   }
 
 /** Approve */
-  async approve(shopId: string): Promise<ShopsApproveResult> {
-    return this.client.post<ShopsApproveResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/approve`));
+  async approve(shopId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/approve`));
   }
 
 /** Close */
-  async close(shopId: string): Promise<ShopsCloseResult> {
-    return this.client.post<ShopsCloseResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/close`));
+  async close(shopId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/close`));
   }
 
 /** Reject */
-  async reject(shopId: string): Promise<ShopsRejectResult> {
-    return this.client.post<ShopsRejectResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/reject`));
+  async reject(shopId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/reject`));
   }
 
 /** Resume */
-  async resume(shopId: string): Promise<ShopsResumeResult> {
-    return this.client.post<ShopsResumeResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/resume`));
+  async resume(shopId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/resume`));
   }
 
 /** Create review */
-  async submitReview(shopId: string): Promise<ShopsSubmitReviewResult> {
-    return this.client.post<ShopsSubmitReviewResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/submit_review`));
+  async submitReview(shopId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/submit_review`));
   }
 
 /** Suspend */
-  async suspend(shopId: string): Promise<ShopsSuspendResult> {
-    return this.client.post<ShopsSuspendResult>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/suspend`));
+  async suspend(shopId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/suspend`));
   }
 }
 
@@ -367,8 +364,8 @@ export class SystemServiceNodesStatusApi {
 
 
 /** Update */
-  async update(nodeId: string): Promise<ServiceNodesStatusUpdateResult> {
-    return this.client.put<ServiceNodesStatusUpdateResult>(backendApiPath(`/system/service_nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/status`));
+  async update(nodeId: string): Promise<Record<string, never>> {
+    return this.client.put<Record<string, never>>(backendApiPath(`/system/service_nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/status`));
   }
 }
 
@@ -383,23 +380,23 @@ export class SystemServiceNodesApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/system/service_nodes`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/system/service_nodes`));
   }
 
 /** Create */
-  async create(): Promise<ServiceNodesCreateResult> {
-    return this.client.post<ServiceNodesCreateResult>(backendApiPath(`/system/service_nodes`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/service_nodes`));
   }
 
 /** Delete */
-  async delete(nodeId: string): Promise<SdkWorkCommandData> {
-    return this.client.delete<SdkWorkCommandData>(backendApiPath(`/system/service_nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}`));
+  async delete(nodeId: string): Promise<Record<string, never>> {
+    return this.client.delete<Record<string, never>>(backendApiPath(`/system/service_nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}`));
   }
 
 /** Update */
-  async update(nodeId: string): Promise<ServiceNodesUpdateResult> {
-    return this.client.put<ServiceNodesUpdateResult>(backendApiPath(`/system/service_nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}`));
+  async update(nodeId: string): Promise<Record<string, never>> {
+    return this.client.put<Record<string, never>>(backendApiPath(`/system/service_nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -412,13 +409,13 @@ export class SystemRuntimeRegionSettingsApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<RuntimeRegionSettingsRetrieveResult> {
-    return this.client.get<RuntimeRegionSettingsRetrieveResult>(backendApiPath(`/system/runtime_region/settings`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/system/runtime_region/settings`));
   }
 
 /** Update */
-  async update(): Promise<RuntimeRegionSettingsUpdateResult> {
-    return this.client.patch<RuntimeRegionSettingsUpdateResult>(backendApiPath(`/system/runtime_region/settings`));
+  async update(): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(backendApiPath(`/system/runtime_region/settings`));
   }
 }
 
@@ -442,8 +439,8 @@ export class SystemRecordsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/system/records`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/system/records`));
   }
 }
 
@@ -456,13 +453,13 @@ export class SystemRateLimitsModelsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/system/rate_limits/models`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/system/rate_limits/models`));
   }
 
 /** Create */
-  async create(): Promise<RateLimitsModelsCreateResult> {
-    return this.client.post<RateLimitsModelsCreateResult>(backendApiPath(`/system/rate_limits/models`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/rate_limits/models`));
   }
 }
 
@@ -475,13 +472,13 @@ export class SystemRateLimitsIpApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/system/rate_limits/ip`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/system/rate_limits/ip`));
   }
 
 /** Create */
-  async create(): Promise<RateLimitsIpCreateResult> {
-    return this.client.post<RateLimitsIpCreateResult>(backendApiPath(`/system/rate_limits/ip`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/rate_limits/ip`));
   }
 }
 
@@ -494,13 +491,13 @@ export class SystemRateLimitsApiKeysApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/system/rate_limits/api_keys`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/system/rate_limits/api_keys`));
   }
 
 /** Create */
-  async create(): Promise<RateLimitsApiKeysCreateResult> {
-    return this.client.post<RateLimitsApiKeysCreateResult>(backendApiPath(`/system/rate_limits/api_keys`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/rate_limits/api_keys`));
   }
 }
 
@@ -528,8 +525,8 @@ export class SystemMonitorPerformanceApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/system/monitor/performance`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/system/monitor/performance`));
   }
 }
 
@@ -542,8 +539,8 @@ export class SystemMonitorNodesApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/system/monitor/nodes`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/system/monitor/nodes`));
   }
 }
 
@@ -556,8 +553,8 @@ export class SystemMonitorAlertsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/system/monitor/alerts`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/system/monitor/alerts`));
   }
 }
 
@@ -585,8 +582,8 @@ export class SystemMarketingReferralStatsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/system/marketing/referral_stats`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/system/marketing/referral_stats`));
   }
 }
 
@@ -610,8 +607,8 @@ export class SystemInstallationStatusApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<InstallationStatusRetrieveResult> {
-    return this.client.get<InstallationStatusRetrieveResult>(backendApiPath(`/system/installation/status`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/system/installation/status`));
   }
 }
 
@@ -635,18 +632,18 @@ export class SystemFirewallsRulesApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/system/firewalls/rules`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/system/firewalls/rules`));
   }
 
 /** Create */
-  async create(): Promise<FirewallsRulesCreateResult> {
-    return this.client.post<FirewallsRulesCreateResult>(backendApiPath(`/system/firewalls/rules`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/firewalls/rules`));
   }
 
 /** Delete */
-  async delete(ruleId: string): Promise<SdkWorkCommandData> {
-    return this.client.delete<SdkWorkCommandData>(backendApiPath(`/system/firewalls/rules/${serializePathParameter(ruleId, { name: 'ruleId', style: 'simple', explode: false })}`));
+  async delete(ruleId: string): Promise<Record<string, never>> {
+    return this.client.delete<Record<string, never>>(backendApiPath(`/system/firewalls/rules/${serializePathParameter(ruleId, { name: 'ruleId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -670,8 +667,8 @@ export class SystemDashboardAdminOverviewApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<DashboardAdminOverviewRetrieveResult> {
-    return this.client.get<DashboardAdminOverviewRetrieveResult>(backendApiPath(`/system/dashboard/admin/overview`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/system/dashboard/admin/overview`));
   }
 }
 
@@ -706,8 +703,8 @@ export class SystemCacheRefreshApi {
 
 
 /** Create */
-  async create(): Promise<CacheRefreshCreateResult> {
-    return this.client.post<CacheRefreshCreateResult>(backendApiPath(`/system/cache/refresh`));
+  async create(): Promise<CacheOperationOutcome> {
+    return this.client.post<CacheOperationOutcome>(backendApiPath(`/system/cache/refresh`));
   }
 }
 
@@ -720,8 +717,8 @@ export class SystemCacheOverviewApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<CacheOverviewRetrieveResult> {
-    return this.client.get<CacheOverviewRetrieveResult>(backendApiPath(`/system/cache/overview`));
+  async retrieve(): Promise<CacheOverview> {
+    return this.client.get<CacheOverview>(backendApiPath(`/system/cache/overview`));
   }
 }
 
@@ -734,9 +731,14 @@ export class SystemCacheNamespacesRefreshApi {
 
 
 /** Create */
-  async create(namespace_: string): Promise<CacheNamespacesRefreshCreateResult> {
-    return this.client.post<CacheNamespacesRefreshCreateResult>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/refresh`));
+  async create(namespace_: string): Promise<CacheOperationOutcome> {
+    return this.client.post<CacheOperationOutcome>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/refresh`));
   }
+}
+
+export interface SystemCacheNamespacesKeysListParams {
+  pageSize?: number;
+  cursor?: string;
 }
 
 export class SystemCacheNamespacesKeysApi {
@@ -748,13 +750,17 @@ export class SystemCacheNamespacesKeysApi {
 
 
 /** List */
-  async list(namespace_: string): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/keys`));
+  async list(namespace_: string, params?: SystemCacheNamespacesKeysListParams): Promise<CacheNamespaceKeyPage> {
+    const query = buildQueryString([
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<CacheNamespaceKeyPage>(appendQueryString(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/keys`), query));
   }
 
 /** Delete */
-  async delete(namespace_: string, key: string): Promise<SdkWorkCommandData> {
-    return this.client.delete<SdkWorkCommandData>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/keys/${serializePathParameter(key, { name: 'key', style: 'simple', explode: false })}`));
+  async delete(namespace_: string, key: string): Promise<CacheOperationOutcome> {
+    return this.client.delete<CacheOperationOutcome>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/keys/${serializePathParameter(key, { name: 'key', style: 'simple', explode: false })}`));
   }
 }
 
@@ -771,8 +777,8 @@ export class SystemCacheNamespacesApi {
 
 
 /** Delete */
-  async delete(namespace_: string): Promise<SdkWorkCommandData> {
-    return this.client.delete<SdkWorkCommandData>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}`));
+  async delete(namespace_: string): Promise<CacheOperationOutcome> {
+    return this.client.delete<CacheOperationOutcome>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}`));
   }
 }
 
@@ -785,8 +791,8 @@ export class SystemCacheInstancesRefreshApi {
 
 
 /** Create */
-  async create(instanceName: string): Promise<CacheInstancesRefreshCreateResult> {
-    return this.client.post<CacheInstancesRefreshCreateResult>(backendApiPath(`/system/cache/instances/${serializePathParameter(instanceName, { name: 'instanceName', style: 'simple', explode: false })}/refresh`));
+  async create(instanceName: string): Promise<CacheOperationOutcome> {
+    return this.client.post<CacheOperationOutcome>(backendApiPath(`/system/cache/instances/${serializePathParameter(instanceName, { name: 'instanceName', style: 'simple', explode: false })}/refresh`));
   }
 }
 
@@ -801,8 +807,8 @@ export class SystemCacheInstancesApi {
 
 
 /** Delete */
-  async delete(instanceName: string): Promise<SdkWorkCommandData> {
-    return this.client.delete<SdkWorkCommandData>(backendApiPath(`/system/cache/instances/${serializePathParameter(instanceName, { name: 'instanceName', style: 'simple', explode: false })}`));
+  async delete(instanceName: string): Promise<CacheOperationOutcome> {
+    return this.client.delete<CacheOperationOutcome>(backendApiPath(`/system/cache/instances/${serializePathParameter(instanceName, { name: 'instanceName', style: 'simple', explode: false })}`));
   }
 }
 
@@ -832,13 +838,13 @@ export class SystemAuthSettingsApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<AuthSettingsRetrieveResult> {
-    return this.client.get<AuthSettingsRetrieveResult>(backendApiPath(`/system/auth/settings`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/system/auth/settings`));
   }
 
 /** Update */
-  async update(): Promise<AuthSettingsUpdateResult> {
-    return this.client.patch<AuthSettingsUpdateResult>(backendApiPath(`/system/auth/settings`));
+  async update(): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(backendApiPath(`/system/auth/settings`));
   }
 }
 
@@ -853,6 +859,13 @@ export class SystemAuthApi {
 
 }
 
+export interface SystemAnalyticsAdminOverviewRetrieveParams {
+  timeRange?: 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly';
+  startTime?: string;
+  endTime?: string;
+  rankingSize?: number;
+}
+
 export class SystemAnalyticsAdminOverviewApi {
   private client: HttpClient;
 
@@ -862,8 +875,14 @@ export class SystemAnalyticsAdminOverviewApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<AnalyticsAdminOverviewRetrieveResult> {
-    return this.client.get<AnalyticsAdminOverviewRetrieveResult>(backendApiPath(`/system/analytics/admin/overview`));
+  async retrieve(params?: SystemAnalyticsAdminOverviewRetrieveParams): Promise<AdminAnalyticsOverview> {
+    const query = buildQueryString([
+      { name: 'time_range', value: params?.timeRange, style: 'form', explode: true, allowReserved: false },
+      { name: 'start_time', value: params?.startTime, style: 'form', explode: true, allowReserved: false },
+      { name: 'end_time', value: params?.endTime, style: 'form', explode: true, allowReserved: false },
+      { name: 'ranking_size', value: params?.rankingSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<AdminAnalyticsOverview>(appendQueryString(backendApiPath(`/system/analytics/admin/overview`), query));
   }
 }
 
@@ -898,8 +917,8 @@ export class SystemAfterSalesReviewsApi {
 
 
 /** Create */
-  async create(afterSalesRequestId: string): Promise<AfterSalesReviewsCreateResult> {
-    return this.client.post<AfterSalesReviewsCreateResult>(backendApiPath(`/system/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}/reviews`));
+  async create(afterSalesRequestId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/system/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}/reviews`));
   }
 }
 
@@ -1035,4 +1054,156 @@ function serializePathPrimitive(value: unknown): string {
     return JSON.stringify(value);
   }
   return String(value);
+}
+interface QueryParameterSpec {
+  name: string;
+  value: unknown;
+  style: string;
+  explode: boolean;
+  allowReserved: boolean;
+  contentType?: string;
+}
+
+function buildQueryString(parameters: QueryParameterSpec[]): string {
+  const pairs: string[] = [];
+  for (const parameter of parameters) {
+    appendSerializedParameter(pairs, parameter);
+  }
+  return pairs.join('&');
+}
+
+function appendSerializedParameter(pairs: string[], parameter: QueryParameterSpec): void {
+  if (parameter.value === undefined || parameter.value === null) {
+    return;
+  }
+
+  if (parameter.contentType) {
+    pairs.push(`${encodeQueryComponent(parameter.name)}=${encodeQueryValue(JSON.stringify(parameter.value), parameter.allowReserved)}`);
+    return;
+  }
+
+  const style = parameter.style || 'form';
+  if (style === 'deepObject') {
+    appendDeepObjectParameter(pairs, parameter.name, parameter.value, parameter.allowReserved);
+    return;
+  }
+
+  if (Array.isArray(parameter.value)) {
+    appendArrayParameter(pairs, parameter.name, parameter.value, style, parameter.explode, parameter.allowReserved);
+    return;
+  }
+
+  if (typeof parameter.value === 'object') {
+    appendObjectParameter(pairs, parameter.name, parameter.value as Record<string, unknown>, style, parameter.explode, parameter.allowReserved);
+    return;
+  }
+
+  pairs.push(`${encodeQueryComponent(parameter.name)}=${encodeQueryValue(serializePrimitive(parameter.value), parameter.allowReserved)}`);
+}
+
+function appendArrayParameter(
+  pairs: string[],
+  name: string,
+  value: unknown[],
+  style: string,
+  explode: boolean,
+  allowReserved: boolean,
+): void {
+  const values = value
+    .filter((item) => item !== undefined && item !== null)
+    .map((item) => serializePrimitive(item));
+  if (values.length === 0) {
+    return;
+  }
+
+  if (style === 'form' && explode) {
+    for (const item of values) {
+      pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(item, allowReserved)}`);
+    }
+    return;
+  }
+
+  pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(values.join(','), allowReserved)}`);
+}
+
+function appendObjectParameter(
+  pairs: string[],
+  name: string,
+  value: Record<string, unknown>,
+  style: string,
+  explode: boolean,
+  allowReserved: boolean,
+): void {
+  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== undefined && entryValue !== null);
+  if (entries.length === 0) {
+    return;
+  }
+
+  if (style === 'form' && explode) {
+    for (const [key, entryValue] of entries) {
+      pairs.push(`${encodeQueryComponent(key)}=${encodeQueryValue(serializePrimitive(entryValue), allowReserved)}`);
+    }
+    return;
+  }
+
+  const serialized = entries.flatMap(([key, entryValue]) => [key, serializePrimitive(entryValue)]).join(',');
+  pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(serialized, allowReserved)}`);
+}
+
+function appendDeepObjectParameter(
+  pairs: string[],
+  name: string,
+  value: unknown,
+  allowReserved: boolean,
+): void {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(serializePrimitive(value), allowReserved)}`);
+    return;
+  }
+
+  for (const [key, entryValue] of Object.entries(value as Record<string, unknown>)) {
+    if (entryValue === undefined || entryValue === null) {
+      continue;
+    }
+    pairs.push(`${encodeQueryComponent(`${name}[${key}]`)}=${encodeQueryValue(serializePrimitive(entryValue), allowReserved)}`);
+  }
+}
+
+function serializePrimitive(value: unknown): string {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
+function encodeQueryComponent(value: string): string {
+  return encodeURIComponent(value);
+}
+
+function encodeQueryValue(value: string, allowReserved: boolean): string {
+  const encoded = encodeURIComponent(value);
+  if (!allowReserved) {
+    return encoded;
+  }
+  return encoded.replace(/%3A/gi, ':')
+    .replace(/%2F/gi, '/')
+    .replace(/%3F/gi, '?')
+    .replace(/%23/gi, '#')
+    .replace(/%5B/gi, '[')
+    .replace(/%5D/gi, ']')
+    .replace(/%40/gi, '@')
+    .replace(/%21/gi, '!')
+    .replace(/%24/gi, '$')
+    .replace(/%26/gi, '&')
+    .replace(/%27/gi, "'")
+    .replace(/%28/gi, '(')
+    .replace(/%29/gi, ')')
+    .replace(/%2A/gi, '*')
+    .replace(/%2B/gi, '+')
+    .replace(/%2C/gi, ',')
+    .replace(/%3B/gi, ';')
+    .replace(/%3D/gi, '=');
 }

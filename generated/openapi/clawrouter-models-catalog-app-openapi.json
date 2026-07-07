@@ -83,85 +83,220 @@
           }
         ]
       },
-      "ModelRankingsListResult": {
+      "ModelCatalogPage": {
         "additionalProperties": false,
-        "description": "Model rankings list result schema exposed by Claw Router.",
+        "description": "Model catalog page schema exposed by Claw Router.",
+        "name": "ModelCatalogPage",
         "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+          "groups": {
+            "description": "Groups field on model catalog page.",
+            "items": {
+              "additionalProperties": false,
+              "description": "Groups field on model catalog page.",
+              "properties": {
+                "key": {
+                  "description": "Key field on model catalog page.",
+                  "type": "string"
+                },
+                "label": {
+                  "description": "Label field on model catalog page.",
+                  "type": "string"
+                },
+                "modelCount": {
+                  "description": "Model count field on model catalog page.",
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                }
+              },
+              "required": [
+                "key",
+                "label",
+                "modelCount"
+              ],
+              "type": "object"
+            },
+            "type": "array"
           },
-          "data": {
+          "items": {
+            "description": "Items field on model catalog page.",
+            "items": {
+              "additionalProperties": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/JsonValue"
+                  }
+                ],
+                "description": "Items field on model catalog page."
+              },
+              "description": "Items field on model catalog page.",
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/NoData"
+                "$ref": "#/components/schemas/PageInfo"
               }
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "description": "Page info field on model catalog page."
           }
         },
         "required": [
-          "code"
+          "items",
+          "groups",
+          "pageInfo"
         ],
-        "type": "object",
+        "type": "object"
+      },
+      "ModelRankingsListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by model rankings list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ModelRankingsPage"
+                  }
+                ],
+                "description": "Data field on model rankings list result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Model rankings list result schema exposed by Claw Router.",
         "x-operation-id": "modelRankings.list"
       },
-      "ModelVendorsListResult": {
+      "ModelRankingsPage": {
         "additionalProperties": false,
-        "description": "Model vendors list result schema exposed by Claw Router.",
+        "description": "Model rankings page schema exposed by Claw Router.",
+        "name": "ModelRankingsPage",
         "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+          "history": {
+            "description": "History field on model rankings page.",
+            "items": {
+              "additionalProperties": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/JsonValue"
+                  }
+                ],
+                "description": "History field on model rankings page."
+              },
+              "description": "History field on model rankings page.",
+              "type": "object"
+            },
+            "type": "array"
           },
-          "data": {
+          "items": {
+            "description": "Items field on model rankings page.",
+            "items": {
+              "additionalProperties": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/JsonValue"
+                  }
+                ],
+                "description": "Items field on model rankings page."
+              },
+              "description": "Items field on model rankings page.",
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/NoData"
+                "$ref": "#/components/schemas/PageInfo"
               }
             ],
-            "description": "No business data returned by this operation."
+            "description": "Page info field on model rankings page."
           },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+          "source": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              ],
+              "description": "Source field on model rankings page."
+            },
+            "description": "Source field on model rankings page.",
+            "type": "object"
           }
         },
         "required": [
-          "code"
+          "items",
+          "history",
+          "source",
+          "pageInfo"
         ],
-        "type": "object",
+        "type": "object"
+      },
+      "ModelVendorsListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by model vendors list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Model vendors list result schema exposed by Claw Router.",
         "x-operation-id": "modelVendors.list"
       },
       "ModelsListResult": {
-        "additionalProperties": false,
-        "description": "Models list result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by models list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ModelCatalogPage"
+                  }
+                ],
+                "description": "Data field on models list result."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Models list result schema exposed by Claw Router.",
         "x-operation-id": "models.list"
       },
       "NoData": {
@@ -426,13 +561,63 @@
       "get": {
         "description": "List. Reads ai. Writes none. File targets none.",
         "operationId": "modelRankings.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Ranking snapshot scope.",
+            "in": "query",
+            "name": "rank_scope",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Vendor code filter.",
+            "in": "query",
+            "name": "vendor_code",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Model modality filter.",
+            "in": "query",
+            "name": "modality",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Free-text ranking search query.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Number of ranking rows returned in the current page.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SdkWorkListResponse"
+                  "$ref": "#/components/schemas/ModelRankingsListResult"
                 }
               }
             },
@@ -510,7 +695,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SdkWorkListResponse"
+                  "$ref": "#/components/schemas/ModelVendorsListResult"
                 }
               }
             },
@@ -582,13 +767,127 @@
       "get": {
         "description": "List. Reads ai. Writes none. File targets none.",
         "operationId": "models.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "One-based page index.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of models returned in the current page.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Free-text model search query.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Billing meter code filter.",
+            "in": "query",
+            "name": "billing_meter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated vendor code filter.",
+            "explode": false,
+            "in": "query",
+            "name": "vendor_codes",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Comma-separated modality filter.",
+            "explode": false,
+            "in": "query",
+            "name": "modalities",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Comma-separated capability filter.",
+            "explode": false,
+            "in": "query",
+            "name": "capabilities",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Comma-separated model category filter.",
+            "explode": false,
+            "in": "query",
+            "name": "categories",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Comma-separated channel group filter.",
+            "explode": false,
+            "in": "query",
+            "name": "groups",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SdkWorkListResponse"
+                  "$ref": "#/components/schemas/ModelsListResult"
                 }
               }
             },

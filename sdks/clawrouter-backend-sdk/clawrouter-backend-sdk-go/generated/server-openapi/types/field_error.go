@@ -1,8 +1,8 @@
 package types
 
-// Field-level validation problem detail.
+
 type FieldError struct {
-	Code string `json:"code"`
+	Code int `json:"code"`
 	Field string `json:"field"`
 	Message string `json:"message"`
 }

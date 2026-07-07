@@ -16,7 +16,7 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// List channels
+        /// List
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.ChannelsListResult?> ChannelsListAsync()
         {
@@ -24,23 +24,23 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// Create channel
+        /// Create
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.Backend.Models.ChannelsCreateResult?> ChannelsCreateAsync(Sdkwork.ClawRouter.Backend.Models.AdminChannelCreateRequest body)
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ChannelsCreateResult?> ChannelsCreateAsync()
         {
-            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ChannelsCreateResult>(ApiPaths.BackendPath("/integration/channels"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ChannelsCreateResult>(ApiPaths.BackendPath("/integration/channels"), null);
         }
 
         /// <summary>
-        /// Update channel
+        /// Update
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.Backend.Models.ChannelsUpdateResult?> ChannelsUpdateAsync(Sdkwork.ClawRouter.Backend.Models.AdminChannelUpdateRequest body)
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ChannelsUpdateResult?> ChannelsUpdateAsync()
         {
-            return await _client.PutAsync<Sdkwork.ClawRouter.Backend.Models.ChannelsUpdateResult>(ApiPaths.BackendPath("/integration/channels"), body, null, null, "application/json");
+            return await _client.PutAsync<Sdkwork.ClawRouter.Backend.Models.ChannelsUpdateResult>(ApiPaths.BackendPath("/integration/channels"), null);
         }
 
         /// <summary>
-        /// Delete channel
+        /// Delete
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.ChannelsDeleteResult?> ChannelsDeleteAsync(string channelId)
         {
@@ -48,7 +48,7 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// Test channel
+        /// Verify
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.ChannelsVerifyResult?> ChannelsVerifyAsync(string channelId)
         {
@@ -56,36 +56,31 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// List provider secrets
+        /// List
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.Backend.Models.ProviderSecretsListResult?> ProviderSecretsListAsync(string? providerCode = null, string? status = null)
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ProviderSecretsListResult?> ProviderSecretsListAsync()
         {
-            var queryString = BuildQueryString(new[]
-            {
-                new QueryParameterSpec("provider_code", providerCode, "form", true, false, null),
-                new QueryParameterSpec("status", status, "form", true, false, null),
-            });
-            return await _client.GetAsync<Sdkwork.ClawRouter.Backend.Models.ProviderSecretsListResult>(ApiPaths.AppendQueryString(ApiPaths.BackendPath("/integration/provider_secrets"), queryString));
+            return await _client.GetAsync<Sdkwork.ClawRouter.Backend.Models.ProviderSecretsListResult>(ApiPaths.BackendPath("/integration/provider_secrets"));
         }
 
         /// <summary>
-        /// Create provider secret
+        /// Create
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.Backend.Models.ProviderSecretsCreateResult?> ProviderSecretsCreateAsync(Sdkwork.ClawRouter.Backend.Models.AdminProviderSecretCreateRequest body)
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ProviderSecretsCreateResult?> ProviderSecretsCreateAsync()
         {
-            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ProviderSecretsCreateResult>(ApiPaths.BackendPath("/integration/provider_secrets"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ProviderSecretsCreateResult>(ApiPaths.BackendPath("/integration/provider_secrets"), null);
         }
 
         /// <summary>
-        /// Update provider secret
+        /// Update
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.Backend.Models.ProviderSecretsUpdateResult?> ProviderSecretsUpdateAsync(Sdkwork.ClawRouter.Backend.Models.AdminProviderSecretUpdateRequest body)
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ProviderSecretsUpdateResult?> ProviderSecretsUpdateAsync()
         {
-            return await _client.PutAsync<Sdkwork.ClawRouter.Backend.Models.ProviderSecretsUpdateResult>(ApiPaths.BackendPath("/integration/provider_secrets"), body, null, null, "application/json");
+            return await _client.PutAsync<Sdkwork.ClawRouter.Backend.Models.ProviderSecretsUpdateResult>(ApiPaths.BackendPath("/integration/provider_secrets"), null);
         }
 
         /// <summary>
-        /// Delete provider secret
+        /// Delete
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.ProviderSecretsDeleteResult?> ProviderSecretsDeleteAsync(string secretId)
         {
@@ -192,132 +187,6 @@ namespace Sdkwork.ClawRouter.Backend.Api
             return style == "matrix" ? ";" + name + "=" : PathPrefix(name, style);
         }
 
-        private sealed record QueryParameterSpec(
-            string Name,
-            object? Value,
-            string Style,
-            bool Explode,
-            bool AllowReserved,
-            string? ContentType);
-
-        private static string BuildQueryString(IEnumerable<QueryParameterSpec> parameters)
-        {
-            var pairs = new List<string>();
-            foreach (var parameter in parameters)
-            {
-                AppendSerializedParameter(pairs, parameter);
-            }
-            return string.Join("&", pairs);
-        }
-
-        private static void AppendSerializedParameter(List<string> pairs, QueryParameterSpec parameter)
-        {
-            if (parameter.Value is null)
-            {
-                return;
-            }
-
-            if (!string.IsNullOrWhiteSpace(parameter.ContentType))
-            {
-                var json = System.Text.Json.JsonSerializer.Serialize(parameter.Value);
-                pairs.Add(Uri.EscapeDataString(parameter.Name) + "=" + EncodeQueryValue(json, parameter.AllowReserved));
-                return;
-            }
-
-            var style = string.IsNullOrWhiteSpace(parameter.Style) ? "form" : parameter.Style;
-            if (style == "deepObject" && parameter.Value is System.Collections.IDictionary deepObject)
-            {
-                AppendDeepObjectParameter(pairs, parameter.Name, deepObject, parameter.AllowReserved);
-            }
-            else if (parameter.Value is System.Collections.IEnumerable enumerable && parameter.Value is not string && parameter.Value is not System.Collections.IDictionary)
-            {
-                AppendArrayParameter(pairs, parameter.Name, enumerable, style, parameter.Explode, parameter.AllowReserved);
-            }
-            else if (parameter.Value is System.Collections.IDictionary dictionary)
-            {
-                AppendObjectParameter(pairs, parameter.Name, dictionary, style, parameter.Explode, parameter.AllowReserved);
-            }
-            else
-            {
-                pairs.Add(Uri.EscapeDataString(parameter.Name) + "=" + EncodeQueryValue(parameter.Value.ToString() ?? string.Empty, parameter.AllowReserved));
-            }
-        }
-
-        private static void AppendArrayParameter(List<string> pairs, string name, System.Collections.IEnumerable values, string style, bool explode, bool allowReserved)
-        {
-            var serialized = new List<string>();
-            foreach (var item in values)
-            {
-                if (item is not null)
-                {
-                    serialized.Add(item.ToString() ?? string.Empty);
-                }
-            }
-            if (serialized.Count == 0)
-            {
-                return;
-            }
-            if (style == "form" && explode)
-            {
-                foreach (var item in serialized)
-                {
-                    pairs.Add(Uri.EscapeDataString(name) + "=" + EncodeQueryValue(item, allowReserved));
-                }
-                return;
-            }
-            pairs.Add(Uri.EscapeDataString(name) + "=" + EncodeQueryValue(string.Join(",", serialized), allowReserved));
-        }
-
-        private static void AppendObjectParameter(List<string> pairs, string name, System.Collections.IDictionary values, string style, bool explode, bool allowReserved)
-        {
-            var serialized = new List<string>();
-            foreach (System.Collections.DictionaryEntry item in values)
-            {
-                if (item.Value is null)
-                {
-                    continue;
-                }
-                if (style == "form" && explode)
-                {
-                    pairs.Add(Uri.EscapeDataString(item.Key.ToString() ?? string.Empty) + "=" + EncodeQueryValue(item.Value.ToString() ?? string.Empty, allowReserved));
-                }
-                else
-                {
-                    serialized.Add(item.Key.ToString() ?? string.Empty);
-                    serialized.Add(item.Value.ToString() ?? string.Empty);
-                }
-            }
-            if (serialized.Count > 0)
-            {
-                pairs.Add(Uri.EscapeDataString(name) + "=" + EncodeQueryValue(string.Join(",", serialized), allowReserved));
-            }
-        }
-
-        private static void AppendDeepObjectParameter(List<string> pairs, string name, System.Collections.IDictionary values, bool allowReserved)
-        {
-            foreach (System.Collections.DictionaryEntry item in values)
-            {
-                if (item.Value is not null)
-                {
-                    pairs.Add(Uri.EscapeDataString(name + "[" + item.Key + "]") + "=" + EncodeQueryValue(item.Value.ToString() ?? string.Empty, allowReserved));
-                }
-            }
-        }
-
-        private static string EncodeQueryValue(string value, bool allowReserved)
-        {
-            var encoded = Uri.EscapeDataString(value);
-            if (!allowReserved)
-            {
-                return encoded;
-            }
-            return encoded
-                .Replace("%3A", ":").Replace("%2F", "/").Replace("%3F", "?").Replace("%23", "#")
-                .Replace("%5B", "[").Replace("%5D", "]").Replace("%40", "@").Replace("%21", "!")
-                .Replace("%24", "$").Replace("%26", "&").Replace("%27", "'").Replace("%28", "(")
-                .Replace("%29", ")").Replace("%2A", "*").Replace("%2B", "+").Replace("%2C", ",")
-                .Replace("%3B", ";").Replace("%3D", "=");
-        }
 
     }
 }

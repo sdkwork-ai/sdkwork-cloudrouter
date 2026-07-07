@@ -61,19 +61,27 @@ client.getHttpClient().setHeader("X-Custom-Header", "value");
 
 ## API Modules
 
+- `client.getSystem()` - system API
 - `client.getAi()` - ai API
 - `client.getChat()` - chat API
 - `client.getIam()` - iam API
 - `client.getNotification()` - notification API
 - `client.getRuntime()` - runtime API
-- `client.getSystem()` - system API
 
 ## Usage Examples
+
+### system
+
+```java
+// List
+AfterSalesRequestsListResult result = client.getSystem().afterSalesRequestsList();
+System.out.println(result);
+```
 
 ### ai
 
 ```java
-// List groups
+// List
 ChannelGroupsListResult result = client.getAi().channelGroupsList();
 System.out.println(result);
 ```
@@ -81,18 +89,15 @@ System.out.println(result);
 ### chat
 
 ```java
-// List product chat conversations
-Map<String, Object> params = new LinkedHashMap<>();
-params.put("page", "page");
-params.put("page_size", "page-size");
-ConversationsListResult result = client.getChat().conversationsList(params);
+// List
+ConversationsListResult result = client.getChat().conversationsList();
 System.out.println(result);
 ```
 
 ### iam
 
 ```java
-// List keys
+// List
 ApiKeysListResult result = client.getIam().apiKeysList();
 System.out.println(result);
 ```
@@ -100,39 +105,16 @@ System.out.println(result);
 ### notification
 
 ```java
-// List portal notifications
-Map<String, Object> params = new LinkedHashMap<>();
-params.put("include_archived", true);
-params.put("page", "page");
-params.put("page_size", "page-size");
-NotificationsListResult result = client.getNotification().notificationsList(params);
+// List
+NotificationsListResult result = client.getNotification().notificationsList();
 System.out.println(result);
 ```
 
 ### runtime
 
 ```java
-// List runtime invocations
-Map<String, Object> params = new LinkedHashMap<>();
-params.put("page", "page");
-params.put("page_size", "page-size");
-params.put("conversation_id", "1");
-params.put("chat_turn_id", "1");
-params.put("agent_session_id", "1");
-params.put("runtime", "runtime");
-params.put("status", "status");
-InvocationsListResult result = client.getRuntime().invocationsList(params);
-System.out.println(result);
-```
-
-### system
-
-```java
-// Retrieve public site runtime branding settings
-Map<String, Object> params = new LinkedHashMap<>();
-params.put("tenant_code", "ok");
-params.put("organization_code", "ok");
-SiteRuntimeRetrieveResult result = client.getSystem().siteRuntimeRetrieve(params);
+// List
+InvocationsListResult result = client.getRuntime().invocationsList();
 System.out.println(result);
 ```
 

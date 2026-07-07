@@ -13,240 +13,415 @@ public class SystemApi {
         this.client = client;
     }
 
-    /** List overview */
-    public AnalyticsAdminOverviewRetrieveResult analyticsAdminOverviewRetrieve(String timeRange, String startTime, String endTime, String limit) throws Exception {
+    /** Create */
+    public AfterSalesReviewsCreateResult afterSalesReviewsCreate(String afterSalesRequestId) throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/after_sales/requests/" + serializePathParameter(afterSalesRequestId, new PathParameterSpec("afterSalesRequestId", "simple", false)) + "/reviews"), null);
+        return client.convertValue(raw, new TypeReference<AfterSalesReviewsCreateResult>() {});
+    }
+
+    /** Retrieve */
+    public AnalyticsAdminOverviewRetrieveResult analyticsAdminOverviewRetrieve(String timeRange, String startTime, String endTime, Integer rankingSize) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("time_range", timeRange, "form", true, false, null),
             new QueryParameterSpec("start_time", startTime, "form", true, false, null),
             new QueryParameterSpec("end_time", endTime, "form", true, false, null),
-            new QueryParameterSpec("limit", limit, "form", true, false, null)
+            new QueryParameterSpec("ranking_size", rankingSize, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/system/analytics/admin/overview"), query));
         return client.convertValue(raw, new TypeReference<AnalyticsAdminOverviewRetrieveResult>() {});
     }
 
-    /** Retrieve IAM auth runtime settings */
+    /** Retrieve */
     public AuthSettingsRetrieveResult authSettingsRetrieve() throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/system/auth/settings"));
         return client.convertValue(raw, new TypeReference<AuthSettingsRetrieveResult>() {});
     }
 
-    /** Update IAM auth runtime settings */
-    public AuthSettingsUpdateResult authSettingsUpdate(AdminAuthSettingsUpdateRequest body) throws Exception {
-        Object raw = client.patch(ApiPaths.backendPath("/system/auth/settings"), body, null, null, "application/json");
+    /** Update */
+    public AuthSettingsUpdateResult authSettingsUpdate() throws Exception {
+        Object raw = client.patch(ApiPaths.backendPath("/system/auth/settings"), null);
         return client.convertValue(raw, new TypeReference<AuthSettingsUpdateResult>() {});
     }
 
-    /** Delete one runtime cache instance */
+    /** Delete */
     public CacheInstancesDeleteResult cacheInstancesDelete(String instanceName) throws Exception {
         Object raw = client.delete(ApiPaths.backendPath("/system/cache/instances/" + serializePathParameter(instanceName, new PathParameterSpec("instanceName", "simple", false)) + ""));
         return client.convertValue(raw, new TypeReference<CacheInstancesDeleteResult>() {});
     }
 
-    /** Refresh one runtime cache instance */
+    /** Create */
     public CacheInstancesRefreshCreateResult cacheInstancesRefreshCreate(String instanceName) throws Exception {
         Object raw = client.post(ApiPaths.backendPath("/system/cache/instances/" + serializePathParameter(instanceName, new PathParameterSpec("instanceName", "simple", false)) + "/refresh"), null);
         return client.convertValue(raw, new TypeReference<CacheInstancesRefreshCreateResult>() {});
     }
 
-    /** Delete a runtime cache namespace */
+    /** Delete */
     public CacheNamespacesDeleteResult cacheNamespacesDelete(String namespace) throws Exception {
         Object raw = client.delete(ApiPaths.backendPath("/system/cache/namespaces/" + serializePathParameter(namespace, new PathParameterSpec("namespace", "simple", false)) + ""));
         return client.convertValue(raw, new TypeReference<CacheNamespacesDeleteResult>() {});
     }
 
-    /** List runtime cache keys in a namespace */
-    public CacheNamespacesKeysListResult cacheNamespacesKeysList(String namespace, String limit, String cursor) throws Exception {
+    /** List */
+    public CacheNamespacesKeysListResult cacheNamespacesKeysList(String namespace, Integer pageSize, String cursor) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
             new QueryParameterSpec("cursor", cursor, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/system/cache/namespaces/" + serializePathParameter(namespace, new PathParameterSpec("namespace", "simple", false)) + "/keys"), query));
         return client.convertValue(raw, new TypeReference<CacheNamespacesKeysListResult>() {});
     }
 
-    /** Delete a runtime cache key */
+    /** Delete */
     public CacheNamespacesKeysDeleteResult cacheNamespacesKeysDelete(String namespace, String key) throws Exception {
         Object raw = client.delete(ApiPaths.backendPath("/system/cache/namespaces/" + serializePathParameter(namespace, new PathParameterSpec("namespace", "simple", false)) + "/keys/" + serializePathParameter(key, new PathParameterSpec("key", "simple", false)) + ""));
         return client.convertValue(raw, new TypeReference<CacheNamespacesKeysDeleteResult>() {});
     }
 
-    /** Refresh one runtime cache namespace */
+    /** Create */
     public CacheNamespacesRefreshCreateResult cacheNamespacesRefreshCreate(String namespace) throws Exception {
         Object raw = client.post(ApiPaths.backendPath("/system/cache/namespaces/" + serializePathParameter(namespace, new PathParameterSpec("namespace", "simple", false)) + "/refresh"), null);
         return client.convertValue(raw, new TypeReference<CacheNamespacesRefreshCreateResult>() {});
     }
 
-    /** Retrieve runtime cache overview */
+    /** Retrieve */
     public CacheOverviewRetrieveResult cacheOverviewRetrieve() throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/system/cache/overview"));
         return client.convertValue(raw, new TypeReference<CacheOverviewRetrieveResult>() {});
     }
 
-    /** Refresh all runtime cache instances */
+    /** Create */
     public CacheRefreshCreateResult cacheRefreshCreate() throws Exception {
         Object raw = client.post(ApiPaths.backendPath("/system/cache/refresh"), null);
         return client.convertValue(raw, new TypeReference<CacheRefreshCreateResult>() {});
     }
 
-    /** List dashboard data */
+    /** Retrieve */
     public DashboardAdminOverviewRetrieveResult dashboardAdminOverviewRetrieve() throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/system/dashboard/admin/overview"));
         return client.convertValue(raw, new TypeReference<DashboardAdminOverviewRetrieveResult>() {});
     }
 
-    /** List firewalls */
+    /** List */
     public FirewallsRulesListResult firewallsRulesList() throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/system/firewalls/rules"));
         return client.convertValue(raw, new TypeReference<FirewallsRulesListResult>() {});
     }
 
-    /** Create firewall */
-    public FirewallsRulesCreateResult firewallsRulesCreate(AdminFirewallRuleCreateRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.backendPath("/system/firewalls/rules"), body, null, null, "application/json");
+    /** Create */
+    public FirewallsRulesCreateResult firewallsRulesCreate() throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/firewalls/rules"), null);
         return client.convertValue(raw, new TypeReference<FirewallsRulesCreateResult>() {});
     }
 
-    /** Delete firewall */
+    /** Delete */
     public FirewallsRulesDeleteResult firewallsRulesDelete(String ruleId) throws Exception {
         Object raw = client.delete(ApiPaths.backendPath("/system/firewalls/rules/" + serializePathParameter(ruleId, new PathParameterSpec("ruleId", "simple", false)) + ""));
         return client.convertValue(raw, new TypeReference<FirewallsRulesDeleteResult>() {});
     }
 
-    /** List installation status */
+    /** Retrieve */
     public InstallationStatusRetrieveResult installationStatusRetrieve() throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/system/installation/status"));
         return client.convertValue(raw, new TypeReference<InstallationStatusRetrieveResult>() {});
     }
 
-    /** List referral stats */
+    /** List */
     public MarketingReferralStatsListResult marketingReferralStatsList() throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/system/marketing/referral_stats"));
         return client.convertValue(raw, new TypeReference<MarketingReferralStatsListResult>() {});
     }
 
-    /** List alerts */
+    /** List */
     public MonitorAlertsListResult monitorAlertsList() throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/system/monitor/alerts"));
         return client.convertValue(raw, new TypeReference<MonitorAlertsListResult>() {});
     }
 
-    /** List nodes */
+    /** List */
     public MonitorNodesListResult monitorNodesList() throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/system/monitor/nodes"));
         return client.convertValue(raw, new TypeReference<MonitorNodesListResult>() {});
     }
 
-    /** List performance data */
+    /** List */
     public MonitorPerformanceListResult monitorPerformanceList() throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/system/monitor/performance"));
         return client.convertValue(raw, new TypeReference<MonitorPerformanceListResult>() {});
     }
 
-    /** List token limits */
+    /** List */
     public RateLimitsApiKeysListResult rateLimitsApiKeysList() throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/system/rate_limits/api_keys"));
         return client.convertValue(raw, new TypeReference<RateLimitsApiKeysListResult>() {});
     }
 
-    /** Create token limit */
-    public RateLimitsApiKeysCreateResult rateLimitsApiKeysCreate(AdminTokenLimitCreateRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.backendPath("/system/rate_limits/api_keys"), body, null, null, "application/json");
+    /** Create */
+    public RateLimitsApiKeysCreateResult rateLimitsApiKeysCreate() throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/rate_limits/api_keys"), null);
         return client.convertValue(raw, new TypeReference<RateLimitsApiKeysCreateResult>() {});
     }
 
-    /** List IP limits */
+    /** List */
     public RateLimitsIpListResult rateLimitsIpList() throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/system/rate_limits/ip"));
         return client.convertValue(raw, new TypeReference<RateLimitsIpListResult>() {});
     }
 
-    /** Create IP limit */
-    public RateLimitsIpCreateResult rateLimitsIpCreate(AdminIpLimitCreateRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.backendPath("/system/rate_limits/ip"), body, null, null, "application/json");
+    /** Create */
+    public RateLimitsIpCreateResult rateLimitsIpCreate() throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/rate_limits/ip"), null);
         return client.convertValue(raw, new TypeReference<RateLimitsIpCreateResult>() {});
     }
 
-    /** List model limits */
+    /** List */
     public RateLimitsModelsListResult rateLimitsModelsList() throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/system/rate_limits/models"));
         return client.convertValue(raw, new TypeReference<RateLimitsModelsListResult>() {});
     }
 
-    /** Create model limit */
-    public RateLimitsModelsCreateResult rateLimitsModelsCreate(AdminModelLimitCreateRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.backendPath("/system/rate_limits/models"), body, null, null, "application/json");
+    /** Create */
+    public RateLimitsModelsCreateResult rateLimitsModelsCreate() throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/rate_limits/models"), null);
         return client.convertValue(raw, new TypeReference<RateLimitsModelsCreateResult>() {});
     }
 
-    /** List logs */
-    public RecordsListResult recordsList(String page, String pageSize, String user, String token, String model) throws Exception {
-        String query = buildQueryString(List.of(
-            new QueryParameterSpec("page", page, "form", true, false, null),
-            new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
-            new QueryParameterSpec("user", user, "form", true, false, null),
-            new QueryParameterSpec("token", token, "form", true, false, null),
-            new QueryParameterSpec("model", model, "form", true, false, null)
-        ));
-        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/system/records"), query));
+    /** List */
+    public RecordsListResult recordsList() throws Exception {
+        Object raw = client.get(ApiPaths.backendPath("/system/records"));
         return client.convertValue(raw, new TypeReference<RecordsListResult>() {});
     }
 
-    /** Retrieve runtime region settings */
+    /** Retrieve */
     public RuntimeRegionSettingsRetrieveResult runtimeRegionSettingsRetrieve() throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/system/runtime_region/settings"));
         return client.convertValue(raw, new TypeReference<RuntimeRegionSettingsRetrieveResult>() {});
     }
 
-    /** Update runtime region settings */
-    public RuntimeRegionSettingsUpdateResult runtimeRegionSettingsUpdate(AdminRuntimeRegionSettingsUpdateRequest body) throws Exception {
-        Object raw = client.patch(ApiPaths.backendPath("/system/runtime_region/settings"), body, null, null, "application/json");
+    /** Update */
+    public RuntimeRegionSettingsUpdateResult runtimeRegionSettingsUpdate() throws Exception {
+        Object raw = client.patch(ApiPaths.backendPath("/system/runtime_region/settings"), null);
         return client.convertValue(raw, new TypeReference<RuntimeRegionSettingsUpdateResult>() {});
     }
 
-    /** List service nodes */
-    public ServiceNodesListResult serviceNodesList(String q, String status) throws Exception {
-        String query = buildQueryString(List.of(
-            new QueryParameterSpec("q", q, "form", true, false, null),
-            new QueryParameterSpec("status", status, "form", true, false, null)
-        ));
-        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/system/service_nodes"), query));
+    /** List */
+    public ServiceNodesListResult serviceNodesList() throws Exception {
+        Object raw = client.get(ApiPaths.backendPath("/system/service_nodes"));
         return client.convertValue(raw, new TypeReference<ServiceNodesListResult>() {});
     }
 
-    /** Create service node */
-    public ServiceNodesCreateResult serviceNodesCreate(AdminServiceNodeCreateRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.backendPath("/system/service_nodes"), body, null, null, "application/json");
+    /** Create */
+    public ServiceNodesCreateResult serviceNodesCreate() throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/service_nodes"), null);
         return client.convertValue(raw, new TypeReference<ServiceNodesCreateResult>() {});
     }
 
-    /** Delete service node */
+    /** Delete */
     public ServiceNodesDeleteResult serviceNodesDelete(String nodeId) throws Exception {
         Object raw = client.delete(ApiPaths.backendPath("/system/service_nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + ""));
         return client.convertValue(raw, new TypeReference<ServiceNodesDeleteResult>() {});
     }
 
-    /** Update service node */
-    public ServiceNodesUpdateResult serviceNodesUpdate(String nodeId, AdminServiceNodeUpdateRequest body) throws Exception {
-        Object raw = client.put(ApiPaths.backendPath("/system/service_nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + ""), body, null, null, "application/json");
+    /** Update */
+    public ServiceNodesUpdateResult serviceNodesUpdate(String nodeId) throws Exception {
+        Object raw = client.put(ApiPaths.backendPath("/system/service_nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + ""), null);
         return client.convertValue(raw, new TypeReference<ServiceNodesUpdateResult>() {});
     }
 
-    /** Update service node status */
-    public ServiceNodesStatusUpdateResult serviceNodesStatusUpdate(String nodeId, AdminServiceNodeStatusUpdateRequest body) throws Exception {
-        Object raw = client.put(ApiPaths.backendPath("/system/service_nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/status"), body, null, null, "application/json");
+    /** Update */
+    public ServiceNodesStatusUpdateResult serviceNodesStatusUpdate(String nodeId) throws Exception {
+        Object raw = client.put(ApiPaths.backendPath("/system/service_nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/status"), null);
         return client.convertValue(raw, new TypeReference<ServiceNodesStatusUpdateResult>() {});
     }
 
-    /** Retrieve site branding and deployment personalization settings */
+    /** Create */
+    public ShopsCreateResult shopsCreate() throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/shops"), null);
+        return client.convertValue(raw, new TypeReference<ShopsCreateResult>() {});
+    }
+
+    /** Update */
+    public ShopsUpdateResult shopsUpdate(String shopId) throws Exception {
+        Object raw = client.patch(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + ""), null);
+        return client.convertValue(raw, new TypeReference<ShopsUpdateResult>() {});
+    }
+
+    /** Approve */
+    public ShopsApproveResult shopsApprove(String shopId) throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/approve"), null);
+        return client.convertValue(raw, new TypeReference<ShopsApproveResult>() {});
+    }
+
+    /** Upsert */
+    public ShopsBrandAuthorizationsUpsertResult shopsBrandAuthorizationsUpsert(String shopId) throws Exception {
+        Object raw = client.put(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/brand_authorizations"), null);
+        return client.convertValue(raw, new TypeReference<ShopsBrandAuthorizationsUpsertResult>() {});
+    }
+
+    /** Update */
+    public ShopsBusinessHoursUpdateResult shopsBusinessHoursUpdate(String shopId) throws Exception {
+        Object raw = client.patch(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/business_hours"), null);
+        return client.convertValue(raw, new TypeReference<ShopsBusinessHoursUpdateResult>() {});
+    }
+
+    /** Upsert */
+    public ShopsCategoryBindingsUpsertResult shopsCategoryBindingsUpsert(String shopId) throws Exception {
+        Object raw = client.put(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/category_bindings"), null);
+        return client.convertValue(raw, new TypeReference<ShopsCategoryBindingsUpsertResult>() {});
+    }
+
+    /** Create */
+    public ShopsChannelsCreateResult shopsChannelsCreate(String shopId) throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/channels"), null);
+        return client.convertValue(raw, new TypeReference<ShopsChannelsCreateResult>() {});
+    }
+
+    /** Update */
+    public ShopsChannelsUpdateResult shopsChannelsUpdate(String shopId, String channelId) throws Exception {
+        Object raw = client.patch(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/channels/" + serializePathParameter(channelId, new PathParameterSpec("channelId", "simple", false)) + ""), null);
+        return client.convertValue(raw, new TypeReference<ShopsChannelsUpdateResult>() {});
+    }
+
+    /** Close */
+    public ShopsCloseResult shopsClose(String shopId) throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/close"), null);
+        return client.convertValue(raw, new TypeReference<ShopsCloseResult>() {});
+    }
+
+    /** Upsert */
+    public ShopsCustomerServicesUpsertResult shopsCustomerServicesUpsert(String shopId) throws Exception {
+        Object raw = client.put(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/customer_services"), null);
+        return client.convertValue(raw, new TypeReference<ShopsCustomerServicesUpsertResult>() {});
+    }
+
+    /** Update */
+    public ShopsDepositAccountUpdateResult shopsDepositAccountUpdate(String shopId) throws Exception {
+        Object raw = client.patch(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/deposit_account"), null);
+        return client.convertValue(raw, new TypeReference<ShopsDepositAccountUpdateResult>() {});
+    }
+
+    /** Review */
+    public ShopsDepositAccountReviewResult shopsDepositAccountReview(String shopId) throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/deposit_account/review"), null);
+        return client.convertValue(raw, new TypeReference<ShopsDepositAccountReviewResult>() {});
+    }
+
+    /** Update */
+    public ShopsFulfillmentProfileUpdateResult shopsFulfillmentProfileUpdate(String shopId) throws Exception {
+        Object raw = client.patch(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/fulfillment_profile"), null);
+        return client.convertValue(raw, new TypeReference<ShopsFulfillmentProfileUpdateResult>() {});
+    }
+
+    /** Create */
+    public ShopsPoliciesCreateResult shopsPoliciesCreate(String shopId) throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/policies"), null);
+        return client.convertValue(raw, new TypeReference<ShopsPoliciesCreateResult>() {});
+    }
+
+    /** Update */
+    public ShopsPoliciesUpdateResult shopsPoliciesUpdate(String shopId, String policyId) throws Exception {
+        Object raw = client.patch(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/policies/" + serializePathParameter(policyId, new PathParameterSpec("policyId", "simple", false)) + ""), null);
+        return client.convertValue(raw, new TypeReference<ShopsPoliciesUpdateResult>() {});
+    }
+
+    /** Upsert */
+    public ShopsQualificationsUpsertResult shopsQualificationsUpsert(String shopId) throws Exception {
+        Object raw = client.put(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/qualifications"), null);
+        return client.convertValue(raw, new TypeReference<ShopsQualificationsUpsertResult>() {});
+    }
+
+    /** Reject */
+    public ShopsRejectResult shopsReject(String shopId) throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/reject"), null);
+        return client.convertValue(raw, new TypeReference<ShopsRejectResult>() {});
+    }
+
+    /** Resume */
+    public ShopsResumeResult shopsResume(String shopId) throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/resume"), null);
+        return client.convertValue(raw, new TypeReference<ShopsResumeResult>() {});
+    }
+
+    /** Upsert */
+    public ShopsReturnAddressesUpsertResult shopsReturnAddressesUpsert(String shopId) throws Exception {
+        Object raw = client.put(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/return_addresses"), null);
+        return client.convertValue(raw, new TypeReference<ShopsReturnAddressesUpsertResult>() {});
+    }
+
+    /** Create */
+    public ShopsRiskSignalsCreateResult shopsRiskSignalsCreate(String shopId) throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/risk_signals"), null);
+        return client.convertValue(raw, new TypeReference<ShopsRiskSignalsCreateResult>() {});
+    }
+
+    /** Resolve */
+    public ShopsRiskSignalsResolveResult shopsRiskSignalsResolve(String shopId, String riskSignalId) throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/risk_signals/" + serializePathParameter(riskSignalId, new PathParameterSpec("riskSignalId", "simple", false)) + "/resolve"), null);
+        return client.convertValue(raw, new TypeReference<ShopsRiskSignalsResolveResult>() {});
+    }
+
+    /** Create */
+    public ShopsServiceAreasCreateResult shopsServiceAreasCreate(String shopId) throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/service_areas"), null);
+        return client.convertValue(raw, new TypeReference<ShopsServiceAreasCreateResult>() {});
+    }
+
+    /** Update */
+    public ShopsServiceAreasUpdateResult shopsServiceAreasUpdate(String shopId, String serviceAreaId) throws Exception {
+        Object raw = client.patch(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/service_areas/" + serializePathParameter(serviceAreaId, new PathParameterSpec("serviceAreaId", "simple", false)) + ""), null);
+        return client.convertValue(raw, new TypeReference<ShopsServiceAreasUpdateResult>() {});
+    }
+
+    /** Update */
+    public ShopsSettlementProfileUpdateResult shopsSettlementProfileUpdate(String shopId) throws Exception {
+        Object raw = client.patch(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/settlement_profile"), null);
+        return client.convertValue(raw, new TypeReference<ShopsSettlementProfileUpdateResult>() {});
+    }
+
+    /** Approve */
+    public ShopsSettlementProfileApproveResult shopsSettlementProfileApprove(String shopId) throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/settlement_profile/approve"), null);
+        return client.convertValue(raw, new TypeReference<ShopsSettlementProfileApproveResult>() {});
+    }
+
+    /** Reject */
+    public ShopsSettlementProfileRejectResult shopsSettlementProfileReject(String shopId) throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/settlement_profile/reject"), null);
+        return client.convertValue(raw, new TypeReference<ShopsSettlementProfileRejectResult>() {});
+    }
+
+    /** Upsert */
+    public ShopsShippingTemplatesUpsertResult shopsShippingTemplatesUpsert(String shopId) throws Exception {
+        Object raw = client.put(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/shipping_templates"), null);
+        return client.convertValue(raw, new TypeReference<ShopsShippingTemplatesUpsertResult>() {});
+    }
+
+    /** Create review */
+    public ShopsSubmitReviewResult shopsSubmitReview(String shopId) throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/submit_review"), null);
+        return client.convertValue(raw, new TypeReference<ShopsSubmitReviewResult>() {});
+    }
+
+    /** Suspend */
+    public ShopsSuspendResult shopsSuspend(String shopId) throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/suspend"), null);
+        return client.convertValue(raw, new TypeReference<ShopsSuspendResult>() {});
+    }
+
+    /** Update */
+    public ShopsVerificationsUpdateResult shopsVerificationsUpdate(String shopId, String verificationId) throws Exception {
+        Object raw = client.patch(ApiPaths.backendPath("/system/shops/" + serializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false)) + "/verifications/" + serializePathParameter(verificationId, new PathParameterSpec("verificationId", "simple", false)) + ""), null);
+        return client.convertValue(raw, new TypeReference<ShopsVerificationsUpdateResult>() {});
+    }
+
+    /** Retrieve */
     public SiteSettingsRetrieveResult siteSettingsRetrieve() throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/system/site/settings"));
         return client.convertValue(raw, new TypeReference<SiteSettingsRetrieveResult>() {});
     }
 
-    /** Update site branding and deployment personalization settings */
-    public SiteSettingsUpdateResult siteSettingsUpdate(AdminSiteSettingsUpdateRequest body) throws Exception {
-        Object raw = client.patch(ApiPaths.backendPath("/system/site/settings"), body, null, null, "application/json");
+    /** Update */
+    public SiteSettingsUpdateResult siteSettingsUpdate() throws Exception {
+        Object raw = client.patch(ApiPaths.backendPath("/system/site/settings"), null);
         return client.convertValue(raw, new TypeReference<SiteSettingsUpdateResult>() {});
     }
 

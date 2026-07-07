@@ -14,7 +14,6 @@ pub mod web_bridge;
 pub mod web_framework_compat;
 pub mod web_security;
 
-pub use sdkwork_iam_web_adapter::TenantSigningKeyResolver;
 pub use auth::{
     app_request_subject_boundary, attach_trusted_request_subject,
     decode_app_session_token_claims_unverified, optional_app_request_subject,
@@ -30,6 +29,10 @@ pub use auth::{
     AppSessionTokenKind, AppSubjectBoundaryConfig, TrustedRequestSubject,
     TrustedRequestSubjectError, TrustedSubjectBoundaryError,
 };
+pub use claw_web_resolver::{
+    ensure_iam_database_env_for_claw_database, iam_web_resolver_for_claw_database,
+    materialize_federated_database_env_from_claw_config,
+};
 pub use contract_routes::{
     app_openapi_response, backend_openapi_response, cloud_services_openapi_response,
     contract_fallback, gateway_openapi_response, openapi_schema_tabs_response_for_surface,
@@ -40,9 +43,6 @@ pub use contract_routes::{
 pub use error::{not_implemented_response, NotImplementedData};
 pub use headers::{default_security_headers, redact_http_header};
 pub use metrics::{metrics, metrics_middleware, record_readiness_check};
-pub use tenant_isolation::{
-    ensure_row_tenant_matches, record_tenant_isolation_violation, TenantIsolationViolation,
-};
 pub use readiness::{combine_readiness_checks, ReadinessCheckFn};
 pub use router::{
     service_router, service_router_with_contract_routes,
@@ -53,13 +53,13 @@ pub use router::{
     ContractOperationFilter,
 };
 pub use sdkwork_claw_contract::{ApiSurface, ContractOperation};
+pub use sdkwork_iam_web_adapter::TenantSigningKeyResolver;
 pub use shutdown::{subscribe_shutdown_signal, wait_for_shutdown_signal};
 pub use signing_service::{
     InMemorySigningKeyStore, SessionTokenSigningService, SigningServiceConfig, TokenWithKid,
 };
-pub use claw_web_resolver::{
-    ensure_iam_database_env_for_claw_database, iam_web_resolver_for_claw_database,
-    materialize_federated_database_env_from_claw_config,
+pub use tenant_isolation::{
+    ensure_row_tenant_matches, record_tenant_isolation_violation, TenantIsolationViolation,
 };
 pub use web_bridge::{
     authenticated_principal_failed_trusted_subject_projection,
@@ -70,8 +70,7 @@ pub use web_framework_compat::{
     claw_web_framework_enabled_from_env, ensure_production_web_framework_security_policy,
     merge_federated_app_capability_router,
     merge_federated_app_capability_router_with_optional_auth,
-    merge_web_framework_scoped_app_read_router,
-    merge_web_framework_scoped_app_router,
+    merge_web_framework_scoped_app_read_router, merge_web_framework_scoped_app_router,
     project_trusted_subject_from_web_request_context,
 };
 pub use web_security::{

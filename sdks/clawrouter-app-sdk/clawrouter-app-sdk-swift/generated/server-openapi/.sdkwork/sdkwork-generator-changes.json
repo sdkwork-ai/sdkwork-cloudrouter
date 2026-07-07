@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "ClawRouterAppSdk"
   },
-  "changeFingerprint": "21f17e93e821bb4069bf5d98db18ac0eca620c868369242250de2577bf7133f7",
+  "changeFingerprint": "6c5a84b2e91d4a9a6108d626295d0b60431b8855fee48948e3f87d932345f462",
   "changes": {
     "createdGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -129,7 +129,7 @@
         "title": "Unified package check",
         "required": true,
         "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-claw-router\\sdks\\clawrouter-app-sdk\\clawrouter-app-sdk-swift\\generated\\server-openapi",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-clawrouter\\sdks\\clawrouter-app-sdk\\clawrouter-app-sdk-swift\\generated\\server-openapi",
         "command": "node",
         "args": [
           "./bin/publish-core.mjs",

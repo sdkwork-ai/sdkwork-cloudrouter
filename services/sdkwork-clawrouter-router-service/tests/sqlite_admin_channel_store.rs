@@ -138,7 +138,10 @@ async fn sqlite_admin_channel_store_encrypts_channel_api_key_material() {
     );
     assert_eq!(
         Some("2026-06-30T08:00:00Z"),
-        listed.items.first().and_then(|item| item.expires_at.as_deref())
+        listed
+            .items
+            .first()
+            .and_then(|item| item.expires_at.as_deref())
     );
     assert_eq!(
         Some("official"),
@@ -150,7 +153,10 @@ async fn sqlite_admin_channel_store_encrypts_channel_api_key_material() {
         .await
         .unwrap();
     assert_eq!(channel_id, item.channel_id);
-    assert_eq!(Some(channel_id), listed.items.first().map(|item| item.channel_id));
+    assert_eq!(
+        Some(channel_id),
+        listed.items.first().map(|item| item.channel_id)
+    );
     assert_eq!(
         vec![
             "vendor.openai".to_owned(),

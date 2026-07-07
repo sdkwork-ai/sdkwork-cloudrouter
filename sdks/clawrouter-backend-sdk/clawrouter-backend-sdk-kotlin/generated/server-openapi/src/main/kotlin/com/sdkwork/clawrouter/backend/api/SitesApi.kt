@@ -8,48 +8,45 @@ import com.sdkwork.clawrouter.backend.http.HttpClient
 
 class SitesApi(private val client: HttpClient) {
 
-    /** List sites */
-    suspend fun siteCatalogList(q: String? = null): SiteCatalogListResult? {
-        val query = buildQueryString(listOf(
-            QueryParameterSpec("q", q, "form", true, false, null)
-        ))
-        val raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/sites"), query))
+    /** List */
+    suspend fun siteCatalogList(): SiteCatalogListResult? {
+        val raw = client.get(ApiPaths.backendPath("/sites"))
         return client.convertValue(raw, object : TypeReference<SiteCatalogListResult>() {})
     }
 
-    /** Create site */
-    suspend fun siteCreate(body: AdminSiteCreateRequest): SiteCreateResult? {
-        val raw = client.post(ApiPaths.backendPath("/sites"), body, null, null, "application/json")
+    /** Create */
+    suspend fun siteCreate(): SiteCreateResult? {
+        val raw = client.post(ApiPaths.backendPath("/sites"), null)
         return client.convertValue(raw, object : TypeReference<SiteCreateResult>() {})
     }
 
-    /** Delete site */
+    /** Delete */
     suspend fun siteDelete(siteId: String): SiteDeleteResult? {
         val raw = client.delete(ApiPaths.backendPath("/sites/${serializePathParameter(siteId, PathParameterSpec("siteId", "simple", false))}"))
         return client.convertValue(raw, object : TypeReference<SiteDeleteResult>() {})
     }
 
-    /** Update site */
-    suspend fun siteUpdate(siteId: String, body: AdminSiteUpdateRequest): SiteUpdateResult? {
-        val raw = client.patch(ApiPaths.backendPath("/sites/${serializePathParameter(siteId, PathParameterSpec("siteId", "simple", false))}"), body, null, null, "application/json")
+    /** Update */
+    suspend fun siteUpdate(siteId: String): SiteUpdateResult? {
+        val raw = client.patch(ApiPaths.backendPath("/sites/${serializePathParameter(siteId, PathParameterSpec("siteId", "simple", false))}"), null)
         return client.convertValue(raw, object : TypeReference<SiteUpdateResult>() {})
     }
 
-    /** List site channels */
+    /** List */
     suspend fun siteChannelsList(siteId: String): SiteChannelsListResult? {
         val raw = client.get(ApiPaths.backendPath("/sites/${serializePathParameter(siteId, PathParameterSpec("siteId", "simple", false))}/channels"))
         return client.convertValue(raw, object : TypeReference<SiteChannelsListResult>() {})
     }
 
-    /** Health check site */
-    suspend fun healthCheckCreate(siteId: String, body: AdminSiteActionRequest): HealthCheckCreateResult? {
-        val raw = client.post(ApiPaths.backendPath("/sites/${serializePathParameter(siteId, PathParameterSpec("siteId", "simple", false))}/health_check"), body, null, null, "application/json")
+    /** Create */
+    suspend fun healthCheckCreate(siteId: String): HealthCheckCreateResult? {
+        val raw = client.post(ApiPaths.backendPath("/sites/${serializePathParameter(siteId, PathParameterSpec("siteId", "simple", false))}/health_check"), null)
         return client.convertValue(raw, object : TypeReference<HealthCheckCreateResult>() {})
     }
 
-    /** Test site connection */
-    suspend fun testConnectionCreate(siteId: String, body: AdminSiteActionRequest): TestConnectionCreateResult? {
-        val raw = client.post(ApiPaths.backendPath("/sites/${serializePathParameter(siteId, PathParameterSpec("siteId", "simple", false))}/test_connection"), body, null, null, "application/json")
+    /** Create */
+    suspend fun testConnectionCreate(siteId: String): TestConnectionCreateResult? {
+        val raw = client.post(ApiPaths.backendPath("/sites/${serializePathParameter(siteId, PathParameterSpec("siteId", "simple", false))}/test_connection"), null)
         return client.convertValue(raw, object : TypeReference<TestConnectionCreateResult>() {})
     }
 
@@ -123,106 +120,5 @@ class SitesApi(private val client: HttpClient) {
         return java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8).replace("+", "%20")
     }
 
-    private data class QueryParameterSpec(
-        val name: String,
-        val value: Any?,
-        val style: String,
-        val explode: Boolean,
-        val allowReserved: Boolean,
-        val contentType: String?,
-    )
-
-    private val queryObjectMapper = ObjectMapper().registerKotlinModule()
-
-    private fun buildQueryString(parameters: List<QueryParameterSpec>): String {
-        val pairs = mutableListOf<String>()
-        parameters.forEach { appendSerializedParameter(pairs, it) }
-        return pairs.joinToString("&")
-    }
-
-    private fun appendSerializedParameter(pairs: MutableList<String>, parameter: QueryParameterSpec) {
-        val value = parameter.value ?: return
-        if (!parameter.contentType.isNullOrBlank()) {
-            val json = queryObjectMapper.writeValueAsString(value)
-            pairs += urlEncode(parameter.name) + "=" + encodeQueryValue(json, parameter.allowReserved)
-            return
-        }
-
-        val style = parameter.style.ifBlank { "form" }
-        when (value) {
-            is Iterable<*> -> appendArrayParameter(pairs, parameter.name, value, style, parameter.explode, parameter.allowReserved)
-            is Map<*, *> -> if (style == "deepObject") {
-                appendDeepObjectParameter(pairs, parameter.name, value, parameter.allowReserved)
-            } else {
-                appendObjectParameter(pairs, parameter.name, value, style, parameter.explode, parameter.allowReserved)
-            }
-            else -> pairs += urlEncode(parameter.name) + "=" + encodeQueryValue(value.toString(), parameter.allowReserved)
-        }
-    }
-
-    private fun appendArrayParameter(
-        pairs: MutableList<String>,
-        name: String,
-        values: Iterable<*>,
-        style: String,
-        explode: Boolean,
-        allowReserved: Boolean,
-    ) {
-        val serialized = values.mapNotNull { it?.toString() }
-        if (serialized.isEmpty()) return
-        if (style == "form" && explode) {
-            serialized.forEach { pairs += urlEncode(name) + "=" + encodeQueryValue(it, allowReserved) }
-            return
-        }
-        pairs += urlEncode(name) + "=" + encodeQueryValue(serialized.joinToString(","), allowReserved)
-    }
-
-    private fun appendObjectParameter(
-        pairs: MutableList<String>,
-        name: String,
-        values: Map<*, *>,
-        style: String,
-        explode: Boolean,
-        allowReserved: Boolean,
-    ) {
-        val serialized = mutableListOf<String>()
-        values.forEach { (key, value) ->
-            if (value == null) return@forEach
-            if (style == "form" && explode) {
-                pairs += urlEncode(key.toString()) + "=" + encodeQueryValue(value.toString(), allowReserved)
-            } else {
-                serialized += key.toString()
-                serialized += value.toString()
-            }
-        }
-        if (serialized.isNotEmpty()) {
-            pairs += urlEncode(name) + "=" + encodeQueryValue(serialized.joinToString(","), allowReserved)
-        }
-    }
-
-    private fun appendDeepObjectParameter(pairs: MutableList<String>, name: String, values: Map<*, *>, allowReserved: Boolean) {
-        values.forEach { (key, value) ->
-            if (value != null) {
-                pairs += urlEncode("$name[$key]") + "=" + encodeQueryValue(value.toString(), allowReserved)
-            }
-        }
-    }
-
-    private fun encodeQueryValue(value: String, allowReserved: Boolean): String {
-        var encoded = urlEncode(value)
-        if (!allowReserved) return encoded
-        mapOf(
-            "%3A" to ":", "%2F" to "/", "%3F" to "?", "%23" to "#",
-            "%5B" to "[", "%5D" to "]", "%40" to "@", "%21" to "!",
-            "%24" to "$", "%26" to "&", "%27" to "'", "%28" to "(",
-            "%29" to ")", "%2A" to "*", "%2B" to "+", "%2C" to ",",
-            "%3B" to ";", "%3D" to "=",
-        ).forEach { (escaped, reserved) -> encoded = encoded.replace(escaped, reserved) }
-        return encoded
-    }
-
-    private fun urlEncode(value: String): String {
-        return java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8)
-    }
 
 }

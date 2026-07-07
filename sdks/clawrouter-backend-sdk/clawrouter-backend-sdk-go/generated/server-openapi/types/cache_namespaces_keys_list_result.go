@@ -2,7 +2,7 @@ package types
 
 // Cache namespaces keys list result schema exposed by Claw Router.
 type CacheNamespacesKeysListResult struct {
-	Code string `json:"code"`
-	Data AdminCacheKeyListResponse `json:"data"`
-	Msg string `json:"msg"`
+	Code int `json:"code"`
+	Data interface{} `json:"data"`
+	TraceId string `json:"traceId"`
 }

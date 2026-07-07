@@ -1,6 +1,6 @@
+use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::net::IpAddr;
 use std::sync::Arc;
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
@@ -121,10 +121,9 @@ async fn create_service_node(
         Err(response) => return response,
     };
     match state.store.create_service_node(command).await {
-        Ok(item) => Json(success_envelope(AdminServiceNodeMutationResponse {
-            item,
-        }))
-        .into_response(),
+        Ok(item) => {
+            Json(success_envelope(AdminServiceNodeMutationResponse { item })).into_response()
+        }
         Err(error) => system_error("service node create failed", error),
     }
 }
@@ -141,10 +140,9 @@ async fn update_service_node(
         Err(response) => return response,
     };
     match state.store.update_service_node(command).await {
-        Ok(item) => Json(success_envelope(AdminServiceNodeMutationResponse {
-            item,
-        }))
-        .into_response(),
+        Ok(item) => {
+            Json(success_envelope(AdminServiceNodeMutationResponse { item })).into_response()
+        }
         Err(error) => system_error("service node update failed", error),
     }
 }
@@ -161,10 +159,9 @@ async fn update_service_node_status(
         Err(response) => return response,
     };
     match state.store.update_service_node_status(command).await {
-        Ok(item) => Json(success_envelope(AdminServiceNodeMutationResponse {
-            item,
-        }))
-        .into_response(),
+        Ok(item) => {
+            Json(success_envelope(AdminServiceNodeMutationResponse { item })).into_response()
+        }
         Err(error) => system_error("service node status update failed", error),
     }
 }
@@ -188,7 +185,6 @@ async fn delete_service_node(
         Err(error) => system_error("service node delete failed", error),
     }
 }
-
 
 fn build_list_query(
     subject: AdminServiceNodeSubject,

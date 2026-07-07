@@ -3,12 +3,12 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 if TYPE_CHECKING:
-    from .admin_ai_model_mutation_response import AdminAiModelMutationResponse
+    from .no_data import NoData
 
 
 @dataclass
 class ModelsUpdateResult:
     """Models update result schema exposed by Claw Router."""
-    code: str
-    data: Optional[AdminAiModelMutationResponse] = None
-    msg: Optional[str] = None
+    code: int
+    data: Any
+    trace_id: str

@@ -4,10 +4,10 @@ use axum::extract::{Path, State};
 use axum::http::{HeaderMap, Method, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::Json;
-use sdkwork_claw_provider_adapter_contract::AdapterInvocationRequest;
 use sdkwork_claw_provider_adapter::{
     provider_adapter_manifest, AdapterInvocationContext, ProviderAdapter,
 };
+use sdkwork_claw_provider_adapter_contract::AdapterInvocationRequest;
 use serde_json::{json, Value};
 
 use crate::gateway_auth::authorized;

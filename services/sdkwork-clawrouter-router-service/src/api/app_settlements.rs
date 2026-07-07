@@ -1,17 +1,17 @@
 use std::sync::Arc;
 
+use crate::api::app_sql_subject::{map_optional_app_sql_subject, ResolvedAppSqlScopedSubject};
+use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::ports::{
+    SettlementsDashboardQuery, SettlementsDashboardReadFuture, SettlementsDashboardReadStore,
+    SettlementsDashboardSnapshot, SettlementsDashboardSubject,
+};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
-use crate::api::app_sql_subject::{map_optional_app_sql_subject, ResolvedAppSqlScopedSubject};
-use crate::api::response::{problem_from_wire_code, success_envelope};
 use serde::Deserialize;
-use crate::ports::{
-    SettlementsDashboardQuery, SettlementsDashboardReadFuture, SettlementsDashboardReadStore,
-    SettlementsDashboardSnapshot, SettlementsDashboardSubject,
-};
 
 const MIN_SETTLEMENTS_YEAR: i64 = 2000;
 const MAX_SETTLEMENTS_YEAR: i64 = 2100;
@@ -110,9 +110,10 @@ async fn fetch_settlements_dashboard(
     {
         Ok(snapshot) => Json(success_envelope(snapshot)).into_response(),
         Err(error) => problem_from_wire_code(
-                "5000",
-                format!("settlements dashboard read model is unavailable: {error}"),
-            ).into_response(),
+            "5000",
+            format!("settlements dashboard read model is unavailable: {error}"),
+        )
+        .into_response(),
     }
 }
 

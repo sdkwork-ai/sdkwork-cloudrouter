@@ -7,205 +7,349 @@ public class SystemApi {
         self.client = client
     }
 
-    /// List overview
-    public func analyticsAdminOverviewRetrieve(timeRange: String? = nil, startTime: String? = nil, endTime: String? = nil, limit: String? = nil) async throws -> AnalyticsAdminOverviewRetrieveResult? {
+    /// Create
+    public func afterSalesReviewsCreate(afterSalesRequestId: String) async throws -> AfterSalesReviewsCreateResult? {
+        return try await client.post(ApiPaths.backendPath("/system/after_sales/requests/\(serializePathParameter(afterSalesRequestId, PathParameterSpec(name: "afterSalesRequestId", style: "simple", explode: false)))/reviews"), body: nil, responseType: AfterSalesReviewsCreateResult.self)
+    }
+
+    /// Retrieve
+    public func analyticsAdminOverviewRetrieve(timeRange: String? = nil, startTime: String? = nil, endTime: String? = nil, rankingSize: Int? = nil) async throws -> AnalyticsAdminOverviewRetrieveResult? {
         let query = buildQueryString([
             QueryParameterSpec(name: "time_range", value: timeRange, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "start_time", value: startTime, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "end_time", value: endTime, style: "form", explode: true, allowReserved: false, contentType: nil),
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil)
+            QueryParameterSpec(name: "ranking_size", value: rankingSize, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
         return try await client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/system/analytics/admin/overview"), query), responseType: AnalyticsAdminOverviewRetrieveResult.self)
     }
 
-    /// Retrieve IAM auth runtime settings
+    /// Retrieve
     public func authSettingsRetrieve() async throws -> AuthSettingsRetrieveResult? {
         return try await client.get(ApiPaths.backendPath("/system/auth/settings"), responseType: AuthSettingsRetrieveResult.self)
     }
 
-    /// Update IAM auth runtime settings
-    public func authSettingsUpdate(body: AdminAuthSettingsUpdateRequest) async throws -> AuthSettingsUpdateResult? {
-        return try await client.patch(ApiPaths.backendPath("/system/auth/settings"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: AuthSettingsUpdateResult.self)
+    /// Update
+    public func authSettingsUpdate() async throws -> AuthSettingsUpdateResult? {
+        return try await client.patch(ApiPaths.backendPath("/system/auth/settings"), body: nil, responseType: AuthSettingsUpdateResult.self)
     }
 
-    /// Delete one runtime cache instance
+    /// Delete
     public func cacheInstancesDelete(instanceName: String) async throws -> CacheInstancesDeleteResult? {
         return try await client.delete(ApiPaths.backendPath("/system/cache/instances/\(serializePathParameter(instanceName, PathParameterSpec(name: "instanceName", style: "simple", explode: false)))"), responseType: CacheInstancesDeleteResult.self)
     }
 
-    /// Refresh one runtime cache instance
+    /// Create
     public func cacheInstancesRefreshCreate(instanceName: String) async throws -> CacheInstancesRefreshCreateResult? {
         return try await client.post(ApiPaths.backendPath("/system/cache/instances/\(serializePathParameter(instanceName, PathParameterSpec(name: "instanceName", style: "simple", explode: false)))/refresh"), body: nil, responseType: CacheInstancesRefreshCreateResult.self)
     }
 
-    /// Delete a runtime cache namespace
+    /// Delete
     public func cacheNamespacesDelete(namespace: String) async throws -> CacheNamespacesDeleteResult? {
         return try await client.delete(ApiPaths.backendPath("/system/cache/namespaces/\(serializePathParameter(namespace, PathParameterSpec(name: "namespace", style: "simple", explode: false)))"), responseType: CacheNamespacesDeleteResult.self)
     }
 
-    /// List runtime cache keys in a namespace
-    public func cacheNamespacesKeysList(namespace: String, limit: String? = nil, cursor: String? = nil) async throws -> CacheNamespacesKeysListResult? {
+    /// List
+    public func cacheNamespacesKeysList(namespace: String, pageSize: Int? = nil, cursor: String? = nil) async throws -> CacheNamespacesKeysListResult? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: pageSize, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "cursor", value: cursor, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
         return try await client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/system/cache/namespaces/\(serializePathParameter(namespace, PathParameterSpec(name: "namespace", style: "simple", explode: false)))/keys"), query), responseType: CacheNamespacesKeysListResult.self)
     }
 
-    /// Delete a runtime cache key
+    /// Delete
     public func cacheNamespacesKeysDelete(namespace: String, key: String) async throws -> CacheNamespacesKeysDeleteResult? {
         return try await client.delete(ApiPaths.backendPath("/system/cache/namespaces/\(serializePathParameter(namespace, PathParameterSpec(name: "namespace", style: "simple", explode: false)))/keys/\(serializePathParameter(key, PathParameterSpec(name: "key", style: "simple", explode: false)))"), responseType: CacheNamespacesKeysDeleteResult.self)
     }
 
-    /// Refresh one runtime cache namespace
+    /// Create
     public func cacheNamespacesRefreshCreate(namespace: String) async throws -> CacheNamespacesRefreshCreateResult? {
         return try await client.post(ApiPaths.backendPath("/system/cache/namespaces/\(serializePathParameter(namespace, PathParameterSpec(name: "namespace", style: "simple", explode: false)))/refresh"), body: nil, responseType: CacheNamespacesRefreshCreateResult.self)
     }
 
-    /// Retrieve runtime cache overview
+    /// Retrieve
     public func cacheOverviewRetrieve() async throws -> CacheOverviewRetrieveResult? {
         return try await client.get(ApiPaths.backendPath("/system/cache/overview"), responseType: CacheOverviewRetrieveResult.self)
     }
 
-    /// Refresh all runtime cache instances
+    /// Create
     public func cacheRefreshCreate() async throws -> CacheRefreshCreateResult? {
         return try await client.post(ApiPaths.backendPath("/system/cache/refresh"), body: nil, responseType: CacheRefreshCreateResult.self)
     }
 
-    /// List dashboard data
+    /// Retrieve
     public func dashboardAdminOverviewRetrieve() async throws -> DashboardAdminOverviewRetrieveResult? {
         return try await client.get(ApiPaths.backendPath("/system/dashboard/admin/overview"), responseType: DashboardAdminOverviewRetrieveResult.self)
     }
 
-    /// List firewalls
+    /// List
     public func firewallsRulesList() async throws -> FirewallsRulesListResult? {
         return try await client.get(ApiPaths.backendPath("/system/firewalls/rules"), responseType: FirewallsRulesListResult.self)
     }
 
-    /// Create firewall
-    public func firewallsRulesCreate(body: AdminFirewallRuleCreateRequest) async throws -> FirewallsRulesCreateResult? {
-        return try await client.post(ApiPaths.backendPath("/system/firewalls/rules"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: FirewallsRulesCreateResult.self)
+    /// Create
+    public func firewallsRulesCreate() async throws -> FirewallsRulesCreateResult? {
+        return try await client.post(ApiPaths.backendPath("/system/firewalls/rules"), body: nil, responseType: FirewallsRulesCreateResult.self)
     }
 
-    /// Delete firewall
+    /// Delete
     public func firewallsRulesDelete(ruleId: String) async throws -> FirewallsRulesDeleteResult? {
         return try await client.delete(ApiPaths.backendPath("/system/firewalls/rules/\(serializePathParameter(ruleId, PathParameterSpec(name: "ruleId", style: "simple", explode: false)))"), responseType: FirewallsRulesDeleteResult.self)
     }
 
-    /// List installation status
+    /// Retrieve
     public func installationStatusRetrieve() async throws -> InstallationStatusRetrieveResult? {
         return try await client.get(ApiPaths.backendPath("/system/installation/status"), responseType: InstallationStatusRetrieveResult.self)
     }
 
-    /// List referral stats
+    /// List
     public func marketingReferralStatsList() async throws -> MarketingReferralStatsListResult? {
         return try await client.get(ApiPaths.backendPath("/system/marketing/referral_stats"), responseType: MarketingReferralStatsListResult.self)
     }
 
-    /// List alerts
+    /// List
     public func monitorAlertsList() async throws -> MonitorAlertsListResult? {
         return try await client.get(ApiPaths.backendPath("/system/monitor/alerts"), responseType: MonitorAlertsListResult.self)
     }
 
-    /// List nodes
+    /// List
     public func monitorNodesList() async throws -> MonitorNodesListResult? {
         return try await client.get(ApiPaths.backendPath("/system/monitor/nodes"), responseType: MonitorNodesListResult.self)
     }
 
-    /// List performance data
+    /// List
     public func monitorPerformanceList() async throws -> MonitorPerformanceListResult? {
         return try await client.get(ApiPaths.backendPath("/system/monitor/performance"), responseType: MonitorPerformanceListResult.self)
     }
 
-    /// List token limits
+    /// List
     public func rateLimitsApiKeysList() async throws -> RateLimitsApiKeysListResult? {
         return try await client.get(ApiPaths.backendPath("/system/rate_limits/api_keys"), responseType: RateLimitsApiKeysListResult.self)
     }
 
-    /// Create token limit
-    public func rateLimitsApiKeysCreate(body: AdminTokenLimitCreateRequest) async throws -> RateLimitsApiKeysCreateResult? {
-        return try await client.post(ApiPaths.backendPath("/system/rate_limits/api_keys"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: RateLimitsApiKeysCreateResult.self)
+    /// Create
+    public func rateLimitsApiKeysCreate() async throws -> RateLimitsApiKeysCreateResult? {
+        return try await client.post(ApiPaths.backendPath("/system/rate_limits/api_keys"), body: nil, responseType: RateLimitsApiKeysCreateResult.self)
     }
 
-    /// List IP limits
+    /// List
     public func rateLimitsIpList() async throws -> RateLimitsIpListResult? {
         return try await client.get(ApiPaths.backendPath("/system/rate_limits/ip"), responseType: RateLimitsIpListResult.self)
     }
 
-    /// Create IP limit
-    public func rateLimitsIpCreate(body: AdminIpLimitCreateRequest) async throws -> RateLimitsIpCreateResult? {
-        return try await client.post(ApiPaths.backendPath("/system/rate_limits/ip"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: RateLimitsIpCreateResult.self)
+    /// Create
+    public func rateLimitsIpCreate() async throws -> RateLimitsIpCreateResult? {
+        return try await client.post(ApiPaths.backendPath("/system/rate_limits/ip"), body: nil, responseType: RateLimitsIpCreateResult.self)
     }
 
-    /// List model limits
+    /// List
     public func rateLimitsModelsList() async throws -> RateLimitsModelsListResult? {
         return try await client.get(ApiPaths.backendPath("/system/rate_limits/models"), responseType: RateLimitsModelsListResult.self)
     }
 
-    /// Create model limit
-    public func rateLimitsModelsCreate(body: AdminModelLimitCreateRequest) async throws -> RateLimitsModelsCreateResult? {
-        return try await client.post(ApiPaths.backendPath("/system/rate_limits/models"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: RateLimitsModelsCreateResult.self)
+    /// Create
+    public func rateLimitsModelsCreate() async throws -> RateLimitsModelsCreateResult? {
+        return try await client.post(ApiPaths.backendPath("/system/rate_limits/models"), body: nil, responseType: RateLimitsModelsCreateResult.self)
     }
 
-    /// List logs
-    public func recordsList(page: String? = nil, pageSize: String? = nil, user: String? = nil, token: String? = nil, model: String? = nil) async throws -> RecordsListResult? {
-        let query = buildQueryString([
-            QueryParameterSpec(name: "page", value: page, style: "form", explode: true, allowReserved: false, contentType: nil),
-            QueryParameterSpec(name: "page_size", value: pageSize, style: "form", explode: true, allowReserved: false, contentType: nil),
-            QueryParameterSpec(name: "user", value: user, style: "form", explode: true, allowReserved: false, contentType: nil),
-            QueryParameterSpec(name: "token", value: token, style: "form", explode: true, allowReserved: false, contentType: nil),
-            QueryParameterSpec(name: "model", value: model, style: "form", explode: true, allowReserved: false, contentType: nil)
-        ])
-        return try await client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/system/records"), query), responseType: RecordsListResult.self)
+    /// List
+    public func recordsList() async throws -> RecordsListResult? {
+        return try await client.get(ApiPaths.backendPath("/system/records"), responseType: RecordsListResult.self)
     }
 
-    /// Retrieve runtime region settings
+    /// Retrieve
     public func runtimeRegionSettingsRetrieve() async throws -> RuntimeRegionSettingsRetrieveResult? {
         return try await client.get(ApiPaths.backendPath("/system/runtime_region/settings"), responseType: RuntimeRegionSettingsRetrieveResult.self)
     }
 
-    /// Update runtime region settings
-    public func runtimeRegionSettingsUpdate(body: AdminRuntimeRegionSettingsUpdateRequest) async throws -> RuntimeRegionSettingsUpdateResult? {
-        return try await client.patch(ApiPaths.backendPath("/system/runtime_region/settings"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: RuntimeRegionSettingsUpdateResult.self)
+    /// Update
+    public func runtimeRegionSettingsUpdate() async throws -> RuntimeRegionSettingsUpdateResult? {
+        return try await client.patch(ApiPaths.backendPath("/system/runtime_region/settings"), body: nil, responseType: RuntimeRegionSettingsUpdateResult.self)
     }
 
-    /// List service nodes
-    public func serviceNodesList(q: String? = nil, status: String? = nil) async throws -> ServiceNodesListResult? {
-        let query = buildQueryString([
-            QueryParameterSpec(name: "q", value: q, style: "form", explode: true, allowReserved: false, contentType: nil),
-            QueryParameterSpec(name: "status", value: status, style: "form", explode: true, allowReserved: false, contentType: nil)
-        ])
-        return try await client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/system/service_nodes"), query), responseType: ServiceNodesListResult.self)
+    /// List
+    public func serviceNodesList() async throws -> ServiceNodesListResult? {
+        return try await client.get(ApiPaths.backendPath("/system/service_nodes"), responseType: ServiceNodesListResult.self)
     }
 
-    /// Create service node
-    public func serviceNodesCreate(body: AdminServiceNodeCreateRequest) async throws -> ServiceNodesCreateResult? {
-        return try await client.post(ApiPaths.backendPath("/system/service_nodes"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: ServiceNodesCreateResult.self)
+    /// Create
+    public func serviceNodesCreate() async throws -> ServiceNodesCreateResult? {
+        return try await client.post(ApiPaths.backendPath("/system/service_nodes"), body: nil, responseType: ServiceNodesCreateResult.self)
     }
 
-    /// Delete service node
+    /// Delete
     public func serviceNodesDelete(nodeId: String) async throws -> ServiceNodesDeleteResult? {
         return try await client.delete(ApiPaths.backendPath("/system/service_nodes/\(serializePathParameter(nodeId, PathParameterSpec(name: "nodeId", style: "simple", explode: false)))"), responseType: ServiceNodesDeleteResult.self)
     }
 
-    /// Update service node
-    public func serviceNodesUpdate(nodeId: String, body: AdminServiceNodeUpdateRequest) async throws -> ServiceNodesUpdateResult? {
-        return try await client.put(ApiPaths.backendPath("/system/service_nodes/\(serializePathParameter(nodeId, PathParameterSpec(name: "nodeId", style: "simple", explode: false)))"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: ServiceNodesUpdateResult.self)
+    /// Update
+    public func serviceNodesUpdate(nodeId: String) async throws -> ServiceNodesUpdateResult? {
+        return try await client.put(ApiPaths.backendPath("/system/service_nodes/\(serializePathParameter(nodeId, PathParameterSpec(name: "nodeId", style: "simple", explode: false)))"), body: nil, responseType: ServiceNodesUpdateResult.self)
     }
 
-    /// Update service node status
-    public func serviceNodesStatusUpdate(nodeId: String, body: AdminServiceNodeStatusUpdateRequest) async throws -> ServiceNodesStatusUpdateResult? {
-        return try await client.put(ApiPaths.backendPath("/system/service_nodes/\(serializePathParameter(nodeId, PathParameterSpec(name: "nodeId", style: "simple", explode: false)))/status"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: ServiceNodesStatusUpdateResult.self)
+    /// Update
+    public func serviceNodesStatusUpdate(nodeId: String) async throws -> ServiceNodesStatusUpdateResult? {
+        return try await client.put(ApiPaths.backendPath("/system/service_nodes/\(serializePathParameter(nodeId, PathParameterSpec(name: "nodeId", style: "simple", explode: false)))/status"), body: nil, responseType: ServiceNodesStatusUpdateResult.self)
     }
 
-    /// Retrieve site branding and deployment personalization settings
+    /// Create
+    public func shopsCreate() async throws -> ShopsCreateResult? {
+        return try await client.post(ApiPaths.backendPath("/system/shops"), body: nil, responseType: ShopsCreateResult.self)
+    }
+
+    /// Update
+    public func shopsUpdate(shopId: String) async throws -> ShopsUpdateResult? {
+        return try await client.patch(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))"), body: nil, responseType: ShopsUpdateResult.self)
+    }
+
+    /// Approve
+    public func shopsApprove(shopId: String) async throws -> ShopsApproveResult? {
+        return try await client.post(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/approve"), body: nil, responseType: ShopsApproveResult.self)
+    }
+
+    /// Upsert
+    public func shopsBrandAuthorizationsUpsert(shopId: String) async throws -> ShopsBrandAuthorizationsUpsertResult? {
+        return try await client.put(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/brand_authorizations"), body: nil, responseType: ShopsBrandAuthorizationsUpsertResult.self)
+    }
+
+    /// Update
+    public func shopsBusinessHoursUpdate(shopId: String) async throws -> ShopsBusinessHoursUpdateResult? {
+        return try await client.patch(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/business_hours"), body: nil, responseType: ShopsBusinessHoursUpdateResult.self)
+    }
+
+    /// Upsert
+    public func shopsCategoryBindingsUpsert(shopId: String) async throws -> ShopsCategoryBindingsUpsertResult? {
+        return try await client.put(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/category_bindings"), body: nil, responseType: ShopsCategoryBindingsUpsertResult.self)
+    }
+
+    /// Create
+    public func shopsChannelsCreate(shopId: String) async throws -> ShopsChannelsCreateResult? {
+        return try await client.post(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/channels"), body: nil, responseType: ShopsChannelsCreateResult.self)
+    }
+
+    /// Update
+    public func shopsChannelsUpdate(shopId: String, channelId: String) async throws -> ShopsChannelsUpdateResult? {
+        return try await client.patch(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/channels/\(serializePathParameter(channelId, PathParameterSpec(name: "channelId", style: "simple", explode: false)))"), body: nil, responseType: ShopsChannelsUpdateResult.self)
+    }
+
+    /// Close
+    public func shopsClose(shopId: String) async throws -> ShopsCloseResult? {
+        return try await client.post(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/close"), body: nil, responseType: ShopsCloseResult.self)
+    }
+
+    /// Upsert
+    public func shopsCustomerServicesUpsert(shopId: String) async throws -> ShopsCustomerServicesUpsertResult? {
+        return try await client.put(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/customer_services"), body: nil, responseType: ShopsCustomerServicesUpsertResult.self)
+    }
+
+    /// Update
+    public func shopsDepositAccountUpdate(shopId: String) async throws -> ShopsDepositAccountUpdateResult? {
+        return try await client.patch(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/deposit_account"), body: nil, responseType: ShopsDepositAccountUpdateResult.self)
+    }
+
+    /// Review
+    public func shopsDepositAccountReview(shopId: String) async throws -> ShopsDepositAccountReviewResult? {
+        return try await client.post(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/deposit_account/review"), body: nil, responseType: ShopsDepositAccountReviewResult.self)
+    }
+
+    /// Update
+    public func shopsFulfillmentProfileUpdate(shopId: String) async throws -> ShopsFulfillmentProfileUpdateResult? {
+        return try await client.patch(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/fulfillment_profile"), body: nil, responseType: ShopsFulfillmentProfileUpdateResult.self)
+    }
+
+    /// Create
+    public func shopsPoliciesCreate(shopId: String) async throws -> ShopsPoliciesCreateResult? {
+        return try await client.post(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/policies"), body: nil, responseType: ShopsPoliciesCreateResult.self)
+    }
+
+    /// Update
+    public func shopsPoliciesUpdate(shopId: String, policyId: String) async throws -> ShopsPoliciesUpdateResult? {
+        return try await client.patch(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/policies/\(serializePathParameter(policyId, PathParameterSpec(name: "policyId", style: "simple", explode: false)))"), body: nil, responseType: ShopsPoliciesUpdateResult.self)
+    }
+
+    /// Upsert
+    public func shopsQualificationsUpsert(shopId: String) async throws -> ShopsQualificationsUpsertResult? {
+        return try await client.put(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/qualifications"), body: nil, responseType: ShopsQualificationsUpsertResult.self)
+    }
+
+    /// Reject
+    public func shopsReject(shopId: String) async throws -> ShopsRejectResult? {
+        return try await client.post(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/reject"), body: nil, responseType: ShopsRejectResult.self)
+    }
+
+    /// Resume
+    public func shopsResume(shopId: String) async throws -> ShopsResumeResult? {
+        return try await client.post(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/resume"), body: nil, responseType: ShopsResumeResult.self)
+    }
+
+    /// Upsert
+    public func shopsReturnAddressesUpsert(shopId: String) async throws -> ShopsReturnAddressesUpsertResult? {
+        return try await client.put(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/return_addresses"), body: nil, responseType: ShopsReturnAddressesUpsertResult.self)
+    }
+
+    /// Create
+    public func shopsRiskSignalsCreate(shopId: String) async throws -> ShopsRiskSignalsCreateResult? {
+        return try await client.post(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/risk_signals"), body: nil, responseType: ShopsRiskSignalsCreateResult.self)
+    }
+
+    /// Resolve
+    public func shopsRiskSignalsResolve(shopId: String, riskSignalId: String) async throws -> ShopsRiskSignalsResolveResult? {
+        return try await client.post(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/risk_signals/\(serializePathParameter(riskSignalId, PathParameterSpec(name: "riskSignalId", style: "simple", explode: false)))/resolve"), body: nil, responseType: ShopsRiskSignalsResolveResult.self)
+    }
+
+    /// Create
+    public func shopsServiceAreasCreate(shopId: String) async throws -> ShopsServiceAreasCreateResult? {
+        return try await client.post(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/service_areas"), body: nil, responseType: ShopsServiceAreasCreateResult.self)
+    }
+
+    /// Update
+    public func shopsServiceAreasUpdate(shopId: String, serviceAreaId: String) async throws -> ShopsServiceAreasUpdateResult? {
+        return try await client.patch(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/service_areas/\(serializePathParameter(serviceAreaId, PathParameterSpec(name: "serviceAreaId", style: "simple", explode: false)))"), body: nil, responseType: ShopsServiceAreasUpdateResult.self)
+    }
+
+    /// Update
+    public func shopsSettlementProfileUpdate(shopId: String) async throws -> ShopsSettlementProfileUpdateResult? {
+        return try await client.patch(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/settlement_profile"), body: nil, responseType: ShopsSettlementProfileUpdateResult.self)
+    }
+
+    /// Approve
+    public func shopsSettlementProfileApprove(shopId: String) async throws -> ShopsSettlementProfileApproveResult? {
+        return try await client.post(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/settlement_profile/approve"), body: nil, responseType: ShopsSettlementProfileApproveResult.self)
+    }
+
+    /// Reject
+    public func shopsSettlementProfileReject(shopId: String) async throws -> ShopsSettlementProfileRejectResult? {
+        return try await client.post(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/settlement_profile/reject"), body: nil, responseType: ShopsSettlementProfileRejectResult.self)
+    }
+
+    /// Upsert
+    public func shopsShippingTemplatesUpsert(shopId: String) async throws -> ShopsShippingTemplatesUpsertResult? {
+        return try await client.put(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/shipping_templates"), body: nil, responseType: ShopsShippingTemplatesUpsertResult.self)
+    }
+
+    /// Create review
+    public func shopsSubmitReview(shopId: String) async throws -> ShopsSubmitReviewResult? {
+        return try await client.post(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/submit_review"), body: nil, responseType: ShopsSubmitReviewResult.self)
+    }
+
+    /// Suspend
+    public func shopsSuspend(shopId: String) async throws -> ShopsSuspendResult? {
+        return try await client.post(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/suspend"), body: nil, responseType: ShopsSuspendResult.self)
+    }
+
+    /// Update
+    public func shopsVerificationsUpdate(shopId: String, verificationId: String) async throws -> ShopsVerificationsUpdateResult? {
+        return try await client.patch(ApiPaths.backendPath("/system/shops/\(serializePathParameter(shopId, PathParameterSpec(name: "shopId", style: "simple", explode: false)))/verifications/\(serializePathParameter(verificationId, PathParameterSpec(name: "verificationId", style: "simple", explode: false)))"), body: nil, responseType: ShopsVerificationsUpdateResult.self)
+    }
+
+    /// Retrieve
     public func siteSettingsRetrieve() async throws -> SiteSettingsRetrieveResult? {
         return try await client.get(ApiPaths.backendPath("/system/site/settings"), responseType: SiteSettingsRetrieveResult.self)
     }
 
-    /// Update site branding and deployment personalization settings
-    public func siteSettingsUpdate(body: AdminSiteSettingsUpdateRequest) async throws -> SiteSettingsUpdateResult? {
-        return try await client.patch(ApiPaths.backendPath("/system/site/settings"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: SiteSettingsUpdateResult.self)
+    /// Update
+    public func siteSettingsUpdate() async throws -> SiteSettingsUpdateResult? {
+        return try await client.patch(ApiPaths.backendPath("/system/site/settings"), body: nil, responseType: SiteSettingsUpdateResult.self)
     }
 
     private struct PathParameterSpec {

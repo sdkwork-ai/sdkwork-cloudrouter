@@ -185,7 +185,10 @@ async fn admin_service_node_routes_reject_invalid_management_inputs() {
         .await
         .unwrap();
     assert_eq!(StatusCode::BAD_REQUEST, bad_domain.status());
-    assert_eq!(50001, json_payload(bad_domain).await["code"].as_i64().unwrap());
+    assert_eq!(
+        50001,
+        json_payload(bad_domain).await["code"].as_i64().unwrap()
+    );
 
     let bad_ip = router
         .clone()
@@ -284,7 +287,7 @@ fn signed_request(method: &str, path: &str, body: Option<Value>) -> Request<Body
     let mut builder = Request::builder()
         .method(method)
         .uri(path)
-        .internal_trusted_subject(10, 20, 30);
+        .internal_trusted_subject(100001, 0, 30);
     let body = match body {
         Some(value) => {
             builder = builder.header("content-type", "application/json");

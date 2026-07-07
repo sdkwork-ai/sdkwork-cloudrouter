@@ -10,9 +10,9 @@ use crate::infrastructure::sql::sql_admin_site::{
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     AdminSiteChannelItem, AdminSiteChannelListPage, AdminSiteConnectionCheckItem, AdminSiteFuture,
-    AdminSiteItem, AdminSiteListPage, AdminSiteStore, CreateAdminSiteCommand, DeleteAdminSiteCommand,
-    ListAdminSiteChannelsQuery, ListAdminSitesQuery, TestAdminSiteConnectionCommand,
-    UpdateAdminSiteCommand,
+    AdminSiteItem, AdminSiteListPage, AdminSiteStore, CreateAdminSiteCommand,
+    DeleteAdminSiteCommand, ListAdminSiteChannelsQuery, ListAdminSitesQuery,
+    TestAdminSiteConnectionCommand, UpdateAdminSiteCommand,
 };
 
 const SITE_TARGET_TYPE: i32 = 93;
@@ -101,7 +101,10 @@ async fn list_sites(pool: &PgPool, query: ListAdminSitesQuery) -> DomainResult<A
         .first()
         .and_then(|row| row.try_get::<i64, _>("total").ok())
         .unwrap_or(0);
-    let items = rows.into_iter().map(site_from_row).collect::<DomainResult<Vec<_>>>()?;
+    let items = rows
+        .into_iter()
+        .map(site_from_row)
+        .collect::<DomainResult<Vec<_>>>()?;
     Ok(AdminSiteListPage {
         items,
         total,

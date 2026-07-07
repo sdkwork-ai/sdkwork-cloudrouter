@@ -133,6 +133,31 @@ SDK_GENERATED_OPENAPI_PATHS = {
     "clawrouter-backend-sdk": Path("generated/openapi/clawrouter-backend-openapi.json"),
     "clawrouter-open-sdk": Path("apps/sdkwork-clawrouter-pc/public/openapi.json"),
 }
+
+
+def infer_external_protocol_id(route_path: str) -> str:
+    normalized = str(route_path or "").replace("\\", "/")
+    if normalized.startswith("/v1/"):
+        return "openai-v1"
+    if normalized.startswith("/anthropic/"):
+        return "anthropic-messages"
+    if normalized.startswith("/google/"):
+        return "google-gemini-v1beta"
+    if normalized.startswith("/kling/"):
+        return "kling-v1"
+    if normalized.startswith("/midjourney/"):
+        return "midjourney-v1"
+    if normalized.startswith("/nano-banana/"):
+        return "nano-banana-v1"
+    if normalized.startswith("/suno/"):
+        return "suno-v1"
+    if normalized.startswith("/vidu/"):
+        return "vidu-v1"
+    if normalized.startswith("/volcengine/"):
+        return "volcengine-v1"
+    return "clawrouter-vendor-relay"
+
+
 SDK_DEPENDENCIES = {
     "clawrouter-app-sdk": [
         {
@@ -752,10 +777,15 @@ class SdkRuntimeStandardizer:
         authority = SDK_API_AUTHORITIES[sdk_family]
         payload["x-sdkwork-owner"] = SDK_OWNER
         payload["x-sdkwork-api-authority"] = authority
+        if sdk_family == "clawrouter-open-sdk":
+            info = payload.setdefault("info", {})
+            if isinstance(info, dict):
+                info["x-sdkwork-wire-protocol"] = "external"
+                info["x-sdkwork-external-protocol-id"] = "clawrouter-vendor-gateway"
         paths = payload.get("paths")
         if not isinstance(paths, dict):
             return
-        for path_item in paths.values():
+        for route_path, path_item in paths.items():
             if not isinstance(path_item, dict):
                 continue
             for method, operation in path_item.items():
@@ -763,6 +793,9 @@ class SdkRuntimeStandardizer:
                     continue
                 operation["x-sdkwork-owner"] = SDK_OWNER
                 operation["x-sdkwork-api-authority"] = authority
+                if sdk_family == "clawrouter-open-sdk":
+                    operation["x-sdkwork-wire-protocol"] = "external"
+                    operation["x-sdkwork-external-protocol-id"] = infer_external_protocol_id(str(route_path))
 
     def _dependency_operation_keys(self, dependency: dict[str, Any]) -> set[str]:
         workspace = str(dependency.get("workspace") or "")
@@ -1133,8 +1166,12 @@ class SdkRuntimeStandardizer:
     def _build_assembly(self, sdk_family: str, family: Path, package: dict[str, Any]) -> dict[str, Any]:
         typescript_directory = SDK_TYPESCRIPT_DIRECTORIES[sdk_family]
         typescript_generated_path = f"{typescript_directory}/generated/server-openapi"
-        package_name = str(package.get("name") or SDK_PACKAGE_NAMES[sdk_family])
+        package_name = SDK_PACKAGE_NAMES[sdk_family]
         version = str(package.get("version") or "0.1.0")
+        generated_package = self._read_json_or_none(
+            family / typescript_generated_path / "package.json"
+        ) or {}
+        generated_package_name = str(generated_package.get("name") or package_name)
         languages: list[dict[str, Any]] = [
             {
                 "language": "typescript",
@@ -1161,7 +1198,7 @@ class SdkRuntimeStandardizer:
                         "layer": "generated-output",
                         "packagePath": typescript_generated_path,
                         "manifestPath": f"{typescript_generated_path}/package.json",
-                        "name": package_name,
+                        "name": generated_package_name,
                         "version": version,
                         "description": f"{SDK_DESCRIPTIONS[sdk_family]} generator-owned transport output",
                         "entrypoints": {
@@ -1647,8 +1684,6 @@ class SdkRuntimeStandardizer:
                 "CHANGELOG.md",
                 "LICENSE",
                 "README.md",
-                "package.json",
-                "sdkwork-sdk.json",
                 "tsconfig.json",
             }
         )
@@ -1709,8 +1744,6 @@ class SdkRuntimeStandardizer:
             "CHANGELOG.md",
             "LICENSE",
             "README.md",
-            "package.json",
-            "sdkwork-sdk.json",
             "tsconfig.json",
         }
 
@@ -1746,6 +1779,38 @@ class SdkRuntimeStandardizer:
         updated: list[Path] = []
         package_path = base / "package.json"
         package = self._read_json(package_path)
+        package["name"] = SDK_PACKAGE_NAMES[sdk_family]
+        package["version"] = str(package.get("version") or "0.1.0")
+        package["sdkworkRole"] = "composed-facade"
+        package["description"] = SDK_DESCRIPTIONS[sdk_family]
+        package["author"] = "SDKWork Team"
+        package["license"] = "MIT"
+        package["type"] = "module"
+        package["main"] = "./dist/index.cjs"
+        package["module"] = "./dist/index.js"
+        package["types"] = "./dist/index.d.ts"
+        exports = package.setdefault("exports", {})
+        if not isinstance(exports, dict):
+            exports = {}
+            package["exports"] = exports
+        exports["."] = {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs",
+        }
+        domains_entry = base / "src" / "domains" / "index.ts"
+        if domains_entry.is_file():
+            exports["./domains"] = {
+                "types": "./src/domains/index.ts",
+                "import": "./src/domains/index.ts",
+                "default": "./src/domains/index.ts",
+            }
+        else:
+            exports.pop("./domains", None)
+        package["publishConfig"] = {
+            "access": "public",
+            "registry": "https://registry.npmjs.org/",
+        }
 
         scripts = package.setdefault("scripts", {})
         if not isinstance(scripts, dict):

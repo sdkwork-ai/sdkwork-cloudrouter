@@ -133,7 +133,7 @@ async fn admin_api_serves_admin_analytics_overview_from_database_runtime() {
     let response = router
         .oneshot(app_session_request(
             "GET",
-            "/backend/v3/api/system/analytics/admin/overview?time_range=daily&limit=10",
+            "/backend/v3/api/system/analytics/admin/overview?time_range=daily&ranking_size=10",
             Body::empty(),
         ))
         .await
@@ -147,7 +147,7 @@ async fn admin_api_serves_admin_analytics_overview_from_database_runtime() {
 
     assert_eq!("2000", payload["code"]);
     assert_eq!("daily", payload["data"]["timeRange"]);
-    assert_eq!(10, payload["data"]["limit"]);
+    assert_eq!(10, payload["data"]["rankingSize"]);
     assert!(payload["data"]["summary"]["totalRequests"].is_number());
     assert!(payload["data"]["userRankings"]["points"].is_array());
     assert!(payload["data"]["modelRankings"]["points"].is_array());
@@ -193,8 +193,8 @@ async fn admin_api_manual_model_ranking_refresh_runs_worker_and_records_audit() 
     assert_eq!("2000", payload["code"]);
     assert_eq!(true, payload["data"]["triggered"]);
     assert_eq!("commercial-default", payload["data"]["rankScope"]);
-    assert_eq!(10, payload["data"]["tenantId"]);
-    assert_eq!(20, payload["data"]["organizationId"]);
+    assert_eq!(100001, payload["data"]["tenantId"]);
+    assert_eq!(0, payload["data"]["organizationId"]);
     assert!(payload["data"]["status"] == "empty" || payload["data"]["status"] == "succeeded");
 
     let pool = sqlx::SqlitePool::connect(&database_url).await.unwrap();
@@ -216,15 +216,14 @@ async fn fresh_sqlite_install_refreshes_model_rankings_from_usage_and_serves_adm
     let api_key_config =
         ApiKeySecurityConfig::from_pepper_secret("0123456789abcdef0123456789abcdef").unwrap();
 
-    let admin_router =
-        sdkwork_clawrouter_admin_gateway::router_with_database_and_api_key_config(
-            database_config,
-            Some(api_key_config),
-            Some(trusted_subject_config().unwrap()),
-            Some(app_session_config().unwrap()),
-        )
-        .await
-        .unwrap();
+    let admin_router = sdkwork_clawrouter_admin_gateway::router_with_database_and_api_key_config(
+        database_config,
+        Some(api_key_config),
+        Some(trusted_subject_config().unwrap()),
+        Some(app_session_config().unwrap()),
+    )
+    .await
+    .unwrap();
 
     let pool = sqlx::SqlitePool::connect(&database_url).await.unwrap();
     sqlx::query("DELETE FROM ai_model_rank_snapshot")
@@ -258,8 +257,8 @@ async fn fresh_sqlite_install_refreshes_model_rankings_from_usage_and_serves_adm
     assert_eq!("succeeded", refresh_payload["data"]["status"]);
     assert_eq!(true, refresh_payload["data"]["triggered"]);
     assert_eq!("commercial-default", refresh_payload["data"]["rankScope"]);
-    assert_eq!(10, refresh_payload["data"]["tenantId"]);
-    assert_eq!(20, refresh_payload["data"]["organizationId"]);
+    assert_eq!(100001, refresh_payload["data"]["tenantId"]);
+    assert_eq!(0, refresh_payload["data"]["organizationId"]);
     assert!(refresh_payload["data"]["generatedCount"]
         .as_i64()
         .is_some_and(|count| count > 0));
@@ -333,7 +332,7 @@ async fn fresh_sqlite_install_refreshes_model_rankings_from_usage_and_serves_adm
     let backend_payload = request_json(
         admin_router,
         "GET",
-        "/backend/v3/api/ai/model_rankings?limit=5",
+        "/backend/v3/api/ai/model_rankings?page_size=5",
         Body::empty(),
     )
     .await;
@@ -352,7 +351,7 @@ async fn fresh_sqlite_install_refreshes_model_rankings_from_usage_and_serves_adm
     let app_payload = request_json(
         app_router,
         "GET",
-        "/app/v3/api/ai/model_rankings?limit=5",
+        "/app/v3/api/ai/model_rankings?page_size=5",
         Body::empty(),
     )
     .await;
@@ -473,7 +472,7 @@ fn app_session_request(method: &str, path: &str, body: Body) -> Request<Body> {
     let issued_at = current_unix_seconds();
     let expires_at = issued_at + 3600;
     let (authorization, access_token) = app_session_dual_token_headers(
-        trusted_request_subject(100_001, 0, 1),
+        trusted_request_subject(100001, 0, 30),
         issued_at,
         expires_at,
     )

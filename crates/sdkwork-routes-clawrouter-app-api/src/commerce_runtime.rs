@@ -9,23 +9,23 @@ use std::sync::Arc;
 use axum::Router;
 use sdkwork_claw_config::DatabaseConfig;
 use sdkwork_claw_http::{
-    materialize_federated_database_env_from_claw_config,
-    merge_federated_app_capability_router, merge_federated_app_capability_router_with_optional_auth,
-    AppSubjectBoundaryConfig,
+    materialize_federated_database_env_from_claw_config, merge_federated_app_capability_router,
+    merge_federated_app_capability_router_with_optional_auth, AppSubjectBoundaryConfig,
 };
 use sdkwork_database_sqlx::DatabasePool;
-use sdkwork_membership_repository_sqlx::{
-    app_membership_router_with_postgres_pool, app_membership_router_with_sqlite_pool,
-};
+use sdkwork_payment_providers::{PaymentProviderRegistry, ProviderCredentialBundle};
 use sdkwork_payment_service_host::PaymentServiceHost;
-use sdkwork_routes_membership_app_api::wrap_router_with_web_framework_from_env;
-use sdkwork_routes_payment_app_api::routes::build_payment_app_router;
 use sdkwork_routes_account_app_api::{
     app_account_wallet_router_with_postgres_pool, app_account_wallet_router_with_sqlite_pool,
+};
+use sdkwork_routes_membership_app_api::{
+    app_membership_router_with_postgres_pool, app_membership_router_with_sqlite_pool,
+    wrap_router_with_web_framework_from_env,
 };
 use sdkwork_routes_order_app_api::{
     app_order_router_with_postgres_pool, app_order_router_with_sqlite_pool,
 };
+use sdkwork_routes_payment_app_api::routes::build_payment_app_router;
 use sdkwork_routes_promotion_app_api::{
     app_promotion_router_with_postgres_pool, app_promotion_router_with_sqlite_pool,
 };
@@ -54,7 +54,8 @@ pub async fn merge_federated_commerce_app_routers(
 
 async fn wire_commerce_app_router(payment: Arc<PaymentServiceHost>) -> Result<Router, String> {
     let promotion_router = build_promotion_router_from_payment_pool(payment.database_pool())?;
-    let account_wallet_router = build_account_wallet_router_from_payment_pool(payment.database_pool())?;
+    let account_wallet_router =
+        build_account_wallet_router_from_payment_pool(payment.database_pool())?;
     let order_router = build_order_router_from_payment_pool(payment.database_pool())?;
 
     Ok(Router::new()
@@ -85,14 +86,24 @@ fn build_promotion_router_from_payment_pool(pool: &DatabasePool) -> Result<Route
 
 fn build_account_wallet_router_from_payment_pool(pool: &DatabasePool) -> Result<Router, String> {
     Ok(match pool {
-        DatabasePool::Postgres(pool, _) => app_account_wallet_router_with_postgres_pool(pool.clone()),
+        DatabasePool::Postgres(pool, _) => {
+            app_account_wallet_router_with_postgres_pool(pool.clone())
+        }
         DatabasePool::Sqlite(pool, _) => app_account_wallet_router_with_sqlite_pool(pool.clone()),
     })
 }
 
 fn build_order_router_from_payment_pool(pool: &DatabasePool) -> Result<Router, String> {
+    let credentials = ProviderCredentialBundle::from_env();
+    let registry = Arc::new(PaymentProviderRegistry::from_credentials(
+        credentials.clone(),
+    ));
     Ok(match pool {
-        DatabasePool::Postgres(pool, _) => app_order_router_with_postgres_pool(pool.clone()),
-        DatabasePool::Sqlite(pool, _) => app_order_router_with_sqlite_pool(pool.clone()),
+        DatabasePool::Postgres(pool, _) => {
+            app_order_router_with_postgres_pool(pool.clone(), registry.clone(), credentials.clone())
+        }
+        DatabasePool::Sqlite(pool, _) => {
+            app_order_router_with_sqlite_pool(pool.clone(), registry, credentials)
+        }
     })
 }

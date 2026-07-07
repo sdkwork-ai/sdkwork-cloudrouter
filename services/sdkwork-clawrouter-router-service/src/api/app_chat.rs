@@ -282,10 +282,10 @@ async fn create_conversation(
         }
     };
     match state.store.create_conversation(command).await {
-        Ok(item) => {
-            Json(success_envelope(AppChatConversationEnvelope { item })).into_response()
+        Ok(item) => Json(success_envelope(AppChatConversationEnvelope { item })).into_response(),
+        Err(error) if error.is_conflict() => {
+            problem_from_wire_code("4090", error.to_string()).into_response()
         }
-        Err(error) if error.is_conflict() => problem_from_wire_code("4090", error.to_string()).into_response(),
         Err(error) => app_chat_system_response("app chat conversation is unavailable", error),
     }
 }
@@ -308,7 +308,12 @@ async fn list_messages(
     };
     match state
         .store
-        .list_messages(subject, conversation_id, pagination.page_no, pagination.page_size)
+        .list_messages(
+            subject,
+            conversation_id,
+            pagination.page_no,
+            pagination.page_size,
+        )
         .await
     {
         Ok(list) => json_success_list_response(
@@ -366,7 +371,9 @@ async fn complete_turn_response(
     match state.store.complete_turn_response(command).await {
         Ok(outcome) => Json(success_envelope(outcome)).into_response(),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
-        Err(error) if error.is_conflict() => problem_from_wire_code("4090", error.to_string()).into_response(),
+        Err(error) if error.is_conflict() => {
+            problem_from_wire_code("4090", error.to_string()).into_response()
+        }
         Err(error) => app_chat_system_response("app chat turn response is unavailable", error),
     }
 }

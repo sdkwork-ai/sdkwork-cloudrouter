@@ -2,12 +2,12 @@ use std::net::IpAddr;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::api::app_sql_subject::{RequiredAppSqlScopedSubject, SqlScopedSubject};
 use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, patch};
 use axum::{Json, Router};
-use crate::api::app_sql_subject::{RequiredAppSqlScopedSubject, SqlScopedSubject};
 use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
@@ -201,9 +201,7 @@ where
     C: PricingCatalog + Send + Sync + 'static,
 {
     let snapshot = GatewayApiKeyManagementSnapshot::from_pricing_catalog(state.catalog.as_ref());
-    Json(success_envelope(public_catalog_list_response(
-        &snapshot,
-    )))
+    Json(success_envelope(public_catalog_list_response(&snapshot)))
 }
 
 async fn fetch_catalog_key_groups<C>(
@@ -248,8 +246,7 @@ async fn fetch_keys(
             };
             json_success_list_response(
                 None,
-                page
-                    .items
+                page.items
                     .into_iter()
                     .map(|api_key| to_item_response(&snapshot, api_key))
                     .collect(),
@@ -328,10 +325,18 @@ async fn create_key(
 ) -> Response {
     match create_key_inner(state, scope, headers, request).await {
         Ok(response) => Json(success_envelope(response)).into_response(),
-        Err(AppApiKeyCreateError::Unauthorized(message)) => problem_from_wire_code("4010", message).into_response(),
-        Err(AppApiKeyCreateError::BadRequest(message)) => problem_from_wire_code("4001", message).into_response(),
-        Err(AppApiKeyCreateError::System(message)) => problem_from_wire_code("5000", message).into_response(),
-        Err(AppApiKeyCreateError::Conflict(message)) => problem_from_wire_code("4090", message).into_response(),
+        Err(AppApiKeyCreateError::Unauthorized(message)) => {
+            problem_from_wire_code("4010", message).into_response()
+        }
+        Err(AppApiKeyCreateError::BadRequest(message)) => {
+            problem_from_wire_code("4001", message).into_response()
+        }
+        Err(AppApiKeyCreateError::System(message)) => {
+            problem_from_wire_code("5000", message).into_response()
+        }
+        Err(AppApiKeyCreateError::Conflict(message)) => {
+            problem_from_wire_code("4090", message).into_response()
+        }
     }
 }
 
@@ -344,10 +349,18 @@ async fn update_key(
 ) -> Response {
     match update_key_inner(state, scope, headers, api_key_id, request).await {
         Ok(response) => Json(success_envelope(response)).into_response(),
-        Err(AppApiKeyCreateError::Unauthorized(message)) => problem_from_wire_code("4010", message).into_response(),
-        Err(AppApiKeyCreateError::BadRequest(message)) => problem_from_wire_code("4001", message).into_response(),
-        Err(AppApiKeyCreateError::System(message)) => problem_from_wire_code("5000", message).into_response(),
-        Err(AppApiKeyCreateError::Conflict(message)) => problem_from_wire_code("4090", message).into_response(),
+        Err(AppApiKeyCreateError::Unauthorized(message)) => {
+            problem_from_wire_code("4010", message).into_response()
+        }
+        Err(AppApiKeyCreateError::BadRequest(message)) => {
+            problem_from_wire_code("4001", message).into_response()
+        }
+        Err(AppApiKeyCreateError::System(message)) => {
+            problem_from_wire_code("5000", message).into_response()
+        }
+        Err(AppApiKeyCreateError::Conflict(message)) => {
+            problem_from_wire_code("4090", message).into_response()
+        }
     }
 }
 
@@ -359,10 +372,18 @@ async fn delete_key(
 ) -> Response {
     match delete_key_inner(state, scope, headers, api_key_id).await {
         Ok(response) => Json(success_envelope(response)).into_response(),
-        Err(AppApiKeyCreateError::Unauthorized(message)) => problem_from_wire_code("4010", message).into_response(),
-        Err(AppApiKeyCreateError::BadRequest(message)) => problem_from_wire_code("4001", message).into_response(),
-        Err(AppApiKeyCreateError::System(message)) => problem_from_wire_code("5000", message).into_response(),
-        Err(AppApiKeyCreateError::Conflict(message)) => problem_from_wire_code("4090", message).into_response(),
+        Err(AppApiKeyCreateError::Unauthorized(message)) => {
+            problem_from_wire_code("4010", message).into_response()
+        }
+        Err(AppApiKeyCreateError::BadRequest(message)) => {
+            problem_from_wire_code("4001", message).into_response()
+        }
+        Err(AppApiKeyCreateError::System(message)) => {
+            problem_from_wire_code("5000", message).into_response()
+        }
+        Err(AppApiKeyCreateError::Conflict(message)) => {
+            problem_from_wire_code("4090", message).into_response()
+        }
     }
 }
 

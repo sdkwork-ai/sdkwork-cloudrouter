@@ -8,240 +8,415 @@ import com.sdkwork.clawrouter.backend.http.HttpClient
 
 class SystemApi(private val client: HttpClient) {
 
-    /** List overview */
-    suspend fun analyticsAdminOverviewRetrieve(timeRange: String? = null, startTime: String? = null, endTime: String? = null, limit: String? = null): AnalyticsAdminOverviewRetrieveResult? {
+    /** Create */
+    suspend fun afterSalesReviewsCreate(afterSalesRequestId: String): AfterSalesReviewsCreateResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/after_sales/requests/${serializePathParameter(afterSalesRequestId, PathParameterSpec("afterSalesRequestId", "simple", false))}/reviews"), null)
+        return client.convertValue(raw, object : TypeReference<AfterSalesReviewsCreateResult>() {})
+    }
+
+    /** Retrieve */
+    suspend fun analyticsAdminOverviewRetrieve(timeRange: String? = null, startTime: String? = null, endTime: String? = null, rankingSize: Int? = null): AnalyticsAdminOverviewRetrieveResult? {
         val query = buildQueryString(listOf(
             QueryParameterSpec("time_range", timeRange, "form", true, false, null),
             QueryParameterSpec("start_time", startTime, "form", true, false, null),
             QueryParameterSpec("end_time", endTime, "form", true, false, null),
-            QueryParameterSpec("limit", limit, "form", true, false, null)
+            QueryParameterSpec("ranking_size", rankingSize, "form", true, false, null)
         ))
         val raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/system/analytics/admin/overview"), query))
         return client.convertValue(raw, object : TypeReference<AnalyticsAdminOverviewRetrieveResult>() {})
     }
 
-    /** Retrieve IAM auth runtime settings */
+    /** Retrieve */
     suspend fun authSettingsRetrieve(): AuthSettingsRetrieveResult? {
         val raw = client.get(ApiPaths.backendPath("/system/auth/settings"))
         return client.convertValue(raw, object : TypeReference<AuthSettingsRetrieveResult>() {})
     }
 
-    /** Update IAM auth runtime settings */
-    suspend fun authSettingsUpdate(body: AdminAuthSettingsUpdateRequest): AuthSettingsUpdateResult? {
-        val raw = client.patch(ApiPaths.backendPath("/system/auth/settings"), body, null, null, "application/json")
+    /** Update */
+    suspend fun authSettingsUpdate(): AuthSettingsUpdateResult? {
+        val raw = client.patch(ApiPaths.backendPath("/system/auth/settings"), null)
         return client.convertValue(raw, object : TypeReference<AuthSettingsUpdateResult>() {})
     }
 
-    /** Delete one runtime cache instance */
+    /** Delete */
     suspend fun cacheInstancesDelete(instanceName: String): CacheInstancesDeleteResult? {
         val raw = client.delete(ApiPaths.backendPath("/system/cache/instances/${serializePathParameter(instanceName, PathParameterSpec("instanceName", "simple", false))}"))
         return client.convertValue(raw, object : TypeReference<CacheInstancesDeleteResult>() {})
     }
 
-    /** Refresh one runtime cache instance */
+    /** Create */
     suspend fun cacheInstancesRefreshCreate(instanceName: String): CacheInstancesRefreshCreateResult? {
         val raw = client.post(ApiPaths.backendPath("/system/cache/instances/${serializePathParameter(instanceName, PathParameterSpec("instanceName", "simple", false))}/refresh"), null)
         return client.convertValue(raw, object : TypeReference<CacheInstancesRefreshCreateResult>() {})
     }
 
-    /** Delete a runtime cache namespace */
+    /** Delete */
     suspend fun cacheNamespacesDelete(namespace: String): CacheNamespacesDeleteResult? {
         val raw = client.delete(ApiPaths.backendPath("/system/cache/namespaces/${serializePathParameter(namespace, PathParameterSpec("namespace", "simple", false))}"))
         return client.convertValue(raw, object : TypeReference<CacheNamespacesDeleteResult>() {})
     }
 
-    /** List runtime cache keys in a namespace */
-    suspend fun cacheNamespacesKeysList(namespace: String, limit: String? = null, cursor: String? = null): CacheNamespacesKeysListResult? {
+    /** List */
+    suspend fun cacheNamespacesKeysList(namespace: String, pageSize: Int? = null, cursor: String? = null): CacheNamespacesKeysListResult? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", pageSize, "form", true, false, null),
             QueryParameterSpec("cursor", cursor, "form", true, false, null)
         ))
         val raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/system/cache/namespaces/${serializePathParameter(namespace, PathParameterSpec("namespace", "simple", false))}/keys"), query))
         return client.convertValue(raw, object : TypeReference<CacheNamespacesKeysListResult>() {})
     }
 
-    /** Delete a runtime cache key */
+    /** Delete */
     suspend fun cacheNamespacesKeysDelete(namespace: String, key: String): CacheNamespacesKeysDeleteResult? {
         val raw = client.delete(ApiPaths.backendPath("/system/cache/namespaces/${serializePathParameter(namespace, PathParameterSpec("namespace", "simple", false))}/keys/${serializePathParameter(key, PathParameterSpec("key", "simple", false))}"))
         return client.convertValue(raw, object : TypeReference<CacheNamespacesKeysDeleteResult>() {})
     }
 
-    /** Refresh one runtime cache namespace */
+    /** Create */
     suspend fun cacheNamespacesRefreshCreate(namespace: String): CacheNamespacesRefreshCreateResult? {
         val raw = client.post(ApiPaths.backendPath("/system/cache/namespaces/${serializePathParameter(namespace, PathParameterSpec("namespace", "simple", false))}/refresh"), null)
         return client.convertValue(raw, object : TypeReference<CacheNamespacesRefreshCreateResult>() {})
     }
 
-    /** Retrieve runtime cache overview */
+    /** Retrieve */
     suspend fun cacheOverviewRetrieve(): CacheOverviewRetrieveResult? {
         val raw = client.get(ApiPaths.backendPath("/system/cache/overview"))
         return client.convertValue(raw, object : TypeReference<CacheOverviewRetrieveResult>() {})
     }
 
-    /** Refresh all runtime cache instances */
+    /** Create */
     suspend fun cacheRefreshCreate(): CacheRefreshCreateResult? {
         val raw = client.post(ApiPaths.backendPath("/system/cache/refresh"), null)
         return client.convertValue(raw, object : TypeReference<CacheRefreshCreateResult>() {})
     }
 
-    /** List dashboard data */
+    /** Retrieve */
     suspend fun dashboardAdminOverviewRetrieve(): DashboardAdminOverviewRetrieveResult? {
         val raw = client.get(ApiPaths.backendPath("/system/dashboard/admin/overview"))
         return client.convertValue(raw, object : TypeReference<DashboardAdminOverviewRetrieveResult>() {})
     }
 
-    /** List firewalls */
+    /** List */
     suspend fun firewallsRulesList(): FirewallsRulesListResult? {
         val raw = client.get(ApiPaths.backendPath("/system/firewalls/rules"))
         return client.convertValue(raw, object : TypeReference<FirewallsRulesListResult>() {})
     }
 
-    /** Create firewall */
-    suspend fun firewallsRulesCreate(body: AdminFirewallRuleCreateRequest): FirewallsRulesCreateResult? {
-        val raw = client.post(ApiPaths.backendPath("/system/firewalls/rules"), body, null, null, "application/json")
+    /** Create */
+    suspend fun firewallsRulesCreate(): FirewallsRulesCreateResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/firewalls/rules"), null)
         return client.convertValue(raw, object : TypeReference<FirewallsRulesCreateResult>() {})
     }
 
-    /** Delete firewall */
+    /** Delete */
     suspend fun firewallsRulesDelete(ruleId: String): FirewallsRulesDeleteResult? {
         val raw = client.delete(ApiPaths.backendPath("/system/firewalls/rules/${serializePathParameter(ruleId, PathParameterSpec("ruleId", "simple", false))}"))
         return client.convertValue(raw, object : TypeReference<FirewallsRulesDeleteResult>() {})
     }
 
-    /** List installation status */
+    /** Retrieve */
     suspend fun installationStatusRetrieve(): InstallationStatusRetrieveResult? {
         val raw = client.get(ApiPaths.backendPath("/system/installation/status"))
         return client.convertValue(raw, object : TypeReference<InstallationStatusRetrieveResult>() {})
     }
 
-    /** List referral stats */
+    /** List */
     suspend fun marketingReferralStatsList(): MarketingReferralStatsListResult? {
         val raw = client.get(ApiPaths.backendPath("/system/marketing/referral_stats"))
         return client.convertValue(raw, object : TypeReference<MarketingReferralStatsListResult>() {})
     }
 
-    /** List alerts */
+    /** List */
     suspend fun monitorAlertsList(): MonitorAlertsListResult? {
         val raw = client.get(ApiPaths.backendPath("/system/monitor/alerts"))
         return client.convertValue(raw, object : TypeReference<MonitorAlertsListResult>() {})
     }
 
-    /** List nodes */
+    /** List */
     suspend fun monitorNodesList(): MonitorNodesListResult? {
         val raw = client.get(ApiPaths.backendPath("/system/monitor/nodes"))
         return client.convertValue(raw, object : TypeReference<MonitorNodesListResult>() {})
     }
 
-    /** List performance data */
+    /** List */
     suspend fun monitorPerformanceList(): MonitorPerformanceListResult? {
         val raw = client.get(ApiPaths.backendPath("/system/monitor/performance"))
         return client.convertValue(raw, object : TypeReference<MonitorPerformanceListResult>() {})
     }
 
-    /** List token limits */
+    /** List */
     suspend fun rateLimitsApiKeysList(): RateLimitsApiKeysListResult? {
         val raw = client.get(ApiPaths.backendPath("/system/rate_limits/api_keys"))
         return client.convertValue(raw, object : TypeReference<RateLimitsApiKeysListResult>() {})
     }
 
-    /** Create token limit */
-    suspend fun rateLimitsApiKeysCreate(body: AdminTokenLimitCreateRequest): RateLimitsApiKeysCreateResult? {
-        val raw = client.post(ApiPaths.backendPath("/system/rate_limits/api_keys"), body, null, null, "application/json")
+    /** Create */
+    suspend fun rateLimitsApiKeysCreate(): RateLimitsApiKeysCreateResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/rate_limits/api_keys"), null)
         return client.convertValue(raw, object : TypeReference<RateLimitsApiKeysCreateResult>() {})
     }
 
-    /** List IP limits */
+    /** List */
     suspend fun rateLimitsIpList(): RateLimitsIpListResult? {
         val raw = client.get(ApiPaths.backendPath("/system/rate_limits/ip"))
         return client.convertValue(raw, object : TypeReference<RateLimitsIpListResult>() {})
     }
 
-    /** Create IP limit */
-    suspend fun rateLimitsIpCreate(body: AdminIpLimitCreateRequest): RateLimitsIpCreateResult? {
-        val raw = client.post(ApiPaths.backendPath("/system/rate_limits/ip"), body, null, null, "application/json")
+    /** Create */
+    suspend fun rateLimitsIpCreate(): RateLimitsIpCreateResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/rate_limits/ip"), null)
         return client.convertValue(raw, object : TypeReference<RateLimitsIpCreateResult>() {})
     }
 
-    /** List model limits */
+    /** List */
     suspend fun rateLimitsModelsList(): RateLimitsModelsListResult? {
         val raw = client.get(ApiPaths.backendPath("/system/rate_limits/models"))
         return client.convertValue(raw, object : TypeReference<RateLimitsModelsListResult>() {})
     }
 
-    /** Create model limit */
-    suspend fun rateLimitsModelsCreate(body: AdminModelLimitCreateRequest): RateLimitsModelsCreateResult? {
-        val raw = client.post(ApiPaths.backendPath("/system/rate_limits/models"), body, null, null, "application/json")
+    /** Create */
+    suspend fun rateLimitsModelsCreate(): RateLimitsModelsCreateResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/rate_limits/models"), null)
         return client.convertValue(raw, object : TypeReference<RateLimitsModelsCreateResult>() {})
     }
 
-    /** List logs */
-    suspend fun recordsList(page: String? = null, pageSize: String? = null, user: String? = null, token: String? = null, model: String? = null): RecordsListResult? {
-        val query = buildQueryString(listOf(
-            QueryParameterSpec("page", page, "form", true, false, null),
-            QueryParameterSpec("page_size", pageSize, "form", true, false, null),
-            QueryParameterSpec("user", user, "form", true, false, null),
-            QueryParameterSpec("token", token, "form", true, false, null),
-            QueryParameterSpec("model", model, "form", true, false, null)
-        ))
-        val raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/system/records"), query))
+    /** List */
+    suspend fun recordsList(): RecordsListResult? {
+        val raw = client.get(ApiPaths.backendPath("/system/records"))
         return client.convertValue(raw, object : TypeReference<RecordsListResult>() {})
     }
 
-    /** Retrieve runtime region settings */
+    /** Retrieve */
     suspend fun runtimeRegionSettingsRetrieve(): RuntimeRegionSettingsRetrieveResult? {
         val raw = client.get(ApiPaths.backendPath("/system/runtime_region/settings"))
         return client.convertValue(raw, object : TypeReference<RuntimeRegionSettingsRetrieveResult>() {})
     }
 
-    /** Update runtime region settings */
-    suspend fun runtimeRegionSettingsUpdate(body: AdminRuntimeRegionSettingsUpdateRequest): RuntimeRegionSettingsUpdateResult? {
-        val raw = client.patch(ApiPaths.backendPath("/system/runtime_region/settings"), body, null, null, "application/json")
+    /** Update */
+    suspend fun runtimeRegionSettingsUpdate(): RuntimeRegionSettingsUpdateResult? {
+        val raw = client.patch(ApiPaths.backendPath("/system/runtime_region/settings"), null)
         return client.convertValue(raw, object : TypeReference<RuntimeRegionSettingsUpdateResult>() {})
     }
 
-    /** List service nodes */
-    suspend fun serviceNodesList(q: String? = null, status: String? = null): ServiceNodesListResult? {
-        val query = buildQueryString(listOf(
-            QueryParameterSpec("q", q, "form", true, false, null),
-            QueryParameterSpec("status", status, "form", true, false, null)
-        ))
-        val raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/system/service_nodes"), query))
+    /** List */
+    suspend fun serviceNodesList(): ServiceNodesListResult? {
+        val raw = client.get(ApiPaths.backendPath("/system/service_nodes"))
         return client.convertValue(raw, object : TypeReference<ServiceNodesListResult>() {})
     }
 
-    /** Create service node */
-    suspend fun serviceNodesCreate(body: AdminServiceNodeCreateRequest): ServiceNodesCreateResult? {
-        val raw = client.post(ApiPaths.backendPath("/system/service_nodes"), body, null, null, "application/json")
+    /** Create */
+    suspend fun serviceNodesCreate(): ServiceNodesCreateResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/service_nodes"), null)
         return client.convertValue(raw, object : TypeReference<ServiceNodesCreateResult>() {})
     }
 
-    /** Delete service node */
+    /** Delete */
     suspend fun serviceNodesDelete(nodeId: String): ServiceNodesDeleteResult? {
         val raw = client.delete(ApiPaths.backendPath("/system/service_nodes/${serializePathParameter(nodeId, PathParameterSpec("nodeId", "simple", false))}"))
         return client.convertValue(raw, object : TypeReference<ServiceNodesDeleteResult>() {})
     }
 
-    /** Update service node */
-    suspend fun serviceNodesUpdate(nodeId: String, body: AdminServiceNodeUpdateRequest): ServiceNodesUpdateResult? {
-        val raw = client.put(ApiPaths.backendPath("/system/service_nodes/${serializePathParameter(nodeId, PathParameterSpec("nodeId", "simple", false))}"), body, null, null, "application/json")
+    /** Update */
+    suspend fun serviceNodesUpdate(nodeId: String): ServiceNodesUpdateResult? {
+        val raw = client.put(ApiPaths.backendPath("/system/service_nodes/${serializePathParameter(nodeId, PathParameterSpec("nodeId", "simple", false))}"), null)
         return client.convertValue(raw, object : TypeReference<ServiceNodesUpdateResult>() {})
     }
 
-    /** Update service node status */
-    suspend fun serviceNodesStatusUpdate(nodeId: String, body: AdminServiceNodeStatusUpdateRequest): ServiceNodesStatusUpdateResult? {
-        val raw = client.put(ApiPaths.backendPath("/system/service_nodes/${serializePathParameter(nodeId, PathParameterSpec("nodeId", "simple", false))}/status"), body, null, null, "application/json")
+    /** Update */
+    suspend fun serviceNodesStatusUpdate(nodeId: String): ServiceNodesStatusUpdateResult? {
+        val raw = client.put(ApiPaths.backendPath("/system/service_nodes/${serializePathParameter(nodeId, PathParameterSpec("nodeId", "simple", false))}/status"), null)
         return client.convertValue(raw, object : TypeReference<ServiceNodesStatusUpdateResult>() {})
     }
 
-    /** Retrieve site branding and deployment personalization settings */
+    /** Create */
+    suspend fun shopsCreate(): ShopsCreateResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/shops"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsCreateResult>() {})
+    }
+
+    /** Update */
+    suspend fun shopsUpdate(shopId: String): ShopsUpdateResult? {
+        val raw = client.patch(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsUpdateResult>() {})
+    }
+
+    /** Approve */
+    suspend fun shopsApprove(shopId: String): ShopsApproveResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/approve"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsApproveResult>() {})
+    }
+
+    /** Upsert */
+    suspend fun shopsBrandAuthorizationsUpsert(shopId: String): ShopsBrandAuthorizationsUpsertResult? {
+        val raw = client.put(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/brand_authorizations"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsBrandAuthorizationsUpsertResult>() {})
+    }
+
+    /** Update */
+    suspend fun shopsBusinessHoursUpdate(shopId: String): ShopsBusinessHoursUpdateResult? {
+        val raw = client.patch(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/business_hours"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsBusinessHoursUpdateResult>() {})
+    }
+
+    /** Upsert */
+    suspend fun shopsCategoryBindingsUpsert(shopId: String): ShopsCategoryBindingsUpsertResult? {
+        val raw = client.put(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/category_bindings"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsCategoryBindingsUpsertResult>() {})
+    }
+
+    /** Create */
+    suspend fun shopsChannelsCreate(shopId: String): ShopsChannelsCreateResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/channels"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsChannelsCreateResult>() {})
+    }
+
+    /** Update */
+    suspend fun shopsChannelsUpdate(shopId: String, channelId: String): ShopsChannelsUpdateResult? {
+        val raw = client.patch(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/channels/${serializePathParameter(channelId, PathParameterSpec("channelId", "simple", false))}"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsChannelsUpdateResult>() {})
+    }
+
+    /** Close */
+    suspend fun shopsClose(shopId: String): ShopsCloseResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/close"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsCloseResult>() {})
+    }
+
+    /** Upsert */
+    suspend fun shopsCustomerServicesUpsert(shopId: String): ShopsCustomerServicesUpsertResult? {
+        val raw = client.put(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/customer_services"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsCustomerServicesUpsertResult>() {})
+    }
+
+    /** Update */
+    suspend fun shopsDepositAccountUpdate(shopId: String): ShopsDepositAccountUpdateResult? {
+        val raw = client.patch(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/deposit_account"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsDepositAccountUpdateResult>() {})
+    }
+
+    /** Review */
+    suspend fun shopsDepositAccountReview(shopId: String): ShopsDepositAccountReviewResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/deposit_account/review"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsDepositAccountReviewResult>() {})
+    }
+
+    /** Update */
+    suspend fun shopsFulfillmentProfileUpdate(shopId: String): ShopsFulfillmentProfileUpdateResult? {
+        val raw = client.patch(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/fulfillment_profile"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsFulfillmentProfileUpdateResult>() {})
+    }
+
+    /** Create */
+    suspend fun shopsPoliciesCreate(shopId: String): ShopsPoliciesCreateResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/policies"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsPoliciesCreateResult>() {})
+    }
+
+    /** Update */
+    suspend fun shopsPoliciesUpdate(shopId: String, policyId: String): ShopsPoliciesUpdateResult? {
+        val raw = client.patch(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/policies/${serializePathParameter(policyId, PathParameterSpec("policyId", "simple", false))}"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsPoliciesUpdateResult>() {})
+    }
+
+    /** Upsert */
+    suspend fun shopsQualificationsUpsert(shopId: String): ShopsQualificationsUpsertResult? {
+        val raw = client.put(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/qualifications"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsQualificationsUpsertResult>() {})
+    }
+
+    /** Reject */
+    suspend fun shopsReject(shopId: String): ShopsRejectResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/reject"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsRejectResult>() {})
+    }
+
+    /** Resume */
+    suspend fun shopsResume(shopId: String): ShopsResumeResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/resume"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsResumeResult>() {})
+    }
+
+    /** Upsert */
+    suspend fun shopsReturnAddressesUpsert(shopId: String): ShopsReturnAddressesUpsertResult? {
+        val raw = client.put(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/return_addresses"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsReturnAddressesUpsertResult>() {})
+    }
+
+    /** Create */
+    suspend fun shopsRiskSignalsCreate(shopId: String): ShopsRiskSignalsCreateResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/risk_signals"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsRiskSignalsCreateResult>() {})
+    }
+
+    /** Resolve */
+    suspend fun shopsRiskSignalsResolve(shopId: String, riskSignalId: String): ShopsRiskSignalsResolveResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/risk_signals/${serializePathParameter(riskSignalId, PathParameterSpec("riskSignalId", "simple", false))}/resolve"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsRiskSignalsResolveResult>() {})
+    }
+
+    /** Create */
+    suspend fun shopsServiceAreasCreate(shopId: String): ShopsServiceAreasCreateResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/service_areas"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsServiceAreasCreateResult>() {})
+    }
+
+    /** Update */
+    suspend fun shopsServiceAreasUpdate(shopId: String, serviceAreaId: String): ShopsServiceAreasUpdateResult? {
+        val raw = client.patch(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/service_areas/${serializePathParameter(serviceAreaId, PathParameterSpec("serviceAreaId", "simple", false))}"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsServiceAreasUpdateResult>() {})
+    }
+
+    /** Update */
+    suspend fun shopsSettlementProfileUpdate(shopId: String): ShopsSettlementProfileUpdateResult? {
+        val raw = client.patch(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/settlement_profile"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsSettlementProfileUpdateResult>() {})
+    }
+
+    /** Approve */
+    suspend fun shopsSettlementProfileApprove(shopId: String): ShopsSettlementProfileApproveResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/settlement_profile/approve"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsSettlementProfileApproveResult>() {})
+    }
+
+    /** Reject */
+    suspend fun shopsSettlementProfileReject(shopId: String): ShopsSettlementProfileRejectResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/settlement_profile/reject"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsSettlementProfileRejectResult>() {})
+    }
+
+    /** Upsert */
+    suspend fun shopsShippingTemplatesUpsert(shopId: String): ShopsShippingTemplatesUpsertResult? {
+        val raw = client.put(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/shipping_templates"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsShippingTemplatesUpsertResult>() {})
+    }
+
+    /** Create review */
+    suspend fun shopsSubmitReview(shopId: String): ShopsSubmitReviewResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/submit_review"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsSubmitReviewResult>() {})
+    }
+
+    /** Suspend */
+    suspend fun shopsSuspend(shopId: String): ShopsSuspendResult? {
+        val raw = client.post(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/suspend"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsSuspendResult>() {})
+    }
+
+    /** Update */
+    suspend fun shopsVerificationsUpdate(shopId: String, verificationId: String): ShopsVerificationsUpdateResult? {
+        val raw = client.patch(ApiPaths.backendPath("/system/shops/${serializePathParameter(shopId, PathParameterSpec("shopId", "simple", false))}/verifications/${serializePathParameter(verificationId, PathParameterSpec("verificationId", "simple", false))}"), null)
+        return client.convertValue(raw, object : TypeReference<ShopsVerificationsUpdateResult>() {})
+    }
+
+    /** Retrieve */
     suspend fun siteSettingsRetrieve(): SiteSettingsRetrieveResult? {
         val raw = client.get(ApiPaths.backendPath("/system/site/settings"))
         return client.convertValue(raw, object : TypeReference<SiteSettingsRetrieveResult>() {})
     }
 
-    /** Update site branding and deployment personalization settings */
-    suspend fun siteSettingsUpdate(body: AdminSiteSettingsUpdateRequest): SiteSettingsUpdateResult? {
-        val raw = client.patch(ApiPaths.backendPath("/system/site/settings"), body, null, null, "application/json")
+    /** Update */
+    suspend fun siteSettingsUpdate(): SiteSettingsUpdateResult? {
+        val raw = client.patch(ApiPaths.backendPath("/system/site/settings"), null)
         return client.convertValue(raw, object : TypeReference<SiteSettingsUpdateResult>() {})
     }
 

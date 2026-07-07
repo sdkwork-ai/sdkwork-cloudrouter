@@ -8,8 +8,9 @@ use sdkwork_clawrouter_router_service::application::EntityUuidGenerator;
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
     AppChatConversationItem, AppChatConversationList, AppChatFuture, AppChatMessageItem,
-    AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnItem, AppChatTurnOutcome, AppChatUsageSnapshot,
-    CompleteAppChatTurnCommand, CreateAppChatConversationCommand, CreateAppChatTurnCommand,
+    AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnItem, AppChatTurnOutcome,
+    AppChatUsageSnapshot, CompleteAppChatTurnCommand, CreateAppChatConversationCommand,
+    CreateAppChatTurnCommand,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -28,7 +29,7 @@ async fn app_chat_create_conversation_uses_product_chat_namespace_and_store_cont
                 .method("POST")
                 .uri("/app/v3/api/chat/conversations")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{
                       "title":"Router design",
@@ -47,7 +48,7 @@ async fn app_chat_create_conversation_uses_product_chat_namespace_and_store_cont
     assert_eq!(StatusCode::OK, response.status());
     let payload = response_json(response).await;
     assert_eq!(0, payload["code"].as_i64().unwrap());
-    
+
     assert_eq!(None, payload.get("message"));
     assert_eq!("chat-conversation-1", payload["data"]["item"]["id"]);
     assert_eq!("Router design", payload["data"]["item"]["title"]);
@@ -79,7 +80,7 @@ async fn app_chat_list_conversations_uses_trusted_subject_and_returns_items() {
             Request::builder()
                 .method("GET")
                 .uri("/app/v3/api/chat/conversations?page=1&page_size=20")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -95,8 +96,8 @@ async fn app_chat_list_conversations_uses_trusted_subject_and_returns_items() {
     let subjects = store.list_subjects.lock().unwrap();
     assert_eq!(
         vec![AppChatSubject {
-            tenant_id: 10,
-            organization_id: 20,
+            tenant_id: 100001,
+            organization_id: 0,
             user_id: 30
         }],
         *subjects
@@ -123,7 +124,7 @@ async fn app_chat_create_turn_carries_message_agent_and_model_context() {
                 .method("POST")
                 .uri("/app/v3/api/chat/conversations/chat-conversation-1/turns")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{
                       "message":"Design the chat schema",
@@ -184,7 +185,7 @@ async fn app_chat_complete_turn_response_carries_runtime_usage_and_assistant_out
                 .method("POST")
                 .uri("/app/v3/api/chat/conversations/chat-conversation-1/turns/chat-turn-1/response")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{
                       "message":"Use ChatConversation, ChatTurn, ChatMessage, and runtime usage links.",
@@ -284,7 +285,7 @@ async fn app_chat_complete_turn_response_preserves_markdown_response_whitespace(
                     "/app/v3/api/chat/conversations/chat-conversation-1/turns/chat-turn-1/response",
                 )
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     serde_json::json!({
                         "message": markdown,
@@ -330,7 +331,7 @@ async fn app_chat_complete_turn_response_rejects_non_numeric_usage_fact_id() {
                     "/app/v3/api/chat/conversations/chat-conversation-1/turns/chat-turn-1/response",
                 )
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{
                       "message":"invalid usage id",
@@ -367,7 +368,7 @@ async fn app_chat_does_not_expose_playground_backend_namespace() {
                 .method("POST")
                 .uri("/app/v3/api/playground/chat/conversations")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from("{}"))
                 .unwrap(),
         )
@@ -434,21 +435,21 @@ impl AppChatStore for TestAppChatStore {
         Box::pin(async {
             Ok(AppChatMessageList {
                 items: vec![AppChatMessageItem {
-                id: "chat-message-user-1".to_owned(),
-                conversation_id: "chat-conversation-1".to_owned(),
-                turn_id: Some("chat-turn-1".to_owned()),
-                role: "user".to_owned(),
-                direction: "input".to_owned(),
-                content: "Design the chat schema".to_owned(),
-                status: "completed".to_owned(),
-                model: None,
-                provider: None,
-                runtime: None,
-                runtime_invocation_id: None,
-                usage_link_id: None,
-                usage: None,
-                created_at: "2026-05-18T00:00:00Z".to_owned(),
-            }],
+                    id: "chat-message-user-1".to_owned(),
+                    conversation_id: "chat-conversation-1".to_owned(),
+                    turn_id: Some("chat-turn-1".to_owned()),
+                    role: "user".to_owned(),
+                    direction: "input".to_owned(),
+                    content: "Design the chat schema".to_owned(),
+                    status: "completed".to_owned(),
+                    model: None,
+                    provider: None,
+                    runtime: None,
+                    runtime_invocation_id: None,
+                    usage_link_id: None,
+                    usage: None,
+                    created_at: "2026-05-18T00:00:00Z".to_owned(),
+                }],
                 total: 1,
                 page_no: 1,
                 page_size: 100,

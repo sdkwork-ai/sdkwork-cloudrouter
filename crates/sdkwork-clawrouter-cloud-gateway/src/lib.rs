@@ -1,6 +1,6 @@
 pub mod edge_server;
-mod iam_embedded;
 mod gateway_api_key_auth;
+mod iam_embedded;
 mod invocation_dispatcher;
 mod invocation_http;
 mod invocation_provider_adapter;

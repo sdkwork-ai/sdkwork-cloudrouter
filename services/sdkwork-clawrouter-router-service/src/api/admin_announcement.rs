@@ -1,6 +1,6 @@
+use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
@@ -258,7 +258,6 @@ async fn delete_announcement(
         }
     }
 }
-
 
 fn parse_json_body<T>(body: &[u8]) -> Result<T, String>
 where

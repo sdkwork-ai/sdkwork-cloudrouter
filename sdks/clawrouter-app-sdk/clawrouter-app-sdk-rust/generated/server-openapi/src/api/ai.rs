@@ -15,101 +15,87 @@ impl AiApi {
         Self { client }
     }
 
-    /// List groups
+    /// List
     pub async fn channel_groups_list(&self) -> Result<ChannelGroupsListResult, SdkworkError> {
         let path = app_path(&"/ai/channel_groups".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// List dashboard overview
-    pub async fn dashboard_overview_retrieve(&self, time_range: Option<&str>, start_time: Option<&str>, end_time: Option<&str>) -> Result<DashboardOverviewRetrieveResult, SdkworkError> {
-        let query = build_query_string(&[
-            QueryParameterSpec::new("time_range", time_range, "form", true, false, None),
-            QueryParameterSpec::new("start_time", start_time, "form", true, false, None),
-            QueryParameterSpec::new("end_time", end_time, "form", true, false, None),
-        ]);
-        let path = append_query_string(app_path(&"/ai/dashboard/overview".to_string()), &query);
+    /// Retrieve
+    pub async fn dashboard_overview_retrieve(&self) -> Result<DashboardOverviewRetrieveResult, SdkworkError> {
+        let path = app_path(&"/ai/dashboard/overview".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// List traces
+    /// List
     pub async fn gateway_traces_list(&self) -> Result<GatewayTracesListResult, SdkworkError> {
         let path = app_path(&"/ai/gateway/traces".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// List model rankings
-    pub async fn model_rankings_list(&self, rank_scope: Option<&str>, vendor_code: Option<&str>, modality: Option<&str>, q: Option<&str>, limit: Option<&str>) -> Result<ModelRankingsListResult, SdkworkError> {
+    /// List
+    pub async fn model_rankings_list(&self, rank_scope: Option<&str>, vendor_code: Option<&str>, modality: Option<&str>, q: Option<&str>, page_size: Option<i64>) -> Result<ModelRankingsListResult, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("rank_scope", rank_scope, "form", true, false, None),
             QueryParameterSpec::new("vendor_code", vendor_code, "form", true, false, None),
             QueryParameterSpec::new("modality", modality, "form", true, false, None),
             QueryParameterSpec::new("q", q, "form", true, false, None),
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
         ]);
         let path = append_query_string(app_path(&"/ai/model_rankings".to_string()), &query);
         self.client.get(&path, None, None).await
     }
 
-    /// List ranking vendor filters
+    /// List
     pub async fn model_vendors_list(&self) -> Result<ModelVendorsListResult, SdkworkError> {
         let path = app_path(&"/ai/model_vendors".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// List model catalog for Playground
-    pub async fn models_list(&self, billing_meter: Option<&str>, vendor_code: Option<&str>, vendor_codes: Option<&[String]>, modalities: Option<&[String]>, capabilities: Option<&[String]>, categories: Option<&[String]>, groups: Option<&[String]>, q: Option<&str>, limit: Option<&str>, offset: Option<&str>) -> Result<ModelsListResult, SdkworkError> {
+    /// List
+    pub async fn models_list(&self, page: Option<i64>, page_size: Option<i64>, q: Option<&str>, billing_meter: Option<&str>, vendor_codes: Option<&[String]>, modalities: Option<&[String]>, capabilities: Option<&[String]>, categories: Option<&[String]>, groups: Option<&[String]>) -> Result<ModelsListResult, SdkworkError> {
         let query = build_query_string(&[
+            QueryParameterSpec::new("page", page, "form", true, false, None),
+            QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
+            QueryParameterSpec::new("q", q, "form", true, false, None),
             QueryParameterSpec::new("billing_meter", billing_meter, "form", true, false, None),
-            QueryParameterSpec::new("vendor_code", vendor_code, "form", true, false, None),
             QueryParameterSpec::new("vendor_codes", vendor_codes, "form", false, false, None),
             QueryParameterSpec::new("modalities", modalities, "form", false, false, None),
             QueryParameterSpec::new("capabilities", capabilities, "form", false, false, None),
             QueryParameterSpec::new("categories", categories, "form", false, false, None),
             QueryParameterSpec::new("groups", groups, "form", false, false, None),
-            QueryParameterSpec::new("q", q, "form", true, false, None),
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
-            QueryParameterSpec::new("offset", offset, "form", true, false, None),
         ]);
         let path = append_query_string(app_path(&"/ai/models".to_string()), &query);
         self.client.get(&path, None, None).await
     }
 
-    /// List routing API keys
+    /// List
     pub async fn routing_api_keys_list(&self) -> Result<RoutingApiKeysListResult, SdkworkError> {
         let path = app_path(&"/ai/routing/api_keys".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// List routing channels
+    /// List
     pub async fn routing_channels_list(&self) -> Result<RoutingChannelsListResult, SdkworkError> {
         let path = app_path(&"/ai/routing/channels".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// List routing request traces
+    /// List
     pub async fn routing_request_traces_list(&self) -> Result<RoutingRequestTracesListResult, SdkworkError> {
         let path = app_path(&"/ai/routing/request_traces".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// List routing usage
+    /// List
     pub async fn routing_usage_list(&self) -> Result<RoutingUsageListResult, SdkworkError> {
         let path = app_path(&"/ai/routing/usage".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// List logs
-    pub async fn usage_logs_list(&self, page: Option<&str>, page_size: Option<&str>, q: Option<&str>, status: Option<&str>, start_time: Option<&str>, end_time: Option<&str>) -> Result<UsageLogsListResult, SdkworkError> {
-        let query = build_query_string(&[
-            QueryParameterSpec::new("page", page, "form", true, false, None),
-            QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
-            QueryParameterSpec::new("q", q, "form", true, false, None),
-            QueryParameterSpec::new("status", status, "form", true, false, None),
-            QueryParameterSpec::new("start_time", start_time, "form", true, false, None),
-            QueryParameterSpec::new("end_time", end_time, "form", true, false, None),
-        ]);
-        let path = append_query_string(app_path(&"/ai/usage/logs".to_string()), &query);
+    /// List
+    pub async fn usage_logs_list(&self) -> Result<UsageLogsListResult, SdkworkError> {
+        let path = app_path(&"/ai/usage/logs".to_string());
         self.client.get(&path, None, None).await
     }
 

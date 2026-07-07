@@ -328,7 +328,19 @@ class ClawRouterPayloadSdkAuditTest(unittest.TestCase):
                                     "content": {
                                         "application/json": {
                                             "schema": {
-                                                "$ref": "#/components/schemas/ForumAttachmentsCreateResult"
+                                                "allOf": [
+                                                    {"$ref": "#/components/schemas/SdkWorkApiResponse"},
+                                                    {
+                                                        "type": "object",
+                                                        "additionalProperties": False,
+                                                        "required": ["data"],
+                                                        "properties": {
+                                                            "data": {
+                                                                "$ref": "#/components/schemas/ForumAttachmentUploadResponse"
+                                                            }
+                                                        },
+                                                    },
+                                                ]
                                             }
                                         }
                                     }
@@ -342,12 +354,14 @@ class ClawRouterPayloadSdkAuditTest(unittest.TestCase):
                         "ForumAttachmentUploadRequest": upload_request,
                         "ForumAttachmentUploadResponse": upload_response,
                         "MediaResource": media_resource,
-                        "ForumAttachmentsCreateResult": {
+                        "SdkWorkApiResponse": {
                             "type": "object",
+                            "additionalProperties": False,
+                            "required": ["code", "data", "traceId"],
                             "properties": {
-                                "data": {
-                                    "$ref": "#/components/schemas/ForumAttachmentUploadResponse"
-                                }
+                                "code": {"type": "integer", "format": "int32", "const": 0},
+                                "data": True,
+                                "traceId": {"type": "string"},
                             },
                         },
                     }
@@ -366,11 +380,11 @@ class ClawRouterPayloadSdkAuditTest(unittest.TestCase):
             (sdk_base / "api" / "content.ts").write_text(
                 "import { appApiPath } from './paths';\n"
                 "import type { HttpClient } from '../http/client';\n"
-                "import type { ForumAttachmentsCreateResult, ForumAttachmentUploadRequest } from '../types';\n"
+                "import type { ForumAttachmentUploadRequest, ForumAttachmentUploadResponse } from '../types';\n"
                 "export class ContentForumAttachmentsApi {\n"
                 "  constructor(private client: HttpClient) {}\n"
-                "  async create(body: ForumAttachmentUploadRequest): Promise<ForumAttachmentsCreateResult> {\n"
-                "    return this.client.post<ForumAttachmentsCreateResult>(appApiPath(`/content/forum/attachments`), body, undefined, undefined, 'multipart/form-data');\n"
+                "  async create(body: ForumAttachmentUploadRequest): Promise<ForumAttachmentUploadResponse> {\n"
+                "    return this.client.post<ForumAttachmentUploadResponse>(appApiPath(`/content/forum/attachments`), body, undefined, undefined, 'multipart/form-data');\n"
                 "  }\n"
                 "}\n",
                 encoding="utf-8",
@@ -386,11 +400,6 @@ class ClawRouterPayloadSdkAuditTest(unittest.TestCase):
             )
             (sdk_base / "types" / "media-resource.ts").write_text(
                 "export interface MediaResource { kind: string; source: string; uri?: string; }\n",
-                encoding="utf-8",
-            )
-            (sdk_base / "types" / "forum-attachments-create-result.ts").write_text(
-                "import type { ForumAttachmentUploadResponse } from './forum-attachment-upload-response';\n"
-                "export interface ForumAttachmentsCreateResult { data?: ForumAttachmentUploadResponse; }\n",
                 encoding="utf-8",
             )
             (sdk_base / "types" / "index.ts").write_text(

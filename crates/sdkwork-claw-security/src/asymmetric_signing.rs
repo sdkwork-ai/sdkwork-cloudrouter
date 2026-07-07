@@ -13,9 +13,7 @@ use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use hmac::{Hmac, Mac};
 use rand::RngCore;
 use rsa::pkcs1::DecodeRsaPrivateKey;
-use rsa::pkcs8::{
-    DecodePrivateKey, EncodePrivateKey, EncodePublicKey, LineEnding,
-};
+use rsa::pkcs8::{DecodePrivateKey, EncodePrivateKey, EncodePublicKey, LineEnding};
 use rsa::Pkcs1v15Sign;
 use rsa::{RsaPrivateKey, RsaPublicKey};
 use serde::{Deserialize, Serialize};
@@ -173,9 +171,7 @@ impl SigningKeyMaterial {
                 let bytes = private_key.to_bytes();
                 Ok(URL_SAFE_NO_PAD.encode(bytes))
             }
-            Self::Ed25519 { private_key, .. } => {
-                Ok(URL_SAFE_NO_PAD.encode(private_key.as_bytes()))
-            }
+            Self::Ed25519 { private_key, .. } => Ok(URL_SAFE_NO_PAD.encode(private_key.as_bytes())),
         }
     }
 
@@ -195,9 +191,7 @@ impl SigningKeyMaterial {
                 let point = public_key.to_encoded_point(false);
                 Ok(URL_SAFE_NO_PAD.encode(point.as_bytes()))
             }
-            Self::Ed25519 { public_key, .. } => {
-                Ok(URL_SAFE_NO_PAD.encode(public_key.as_bytes()))
-            }
+            Self::Ed25519 { public_key, .. } => Ok(URL_SAFE_NO_PAD.encode(public_key.as_bytes())),
         }
     }
 
@@ -439,9 +433,9 @@ pub fn deserialize_key_material(
             let bytes = URL_SAFE_NO_PAD
                 .decode(bytes_b64)
                 .map_err(|e| SigningError::DecodingFailed(e.to_string()))?;
-            let key_bytes: [u8; 32] = bytes
-                .try_into()
-                .map_err(|_| SigningError::DecodingFailed("invalid Ed25519 key length".to_string()))?;
+            let key_bytes: [u8; 32] = bytes.try_into().map_err(|_| {
+                SigningError::DecodingFailed("invalid Ed25519 key length".to_string())
+            })?;
             let private_key = ed25519_dalek::SigningKey::from_bytes(&key_bytes);
             let public_key = private_key.verifying_key();
             Ok(SigningKeyMaterial::Ed25519 {

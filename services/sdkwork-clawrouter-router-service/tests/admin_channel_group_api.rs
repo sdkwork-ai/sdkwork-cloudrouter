@@ -13,9 +13,10 @@ use sdkwork_clawrouter_router_service::application::{
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
     AdminChannelGroupChannelBindingItem, AdminChannelGroupCommandFuture, AdminChannelGroupItem,
-    AdminChannelGroupListPage, AdminChannelGroupStore, CreateAdminChannelGroupCommand, DeleteAdminChannelGroupCommand,
-    ListAdminChannelGroupChannelBindingsQuery, ListAdminChannelGroupsQuery,
-    ReplaceAdminChannelGroupChannelBindingsCommand, UpdateAdminChannelGroupCommand,
+    AdminChannelGroupListPage, AdminChannelGroupStore, CreateAdminChannelGroupCommand,
+    DeleteAdminChannelGroupCommand, ListAdminChannelGroupChannelBindingsQuery,
+    ListAdminChannelGroupsQuery, ReplaceAdminChannelGroupChannelBindingsCommand,
+    UpdateAdminChannelGroupCommand,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -36,7 +37,7 @@ async fn admin_channel_group_route_creates_lists_updates_and_soft_deletes_groups
                 .method("POST")
                 .uri("/backend/v3/api/ai/channel_groups")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"groupName":"\u4e2d\u6587 standard","groupCode":"zh-standard","priceReferenceMode":"multiplier","rateMultiplier":1.25,"groupType":"dedicated","capacity":{"total":500},"status":"active","resourceGroupCodes":[" api.openai.chat ","api.google.image","api.openai.chat"],"resourceCodes":[" api.openai.chat_completions ","api.openai.responses","api.openai.chat_completions"]}"#,
                 ))
@@ -84,7 +85,7 @@ async fn admin_channel_group_route_creates_lists_updates_and_soft_deletes_groups
                 .method("PATCH")
                 .uri("/backend/v3/api/ai/channel_groups/1")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"groupName":"OpenAI enterprise","priceReferenceMode":"official_price","officialPriceMultiplier":1.5,"capacity":{"total":750},"status":"disabled","resourceGroupCodes":["api.openai.codex"],"resourceCodes":["api.openai.containers","api.openai.skills"]}"#,
                 ))
@@ -125,7 +126,7 @@ async fn admin_channel_group_route_creates_lists_updates_and_soft_deletes_groups
             Request::builder()
                 .method("GET")
                 .uri("/backend/v3/api/ai/channel_groups")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -151,7 +152,7 @@ async fn admin_channel_group_route_creates_lists_updates_and_soft_deletes_groups
             Request::builder()
                 .method("DELETE")
                 .uri("/backend/v3/api/ai/channel_groups/1")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -167,7 +168,7 @@ async fn admin_channel_group_route_creates_lists_updates_and_soft_deletes_groups
             Request::builder()
                 .method("GET")
                 .uri("/backend/v3/api/ai/channel_groups")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -207,7 +208,7 @@ async fn admin_channel_group_route_lists_and_replaces_channel_bindings() {
             Request::builder()
                 .method("GET")
                 .uri("/backend/v3/api/ai/channel_groups/10/channel_bindings")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -236,7 +237,7 @@ async fn admin_channel_group_route_lists_and_replaces_channel_bindings() {
                 .method("PUT")
                 .uri("/backend/v3/api/ai/channel_groups/10/channel_bindings")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"items":[{"channelId":"3001","priority":5,"weight":100,"status":"active","apiScope":["openai.chat_completions"],"capabilities":["llm"],"resourceCodes":["model.openai.gpt-4o-mini.chat","api.openai.chat_completions","bundle.openrouter.openai.standard"]},{"channelId":"3003","priority":30,"weight":20,"status":"disabled"}]}"#,
                 ))
@@ -277,7 +278,7 @@ async fn admin_channel_group_route_lists_and_replaces_channel_bindings() {
             Request::builder()
                 .method("GET")
                 .uri("/backend/v3/api/ai/channel_groups/11/channel_bindings")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -329,7 +330,7 @@ async fn admin_channel_group_route_explain_reports_backend_config_readiness() {
             Request::builder()
                 .method("GET")
                 .uri("/backend/v3/api/ai/channel_groups/10/route_explain")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -390,7 +391,7 @@ async fn admin_channel_group_route_explain_reports_blocking_backend_config_issue
             Request::builder()
                 .method("GET")
                 .uri("/backend/v3/api/ai/channel_groups/11/route_explain")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -467,7 +468,7 @@ async fn admin_channel_group_route_invalidates_routing_cache_after_successful_bi
                 .method("PUT")
                 .uri("/backend/v3/api/ai/channel_groups/10/channel_bindings")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"items":[{"channelId":"3001","priority":5,"weight":100,"status":"active","resourceCodes":["model.openai.gpt-4o-mini.chat"]}]}"#,
                 ))
@@ -542,7 +543,7 @@ async fn admin_channel_group_route_rejects_invalid_multiplier_without_calling_st
                 .method("POST")
                 .uri("/backend/v3/api/ai/channel_groups")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"groupName":"Invalid","groupCode":"invalid","priceReferenceMode":"multiplier","rateMultiplier":0}"#,
                 ))
@@ -580,7 +581,7 @@ async fn admin_channel_group_route_does_not_expose_legacy_public_paths() {
                 Request::builder()
                     .method("GET")
                     .uri(path.as_str())
-                    .internal_trusted_subject(10, 20, 30)
+                    .internal_trusted_subject(100001, 0, 30)
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -869,8 +870,8 @@ fn channel_binding_item(
     AdminChannelGroupChannelBindingItem {
         id,
         uuid: format!("binding-{id}"),
-        tenant_id: 10,
-        organization_id: 20,
+        tenant_id: 100001,
+        organization_id: 0,
         group_id,
         channel_id,
         channel_name: channel_name.to_owned(),
@@ -900,8 +901,8 @@ fn channel_group_item(
     AdminChannelGroupItem {
         id,
         uuid: format!("group-{id}"),
-        tenant_id: 10,
-        organization_id: 20,
+        tenant_id: 100001,
+        organization_id: 0,
         group_code: group_code.to_owned(),
         group_name: group_name.to_owned(),
         provider_code: "openai".to_owned(),

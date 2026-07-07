@@ -12,6 +12,7 @@ import {
   shouldResolvePortalPnpmWorkspaceSpecifier,
 } from './scripts/lib/portal-workspace-package-resolver.mjs';
 import { createPortalOptimizeDepsEsbuildPlugin } from './scripts/lib/portal-optimize-deps-esbuild-resolver.mjs';
+import { readGenerationAssetConfigStubReplacement } from './scripts/lib/portal-generation-asset-config-stub.mjs';
 
 function readBootstrapLocalEnv(configDir: string, mode: string): Record<string, string> {
   const bootstrapPath = path.join(configDir, `.env.${mode}.bootstrap.local`);
@@ -112,6 +113,7 @@ const PORTAL_SOURCE_OPTIMIZE_EXCLUDE = [
   '@sdkwork/order-app-sdk',
   '@sdkwork/account-app-sdk',
   '@sdkwork/account-backend-sdk',
+  '@sdkwork/assets-core',
   '@sdkwork/utils',
   '@sdkwork/iam-contracts',
   '@sdkwork/iam-runtime',
@@ -126,6 +128,7 @@ const PORTAL_SOURCE_OPTIMIZE_EXCLUDE = [
   '@sdkwork/clawrouter-app-sdk',
   '@sdkwork/clawrouter-backend-sdk',
   '@sdkwork/generations-app-sdk',
+  '@sdkwork/generations-pc-asset-config',
   '@sdkwork/drive-backend-sdk',
   '@sdkwork/clawrouter-app-sdk/domains',
   '@sdkwork/clawrouter-backend-sdk/domains',
@@ -252,6 +255,18 @@ function clawrouterTypeScriptTransform() {
 
 function resolvePortalDependency(specifier: string, configDir: string): string {
   return require.resolve(specifier, {paths: [configDir]});
+}
+
+function clawrouterGenerationAssetConfigStubInlining(configDir: string): Plugin {
+  return {
+    name: 'clawrouter-generation-asset-config-stub-inlining',
+    enforce: 'pre',
+    load(id) {
+      const filePath = id.split('?', 1)[0];
+      const replacement = readGenerationAssetConfigStubReplacement(configDir, filePath, filePath);
+      return replacement ?? null;
+    },
+  };
 }
 
 function clawrouterPortalLocalPackageResolver(configDir: string): Plugin {
@@ -542,6 +557,7 @@ export default defineConfig(({mode}) => {
       clawrouterNodeEnvTransform(),
       clawrouterImportMetaHotTransform(),
       clawrouterTypeScriptTransform(),
+      clawrouterGenerationAssetConfigStubInlining(configDir),
       clawrouterPortalLocalPackageResolver(configDir),
       clawrouterPortalPnpmWorkspaceResolver(configDir),
       clawrouterPortalWorkspaceDependencyResolver(configDir, portalWorkspaceDependencyRoots),

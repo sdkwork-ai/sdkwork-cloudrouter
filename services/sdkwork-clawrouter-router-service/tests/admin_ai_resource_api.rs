@@ -35,7 +35,7 @@ async fn admin_ai_resource_route_lists_resources_with_members() {
             Request::builder()
                 .method("GET")
                 .uri("/backend/v3/api/ai/resources")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -71,7 +71,7 @@ async fn admin_ai_resource_group_route_manages_groups_and_static_all_api_resourc
             Request::builder()
                 .method("GET")
                 .uri("/backend/v3/api/ai/resource_groups")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -95,7 +95,7 @@ async fn admin_ai_resource_group_route_manages_groups_and_static_all_api_resourc
             Request::builder()
                 .method("GET")
                 .uri("/backend/v3/api/ai/resource_groups/api.all/resources")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -120,7 +120,7 @@ async fn admin_ai_resource_group_route_manages_groups_and_static_all_api_resourc
             Request::builder()
                 .method("POST")
                 .uri("/backend/v3/api/ai/resource_groups")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{"groupCode":" API.Custom.Chat ","groupName":"Custom Chat API","groupType":"api_group","selectionMode":"manual","description":"Custom group","sortOrder":30,"status":"active","members":[{"resourceCode":"api.openai.chat_completions","itemRole":"included","sortOrder":1}]}"#,
@@ -144,7 +144,7 @@ async fn admin_ai_resource_group_route_manages_groups_and_static_all_api_resourc
             Request::builder()
                 .method("PATCH")
                 .uri("/backend/v3/api/ai/resource_groups/3")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{"groupName":"Custom Chat API v2","members":[{"resourceCode":"api.openai.responses","itemRole":"optional","sortOrder":2}]}"#,
@@ -167,7 +167,7 @@ async fn admin_ai_resource_group_route_manages_groups_and_static_all_api_resourc
             Request::builder()
                 .method("DELETE")
                 .uri("/backend/v3/api/ai/resource_groups/3")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -192,7 +192,7 @@ async fn admin_ai_resource_route_creates_and_updates_resources() {
             Request::builder()
                 .method("POST")
                 .uri("/backend/v3/api/ai/resources")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{"resourceCode":" Bundle.OpenRouter.OpenAI.Standard ","resourceType":"bundle","displayName":"OpenRouter OpenAI Standard","vendorCode":" OpenAI ","compositionMode":"all","status":"active","sortOrder":5,"members":[{"memberResourceCode":"model.openai.gpt-4o-mini.chat","memberRole":"included","required":true,"sortOrder":1}]}"#,
@@ -221,7 +221,7 @@ async fn admin_ai_resource_route_creates_and_updates_resources() {
             Request::builder()
                 .method("PUT")
                 .uri("/backend/v3/api/ai/resources/5")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{"displayName":"OpenRouter OpenAI Bundle","status":"disabled","members":[]}"#,
@@ -287,7 +287,7 @@ async fn admin_ai_resource_route_invalidates_routing_cache_after_successful_muta
             Request::builder()
                 .method("POST")
                 .uri("/backend/v3/api/ai/resources")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{"resourceCode":"bundle.openrouter.openai.standard","resourceType":"bundle","displayName":"OpenRouter OpenAI Standard","vendorCode":"OpenAI","compositionMode":"all","status":"active","sortOrder":5,"members":[{"memberResourceCode":"model.openai.gpt-4o-mini.chat"}]}"#,
@@ -331,7 +331,7 @@ async fn admin_ai_resource_route_maps_missing_member_resource_to_not_found() {
             Request::builder()
                 .method("POST")
                 .uri("/backend/v3/api/ai/resources")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{"resourceCode":"bundle.openrouter.openai.invalid","resourceType":"bundle","displayName":"Invalid Bundle","members":[{"memberResourceCode":"model.openai.missing.chat"}]}"#,
@@ -354,7 +354,7 @@ async fn admin_ai_resource_route_maps_missing_member_resource_to_not_found() {
             Request::builder()
                 .method("PUT")
                 .uri("/backend/v3/api/ai/resources/5")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{"members":[{"memberResourceCode":"model.openai.missing.chat"}]}"#,

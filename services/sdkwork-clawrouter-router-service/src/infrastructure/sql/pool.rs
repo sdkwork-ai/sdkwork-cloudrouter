@@ -379,12 +379,9 @@ mod tests {
         let check = redis_readiness_check(url);
         // Use a watchdog longer than the readiness timeout but short enough to
         // fail the test if the timeout wrapper is missing.
-        let ready = tokio::time::timeout(
-            READINESS_CHECK_TIMEOUT + Duration::from_secs(2),
-            check(),
-        )
-        .await
-        .expect("readiness check must not hang beyond its timeout");
+        let ready = tokio::time::timeout(READINESS_CHECK_TIMEOUT + Duration::from_secs(2), check())
+            .await
+            .expect("readiness check must not hang beyond its timeout");
 
         assert!(!ready, "silent redis must time out and report not ready");
 
@@ -397,12 +394,9 @@ mod tests {
             .await
             .expect("sqlite memory pool");
         let check = sqlite_database_readiness_check(pool);
-        let ready = tokio::time::timeout(
-            READINESS_CHECK_TIMEOUT + Duration::from_secs(2),
-            check(),
-        )
-        .await
-        .expect("sqlite readiness must not hang");
+        let ready = tokio::time::timeout(READINESS_CHECK_TIMEOUT + Duration::from_secs(2), check())
+            .await
+            .expect("sqlite readiness must not hang");
         assert!(ready, "healthy sqlite pool must report ready");
     }
 }

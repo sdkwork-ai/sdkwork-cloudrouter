@@ -21,7 +21,7 @@ async fn admin_dashboard_route_serializes_active_users_as_int64_string() {
         .oneshot(
             Request::builder()
                 .uri("/backend/v3/api/system/dashboard/admin/overview")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )

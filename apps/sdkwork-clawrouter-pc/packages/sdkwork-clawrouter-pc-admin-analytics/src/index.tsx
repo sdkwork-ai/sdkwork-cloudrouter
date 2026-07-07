@@ -72,7 +72,7 @@ export function AnalyticsAdmin() {
     setLoading(true);
     setLoadError(null);
     try {
-      const data = await AdminAnalyticsService.fetchOverview({ timeRange, limit: 12 });
+      const data = await AdminAnalyticsService.fetchOverview({ timeRange, rankingSize: 12 });
       setOverview(data);
     } catch (error) {
       setOverview(createEmptyAnalyticsOverview(timeRange));

@@ -28,7 +28,7 @@ async fn admin_model_rate_limit_route_creates_and_lists_model_limits() {
                 .method("POST")
                 .uri("/backend/v3/api/system/rate_limits/models")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"model":"openai/gpt-4o-mini","channelGroup":"standard-group","rpm":600,"tpm":120000}"#,
                 ))
@@ -62,7 +62,7 @@ async fn admin_model_rate_limit_route_creates_and_lists_model_limits() {
             Request::builder()
                 .method("GET")
                 .uri("/backend/v3/api/system/rate_limits/models")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -93,7 +93,7 @@ async fn admin_model_rate_limit_route_rejects_invalid_model_without_calling_stor
                 .method("POST")
                 .uri("/backend/v3/api/system/rate_limits/models")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"model":"gpt 4o","channelGroup":"standard-group","rpm":600,"tpm":120000}"#,
                 ))
@@ -123,7 +123,7 @@ async fn admin_model_rate_limit_route_rejects_invalid_limit_without_calling_stor
                 .method("POST")
                 .uri("/backend/v3/api/system/rate_limits/models")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"model":"gpt-4o-mini","channelGroup":"standard-group","rpm":0,"tpm":120000}"#,
                 ))
@@ -174,7 +174,7 @@ async fn admin_model_rate_limit_route_does_not_expose_legacy_public_path() {
             Request::builder()
                 .method("GET")
                 .uri("/backend/v3/api/router/rate_limits/models")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )

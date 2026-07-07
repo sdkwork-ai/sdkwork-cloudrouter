@@ -127,8 +127,8 @@ export function Models() {
       categories: filters.selectedCategories,
       groups: filters.selectedGroups,
       searchQuery: filters.searchQuery,
-      limit: catalogPageSize,
-      offset: (catalogPage - 1) * catalogPageSize,
+      page: catalogPage,
+      pageSize: catalogPageSize,
     })
       .then((catalog) => {
         if (!cancelled) {

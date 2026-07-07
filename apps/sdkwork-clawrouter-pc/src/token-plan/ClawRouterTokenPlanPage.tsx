@@ -1,11 +1,35 @@
-import { useTranslation } from 'react-i18next';
-import { SdkworkSubscriptionPage } from '@sdkwork/membership-pc-subscription';
+import { SdkworkSubscriptionCatalogPage } from "@sdkwork/membership-pc-subscription/catalog";
 
-import { resolveConsoleSubscriptionLocale } from '../console-business/consoleCommerceLocale.ts';
+import { ClawRouterTokenPlanCheckoutModal } from "./ClawRouterTokenPlanCheckoutModal.tsx";
+import {
+  ClawRouterTokenPlanPointsDetailsModal,
+  ClawRouterTokenPlanPointsPurchaseModal,
+  ClawRouterTokenPlanRedeemModal,
+} from "./ClawRouterTokenPlanCommerceModal.tsx";
+import { useTokenPlanMemberSummary } from "./tokenPlanMemberSummary.ts";
+import { useTokenPlanNotify } from "./tokenPlanNotify.tsx";
 
 export function ClawRouterTokenPlanPage() {
-  const { i18n } = useTranslation();
-  const locale = resolveConsoleSubscriptionLocale(i18n.resolvedLanguage ?? i18n.language);
+  const { memberSummary, refreshMembership, setMembershipTierKey } = useTokenPlanMemberSummary();
+  const { NotifyOutlet, onNotify } = useTokenPlanNotify();
 
-  return <SdkworkSubscriptionPage locale={locale} />;
+  return (
+    <div className="mx-auto w-full max-w-7xl">
+      <SdkworkSubscriptionCatalogPage
+        components={{
+          checkoutModal: ClawRouterTokenPlanCheckoutModal,
+          pointsDetailsModal: ClawRouterTokenPlanPointsDetailsModal,
+          pointsPurchaseModal: ClawRouterTokenPlanPointsPurchaseModal,
+          redeemModal: ClawRouterTokenPlanRedeemModal,
+        }}
+        memberSummary={memberSummary}
+        notifyOutlet={NotifyOutlet}
+        onMembershipTierUpdated={(membershipTierKey, _durationDays) => {
+          setMembershipTierKey(membershipTierKey);
+          void refreshMembership().catch(() => undefined);
+        }}
+        onNotify={onNotify}
+      />
+    </div>
+  );
 }

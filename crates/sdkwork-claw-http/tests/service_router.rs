@@ -2216,9 +2216,7 @@ async fn service_router_surface_openapi_documents_exclude_commerce_dependency_co
         "/app/v3/api/openapi.json",
     )
     .await;
-    for (method, path, operation_id) in [
-        ("get", "/app/v3/api/ai/models", "models.list"),
-    ] {
+    for (method, path, operation_id) in [("get", "/app/v3/api/ai/models", "models.list")] {
         assert_openapi_operation(&app_payload, method, path, operation_id);
     }
     for (method, path) in [

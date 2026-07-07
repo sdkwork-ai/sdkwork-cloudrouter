@@ -11,7 +11,7 @@ class AiApi {
 
   AiApi(this._client);
 
-  /// List groups
+  /// List
   Future<ChannelGroupsListResult?> channelGroupsList() async {
     final response = await _client.get(ApiPaths.backendPath('/ai/channel_groups'));
     return (() {
@@ -20,17 +20,16 @@ class AiApi {
     })();
   }
 
-  /// Create group
-  Future<ChannelGroupsCreateResult?> channelGroupsCreate(AdminChannelGroupCreateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.backendPath('/ai/channel_groups'), body: payload, contentType: 'application/json');
+  /// Create
+  Future<ChannelGroupsCreateResult?> channelGroupsCreate() async {
+    final response = await _client.post(ApiPaths.backendPath('/ai/channel_groups'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ChannelGroupsCreateResult.fromJson(map);
     })();
   }
 
-  /// Delete group
+  /// Delete
   Future<ChannelGroupsDeleteResult?> channelGroupsDelete(String channelGroupId) async {
     final response = await _client.delete(ApiPaths.backendPath('/ai/channel_groups/${serializePathParameter(channelGroupId, const PathParameterSpec('channelGroupId', 'simple', false))}'));
     return (() {
@@ -39,17 +38,16 @@ class AiApi {
     })();
   }
 
-  /// Update group
-  Future<ChannelGroupsUpdateResult?> channelGroupsUpdate(String channelGroupId, AdminChannelGroupUpdateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.patch(ApiPaths.backendPath('/ai/channel_groups/${serializePathParameter(channelGroupId, const PathParameterSpec('channelGroupId', 'simple', false))}'), body: payload, contentType: 'application/json');
+  /// Update
+  Future<ChannelGroupsUpdateResult?> channelGroupsUpdate(String channelGroupId) async {
+    final response = await _client.patch(ApiPaths.backendPath('/ai/channel_groups/${serializePathParameter(channelGroupId, const PathParameterSpec('channelGroupId', 'simple', false))}'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ChannelGroupsUpdateResult.fromJson(map);
     })();
   }
 
-  /// List group channel bindings
+  /// List
   Future<ChannelGroupsChannelBindingsListResult?> channelGroupsBindingsList(String channelGroupId) async {
     final response = await _client.get(ApiPaths.backendPath('/ai/channel_groups/${serializePathParameter(channelGroupId, const PathParameterSpec('channelGroupId', 'simple', false))}/channel_bindings'));
     return (() {
@@ -58,17 +56,16 @@ class AiApi {
     })();
   }
 
-  /// Replace group channel bindings
-  Future<ChannelGroupsChannelBindingsUpdateResult?> channelGroupsBindingsUpdate(String channelGroupId, AdminChannelGroupChannelBindingsReplaceRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.put(ApiPaths.backendPath('/ai/channel_groups/${serializePathParameter(channelGroupId, const PathParameterSpec('channelGroupId', 'simple', false))}/channel_bindings'), body: payload, contentType: 'application/json');
+  /// Update
+  Future<ChannelGroupsChannelBindingsUpdateResult?> channelGroupsBindingsUpdate(String channelGroupId) async {
+    final response = await _client.put(ApiPaths.backendPath('/ai/channel_groups/${serializePathParameter(channelGroupId, const PathParameterSpec('channelGroupId', 'simple', false))}/channel_bindings'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ChannelGroupsChannelBindingsUpdateResult.fromJson(map);
     })();
   }
 
-  /// List group route explain
+  /// Retrieve
   Future<ChannelGroupsRouteExplainRetrieveResult?> channelGroupsRouteExplainRetrieve(String channelGroupId) async {
     final response = await _client.get(ApiPaths.backendPath('/ai/channel_groups/${serializePathParameter(channelGroupId, const PathParameterSpec('channelGroupId', 'simple', false))}/route_explain'));
     return (() {
@@ -77,43 +74,52 @@ class AiApi {
     })();
   }
 
-  /// List model mappings
-  Future<ModelMappingsListResult?> modelMappingsList([String? bindingType, String? vendorCode, String? channelId, String? channelCode, String? q]) async {
-    final query = buildQueryString([
-      QueryParameterSpec('binding_type', bindingType, 'form', true, false, null),
-      QueryParameterSpec('vendor_code', vendorCode, 'form', true, false, null),
-      QueryParameterSpec('channel_id', channelId, 'form', true, false, null),
-      QueryParameterSpec('channel_code', channelCode, 'form', true, false, null),
-      QueryParameterSpec('q', q, 'form', true, false, null)
-    ]);
-    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.backendPath('/ai/model_mappings'), query));
+  /// List
+  Future<ModelMappingOptionsListResult?> modelMappingOptionsList() async {
+    final response = await _client.get(ApiPaths.backendPath('/ai/model_mapping_options'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ModelMappingOptionsListResult.fromJson(map);
+    })();
+  }
+
+  /// List
+  Future<ModelMappingsListResult?> modelMappingsList() async {
+    final response = await _client.get(ApiPaths.backendPath('/ai/model_mappings'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ModelMappingsListResult.fromJson(map);
     })();
   }
 
-  /// Create model mapping
-  Future<ModelMappingsCreateResult?> modelMappingsCreate(AdminModelMappingCreateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.backendPath('/ai/model_mappings'), body: payload, contentType: 'application/json');
+  /// Create
+  Future<ModelMappingsCreateResult?> modelMappingsCreate() async {
+    final response = await _client.post(ApiPaths.backendPath('/ai/model_mappings'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ModelMappingsCreateResult.fromJson(map);
     })();
   }
 
-  /// Resolve model mapping
-  Future<ModelMappingsResolveCreateResult?> modelMappingsResolveCreate(AdminModelMappingResolveRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.backendPath('/ai/model_mappings/resolve'), body: payload, contentType: 'application/json');
+  /// Replace
+  Future<ModelMappingsReplaceResult?> modelMappingsReplace() async {
+    final response = await _client.put(ApiPaths.backendPath('/ai/model_mappings'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ModelMappingsReplaceResult.fromJson(map);
+    })();
+  }
+
+  /// Create
+  Future<ModelMappingsResolveCreateResult?> modelMappingsResolveCreate() async {
+    final response = await _client.post(ApiPaths.backendPath('/ai/model_mappings/resolve'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ModelMappingsResolveCreateResult.fromJson(map);
     })();
   }
 
-  /// Delete model mapping
+  /// Delete
   Future<ModelMappingsDeleteResult?> modelMappingsDelete(String mappingId) async {
     final response = await _client.delete(ApiPaths.backendPath('/ai/model_mappings/${serializePathParameter(mappingId, const PathParameterSpec('mappingId', 'simple', false))}'));
     return (() {
@@ -122,24 +128,23 @@ class AiApi {
     })();
   }
 
-  /// Update model mapping
-  Future<ModelMappingsUpdateResult?> modelMappingsUpdate(String mappingId, AdminModelMappingUpdateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.patch(ApiPaths.backendPath('/ai/model_mappings/${serializePathParameter(mappingId, const PathParameterSpec('mappingId', 'simple', false))}'), body: payload, contentType: 'application/json');
+  /// Update
+  Future<ModelMappingsUpdateResult?> modelMappingsUpdate(String mappingId) async {
+    final response = await _client.patch(ApiPaths.backendPath('/ai/model_mappings/${serializePathParameter(mappingId, const PathParameterSpec('mappingId', 'simple', false))}'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ModelMappingsUpdateResult.fromJson(map);
     })();
   }
 
-  /// List model rankings
-  Future<ModelRankingsListResult?> modelRankingsList([String? rankScope, String? vendorCode, String? modality, String? q, String? limit]) async {
+  /// List
+  Future<ModelRankingsListResult?> modelRankingsList([String? rankScope, String? vendorCode, String? modality, String? q, int? pageSize]) async {
     final query = buildQueryString([
       QueryParameterSpec('rank_scope', rankScope, 'form', true, false, null),
       QueryParameterSpec('vendor_code', vendorCode, 'form', true, false, null),
       QueryParameterSpec('modality', modality, 'form', true, false, null),
       QueryParameterSpec('q', q, 'form', true, false, null),
-      QueryParameterSpec('limit', limit, 'form', true, false, null)
+      QueryParameterSpec('page_size', pageSize, 'form', true, false, null)
     ]);
     final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.backendPath('/ai/model_rankings'), query));
     return (() {
@@ -148,11 +153,11 @@ class AiApi {
     })();
   }
 
-  /// List model ranking refresh jobs
-  Future<ModelRankingsJobsListResult?> modelRankingsJobsList([String? rankScope, String? limit]) async {
+  /// List
+  Future<ModelRankingsJobsListResult?> modelRankingsJobsList([String? rankScope, int? pageSize]) async {
     final query = buildQueryString([
       QueryParameterSpec('rank_scope', rankScope, 'form', true, false, null),
-      QueryParameterSpec('limit', limit, 'form', true, false, null)
+      QueryParameterSpec('page_size', pageSize, 'form', true, false, null)
     ]);
     final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.backendPath('/ai/model_rankings/jobs'), query));
     return (() {
@@ -161,20 +166,27 @@ class AiApi {
     })();
   }
 
-  /// Trigger model ranking refresh
-  Future<ModelRankingsRefreshResult?> modelRankingsRefresh(ModelRankingRefreshTriggerRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.backendPath('/ai/model_rankings/refresh'), body: payload, contentType: 'application/json');
+  /// Refresh
+  Future<ModelRankingsRefreshResult?> modelRankingsRefresh() async {
+    final response = await _client.post(ApiPaths.backendPath('/ai/model_rankings/refresh'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ModelRankingsRefreshResult.fromJson(map);
     })();
   }
 
-  /// List model ranking refresh status
-  Future<ModelRankingsStatusRetrieveResult?> modelRankingsStatusRetrieve([String? rankScope]) async {
+  /// Retrieve
+  Future<ModelRankingsStatusRetrieveResult?> modelRankingsStatusRetrieve([int? page, int? pageSize, String? q, String? billingMeter, List<String>? vendorCodes, List<String>? modalities, List<String>? capabilities, List<String>? categories, List<String>? groups]) async {
     final query = buildQueryString([
-      QueryParameterSpec('rank_scope', rankScope, 'form', true, false, null)
+      QueryParameterSpec('page', page, 'form', true, false, null),
+      QueryParameterSpec('page_size', pageSize, 'form', true, false, null),
+      QueryParameterSpec('q', q, 'form', true, false, null),
+      QueryParameterSpec('billing_meter', billingMeter, 'form', true, false, null),
+      QueryParameterSpec('vendor_codes', vendorCodes, 'form', false, false, null),
+      QueryParameterSpec('modalities', modalities, 'form', false, false, null),
+      QueryParameterSpec('capabilities', capabilities, 'form', false, false, null),
+      QueryParameterSpec('categories', categories, 'form', false, false, null),
+      QueryParameterSpec('groups', groups, 'form', false, false, null)
     ]);
     final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.backendPath('/ai/model_rankings/status'), query));
     return (() {
@@ -183,7 +195,7 @@ class AiApi {
     })();
   }
 
-  /// List vendors
+  /// List
   Future<ModelVendorsListResult?> modelVendorsList() async {
     final response = await _client.get(ApiPaths.backendPath('/ai/model_vendors'));
     return (() {
@@ -192,46 +204,54 @@ class AiApi {
     })();
   }
 
-  /// Create vendor
-  Future<ModelVendorsCreateResult?> modelVendorsCreate(AdminModelVendorCreateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.backendPath('/ai/model_vendors'), body: payload, contentType: 'application/json');
+  /// Create
+  Future<ModelVendorsCreateResult?> modelVendorsCreate() async {
+    final response = await _client.post(ApiPaths.backendPath('/ai/model_vendors'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ModelVendorsCreateResult.fromJson(map);
     })();
   }
 
-  /// List models
-  Future<ModelsListResult?> modelsList() async {
-    final response = await _client.get(ApiPaths.backendPath('/ai/models'));
+  /// List
+  Future<ModelsListResult?> modelsList([int? page, int? pageSize, String? q, String? billingMeter, List<String>? vendorCodes, List<String>? modalities, List<String>? capabilities, List<String>? categories, List<String>? groups]) async {
+    final query = buildQueryString([
+      QueryParameterSpec('page', page, 'form', true, false, null),
+      QueryParameterSpec('page_size', pageSize, 'form', true, false, null),
+      QueryParameterSpec('q', q, 'form', true, false, null),
+      QueryParameterSpec('billing_meter', billingMeter, 'form', true, false, null),
+      QueryParameterSpec('vendor_codes', vendorCodes, 'form', false, false, null),
+      QueryParameterSpec('modalities', modalities, 'form', false, false, null),
+      QueryParameterSpec('capabilities', capabilities, 'form', false, false, null),
+      QueryParameterSpec('categories', categories, 'form', false, false, null),
+      QueryParameterSpec('groups', groups, 'form', false, false, null)
+    ]);
+    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.backendPath('/ai/models'), query));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ModelsListResult.fromJson(map);
     })();
   }
 
-  /// Create model
-  Future<ModelsCreateResult?> modelsCreate(AdminAiModelCreateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.backendPath('/ai/models'), body: payload, contentType: 'application/json');
+  /// Create
+  Future<ModelsCreateResult?> modelsCreate() async {
+    final response = await _client.post(ApiPaths.backendPath('/ai/models'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ModelsCreateResult.fromJson(map);
     })();
   }
 
-  /// Sync vendors and models
-  Future<ModelsRefreshResult?> modelsRefresh(AdminModelCatalogSyncRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.backendPath('/ai/models/refresh'), body: payload, contentType: 'application/json');
+  /// Refresh
+  Future<ModelsRefreshResult?> modelsRefresh() async {
+    final response = await _client.post(ApiPaths.backendPath('/ai/models/refresh'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ModelsRefreshResult.fromJson(map);
     })();
   }
 
-  /// Delete model
+  /// Delete
   Future<ModelsDeleteResult?> modelsDelete(String modelId) async {
     final response = await _client.delete(ApiPaths.backendPath('/ai/models/${serializePathParameter(modelId, const PathParameterSpec('modelId', 'simple', false))}'));
     return (() {
@@ -240,17 +260,16 @@ class AiApi {
     })();
   }
 
-  /// Update model
-  Future<ModelsUpdateResult?> modelsUpdate(String modelId, AdminAiModelUpdateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.patch(ApiPaths.backendPath('/ai/models/${serializePathParameter(modelId, const PathParameterSpec('modelId', 'simple', false))}'), body: payload, contentType: 'application/json');
+  /// Update
+  Future<ModelsUpdateResult?> modelsUpdate(String modelId) async {
+    final response = await _client.patch(ApiPaths.backendPath('/ai/models/${serializePathParameter(modelId, const PathParameterSpec('modelId', 'simple', false))}'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ModelsUpdateResult.fromJson(map);
     })();
   }
 
-  /// List resource groups
+  /// List
   Future<AiResourceGroupsListResult?> getResourceGroupsList() async {
     final response = await _client.get(ApiPaths.backendPath('/ai/resource_groups'));
     return (() {
@@ -259,17 +278,16 @@ class AiApi {
     })();
   }
 
-  /// Create resource group
-  Future<AiResourceGroupsCreateResult?> resourceGroupsCreate(AdminAiResourceGroupCreateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.backendPath('/ai/resource_groups'), body: payload, contentType: 'application/json');
+  /// Create
+  Future<AiResourceGroupsCreateResult?> resourceGroupsCreate() async {
+    final response = await _client.post(ApiPaths.backendPath('/ai/resource_groups'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : AiResourceGroupsCreateResult.fromJson(map);
     })();
   }
 
-  /// List resource group resources
+  /// List
   Future<AiResourceGroupsResourcesListResult?> getResourceGroupsListResourceGroups(String groupIdOrCode) async {
     final response = await _client.get(ApiPaths.backendPath('/ai/resource_groups/${serializePathParameter(groupIdOrCode, const PathParameterSpec('groupIdOrCode', 'simple', false))}/resources'));
     return (() {
@@ -278,7 +296,7 @@ class AiApi {
     })();
   }
 
-  /// Delete resource group
+  /// Delete
   Future<AiResourceGroupsDeleteResult?> resourceGroupsDelete(String groupId) async {
     final response = await _client.delete(ApiPaths.backendPath('/ai/resource_groups/${serializePathParameter(groupId, const PathParameterSpec('groupId', 'simple', false))}'));
     return (() {
@@ -287,17 +305,16 @@ class AiApi {
     })();
   }
 
-  /// Update resource group
-  Future<AiResourceGroupsUpdateResult?> resourceGroupsUpdate(String groupId, AdminAiResourceGroupUpdateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.patch(ApiPaths.backendPath('/ai/resource_groups/${serializePathParameter(groupId, const PathParameterSpec('groupId', 'simple', false))}'), body: payload, contentType: 'application/json');
+  /// Update
+  Future<AiResourceGroupsUpdateResult?> resourceGroupsUpdate(String groupId) async {
+    final response = await _client.patch(ApiPaths.backendPath('/ai/resource_groups/${serializePathParameter(groupId, const PathParameterSpec('groupId', 'simple', false))}'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : AiResourceGroupsUpdateResult.fromJson(map);
     })();
   }
 
-  /// List ai resources
+  /// List
   Future<AiResourcesListResult?> resourcesList() async {
     final response = await _client.get(ApiPaths.backendPath('/ai/resources'));
     return (() {
@@ -306,30 +323,27 @@ class AiApi {
     })();
   }
 
-  /// Create ai resource
-  Future<AiResourcesCreateResult?> resourcesCreate(AdminAiResourceCreateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.backendPath('/ai/resources'), body: payload, contentType: 'application/json');
+  /// Create
+  Future<AiResourcesCreateResult?> resourcesCreate() async {
+    final response = await _client.post(ApiPaths.backendPath('/ai/resources'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : AiResourcesCreateResult.fromJson(map);
     })();
   }
 
-  /// Update ai resource
-  Future<AiResourcesUpdateResult?> resourcesUpdate(String resourceId, AdminAiResourceUpdateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.put(ApiPaths.backendPath('/ai/resources/${serializePathParameter(resourceId, const PathParameterSpec('resourceId', 'simple', false))}'), body: payload, contentType: 'application/json');
+  /// Update
+  Future<AiResourcesUpdateResult?> resourcesUpdate(String resourceId) async {
+    final response = await _client.put(ApiPaths.backendPath('/ai/resources/${serializePathParameter(resourceId, const PathParameterSpec('resourceId', 'simple', false))}'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : AiResourcesUpdateResult.fromJson(map);
     })();
   }
 
-  /// List runtime route explain
-  Future<RouteExplainCreateResult?> routeExplainCreate(AdminRuntimeRouteExplainRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.backendPath('/ai/route_explain'), body: payload, contentType: 'application/json');
+  /// Create
+  Future<RouteExplainCreateResult?> routeExplainCreate() async {
+    final response = await _client.post(ApiPaths.backendPath('/ai/route_explain'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : RouteExplainCreateResult.fromJson(map);

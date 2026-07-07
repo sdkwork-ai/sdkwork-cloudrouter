@@ -1,10 +1,10 @@
 from .http_client import HttpClient, SdkConfig
+from .api.system import SystemApi
 from .api.ai import AiApi
 from .api.chat import ChatApi
 from .api.iam import IamApi
 from .api.notification import NotificationApi
 from .api.runtime import RuntimeApi
-from .api.system import SystemApi
 
 
 class SdkworkAppClient:
@@ -12,20 +12,20 @@ class SdkworkAppClient:
 
     def __init__(self, config: SdkConfig):
         self._client = HttpClient(config)
+        self.system: SystemApi
         self.ai: AiApi
         self.chat: ChatApi
         self.iam: IamApi
         self.notification: NotificationApi
         self.runtime: RuntimeApi
-        self.system: SystemApi
 
         # Initialize API modules
+        self.system = SystemApi(self._client)
         self.ai = AiApi(self._client)
         self.chat = ChatApi(self._client)
         self.iam = IamApi(self._client)
         self.notification = NotificationApi(self._client)
         self.runtime = RuntimeApi(self._client)
-        self.system = SystemApi(self._client)
     def set_auth_token(self, token: str) -> 'SdkworkAppClient':
         """Set auth token for authentication."""
         self._client.set_auth_token(token)

@@ -1,6 +1,6 @@
+use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
@@ -296,7 +296,6 @@ async fn delete_provider_secret(
     }
 }
 
-
 fn parse_json_object(
     body: &[u8],
     required_message: &'static str,
@@ -332,13 +331,11 @@ fn normalize_list_request(
     let status = optional_text(&request, "status", "provider secret status", 32)?
         .map(|status| normalize_status(&status))
         .transpose()?;
-    let page = optional_integer(&request, "page")?
-        .or(query_params.page);
+    let page = optional_integer(&request, "page")?.or(query_params.page);
     let page_size = optional_integer(&request, "pageSize")?
         .or(optional_integer(&request, "page_size")?)
         .or(query_params.page_size);
-    let q = optional_text(&request, "q", "q", 128)?
-        .or(query_params.q);
+    let q = optional_text(&request, "q", "q", 128)?.or(query_params.q);
     let provider_code = match provider_code {
         Some(code) => Some(code),
         None => query_params

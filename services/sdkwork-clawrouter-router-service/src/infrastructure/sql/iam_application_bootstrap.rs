@@ -23,12 +23,12 @@ pub async fn ensure_clawrouter_tenant_application_bootstrap(
         None,
         &[],
     )
-        .await
-        .map_err(|error| {
-            DatabaseInstallError::InvalidState(format!(
-                "ensure clawrouter IAM embedded application bootstrap failed: {error}"
-            ))
-        })
+    .await
+    .map_err(|error| {
+        DatabaseInstallError::InvalidState(format!(
+            "ensure clawrouter IAM embedded application bootstrap failed: {error}"
+        ))
+    })
 }
 
 pub async fn ensure_postgres_clawrouter_tenant_application(
@@ -60,10 +60,8 @@ mod tests {
 
     #[test]
     fn resolve_clawrouter_app_root_prefers_sdkwork_app_root_env() {
-        let temp = std::env::temp_dir().join(format!(
-            "clawrouter-app-root-test-{}",
-            std::process::id()
-        ));
+        let temp =
+            std::env::temp_dir().join(format!("clawrouter-app-root-test-{}", std::process::id()));
         let _ = std::fs::create_dir_all(&temp);
         let previous = std::env::var("SDKWORK_APP_ROOT").ok();
         unsafe {

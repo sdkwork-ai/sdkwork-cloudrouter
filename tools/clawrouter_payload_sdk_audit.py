@@ -217,9 +217,13 @@ class ClawRouterPayloadSdkAudit:
                 if not uses_generic_envelope and not uses_sdkwork_envelope:
                     messages.append(f"{surface} {operation_id} result schema component is missing: {result_schema}")
             elif operation_spec is not None and not uses_sdkwork_envelope:
-                data_schema = result_component.get("properties", {}).get("data") if isinstance(result_component.get("properties"), dict) else None
-                expected_data_schema = {"$ref": f"#/components/schemas/{response_schema}"}
-                if not self._schema_matches_ref(data_schema, expected_data_schema["$ref"]):
+                data_schema = self._result_data_schema(result_component)
+                expected_data_schema = self._expected_response_data_schema(
+                    operation=operation,
+                    response_schema=response_schema,
+                    response_component=response_component,
+                )
+                if not self._schema_matches(data_schema, expected_data_schema):
                     messages.append(f"{surface} {operation_id} result data schema must be {expected_data_schema}")
             if operation_spec is None:
                 messages.append(f"{surface} {operation_id} is missing from OpenAPI path {self._string(operation.get('api_path'))} {method}")
@@ -566,6 +570,80 @@ class ClawRouterPayloadSdkAudit:
             isinstance(item, dict) and item.get("$ref") == self.SDKWORK_API_RESPONSE_REF
             for item in all_of
         )
+
+    def _result_data_schema(self, schema: dict[str, Any]) -> Any:
+        all_of = schema.get("allOf")
+        if isinstance(all_of, list) and any(
+            isinstance(item, dict) and item.get("$ref") == self.SDKWORK_API_RESPONSE_REF
+            for item in all_of
+        ):
+            for item in all_of:
+                if not isinstance(item, dict) or item.get("$ref") == self.SDKWORK_API_RESPONSE_REF:
+                    continue
+                properties = item.get("properties")
+                if isinstance(properties, dict) and "data" in properties:
+                    return properties["data"]
+            return None
+
+        properties = schema.get("properties")
+        if isinstance(properties, dict):
+            return properties.get("data")
+        return None
+
+    def _expected_response_data_schema(
+        self,
+        *,
+        operation: dict[str, Any],
+        response_schema: str,
+        response_component: Any,
+    ) -> dict[str, Any]:
+        if self._operation_is_list(operation) and isinstance(response_component, dict):
+            if self._schema_is_page_payload(response_component):
+                return {"$ref": f"#/components/schemas/{response_schema}"}
+            return self._page_data_schema(
+                self._list_item_schema(
+                    response_schema=response_schema,
+                    response_component=response_component,
+                )
+            )
+        return {"$ref": f"#/components/schemas/{response_schema}"}
+
+    def _operation_is_list(self, operation: dict[str, Any]) -> bool:
+        operation_id = self._string(operation.get("operation_id")) or self._string(operation.get("operation"))
+        if operation_id.endswith(".list") or operation_id.endswith(".search"):
+            return True
+        return self._string(operation.get("operation")).lower() in {"list", "search"}
+
+    def _schema_is_page_payload(self, schema: dict[str, Any]) -> bool:
+        properties = schema.get("properties")
+        return (
+            isinstance(properties, dict)
+            and isinstance(properties.get("items"), dict)
+            and isinstance(properties.get("pageInfo"), dict)
+        )
+
+    def _list_item_schema(self, *, response_schema: str, response_component: dict[str, Any]) -> dict[str, Any]:
+        items = response_component.get("items")
+        if response_component.get("type") == "array" and isinstance(items, dict):
+            item_ref = self._schema_ref(items)
+            if item_ref:
+                return {"$ref": item_ref}
+            item_name = items.get("name")
+            if isinstance(item_name, str) and re.match(r"^[A-Z][A-Za-z0-9]*$", item_name):
+                return {"$ref": f"#/components/schemas/{item_name}"}
+            return items
+        return {"$ref": f"#/components/schemas/{response_schema}"}
+
+    def _page_data_schema(self, item_schema: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["items", "pageInfo"],
+            "properties": {
+                "items": {"type": "array", "items": item_schema},
+                "pageInfo": {"$ref": "#/components/schemas/PageInfo"},
+            },
+        }
 
     def _uses_sdkwork_generic_success_envelope(self, schema: dict[str, Any]) -> bool:
         ref = self._string(schema.get("$ref"))
@@ -1025,6 +1103,30 @@ class ClawRouterPayloadSdkAudit:
             return True
         all_of = schema.get("allOf")
         return isinstance(all_of, list) and all_of == [{"$ref": expected_ref}]
+
+    def _schema_matches(self, actual: Any, expected: Any) -> bool:
+        return self._canonical_schema(actual) == self._canonical_schema(expected)
+
+    def _canonical_schema(self, value: Any) -> Any:
+        if isinstance(value, list):
+            return [self._canonical_schema(item) for item in value]
+        if isinstance(value, dict):
+            normalized = {
+                key: self._canonical_schema(item)
+                for key, item in value.items()
+                if key != "description"
+            }
+            all_of = normalized.get("allOf")
+            if (
+                isinstance(all_of, list)
+                and len(all_of) == 1
+                and isinstance(all_of[0], dict)
+                and isinstance(all_of[0].get("$ref"), str)
+                and set(normalized.keys()) == {"allOf"}
+            ):
+                return {"$ref": all_of[0]["$ref"]}
+            return normalized
+        return value
 
     def _schema_ref(self, schema: Any) -> str:
         if not isinstance(schema, dict):

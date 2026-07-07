@@ -1,5 +1,4 @@
 import {
-  ensureSdkworkApiSuccess,
   getModelsAppSdkClient,
   isRecord,
   readApiRecord,
@@ -35,7 +34,7 @@ export interface RankingServiceFilters {
   vendorCode?: string;
   modality?: string;
   searchQuery?: string;
-  limit?: number;
+  pageSize?: number;
 }
 
 export class RankingService {
@@ -45,9 +44,8 @@ export class RankingService {
       vendorCode: normalizeQueryString(filters.vendorCode),
       modality: normalizeQueryString(filters.modality),
       q: normalizeQueryString(filters.searchQuery),
-      limit: String(filters.limit ?? 200),
+      pageSize: filters.pageSize ?? 200,
     });
-    ensureSdkworkApiSuccess(result, 'Failed to fetch model rankings');
     const data = readApiRecord(result);
     const items = readRequiredApiItems(data, 'Failed to fetch model rankings', ['items'])
       .map(normalizeRankingModel)
@@ -62,7 +60,6 @@ export class RankingService {
 
   static async fetchModelVendors(): Promise<RankingVendorOption[]> {
     const result = await getModelsAppSdkClient().ai.modelVendors.list();
-    ensureSdkworkApiSuccess(result, 'Failed to fetch ranking model vendors');
 
     return readRequiredApiItems(result, 'Failed to fetch ranking model vendors')
       .map(normalizeRankingVendorOption)

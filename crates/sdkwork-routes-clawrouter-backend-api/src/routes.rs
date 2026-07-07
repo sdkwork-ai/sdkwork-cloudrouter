@@ -1675,20 +1675,14 @@ fn merge_admin_router_with_subject_boundary(
     }
 }
 
-fn layer_with_admin_subject_boundary(
-    config: AdminSubjectBoundaryConfig,
-    router: Router,
-) -> Router {
+fn layer_with_admin_subject_boundary(config: AdminSubjectBoundaryConfig, router: Router) -> Router {
     if sdkwork_claw_http::claw_web_framework_enabled_from_env() {
         router.layer(from_fn_with_state(
             config,
             admin_web_framework_access_boundary,
         ))
     } else {
-        router.layer(from_fn_with_state(
-            config,
-            admin_request_subject_boundary,
-        ))
+        router.layer(from_fn_with_state(config, admin_request_subject_boundary))
     }
 }
 
@@ -2029,9 +2023,7 @@ mod tests {
             .unwrap()
             .as_millis();
         let mut path = std::env::temp_dir();
-        path.push(format!(
-            "sdkwork-clawrouter-admin-gateway-runtime-{millis}"
-        ));
+        path.push(format!("sdkwork-clawrouter-admin-gateway-runtime-{millis}"));
         path.push("sdkwork-clawrouter.toml");
         path
     }

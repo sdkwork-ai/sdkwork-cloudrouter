@@ -6,8 +6,8 @@ namespace Sdkwork.ClawRouter.Backend.Models
 {
     public class ModelMappingsUpdateResult
     {
-        public string Code { get; set; }
-        public AdminModelMappingMutationResponse? Data { get; set; }
-        public string? Msg { get; set; }
+        public int Code { get; set; }
+        public object Data { get; set; }
+        public string TraceId { get; set; }
     }
 }

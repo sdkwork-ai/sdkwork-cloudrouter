@@ -222,7 +222,10 @@ async fn list_transactions(
         .first()
         .map(|row| integer_cell(row, "total"))
         .unwrap_or(0);
-    let items = rows.into_iter().map(row_to_transaction).collect::<Result<Vec<_>, _>>()?;
+    let items = rows
+        .into_iter()
+        .map(row_to_transaction)
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(AdminFinanceCollection {
         items,

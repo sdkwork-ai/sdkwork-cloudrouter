@@ -9,33 +9,33 @@ namespace Sdkwork.ClawRouter.App
     {
         private readonly SdkHttpClient _httpClient;
 
+        public SystemApi System { get; }
         public AiApi Ai { get; }
         public ChatApi Chat { get; }
         public IamApi Iam { get; }
         public NotificationApi Notification { get; }
         public RuntimeApi Runtime { get; }
-        public SystemApi System { get; }
 
         public SdkworkAppClient(string baseUrl)
         {
             _httpClient = new SdkHttpClient(baseUrl);
+            System = new SystemApi(_httpClient);
             Ai = new AiApi(_httpClient);
             Chat = new ChatApi(_httpClient);
             Iam = new IamApi(_httpClient);
             Notification = new NotificationApi(_httpClient);
             Runtime = new RuntimeApi(_httpClient);
-            System = new SystemApi(_httpClient);
         }
 
         public SdkworkAppClient(SdkConfig config)
         {
             _httpClient = new SdkHttpClient(config);
+            System = new SystemApi(_httpClient);
             Ai = new AiApi(_httpClient);
             Chat = new ChatApi(_httpClient);
             Iam = new IamApi(_httpClient);
             Notification = new NotificationApi(_httpClient);
             Runtime = new RuntimeApi(_httpClient);
-            System = new SystemApi(_httpClient);
         }
         public SdkworkAppClient SetAuthToken(string token)
         {

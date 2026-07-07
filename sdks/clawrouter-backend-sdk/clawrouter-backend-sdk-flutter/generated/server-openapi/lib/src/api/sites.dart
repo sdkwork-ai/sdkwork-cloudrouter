@@ -1,4 +1,3 @@
-import 'dart:convert';
 import '../http/client.dart';
 import '../models.dart';
 
@@ -11,29 +10,25 @@ class SitesApi {
 
   SitesApi(this._client);
 
-  /// List sites
-  Future<SiteCatalogListResult?> siteCatalogList([String? q]) async {
-    final query = buildQueryString([
-      QueryParameterSpec('q', q, 'form', true, false, null)
-    ]);
-    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.backendPath('/sites'), query));
+  /// List
+  Future<SiteCatalogListResult?> siteCatalogList() async {
+    final response = await _client.get(ApiPaths.backendPath('/sites'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : SiteCatalogListResult.fromJson(map);
     })();
   }
 
-  /// Create site
-  Future<SiteCreateResult?> siteCreate(AdminSiteCreateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.backendPath('/sites'), body: payload, contentType: 'application/json');
+  /// Create
+  Future<SiteCreateResult?> siteCreate() async {
+    final response = await _client.post(ApiPaths.backendPath('/sites'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : SiteCreateResult.fromJson(map);
     })();
   }
 
-  /// Delete site
+  /// Delete
   Future<SiteDeleteResult?> siteDelete(String siteId) async {
     final response = await _client.delete(ApiPaths.backendPath('/sites/${serializePathParameter(siteId, const PathParameterSpec('siteId', 'simple', false))}'));
     return (() {
@@ -42,17 +37,16 @@ class SitesApi {
     })();
   }
 
-  /// Update site
-  Future<SiteUpdateResult?> siteUpdate(String siteId, AdminSiteUpdateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.patch(ApiPaths.backendPath('/sites/${serializePathParameter(siteId, const PathParameterSpec('siteId', 'simple', false))}'), body: payload, contentType: 'application/json');
+  /// Update
+  Future<SiteUpdateResult?> siteUpdate(String siteId) async {
+    final response = await _client.patch(ApiPaths.backendPath('/sites/${serializePathParameter(siteId, const PathParameterSpec('siteId', 'simple', false))}'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : SiteUpdateResult.fromJson(map);
     })();
   }
 
-  /// List site channels
+  /// List
   Future<SiteChannelsListResult?> siteChannelsList(String siteId) async {
     final response = await _client.get(ApiPaths.backendPath('/sites/${serializePathParameter(siteId, const PathParameterSpec('siteId', 'simple', false))}/channels'));
     return (() {
@@ -61,20 +55,18 @@ class SitesApi {
     })();
   }
 
-  /// Health check site
-  Future<HealthCheckCreateResult?> healthCheckCreate(String siteId, AdminSiteActionRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.backendPath('/sites/${serializePathParameter(siteId, const PathParameterSpec('siteId', 'simple', false))}/health_check'), body: payload, contentType: 'application/json');
+  /// Create
+  Future<HealthCheckCreateResult?> healthCheckCreate(String siteId) async {
+    final response = await _client.post(ApiPaths.backendPath('/sites/${serializePathParameter(siteId, const PathParameterSpec('siteId', 'simple', false))}/health_check'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : HealthCheckCreateResult.fromJson(map);
     })();
   }
 
-  /// Test site connection
-  Future<TestConnectionCreateResult?> testConnectionCreate(String siteId, AdminSiteActionRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.backendPath('/sites/${serializePathParameter(siteId, const PathParameterSpec('siteId', 'simple', false))}/test_connection'), body: payload, contentType: 'application/json');
+  /// Create
+  Future<TestConnectionCreateResult?> testConnectionCreate(String siteId) async {
+    final response = await _client.post(ApiPaths.backendPath('/sites/${serializePathParameter(siteId, const PathParameterSpec('siteId', 'simple', false))}/test_connection'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : TestConnectionCreateResult.fromJson(map);
@@ -153,135 +145,3 @@ String pathPrefix(String name, String style) {
 String pathPrimitivePrefix(String name, String style) {
   return style == 'matrix' ? ';$name=' : pathPrefix(name, style);
 }
-class QueryParameterSpec {
-  final String name;
-  final dynamic value;
-  final String style;
-  final bool explode;
-  final bool allowReserved;
-  final String? contentType;
-
-  const QueryParameterSpec(
-    this.name,
-    this.value,
-    this.style,
-    this.explode,
-    this.allowReserved,
-    this.contentType,
-  );
-}
-
-String buildQueryString(List<QueryParameterSpec> parameters) {
-  final pairs = <String>[];
-  for (final parameter in parameters) {
-    appendSerializedParameter(pairs, parameter);
-  }
-  return pairs.join('&');
-}
-
-void appendSerializedParameter(List<String> pairs, QueryParameterSpec parameter) {
-  final value = parameter.value;
-  if (value == null) return;
-
-  final contentType = parameter.contentType;
-  if (contentType != null && contentType.trim().isNotEmpty) {
-    pairs.add('${urlEncode(parameter.name)}=${encodeQueryValue(jsonEncode(value), parameter.allowReserved)}');
-    return;
-  }
-
-  final style = parameter.style.trim().isEmpty ? 'form' : parameter.style;
-  if (style == 'deepObject' && value is Map) {
-    appendDeepObjectParameter(pairs, parameter.name, value, parameter.allowReserved);
-    return;
-  }
-  if (value is Iterable) {
-    appendArrayParameter(pairs, parameter.name, value, style, parameter.explode, parameter.allowReserved);
-    return;
-  }
-  if (value is Map) {
-    appendObjectParameter(pairs, parameter.name, value, style, parameter.explode, parameter.allowReserved);
-    return;
-  }
-  pairs.add('${urlEncode(parameter.name)}=${encodeQueryValue(value.toString(), parameter.allowReserved)}');
-}
-
-void appendArrayParameter(
-  List<String> pairs,
-  String name,
-  Iterable values,
-  String style,
-  bool explode,
-  bool allowReserved,
-) {
-  final serialized = values.where((item) => item != null).map((item) => item.toString()).toList();
-  if (serialized.isEmpty) return;
-  if (style == 'form' && explode) {
-    for (final item in serialized) {
-      pairs.add('${urlEncode(name)}=${encodeQueryValue(item, allowReserved)}');
-    }
-    return;
-  }
-  pairs.add('${urlEncode(name)}=${encodeQueryValue(serialized.join(','), allowReserved)}');
-}
-
-void appendObjectParameter(
-  List<String> pairs,
-  String name,
-  Map values,
-  String style,
-  bool explode,
-  bool allowReserved,
-) {
-  final serialized = <String>[];
-  values.forEach((key, value) {
-    if (value == null) return;
-    if (style == 'form' && explode) {
-      pairs.add('${urlEncode(key.toString())}=${encodeQueryValue(value.toString(), allowReserved)}');
-      return;
-    }
-    serialized.add(key.toString());
-    serialized.add(value.toString());
-  });
-  if (serialized.isNotEmpty) {
-    pairs.add('${urlEncode(name)}=${encodeQueryValue(serialized.join(','), allowReserved)}');
-  }
-}
-
-void appendDeepObjectParameter(List<String> pairs, String name, Map values, bool allowReserved) {
-  values.forEach((key, value) {
-    if (value != null) {
-      pairs.add('${urlEncode('$name[$key]')}=${encodeQueryValue(value.toString(), allowReserved)}');
-    }
-  });
-}
-
-String encodeQueryValue(String value, bool allowReserved) {
-  var encoded = urlEncode(value);
-  if (!allowReserved) return encoded;
-  const replacements = <String, String>{
-    '%3A': ':',
-    '%2F': '/',
-    '%3F': '?',
-    '%23': '#',
-    '%5B': '[',
-    '%5D': ']',
-    '%40': '@',
-    '%21': '!',
-    '%24': r'$',
-    '%26': '&',
-    '%27': "'",
-    '%28': '(',
-    '%29': ')',
-    '%2A': '*',
-    '%2B': '+',
-    '%2C': ',',
-    '%3B': ';',
-    '%3D': '=',
-  };
-  replacements.forEach((escaped, reserved) {
-    encoded = encoded.replaceAll(escaped, reserved);
-  });
-  return encoded;
-}
-
-String urlEncode(String value) => Uri.encodeQueryComponent(value);

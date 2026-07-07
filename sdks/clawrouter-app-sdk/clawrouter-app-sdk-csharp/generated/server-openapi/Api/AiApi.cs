@@ -16,7 +16,7 @@ namespace Sdkwork.ClawRouter.App.Api
         }
 
         /// <summary>
-        /// List groups
+        /// List
         /// </summary>
         public async Task<Sdkwork.ClawRouter.App.Models.ChannelGroupsListResult?> ChannelGroupsListAsync()
         {
@@ -24,21 +24,15 @@ namespace Sdkwork.ClawRouter.App.Api
         }
 
         /// <summary>
-        /// List dashboard overview
+        /// Retrieve
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.App.Models.DashboardOverviewRetrieveResult?> DashboardOverviewRetrieveAsync(string? timeRange = null, string? startTime = null, string? endTime = null)
+        public async Task<Sdkwork.ClawRouter.App.Models.DashboardOverviewRetrieveResult?> DashboardOverviewRetrieveAsync()
         {
-            var queryString = BuildQueryString(new[]
-            {
-                new QueryParameterSpec("time_range", timeRange, "form", true, false, null),
-                new QueryParameterSpec("start_time", startTime, "form", true, false, null),
-                new QueryParameterSpec("end_time", endTime, "form", true, false, null),
-            });
-            return await _client.GetAsync<Sdkwork.ClawRouter.App.Models.DashboardOverviewRetrieveResult>(ApiPaths.AppendQueryString(ApiPaths.AppPath("/ai/dashboard/overview"), queryString));
+            return await _client.GetAsync<Sdkwork.ClawRouter.App.Models.DashboardOverviewRetrieveResult>(ApiPaths.AppPath("/ai/dashboard/overview"));
         }
 
         /// <summary>
-        /// List traces
+        /// List
         /// </summary>
         public async Task<Sdkwork.ClawRouter.App.Models.GatewayTracesListResult?> GatewayTracesListAsync()
         {
@@ -46,9 +40,9 @@ namespace Sdkwork.ClawRouter.App.Api
         }
 
         /// <summary>
-        /// List model rankings
+        /// List
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.App.Models.ModelRankingsListResult?> ModelRankingsListAsync(string? rankScope = null, string? vendorCode = null, string? modality = null, string? q = null, string? limit = null)
+        public async Task<Sdkwork.ClawRouter.App.Models.ModelRankingsListResult?> ModelRankingsListAsync(string? rankScope = null, string? vendorCode = null, string? modality = null, string? q = null, int? pageSize = null)
         {
             var queryString = BuildQueryString(new[]
             {
@@ -56,13 +50,13 @@ namespace Sdkwork.ClawRouter.App.Api
                 new QueryParameterSpec("vendor_code", vendorCode, "form", true, false, null),
                 new QueryParameterSpec("modality", modality, "form", true, false, null),
                 new QueryParameterSpec("q", q, "form", true, false, null),
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
             });
             return await _client.GetAsync<Sdkwork.ClawRouter.App.Models.ModelRankingsListResult>(ApiPaths.AppendQueryString(ApiPaths.AppPath("/ai/model_rankings"), queryString));
         }
 
         /// <summary>
-        /// List ranking vendor filters
+        /// List
         /// </summary>
         public async Task<Sdkwork.ClawRouter.App.Models.ModelVendorsListResult?> ModelVendorsListAsync()
         {
@@ -70,28 +64,27 @@ namespace Sdkwork.ClawRouter.App.Api
         }
 
         /// <summary>
-        /// List model catalog for Playground
+        /// List
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.App.Models.ModelsListResult?> ModelsListAsync(string? billingMeter = null, string? vendorCode = null, List<string>? vendorCodes = null, List<string>? modalities = null, List<string>? capabilities = null, List<string>? categories = null, List<string>? groups = null, string? q = null, string? limit = null, string? offset = null)
+        public async Task<Sdkwork.ClawRouter.App.Models.ModelsListResult?> ModelsListAsync(int? page = null, int? pageSize = null, string? q = null, string? billingMeter = null, List<string>? vendorCodes = null, List<string>? modalities = null, List<string>? capabilities = null, List<string>? categories = null, List<string>? groups = null)
         {
             var queryString = BuildQueryString(new[]
             {
+                new QueryParameterSpec("page", page, "form", true, false, null),
+                new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+                new QueryParameterSpec("q", q, "form", true, false, null),
                 new QueryParameterSpec("billing_meter", billingMeter, "form", true, false, null),
-                new QueryParameterSpec("vendor_code", vendorCode, "form", true, false, null),
                 new QueryParameterSpec("vendor_codes", vendorCodes, "form", false, false, null),
                 new QueryParameterSpec("modalities", modalities, "form", false, false, null),
                 new QueryParameterSpec("capabilities", capabilities, "form", false, false, null),
                 new QueryParameterSpec("categories", categories, "form", false, false, null),
                 new QueryParameterSpec("groups", groups, "form", false, false, null),
-                new QueryParameterSpec("q", q, "form", true, false, null),
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
-                new QueryParameterSpec("offset", offset, "form", true, false, null),
             });
             return await _client.GetAsync<Sdkwork.ClawRouter.App.Models.ModelsListResult>(ApiPaths.AppendQueryString(ApiPaths.AppPath("/ai/models"), queryString));
         }
 
         /// <summary>
-        /// List routing API keys
+        /// List
         /// </summary>
         public async Task<Sdkwork.ClawRouter.App.Models.RoutingApiKeysListResult?> RoutingApiKeysListAsync()
         {
@@ -99,7 +92,7 @@ namespace Sdkwork.ClawRouter.App.Api
         }
 
         /// <summary>
-        /// List routing channels
+        /// List
         /// </summary>
         public async Task<Sdkwork.ClawRouter.App.Models.RoutingChannelsListResult?> RoutingChannelsListAsync()
         {
@@ -107,7 +100,7 @@ namespace Sdkwork.ClawRouter.App.Api
         }
 
         /// <summary>
-        /// List routing request traces
+        /// List
         /// </summary>
         public async Task<Sdkwork.ClawRouter.App.Models.RoutingRequestTracesListResult?> RoutingRequestTracesListAsync()
         {
@@ -115,7 +108,7 @@ namespace Sdkwork.ClawRouter.App.Api
         }
 
         /// <summary>
-        /// List routing usage
+        /// List
         /// </summary>
         public async Task<Sdkwork.ClawRouter.App.Models.RoutingUsageListResult?> RoutingUsageListAsync()
         {
@@ -123,20 +116,11 @@ namespace Sdkwork.ClawRouter.App.Api
         }
 
         /// <summary>
-        /// List logs
+        /// List
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.App.Models.UsageLogsListResult?> UsageLogsListAsync(string? page = null, string? pageSize = null, string? q = null, string? status = null, string? startTime = null, string? endTime = null)
+        public async Task<Sdkwork.ClawRouter.App.Models.UsageLogsListResult?> UsageLogsListAsync()
         {
-            var queryString = BuildQueryString(new[]
-            {
-                new QueryParameterSpec("page", page, "form", true, false, null),
-                new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
-                new QueryParameterSpec("q", q, "form", true, false, null),
-                new QueryParameterSpec("status", status, "form", true, false, null),
-                new QueryParameterSpec("start_time", startTime, "form", true, false, null),
-                new QueryParameterSpec("end_time", endTime, "form", true, false, null),
-            });
-            return await _client.GetAsync<Sdkwork.ClawRouter.App.Models.UsageLogsListResult>(ApiPaths.AppendQueryString(ApiPaths.AppPath("/ai/usage/logs"), queryString));
+            return await _client.GetAsync<Sdkwork.ClawRouter.App.Models.UsageLogsListResult>(ApiPaths.AppPath("/ai/usage/logs"));
         }
 
 

@@ -1,5 +1,6 @@
 import path from 'node:path';
 
+import { readGenerationAssetConfigStubReplacement } from './portal-generation-asset-config-stub.mjs';
 import {
   resolvePortalPackageModule,
   shouldResolvePortalPnpmWorkspaceSpecifier,
@@ -52,6 +53,18 @@ export function createPortalOptimizeDepsEsbuildPlugin(
   return {
     name: 'portal-optimize-deps-resolver',
     setup(build) {
+      build.onLoad({ filter: /generation-asset-config\.ts$/ }, (args) => {
+        const replacement = readGenerationAssetConfigStubReplacement(configDir, args.path, args.path);
+        if (!replacement) {
+          return null;
+        }
+
+        return {
+          contents: replacement,
+          loader: 'ts',
+        };
+      });
+
       build.onResolve({ filter: /.*/ }, (args) => {
         if (!shouldResolvePortalOptimizeDepsImport(
           args.path,

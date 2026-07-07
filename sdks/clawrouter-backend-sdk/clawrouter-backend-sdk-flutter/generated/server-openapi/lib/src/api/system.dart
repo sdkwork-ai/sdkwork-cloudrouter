@@ -11,13 +11,22 @@ class SystemApi {
 
   SystemApi(this._client);
 
-  /// List overview
-  Future<AnalyticsAdminOverviewRetrieveResult?> analyticsAdminOverviewRetrieve([String? timeRange, String? startTime, String? endTime, String? limit]) async {
+  /// Create
+  Future<AfterSalesReviewsCreateResult?> afterSalesReviewsCreate(String afterSalesRequestId) async {
+    final response = await _client.post(ApiPaths.backendPath('/system/after_sales/requests/${serializePathParameter(afterSalesRequestId, const PathParameterSpec('afterSalesRequestId', 'simple', false))}/reviews'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : AfterSalesReviewsCreateResult.fromJson(map);
+    })();
+  }
+
+  /// Retrieve
+  Future<AnalyticsAdminOverviewRetrieveResult?> analyticsAdminOverviewRetrieve([String? timeRange, String? startTime, String? endTime, int? rankingSize]) async {
     final query = buildQueryString([
       QueryParameterSpec('time_range', timeRange, 'form', true, false, null),
       QueryParameterSpec('start_time', startTime, 'form', true, false, null),
       QueryParameterSpec('end_time', endTime, 'form', true, false, null),
-      QueryParameterSpec('limit', limit, 'form', true, false, null)
+      QueryParameterSpec('ranking_size', rankingSize, 'form', true, false, null)
     ]);
     final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.backendPath('/system/analytics/admin/overview'), query));
     return (() {
@@ -26,7 +35,7 @@ class SystemApi {
     })();
   }
 
-  /// Retrieve IAM auth runtime settings
+  /// Retrieve
   Future<AuthSettingsRetrieveResult?> authSettingsRetrieve() async {
     final response = await _client.get(ApiPaths.backendPath('/system/auth/settings'));
     return (() {
@@ -35,17 +44,16 @@ class SystemApi {
     })();
   }
 
-  /// Update IAM auth runtime settings
-  Future<AuthSettingsUpdateResult?> authSettingsUpdate(AdminAuthSettingsUpdateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.patch(ApiPaths.backendPath('/system/auth/settings'), body: payload, contentType: 'application/json');
+  /// Update
+  Future<AuthSettingsUpdateResult?> authSettingsUpdate() async {
+    final response = await _client.patch(ApiPaths.backendPath('/system/auth/settings'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : AuthSettingsUpdateResult.fromJson(map);
     })();
   }
 
-  /// Delete one runtime cache instance
+  /// Delete
   Future<CacheInstancesDeleteResult?> cacheInstancesDelete(String instanceName) async {
     final response = await _client.delete(ApiPaths.backendPath('/system/cache/instances/${serializePathParameter(instanceName, const PathParameterSpec('instanceName', 'simple', false))}'));
     return (() {
@@ -54,7 +62,7 @@ class SystemApi {
     })();
   }
 
-  /// Refresh one runtime cache instance
+  /// Create
   Future<CacheInstancesRefreshCreateResult?> cacheInstancesRefreshCreate(String instanceName) async {
     final response = await _client.post(ApiPaths.backendPath('/system/cache/instances/${serializePathParameter(instanceName, const PathParameterSpec('instanceName', 'simple', false))}/refresh'));
     return (() {
@@ -63,7 +71,7 @@ class SystemApi {
     })();
   }
 
-  /// Delete a runtime cache namespace
+  /// Delete
   Future<CacheNamespacesDeleteResult?> cacheNamespacesDelete(String namespace) async {
     final response = await _client.delete(ApiPaths.backendPath('/system/cache/namespaces/${serializePathParameter(namespace, const PathParameterSpec('namespace', 'simple', false))}'));
     return (() {
@@ -72,10 +80,10 @@ class SystemApi {
     })();
   }
 
-  /// List runtime cache keys in a namespace
-  Future<CacheNamespacesKeysListResult?> cacheNamespacesKeysList(String namespace, [String? limit, String? cursor]) async {
+  /// List
+  Future<CacheNamespacesKeysListResult?> cacheNamespacesKeysList(String namespace, [int? pageSize, String? cursor]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', pageSize, 'form', true, false, null),
       QueryParameterSpec('cursor', cursor, 'form', true, false, null)
     ]);
     final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.backendPath('/system/cache/namespaces/${serializePathParameter(namespace, const PathParameterSpec('namespace', 'simple', false))}/keys'), query));
@@ -85,7 +93,7 @@ class SystemApi {
     })();
   }
 
-  /// Delete a runtime cache key
+  /// Delete
   Future<CacheNamespacesKeysDeleteResult?> cacheNamespacesKeysDelete(String namespace, String key) async {
     final response = await _client.delete(ApiPaths.backendPath('/system/cache/namespaces/${serializePathParameter(namespace, const PathParameterSpec('namespace', 'simple', false))}/keys/${serializePathParameter(key, const PathParameterSpec('key', 'simple', false))}'));
     return (() {
@@ -94,7 +102,7 @@ class SystemApi {
     })();
   }
 
-  /// Refresh one runtime cache namespace
+  /// Create
   Future<CacheNamespacesRefreshCreateResult?> cacheNamespacesRefreshCreate(String namespace) async {
     final response = await _client.post(ApiPaths.backendPath('/system/cache/namespaces/${serializePathParameter(namespace, const PathParameterSpec('namespace', 'simple', false))}/refresh'));
     return (() {
@@ -103,7 +111,7 @@ class SystemApi {
     })();
   }
 
-  /// Retrieve runtime cache overview
+  /// Retrieve
   Future<CacheOverviewRetrieveResult?> cacheOverviewRetrieve() async {
     final response = await _client.get(ApiPaths.backendPath('/system/cache/overview'));
     return (() {
@@ -112,7 +120,7 @@ class SystemApi {
     })();
   }
 
-  /// Refresh all runtime cache instances
+  /// Create
   Future<CacheRefreshCreateResult?> cacheRefreshCreate() async {
     final response = await _client.post(ApiPaths.backendPath('/system/cache/refresh'));
     return (() {
@@ -121,7 +129,7 @@ class SystemApi {
     })();
   }
 
-  /// List dashboard data
+  /// Retrieve
   Future<DashboardAdminOverviewRetrieveResult?> dashboardAdminOverviewRetrieve() async {
     final response = await _client.get(ApiPaths.backendPath('/system/dashboard/admin/overview'));
     return (() {
@@ -130,7 +138,7 @@ class SystemApi {
     })();
   }
 
-  /// List firewalls
+  /// List
   Future<FirewallsRulesListResult?> firewallsRulesList() async {
     final response = await _client.get(ApiPaths.backendPath('/system/firewalls/rules'));
     return (() {
@@ -139,17 +147,16 @@ class SystemApi {
     })();
   }
 
-  /// Create firewall
-  Future<FirewallsRulesCreateResult?> firewallsRulesCreate(AdminFirewallRuleCreateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.backendPath('/system/firewalls/rules'), body: payload, contentType: 'application/json');
+  /// Create
+  Future<FirewallsRulesCreateResult?> firewallsRulesCreate() async {
+    final response = await _client.post(ApiPaths.backendPath('/system/firewalls/rules'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : FirewallsRulesCreateResult.fromJson(map);
     })();
   }
 
-  /// Delete firewall
+  /// Delete
   Future<FirewallsRulesDeleteResult?> firewallsRulesDelete(String ruleId) async {
     final response = await _client.delete(ApiPaths.backendPath('/system/firewalls/rules/${serializePathParameter(ruleId, const PathParameterSpec('ruleId', 'simple', false))}'));
     return (() {
@@ -158,7 +165,7 @@ class SystemApi {
     })();
   }
 
-  /// List installation status
+  /// Retrieve
   Future<InstallationStatusRetrieveResult?> installationStatusRetrieve() async {
     final response = await _client.get(ApiPaths.backendPath('/system/installation/status'));
     return (() {
@@ -167,7 +174,7 @@ class SystemApi {
     })();
   }
 
-  /// List referral stats
+  /// List
   Future<MarketingReferralStatsListResult?> marketingReferralStatsList() async {
     final response = await _client.get(ApiPaths.backendPath('/system/marketing/referral_stats'));
     return (() {
@@ -176,7 +183,7 @@ class SystemApi {
     })();
   }
 
-  /// List alerts
+  /// List
   Future<MonitorAlertsListResult?> monitorAlertsList() async {
     final response = await _client.get(ApiPaths.backendPath('/system/monitor/alerts'));
     return (() {
@@ -185,7 +192,7 @@ class SystemApi {
     })();
   }
 
-  /// List nodes
+  /// List
   Future<MonitorNodesListResult?> monitorNodesList() async {
     final response = await _client.get(ApiPaths.backendPath('/system/monitor/nodes'));
     return (() {
@@ -194,7 +201,7 @@ class SystemApi {
     })();
   }
 
-  /// List performance data
+  /// List
   Future<MonitorPerformanceListResult?> monitorPerformanceList() async {
     final response = await _client.get(ApiPaths.backendPath('/system/monitor/performance'));
     return (() {
@@ -203,7 +210,7 @@ class SystemApi {
     })();
   }
 
-  /// List token limits
+  /// List
   Future<RateLimitsApiKeysListResult?> rateLimitsApiKeysList() async {
     final response = await _client.get(ApiPaths.backendPath('/system/rate_limits/api_keys'));
     return (() {
@@ -212,17 +219,16 @@ class SystemApi {
     })();
   }
 
-  /// Create token limit
-  Future<RateLimitsApiKeysCreateResult?> rateLimitsApiKeysCreate(AdminTokenLimitCreateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.backendPath('/system/rate_limits/api_keys'), body: payload, contentType: 'application/json');
+  /// Create
+  Future<RateLimitsApiKeysCreateResult?> rateLimitsApiKeysCreate() async {
+    final response = await _client.post(ApiPaths.backendPath('/system/rate_limits/api_keys'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : RateLimitsApiKeysCreateResult.fromJson(map);
     })();
   }
 
-  /// List IP limits
+  /// List
   Future<RateLimitsIpListResult?> rateLimitsIpList() async {
     final response = await _client.get(ApiPaths.backendPath('/system/rate_limits/ip'));
     return (() {
@@ -231,17 +237,16 @@ class SystemApi {
     })();
   }
 
-  /// Create IP limit
-  Future<RateLimitsIpCreateResult?> rateLimitsIpCreate(AdminIpLimitCreateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.backendPath('/system/rate_limits/ip'), body: payload, contentType: 'application/json');
+  /// Create
+  Future<RateLimitsIpCreateResult?> rateLimitsIpCreate() async {
+    final response = await _client.post(ApiPaths.backendPath('/system/rate_limits/ip'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : RateLimitsIpCreateResult.fromJson(map);
     })();
   }
 
-  /// List model limits
+  /// List
   Future<RateLimitsModelsListResult?> rateLimitsModelsList() async {
     final response = await _client.get(ApiPaths.backendPath('/system/rate_limits/models'));
     return (() {
@@ -250,33 +255,25 @@ class SystemApi {
     })();
   }
 
-  /// Create model limit
-  Future<RateLimitsModelsCreateResult?> rateLimitsModelsCreate(AdminModelLimitCreateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.backendPath('/system/rate_limits/models'), body: payload, contentType: 'application/json');
+  /// Create
+  Future<RateLimitsModelsCreateResult?> rateLimitsModelsCreate() async {
+    final response = await _client.post(ApiPaths.backendPath('/system/rate_limits/models'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : RateLimitsModelsCreateResult.fromJson(map);
     })();
   }
 
-  /// List logs
-  Future<RecordsListResult?> recordsList([String? page, String? pageSize, String? user, String? token, String? model]) async {
-    final query = buildQueryString([
-      QueryParameterSpec('page', page, 'form', true, false, null),
-      QueryParameterSpec('page_size', pageSize, 'form', true, false, null),
-      QueryParameterSpec('user', user, 'form', true, false, null),
-      QueryParameterSpec('token', token, 'form', true, false, null),
-      QueryParameterSpec('model', model, 'form', true, false, null)
-    ]);
-    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.backendPath('/system/records'), query));
+  /// List
+  Future<RecordsListResult?> recordsList() async {
+    final response = await _client.get(ApiPaths.backendPath('/system/records'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : RecordsListResult.fromJson(map);
     })();
   }
 
-  /// Retrieve runtime region settings
+  /// Retrieve
   Future<RuntimeRegionSettingsRetrieveResult?> runtimeRegionSettingsRetrieve() async {
     final response = await _client.get(ApiPaths.backendPath('/system/runtime_region/settings'));
     return (() {
@@ -285,40 +282,34 @@ class SystemApi {
     })();
   }
 
-  /// Update runtime region settings
-  Future<RuntimeRegionSettingsUpdateResult?> runtimeRegionSettingsUpdate(AdminRuntimeRegionSettingsUpdateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.patch(ApiPaths.backendPath('/system/runtime_region/settings'), body: payload, contentType: 'application/json');
+  /// Update
+  Future<RuntimeRegionSettingsUpdateResult?> runtimeRegionSettingsUpdate() async {
+    final response = await _client.patch(ApiPaths.backendPath('/system/runtime_region/settings'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : RuntimeRegionSettingsUpdateResult.fromJson(map);
     })();
   }
 
-  /// List service nodes
-  Future<ServiceNodesListResult?> serviceNodesList([String? q, String? status]) async {
-    final query = buildQueryString([
-      QueryParameterSpec('q', q, 'form', true, false, null),
-      QueryParameterSpec('status', status, 'form', true, false, null)
-    ]);
-    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.backendPath('/system/service_nodes'), query));
+  /// List
+  Future<ServiceNodesListResult?> serviceNodesList() async {
+    final response = await _client.get(ApiPaths.backendPath('/system/service_nodes'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ServiceNodesListResult.fromJson(map);
     })();
   }
 
-  /// Create service node
-  Future<ServiceNodesCreateResult?> serviceNodesCreate(AdminServiceNodeCreateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.backendPath('/system/service_nodes'), body: payload, contentType: 'application/json');
+  /// Create
+  Future<ServiceNodesCreateResult?> serviceNodesCreate() async {
+    final response = await _client.post(ApiPaths.backendPath('/system/service_nodes'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ServiceNodesCreateResult.fromJson(map);
     })();
   }
 
-  /// Delete service node
+  /// Delete
   Future<ServiceNodesDeleteResult?> serviceNodesDelete(String nodeId) async {
     final response = await _client.delete(ApiPaths.backendPath('/system/service_nodes/${serializePathParameter(nodeId, const PathParameterSpec('nodeId', 'simple', false))}'));
     return (() {
@@ -327,27 +318,295 @@ class SystemApi {
     })();
   }
 
-  /// Update service node
-  Future<ServiceNodesUpdateResult?> serviceNodesUpdate(String nodeId, AdminServiceNodeUpdateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.put(ApiPaths.backendPath('/system/service_nodes/${serializePathParameter(nodeId, const PathParameterSpec('nodeId', 'simple', false))}'), body: payload, contentType: 'application/json');
+  /// Update
+  Future<ServiceNodesUpdateResult?> serviceNodesUpdate(String nodeId) async {
+    final response = await _client.put(ApiPaths.backendPath('/system/service_nodes/${serializePathParameter(nodeId, const PathParameterSpec('nodeId', 'simple', false))}'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ServiceNodesUpdateResult.fromJson(map);
     })();
   }
 
-  /// Update service node status
-  Future<ServiceNodesStatusUpdateResult?> serviceNodesStatusUpdate(String nodeId, AdminServiceNodeStatusUpdateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.put(ApiPaths.backendPath('/system/service_nodes/${serializePathParameter(nodeId, const PathParameterSpec('nodeId', 'simple', false))}/status'), body: payload, contentType: 'application/json');
+  /// Update
+  Future<ServiceNodesStatusUpdateResult?> serviceNodesStatusUpdate(String nodeId) async {
+    final response = await _client.put(ApiPaths.backendPath('/system/service_nodes/${serializePathParameter(nodeId, const PathParameterSpec('nodeId', 'simple', false))}/status'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ServiceNodesStatusUpdateResult.fromJson(map);
     })();
   }
 
-  /// Retrieve site branding and deployment personalization settings
+  /// Create
+  Future<ShopsCreateResult?> shopsCreate() async {
+    final response = await _client.post(ApiPaths.backendPath('/system/shops'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsCreateResult.fromJson(map);
+    })();
+  }
+
+  /// Update
+  Future<ShopsUpdateResult?> shopsUpdate(String shopId) async {
+    final response = await _client.patch(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsUpdateResult.fromJson(map);
+    })();
+  }
+
+  /// Approve
+  Future<ShopsApproveResult?> shopsApprove(String shopId) async {
+    final response = await _client.post(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/approve'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsApproveResult.fromJson(map);
+    })();
+  }
+
+  /// Upsert
+  Future<ShopsBrandAuthorizationsUpsertResult?> shopsBrandAuthorizationsUpsert(String shopId) async {
+    final response = await _client.put(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/brand_authorizations'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsBrandAuthorizationsUpsertResult.fromJson(map);
+    })();
+  }
+
+  /// Update
+  Future<ShopsBusinessHoursUpdateResult?> shopsBusinessHoursUpdate(String shopId) async {
+    final response = await _client.patch(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/business_hours'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsBusinessHoursUpdateResult.fromJson(map);
+    })();
+  }
+
+  /// Upsert
+  Future<ShopsCategoryBindingsUpsertResult?> shopsCategoryBindingsUpsert(String shopId) async {
+    final response = await _client.put(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/category_bindings'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsCategoryBindingsUpsertResult.fromJson(map);
+    })();
+  }
+
+  /// Create
+  Future<ShopsChannelsCreateResult?> shopsChannelsCreate(String shopId) async {
+    final response = await _client.post(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/channels'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsChannelsCreateResult.fromJson(map);
+    })();
+  }
+
+  /// Update
+  Future<ShopsChannelsUpdateResult?> shopsChannelsUpdate(String shopId, String channelId) async {
+    final response = await _client.patch(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/channels/${serializePathParameter(channelId, const PathParameterSpec('channelId', 'simple', false))}'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsChannelsUpdateResult.fromJson(map);
+    })();
+  }
+
+  /// Close
+  Future<ShopsCloseResult?> shopsClose(String shopId) async {
+    final response = await _client.post(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/close'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsCloseResult.fromJson(map);
+    })();
+  }
+
+  /// Upsert
+  Future<ShopsCustomerServicesUpsertResult?> shopsCustomerServicesUpsert(String shopId) async {
+    final response = await _client.put(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/customer_services'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsCustomerServicesUpsertResult.fromJson(map);
+    })();
+  }
+
+  /// Update
+  Future<ShopsDepositAccountUpdateResult?> shopsDepositAccountUpdate(String shopId) async {
+    final response = await _client.patch(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/deposit_account'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsDepositAccountUpdateResult.fromJson(map);
+    })();
+  }
+
+  /// Review
+  Future<ShopsDepositAccountReviewResult?> shopsDepositAccountReview(String shopId) async {
+    final response = await _client.post(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/deposit_account/review'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsDepositAccountReviewResult.fromJson(map);
+    })();
+  }
+
+  /// Update
+  Future<ShopsFulfillmentProfileUpdateResult?> shopsFulfillmentProfileUpdate(String shopId) async {
+    final response = await _client.patch(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/fulfillment_profile'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsFulfillmentProfileUpdateResult.fromJson(map);
+    })();
+  }
+
+  /// Create
+  Future<ShopsPoliciesCreateResult?> shopsPoliciesCreate(String shopId) async {
+    final response = await _client.post(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/policies'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsPoliciesCreateResult.fromJson(map);
+    })();
+  }
+
+  /// Update
+  Future<ShopsPoliciesUpdateResult?> shopsPoliciesUpdate(String shopId, String policyId) async {
+    final response = await _client.patch(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/policies/${serializePathParameter(policyId, const PathParameterSpec('policyId', 'simple', false))}'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsPoliciesUpdateResult.fromJson(map);
+    })();
+  }
+
+  /// Upsert
+  Future<ShopsQualificationsUpsertResult?> shopsQualificationsUpsert(String shopId) async {
+    final response = await _client.put(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/qualifications'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsQualificationsUpsertResult.fromJson(map);
+    })();
+  }
+
+  /// Reject
+  Future<ShopsRejectResult?> shopsReject(String shopId) async {
+    final response = await _client.post(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/reject'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsRejectResult.fromJson(map);
+    })();
+  }
+
+  /// Resume
+  Future<ShopsResumeResult?> shopsResume(String shopId) async {
+    final response = await _client.post(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/resume'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsResumeResult.fromJson(map);
+    })();
+  }
+
+  /// Upsert
+  Future<ShopsReturnAddressesUpsertResult?> shopsReturnAddressesUpsert(String shopId) async {
+    final response = await _client.put(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/return_addresses'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsReturnAddressesUpsertResult.fromJson(map);
+    })();
+  }
+
+  /// Create
+  Future<ShopsRiskSignalsCreateResult?> shopsRiskSignalsCreate(String shopId) async {
+    final response = await _client.post(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/risk_signals'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsRiskSignalsCreateResult.fromJson(map);
+    })();
+  }
+
+  /// Resolve
+  Future<ShopsRiskSignalsResolveResult?> shopsRiskSignalsResolve(String shopId, String riskSignalId) async {
+    final response = await _client.post(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/risk_signals/${serializePathParameter(riskSignalId, const PathParameterSpec('riskSignalId', 'simple', false))}/resolve'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsRiskSignalsResolveResult.fromJson(map);
+    })();
+  }
+
+  /// Create
+  Future<ShopsServiceAreasCreateResult?> shopsServiceAreasCreate(String shopId) async {
+    final response = await _client.post(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/service_areas'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsServiceAreasCreateResult.fromJson(map);
+    })();
+  }
+
+  /// Update
+  Future<ShopsServiceAreasUpdateResult?> shopsServiceAreasUpdate(String shopId, String serviceAreaId) async {
+    final response = await _client.patch(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/service_areas/${serializePathParameter(serviceAreaId, const PathParameterSpec('serviceAreaId', 'simple', false))}'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsServiceAreasUpdateResult.fromJson(map);
+    })();
+  }
+
+  /// Update
+  Future<ShopsSettlementProfileUpdateResult?> shopsSettlementProfileUpdate(String shopId) async {
+    final response = await _client.patch(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/settlement_profile'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsSettlementProfileUpdateResult.fromJson(map);
+    })();
+  }
+
+  /// Approve
+  Future<ShopsSettlementProfileApproveResult?> shopsSettlementProfileApprove(String shopId) async {
+    final response = await _client.post(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/settlement_profile/approve'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsSettlementProfileApproveResult.fromJson(map);
+    })();
+  }
+
+  /// Reject
+  Future<ShopsSettlementProfileRejectResult?> shopsSettlementProfileReject(String shopId) async {
+    final response = await _client.post(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/settlement_profile/reject'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsSettlementProfileRejectResult.fromJson(map);
+    })();
+  }
+
+  /// Upsert
+  Future<ShopsShippingTemplatesUpsertResult?> shopsShippingTemplatesUpsert(String shopId) async {
+    final response = await _client.put(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/shipping_templates'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsShippingTemplatesUpsertResult.fromJson(map);
+    })();
+  }
+
+  /// Create review
+  Future<ShopsSubmitReviewResult?> shopsSubmitReview(String shopId) async {
+    final response = await _client.post(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/submit_review'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsSubmitReviewResult.fromJson(map);
+    })();
+  }
+
+  /// Suspend
+  Future<ShopsSuspendResult?> shopsSuspend(String shopId) async {
+    final response = await _client.post(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/suspend'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsSuspendResult.fromJson(map);
+    })();
+  }
+
+  /// Update
+  Future<ShopsVerificationsUpdateResult?> shopsVerificationsUpdate(String shopId, String verificationId) async {
+    final response = await _client.patch(ApiPaths.backendPath('/system/shops/${serializePathParameter(shopId, const PathParameterSpec('shopId', 'simple', false))}/verifications/${serializePathParameter(verificationId, const PathParameterSpec('verificationId', 'simple', false))}'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ShopsVerificationsUpdateResult.fromJson(map);
+    })();
+  }
+
+  /// Retrieve
   Future<SiteSettingsRetrieveResult?> siteSettingsRetrieve() async {
     final response = await _client.get(ApiPaths.backendPath('/system/site/settings'));
     return (() {
@@ -356,10 +615,9 @@ class SystemApi {
     })();
   }
 
-  /// Update site branding and deployment personalization settings
-  Future<SiteSettingsUpdateResult?> siteSettingsUpdate(AdminSiteSettingsUpdateRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.patch(ApiPaths.backendPath('/system/site/settings'), body: payload, contentType: 'application/json');
+  /// Update
+  Future<SiteSettingsUpdateResult?> siteSettingsUpdate() async {
+    final response = await _client.patch(ApiPaths.backendPath('/system/site/settings'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : SiteSettingsUpdateResult.fromJson(map);

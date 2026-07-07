@@ -23,7 +23,7 @@ async fn admin_analytics_route_returns_usage_snapshot_for_trusted_subject() {
         .oneshot(
             signed_request(
                 "GET",
-                "/backend/v3/api/system/analytics/admin/overview?time_range=monthly&start_time=2026-05-01T00:00:00Z&end_time=2026-05-31T23:59:59Z&limit=12",
+                "/backend/v3/api/system/analytics/admin/overview?time_range=monthly&start_time=2026-05-01T00:00:00Z&end_time=2026-05-31T23:59:59Z&ranking_size=12",
             ),
         )
         .await
@@ -36,7 +36,8 @@ async fn admin_analytics_route_returns_usage_snapshot_for_trusted_subject() {
     assert_eq!(1200.0, payload["data"]["summary"]["totalTokens"]);
     assert_eq!(38.5, payload["data"]["summary"]["totalPoints"]);
     assert_eq!("monthly", payload["data"]["timeRange"]);
-    assert_eq!(12, payload["data"]["limit"]);
+    assert!(payload["data"].get("limit").is_none());
+    assert_eq!(12, payload["data"]["rankingSize"]);
     assert_eq!(
         "alice",
         payload["data"]["userRankings"]["points"][0]["userName"]
@@ -53,6 +54,48 @@ async fn admin_analytics_route_returns_usage_snapshot_for_trusted_subject() {
         "admin.analytics.insights.topUserShare.detail",
         payload["data"]["insights"][0]["detail"]
     );
+}
+
+#[tokio::test]
+async fn admin_analytics_route_rejects_pagination_alias_and_invalid_ranking_size() {
+    let router = sdkwork_clawrouter_router_service::api::admin_analytics_router_with_read_store(
+        Arc::new(TestAdminAnalyticsStore),
+    );
+
+    let legacy_limit_response = router
+        .clone()
+        .oneshot(signed_request(
+            "GET",
+            "/backend/v3/api/system/analytics/admin/overview?limit=12",
+        ))
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::BAD_REQUEST, legacy_limit_response.status());
+    let legacy_limit_payload = json_payload(legacy_limit_response).await;
+    assert_eq!(40003, legacy_limit_payload["code"].as_i64().unwrap());
+
+    let undersized_response = router
+        .clone()
+        .oneshot(signed_request(
+            "GET",
+            "/backend/v3/api/system/analytics/admin/overview?ranking_size=2",
+        ))
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::BAD_REQUEST, undersized_response.status());
+    let undersized_payload = json_payload(undersized_response).await;
+    assert_eq!(40003, undersized_payload["code"].as_i64().unwrap());
+
+    let oversized_response = router
+        .oneshot(signed_request(
+            "GET",
+            "/backend/v3/api/system/analytics/admin/overview?ranking_size=51",
+        ))
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::BAD_REQUEST, oversized_response.status());
+    let oversized_payload = json_payload(oversized_response).await;
+    assert_eq!(40003, oversized_payload["code"].as_i64().unwrap());
 }
 
 #[tokio::test]
@@ -82,7 +125,7 @@ fn signed_request(method: &str, path: &str) -> Request<Body> {
         .method(method)
         .uri(path)
         .header("content-type", "application/json")
-        .internal_trusted_subject(10, 20, 30)
+        .internal_trusted_subject(100001, 0, 30)
         .body(Body::empty())
         .unwrap()
 }

@@ -1,7 +1,6 @@
 package api
 
 import (
-    "encoding/json"
     "fmt"
     "net/url"
     "strings"
@@ -17,18 +16,9 @@ func NewRuntimeApi(client *sdkhttp.Client) *RuntimeApi {
     return &RuntimeApi{client: client}
 }
 
-// List runtime invocations
-func (a *RuntimeApi) InvocationsList(page *string, pageSize *string, conversationId *string, chatTurnId *string, agentSessionId *string, runtime *string, status *string) (sdktypes.InvocationsListResult, error) {
-    query := BuildQueryString([]QueryParameterSpec{
-        {Name: "page", Value: func() interface{} { if page == nil { return nil }; return *page }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "conversation_id", Value: func() interface{} { if conversationId == nil { return nil }; return *conversationId }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "chat_turn_id", Value: func() interface{} { if chatTurnId == nil { return nil }; return *chatTurnId }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "agent_session_id", Value: func() interface{} { if agentSessionId == nil { return nil }; return *agentSessionId }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "runtime", Value: func() interface{} { if runtime == nil { return nil }; return *runtime }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "status", Value: func() interface{} { if status == nil { return nil }; return *status }(), Style: "form", Explode: true, AllowReserved: false},
-    })
-    raw, err := a.client.Get(AppendQueryString(AppApiPath("/runtime/invocations"), query), nil, nil)
+// List
+func (a *RuntimeApi) InvocationsList() (sdktypes.InvocationsListResult, error) {
+    raw, err := a.client.Get(AppApiPath("/runtime/invocations"), nil, nil)
     if err != nil {
         var zero sdktypes.InvocationsListResult
         return zero, err
@@ -36,13 +26,9 @@ func (a *RuntimeApi) InvocationsList(page *string, pageSize *string, conversatio
     return decodeResult[sdktypes.InvocationsListResult](raw)
 }
 
-// Create runtime invocation
-func (a *RuntimeApi) InvocationsCreate(body sdktypes.RuntimeInvocationCreateRequest, idempotencyKey string) (sdktypes.InvocationsCreateResult, error) {
-    headers := BuildRequestHeaders(
-        map[string]ParameterSpec{"Idempotency-Key": ParameterSpec{Value: idempotencyKey, Style: "simple", Explode: false},},
-        map[string]ParameterSpec{},
-    )
-    raw, err := a.client.Post(AppApiPath("/runtime/invocations"), body, nil, headers, "application/json")
+// Create
+func (a *RuntimeApi) InvocationsCreate() (sdktypes.InvocationsCreateResult, error) {
+    raw, err := a.client.Post(AppApiPath("/runtime/invocations"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.InvocationsCreateResult
         return zero, err
@@ -50,7 +36,7 @@ func (a *RuntimeApi) InvocationsCreate(body sdktypes.RuntimeInvocationCreateRequ
     return decodeResult[sdktypes.InvocationsCreateResult](raw)
 }
 
-// Retrieve runtime invocation
+// Retrieve
 func (a *RuntimeApi) InvocationsRetrieve(invocationId string) (sdktypes.InvocationsRetrieveResult, error) {
     raw, err := a.client.Get(AppApiPath(fmt.Sprintf("/runtime/invocations/%s", SerializePathParameter(invocationId, PathParameterSpec{Name: "invocationId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
@@ -60,13 +46,9 @@ func (a *RuntimeApi) InvocationsRetrieve(invocationId string) (sdktypes.Invocati
     return decodeResult[sdktypes.InvocationsRetrieveResult](raw)
 }
 
-// List runtime artifacts
-func (a *RuntimeApi) ArtifactsList(invocationId string, page *string, pageSize *string) (sdktypes.ArtifactsListResult, error) {
-    query := BuildQueryString([]QueryParameterSpec{
-        {Name: "page", Value: func() interface{} { if page == nil { return nil }; return *page }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
-    })
-    raw, err := a.client.Get(AppendQueryString(AppApiPath(fmt.Sprintf("/runtime/invocations/%s/artifacts", SerializePathParameter(invocationId, PathParameterSpec{Name: "invocationId", Style: "simple", Explode: false}))), query), nil, nil)
+// List
+func (a *RuntimeApi) ArtifactsList(invocationId string) (sdktypes.ArtifactsListResult, error) {
+    raw, err := a.client.Get(AppApiPath(fmt.Sprintf("/runtime/invocations/%s/artifacts", SerializePathParameter(invocationId, PathParameterSpec{Name: "invocationId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
         var zero sdktypes.ArtifactsListResult
         return zero, err
@@ -74,13 +56,9 @@ func (a *RuntimeApi) ArtifactsList(invocationId string, page *string, pageSize *
     return decodeResult[sdktypes.ArtifactsListResult](raw)
 }
 
-// Create runtime artifact
-func (a *RuntimeApi) ArtifactsCreate(invocationId string, body sdktypes.RuntimeArtifactCreateRequest, idempotencyKey string) (sdktypes.ArtifactsCreateResult, error) {
-    headers := BuildRequestHeaders(
-        map[string]ParameterSpec{"Idempotency-Key": ParameterSpec{Value: idempotencyKey, Style: "simple", Explode: false},},
-        map[string]ParameterSpec{},
-    )
-    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/runtime/invocations/%s/artifacts", SerializePathParameter(invocationId, PathParameterSpec{Name: "invocationId", Style: "simple", Explode: false}))), body, nil, headers, "application/json")
+// Create
+func (a *RuntimeApi) ArtifactsCreate(invocationId string) (sdktypes.ArtifactsCreateResult, error) {
+    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/runtime/invocations/%s/artifacts", SerializePathParameter(invocationId, PathParameterSpec{Name: "invocationId", Style: "simple", Explode: false}))), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ArtifactsCreateResult
         return zero, err
@@ -88,13 +66,9 @@ func (a *RuntimeApi) ArtifactsCreate(invocationId string, body sdktypes.RuntimeA
     return decodeResult[sdktypes.ArtifactsCreateResult](raw)
 }
 
-// Complete runtime invocation
-func (a *RuntimeApi) InvocationsSubmit(invocationId string, body sdktypes.RuntimeInvocationCompleteRequest, idempotencyKey string) (sdktypes.InvocationsSubmitResult, error) {
-    headers := BuildRequestHeaders(
-        map[string]ParameterSpec{"Idempotency-Key": ParameterSpec{Value: idempotencyKey, Style: "simple", Explode: false},},
-        map[string]ParameterSpec{},
-    )
-    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/runtime/invocations/%s/complete", SerializePathParameter(invocationId, PathParameterSpec{Name: "invocationId", Style: "simple", Explode: false}))), body, nil, headers, "application/json")
+// Create
+func (a *RuntimeApi) InvocationsSubmit(invocationId string) (sdktypes.InvocationsSubmitResult, error) {
+    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/runtime/invocations/%s/complete", SerializePathParameter(invocationId, PathParameterSpec{Name: "invocationId", Style: "simple", Explode: false}))), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.InvocationsSubmitResult
         return zero, err
@@ -102,13 +76,9 @@ func (a *RuntimeApi) InvocationsSubmit(invocationId string, body sdktypes.Runtim
     return decodeResult[sdktypes.InvocationsSubmitResult](raw)
 }
 
-// List runtime invocation events
-func (a *RuntimeApi) InvocationEventsList(invocationId string, page *string, pageSize *string) (sdktypes.InvocationEventsListResult, error) {
-    query := BuildQueryString([]QueryParameterSpec{
-        {Name: "page", Value: func() interface{} { if page == nil { return nil }; return *page }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
-    })
-    raw, err := a.client.Get(AppendQueryString(AppApiPath(fmt.Sprintf("/runtime/invocations/%s/events", SerializePathParameter(invocationId, PathParameterSpec{Name: "invocationId", Style: "simple", Explode: false}))), query), nil, nil)
+// List
+func (a *RuntimeApi) InvocationEventsList(invocationId string) (sdktypes.InvocationEventsListResult, error) {
+    raw, err := a.client.Get(AppApiPath(fmt.Sprintf("/runtime/invocations/%s/events", SerializePathParameter(invocationId, PathParameterSpec{Name: "invocationId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
         var zero sdktypes.InvocationEventsListResult
         return zero, err
@@ -116,13 +86,9 @@ func (a *RuntimeApi) InvocationEventsList(invocationId string, page *string, pag
     return decodeResult[sdktypes.InvocationEventsListResult](raw)
 }
 
-// Create runtime invocation event
-func (a *RuntimeApi) InvocationEventsCreate(invocationId string, body sdktypes.RuntimeEventCreateRequest, idempotencyKey string) (sdktypes.InvocationEventsCreateResult, error) {
-    headers := BuildRequestHeaders(
-        map[string]ParameterSpec{"Idempotency-Key": ParameterSpec{Value: idempotencyKey, Style: "simple", Explode: false},},
-        map[string]ParameterSpec{},
-    )
-    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/runtime/invocations/%s/events", SerializePathParameter(invocationId, PathParameterSpec{Name: "invocationId", Style: "simple", Explode: false}))), body, nil, headers, "application/json")
+// Create
+func (a *RuntimeApi) InvocationEventsCreate(invocationId string) (sdktypes.InvocationEventsCreateResult, error) {
+    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/runtime/invocations/%s/events", SerializePathParameter(invocationId, PathParameterSpec{Name: "invocationId", Style: "simple", Explode: false}))), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.InvocationEventsCreateResult
         return zero, err
@@ -130,7 +96,7 @@ func (a *RuntimeApi) InvocationEventsCreate(invocationId string, body sdktypes.R
     return decodeResult[sdktypes.InvocationEventsCreateResult](raw)
 }
 
-// Stream runtime invocation events
+// List
 func (a *RuntimeApi) InvocationEventStreamsList(invocationId string) (sdktypes.InvocationEventStreamsListResult, error) {
     raw, err := a.client.Get(AppApiPath(fmt.Sprintf("/runtime/invocations/%s/events/stream", SerializePathParameter(invocationId, PathParameterSpec{Name: "invocationId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
@@ -244,214 +210,8 @@ func PathPrefix(name string, style string) string {
     }
     return ""
 }
-type QueryParameterSpec struct {
-    Name          string
-    Value         interface{}
-    Style         string
-    Explode       bool
-    AllowReserved bool
-    ContentType   string
-}
-
-func BuildQueryString(parameters []QueryParameterSpec) string {
-    pairs := make([]string, 0)
-    for _, parameter := range parameters {
-        AppendSerializedParameter(&pairs, parameter)
-    }
-    return strings.Join(pairs, "&")
-}
-
-func AppendSerializedParameter(pairs *[]string, parameter QueryParameterSpec) {
-    if parameter.Value == nil {
-        return
-    }
-
-    if parameter.ContentType != "" {
-        encoded, _ := json.Marshal(parameter.Value)
-        *pairs = append(*pairs, url.QueryEscape(parameter.Name)+"="+EncodeQueryValue(string(encoded), parameter.AllowReserved))
-        return
-    }
-
-    style := parameter.Style
-    if style == "" {
-        style = "form"
-    }
-
-    switch value := parameter.Value.(type) {
-    case []string:
-        AppendArrayParameter(pairs, parameter.Name, stringSliceToInterface(value), style, parameter.Explode, parameter.AllowReserved)
-    case []int:
-        AppendArrayParameter(pairs, parameter.Name, intSliceToInterface(value), style, parameter.Explode, parameter.AllowReserved)
-    case []interface{}:
-        AppendArrayParameter(pairs, parameter.Name, value, style, parameter.Explode, parameter.AllowReserved)
-    case map[string]int:
-        AppendObjectParameter(pairs, parameter.Name, intMapToInterface(value), style, parameter.Explode, parameter.AllowReserved)
-    case map[string]string:
-        AppendObjectParameter(pairs, parameter.Name, stringMapToInterface(value), style, parameter.Explode, parameter.AllowReserved)
-    case map[string]interface{}:
-        if style == "deepObject" {
-            AppendDeepObjectParameter(pairs, parameter.Name, value, parameter.AllowReserved)
-        } else {
-            AppendObjectParameter(pairs, parameter.Name, value, style, parameter.Explode, parameter.AllowReserved)
-        }
-    default:
-        *pairs = append(*pairs, url.QueryEscape(parameter.Name)+"="+EncodeQueryValue(fmt.Sprint(value), parameter.AllowReserved))
-    }
-}
-
-func AppendArrayParameter(pairs *[]string, name string, value []interface{}, style string, explode bool, allowReserved bool) {
-    values := make([]string, 0, len(value))
-    for _, item := range value {
-        if item != nil {
-            values = append(values, fmt.Sprint(item))
-        }
-    }
-    if len(values) == 0 {
-        return
-    }
-    if style == "form" && explode {
-        for _, item := range values {
-            *pairs = append(*pairs, url.QueryEscape(name)+"="+EncodeQueryValue(item, allowReserved))
-        }
-        return
-    }
-    *pairs = append(*pairs, url.QueryEscape(name)+"="+EncodeQueryValue(strings.Join(values, ","), allowReserved))
-}
-
-func AppendObjectParameter(pairs *[]string, name string, value map[string]interface{}, style string, explode bool, allowReserved bool) {
-    entries := make([]string, 0, len(value)*2)
-    for key, item := range value {
-        if item == nil {
-            continue
-        }
-        if style == "form" && explode {
-            *pairs = append(*pairs, url.QueryEscape(key)+"="+EncodeQueryValue(fmt.Sprint(item), allowReserved))
-            continue
-        }
-        entries = append(entries, key, fmt.Sprint(item))
-    }
-    if len(entries) == 0 {
-        return
-    }
-    if !(style == "form" && explode) {
-        *pairs = append(*pairs, url.QueryEscape(name)+"="+EncodeQueryValue(strings.Join(entries, ","), allowReserved))
-    }
-}
-
-func AppendDeepObjectParameter(pairs *[]string, name string, value map[string]interface{}, allowReserved bool) {
-    for key, item := range value {
-        if item == nil {
-            continue
-        }
-        *pairs = append(*pairs, url.QueryEscape(fmt.Sprintf("%s[%s]", name, key))+"="+EncodeQueryValue(fmt.Sprint(item), allowReserved))
-    }
-}
-
-func EncodeQueryValue(value string, allowReserved bool) string {
-    encoded := url.QueryEscape(value)
-    if !allowReserved {
-        return encoded
-    }
-    replacements := map[string]string{
-        "%3A": ":", "%2F": "/", "%3F": "?", "%23": "#",
-        "%5B": "[", "%5D": "]", "%40": "@", "%21": "!",
-        "%24": "$", "%26": "&", "%27": "'", "%28": "(",
-        "%29": ")", "%2A": "*", "%2B": "+", "%2C": ",",
-        "%3B": ";", "%3D": "=",
-    }
-    for escaped, reserved := range replacements {
-        encoded = strings.ReplaceAll(encoded, escaped, reserved)
-    }
-    return encoded
-}
 
 
-type ParameterSpec struct {
-    Value       interface{}
-    Style       string
-    Explode     bool
-    ContentType string
-}
-
-func BuildRequestHeaders(headers map[string]ParameterSpec, cookies map[string]ParameterSpec) map[string]string {
-    requestHeaders := map[string]string{}
-    for name, parameter := range headers {
-        if serialized, ok := SerializeParameterValue(parameter); ok {
-            requestHeaders[name] = serialized
-        }
-    }
-
-    if cookieHeader := BuildCookieHeader(cookies); cookieHeader != "" {
-        if existing, ok := requestHeaders["Cookie"]; ok && existing != "" {
-            requestHeaders["Cookie"] = existing + "; " + cookieHeader
-        } else {
-            requestHeaders["Cookie"] = cookieHeader
-        }
-    }
-
-    if len(requestHeaders) == 0 {
-        return nil
-    }
-    return requestHeaders
-}
-
-func BuildCookieHeader(cookies map[string]ParameterSpec) string {
-    pairs := make([]string, 0, len(cookies))
-    for name, parameter := range cookies {
-        if serialized, ok := SerializeParameterValue(parameter); ok {
-            pairs = append(pairs, url.QueryEscape(name)+"="+url.QueryEscape(serialized))
-        }
-    }
-    return strings.Join(pairs, "; ")
-}
-
-func SerializeParameterValue(parameter ParameterSpec) (string, bool) {
-    value := parameter.Value
-    if value == nil {
-        return "", false
-    }
-    if parameter.ContentType != "" {
-        encoded, _ := json.Marshal(value)
-        return string(encoded), true
-    }
-    switch typed := value.(type) {
-    case string:
-        return typed, true
-    case fmt.Stringer:
-        return typed.String(), true
-    case []string:
-        return strings.Join(typed, ","), true
-    case []int:
-        values := make([]string, 0, len(typed))
-        for _, item := range typed {
-            values = append(values, fmt.Sprint(item))
-        }
-        return strings.Join(values, ","), true
-    case map[string]string:
-        return SerializeHeaderObject(stringMapToInterface(typed), parameter.Explode), true
-    case map[string]int:
-        return SerializeHeaderObject(intMapToInterface(typed), parameter.Explode), true
-    case map[string]interface{}:
-        return SerializeHeaderObject(typed, parameter.Explode), true
-    default:
-        return fmt.Sprint(value), true
-    }
-}
-
-func SerializeHeaderObject(values map[string]interface{}, explode bool) string {
-    serialized := make([]string, 0, len(values)*2)
-    for key, value := range values {
-        if value == nil {
-            continue
-        }
-        if explode {
-            serialized = append(serialized, key+"="+fmt.Sprint(value))
-        } else {
-            serialized = append(serialized, key, fmt.Sprint(value))
-        }
-    }
-    return strings.Join(serialized, ",")
-}
 func stringSliceToInterface(values []string) []interface{} {
     result := make([]interface{}, 0, len(values))
     for _, value := range values {

@@ -2107,7 +2107,11 @@ mod tests {
         let route = manifest
             .match_route(method, path)
             .unwrap_or_else(|| panic!("{method} {path} must be registered"));
-        assert_eq!(RouteAuth::Public, route.auth, "{method} {path} must be public");
+        assert_eq!(
+            RouteAuth::Public,
+            route.auth,
+            "{method} {path} must be public"
+        );
         assert!(
             resolve_public_path(
                 method,
@@ -2127,4 +2131,3 @@ mod tests {
         assert_public_route("GET", "/app/v3/api/system/site/runtime");
     }
 }
-

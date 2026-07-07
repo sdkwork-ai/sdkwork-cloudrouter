@@ -1,7 +1,6 @@
 package api
 
 import (
-    "encoding/json"
     "fmt"
     "net/url"
     "strings"
@@ -17,7 +16,7 @@ func NewIntegrationApi(client *sdkhttp.Client) *IntegrationApi {
     return &IntegrationApi{client: client}
 }
 
-// List channels
+// List
 func (a *IntegrationApi) ChannelsList() (sdktypes.ChannelsListResult, error) {
     raw, err := a.client.Get(BackendApiPath("/integration/channels"), nil, nil)
     if err != nil {
@@ -27,9 +26,9 @@ func (a *IntegrationApi) ChannelsList() (sdktypes.ChannelsListResult, error) {
     return decodeResult[sdktypes.ChannelsListResult](raw)
 }
 
-// Create channel
-func (a *IntegrationApi) ChannelsCreate(body sdktypes.AdminChannelCreateRequest) (sdktypes.ChannelsCreateResult, error) {
-    raw, err := a.client.Post(BackendApiPath("/integration/channels"), body, nil, nil, "application/json")
+// Create
+func (a *IntegrationApi) ChannelsCreate() (sdktypes.ChannelsCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath("/integration/channels"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ChannelsCreateResult
         return zero, err
@@ -37,9 +36,9 @@ func (a *IntegrationApi) ChannelsCreate(body sdktypes.AdminChannelCreateRequest)
     return decodeResult[sdktypes.ChannelsCreateResult](raw)
 }
 
-// Update channel
-func (a *IntegrationApi) ChannelsUpdate(body sdktypes.AdminChannelUpdateRequest) (sdktypes.ChannelsUpdateResult, error) {
-    raw, err := a.client.Put(BackendApiPath("/integration/channels"), body, nil, nil, "application/json")
+// Update
+func (a *IntegrationApi) ChannelsUpdate() (sdktypes.ChannelsUpdateResult, error) {
+    raw, err := a.client.Put(BackendApiPath("/integration/channels"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ChannelsUpdateResult
         return zero, err
@@ -47,7 +46,7 @@ func (a *IntegrationApi) ChannelsUpdate(body sdktypes.AdminChannelUpdateRequest)
     return decodeResult[sdktypes.ChannelsUpdateResult](raw)
 }
 
-// Delete channel
+// Delete
 func (a *IntegrationApi) ChannelsDelete(channelId string) (sdktypes.ChannelsDeleteResult, error) {
     raw, err := a.client.Delete(BackendApiPath(fmt.Sprintf("/integration/channels/%s", SerializePathParameter(channelId, PathParameterSpec{Name: "channelId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
@@ -57,7 +56,7 @@ func (a *IntegrationApi) ChannelsDelete(channelId string) (sdktypes.ChannelsDele
     return decodeResult[sdktypes.ChannelsDeleteResult](raw)
 }
 
-// Test channel
+// Verify
 func (a *IntegrationApi) ChannelsVerify(channelId string) (sdktypes.ChannelsVerifyResult, error) {
     raw, err := a.client.Post(BackendApiPath(fmt.Sprintf("/integration/channels/%s/verify", SerializePathParameter(channelId, PathParameterSpec{Name: "channelId", Style: "simple", Explode: false}))), nil, nil, nil, "")
     if err != nil {
@@ -67,13 +66,9 @@ func (a *IntegrationApi) ChannelsVerify(channelId string) (sdktypes.ChannelsVeri
     return decodeResult[sdktypes.ChannelsVerifyResult](raw)
 }
 
-// List provider secrets
-func (a *IntegrationApi) ProviderSecretsList(providerCode *string, status *string) (sdktypes.ProviderSecretsListResult, error) {
-    query := BuildQueryString([]QueryParameterSpec{
-        {Name: "provider_code", Value: func() interface{} { if providerCode == nil { return nil }; return *providerCode }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "status", Value: func() interface{} { if status == nil { return nil }; return *status }(), Style: "form", Explode: true, AllowReserved: false},
-    })
-    raw, err := a.client.Get(AppendQueryString(BackendApiPath("/integration/provider_secrets"), query), nil, nil)
+// List
+func (a *IntegrationApi) ProviderSecretsList() (sdktypes.ProviderSecretsListResult, error) {
+    raw, err := a.client.Get(BackendApiPath("/integration/provider_secrets"), nil, nil)
     if err != nil {
         var zero sdktypes.ProviderSecretsListResult
         return zero, err
@@ -81,9 +76,9 @@ func (a *IntegrationApi) ProviderSecretsList(providerCode *string, status *strin
     return decodeResult[sdktypes.ProviderSecretsListResult](raw)
 }
 
-// Create provider secret
-func (a *IntegrationApi) ProviderSecretsCreate(body sdktypes.AdminProviderSecretCreateRequest) (sdktypes.ProviderSecretsCreateResult, error) {
-    raw, err := a.client.Post(BackendApiPath("/integration/provider_secrets"), body, nil, nil, "application/json")
+// Create
+func (a *IntegrationApi) ProviderSecretsCreate() (sdktypes.ProviderSecretsCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath("/integration/provider_secrets"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ProviderSecretsCreateResult
         return zero, err
@@ -91,9 +86,9 @@ func (a *IntegrationApi) ProviderSecretsCreate(body sdktypes.AdminProviderSecret
     return decodeResult[sdktypes.ProviderSecretsCreateResult](raw)
 }
 
-// Update provider secret
-func (a *IntegrationApi) ProviderSecretsUpdate(body sdktypes.AdminProviderSecretUpdateRequest) (sdktypes.ProviderSecretsUpdateResult, error) {
-    raw, err := a.client.Put(BackendApiPath("/integration/provider_secrets"), body, nil, nil, "application/json")
+// Update
+func (a *IntegrationApi) ProviderSecretsUpdate() (sdktypes.ProviderSecretsUpdateResult, error) {
+    raw, err := a.client.Put(BackendApiPath("/integration/provider_secrets"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ProviderSecretsUpdateResult
         return zero, err
@@ -101,7 +96,7 @@ func (a *IntegrationApi) ProviderSecretsUpdate(body sdktypes.AdminProviderSecret
     return decodeResult[sdktypes.ProviderSecretsUpdateResult](raw)
 }
 
-// Delete provider secret
+// Delete
 func (a *IntegrationApi) ProviderSecretsDelete(secretId string) (sdktypes.ProviderSecretsDeleteResult, error) {
     raw, err := a.client.Delete(BackendApiPath(fmt.Sprintf("/integration/provider_secrets/%s", SerializePathParameter(secretId, PathParameterSpec{Name: "secretId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
@@ -215,127 +210,6 @@ func PathPrefix(name string, style string) string {
     }
     return ""
 }
-type QueryParameterSpec struct {
-    Name          string
-    Value         interface{}
-    Style         string
-    Explode       bool
-    AllowReserved bool
-    ContentType   string
-}
-
-func BuildQueryString(parameters []QueryParameterSpec) string {
-    pairs := make([]string, 0)
-    for _, parameter := range parameters {
-        AppendSerializedParameter(&pairs, parameter)
-    }
-    return strings.Join(pairs, "&")
-}
-
-func AppendSerializedParameter(pairs *[]string, parameter QueryParameterSpec) {
-    if parameter.Value == nil {
-        return
-    }
-
-    if parameter.ContentType != "" {
-        encoded, _ := json.Marshal(parameter.Value)
-        *pairs = append(*pairs, url.QueryEscape(parameter.Name)+"="+EncodeQueryValue(string(encoded), parameter.AllowReserved))
-        return
-    }
-
-    style := parameter.Style
-    if style == "" {
-        style = "form"
-    }
-
-    switch value := parameter.Value.(type) {
-    case []string:
-        AppendArrayParameter(pairs, parameter.Name, stringSliceToInterface(value), style, parameter.Explode, parameter.AllowReserved)
-    case []int:
-        AppendArrayParameter(pairs, parameter.Name, intSliceToInterface(value), style, parameter.Explode, parameter.AllowReserved)
-    case []interface{}:
-        AppendArrayParameter(pairs, parameter.Name, value, style, parameter.Explode, parameter.AllowReserved)
-    case map[string]int:
-        AppendObjectParameter(pairs, parameter.Name, intMapToInterface(value), style, parameter.Explode, parameter.AllowReserved)
-    case map[string]string:
-        AppendObjectParameter(pairs, parameter.Name, stringMapToInterface(value), style, parameter.Explode, parameter.AllowReserved)
-    case map[string]interface{}:
-        if style == "deepObject" {
-            AppendDeepObjectParameter(pairs, parameter.Name, value, parameter.AllowReserved)
-        } else {
-            AppendObjectParameter(pairs, parameter.Name, value, style, parameter.Explode, parameter.AllowReserved)
-        }
-    default:
-        *pairs = append(*pairs, url.QueryEscape(parameter.Name)+"="+EncodeQueryValue(fmt.Sprint(value), parameter.AllowReserved))
-    }
-}
-
-func AppendArrayParameter(pairs *[]string, name string, value []interface{}, style string, explode bool, allowReserved bool) {
-    values := make([]string, 0, len(value))
-    for _, item := range value {
-        if item != nil {
-            values = append(values, fmt.Sprint(item))
-        }
-    }
-    if len(values) == 0 {
-        return
-    }
-    if style == "form" && explode {
-        for _, item := range values {
-            *pairs = append(*pairs, url.QueryEscape(name)+"="+EncodeQueryValue(item, allowReserved))
-        }
-        return
-    }
-    *pairs = append(*pairs, url.QueryEscape(name)+"="+EncodeQueryValue(strings.Join(values, ","), allowReserved))
-}
-
-func AppendObjectParameter(pairs *[]string, name string, value map[string]interface{}, style string, explode bool, allowReserved bool) {
-    entries := make([]string, 0, len(value)*2)
-    for key, item := range value {
-        if item == nil {
-            continue
-        }
-        if style == "form" && explode {
-            *pairs = append(*pairs, url.QueryEscape(key)+"="+EncodeQueryValue(fmt.Sprint(item), allowReserved))
-            continue
-        }
-        entries = append(entries, key, fmt.Sprint(item))
-    }
-    if len(entries) == 0 {
-        return
-    }
-    if !(style == "form" && explode) {
-        *pairs = append(*pairs, url.QueryEscape(name)+"="+EncodeQueryValue(strings.Join(entries, ","), allowReserved))
-    }
-}
-
-func AppendDeepObjectParameter(pairs *[]string, name string, value map[string]interface{}, allowReserved bool) {
-    for key, item := range value {
-        if item == nil {
-            continue
-        }
-        *pairs = append(*pairs, url.QueryEscape(fmt.Sprintf("%s[%s]", name, key))+"="+EncodeQueryValue(fmt.Sprint(item), allowReserved))
-    }
-}
-
-func EncodeQueryValue(value string, allowReserved bool) string {
-    encoded := url.QueryEscape(value)
-    if !allowReserved {
-        return encoded
-    }
-    replacements := map[string]string{
-        "%3A": ":", "%2F": "/", "%3F": "?", "%23": "#",
-        "%5B": "[", "%5D": "]", "%40": "@", "%21": "!",
-        "%24": "$", "%26": "&", "%27": "'", "%28": "(",
-        "%29": ")", "%2A": "*", "%2B": "+", "%2C": ",",
-        "%3B": ";", "%3D": "=",
-    }
-    for escaped, reserved := range replacements {
-        encoded = strings.ReplaceAll(encoded, escaped, reserved)
-    }
-    return encoded
-}
-
 
 
 func stringSliceToInterface(values []string) []interface{} {

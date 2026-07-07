@@ -1,6 +1,6 @@
+use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
@@ -549,12 +549,10 @@ async fn generate_promotion_coupon_stock(
     };
 
     match state.store.generate_promotion_coupon_stock(command).await {
-        Ok((item, codes)) => Json(success_envelope(
-            PromotionCouponStockGenerateResponse {
-                item: promotion_coupon_stock_item(item),
-                codes: codes.into_iter().map(promotion_code_item).collect(),
-            },
-        ))
+        Ok((item, codes)) => Json(success_envelope(PromotionCouponStockGenerateResponse {
+            item: promotion_coupon_stock_item(item),
+            codes: codes.into_iter().map(promotion_code_item).collect(),
+        }))
         .into_response(),
         Err(error) if error.is_not_found() => not_found_response("promotion offer was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
@@ -711,9 +709,7 @@ async fn create_recharge_package(
         };
 
     match state.store.create_recharge_package(command).await {
-        Ok(item) => {
-            Json(success_envelope(AdminMarketingItemEnvelope { item })).into_response()
-        }
+        Ok(item) => Json(success_envelope(AdminMarketingItemEnvelope { item })).into_response(),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
             marketing_system_response("recharge package command store is unavailable", error)
@@ -750,9 +746,7 @@ async fn update_recharge_package(
     };
 
     match state.store.update_recharge_package(command).await {
-        Ok(item) => {
-            Json(success_envelope(AdminMarketingItemEnvelope { item })).into_response()
-        }
+        Ok(item) => Json(success_envelope(AdminMarketingItemEnvelope { item })).into_response(),
         Err(error) if error.is_not_found() => not_found_response("recharge package was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
@@ -920,9 +914,7 @@ async fn update_exchange_rule(
         };
 
     match state.store.update_exchange_rule(command).await {
-        Ok(item) => {
-            Json(success_envelope(AdminMarketingItemEnvelope { item })).into_response()
-        }
+        Ok(item) => Json(success_envelope(AdminMarketingItemEnvelope { item })).into_response(),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
             marketing_system_response("exchange rule command store is unavailable", error)
@@ -1066,7 +1058,6 @@ fn safe_suffix(value: &str, max_chars: usize) -> String {
     chars.reverse();
     chars.into_iter().collect()
 }
-
 
 fn parse_json_body<T>(body: &[u8], entity_name: &str) -> Result<T, String>
 where

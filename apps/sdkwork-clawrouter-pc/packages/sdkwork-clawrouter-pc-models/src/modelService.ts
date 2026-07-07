@@ -1,12 +1,10 @@
 import {
-  ensureSdkworkApiSuccess,
   getModelsAppSdkClient,
   isRecord,
   readApiRecord,
   readNumber,
   readRecordArray,
   readRequiredApiItems,
-  readRequiredNonNegativeNumber,
   readString,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
@@ -32,8 +30,8 @@ export interface ModelCatalogServiceFilters {
   categories?: ModelCategoryKey[] | string[];
   groups?: ModelGroupKey[] | string[];
   searchQuery?: string;
-  limit?: number;
-  offset?: number;
+  page?: number;
+  pageSize?: number;
 }
 
 export interface ModelCatalogGroup {
@@ -44,8 +42,8 @@ export interface ModelCatalogGroup {
 
 export interface ModelCatalogPageInfo {
   total: number;
-  offset: number;
-  limit: number;
+  page: number;
+  pageSize: number;
   hasMore: boolean;
 }
 
@@ -73,7 +71,7 @@ export class ModelService {
     const directMatch = findModelByCatalogRouteId(
       (await fetchModelCatalogResult({
         searchQuery: normalizedRouteId,
-        limit: MAX_MODEL_CATALOG_PAGE_SIZE,
+        pageSize: MAX_MODEL_CATALOG_PAGE_SIZE,
       })).models,
       normalizedRouteId,
     );
@@ -96,7 +94,7 @@ export class ModelService {
       (await fetchModelCatalogResult({
         vendorCodes: [vendorCode],
         searchQuery: modelQuery,
-        limit: MAX_MODEL_CATALOG_PAGE_SIZE,
+        pageSize: MAX_MODEL_CATALOG_PAGE_SIZE,
       })).models,
       normalizedRouteId,
     );
@@ -104,17 +102,16 @@ export class ModelService {
 }
 
 async function fetchModelCatalogResult(filters: ModelCatalogServiceFilters): Promise<ModelCatalogResult> {
-  const limit = Math.max(
+  const pageSize = Math.max(
     1,
-    Math.min(filters.limit ?? DEFAULT_MODEL_CATALOG_PAGE_SIZE, MAX_MODEL_CATALOG_PAGE_SIZE),
+    Math.min(filters.pageSize ?? DEFAULT_MODEL_CATALOG_PAGE_SIZE, MAX_MODEL_CATALOG_PAGE_SIZE),
   );
-  const offset = Math.max(filters.offset ?? 0, 0);
-  const result = await getModelsAppSdkClient().ai.models.list(buildModelCatalogListParams(filters, limit, offset));
-  ensureSdkworkApiSuccess(result, 'Failed to fetch models');
+  const page = Math.max(1, Math.trunc(filters.page ?? 1));
+  const result = await getModelsAppSdkClient().ai.models.list(buildModelCatalogListParams(filters, pageSize, page));
   const data = readApiRecord(result);
   const models = resolveRuntimeModelCatalog(readRequiredApiItems(result, 'Failed to fetch models'));
   const groups = resolveRuntimeModelCatalogGroups(readRecordArray(data, 'groups'));
-  const pageInfo = readModelCatalogPageInfo(data, { offset, limit, itemCount: models.length });
+  const pageInfo = readModelCatalogPageInfo(data, { page, pageSize, itemCount: models.length });
 
   return {
     models,
@@ -125,30 +122,23 @@ async function fetchModelCatalogResult(filters: ModelCatalogServiceFilters): Pro
 
 function readModelCatalogPageInfo(
   data: ApiRecord,
-  page: { offset: number; limit: number; itemCount: number },
+  page: { page: number; pageSize: number; itemCount: number },
 ): ModelCatalogPageInfo {
   const total = readModelCatalogListTotal(data, page.itemCount);
-  const consumed = page.offset + page.itemCount;
+  const consumed = (page.page - 1) * page.pageSize + page.itemCount;
   return {
     total,
-    offset: page.offset,
-    limit: page.limit,
+    page: page.page,
+    pageSize: page.pageSize,
     hasMore: consumed < total,
   };
 }
 
 function readModelCatalogListTotal(data: ApiRecord, fallback: number): number {
-  if (data.total !== undefined && data.total !== null && data.total !== '') {
-    return readRequiredNonNegativeNumber(data, 'total', 'Model catalog total is required');
-  }
-
   const pageInfo = data.pageInfo;
   if (isRecord(pageInfo)) {
-    for (const key of ['totalItems', 'total_items'] as const) {
-      const value = pageInfo[key];
-      if (value === undefined || value === null || value === '') {
-        continue;
-      }
+    const value = pageInfo.totalItems;
+    if (value !== undefined && value !== null && value !== '') {
       const parsed = typeof value === 'number' ? value : Number(String(value).trim());
       if (Number.isFinite(parsed) && parsed >= 0) {
         return parsed;
@@ -163,9 +153,11 @@ function readModelCatalogListTotal(data: ApiRecord, fallback: number): number {
 function buildModelCatalogListParams(
   filters: ModelCatalogServiceFilters,
   pageSize: number,
-  offset: number,
+  page: number,
 ) {
   return {
+    page,
+    pageSize,
     billingMeter: normalizeQueryString(filters.billingMeter),
     vendorCodes: normalizeQueryValues(filters.vendorCodes),
     modalities: normalizeQueryValues(filters.modalities),
@@ -173,8 +165,6 @@ function buildModelCatalogListParams(
     categories: normalizeQueryValues(filters.categories),
     groups: normalizeQueryValues(filters.groups),
     q: normalizeQueryString(filters.searchQuery),
-    limit: String(pageSize),
-    offset: String(offset),
   };
 }
 

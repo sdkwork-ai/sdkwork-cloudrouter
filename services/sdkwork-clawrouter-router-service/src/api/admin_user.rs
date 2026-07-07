@@ -1,6 +1,6 @@
+use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
@@ -110,8 +110,6 @@ struct UsersListQuery {
     #[serde(default)]
     page: Option<i64>,
     #[serde(default)]
-    page_no: Option<i64>,
-    #[serde(default)]
     page_size: Option<i64>,
 }
 
@@ -119,8 +117,6 @@ struct UsersListQuery {
 struct ApiKeysListQuery {
     #[serde(default)]
     page: Option<i64>,
-    #[serde(default)]
-    page_no: Option<i64>,
     #[serde(default)]
     page_size: Option<i64>,
 }
@@ -180,7 +176,7 @@ async fn fetch_users(
 ) -> Response {
     let subject: AdminUserSubject = scoped.into();
 
-    let pagination = match parse_offset_list_query(query.page.or(query.page_no), query.page_size) {
+    let pagination = match parse_offset_list_query(query.page, query.page_size) {
         Ok(value) => value,
         Err(message) => return bad_request(message),
     };
@@ -216,7 +212,7 @@ async fn fetch_api_keys_map(
     _headers: HeaderMap,
 ) -> Response {
     let subject: AdminUserSubject = scoped.into();
-    let pagination = match parse_offset_list_query(query.page.or(query.page_no), query.page_size) {
+    let pagination = match parse_offset_list_query(query.page, query.page_size) {
         Ok(value) => value,
         Err(message) => return bad_request(message),
     };
@@ -350,9 +346,7 @@ async fn update_user_with_request(
     };
 
     match state.store.update_user(command).await {
-        Ok(Some(item)) => {
-            Json(success_envelope(AdminUserItemEnvelope { item })).into_response()
-        }
+        Ok(Some(item)) => Json(success_envelope(AdminUserItemEnvelope { item })).into_response(),
         Ok(None) => not_found_response("user was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => admin_user_system_response("admin user command store is unavailable", error),
@@ -417,9 +411,7 @@ async fn adjust_balance(
     };
 
     match state.store.adjust_balance(command).await {
-        Ok(Some(item)) => {
-            Json(success_envelope(AdminUserItemEnvelope { item })).into_response()
-        }
+        Ok(Some(item)) => Json(success_envelope(AdminUserItemEnvelope { item })).into_response(),
         Ok(None) => not_found_response("user was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => admin_user_system_response("admin user balance store is unavailable", error),

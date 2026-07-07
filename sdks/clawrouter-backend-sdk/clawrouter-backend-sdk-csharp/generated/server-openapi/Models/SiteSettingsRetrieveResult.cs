@@ -6,8 +6,8 @@ namespace Sdkwork.ClawRouter.Backend.Models
 {
     public class SiteSettingsRetrieveResult
     {
-        public string Code { get; set; }
-        public AdminSiteSettingsResponse? Data { get; set; }
-        public string? Msg { get; set; }
+        public int Code { get; set; }
+        public object Data { get; set; }
+        public string TraceId { get; set; }
     }
 }

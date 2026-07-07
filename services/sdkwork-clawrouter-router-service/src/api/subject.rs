@@ -35,9 +35,10 @@ pub fn map_optional_app_user_subject<T>(
 
 pub(crate) fn unauthorized_subject_response() -> Response {
     problem_from_wire_code(
-            "4010",
-            TrustedRequestSubjectError::MissingExtension.to_string(),
-        ).into_response()
+        "4010",
+        TrustedRequestSubjectError::MissingExtension.to_string(),
+    )
+    .into_response()
 }
 
 pub fn required_subject(

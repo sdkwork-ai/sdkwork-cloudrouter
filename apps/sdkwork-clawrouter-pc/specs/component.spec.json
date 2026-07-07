@@ -265,7 +265,12 @@
       "../../specs/dependency-api-surfaces.json"
     ],
     "routeManifest": null,
-    "dependencyApiSurfaces": "../../specs/dependency-api-surfaces.json",
+    "dependencyApiSurfaces": [
+      {
+        "mode": "manifest-ref",
+        "manifestRef": "../../specs/dependency-api-surfaces.json"
+      }
+    ],
     "iamModuleManifest": "specs/iam.module.manifest.json",
     "permissionComposition": {
       "inheritanceMode": "module-catalog-with-overrides",

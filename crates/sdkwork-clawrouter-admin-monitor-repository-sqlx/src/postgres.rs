@@ -103,7 +103,10 @@ async fn list_monitor_nodes(
         .map(|row| required_integer_cell(row, "total"))
         .transpose()?
         .unwrap_or(0);
-    let items = rows.into_iter().map(node_from_row).collect::<RepositoryResult<Vec<_>>>()?;
+    let items = rows
+        .into_iter()
+        .map(node_from_row)
+        .collect::<RepositoryResult<Vec<_>>>()?;
     Ok(AdminMonitorCollection {
         items,
         total,
@@ -166,7 +169,10 @@ async fn list_monitor_alerts(
         .map(|row| required_integer_cell(row, "total"))
         .transpose()?
         .unwrap_or(0);
-    let items = rows.into_iter().map(alert_from_row).collect::<RepositoryResult<Vec<_>>>()?;
+    let items = rows
+        .into_iter()
+        .map(alert_from_row)
+        .collect::<RepositoryResult<Vec<_>>>()?;
     Ok(AdminMonitorCollection {
         items,
         total,

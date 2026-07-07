@@ -48,19 +48,27 @@ client.set_header('X-Custom-Header', 'value')
 
 ## API Modules
 
+- `client.system` - system API
 - `client.ai` - ai API
 - `client.chat` - chat API
 - `client.iam` - iam API
 - `client.notification` - notification API
 - `client.runtime` - runtime API
-- `client.system` - system API
 
 ## Usage Examples
+
+### system
+
+```python
+# List
+result = client.system.after_sales.requests.list()
+print(result)
+```
 
 ### ai
 
 ```python
-# List groups
+# List
 result = client.ai.channel_groups.list()
 print(result)
 ```
@@ -68,19 +76,15 @@ print(result)
 ### chat
 
 ```python
-# List product chat conversations
-params = {
-    'page': 'page',
-    'page_size': 'page_size',
-}
-result = client.chat.conversations.list(params)
+# List
+result = client.chat.conversations.list()
 print(result)
 ```
 
 ### iam
 
 ```python
-# List keys
+# List
 result = client.iam.api_keys.list()
 print(result)
 ```
@@ -88,42 +92,16 @@ print(result)
 ### notification
 
 ```python
-# List portal notifications
-params = {
-    'include_archived': True,
-    'page': 'page',
-    'page_size': 'page_size',
-}
-result = client.notification.list_notifications(params)
+# List
+result = client.notification.list_notifications()
 print(result)
 ```
 
 ### runtime
 
 ```python
-# List runtime invocations
-params = {
-    'page': 'page',
-    'page_size': 'page_size',
-    'conversation_id': 'conversation_id',
-    'chat_turn_id': 'chat_turn_id',
-    'agent_session_id': 'agent_session_id',
-    'runtime': 'runtime',
-    'status': 'status',
-}
-result = client.runtime.invocations.list(params)
-print(result)
-```
-
-### system
-
-```python
-# Retrieve public site runtime branding settings
-params = {
-    'tenant_code': 'tenant_code',
-    'organization_code': 'organization_code',
-}
-result = client.system.site.runtime.retrieve(params)
+# List
+result = client.runtime.invocations.list()
 print(result)
 ```
 

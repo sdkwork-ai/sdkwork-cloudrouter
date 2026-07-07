@@ -33,11 +33,7 @@ fn read_not_implemented_data(payload: &Value) -> Value {
 async fn backend_contract_routes_return_standard_not_implemented_envelope() {
     let cases = [
         (Method::GET, "/backend/v3/api/ai/models", "list"),
-        (
-            Method::POST,
-            "/backend/v3/api/ai/models/refresh",
-            "refresh",
-        ),
+        (Method::POST, "/backend/v3/api/ai/models/refresh", "refresh"),
         (
             Method::PATCH,
             "/backend/v3/api/content/announcements/notice-001",

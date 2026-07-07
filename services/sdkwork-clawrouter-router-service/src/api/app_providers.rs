@@ -11,9 +11,7 @@ use crate::api::response::{
     json_success_list_response, normalize_list_search_query, offset_page_info,
     parse_offset_list_query, problem_from_wire_code,
 };
-use crate::ports::{
-    AppProvidersListQuery, AppProvidersReadStore, AppProvidersSubject,
-};
+use crate::ports::{AppProvidersListQuery, AppProvidersReadStore, AppProvidersSubject};
 
 #[derive(Clone)]
 struct AppProvidersState {

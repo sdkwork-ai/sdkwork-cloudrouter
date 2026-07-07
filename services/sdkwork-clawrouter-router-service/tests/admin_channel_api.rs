@@ -14,8 +14,8 @@ use sdkwork_clawrouter_router_service::application::{
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
     AdminChannelCommandFuture, AdminChannelCredentialItem, AdminChannelItem, AdminChannelListPage,
-    AdminChannelStore, CreateAdminChannelCommand, DeleteAdminChannelCommand, ListAdminChannelsQuery,
-    TestAdminChannelCommand, UpdateAdminChannelCommand,
+    AdminChannelStore, CreateAdminChannelCommand, DeleteAdminChannelCommand,
+    ListAdminChannelsQuery, TestAdminChannelCommand, UpdateAdminChannelCommand,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -35,7 +35,7 @@ async fn admin_channel_route_creates_lists_updates_and_soft_deletes_items() {
                 .method("POST")
                 .uri("/backend/v3/api/channel")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"name":"OpenAI primary","vendor":"OpenAI","channelType":"official","protocol":"OpenAI","accessType":"api-key","credentials":[{"name":"primary","baseUrl":"https://api.openai.com/v1","secretRef":"vault://providers/openai/account/main"}],"capabilities":["llm"],"resourceCodes":["vendor.openai","model.openai.gpt-4o-mini.chat"],"timeoutMs":60000,"retryPolicy":{"maxAttempts":3,"retryableStatusCodes":[429,503],"backoffMs":25},"circuitBreakerPolicy":{"failureThreshold":2},"expiresAt":"2026-06-30T08:00:00Z","weight":80,"status":"active"}"#,
                 ))
@@ -95,7 +95,7 @@ async fn admin_channel_route_creates_lists_updates_and_soft_deletes_items() {
                 .method("PUT")
                 .uri("/backend/v3/api/channel")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"id":"1","channelType":"relay","status":"disabled","weight":15,"capabilities":["llm","image"],"resourceCodes":["bundle.openrouter.openai.standard"],"timeoutMs":120000,"retryPolicy":null,"circuitBreakerPolicy":{"failureThreshold":3},"expiresAt":null}"#,
                 ))
@@ -133,7 +133,7 @@ async fn admin_channel_route_creates_lists_updates_and_soft_deletes_items() {
                 .method("POST")
                 .uri("/backend/v3/api/channel/list")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from("{}"))
                 .unwrap(),
         )
@@ -172,7 +172,7 @@ async fn admin_channel_route_creates_lists_updates_and_soft_deletes_items() {
                 .method("POST")
                 .uri("/backend/v3/api/channel/1/test")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .header("X-Request-Id", "00000000-0000-4000-8000-000000000201")
                 .body(Body::empty())
                 .unwrap(),
@@ -201,7 +201,7 @@ async fn admin_channel_route_creates_lists_updates_and_soft_deletes_items() {
             Request::builder()
                 .method("DELETE")
                 .uri("/backend/v3/api/channel/1")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -218,7 +218,7 @@ async fn admin_channel_route_creates_lists_updates_and_soft_deletes_items() {
                 .method("POST")
                 .uri("/backend/v3/api/channel/list")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from("{}"))
                 .unwrap(),
         )
@@ -281,7 +281,7 @@ async fn admin_channel_route_invalidates_routing_cache_after_successful_mutation
                 .method("POST")
                 .uri("/backend/v3/api/channel")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"name":"OpenAI primary","vendor":"OpenAI","channelType":"official","protocol":"OpenAI","accessType":"api-key","credentials":[{"name":"primary","baseUrl":"https://api.openai.com/v1","secretRef":"vault://providers/openai/account/main"}],"capabilities":["llm"],"resourceCodes":["vendor.openai"],"weight":80,"status":"active"}"#,
                 ))
@@ -333,7 +333,7 @@ async fn admin_channel_route_masks_api_key_in_create_response() {
                 .method("POST")
                 .uri("/backend/v3/api/channel")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"name":"OpenAI primary","vendor":"OpenAI","protocol":"OpenAI","accessType":"api-key","credentials":[{"name":"primary","baseUrl":"https://api.openai.com/v1","apiKey":"sk-live-secret"}],"capabilities":["llm"],"weight":80,"status":"active"}"#,
                 ))
@@ -408,7 +408,7 @@ async fn admin_channel_route_rejects_invalid_payload_without_calling_store() {
                 .method("POST")
                 .uri("/backend/v3/api/channel")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"name":"","vendor":"OpenAI","credentials":[{"name":"primary","baseUrl":"https://api.openai.com/v1","secretRef":"vault://providers/openai/account/main"}],"capabilities":["llm"]}"#,
                 ))
@@ -441,7 +441,7 @@ async fn admin_channel_route_creates_channel_with_multiple_upstream_credentials_
                 .method("POST")
                 .uri("/backend/v3/api/integration/channels")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"name":"OpenAI pooled","vendor":"OpenAI","protocol":"OpenAI","accessType":"api-key","credentialRotation":"weighted_round_robin","credentials":[{"name":"primary","baseUrl":"https://api1.openai.example/v1","apiKey":"sk-primary","priority":10,"weight":80,"status":"active"},{"name":"backup","baseUrl":"https://api2.openai.example/v1","apiKey":"sk-backup","priority":20,"weight":20,"status":"active"}],"capabilities":["llm"],"weight":80,"status":"active"}"#,
                 ))
@@ -506,7 +506,7 @@ async fn admin_channel_route_rejects_create_without_upstream_credentials() {
                 .method("POST")
                 .uri("/backend/v3/api/integration/channels")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"name":"OpenAI primary","vendor":"OpenAI","baseUrl":"https://api.openai.com/v1","apiKey":"sk-live-secret","capabilities":["llm"]}"#,
                 ))
@@ -539,7 +539,7 @@ async fn admin_channel_route_rejects_invalid_channel_type_without_calling_store(
                 .method("POST")
                 .uri("/backend/v3/api/channel")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"name":"OpenAI primary","vendor":"OpenAI","channelType":"proxy","credentials":[{"name":"primary","baseUrl":"https://api.openai.com/v1","secretRef":"vault://providers/openai/account/main"}],"capabilities":["llm"]}"#,
                 ))
@@ -572,7 +572,7 @@ async fn admin_channel_route_rejects_plaintext_auth_key_without_calling_store() 
                 .method("POST")
                 .uri("/backend/v3/api/channel")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"name":"OpenAI primary","vendor":"OpenAI","authKey":"sk-live-secret","capabilities":["llm"]}"#,
                 ))
@@ -605,7 +605,7 @@ async fn admin_channel_route_rejects_invalid_base_url_without_calling_store() {
                 .method("POST")
                 .uri("/backend/v3/api/channel")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"name":"OpenAI primary","vendor":"OpenAI","credentials":[{"name":"primary","baseUrl":"javascript:alert(1)","secretRef":"vault://providers/openai/account/main"}],"capabilities":["llm"]}"#,
                 ))
@@ -645,7 +645,7 @@ async fn admin_channel_route_rejects_unsafe_secret_ref_without_calling_store() {
                 .method("POST")
                 .uri("/backend/v3/api/channel")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"name":"OpenAI primary","vendor":"OpenAI","credentials":[{"name":"primary","baseUrl":"https://api.openai.com/v1","secretRef":"vault://"}],"capabilities":["llm"]}"#,
                 ))
@@ -668,7 +668,7 @@ async fn admin_channel_route_rejects_unsafe_secret_ref_without_calling_store() {
                 .method("POST")
                 .uri("/backend/v3/api/channel")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"name":"OpenAI primary","vendor":"OpenAI","credentials":[{"name":"primary","baseUrl":"https://api.openai.com/v1","secretRef":"vault://providers/openai/account/main","api_key":"sk-live-secret"}],"capabilities":["llm"]}"#,
                 ))
@@ -701,7 +701,7 @@ async fn admin_channel_route_rejects_invalid_retry_policy_without_calling_store(
                 .method("POST")
                 .uri("/backend/v3/api/channel")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"name":"OpenAI primary","vendor":"OpenAI","credentials":[{"name":"primary","baseUrl":"https://api.openai.com/v1","secretRef":"vault://providers/openai/account/main"}],"retryPolicy":{"maxAttempts":6,"retryableStatusCodes":[503]}}"#,
                 ))
@@ -734,7 +734,7 @@ async fn admin_channel_route_rejects_invalid_circuit_breaker_policy_without_call
                 .method("POST")
                 .uri("/backend/v3/api/channel")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"name":"OpenAI primary","vendor":"OpenAI","credentials":[{"name":"primary","baseUrl":"https://api.openai.com/v1","secretRef":"vault://providers/openai/account/main"}],"circuitBreakerPolicy":{"failureThreshold":0}}"#,
                 ))
@@ -768,7 +768,7 @@ async fn admin_channel_route_rejects_null_create_runtime_policy_fields_without_c
                 .method("POST")
                 .uri("/backend/v3/api/channel")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"name":"OpenAI primary","vendor":"OpenAI","credentials":[{"name":"primary","baseUrl":"https://api.openai.com/v1","secretRef":"vault://providers/openai/account/main"}],"timeoutMs":null}"#,
                 ))
@@ -792,7 +792,7 @@ async fn admin_channel_route_rejects_null_create_runtime_policy_fields_without_c
                 .method("POST")
                 .uri("/backend/v3/api/channel")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"name":"OpenAI primary","vendor":"OpenAI","credentials":[{"name":"primary","baseUrl":"https://api.openai.com/v1","secretRef":"vault://providers/openai/account/main"}],"retryPolicy":null}"#,
                 ))
@@ -815,7 +815,7 @@ async fn admin_channel_route_rejects_null_create_runtime_policy_fields_without_c
                 .method("POST")
                 .uri("/backend/v3/api/channel")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"name":"OpenAI primary","vendor":"OpenAI","credentials":[{"name":"primary","baseUrl":"https://api.openai.com/v1","secretRef":"vault://providers/openai/account/main"}],"circuitBreakerPolicy":null}"#,
                 ))
@@ -830,7 +830,12 @@ async fn admin_channel_route_rejects_null_create_runtime_policy_fields_without_c
     );
     let null_circuit_breaker_policy_payload =
         json_payload(null_circuit_breaker_policy_response).await;
-    assert_eq!(40001, null_circuit_breaker_policy_payload["code"].as_i64().unwrap());
+    assert_eq!(
+        40001,
+        null_circuit_breaker_policy_payload["code"]
+            .as_i64()
+            .unwrap()
+    );
     assert!(null_circuit_breaker_policy_payload["detail"]
         .as_str()
         .unwrap()
@@ -859,7 +864,7 @@ async fn admin_channel_create_accepts_accounts_without_model_allowlist() {
                 .method("POST")
                 .uri("/backend/v3/api/channel")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     serde_json::json!({
                         "name": "OpenAI account",

@@ -45,131 +45,36 @@ client.setHeader('X-Custom-Header', 'value');
 ## API Modules
 
 - `client.ai` - ai API
-- `client.content` - content API
-- `client.iam` - iam API
 - `client.integration` - integration API
-- `client.mcp` - mcp API
-- `client.messaging` - messaging API
-- `client.prompts` - prompts API
-- `client.serviceProviders` - service_providers API
 - `client.sites` - sites API
-- `client.storage` - storage API
 - `client.system` - system API
 
 ## Usage Examples
 
 ### ai
 ```dart
-// List groups
+// List
 final result = await client.ai.channelGroupsList();
-print(result);
-```
-
-### content
-```dart
-// List announcements
-final result = await client.content.announcementsList();
-print(result);
-```
-
-### iam
-```dart
-// Delete API key
-final apiKeyId = '1';
-final result = await client.iam.apiKeysDelete(apiKeyId);
 print(result);
 ```
 
 ### integration
 ```dart
-// List channels
+// List
 final result = await client.integration.channelsList();
-print(result);
-```
-
-### mcp
-```dart
-// List MCP servers
-final params = <String, dynamic>{
-  'page': 'page',
-  'page_size': 'page-size',
-  'q': 'q',
-  'transport': 'transport',
-  'visibility': 'visibility',
-  'status': 'status',
-  'category_id': '1',
-};
-final result = await client.mcp.serversList(params);
-print(result);
-```
-
-### messaging
-```dart
-// Messaging provider accounts list
-final params = <String, dynamic>{
-  'page': 'page',
-  'page_size': 'page-size',
-  'q': 'q',
-  'status': 'status',
-  'channel': 'sms',
-  'provider_code': 'ok',
-};
-final result = await client.messaging.providerAccountsList(params);
-print(result);
-```
-
-### prompts
-```dart
-// List admin prompts
-final params = <String, dynamic>{
-  'page': 'page',
-  'page_size': 'page-size',
-  'q': 'q',
-  'prompt_type': 'prompt-type',
-  'visibility': 'visibility',
-  'status': 'status',
-  'category_id': '1',
-};
-final result = await client.prompts.definitionsList(params);
-print(result);
-```
-
-### service_providers
-```dart
-// Service Provider Adjustments List
-final params = <String, dynamic>{
-  'page': 'page',
-  'page_size': 'page-size',
-  'status': 'status',
-  'provider_id': '1',
-  'seller_provider_id': '1',
-  'buyer_provider_id': '1',
-  'edge_id': '1',
-};
-final result = await client.serviceProviders.adjustmentsList(params);
 print(result);
 ```
 
 ### sites
 ```dart
-// List sites
-final params = <String, dynamic>{
-  'q': 'q',
-};
-final result = await client.sites.siteCatalogList(params);
-print(result);
-```
-
-### storage
-```dart
-// List storage providers
-final result = await client.storage.ossProvidersList();
+// List
+final result = await client.sites.siteCatalogList();
 print(result);
 ```
 
 ### system
 ```dart
-// Retrieve IAM auth runtime settings
+// Retrieve
 final result = await client.system.authSettingsRetrieve();
 print(result);
 ```

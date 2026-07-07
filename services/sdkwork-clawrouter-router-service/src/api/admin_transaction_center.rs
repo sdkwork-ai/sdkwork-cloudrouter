@@ -1,6 +1,6 @@
+use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
@@ -330,10 +330,9 @@ async fn create_payment_provider_account(
         Err(response) => return response,
     };
     match state.store.create_payment_provider_account(command).await {
-        Ok(item) => Json(success_envelope(TransactionCenterResourceResponse {
-            item,
-        }))
-        .into_response(),
+        Ok(item) => {
+            Json(success_envelope(TransactionCenterResourceResponse { item })).into_response()
+        }
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => transaction_center_system_response(
             "payment provider account command store is unavailable",
@@ -366,10 +365,9 @@ async fn update_payment_provider_account(
         Err(response) => return response,
     };
     match state.store.update_payment_provider_account(command).await {
-        Ok(item) => Json(success_envelope(TransactionCenterResourceResponse {
-            item,
-        }))
-        .into_response(),
+        Ok(item) => {
+            Json(success_envelope(TransactionCenterResourceResponse { item })).into_response()
+        }
         Err(error) if error.is_not_found() => not_found_response(error.to_string()),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => transaction_center_system_response(
@@ -407,10 +405,9 @@ async fn update_payment_provider_account_status(
         .update_payment_provider_account_status(command)
         .await
     {
-        Ok(item) => Json(success_envelope(TransactionCenterResourceResponse {
-            item,
-        }))
-        .into_response(),
+        Ok(item) => {
+            Json(success_envelope(TransactionCenterResourceResponse { item })).into_response()
+        }
         Err(error) if error.is_not_found() => not_found_response(error.to_string()),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => transaction_center_system_response(
@@ -426,12 +423,14 @@ async fn delete_payment_provider_account(
     headers: HeaderMap,
     Path(provider_account_id): Path<String>,
 ) -> Response {
-    let command =
-        match build_delete_payment_provider_account_command(scoped, &headers, provider_account_id)
-        {
-            Ok(command) => command,
-            Err(response) => return response,
-        };
+    let command = match build_delete_payment_provider_account_command(
+        scoped,
+        &headers,
+        provider_account_id,
+    ) {
+        Ok(command) => command,
+        Err(response) => return response,
+    };
     match state.store.delete_payment_provider_account(command).await {
         Ok(deleted) => Json(success_envelope(TransactionCenterDeleteResponse {
             deleted,
@@ -616,10 +615,9 @@ where
         Err(response) => return response,
     };
     match load(LoadAdminTransactionRecordQuery { subject, record_id }).await {
-        Ok(Some(item)) => Json(success_envelope(TransactionCenterResourceResponse {
-            item,
-        }))
-        .into_response(),
+        Ok(Some(item)) => {
+            Json(success_envelope(TransactionCenterResourceResponse { item })).into_response()
+        }
         Ok(None) => not_found_response(format!("{field_name} was not found")),
         Err(error) => {
             transaction_center_system_response("transaction center resource is unavailable", error)
@@ -927,7 +925,6 @@ fn validate_secret_ref(provider_code: &str, value: &str) -> Result<(), Response>
         other => bad_request(other.to_string()),
     })
 }
-
 
 fn parse_json_body<T>(body: &Bytes, resource: &str) -> Result<T, String>
 where

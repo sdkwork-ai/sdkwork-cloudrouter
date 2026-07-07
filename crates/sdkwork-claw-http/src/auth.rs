@@ -12,9 +12,9 @@ use hmac::{Hmac, Mac};
 use sdkwork_claw_config::{
     AppSessionConfig, DeploymentMode as RuntimeDeploymentMode, TrustedSubjectConfig,
 };
-use sdkwork_iam_web_adapter::TenantSigningKeyStore;
 use sdkwork_claw_security::redact_secret;
 use sdkwork_iam_context_service::{AuthLevel, DeploymentMode, Environment, IamAppContext};
+use sdkwork_iam_web_adapter::TenantSigningKeyStore;
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 
@@ -243,7 +243,8 @@ impl TrustedRequestSubject {
             return Some(subject);
         }
         if let Some(context) = extensions.get::<sdkwork_web_core::WebRequestContext>() {
-            if let Some(subject) = crate::web_bridge::trusted_request_subject_from_web_context(context)
+            if let Some(subject) =
+                crate::web_bridge::trusted_request_subject_from_web_context(context)
             {
                 return Some(subject);
             }
@@ -1105,10 +1106,9 @@ fn insert_internal_trusted_subject_headers(
     );
     headers.insert(
         X_SDKWORK_ORGANIZATION_ID,
-        HeaderValue::from_str(&subject.organization_id.to_string())
-            .map_err(|_| {
-                TrustedSubjectBoundaryError::InvalidHeaderValue(X_SDKWORK_ORGANIZATION_ID)
-            })?,
+        HeaderValue::from_str(&subject.organization_id.to_string()).map_err(|_| {
+            TrustedSubjectBoundaryError::InvalidHeaderValue(X_SDKWORK_ORGANIZATION_ID)
+        })?,
     );
     headers.insert(
         X_SDKWORK_USER_ID,
@@ -1237,7 +1237,9 @@ fn verify_trusted_request_subject_signature(
         .map_err(|_| TrustedSubjectBoundaryError::InvalidSignature)
 }
 
-fn hmac_for_config(config: &TrustedSubjectConfig) -> Result<HmacSha256, TrustedSubjectBoundaryError> {
+fn hmac_for_config(
+    config: &TrustedSubjectConfig,
+) -> Result<HmacSha256, TrustedSubjectBoundaryError> {
     HmacSha256::new_from_slice(config.signing_secret().as_bytes())
         .map_err(|error| {
             tracing::error!(
@@ -1254,9 +1256,7 @@ fn app_session_hmac_for_config(
     app_session_hmac_for_secret(config.signing_secret().as_bytes())
 }
 
-fn app_session_hmac_for_secret(
-    signing_secret: &[u8],
-) -> Result<HmacSha256, AppSessionTokenError> {
+fn app_session_hmac_for_secret(signing_secret: &[u8]) -> Result<HmacSha256, AppSessionTokenError> {
     HmacSha256::new_from_slice(signing_secret)
         .map_err(|error| {
             tracing::error!(

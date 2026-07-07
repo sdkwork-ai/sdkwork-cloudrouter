@@ -429,7 +429,7 @@ The gateway sends a stable envelope rather than only forwarding the standard req
     "traceId": "trace_..."
   },
   "subject": {
-    "tenantId": 10,
+    "tenantId": 100001,
     "organizationId": 20,
     "userId": 30,
     "apiKeyId": 100,

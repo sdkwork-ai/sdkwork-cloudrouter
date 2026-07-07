@@ -164,7 +164,10 @@ async fn sqlite_app_chat_store_creates_conversation_and_turn_timeline() {
         messages.items[1].content
     );
     assert_eq!("completed", messages.items[1].status);
-    assert_eq!("claude-sonnet-4-5", messages.items[1].model.as_deref().unwrap());
+    assert_eq!(
+        "claude-sonnet-4-5",
+        messages.items[1].model.as_deref().unwrap()
+    );
     assert_eq!("anthropic", messages.items[1].provider.as_deref().unwrap());
     assert_eq!("claude_code", messages.items[1].runtime.as_deref().unwrap());
     assert_eq!(

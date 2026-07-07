@@ -1396,8 +1396,8 @@ test("model service sends sidebar filters through the generated app SDK query co
       assert.equal(requestUrl.searchParams.get("groups"), "enterprise,vip");
       assert.equal(requestUrl.searchParams.get("q"), "gpt");
       assert.equal(requestUrl.searchParams.has("search_query"), false);
-      assert.equal(requestUrl.searchParams.get("limit"), "200");
-      assert.equal(requestUrl.searchParams.get("offset"), "40");
+      assert.equal(requestUrl.searchParams.get("page"), "3");
+      assert.equal(requestUrl.searchParams.get("page_size"), "200");
       return {
         items: [],
         pageInfo: { totalItems: 42 },
@@ -1412,13 +1412,13 @@ test("model service sends sidebar filters through the generated app SDK query co
         categories: ["Recommended", "Proprietary"],
         groups: ["enterprise", "vip"],
         searchQuery: "gpt",
-        limit: 200,
-        offset: 40,
+        page: 3,
+        pageSize: 200,
       });
 
       assert.deepEqual(models, []);
       assert.deepEqual(captured.map((request) => `${request.method} ${request.url}`), [
-        "GET /app/v3/api/ai/models?billing_meter=llm_input_token&vendor_codes=openai%2Canthropic&modalities=text%2Cimage&capabilities=tools%2Cjson%20mode&categories=Recommended%2CProprietary&groups=enterprise%2Cvip&q=gpt&limit=200&offset=40",
+        "GET /app/v3/api/ai/models?page=3&page_size=200&billing_meter=llm_input_token&vendor_codes=openai%2Canthropic&modalities=text%2Cimage&capabilities=tools%2Cjson%20mode&categories=Recommended%2CProprietary&groups=enterprise%2Cvip&q=gpt",
       ]);
       assert.equal(captured.length, 1);
     },
@@ -1429,8 +1429,8 @@ test("model service fetches one catalog page and exposes pageInfo metadata", asy
   await withAppSdkFetch(
     (url) => {
       const requestUrl = new URL(url, "http://localhost");
-      assert.equal(requestUrl.searchParams.get("limit"), "20");
-      assert.equal(requestUrl.searchParams.get("offset"), "0");
+      assert.equal(requestUrl.searchParams.get("page"), "1");
+      assert.equal(requestUrl.searchParams.get("page_size"), "20");
       return {
         items: [
           {
@@ -1456,8 +1456,8 @@ test("model service fetches one catalog page and exposes pageInfo metadata", asy
 
       assert.equal(catalog.models.length, 1);
       assert.equal(catalog.pageInfo.total, 42);
-      assert.equal(catalog.pageInfo.offset, 0);
-      assert.equal(catalog.pageInfo.limit, 20);
+      assert.equal(catalog.pageInfo.page, 1);
+      assert.equal(catalog.pageInfo.pageSize, 20);
       assert.equal(catalog.pageInfo.hasMore, true);
       assert.equal(captured.length, 1);
     },

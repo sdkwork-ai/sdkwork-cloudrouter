@@ -36,15 +36,15 @@
     },
     {
       "path": "README.md",
-      "sha256": "0648659ebcbed0801d7469bbc48dfaf98cafe6e72a9250467787532401382121"
+      "sha256": "874d43d712452774c0a5f5dd4d459b0b8e194987fef6cc37d5400cd0bcfc53d4"
     },
     {
       "path": "sdkwork-sdk.json",
-      "sha256": "83a9d7349f6bd496c7500fea6273e42508e81a1240f7d6e09837d04457619bff"
+      "sha256": "b5681ceda39f4998ba1f1e9ff9c6495cf0f49b85096d93d214a6a2e04da1f24b"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/api/AiApi.java",
-      "sha256": "b84c7cb205abcbf065c0e0f1f88a96c3fb0fd3fdc257f19314d31addd1d07c67"
+      "sha256": "7c6945fb78b9b1930874d2b9a6461b35f6fdda7d401f3332b9be95726aaf374f"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/api/ApiPaths.java",
@@ -52,487 +52,423 @@
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/api/ChatApi.java",
-      "sha256": "ff97114d54a48b95c5d2e2ce12856dfbeca713c8cde4e7133ee257c0c99e045e"
+      "sha256": "b58dcb3b12ba8bea7cae3eefb04de53f1acb875c654ded2ac44729bf5816b3ad"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/api/IamApi.java",
-      "sha256": "958aee3825a883007636a6ac0e32c89d4a7785587e71a4e1942138b68b4a5ce0"
+      "sha256": "ab50c6a3c66bf57e56aebca8270233b20ca93a5140d21afaa272734139e02fdf"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/api/NotificationApi.java",
-      "sha256": "52716baed2c8a5a9a803461be8cb63eaaa64c5b52aa82e637b726045c5b7aa81"
+      "sha256": "313e2fe2666c9d5eae62e0acfc91ce012628491458e09909b1670c414a9543f4"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/api/package-info.java",
-      "sha256": "d8a79d30d0a7bc0e35fc84243cb557473dcc29f3d74115f604b02d0700342b7a"
+      "sha256": "3db312ea24d1bbc30e80d4089437619fbc3c739deb944caaf6368f86529cf3ae"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/api/RuntimeApi.java",
-      "sha256": "ef08c95b01c8820249728f1b3dcc071492a264218fd7361855957d95639864f8"
+      "sha256": "f835350659eac398c50aef5535d503df96fb0992d1e2e286c3096b1d506192e3"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/api/SystemApi.java",
-      "sha256": "d01d16d612598a5b135d4a655174e446bef347a606bf152d9d15da096dc78530"
+      "sha256": "580161bba44e54d931ef407c4567a7542d2c7b05eedeaf9df010dc9ae8165669"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/http/HttpClient.java",
       "sha256": "fac1abcd174365ff25f73630a6db57aa794a400f0f7ea7a51a4b6b58647f3c58"
     },
     {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/AfterSalesEventsListResult.java",
+      "sha256": "7d52621f0786533227352665c28f8eeebd6ddddefede6a49ab29084da9da3238"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/AfterSalesRequestsCreateResult.java",
+      "sha256": "567ffceaeca051d34e0c51e79b3d3c2e9eca4abcc1ed32c9bb871f208f2bc054"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/AfterSalesRequestsListResult.java",
+      "sha256": "8194aa3a997221273b80a6596bb9dbb64c2948206a622849d4f12a633c1fadb2"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/AfterSalesRequestsRetrieveResult.java",
+      "sha256": "c3d46ac96d311466c19c41bbbd7220ee551864be6499ea2a079955258df67340"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/AfterSalesRequestsUpdateResult.java",
+      "sha256": "3bb642dc4649fde00d07385387c5cab3959042d508d0db2cecdbd6092a8bfc58"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/AfterSalesReturnShipmentsCreateResult.java",
+      "sha256": "fb9df70b48c8ef25cfea3cfd44e23118c9db3069bfff9566c350645f81fdc413"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/AfterSalesReturnShipmentsListResult.java",
+      "sha256": "0adfbca2d6add281d2580b45f5735aaed44575a4716d795ac6e6c7c43e144802"
+    },
+    {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/ApiKeysCreateResult.java",
-      "sha256": "702252bc74ba8d20f49407b4bb1eea36f768e555bbf52d6f29f84c47fc6d2577"
+      "sha256": "ef74a4ff38a0624ec9f777c1d4f9e4c2fc2da5c3fef18aa8fa91b77a96460f01"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/ApiKeysDeleteResult.java",
-      "sha256": "d05703f207d5fc9dd34dbc57272347ebf6a699e2d9573b6f34314c157e395991"
+      "sha256": "85bd2d27d42518d886cd547cf21072625e66a994327a32bcd0e7c77adddcb7a0"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/ApiKeysListResult.java",
-      "sha256": "90dfb05d526b67422689fbbae3e705da4a36acd9c83bf2a1a02aab67bac61521"
+      "sha256": "6a5ef306781f7c9a9471e7eea0d8d6e211492dbdb8d9c1c25a47e7e5e9a8ea0c"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/ApiKeysUpdateResult.java",
-      "sha256": "7f80f1c82319b7ae1b2cb9ef3a43d486567055a0efd25656147b608d154efebe"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/AppApiKeyItem.java",
-      "sha256": "1da48ee663c64a1ae02a650b3f5d5f237de20a7c44e46bb968a0bf11529921c0"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/AppApiKeyListResponse.java",
-      "sha256": "8104b72153d97413a33da05d62be1d8e539e22330ccb0544d9b59c3b65b3f04d"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/AppChannelGroup.java",
-      "sha256": "837a175f1e757f5bac76f09623a89ba54d4955b8d78b4161eed0545c754b8880"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/AppChannelGroupListResponse.java",
-      "sha256": "2659ab029c943b36acaecd0d8f24426bb3f989a8f2e321da8292f5a4006734c8"
+      "sha256": "49e297cbd2788c468bb218a752e6bdde07cee21841cbc72b66224047864f5793"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/ArtifactsCreateResult.java",
-      "sha256": "a11fc17d1ec641e6a9ff3832f6292f4b350f60bd6b364a6779d98509aff65a42"
+      "sha256": "6674c3b96815e0c530799c36283b425830fb0156965a6e68e3a22100e2fbe1c8"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/ArtifactsListResult.java",
-      "sha256": "6afbee9a100b2f223201009110220708078419b00411adb15b5fe3d3855f70c2"
+      "sha256": "38eff03c4467287c05482e1e343e7f60f07d2ee2c806efd01e7127a49aa62379"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/ChannelGroupsListResult.java",
-      "sha256": "f0c283c18eccf1ac372156eebb7a03edef5e0a54b94e66cdb3168a295d16a6c1"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ChatConversationCreateRequest.java",
-      "sha256": "6857e5ab02e426e5164ad1b4a5e5897bc84e6c845da73edc1529c2adc1d75311"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ChatConversationItem.java",
-      "sha256": "8e9711bf52e831b5d453af612f10f04b2a4badd40c5e46c2e01058ca5e1b7b15"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ChatConversationListResponse.java",
-      "sha256": "d4f5b3c4e7c59c11683eac11b001327f3c637c7547c51ae85f3c53b6a8311487"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ChatConversationResponse.java",
-      "sha256": "24ea5bad0090e470af01f500b60ee37818d69e8a1afb37ba6ecd95e39043ad9a"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ChatMessageItem.java",
-      "sha256": "3c66fd0f2820fb8465278bf207e3a87e04e03ad4858b3acb85ea1342f8e5f2fa"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ChatMessageListResponse.java",
-      "sha256": "067ec6c9bcfa485cf7b146861264c01161a83b7c06f31b3855d9a8a9437d0ca4"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ChatTurnCreateRequest.java",
-      "sha256": "f14f70d26d2e6342f219be05308a3d08b28e0821fd573f4a935681a1aea32550"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ChatTurnCreateResponse.java",
-      "sha256": "bf4bb760dd44feeda0bc5da6c8cd415c99ecbcc2fa68d4ba9d58b3913d69f5a7"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ChatTurnItem.java",
-      "sha256": "db1e272dff3d3fae00686af61154b3215e98eafa83d2bc4610842861776d0772"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ChatTurnResponseRequest.java",
-      "sha256": "ce4610c51d61cb3a32e95204439458f6dfc154f72ebf7953e8ae544d772dd9b5"
+      "sha256": "84d3cf62b0bcd4cd57e4a444026ea1205358a1866d59534ba2002bbdea0ebbd0"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/ConversationMessagesListResult.java",
-      "sha256": "0bf7e5db4a256d5a32981928df6268bff0200fc1105a416ea06e1aed50f0fc98"
+      "sha256": "c3842e95e5469eaab29c04c1047df30d041acdf7e101346360debfa0ddcb1e45"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/ConversationsCreateResult.java",
-      "sha256": "5e251da9c94870e2d86062454752cb674b02ec863cca4af796282fb6d43694e2"
+      "sha256": "10be0b510320f1013f89569ba6a90658acfa440f319b7ead60e77d81ae677e25"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/ConversationsListResult.java",
-      "sha256": "17409bf01111db489ac790054956809c6aacbfd7d5f3453ec84c49dc21f6ec32"
+      "sha256": "ff45dc908e4da858edba7646b369265917c9f3ccacb1fd183be16cfbfd4af1c9"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/ConversationsRetrieveResult.java",
-      "sha256": "4aa5d1f45e16b4ed52d861af668ec22175a73026937d003d6169a21275177864"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/CreateApiKeyRequest.java",
-      "sha256": "bb3a29e0da3b05cadcba6999f7d4e73c54f91f244b2f601ea8a63202c344a4a9"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/CreateApiKeyResponse.java",
-      "sha256": "6189c10beb1cace8b0cb0a141e24f40f92d69a4fe70b142b0b1111f69470ab35"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/DashboardAnnouncement.java",
-      "sha256": "aa24a5e44be913b251f9e433a1390d364eefe345cc6fe8d60ffde4af7b36638b"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/DashboardChartPoint.java",
-      "sha256": "0f542eb9e00ee2660888a1b86c3bc9b53df2f693ea716b6dd89cb92d6edb7bcb"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/DashboardConfigurationDomain.java",
-      "sha256": "e67e17e0909fa54db8948ea6a98a078153de0da1375ce4fe7d5ebab5be2fdb3b"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/DashboardOverviewResponse.java",
-      "sha256": "72c5fdc057e7d595354ab809f92d9d9376fd5af44b0c09a17e052076dc630d2c"
+      "sha256": "82ab1569701189e34abc1418c4ef281dcf44100fca8f60095613b872b53ad855"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/DashboardOverviewRetrieveResult.java",
-      "sha256": "ee12e00cfc53efce5774726278fef1427ae2defe7e382bb50ba914555799ca78"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/DashboardOverviewSummary.java",
-      "sha256": "04ad4b16657d5932d087f27dc2e9cd7becd2f7139d97c6aecf2289401f32dcdb"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/DashboardSparklinePoint.java",
-      "sha256": "8a4e6dbfb36d72f1d168854b80d91a9341df235327ffff3f816c2b93db006481"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/DashboardTopModel.java",
-      "sha256": "5b5850ea9d180b33a0c6f7a895453466200f1a880625ba493c82a110f6b5f02d"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/DeleteApiKeyResponse.java",
-      "sha256": "b05cc42032ba0013e75b709a662d00769ec2de1ab8094621a80a19ca3144330a"
+      "sha256": "c5a87952c60ed5703da4fbc5759fb8a8410b54317900990390e8f7cdac05ca36"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/FieldError.java",
-      "sha256": "c315782e9687798d5e7869aae5c47a1a72e7a59f2e534680eaa1acdf17783c3a"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/GatewayTrace.java",
-      "sha256": "4ae7f815fba38bffeea0ec0933d1a8d47245fed94d51e9ea9f7862b90e4f8529"
+      "sha256": "5421cae487abafcdcb0f9d025d5e02e29b65aa1fc908c368639af6ab0a935411"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/GatewayTracesListResult.java",
-      "sha256": "0bcc882a13bbfc7e050c602bdc3e0ba2b398efcea240a999af11b76e2af7e2c6"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/GatewayTracesResponse.java",
-      "sha256": "6f00822a95eed959e971dae1b741557d870aeed4987e5a3616c7f875e88f64a3"
+      "sha256": "fc167da5fe6db9893714de44487fa0d4e31be6f3f6ffe30bf3cf04c160a06887"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/InvocationEventsCreateResult.java",
-      "sha256": "1924206aa6ce32c823689f7f76decde01d0d2de192e5e278b1f08a65ccad08a8"
+      "sha256": "556225024ff2192a0190730caf6976b8ea312ce187a2acdbf3ac9250286c044b"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/InvocationEventsListResult.java",
-      "sha256": "d0adba28e0b56a6fa3aed0c02e62e32cc17f1a152713a15f80989ffc0876fe0a"
+      "sha256": "0d500080386e3438d8057f18bbf4610a2a42d46bd00b39087f66be6d3846d390"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/InvocationEventStreamsListResult.java",
-      "sha256": "e18a8e9ae58c7544d63472f097d15fe9037693209182f5ced6b2085c9e0dc583"
+      "sha256": "0d6bdddf4fcad8e9b715644f98f0efc13c00dbbcb9bee38810c70f9e725bc6e4"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/InvocationsCreateResult.java",
-      "sha256": "b31cbeba8ce15a6592be4662dc16214138cc2d2f18d13ed0a4ca96b3e27a6ebb"
+      "sha256": "fbae970ed54b2c0e9bc56962d8cb4d996fb0d929017532731723f7aae45a31b7"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/InvocationsListResult.java",
-      "sha256": "05f45c87a6f87aa61e68297dc7898f5e6f469d4b3bda85273c022cf560595932"
+      "sha256": "f2c9a12159fd260f99cdae0ce69f8137743468a242a401c876a986ff45982042"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/InvocationsRetrieveResult.java",
-      "sha256": "a2e665a2b746af3195f07d324cce5e47dea521109d3c1b91ecdca822ba11e953"
+      "sha256": "10937d476913591565b6aac98dab33bf4d547585dacbe3e8579b6667d836a199"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/InvocationsSubmitResult.java",
-      "sha256": "a36658e182446a9de25a770197c4994de9400b885e75a1b6981aaf3e9324b654"
+      "sha256": "98dd7339f209a0ed830004d77b413a7f4059eee49be7be8e3d81ba62ead82d2b"
     },
     {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/MediaAccess.java",
-      "sha256": "fbbeefdcd74d651f8a375c83a680f6ce929abd750b0709b5a9c849c4f49c565c"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/MediaAiProvenance.java",
-      "sha256": "cc0039e912848b82aefdfef498cc63a538c5e1e09799c6f19df93025881eb1e3"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/MediaChecksum.java",
-      "sha256": "f51c8ac32fe0e828309e1c7f3e2c22e04720552c6f8c50d4c3d858d2b901a7a4"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/MediaResource.java",
-      "sha256": "b694c6d2383b5785b218049a94ec62a0042a9c80cf02189d7547c5eb554d97de"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ModelRankingHistoryEntry.java",
-      "sha256": "f429ceac64f6ac5829fdf4d3064e07ed4fa803a2b1c6205f07eccf4e35c6090b"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ModelRankingHistoryPoint.java",
-      "sha256": "f8fd5a3a0b473524b56b7da2ef8e3cdd942a3cffab18d40785498fa37cafa044"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ModelRankingItem.java",
-      "sha256": "d6625c7a5e25b8fb37f18d542d8688b784e6d21176af1bfc7fea23f866275e3f"
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ModelCatalogPage.java",
+      "sha256": "e7c14b1b7531cb4b17c502c4383d697ab745baea3edc3a951c5424333e895f50"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/ModelRankingsListResult.java",
-      "sha256": "dbc95d021a9d6d8a2a5fb6872585c621bc1c79e87b6228f4db29c07d1db65c3b"
+      "sha256": "d7070fe67c40a8d56caa4a278107810bfcbb972142fe0d533dfc10edd5e45f11"
     },
     {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ModelRankingsSnapshot.java",
-      "sha256": "67de1e074e15342fa78739b742bbb66476be3835e8814b97a0f5f2d535f6bd8f"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ModelRankingsSource.java",
-      "sha256": "eba2eaa7d130676cf46aab311245b8869673c9ada59c411bd874f76940ca7f15"
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ModelRankingsPage.java",
+      "sha256": "ba989ccfb346f044eb11c51d864cbae8daecc9bbe50010c94f5525188c3aa94e"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/ModelsListResult.java",
-      "sha256": "c33c03d675108d296e52fed7bf99557b726e862ccc4b5c63471012b76f29bc51"
+      "sha256": "2a0cddbaa480e992c37ef84a9f25da53adb38e0d6bfad908f3646dce0a36f93d"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/ModelVendorsListResult.java",
-      "sha256": "3addbbc9a03916c3ac987a559e23b09623953d955cbfbc02a6eb1cc3a7439c79"
+      "sha256": "cb761e55a7d68588cfa521ecb5dd9687c84202445850096de64e72372afedab5"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/NoData.java",
       "sha256": "76365baa567cbf5ab19369f99df6c950b974c353a9d810d6e6a42f1dac0a59d6"
     },
     {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/NotificationItem.java",
-      "sha256": "3ea9346172e43fdb25eb143f6651accd283bd23f8afae80d0151b4fc13028553"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/NotificationListResponse.java",
-      "sha256": "103301bc2cd151bd55e907f69471df898e92d9f4b585271186a7fc8ae321ccbb"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/NotificationMutationResponse.java",
-      "sha256": "7c44990ba6a0804086aaaf8713051ef5e2b619905bcec1001c6aa6b9210f1b7b"
-    },
-    {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/NotificationsAcknowledgeCreateResult.java",
-      "sha256": "65bd783fcccb26d9a915d93f02028990d06b506d72bccdcbf8d4b8f5ccc460af"
+      "sha256": "44a77897c124af849d2dcd484f81dace0fa5b7989151bc398839f9735657c32d"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/NotificationsListResult.java",
-      "sha256": "43b7e072967c31d8ba5ac6f9960f178ac34eeaf1fc5576964f92162dc22a1d26"
+      "sha256": "eeeaac43b3b11f5e7c6e5538972c8235810006d1bb88d71ed4c39786d2b13cd4"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/NotificationsPopupSeenCreateResult.java",
-      "sha256": "6cae5a8e87315b00400ba1202d94b74a63283949b0be0667fb33203ce05f9820"
+      "sha256": "31c003925d18f2ba1f369ed064f69afa1bdee285076128e6305661552af156fc"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/PageInfo.java",
+      "sha256": "289932804587c63db9d035de75239a03fe9daa5c997e94883ca9a80200be7d4d"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/ProblemDetail.java",
-      "sha256": "5aff6f661fa87e1727b8a978d68ed5c0956e3146415b073b33d50425abbb812a"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RankingVendorOption.java",
-      "sha256": "d56c71a72060966ec5c92424f74034d33e7ea9557aefc9f61c2416c1230224c8"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RankingVendorOptionsResponse.java",
-      "sha256": "b423ccd2859c3d8ae791d5137675d53d56fe6ac2073db649629a03e219b5a8f3"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RoutingApiKeyItem.java",
-      "sha256": "86d98c84addaee71a011d23adcd3500bc0313464bb69322ab6a219f647de50be"
+      "sha256": "11299ac8e4fb789903412de8474ed21ff315f4e4055e4f6bb5af38a7fb48ea23"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/RoutingApiKeysListResult.java",
-      "sha256": "bb67c1b1bfe2b3a5775e85625602319ce12d6c700d8d7c81c84be0ac7db4d54d"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RoutingApiKeysResponse.java",
-      "sha256": "75443b495c5a5deac3b866e3a721c7a36964b39c6e354f3704692105f1cfdccb"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RoutingChannelItem.java",
-      "sha256": "93fe7c51f7cf6f29e55fe202e037210ba0793d9d61e08ac083fce9718ec95374"
+      "sha256": "b0370dfa12004981754d7aa6ffb694079b614db65b703a6e372f6dac2bbaaa88"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/RoutingChannelsListResult.java",
-      "sha256": "391bf5e9be5cd8ec3ea149e2b7096a5346af8642f347035d1f0984bd8c45b414"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RoutingChannelsResponse.java",
-      "sha256": "e1a1717ede368013568cbae1a33012d47856689e8611777a26ee6f856e29f3b0"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RoutingCircuitBreakerPolicy.java",
-      "sha256": "b885b5aa4a4a344b4ffa19f875998d18f42f61d363f1ccdff06d8e92bf51ddaf"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RoutingModelStats.java",
-      "sha256": "394e85cd840b696ed2be9a62696713837da9f32016a3f9c7047feb89075ebf76"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RoutingRequestTraceItem.java",
-      "sha256": "5dc5a37c4dcb7f3122f2ec3d9594e990992907a5be4c905bd85cf295a5448c12"
+      "sha256": "03b744cb414fbc2acfbb57745ce83904daeb07f3ab2ab7fe27adba98659d04fb"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/RoutingRequestTracesListResult.java",
-      "sha256": "25e1a708bd2ebb668371434a0d2de77d9462e840d4841b80b171a36f84ff0f24"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RoutingRequestTracesResponse.java",
-      "sha256": "65daa29ed3a41658b3fd186aa8ec8e9ad68dab51d2c2405a0da683e6ae236c54"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RoutingRetryPolicy.java",
-      "sha256": "5be44ddd7253dc57e347616fe1e918e946c2bb0c3f8d3877e8feaa15cd6db3ba"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RoutingUsageData.java",
-      "sha256": "3fe68cd3692621b2cf936a98a91a0a521c12240a436d3b28dd2667f425f38484"
+      "sha256": "ff5c41c395cee63d8c9d416fe03098e5671780555754116c86f7650c5f376126"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/RoutingUsageListResult.java",
-      "sha256": "e469f4027afd910d5a19a07640bf464baeac4f64c41456b10da3fe4d62e79249"
+      "sha256": "81b434456aa0759272604aa751cbb40eedbe01ebaf7a8538f062cb9c6e50351f"
     },
     {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RoutingUsageSnapshot.java",
-      "sha256": "b6e54613b37596f835b1767fedcdd808475bbe764e052988f4ce8c6e3f97752d"
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/SdkWorkApiResponse.java",
+      "sha256": "9adf0d0aef7f9d66b38bcd80c6b08ea560c67ae75ae5034a85807d9d3ee502d2"
     },
     {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RuntimeArtifactCreateRequest.java",
-      "sha256": "7e80814b994c3e03317c93d48da81d3dcb8b0a60c5c188c6239e50f9fbbb8079"
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentApplicationsCreateResult.java",
+      "sha256": "7184b0e7ba1d783c622ff02f673d9cdb0b8f457295f47f7ea797870dc2755920"
     },
     {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RuntimeArtifactItem.java",
-      "sha256": "60099282adc52eb27e189eccb7fff47283ea34c0fd4c17047c6b53dedec5e373"
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentApplicationsListResult.java",
+      "sha256": "1c3966a9c542c4ce0ad9af43ae29ca2d85170467944df5dd97d4b1e6d5ad54cb"
     },
     {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RuntimeArtifactListResponse.java",
-      "sha256": "400034b7a57925461b1013491d987c0e14bee5ed792301c31c1ee61b14e0ffd6"
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentBrandAuthorizationsListResult.java",
+      "sha256": "56671634471ecee48350fcd737ff3e350cc837a05978bcd4deb986dfcb135090"
     },
     {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RuntimeArtifactResponse.java",
-      "sha256": "7323d1122e5fab79938c26ba03c7c6a23bce33f6fde58dbda6ab0eaf530539de"
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentBrandAuthorizationsUpsertResult.java",
+      "sha256": "ed188da7eb46fc5da8fb75270ae458c3f284e55c6b7d0c2f9aacf1a068e4cd88"
     },
     {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RuntimeEventCreateRequest.java",
-      "sha256": "746ea0ba2052a2ce784b6ef407285f25d9495f22bdcf60c38a0c7d4f907092c6"
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentBusinessHoursRetrieveResult.java",
+      "sha256": "ccb47aae42929933396a206f7a34ad379627a45d6bb640c435453781d8e59197"
     },
     {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RuntimeEventItem.java",
-      "sha256": "01930aa56cb2e173f7333ab8b22bdd5f8521abd5f1c68067ef193cedb58d0de5"
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentBusinessHoursUpdateResult.java",
+      "sha256": "2654ec29722a6da572ebe3fe0e69ae87ed773c8c9c8c16c50dc2ad29375fe545"
     },
     {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RuntimeEventListResponse.java",
-      "sha256": "bcf830e5bf8c01ec1aef8009be0f2f3818e0cbcd73eda223926c6ed6de9d7c0f"
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentCategoryBindingsListResult.java",
+      "sha256": "40d8bbd27791e8fbe69fa001927111fb017c4cfbf38a711866104cfe6a7755d0"
     },
     {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RuntimeEventResponse.java",
-      "sha256": "9bd8af3f156fbf6acf0de4064ffc934c42ff38324618b6f97608d7182ed67c67"
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentCategoryBindingsUpsertResult.java",
+      "sha256": "07f9bd2dbf5e088dacb7b2f93f0de781e5a2704f1773c0d8751a332fa6b38c23"
     },
     {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RuntimeInvocationCompleteRequest.java",
-      "sha256": "d5c19f674d7b6f9913c90d71d5754daa2b5fb87655cd0c6e3a11fa13f536c14c"
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentChannelsListResult.java",
+      "sha256": "f345f73a3b04cc6c1dbdc0a964f42eaecfd7e26dca2d81280a4f0fa29c7426dd"
     },
     {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RuntimeInvocationCreateRequest.java",
-      "sha256": "9a72332cefd75da398469488344d96361fa83129d3365d2fd4505b2ccd0fa2e8"
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentChannelsUpdateResult.java",
+      "sha256": "b9039dd97998a6ba8ef95cec4552cedfec63f2e0eaecb2c2c8bb413fe232355c"
     },
     {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RuntimeInvocationItem.java",
-      "sha256": "667c9f9eaa6e1f9d73caacdae5dec5f2deee16499031f6dbb0466a23303ff325"
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentCustomerServicesListResult.java",
+      "sha256": "096a5ba3575154639fa2c5c263697448f3a098b64881fbc3cefb18d1f839db07"
     },
     {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RuntimeInvocationListResponse.java",
-      "sha256": "a8c363f1804b8a74e4fdb8d61e52b6a6abdae90ac4645c3c57b622e740a6250c"
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentCustomerServicesUpsertResult.java",
+      "sha256": "3d3700abf40a8f97dce9958463e8d29d3b3237989d444e8de3bf6cb00437d20c"
     },
     {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/RuntimeInvocationResponse.java",
-      "sha256": "e8f4c674331a8ca52878d301902a93bec26b887ab423c73d0d2cb9402d7be202"
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentDashboardRetrieveResult.java",
+      "sha256": "949cd59027cb2ad1995d7a90934f95b2fb978dff8d7c4a6fb8711f1b6bef6114"
     },
     {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/SettingsDataResponse.java",
-      "sha256": "a400211e63b54ca81551442ef3ad256a32c64eb5f8174830ff1b806b1e929be0"
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentDepositAccountRetrieveResult.java",
+      "sha256": "fd283aa166bba22765a58a798d2a39cbd5d213bc984dd2382a742df77bee9c90"
     },
     {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/SettingsNotifications.java",
-      "sha256": "6aa707baeb769c8502b73e689d3b653e0e0361d1608b1875ce0e0b220aa7fc81"
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentFulfillmentProfileRetrieveResult.java",
+      "sha256": "2f7009b79c3936c639465663d07a5a3b2b49a6edce688196adbf92bd4d14b97d"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentFulfillmentProfileUpdateResult.java",
+      "sha256": "56eb6cc53bd5f14ded7a95ea538c5c04dec3151badd9ec95d3c2f81419025b68"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentInventoryStocksAdjustmentsCreateResult.java",
+      "sha256": "9f341f3c1c3182decb17e6d1de49d697a38416a449ce18335c1b03550258ba23"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentInventoryStocksListResult.java",
+      "sha256": "a74459ee53302161c7af343a1a6cd3ea77e23c2420e9a1d896e950a0b1ab6040"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentOrdersFulfillmentsCreateResult.java",
+      "sha256": "ce4c393f254588c67246d8927257fb3a6d0fad4977b69d5fa95084047d55daac"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentOrdersListResult.java",
+      "sha256": "763b163e8f2b9052f9b37632b703216df5d95d3c79512dabbf90b090a8431aca"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentOrdersRetrieveResult.java",
+      "sha256": "cec664385c46499ae3ba0deda22175940f2680e4184b25c59322574ea6654114"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentPoliciesListResult.java",
+      "sha256": "5f41522a9ac2b73bd89ffc7e558af748d2ea8121f166da4d17e887b45b821614"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentPoliciesUpdateResult.java",
+      "sha256": "554c8a11815b297b2f021950c09d2f8d999db23a8fec87ff5f707ace3f1a2199"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentProductsCreateResult.java",
+      "sha256": "69194c1d4d220854e7a712c4de4396f7b68f9e445f3f170511ce7e7062e88442"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentProductsListResult.java",
+      "sha256": "ffc8932f432838906ed35c6a562cec9705c246e9c026c25155ab7655168a6276"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentProductsPublishResult.java",
+      "sha256": "7f7a7885a3e080c28936e607543cfd1f75cea92a5c3c45d01a0f0e9f80d13906"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentProductsUnpublishResult.java",
+      "sha256": "422c6bc36ad4f6224571a07a0505d66fe6a0c132387a42c0b3c9810d0903b6a5"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentProductsUpdateResult.java",
+      "sha256": "fef16d0f4032294dfec288e4b4b4b7504af33162e91cb9a7d3ffcdf16e17c8e6"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentQualificationsListResult.java",
+      "sha256": "db2029e303827a53de3abb9287f121c702741dd60fa73bad283d1c03242fcc0a"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentQualificationsUpsertResult.java",
+      "sha256": "83029ff30c2fdaafc6809cbb344d291588fe81c60e932b69c054dce1d83f3d4e"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentReadinessRetrieveResult.java",
+      "sha256": "ae90c9a48a0496037f01d6558b6584a77d8745f03b13b27f32140fe3ed2f0d55"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentRetrieveResult.java",
+      "sha256": "0f32698aaf60c26fcd196917f3453898119dc93c2e17aaf7a6b30ad97f556a27"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentReturnAddressesListResult.java",
+      "sha256": "b65c22935391375f3c08dd8e5e1da7eabd18a4cab7279f69da9a567bc180c6df"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentReturnAddressesUpsertResult.java",
+      "sha256": "8adea2e2d64d384497b455abe0929694ee9766c5df8f09b1bf9f2bf91d926433"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentRiskSignalsListResult.java",
+      "sha256": "7e6e3c9516182fc03bc248d6498ecec2594d5a4aa1b037fbaf72e7f7e377903d"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentServiceAreasCreateResult.java",
+      "sha256": "1a22df4eeba328bf62ad038815eed74403fbd8a44dc1b2610ab3b0ccd7ec851a"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentServiceAreasListResult.java",
+      "sha256": "c9879231aa2d44fbd9f0dc9f2a49a3a5e11d4e3b136050997783473e51b0ecf5"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentServiceAreasUpdateResult.java",
+      "sha256": "02a7b4b76b32a4ce1421abe8b435a56a6dce6b92f55b261d3cc0dea2a441c2f3"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentSettlementProfileRetrieveResult.java",
+      "sha256": "e9075181dce3dcff0de49f255213461f9662ae1bbcc4e1ebff092513c6d20682"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentSettlementProfileUpdateResult.java",
+      "sha256": "535021cec09206f97fd970d6fff8f7da9b6fc52e6e11559d4d823335e72cbac3"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentSettlementsListResult.java",
+      "sha256": "b082de408e2dad402d3a2e63a3b122db1e9b354e37d71c889dd7d267391337a8"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentShippingTemplatesListResult.java",
+      "sha256": "9d8ed584d06bb3e8afc6cb2ef1870ddaaaa496ad13ace3b73101e234d5fc76c0"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentShippingTemplatesUpsertResult.java",
+      "sha256": "ac6a810831a8179f64371eb12de45732884dbab9bfec6247625f14bb98f5b822"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentStatusEventsListResult.java",
+      "sha256": "921c78502d39237fab72e92ad9813b5c57bdab02abff47686e1c2ef963225b68"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsCurrentVerificationsListResult.java",
+      "sha256": "90055007b2c9eed3403c51f969be2493889bc1530b60b1898556bb6ea534ee95"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsListResult.java",
+      "sha256": "436ec1d1d5b893511ff020d5171c069da4894d24d122e82475658ade3165db1b"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/clawrouter/app/model/ShopsRetrieveResult.java",
+      "sha256": "df56e3417e6d406c29688f85c6de369b32cf192626f8439bdc8a9253d9656387"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/SiteRuntimeRetrieveResult.java",
-      "sha256": "16a39269d4e66bc46a7d5d8c856a05cc0e1506cfaa71a82631baa150c8067e04"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/SiteRuntimeSettingsResponse.java",
-      "sha256": "8c74a424f21cae3322d9e9b4d3a7b117d5a36155811f6c975fbfe3f73e69cd29"
+      "sha256": "04dd70480535e087b2dcafdbe48fca35be678ae20aa919cd641880e790a5a451"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/TurnResponsesCreateResult.java",
-      "sha256": "88bc718b97a29994e45ec423200be9ebb0f07bc2b9cdfceac4c335db479ac35f"
+      "sha256": "3d80b53917c678ba3975ec020eb3d31841c572a9e8ead790ce4aa25cb1215169"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/TurnsCreateResult.java",
-      "sha256": "ee6af2aea3299ac8912186c47ce6f96b20bcba07d23dc0b83773007257405698"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/UpdateApiKeyRequest.java",
-      "sha256": "c60ca7a75b6f46af855670559557e87b90cbcc9babbf46e732676eab9806ad33"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/UpdateApiKeyResponse.java",
-      "sha256": "529c28c3f9724bb280a11d877b5164d2d074d14d1083f539b9d902d40370663e"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/UpdateSettingsRequest.java",
-      "sha256": "6452907e3463eff21245e3b220dee65f38eaa89f30d9802ee7d7a534888a19b7"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/UpdateSettingsResponse.java",
-      "sha256": "2fd0c1450991d83a541bf88cee5ed6cefb2e5a31340f2dc632ff3802d4e13325"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/UsageLogItem.java",
-      "sha256": "7ac5007c89656cd11299f99cbc32f912f4263f6ab8bc25d2f7cc7feea71fd1a8"
+      "sha256": "81d75444f0f9d0a3f72cf8a6e381dd5ca128d9d9c6abe7997b73c77818be4e50"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/UsageLogsListResult.java",
-      "sha256": "433409cf847c925d8ac97e7511a942f1d32085427f77ec0a13e47cad482a9bd8"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/UsageLogsResponse.java",
-      "sha256": "a3e817b4028db25faecae2cdf14614db6b997adb3af376a386d406962ed88171"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/clawrouter/app/model/UsageSnapshot.java",
-      "sha256": "a3257ec325eb83139d11cd1c8b6aa8c0e771613fa4634141de02803588a53a23"
+      "sha256": "28dfe52b56411fc5fcc444c26504191195fdf9d1d05553edc1bc8e76c6f73275"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/UsersSettingsRetrieveResult.java",
-      "sha256": "1c6f166b51e0b8dd63e316e9fb5d26c987ade1bf43cf85cb96b4be7d28b14077"
+      "sha256": "67eb25a9666c3171ed589e8994f650087d018b1f221977eff74889971abc7eee"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/model/UsersSettingsUpdateResult.java",
-      "sha256": "4e05fca27808eafdaa8108f05d37b83faae24c15cefb1a22bc782c8abfec57e5"
+      "sha256": "649eaaec5a5b342f8ccbcf092f459b82a6609d64759c95acadbf5abe100a1052"
     },
     {
       "path": "src/main/java/com/sdkwork/clawrouter/app/SdkworkAppClient.java",
-      "sha256": "bd75b7f9fdf7d68f212ca7ca7cdcde2ae5e5c3d35c3ded149d9afae37d208ee1"
+      "sha256": "0f7611f8da2e1d361beb3bf84ce23a4fd328460f2fb78f91ba7d42d3710d315e"
     }
   ],
   "scaffoldFiles": [

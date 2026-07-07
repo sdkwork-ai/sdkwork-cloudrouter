@@ -162,7 +162,6 @@ async fn database_config_app_model_catalog_refreshes_runtime_snapshot_after_data
     panic!("refreshed app model catalog did not include gpt-4o-refresh: {refreshed_payload}");
 }
 
-
 #[tokio::test]
 async fn database_config_dashboard_scopes_metrics_to_app_session_subject() {
     let database_url = unique_sqlite_url();
@@ -2152,8 +2151,7 @@ async fn database_config_recharge_lists_packages_and_persists_pending_payment_or
     assert!(!packs_body_text.contains("6103"));
     assert!(!packs_body_text.contains("Other Org Recharge Pack"));
 
-    let recharge_request_body =
-        r#"{"amount":"10.00","currencyCode":"CNY","method":"wechat","packageId":"6101","source":"app-api-test"}"#;
+    let recharge_request_body = r#"{"amount":"10.00","currencyCode":"CNY","method":"wechat","packageId":"6101","source":"app-api-test"}"#;
     let recharge_request_hash_body =
         r#"{"amount":"10.00","currencyCode":"CNY","packageId":"6101","source":"app-api-test"}"#;
     let (recharge_status, recharge_payload, recharge_body_text) = request_json(
@@ -2582,8 +2580,8 @@ fn enable_legacy_app_api_subject_boundary_for_integration_tests() {
 async fn configured_router(database_url: &str) -> axum::Router {
     enable_legacy_app_api_subject_boundary_for_integration_tests();
     let pool = create_sqlite_pool(database_url).await;
-    let database_config =
-        DatabaseConfig::from_url_with_max_connections(database_url, 1).expect("sqlite database config");
+    let database_config = DatabaseConfig::from_url_with_max_connections(database_url, 1)
+        .expect("sqlite database config");
     sdkwork_clawrouter_standalone_gateway::router_with_sqlite_product_catalog(
         pool,
         database_config,

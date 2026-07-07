@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import AdminSiteActionRequest, AdminSiteCreateRequest, AdminSiteUpdateRequest, HealthCheckCreateResult, SiteCatalogListResult, SiteChannelsListResult, SiteCreateResult, SiteDeleteResult, SiteUpdateResult, TestConnectionCreateResult
+from ..models import HealthCheckCreateResult, SiteCatalogListResult, SiteChannelsListResult, SiteCreateResult, SiteDeleteResult, SiteUpdateResult, TestConnectionCreateResult
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -71,116 +71,6 @@ def serialize_path_primitive(value: Any) -> str:
     return str(value)
 
 
-def build_query_string(parameters: List[Dict[str, Any]]) -> str:
-    pairs: List[str] = []
-    for parameter in parameters:
-        append_serialized_parameter(pairs, parameter)
-    return '&'.join(pairs)
-
-
-def append_serialized_parameter(pairs: List[str], parameter: Dict[str, Any]) -> None:
-    value = parameter.get('value')
-    if value is None:
-        return
-
-    name = str(parameter.get('name') or '')
-    allow_reserved = bool(parameter.get('allow_reserved'))
-    content_type = parameter.get('content_type')
-    if content_type:
-        import json
-
-        pairs.append(f"{encode_query_component(name)}={encode_query_value(json.dumps(value, separators=(',', ':')), allow_reserved)}")
-        return
-
-    style = str(parameter.get('style') or 'form')
-    explode = bool(parameter.get('explode'))
-    if style == 'deepObject':
-        append_deep_object_parameter(pairs, name, value, allow_reserved)
-        return
-    if isinstance(value, (list, tuple)):
-        append_array_parameter(pairs, name, value, style, explode, allow_reserved)
-        return
-    if isinstance(value, dict):
-        append_object_parameter(pairs, name, value, style, explode, allow_reserved)
-        return
-
-    pairs.append(f"{encode_query_component(name)}={encode_query_value(serialize_primitive(value), allow_reserved)}")
-
-
-def append_array_parameter(
-    pairs: List[str],
-    name: str,
-    value: Any,
-    style: str,
-    explode: bool,
-    allow_reserved: bool,
-) -> None:
-    values = [serialize_primitive(item) for item in value if item is not None]
-    if not values:
-        return
-
-    if style == 'form' and explode:
-        for item in values:
-            pairs.append(f"{encode_query_component(name)}={encode_query_value(item, allow_reserved)}")
-        return
-
-    pairs.append(f"{encode_query_component(name)}={encode_query_value(','.join(values), allow_reserved)}")
-
-
-def append_object_parameter(
-    pairs: List[str],
-    name: str,
-    value: Dict[str, Any],
-    style: str,
-    explode: bool,
-    allow_reserved: bool,
-) -> None:
-    entries = [(key, entry_value) for key, entry_value in value.items() if entry_value is not None]
-    if not entries:
-        return
-
-    if style == 'form' and explode:
-        for key, entry_value in entries:
-            pairs.append(f"{encode_query_component(str(key))}={encode_query_value(serialize_primitive(entry_value), allow_reserved)}")
-        return
-
-    serialized = ','.join(
-        item
-        for key, entry_value in entries
-        for item in (str(key), serialize_primitive(entry_value))
-    )
-    pairs.append(f"{encode_query_component(name)}={encode_query_value(serialized, allow_reserved)}")
-
-
-def append_deep_object_parameter(pairs: List[str], name: str, value: Any, allow_reserved: bool) -> None:
-    if not isinstance(value, dict):
-        pairs.append(f"{encode_query_component(name)}={encode_query_value(serialize_primitive(value), allow_reserved)}")
-        return
-
-    for key, entry_value in value.items():
-        if entry_value is None:
-            continue
-        pairs.append(f"{encode_query_component(f'{name}[{key}]')}={encode_query_value(serialize_primitive(entry_value), allow_reserved)}")
-
-
-def serialize_primitive(value: Any) -> str:
-    if isinstance(value, dict):
-        import json
-
-        return json.dumps(value, separators=(',', ':'))
-    return str(value)
-
-
-def encode_query_component(value: str) -> str:
-    from urllib.parse import quote
-
-    return quote(value, safe='')
-
-
-def encode_query_value(value: str, allow_reserved: bool) -> str:
-    from urllib.parse import quote
-
-    return quote(value, safe=':/?#[]@!$&\'()*+,;=' if allow_reserved else '')
 
 
 
@@ -195,17 +85,17 @@ class SitesApi:
         self.test_connection = SitesTestConnectionApi(client)
 
 
-    def create(self, body: AdminSiteCreateRequest) -> SiteCreateResult:
-        """Create site"""
-        return self._client.post(f"/backend/v3/api/sites", json=body)
+    def create(self) -> SiteCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/sites")
 
     def delete(self, site_id: str) -> SiteDeleteResult:
-        """Delete site"""
+        """Delete"""
         return self._client.delete(f"/backend/v3/api/sites/{serialize_path_parameter(site_id, {'name': 'siteId', 'style': 'simple', 'explode': False})}")
 
-    def update(self, site_id: str, body: AdminSiteUpdateRequest) -> SiteUpdateResult:
-        """Update site"""
-        return self._client.patch(f"/backend/v3/api/sites/{serialize_path_parameter(site_id, {'name': 'siteId', 'style': 'simple', 'explode': False})}", json=body)
+    def update(self, site_id: str) -> SiteUpdateResult:
+        """Update"""
+        return self._client.patch(f"/backend/v3/api/sites/{serialize_path_parameter(site_id, {'name': 'siteId', 'style': 'simple', 'explode': False})}")
 
 class SitesSiteCatalogApi:
     """sites sites.site_catalog API client."""
@@ -214,12 +104,9 @@ class SitesSiteCatalogApi:
         self._client = client
 
 
-    def list(self, q: Optional[str] = None) -> SiteCatalogListResult:
-        """List sites"""
-        query = build_query_string([
-            {'name': 'q', 'value': q, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/backend/v3/api/sites", query))
+    def list(self) -> SiteCatalogListResult:
+        """List"""
+        return self._client.get(f"/backend/v3/api/sites")
 
 class SitesSiteChannelsApi:
     """sites sites.site_channels API client."""
@@ -229,7 +116,7 @@ class SitesSiteChannelsApi:
 
 
     def list(self, site_id: str) -> SiteChannelsListResult:
-        """List site channels"""
+        """List"""
         return self._client.get(f"/backend/v3/api/sites/{serialize_path_parameter(site_id, {'name': 'siteId', 'style': 'simple', 'explode': False})}/channels")
 
 class SitesHealthCheckApi:
@@ -239,9 +126,9 @@ class SitesHealthCheckApi:
         self._client = client
 
 
-    def create(self, site_id: str, body: AdminSiteActionRequest) -> HealthCheckCreateResult:
-        """Health check site"""
-        return self._client.post(f"/backend/v3/api/sites/{serialize_path_parameter(site_id, {'name': 'siteId', 'style': 'simple', 'explode': False})}/health_check", json=body)
+    def create(self, site_id: str) -> HealthCheckCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/sites/{serialize_path_parameter(site_id, {'name': 'siteId', 'style': 'simple', 'explode': False})}/health_check")
 
 class SitesTestConnectionApi:
     """sites sites.test_connection API client."""
@@ -250,6 +137,6 @@ class SitesTestConnectionApi:
         self._client = client
 
 
-    def create(self, site_id: str, body: AdminSiteActionRequest) -> TestConnectionCreateResult:
-        """Test site connection"""
-        return self._client.post(f"/backend/v3/api/sites/{serialize_path_parameter(site_id, {'name': 'siteId', 'style': 'simple', 'explode': False})}/test_connection", json=body)
+    def create(self, site_id: str) -> TestConnectionCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/sites/{serialize_path_parameter(site_id, {'name': 'siteId', 'style': 'simple', 'explode': False})}/test_connection")

@@ -39,7 +39,7 @@ async fn app_notification_route_uses_notification_domain_and_store_contract() {
                 .uri(
                     "/app/v3/api/notification/notifications?app_id=claw-router&page=1&page_size=20",
                 )
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -95,7 +95,7 @@ async fn app_notification_route_allows_console_reads_without_frontend_app_id() {
             Request::builder()
                 .method("GET")
                 .uri("/app/v3/api/notification/notifications?page=1&page_size=20")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -135,7 +135,7 @@ async fn app_notification_commands_mark_popup_seen_for_trusted_subject() {
             Request::builder()
                 .method("POST")
                 .uri("/app/v3/api/notification/notifications/notification-1/popup_seen?app_id=claw-router")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -173,7 +173,7 @@ async fn app_notification_rejects_noncanonical_popup_seen_route() {
             Request::builder()
                 .method("POST")
                 .uri("/app/v3/api/notification/notifications/notification-1/popup-seen?app_id=claw-router")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -198,7 +198,7 @@ async fn app_notification_acknowledge_marks_read_and_popup_seen_for_trusted_subj
             Request::builder()
                 .method("POST")
                 .uri("/app/v3/api/notification/notifications/notification-1/acknowledge?app_id=claw-router")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -251,7 +251,7 @@ async fn app_notification_route_rejects_missing_subject_and_invalid_notification
             Request::builder()
                 .method("POST")
                 .uri("/app/v3/api/notification/notifications/bad%2Fid/acknowledge")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )

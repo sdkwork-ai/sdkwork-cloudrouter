@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
+use std::sync::Arc;
 
 use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
@@ -215,10 +215,9 @@ async fn fetch_dashboard(
         Err(response) => return response,
     };
     match state.store.retrieve_dashboard(query).await {
-        Ok(item) => Json(success_envelope(ServiceProviderDashboardResponse {
-            item,
-        }))
-        .into_response(),
+        Ok(item) => {
+            Json(success_envelope(ServiceProviderDashboardResponse { item })).into_response()
+        }
         Err(error) => {
             service_provider_system_response("service provider dashboard is unavailable", error)
         }
@@ -307,10 +306,7 @@ async fn list_pricing_rules(
     _headers: HeaderMap,
     Query(query): Query<AdminServiceProviderListRequestQuery>,
 ) -> Response {
-    list_response(scoped, query, |query| {
-        state.store.list_pricing_rules(query)
-    })
-    .await
+    list_response(scoped, query, |query| state.store.list_pricing_rules(query)).await
 }
 
 async fn create_pricing_rule(
@@ -369,9 +365,9 @@ async fn simulate_price(
         Err(response) => return response,
     };
     match state.store.simulate_price(command).await {
-        Ok(item) => Json(success_envelope(
-            ServiceProviderPriceSimulationResponse { item },
-        ))
+        Ok(item) => Json(success_envelope(ServiceProviderPriceSimulationResponse {
+            item,
+        }))
         .into_response(),
         Err(error) => service_provider_system_response(
             "service provider price simulation is unavailable",
@@ -487,8 +483,7 @@ fn validated_list_query(
     query: AdminServiceProviderListRequestQuery,
 ) -> Result<ListAdminServiceProviderRecordsQuery, Response> {
     let subject = scoped.into();
-    let pagination = parse_offset_list_query(query.page, query.page_size)
-        .map_err(bad_request)?;
+    let pagination = parse_offset_list_query(query.page, query.page_size).map_err(bad_request)?;
     let status = normalize_optional_text(query.status, "status", MAX_STATUS_LEN)?
         .map(|value| value.to_ascii_lowercase());
     Ok(ListAdminServiceProviderRecordsQuery {

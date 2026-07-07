@@ -4,7 +4,9 @@
   "version": "0.1.0",
   "language": "flutter",
   "sdkType": "app",
-  "packageName": "clawrouter_app_sdk",
+  "packageName": "sdkwork-clawrouter-app-sdk-generated-typescript",
+  "transportPackageName": "sdkwork-clawrouter-app-sdk-generated-typescript",
+  "consumerPackageName": "@sdkwork/clawrouter-app-sdk",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

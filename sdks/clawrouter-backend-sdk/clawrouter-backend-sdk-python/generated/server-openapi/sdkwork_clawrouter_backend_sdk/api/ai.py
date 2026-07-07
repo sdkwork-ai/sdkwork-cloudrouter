@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import AdminAiModelCreateRequest, AdminAiModelUpdateRequest, AdminAiResourceCreateRequest, AdminAiResourceGroupCreateRequest, AdminAiResourceGroupUpdateRequest, AdminAiResourceUpdateRequest, AdminChannelGroupChannelBindingsReplaceRequest, AdminChannelGroupCreateRequest, AdminChannelGroupUpdateRequest, AdminModelCatalogSyncRequest, AdminModelMappingCreateRequest, AdminModelMappingResolveRequest, AdminModelMappingUpdateRequest, AdminModelVendorCreateRequest, AdminRuntimeRouteExplainRequest, AiResourceGroupsCreateResult, AiResourceGroupsDeleteResult, AiResourceGroupsListResult, AiResourceGroupsResourcesListResult, AiResourceGroupsUpdateResult, AiResourcesCreateResult, AiResourcesListResult, AiResourcesUpdateResult, ChannelGroupsChannelBindingsListResult, ChannelGroupsChannelBindingsUpdateResult, ChannelGroupsCreateResult, ChannelGroupsDeleteResult, ChannelGroupsListResult, ChannelGroupsRouteExplainRetrieveResult, ChannelGroupsUpdateResult, ModelMappingsCreateResult, ModelMappingsDeleteResult, ModelMappingsListResult, ModelMappingsResolveCreateResult, ModelMappingsUpdateResult, ModelRankingRefreshTriggerRequest, ModelRankingsJobsListResult, ModelRankingsListResult, ModelRankingsRefreshResult, ModelRankingsStatusRetrieveResult, ModelsCreateResult, ModelsDeleteResult, ModelsListResult, ModelsRefreshResult, ModelsUpdateResult, ModelVendorsCreateResult, ModelVendorsListResult, RouteExplainCreateResult
+from ..models import AiResourceGroupsCreateResult, AiResourceGroupsDeleteResult, AiResourceGroupsListResult, AiResourceGroupsResourcesListResult, AiResourceGroupsUpdateResult, AiResourcesCreateResult, AiResourcesListResult, AiResourcesUpdateResult, ChannelGroupsChannelBindingsListResult, ChannelGroupsChannelBindingsUpdateResult, ChannelGroupsCreateResult, ChannelGroupsDeleteResult, ChannelGroupsListResult, ChannelGroupsRouteExplainRetrieveResult, ChannelGroupsUpdateResult, ModelMappingOptionsListResult, ModelMappingsCreateResult, ModelMappingsDeleteResult, ModelMappingsListResult, ModelMappingsReplaceResult, ModelMappingsResolveCreateResult, ModelMappingsUpdateResult, ModelRankingsJobsListResult, ModelRankingsListResult, ModelRankingsRefreshResult, ModelRankingsStatusRetrieveResult, ModelsCreateResult, ModelsDeleteResult, ModelsListResult, ModelsRefreshResult, ModelsUpdateResult, ModelVendorsCreateResult, ModelVendorsListResult, RouteExplainCreateResult
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -190,6 +190,7 @@ class AiApi:
     def __init__(self, client: HttpClient):
         self._client = client
         self.channel_groups = AiChannelGroupsApi(client)
+        self.model_mapping_options = AiModelMappingOptionsApi(client)
         self.model_mappings = AiModelMappingsApi(client)
         self.model_rankings = AiModelRankingsApi(client)
         self.model_vendors = AiModelVendorsApi(client)
@@ -209,20 +210,20 @@ class AiChannelGroupsApi:
 
 
     def list(self) -> ChannelGroupsListResult:
-        """List groups"""
+        """List"""
         return self._client.get(f"/backend/v3/api/ai/channel_groups")
 
-    def create(self, body: AdminChannelGroupCreateRequest) -> ChannelGroupsCreateResult:
-        """Create group"""
-        return self._client.post(f"/backend/v3/api/ai/channel_groups", json=body)
+    def create(self) -> ChannelGroupsCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/ai/channel_groups")
 
     def delete(self, channel_group_id: str) -> ChannelGroupsDeleteResult:
-        """Delete group"""
+        """Delete"""
         return self._client.delete(f"/backend/v3/api/ai/channel_groups/{serialize_path_parameter(channel_group_id, {'name': 'channelGroupId', 'style': 'simple', 'explode': False})}")
 
-    def update(self, channel_group_id: str, body: AdminChannelGroupUpdateRequest) -> ChannelGroupsUpdateResult:
-        """Update group"""
-        return self._client.patch(f"/backend/v3/api/ai/channel_groups/{serialize_path_parameter(channel_group_id, {'name': 'channelGroupId', 'style': 'simple', 'explode': False})}", json=body)
+    def update(self, channel_group_id: str) -> ChannelGroupsUpdateResult:
+        """Update"""
+        return self._client.patch(f"/backend/v3/api/ai/channel_groups/{serialize_path_parameter(channel_group_id, {'name': 'channelGroupId', 'style': 'simple', 'explode': False})}")
 
 class AiChannelGroupsChannelBindingsApi:
     """ai ai.channel_groups.channel_bindings API client."""
@@ -232,12 +233,12 @@ class AiChannelGroupsChannelBindingsApi:
 
 
     def list(self, channel_group_id: str) -> ChannelGroupsChannelBindingsListResult:
-        """List group channel bindings"""
+        """List"""
         return self._client.get(f"/backend/v3/api/ai/channel_groups/{serialize_path_parameter(channel_group_id, {'name': 'channelGroupId', 'style': 'simple', 'explode': False})}/channel_bindings")
 
-    def update(self, channel_group_id: str, body: AdminChannelGroupChannelBindingsReplaceRequest) -> ChannelGroupsChannelBindingsUpdateResult:
-        """Replace group channel bindings"""
-        return self._client.put(f"/backend/v3/api/ai/channel_groups/{serialize_path_parameter(channel_group_id, {'name': 'channelGroupId', 'style': 'simple', 'explode': False})}/channel_bindings", json=body)
+    def update(self, channel_group_id: str) -> ChannelGroupsChannelBindingsUpdateResult:
+        """Update"""
+        return self._client.put(f"/backend/v3/api/ai/channel_groups/{serialize_path_parameter(channel_group_id, {'name': 'channelGroupId', 'style': 'simple', 'explode': False})}/channel_bindings")
 
 class AiChannelGroupsRouteExplainApi:
     """ai ai.channel_groups.route_explain API client."""
@@ -247,8 +248,19 @@ class AiChannelGroupsRouteExplainApi:
 
 
     def retrieve(self, channel_group_id: str) -> ChannelGroupsRouteExplainRetrieveResult:
-        """List group route explain"""
+        """Retrieve"""
         return self._client.get(f"/backend/v3/api/ai/channel_groups/{serialize_path_parameter(channel_group_id, {'name': 'channelGroupId', 'style': 'simple', 'explode': False})}/route_explain")
+
+class AiModelMappingOptionsApi:
+    """ai ai.model_mapping_options API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def list(self) -> ModelMappingOptionsListResult:
+        """List"""
+        return self._client.get(f"/backend/v3/api/ai/model_mapping_options")
 
 class AiModelMappingsApi:
     """ai ai.model_mappings API client."""
@@ -258,28 +270,25 @@ class AiModelMappingsApi:
         self.resolve = AiModelMappingsResolveApi(client)
 
 
-    def list(self, binding_type: Optional[str] = None, vendor_code: Optional[str] = None, channel_id: Optional[str] = None, channel_code: Optional[str] = None, q: Optional[str] = None) -> ModelMappingsListResult:
-        """List model mappings"""
-        query = build_query_string([
-            {'name': 'binding_type', 'value': binding_type, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'vendor_code', 'value': vendor_code, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'channel_id', 'value': channel_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'channel_code', 'value': channel_code, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'q', 'value': q, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/backend/v3/api/ai/model_mappings", query))
+    def list(self) -> ModelMappingsListResult:
+        """List"""
+        return self._client.get(f"/backend/v3/api/ai/model_mappings")
 
-    def create(self, body: AdminModelMappingCreateRequest) -> ModelMappingsCreateResult:
-        """Create model mapping"""
-        return self._client.post(f"/backend/v3/api/ai/model_mappings", json=body)
+    def create(self) -> ModelMappingsCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/ai/model_mappings")
+
+    def replace(self) -> ModelMappingsReplaceResult:
+        """Replace"""
+        return self._client.put(f"/backend/v3/api/ai/model_mappings")
 
     def delete(self, mapping_id: str) -> ModelMappingsDeleteResult:
-        """Delete model mapping"""
+        """Delete"""
         return self._client.delete(f"/backend/v3/api/ai/model_mappings/{serialize_path_parameter(mapping_id, {'name': 'mappingId', 'style': 'simple', 'explode': False})}")
 
-    def update(self, mapping_id: str, body: AdminModelMappingUpdateRequest) -> ModelMappingsUpdateResult:
-        """Update model mapping"""
-        return self._client.patch(f"/backend/v3/api/ai/model_mappings/{serialize_path_parameter(mapping_id, {'name': 'mappingId', 'style': 'simple', 'explode': False})}", json=body)
+    def update(self, mapping_id: str) -> ModelMappingsUpdateResult:
+        """Update"""
+        return self._client.patch(f"/backend/v3/api/ai/model_mappings/{serialize_path_parameter(mapping_id, {'name': 'mappingId', 'style': 'simple', 'explode': False})}")
 
 class AiModelMappingsResolveApi:
     """ai ai.model_mappings.resolve API client."""
@@ -288,9 +297,9 @@ class AiModelMappingsResolveApi:
         self._client = client
 
 
-    def create(self, body: AdminModelMappingResolveRequest) -> ModelMappingsResolveCreateResult:
-        """Resolve model mapping"""
-        return self._client.post(f"/backend/v3/api/ai/model_mappings/resolve", json=body)
+    def create(self) -> ModelMappingsResolveCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/ai/model_mappings/resolve")
 
 class AiModelRankingsApi:
     """ai ai.model_rankings API client."""
@@ -301,20 +310,20 @@ class AiModelRankingsApi:
         self.status = AiModelRankingsStatusApi(client)
 
 
-    def list(self, rank_scope: Optional[str] = None, vendor_code: Optional[str] = None, modality: Optional[str] = None, q: Optional[str] = None, limit: Optional[str] = None) -> ModelRankingsListResult:
-        """List model rankings"""
+    def list(self, rank_scope: Optional[str] = None, vendor_code: Optional[str] = None, modality: Optional[str] = None, q: Optional[str] = None, page_size: Optional[int] = None) -> ModelRankingsListResult:
+        """List"""
         query = build_query_string([
             {'name': 'rank_scope', 'value': rank_scope, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'vendor_code', 'value': vendor_code, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'modality', 'value': modality, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'q', 'value': q, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/backend/v3/api/ai/model_rankings", query))
 
-    def refresh(self, body: ModelRankingRefreshTriggerRequest) -> ModelRankingsRefreshResult:
-        """Trigger model ranking refresh"""
-        return self._client.post(f"/backend/v3/api/ai/model_rankings/refresh", json=body)
+    def refresh(self) -> ModelRankingsRefreshResult:
+        """Refresh"""
+        return self._client.post(f"/backend/v3/api/ai/model_rankings/refresh")
 
 class AiModelRankingsJobsApi:
     """ai ai.model_rankings.jobs API client."""
@@ -323,11 +332,11 @@ class AiModelRankingsJobsApi:
         self._client = client
 
 
-    def list(self, rank_scope: Optional[str] = None, limit: Optional[str] = None) -> ModelRankingsJobsListResult:
-        """List model ranking refresh jobs"""
+    def list(self, rank_scope: Optional[str] = None, page_size: Optional[int] = None) -> ModelRankingsJobsListResult:
+        """List"""
         query = build_query_string([
             {'name': 'rank_scope', 'value': rank_scope, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/backend/v3/api/ai/model_rankings/jobs", query))
 
@@ -338,10 +347,18 @@ class AiModelRankingsStatusApi:
         self._client = client
 
 
-    def retrieve(self, rank_scope: Optional[str] = None) -> ModelRankingsStatusRetrieveResult:
-        """List model ranking refresh status"""
+    def retrieve(self, page: Optional[int] = None, page_size: Optional[int] = None, q: Optional[str] = None, billing_meter: Optional[str] = None, vendor_codes: Optional[List[str]] = None, modalities: Optional[List[str]] = None, capabilities: Optional[List[str]] = None, categories: Optional[List[str]] = None, groups: Optional[List[str]] = None) -> ModelRankingsStatusRetrieveResult:
+        """Retrieve"""
         query = build_query_string([
-            {'name': 'rank_scope', 'value': rank_scope, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page', 'value': page, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'q', 'value': q, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'billing_meter', 'value': billing_meter, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'vendor_codes', 'value': vendor_codes, 'style': 'form', 'explode': False, 'allow_reserved': False},
+            {'name': 'modalities', 'value': modalities, 'style': 'form', 'explode': False, 'allow_reserved': False},
+            {'name': 'capabilities', 'value': capabilities, 'style': 'form', 'explode': False, 'allow_reserved': False},
+            {'name': 'categories', 'value': categories, 'style': 'form', 'explode': False, 'allow_reserved': False},
+            {'name': 'groups', 'value': groups, 'style': 'form', 'explode': False, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/backend/v3/api/ai/model_rankings/status", query))
 
@@ -353,12 +370,12 @@ class AiModelVendorsApi:
 
 
     def list(self) -> ModelVendorsListResult:
-        """List vendors"""
+        """List"""
         return self._client.get(f"/backend/v3/api/ai/model_vendors")
 
-    def create(self, body: AdminModelVendorCreateRequest) -> ModelVendorsCreateResult:
-        """Create vendor"""
-        return self._client.post(f"/backend/v3/api/ai/model_vendors", json=body)
+    def create(self) -> ModelVendorsCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/ai/model_vendors")
 
 class AiModelsApi:
     """ai ai.models API client."""
@@ -367,25 +384,36 @@ class AiModelsApi:
         self._client = client
 
 
-    def list(self) -> ModelsListResult:
-        """List models"""
-        return self._client.get(f"/backend/v3/api/ai/models")
+    def list(self, page: Optional[int] = None, page_size: Optional[int] = None, q: Optional[str] = None, billing_meter: Optional[str] = None, vendor_codes: Optional[List[str]] = None, modalities: Optional[List[str]] = None, capabilities: Optional[List[str]] = None, categories: Optional[List[str]] = None, groups: Optional[List[str]] = None) -> ModelsListResult:
+        """List"""
+        query = build_query_string([
+            {'name': 'page', 'value': page, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'q', 'value': q, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'billing_meter', 'value': billing_meter, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'vendor_codes', 'value': vendor_codes, 'style': 'form', 'explode': False, 'allow_reserved': False},
+            {'name': 'modalities', 'value': modalities, 'style': 'form', 'explode': False, 'allow_reserved': False},
+            {'name': 'capabilities', 'value': capabilities, 'style': 'form', 'explode': False, 'allow_reserved': False},
+            {'name': 'categories', 'value': categories, 'style': 'form', 'explode': False, 'allow_reserved': False},
+            {'name': 'groups', 'value': groups, 'style': 'form', 'explode': False, 'allow_reserved': False},
+        ])
+        return self._client.get(_append_query_string(f"/backend/v3/api/ai/models", query))
 
-    def create(self, body: AdminAiModelCreateRequest) -> ModelsCreateResult:
-        """Create model"""
-        return self._client.post(f"/backend/v3/api/ai/models", json=body)
+    def create(self) -> ModelsCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/ai/models")
 
-    def refresh(self, body: AdminModelCatalogSyncRequest) -> ModelsRefreshResult:
-        """Sync vendors and models"""
-        return self._client.post(f"/backend/v3/api/ai/models/refresh", json=body)
+    def refresh(self) -> ModelsRefreshResult:
+        """Refresh"""
+        return self._client.post(f"/backend/v3/api/ai/models/refresh")
 
     def delete(self, model_id: str) -> ModelsDeleteResult:
-        """Delete model"""
+        """Delete"""
         return self._client.delete(f"/backend/v3/api/ai/models/{serialize_path_parameter(model_id, {'name': 'modelId', 'style': 'simple', 'explode': False})}")
 
-    def update(self, model_id: str, body: AdminAiModelUpdateRequest) -> ModelsUpdateResult:
-        """Update model"""
-        return self._client.patch(f"/backend/v3/api/ai/models/{serialize_path_parameter(model_id, {'name': 'modelId', 'style': 'simple', 'explode': False})}", json=body)
+    def update(self, model_id: str) -> ModelsUpdateResult:
+        """Update"""
+        return self._client.patch(f"/backend/v3/api/ai/models/{serialize_path_parameter(model_id, {'name': 'modelId', 'style': 'simple', 'explode': False})}")
 
 class AiAiResourceGroupsApi:
     """ai ai.ai_resource_groups API client."""
@@ -396,20 +424,20 @@ class AiAiResourceGroupsApi:
 
 
     def list(self) -> AiResourceGroupsListResult:
-        """List resource groups"""
+        """List"""
         return self._client.get(f"/backend/v3/api/ai/resource_groups")
 
-    def create(self, body: AdminAiResourceGroupCreateRequest) -> AiResourceGroupsCreateResult:
-        """Create resource group"""
-        return self._client.post(f"/backend/v3/api/ai/resource_groups", json=body)
+    def create(self) -> AiResourceGroupsCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/ai/resource_groups")
 
     def delete(self, group_id: str) -> AiResourceGroupsDeleteResult:
-        """Delete resource group"""
+        """Delete"""
         return self._client.delete(f"/backend/v3/api/ai/resource_groups/{serialize_path_parameter(group_id, {'name': 'groupId', 'style': 'simple', 'explode': False})}")
 
-    def update(self, group_id: str, body: AdminAiResourceGroupUpdateRequest) -> AiResourceGroupsUpdateResult:
-        """Update resource group"""
-        return self._client.patch(f"/backend/v3/api/ai/resource_groups/{serialize_path_parameter(group_id, {'name': 'groupId', 'style': 'simple', 'explode': False})}", json=body)
+    def update(self, group_id: str) -> AiResourceGroupsUpdateResult:
+        """Update"""
+        return self._client.patch(f"/backend/v3/api/ai/resource_groups/{serialize_path_parameter(group_id, {'name': 'groupId', 'style': 'simple', 'explode': False})}")
 
 class AiAiResourceGroupsResourcesApi:
     """ai ai.ai_resource_groups.resources API client."""
@@ -419,7 +447,7 @@ class AiAiResourceGroupsResourcesApi:
 
 
     def list(self, group_id_or_code: str) -> AiResourceGroupsResourcesListResult:
-        """List resource group resources"""
+        """List"""
         return self._client.get(f"/backend/v3/api/ai/resource_groups/{serialize_path_parameter(group_id_or_code, {'name': 'groupIdOrCode', 'style': 'simple', 'explode': False})}/resources")
 
 class AiAiResourcesApi:
@@ -430,16 +458,16 @@ class AiAiResourcesApi:
 
 
     def list(self) -> AiResourcesListResult:
-        """List ai resources"""
+        """List"""
         return self._client.get(f"/backend/v3/api/ai/resources")
 
-    def create(self, body: AdminAiResourceCreateRequest) -> AiResourcesCreateResult:
-        """Create ai resource"""
-        return self._client.post(f"/backend/v3/api/ai/resources", json=body)
+    def create(self) -> AiResourcesCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/ai/resources")
 
-    def update(self, resource_id: str, body: AdminAiResourceUpdateRequest) -> AiResourcesUpdateResult:
-        """Update ai resource"""
-        return self._client.put(f"/backend/v3/api/ai/resources/{serialize_path_parameter(resource_id, {'name': 'resourceId', 'style': 'simple', 'explode': False})}", json=body)
+    def update(self, resource_id: str) -> AiResourcesUpdateResult:
+        """Update"""
+        return self._client.put(f"/backend/v3/api/ai/resources/{serialize_path_parameter(resource_id, {'name': 'resourceId', 'style': 'simple', 'explode': False})}")
 
 class AiRouteExplainApi:
     """ai ai.route_explain API client."""
@@ -448,6 +476,6 @@ class AiRouteExplainApi:
         self._client = client
 
 
-    def create(self, body: AdminRuntimeRouteExplainRequest) -> RouteExplainCreateResult:
-        """List runtime route explain"""
-        return self._client.post(f"/backend/v3/api/ai/route_explain", json=body)
+    def create(self) -> RouteExplainCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/ai/route_explain")

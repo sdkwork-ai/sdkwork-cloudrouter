@@ -7,13 +7,12 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use sdkwork_claw_config::deployment::{resolve_deployment_runtime, DeploymentProfile};
-use sdkwork_utils_rust as sdkwork_utils;
 use crate::infrastructure::sql::commerce_bootstrap::{
     commerce_database_indexes, commerce_database_tables, commerce_experience_seed_manifest,
     commerce_initial_migration_sql, commerce_initial_migration_sqlite,
     commerce_recharge_package_seeds, commerce_recharge_settings_seeds,
 };
+use sdkwork_claw_config::deployment::{resolve_deployment_runtime, DeploymentProfile};
 use sdkwork_contract_service::CommerceServiceError;
 use sdkwork_iam_bootstrap::{
     iam_baseline_postgres_sql, iam_rbac_federation_postgres_sql, import_postgres_default_iam_seed,
@@ -28,6 +27,7 @@ use sdkwork_models_database_bootstrap::{
     models_catalog_foundation_migration_sql, models_catalog_foundation_migration_sqlite,
     models_catalog_module_table_names,
 };
+use sdkwork_utils_rust as sdkwork_utils;
 use sha2::{Digest, Sha256};
 use sqlx::{PgPool, Postgres, Row, Sqlite, SqlitePool, Transaction};
 
@@ -1341,7 +1341,7 @@ impl DatabaseInstaller {
     }
 }
 
-const SYSTEM_REFRESH_TENANT_ID: i64 = 0;
+const SYSTEM_REFRESH_TENANT_ID: i64 = 100_001;
 const SYSTEM_REFRESH_ORGANIZATION_ID: i64 = 0;
 const SYSTEM_REFRESH_OPERATOR_ID: i64 = 0;
 const SYSTEM_REFRESH_OPERATOR_TYPE: i32 = 1;
@@ -2910,7 +2910,10 @@ async fn import_sqlite_commerce_experience_seed(
         payload.as_str(),
     )
     .await?;
-    crate::infrastructure::sql::membership_seed_compat::upsert_sqlite_commerce_experience_seed(pool).await?;
+    crate::infrastructure::sql::membership_seed_compat::upsert_sqlite_commerce_experience_seed(
+        pool,
+    )
+    .await?;
     record_sqlite_migration_completed(
         pool,
         "commerce-experience",
@@ -2932,7 +2935,10 @@ async fn import_postgres_commerce_experience_seed(
         payload.as_str(),
     )
     .await?;
-    crate::infrastructure::sql::membership_seed_compat::upsert_postgres_commerce_experience_seed(pool).await?;
+    crate::infrastructure::sql::membership_seed_compat::upsert_postgres_commerce_experience_seed(
+        pool,
+    )
+    .await?;
     record_postgres_migration_completed(
         pool,
         "commerce-experience",
@@ -5186,10 +5192,7 @@ async fn sqlite_record_failed_catalog_refresh_migration(
 ) -> Result<(), sqlx::Error> {
     let now = current_utc_timestamp_string();
     let failed = failed_catalog_refresh_row(options, catalog_root, catalog_version, error, &now);
-    let audit_key = format!(
-        "catalog-refresh-failed:{}",
-        catalog_refresh_id()
-    );
+    let audit_key = format!("catalog-refresh-failed:{}", catalog_refresh_id());
     let id = next_install_runtime_id("system schema migration")?;
     sqlx::query(
         r#"
@@ -5225,10 +5228,7 @@ async fn postgres_record_failed_catalog_refresh_migration(
 ) -> Result<(), sqlx::Error> {
     let now = current_utc_timestamp_string();
     let failed = failed_catalog_refresh_row(options, catalog_root, catalog_version, error, &now);
-    let audit_key = format!(
-        "catalog-refresh-failed:{}",
-        catalog_refresh_id()
-    );
+    let audit_key = format!("catalog-refresh-failed:{}", catalog_refresh_id());
     let id = next_install_runtime_id("system schema migration")?;
     sqlx::query(
         r#"
@@ -5283,10 +5283,7 @@ fn failed_catalog_refresh_row(
         )
         .as_str(),
     );
-    let uuid = format!(
-        "catalog-sync-failed-{}",
-        catalog_refresh_id()
-    );
+    let uuid = format!("catalog-sync-failed-{}", catalog_refresh_id());
     let metadata = serde_json::json!({
         "source": options.source,
         "catalogRoot": catalog_root,
@@ -6280,12 +6277,8 @@ async fn mark_sqlite_installed_with_catalog_version(
     catalog_version: &str,
 ) -> Result<(), sqlx::Error> {
     let mut tx = pool.begin().await?;
-    mark_sqlite_installed_with_catalog_version_in_transaction(
-        &mut tx,
-        options,
-        catalog_version,
-    )
-    .await?;
+    mark_sqlite_installed_with_catalog_version_in_transaction(&mut tx, options, catalog_version)
+        .await?;
     tx.commit().await?;
     Ok(())
 }
@@ -6341,12 +6334,8 @@ async fn mark_postgres_installed_with_catalog_version(
     catalog_version: &str,
 ) -> Result<(), sqlx::Error> {
     let mut tx = pool.begin().await?;
-    mark_postgres_installed_with_catalog_version_in_transaction(
-        &mut tx,
-        options,
-        catalog_version,
-    )
-    .await?;
+    mark_postgres_installed_with_catalog_version_in_transaction(&mut tx, options, catalog_version)
+        .await?;
     tx.commit().await?;
     Ok(())
 }

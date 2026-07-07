@@ -3,12 +3,12 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 if TYPE_CHECKING:
-    from .admin_analytics_overview_response import AdminAnalyticsOverviewResponse
+    from .admin_analytics_overview import AdminAnalyticsOverview
 
 
 @dataclass
 class AnalyticsAdminOverviewRetrieveResult:
     """Analytics admin overview retrieve result schema exposed by Claw Router."""
-    code: str
-    data: Optional[AdminAnalyticsOverviewResponse] = None
-    msg: Optional[str] = None
+    code: int
+    data: Any
+    trace_id: str

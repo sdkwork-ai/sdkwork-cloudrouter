@@ -1,10 +1,10 @@
+use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 use serde::Deserialize;
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
 use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::{

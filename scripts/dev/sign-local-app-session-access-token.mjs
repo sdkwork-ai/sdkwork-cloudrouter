@@ -7,7 +7,7 @@ const DEFAULT_SESSION_TTL_SECONDS = 86_400;
 const LOCAL_DEV_CONSOLE_PERMISSION = 'clawrouter.console.access';
 
 export const DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT = Object.freeze({
-  tenantId: 100_001,
+  tenantId: 100001,
   organizationId: 0,
   userId: 30,
   appId: 'sdkwork-clawrouter',

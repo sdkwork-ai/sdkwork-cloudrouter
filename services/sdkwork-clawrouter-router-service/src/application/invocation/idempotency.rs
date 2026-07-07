@@ -35,7 +35,11 @@ struct CachedResponse {
 
 impl CachedResponse {
     fn from_response(response: &InvocationDispatchResponse) -> Option<Self> {
-        if response.stream_body.lock().is_ok_and(|guard| guard.is_some()) {
+        if response
+            .stream_body
+            .lock()
+            .is_ok_and(|guard| guard.is_some())
+        {
             return None;
         }
         let status = if response.is_success() {
@@ -176,7 +180,10 @@ impl IdempotencyInterceptor {
     /// the interceptor uses Redis for idempotency key lookup/storage with
     /// automatic TTL expiry. When `None` or the connection fails, it falls
     /// back to the local in-memory cache.
-    pub fn try_with_redis_config(config: IdempotencyConfig, redis_config: Option<&RedisConfig>) -> Self {
+    pub fn try_with_redis_config(
+        config: IdempotencyConfig,
+        redis_config: Option<&RedisConfig>,
+    ) -> Self {
         let distributed = redis_config.and_then(|rc| {
             let url = rc.url();
             let prefix = rc.key_prefix().unwrap_or("clawrouter").to_owned();
@@ -282,7 +289,10 @@ impl IdempotencyInterceptor {
         }
     }
 
-    async fn wait_for_completion(&self, key: &str) -> Result<Option<InvocationDispatchResponse>, InvocationError> {
+    async fn wait_for_completion(
+        &self,
+        key: &str,
+    ) -> Result<Option<InvocationDispatchResponse>, InvocationError> {
         for _ in 0..self.config.max_wait_retries {
             tokio::time::sleep(self.config.wait_retry_delay).await;
 
@@ -385,7 +395,11 @@ impl IdempotencyStore for RedisIdempotencyStore {
     }
 
     async fn store(&self, key: &str, response: &InvocationDispatchResponse, ttl: Duration) {
-        if response.stream_body.lock().is_ok_and(|guard| guard.is_some()) {
+        if response
+            .stream_body
+            .lock()
+            .is_ok_and(|guard| guard.is_some())
+        {
             return;
         }
         let Some(payload) = CachedResponsePayload::from_response(response) else {
@@ -412,7 +426,10 @@ impl IdempotencyStore for RedisIdempotencyStore {
         let Ok(mut conn) = self.client.get_multiplexed_async_connection().await else {
             return;
         };
-        let _: Result<(), _> = redis::cmd("DEL").arg(&redis_key).query_async(&mut conn).await;
+        let _: Result<(), _> = redis::cmd("DEL")
+            .arg(&redis_key)
+            .query_async(&mut conn)
+            .await;
     }
 
     async fn get_status(&self, key: &str) -> IdempotencyKeyStatus {
@@ -453,7 +470,11 @@ struct CachedResponsePayload {
 
 impl CachedResponsePayload {
     fn from_response(response: &InvocationDispatchResponse) -> Option<Self> {
-        if response.stream_body.lock().is_ok_and(|guard| guard.is_some()) {
+        if response
+            .stream_body
+            .lock()
+            .is_ok_and(|guard| guard.is_some())
+        {
             return None;
         }
         Some(Self {
@@ -524,7 +545,10 @@ impl InvocationInterceptor for IdempotencyInterceptor {
                     IdempotencyKeyStatus::Unknown => {}
                 }
 
-                if store.try_acquire_lock(key, self.config.in_progress_timeout).await {
+                if store
+                    .try_acquire_lock(key, self.config.in_progress_timeout)
+                    .await
+                {
                     tracing::debug!(
                         idempotency_key = %key,
                         "idempotency lock acquired (distributed)"
@@ -541,7 +565,10 @@ impl InvocationInterceptor for IdempotencyInterceptor {
 
             // Fall back to local in-memory cache.
             if let Some(cached) = self.lookup(key) {
-                if matches!(cached.status, IdempotencyKeyStatus::Completed | IdempotencyKeyStatus::Failed) {
+                if matches!(
+                    cached.status,
+                    IdempotencyKeyStatus::Completed | IdempotencyKeyStatus::Failed
+                ) {
                     tracing::debug!(
                         idempotency_key = %key,
                         status_code = cached.status_code,

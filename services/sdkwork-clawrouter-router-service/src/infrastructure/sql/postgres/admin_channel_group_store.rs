@@ -1091,7 +1091,10 @@ async fn list_channel_groups(
         .first()
         .and_then(|row| row.try_get::<i64, _>("total").ok())
         .unwrap_or(0);
-    let items = rows.into_iter().map(item_from_row).collect::<DomainResult<Vec<_>>>()?;
+    let items = rows
+        .into_iter()
+        .map(item_from_row)
+        .collect::<DomainResult<Vec<_>>>()?;
     Ok(AdminChannelGroupListPage {
         items,
         total,

@@ -1085,8 +1085,8 @@ async fn invocation_router_resolves_lookup_sticky_route_before_dispatch() {
     let dispatcher = Arc::new(CapturingDispatcher::default());
     let sticky_store = Arc::new(RecordingStickyRouteStore::with_binding(
         StickyObjectRouteBinding {
-            tenant_id: 10,
-            organization_id: 20,
+            tenant_id: 100001,
+            organization_id: 0,
             object_type: "file".to_owned(),
             object_id: "file-sticky-1".to_owned(),
             parent_object_type: None,

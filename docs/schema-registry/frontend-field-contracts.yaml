@@ -94,6 +94,7 @@ frontend_operations:
   request_body_required: false
   write_tables:
   - ops_audit_log
+
 - route: /console/after_sales/requests
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
@@ -108,6 +109,7 @@ frontend_operations:
     name: NoData
     properties: {}
   query_parameters: []
+
 - route: /console/after_sales/requests/{afterSalesRequestId}
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: retrieve
@@ -203,9 +205,59 @@ frontend_operations:
   read_sources:
   - ai
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: ModelRankingsPage
+    additionalProperties: false
+    properties:
+      items:
+        type: array
+        items:
+          type: object
+          additionalProperties: true
+      history:
+        type: array
+        items:
+          type: object
+          additionalProperties: true
+      source:
+        type: object
+        additionalProperties: true
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+    required:
+    - items
+    - history
+    - source
+    - pageInfo
+  query_parameters:
+  - name: rank_scope
+    required: false
+    schema:
+      type: string
+    description: Ranking snapshot scope.
+  - name: vendor_code
+    required: false
+    schema:
+      type: string
+    description: Vendor code filter.
+  - name: modality
+    required: false
+    schema:
+      type: string
+    description: Model modality filter.
+  - name: q
+    required: false
+    schema:
+      type: string
+    description: Free-text ranking search query.
+  - name: page_size
+    required: false
+    schema:
+      type: integer
+      format: int32
+      minimum: 1
+      maximum: 200
+      default: 200
+    description: Number of ranking rows returned in the current page.
 - route: /console/ai/model_vendors
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
@@ -231,9 +283,111 @@ frontend_operations:
   read_sources:
   - ai
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: ModelCatalogPage
+    additionalProperties: false
+    properties:
+      items:
+        type: array
+        items:
+          type: object
+          additionalProperties: true
+      groups:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            key:
+              type: string
+            label:
+              type: string
+            modelCount:
+              type: integer
+              format: int64
+              minimum: 0
+          required:
+          - key
+          - label
+          - modelCount
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+    required:
+    - items
+    - groups
+    - pageInfo
+  query_parameters:
+  - name: page
+    required: false
+    schema:
+      type: integer
+      format: int32
+      minimum: 1
+      default: 1
+    description: One-based page index.
+  - name: page_size
+    required: false
+    schema:
+      type: integer
+      format: int32
+      minimum: 1
+      maximum: 200
+      default: 20
+    description: Number of models returned in the current page.
+  - name: q
+    required: false
+    schema:
+      type: string
+    description: Free-text model search query.
+  - name: billing_meter
+    required: false
+    schema:
+      type: string
+    description: Billing meter code filter.
+  - name: vendor_codes
+    required: false
+    schema:
+      type: array
+      items:
+        type: string
+    style: form
+    explode: false
+    description: Comma-separated vendor code filter.
+  - name: modalities
+    required: false
+    schema:
+      type: array
+      items:
+        type: string
+    style: form
+    explode: false
+    description: Comma-separated modality filter.
+  - name: capabilities
+    required: false
+    schema:
+      type: array
+      items:
+        type: string
+    style: form
+    explode: false
+    description: Comma-separated capability filter.
+  - name: categories
+    required: false
+    schema:
+      type: array
+      items:
+        type: string
+    style: form
+    explode: false
+    description: Comma-separated model category filter.
+  - name: groups
+    required: false
+    schema:
+      type: array
+      items:
+        type: string
+    style: form
+    explode: false
+    description: Comma-separated channel group filter.
 - route: /console/ai/routing/api_keys
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
@@ -3623,9 +3777,59 @@ frontend_operations:
   read_sources:
   - ai
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: ModelRankingsPage
+    additionalProperties: false
+    properties:
+      items:
+        type: array
+        items:
+          type: object
+          additionalProperties: true
+      history:
+        type: array
+        items:
+          type: object
+          additionalProperties: true
+      source:
+        type: object
+        additionalProperties: true
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+    required:
+    - items
+    - history
+    - source
+    - pageInfo
+  query_parameters:
+  - name: rank_scope
+    required: false
+    schema:
+      type: string
+    description: Ranking snapshot scope.
+  - name: vendor_code
+    required: false
+    schema:
+      type: string
+    description: Vendor code filter.
+  - name: modality
+    required: false
+    schema:
+      type: string
+    description: Model modality filter.
+  - name: q
+    required: false
+    schema:
+      type: string
+    description: Free-text ranking search query.
+  - name: page_size
+    required: false
+    schema:
+      type: integer
+      format: int32
+      minimum: 1
+      maximum: 200
+      default: 200
+    description: Number of ranking rows returned in the current page.
 - route: /admin/ai/model_rankings/jobs
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
@@ -3637,9 +3841,34 @@ frontend_operations:
   read_sources:
   - ai
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: ModelRankingRefreshJobHistoryPage
+    additionalProperties: false
+    properties:
+      items:
+        type: array
+        items:
+          type: object
+          additionalProperties: true
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+    required:
+    - items
+    - pageInfo
+  query_parameters:
+  - name: rank_scope
+    required: false
+    schema:
+      type: string
+    description: Ranking snapshot scope.
+  - name: page_size
+    required: false
+    schema:
+      type: integer
+      format: int32
+      minimum: 1
+      maximum: 200
+      default: 20
+    description: Number of refresh jobs returned in the current page.
 - route: /admin/ai/model_rankings/refresh
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: refresh
@@ -3667,9 +3896,111 @@ frontend_operations:
   read_sources:
   - ai
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: ModelCatalogPage
+    additionalProperties: false
+    properties:
+      items:
+        type: array
+        items:
+          type: object
+          additionalProperties: true
+      groups:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            key:
+              type: string
+            label:
+              type: string
+            modelCount:
+              type: integer
+              format: int64
+              minimum: 0
+          required:
+          - key
+          - label
+          - modelCount
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+    required:
+    - items
+    - groups
+    - pageInfo
+  query_parameters:
+  - name: page
+    required: false
+    schema:
+      type: integer
+      format: int32
+      minimum: 1
+      default: 1
+    description: One-based page index.
+  - name: page_size
+    required: false
+    schema:
+      type: integer
+      format: int32
+      minimum: 1
+      maximum: 200
+      default: 20
+    description: Number of models returned in the current page.
+  - name: q
+    required: false
+    schema:
+      type: string
+    description: Free-text model search query.
+  - name: billing_meter
+    required: false
+    schema:
+      type: string
+    description: Billing meter code filter.
+  - name: vendor_codes
+    required: false
+    schema:
+      type: array
+      items:
+        type: string
+    style: form
+    explode: false
+    description: Comma-separated vendor code filter.
+  - name: modalities
+    required: false
+    schema:
+      type: array
+      items:
+        type: string
+    style: form
+    explode: false
+    description: Comma-separated modality filter.
+  - name: capabilities
+    required: false
+    schema:
+      type: array
+      items:
+        type: string
+    style: form
+    explode: false
+    description: Comma-separated capability filter.
+  - name: categories
+    required: false
+    schema:
+      type: array
+      items:
+        type: string
+    style: form
+    explode: false
+    description: Comma-separated model category filter.
+  - name: groups
+    required: false
+    schema:
+      type: array
+      items:
+        type: string
+    style: form
+    explode: false
+    description: Comma-separated channel group filter.
 - route: /admin/ai/model_vendors
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
@@ -3711,9 +4042,111 @@ frontend_operations:
   read_sources:
   - ai
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: ModelCatalogPage
+    additionalProperties: false
+    properties:
+      items:
+        type: array
+        items:
+          type: object
+          additionalProperties: true
+      groups:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            key:
+              type: string
+            label:
+              type: string
+            modelCount:
+              type: integer
+              format: int64
+              minimum: 0
+          required:
+          - key
+          - label
+          - modelCount
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+    required:
+    - items
+    - groups
+    - pageInfo
+  query_parameters:
+  - name: page
+    required: false
+    schema:
+      type: integer
+      format: int32
+      minimum: 1
+      default: 1
+    description: One-based page index.
+  - name: page_size
+    required: false
+    schema:
+      type: integer
+      format: int32
+      minimum: 1
+      maximum: 200
+      default: 20
+    description: Number of models returned in the current page.
+  - name: q
+    required: false
+    schema:
+      type: string
+    description: Free-text model search query.
+  - name: billing_meter
+    required: false
+    schema:
+      type: string
+    description: Billing meter code filter.
+  - name: vendor_codes
+    required: false
+    schema:
+      type: array
+      items:
+        type: string
+    style: form
+    explode: false
+    description: Comma-separated vendor code filter.
+  - name: modalities
+    required: false
+    schema:
+      type: array
+      items:
+        type: string
+    style: form
+    explode: false
+    description: Comma-separated modality filter.
+  - name: capabilities
+    required: false
+    schema:
+      type: array
+      items:
+        type: string
+    style: form
+    explode: false
+    description: Comma-separated capability filter.
+  - name: categories
+    required: false
+    schema:
+      type: array
+      items:
+        type: string
+    style: form
+    explode: false
+    description: Comma-separated model category filter.
+  - name: groups
+    required: false
+    schema:
+      type: array
+      items:
+        type: string
+    style: form
+    explode: false
+    description: Comma-separated channel group filter.
 - route: /admin/ai/models
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: create
@@ -3818,9 +4251,42 @@ frontend_operations:
   read_sources:
   - ai
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: AiResourceGroupResourcesPage
+    additionalProperties: false
+    properties:
+      items:
+        type: array
+        items:
+          type: object
+          additionalProperties: true
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+    required:
+    - items
+    - pageInfo
+  query_parameters:
+  - name: page
+    required: false
+    schema:
+      type: integer
+      format: int32
+      minimum: 1
+      default: 1
+    description: One-based page index.
+  - name: page_size
+    required: false
+    schema:
+      type: integer
+      format: int32
+      minimum: 1
+      maximum: 200
+      default: 20
+    description: Number of resources returned in the current page.
+  - name: q
+    required: false
+    schema:
+      type: string
+    description: Free-text resource search query.
 - route: /admin/ai/resource_groups/{groupId}
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: delete
@@ -3863,9 +4329,42 @@ frontend_operations:
   read_sources:
   - ai
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: AiResourcesPage
+    additionalProperties: false
+    properties:
+      items:
+        type: array
+        items:
+          type: object
+          additionalProperties: true
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+    required:
+    - items
+    - pageInfo
+  query_parameters:
+  - name: page
+    required: false
+    schema:
+      type: integer
+      format: int32
+      minimum: 1
+      default: 1
+    description: One-based page index.
+  - name: page_size
+    required: false
+    schema:
+      type: integer
+      format: int32
+      minimum: 1
+      maximum: 200
+      default: 20
+    description: Number of resources returned in the current page.
+  - name: q
+    required: false
+    schema:
+      type: string
+    description: Free-text resource search query.
 - route: /admin/ai/resources
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: create
@@ -4189,6 +4688,7 @@ frontend_operations:
   request_body_required: false
   write_tables:
   - ops_audit_log
+
 - route: /admin/system/analytics/admin/overview
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: retrieve
@@ -4200,9 +4700,340 @@ frontend_operations:
   read_sources:
   - system
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: AdminAnalyticsOverview
+    additionalProperties: false
+    properties:
+      timeRange:
+        type: string
+        enum:
+        - hourly
+        - daily
+        - weekly
+        - monthly
+        - yearly
+      startTime:
+        type:
+        - string
+        - 'null'
+      endTime:
+        type:
+        - string
+        - 'null'
+      rankingSize:
+        type: integer
+        format: int32
+        minimum: 3
+        maximum: 50
+      summary:
+        type: object
+        additionalProperties: false
+        properties:
+          totalUsers:
+            type: integer
+            format: int64
+            minimum: 0
+          activeUsers:
+            type: integer
+            format: int64
+            minimum: 0
+          activeModels:
+            type: integer
+            format: int64
+            minimum: 0
+          totalRequests:
+            type: integer
+            format: int64
+            minimum: 0
+          successfulRequests:
+            type: integer
+            format: int64
+            minimum: 0
+          failedRequests:
+            type: integer
+            format: int64
+            minimum: 0
+          totalTokens:
+            type: number
+            minimum: 0
+          totalPoints:
+            type: number
+            minimum: 0
+          upstreamCost:
+            type: number
+            minimum: 0
+          averageTokensPerRequest:
+            type: number
+            minimum: 0
+          averagePointsPerRequest:
+            type: number
+            minimum: 0
+          errorRate:
+            type: number
+            minimum: 0
+        required:
+        - totalUsers
+        - activeUsers
+        - activeModels
+        - totalRequests
+        - successfulRequests
+        - failedRequests
+        - totalTokens
+        - totalPoints
+        - upstreamCost
+        - averageTokensPerRequest
+        - averagePointsPerRequest
+        - errorRate
+      trend:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            time:
+              type: string
+            requests:
+              type: number
+              minimum: 0
+            tokens:
+              type: number
+              minimum: 0
+            points:
+              type: number
+              minimum: 0
+            users:
+              type: integer
+              format: int64
+              minimum: 0
+          required:
+          - time
+          - requests
+          - tokens
+          - points
+          - users
+      userRankings:
+        type: object
+        additionalProperties: false
+        properties:
+          points:
+            type: array
+            items: &AdminAnalyticsUserRankItemSchema
+              type: object
+              additionalProperties: false
+              properties:
+                rank:
+                  type: integer
+                  format: int64
+                  minimum: 1
+                userId:
+                  type: string
+                userName:
+                  type: string
+                email:
+                  type:
+                  - string
+                  - 'null'
+                requestCount:
+                  type: integer
+                  format: int64
+                  minimum: 0
+                totalTokens:
+                  type: number
+                  minimum: 0
+                points:
+                  type: number
+                  minimum: 0
+                modelDistribution:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      name:
+                        type: string
+                      value:
+                        type: number
+                        minimum: 0
+                      color:
+                        type: string
+                    required:
+                    - name
+                    - value
+                    - color
+              required:
+              - rank
+              - userId
+              - userName
+              - requestCount
+              - totalTokens
+              - points
+              - modelDistribution
+          tokens:
+            type: array
+            items: *AdminAnalyticsUserRankItemSchema
+          requests:
+            type: array
+            items: *AdminAnalyticsUserRankItemSchema
+        required:
+        - points
+        - tokens
+        - requests
+      modelRankings:
+        type: object
+        additionalProperties: false
+        properties:
+          points:
+            type: array
+            items: &AdminAnalyticsModelRankItemSchema
+              type: object
+              additionalProperties: false
+              properties:
+                rank:
+                  type: integer
+                  format: int64
+                  minimum: 1
+                model:
+                  type: string
+                catalogKey:
+                  type: string
+                vendor:
+                  type: string
+                modality:
+                  type: string
+                requestCount:
+                  type: integer
+                  format: int64
+                  minimum: 0
+                totalTokens:
+                  type: number
+                  minimum: 0
+                points:
+                  type: number
+                  minimum: 0
+                upstreamCost:
+                  type: number
+                  minimum: 0
+                userCount:
+                  type: integer
+                  format: int64
+                  minimum: 0
+                averageTokensPerRequest:
+                  type: number
+                  minimum: 0
+                errorRate:
+                  type: number
+                  minimum: 0
+              required:
+              - rank
+              - model
+              - catalogKey
+              - vendor
+              - modality
+              - requestCount
+              - totalTokens
+              - points
+              - upstreamCost
+              - userCount
+              - averageTokensPerRequest
+              - errorRate
+          tokens:
+            type: array
+            items: *AdminAnalyticsModelRankItemSchema
+          requests:
+            type: array
+            items: *AdminAnalyticsModelRankItemSchema
+        required:
+        - points
+        - tokens
+        - requests
+      modelDistribution:
+        type: array
+        items: &AdminAnalyticsPieItemSchema
+          type: object
+          additionalProperties: false
+          properties:
+            name:
+              type: string
+            value:
+              type: number
+              minimum: 0
+            color:
+              type: string
+          required:
+          - name
+          - value
+          - color
+      modalityDistribution:
+        type: array
+        items: *AdminAnalyticsPieItemSchema
+      insights:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            key:
+              type: string
+            title:
+              type: string
+            value:
+              type: string
+            severity:
+              type: string
+              enum:
+              - info
+              - warning
+              - critical
+            detail:
+              type: string
+          required:
+          - key
+          - title
+          - value
+          - severity
+          - detail
+    required:
+    - timeRange
+    - rankingSize
+    - summary
+    - trend
+    - userRankings
+    - modelRankings
+    - modelDistribution
+    - modalityDistribution
+    - insights
+  query_parameters:
+  - name: time_range
+    required: false
+    schema:
+      type: string
+      enum:
+      - hourly
+      - daily
+      - weekly
+      - monthly
+      - yearly
+    description: Analytics aggregation time range.
+  - name: start_time
+    required: false
+    schema:
+      type: string
+      format: date-time
+    description: Inclusive analytics window start time.
+  - name: end_time
+    required: false
+    schema:
+      type: string
+      format: date-time
+    description: Inclusive analytics window end time.
+  - name: ranking_size
+    required: false
+    schema:
+      type: integer
+      format: int32
+      minimum: 3
+      maximum: 50
+      default: 10
+    description: Number of ranking rows returned for each ranking metric.
 - route: /admin/system/auth/settings
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: retrieve
@@ -4244,8 +5075,41 @@ frontend_operations:
   read_sources:
   - system
   response_schema:
-    name: NoData
-    properties: {}
+    name: CacheOperationOutcome
+    additionalProperties: false
+    properties:
+      operation:
+        type: string
+      instanceName:
+        type:
+        - string
+        - 'null'
+      namespace:
+        type:
+        - string
+        - 'null'
+      cacheKey:
+        type:
+        - string
+        - 'null'
+      deletedEntries:
+        type: integer
+        format: int64
+        minimum: 0
+      refreshedEntries:
+        type: integer
+        format: int64
+        minimum: 0
+      status:
+        type: string
+    required:
+    - operation
+    - instanceName
+    - namespace
+    - cacheKey
+    - deletedEntries
+    - refreshedEntries
+    - status
   write_tables:
   - ops_audit_log
 - route: /admin/system/cache/instances/{instanceName}/refresh
@@ -4259,8 +5123,41 @@ frontend_operations:
   read_sources:
   - system
   response_schema:
-    name: NoData
-    properties: {}
+    name: CacheOperationOutcome
+    additionalProperties: false
+    properties:
+      operation:
+        type: string
+      instanceName:
+        type:
+        - string
+        - 'null'
+      namespace:
+        type:
+        - string
+        - 'null'
+      cacheKey:
+        type:
+        - string
+        - 'null'
+      deletedEntries:
+        type: integer
+        format: int64
+        minimum: 0
+      refreshedEntries:
+        type: integer
+        format: int64
+        minimum: 0
+      status:
+        type: string
+    required:
+    - operation
+    - instanceName
+    - namespace
+    - cacheKey
+    - deletedEntries
+    - refreshedEntries
+    - status
   request_body_required: false
   write_tables:
   - ops_audit_log
@@ -4275,10 +5172,44 @@ frontend_operations:
   read_sources:
   - system
   response_schema:
-    name: NoData
-    properties: {}
+    name: CacheOperationOutcome
+    additionalProperties: false
+    properties:
+      operation:
+        type: string
+      instanceName:
+        type:
+        - string
+        - 'null'
+      namespace:
+        type:
+        - string
+        - 'null'
+      cacheKey:
+        type:
+        - string
+        - 'null'
+      deletedEntries:
+        type: integer
+        format: int64
+        minimum: 0
+      refreshedEntries:
+        type: integer
+        format: int64
+        minimum: 0
+      status:
+        type: string
+    required:
+    - operation
+    - instanceName
+    - namespace
+    - cacheKey
+    - deletedEntries
+    - refreshedEntries
+    - status
   write_tables:
   - ops_audit_log
+
 - route: /admin/system/cache/namespaces/{namespace}/keys
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
@@ -4290,9 +5221,77 @@ frontend_operations:
   read_sources:
   - system
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: CacheNamespaceKeyPage
+    additionalProperties: false
+    properties:
+      namespace:
+        type: string
+      instanceName:
+        type: string
+      scannedItems:
+        type: integer
+        format: int64
+        minimum: 0
+      returnedItems:
+        type: integer
+        format: int64
+        minimum: 0
+      scanComplete:
+        type: boolean
+      items:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            key:
+              type: string
+            namespace:
+              type: string
+            instanceName:
+              type: string
+            status:
+              type: string
+              enum:
+              - active
+              - expired
+            expiresInSeconds:
+              type:
+              - integer
+              - 'null'
+              format: int64
+              minimum: 0
+          required:
+          - key
+          - namespace
+          - instanceName
+          - status
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+    required:
+    - namespace
+    - instanceName
+    - scannedItems
+    - returnedItems
+    - scanComplete
+    - items
+    - pageInfo
+  query_parameters:
+  - name: page_size
+    required: false
+    schema:
+      type: integer
+      format: int32
+      minimum: 1
+      maximum: 200
+      default: 200
+    description: Number of cache keys returned in the current page.
+  - name: cursor
+    required: false
+    schema:
+      type: string
+      maxLength: 2048
+    description: Opaque cursor returned by pageInfo.nextCursor.
 - route: /admin/system/cache/namespaces/{namespace}/keys/{key}
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: delete
@@ -4304,8 +5303,41 @@ frontend_operations:
   read_sources:
   - system
   response_schema:
-    name: NoData
-    properties: {}
+    name: CacheOperationOutcome
+    additionalProperties: false
+    properties:
+      operation:
+        type: string
+      instanceName:
+        type:
+        - string
+        - 'null'
+      namespace:
+        type:
+        - string
+        - 'null'
+      cacheKey:
+        type:
+        - string
+        - 'null'
+      deletedEntries:
+        type: integer
+        format: int64
+        minimum: 0
+      refreshedEntries:
+        type: integer
+        format: int64
+        minimum: 0
+      status:
+        type: string
+    required:
+    - operation
+    - instanceName
+    - namespace
+    - cacheKey
+    - deletedEntries
+    - refreshedEntries
+    - status
   write_tables:
   - ops_audit_log
 - route: /admin/system/cache/namespaces/{namespace}/refresh
@@ -4319,8 +5351,41 @@ frontend_operations:
   read_sources:
   - system
   response_schema:
-    name: NoData
-    properties: {}
+    name: CacheOperationOutcome
+    additionalProperties: false
+    properties:
+      operation:
+        type: string
+      instanceName:
+        type:
+        - string
+        - 'null'
+      namespace:
+        type:
+        - string
+        - 'null'
+      cacheKey:
+        type:
+        - string
+        - 'null'
+      deletedEntries:
+        type: integer
+        format: int64
+        minimum: 0
+      refreshedEntries:
+        type: integer
+        format: int64
+        minimum: 0
+      status:
+        type: string
+    required:
+    - operation
+    - instanceName
+    - namespace
+    - cacheKey
+    - deletedEntries
+    - refreshedEntries
+    - status
   request_body_required: false
   write_tables:
   - ops_audit_log
@@ -4335,8 +5400,224 @@ frontend_operations:
   read_sources:
   - system
   response_schema:
-    name: NoData
-    properties: {}
+    name: CacheOverview
+    additionalProperties: false
+    properties:
+      summary:
+        type: object
+        additionalProperties: false
+        properties:
+          runtimeTarget:
+            type: string
+            enum:
+            - desktop_packaged
+            - service
+          totalInstances:
+            type: integer
+            format: int64
+            minimum: 0
+          totalNamespaces:
+            type: integer
+            format: int64
+            minimum: 0
+          totalEntries:
+            type: integer
+            format: int64
+            minimum: 0
+          expiredEntries:
+            type: integer
+            format: int64
+            minimum: 0
+          cacheHits:
+            type: integer
+            format: int64
+            minimum: 0
+          cacheMisses:
+            type: integer
+            format: int64
+            minimum: 0
+          cacheWrites:
+            type: integer
+            format: int64
+            minimum: 0
+          cacheDeletes:
+            type: integer
+            format: int64
+            minimum: 0
+          cacheRefreshes:
+            type: integer
+            format: int64
+            minimum: 0
+          cacheInspections:
+            type: integer
+            format: int64
+            minimum: 0
+          cacheErrors:
+            type: integer
+            format: int64
+            minimum: 0
+        required:
+        - runtimeTarget
+        - totalInstances
+        - totalNamespaces
+        - totalEntries
+        - expiredEntries
+        - cacheHits
+        - cacheMisses
+        - cacheWrites
+        - cacheDeletes
+        - cacheRefreshes
+        - cacheInspections
+        - cacheErrors
+      instances:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            name:
+              type: string
+            providerKind:
+              type: string
+              enum:
+              - local_cache
+              - redis_cache
+            purpose:
+              type: string
+            keyPrefix:
+              type: string
+            defaultTtlSeconds:
+              type: integer
+              format: int64
+              minimum: 0
+            maxEntries:
+              type:
+              - integer
+              - 'null'
+              format: int64
+              minimum: 0
+            connectionProfileName:
+              type:
+              - string
+              - 'null'
+            supportsInspect:
+              type: boolean
+            supportsRefresh:
+              type: boolean
+            supportsDelete:
+              type: boolean
+            entryCount:
+              type: integer
+              format: int64
+              minimum: 0
+            expiredEntryCount:
+              type: integer
+              format: int64
+              minimum: 0
+            cacheHits:
+              type: integer
+              format: int64
+              minimum: 0
+            cacheMisses:
+              type: integer
+              format: int64
+              minimum: 0
+            cacheWrites:
+              type: integer
+              format: int64
+              minimum: 0
+            cacheDeletes:
+              type: integer
+              format: int64
+              minimum: 0
+            cacheRefreshes:
+              type: integer
+              format: int64
+              minimum: 0
+            cacheInspections:
+              type: integer
+              format: int64
+              minimum: 0
+            cacheErrors:
+              type: integer
+              format: int64
+              minimum: 0
+            status:
+              type: string
+          required:
+          - name
+          - providerKind
+          - purpose
+          - keyPrefix
+          - defaultTtlSeconds
+          - maxEntries
+          - connectionProfileName
+          - supportsInspect
+          - supportsRefresh
+          - supportsDelete
+          - entryCount
+          - expiredEntryCount
+          - cacheHits
+          - cacheMisses
+          - cacheWrites
+          - cacheDeletes
+          - cacheRefreshes
+          - cacheInspections
+          - cacheErrors
+          - status
+      namespacePolicies:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            namespace:
+              type: string
+            instanceName:
+              type: string
+            ttlSeconds:
+              type: integer
+              format: int64
+              minimum: 0
+            scope:
+              type: string
+            sensitivity:
+              type: string
+            failureMode:
+              type: string
+            consistency:
+              type: string
+            jitterPercent:
+              type: integer
+              format: int32
+              minimum: 0
+              maximum: 100
+            staleWhileRevalidateSeconds:
+              type: integer
+              format: int64
+              minimum: 0
+            tags:
+              type: array
+              items:
+                type: string
+            enabled:
+              type: boolean
+          required:
+          - namespace
+          - instanceName
+          - ttlSeconds
+          - scope
+          - sensitivity
+          - failureMode
+          - consistency
+          - jitterPercent
+          - staleWhileRevalidateSeconds
+          - tags
+          - enabled
+    required:
+    - summary
+    - instances
+    - namespacePolicies
   query_parameters: []
 - route: /admin/system/cache/refresh
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
@@ -4349,8 +5630,41 @@ frontend_operations:
   read_sources:
   - system
   response_schema:
-    name: NoData
-    properties: {}
+    name: CacheOperationOutcome
+    additionalProperties: false
+    properties:
+      operation:
+        type: string
+      instanceName:
+        type:
+        - string
+        - 'null'
+      namespace:
+        type:
+        - string
+        - 'null'
+      cacheKey:
+        type:
+        - string
+        - 'null'
+      deletedEntries:
+        type: integer
+        format: int64
+        minimum: 0
+      refreshedEntries:
+        type: integer
+        format: int64
+        minimum: 0
+      status:
+        type: string
+    required:
+    - operation
+    - instanceName
+    - namespace
+    - cacheKey
+    - deletedEntries
+    - refreshedEntries
+    - status
   request_body_required: false
   write_tables:
   - ops_audit_log
@@ -5243,7 +6557,7 @@ frontend_models:
   - timeRange
   - startTime
   - endTime
-  - limit
+  - rankingSize
   - summary
   - summary.totalUsers
   - summary.activeUsers
@@ -5289,7 +6603,7 @@ frontend_models:
   - timeRange
   - startTime
   - endTime
-  - limit
+  - rankingSize
   data_sources:
   - ai_usage_fact
   - ai_request_trace
@@ -5397,10 +6711,12 @@ frontend_models:
   - instanceName
   - scannedItems
   - returnedItems
-  - limit
-  - hasMore
   - scanComplete
-  - nextCursor
+  - pageInfo
+  - pageInfo.mode
+  - pageInfo.pageSize
+  - pageInfo.hasMore
+  - pageInfo.nextCursor
   - items
   - items.key
   - items.namespace
@@ -6988,8 +8304,8 @@ frontend_models:
   - categories
   - groups
   - searchQuery
-  - limit
-  - offset
+  - page
+  - pageSize
   data_sources:
   - ai_model_vendor
   - ai_model
@@ -7128,7 +8444,7 @@ frontend_models:
   - vendorCode
   - modality
   - searchQuery
-  - limit
+  - pageSize
   data_sources:
   - ai_model_rank_snapshot
 - route: /rankings

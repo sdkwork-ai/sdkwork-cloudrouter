@@ -1,9 +1,6 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { ArtifactsCreateResult, InvocationEventsCreateResult, InvocationsCreateResult, InvocationsRetrieveResult, InvocationsSubmitResult, SdkWorkPageData } from '../types';
-
-
 export class RuntimeInvocationEventStreamsApi {
   private client: HttpClient;
 
@@ -13,8 +10,8 @@ export class RuntimeInvocationEventStreamsApi {
 
 
 /** List */
-  async list(invocationId: string): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events/stream`));
+  async list(invocationId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events/stream`));
   }
 }
 
@@ -27,13 +24,13 @@ export class RuntimeInvocationEventsApi {
 
 
 /** List */
-  async list(invocationId: string): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events`));
+  async list(invocationId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events`));
   }
 
 /** Create */
-  async create(invocationId: string): Promise<InvocationEventsCreateResult> {
-    return this.client.post<InvocationEventsCreateResult>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events`));
+  async create(invocationId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events`));
   }
 }
 
@@ -46,13 +43,13 @@ export class RuntimeArtifactsApi {
 
 
 /** List */
-  async list(invocationId: string): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/artifacts`));
+  async list(invocationId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/artifacts`));
   }
 
 /** Create */
-  async create(invocationId: string): Promise<ArtifactsCreateResult> {
-    return this.client.post<ArtifactsCreateResult>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/artifacts`));
+  async create(invocationId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/artifacts`));
   }
 }
 
@@ -65,23 +62,23 @@ export class RuntimeInvocationsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/runtime/invocations`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/runtime/invocations`));
   }
 
 /** Create */
-  async create(): Promise<InvocationsCreateResult> {
-    return this.client.post<InvocationsCreateResult>(appApiPath(`/runtime/invocations`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/runtime/invocations`));
   }
 
 /** Retrieve */
-  async retrieve(invocationId: string): Promise<InvocationsRetrieveResult> {
-    return this.client.get<InvocationsRetrieveResult>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}`));
+  async retrieve(invocationId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}`));
   }
 
 /** Create */
-  async submit(invocationId: string): Promise<InvocationsSubmitResult> {
-    return this.client.post<InvocationsSubmitResult>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/complete`));
+  async submit(invocationId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/complete`));
   }
 }
 

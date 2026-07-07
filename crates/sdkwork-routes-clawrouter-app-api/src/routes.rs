@@ -10,49 +10,50 @@ use sdkwork_claw_config::{
 };
 use sdkwork_claw_http::AppSubjectBoundaryConfig;
 use sdkwork_clawrouter_router_service::application::{
-    ApiKeySecretCodec, ApiKeySecretHasher, bootstrap_payment_provider_registry,
-    EntityUuidGenerator, InMemoryRuntimeStreamBus, ModelRankingRefreshWorker,
-    ModelRankingRefreshWorkerConfig, ModelRankingsService, payment_runtime_environment,
+    ApiKeySecretCodec, ApiKeySecretHasher, EntityUuidGenerator, InMemoryRuntimeStreamBus,
+    ModelRankingRefreshWorker, ModelRankingRefreshWorkerConfig, ModelRankingsService,
     PaymentAggregateRuntimeStore, PaymentProviderRegistry, RuntimeStreamBus,
+    bootstrap_payment_provider_registry, payment_runtime_environment,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::{
     HmacSha256ApiKeySecretHasher, RingAeadApiKeySecretCodec,
 };
 use sdkwork_clawrouter_router_service::infrastructure::provider::{
-    ProviderSecretMapResolver, SecretRefOpenAiCompatibleProviderHealthProbe,
-    DEFAULT_HEALTH_PROBE_TIMEOUT_MILLIS,
+    DEFAULT_HEALTH_PROBE_TIMEOUT_MILLIS, ProviderSecretMapResolver,
+    SecretRefOpenAiCompatibleProviderHealthProbe,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::{
     RefreshableSqlPricingCatalog, SqlPricingCatalogSnapshotSummary,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
-    log_bootstrap_admin_report, DatabaseInstallError, DatabaseInstaller,
+    DatabaseInstallError, DatabaseInstaller, log_bootstrap_admin_report,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::pool::{
     connect_claw_sqlite_runtime_pool, effective_sqlite_runtime_pool_max_connections,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::{
-    PostgresAppChatStore, PostgresAppGatewayTracesReadStore, PostgresAppNotificationStore,
-    PostgresAppProvidersReadStore, PostgresAppRoutingChannelCommandStore,
-    PostgresAppRoutingReadStore, PostgresAppRoutingStrategyStore, PostgresAppRuntimeStore,
-    PostgresCatalogLoadError, PostgresDashboardOverviewReadStore, PostgresGatewayApiKeyCommandStore,
+    PostgresAdminTransactionCenterStore, PostgresAppChatStore, PostgresAppGatewayTracesReadStore,
+    PostgresAppNotificationStore, PostgresAppProvidersReadStore,
+    PostgresAppRoutingChannelCommandStore, PostgresAppRoutingReadStore,
+    PostgresAppRoutingStrategyStore, PostgresAppRuntimeStore, PostgresCatalogLoadError,
+    PostgresDashboardOverviewReadStore, PostgresGatewayApiKeyCommandStore,
     PostgresModelRankingRefreshStore, PostgresModelRankingsReadStore, PostgresPaymentCallbackStore,
-    PostgresAdminTransactionCenterStore, PostgresPaymentIntentRuntimeStore,
-    PostgresPricingCatalogLoader, PostgresSettingsStore,
+    PostgresPaymentIntentRuntimeStore, PostgresPricingCatalogLoader, PostgresSettingsStore,
     PostgresSettlementsDashboardReadStore, PostgresSiteSettingsStore, PostgresUsageLogsReadStore,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::{
-    SqlCatalogLoadError, SqliteAppChatStore, SqliteAppGatewayTracesReadStore,
-    SqliteAppNotificationStore, SqliteAppProvidersReadStore, SqliteAppRoutingChannelCommandStore,
-    SqliteAppRoutingReadStore, SqliteAppRoutingStrategyStore, SqliteAppRuntimeStore,
-    SqliteDashboardOverviewReadStore, SqliteGatewayApiKeyCommandStore,
+    SqlCatalogLoadError, SqliteAdminTransactionCenterStore, SqliteAppChatStore,
+    SqliteAppGatewayTracesReadStore, SqliteAppNotificationStore, SqliteAppProvidersReadStore,
+    SqliteAppRoutingChannelCommandStore, SqliteAppRoutingReadStore, SqliteAppRoutingStrategyStore,
+    SqliteAppRuntimeStore, SqliteDashboardOverviewReadStore, SqliteGatewayApiKeyCommandStore,
     SqliteModelRankingRefreshStore, SqliteModelRankingsReadStore, SqlitePaymentCallbackStore,
-    SqliteAdminTransactionCenterStore, SqlitePaymentIntentRuntimeStore, SqlitePricingCatalogLoader, SqliteSettingsStore,
+    SqlitePaymentIntentRuntimeStore, SqlitePricingCatalogLoader, SqliteSettingsStore,
     SqliteSettlementsDashboardReadStore, SqliteSiteSettingsStore, SqliteUsageLogsReadStore,
 };
 use sdkwork_clawrouter_router_service::infrastructure::{
     AppRuntimeGatewayHttpClient, OsApiKeySecretGenerator, RedisRuntimeStreamBus,
 };
+use sdkwork_clawrouter_router_service::ports::AdminTransactionCenterSubject;
 use sdkwork_clawrouter_router_service::ports::ChatCompletionStreamRelay;
 use sdkwork_clawrouter_router_service::ports::PricingCatalog;
 use sdkwork_clawrouter_router_service::ports::{
@@ -64,7 +65,6 @@ use sdkwork_clawrouter_router_service::ports::{
     ProviderHealthProbe, SettingsStore, SettlementsDashboardReadStore, SiteSettingsStore,
     UnconfiguredProviderHealthProbe, UsageLogsReadStore,
 };
-use sdkwork_clawrouter_router_service::ports::AdminTransactionCenterSubject;
 use sdkwork_content_documents_sdk_reference::app_sdk_reference_router;
 use sdkwork_routes_models_catalog_app_api::{
     app_model_catalog_router, app_model_rankings_router, app_model_rankings_router_with_read_store,
@@ -167,8 +167,8 @@ pub fn build_sdkwork_claw_router_app_api_router() -> Router {
     router()
 }
 
-pub async fn build_sdkwork_claw_router_app_api_router_from_env(
-) -> Result<Router, ProductCatalogRouterError> {
+pub async fn build_sdkwork_claw_router_app_api_router_from_env()
+-> Result<Router, ProductCatalogRouterError> {
     router_from_env().await
 }
 
@@ -219,9 +219,9 @@ fn product_local_contract_operation(operation: &sdkwork_claw_http::ContractOpera
 fn is_clawrouter_owned_iam_app_path(path: &str) -> bool {
     const CLAWROUTER_OWNED_IAM_APP_PREFIXES: &[&str] = &["/app/v3/api/iam/api_keys"];
 
-    CLAWROUTER_OWNED_IAM_APP_PREFIXES
-        .iter()
-        .any(|prefix| path == prefix.trim_end_matches('/') || path.starts_with(&format!("{prefix}/")))
+    CLAWROUTER_OWNED_IAM_APP_PREFIXES.iter().any(|prefix| {
+        path == prefix.trim_end_matches('/') || path.starts_with(&format!("{prefix}/"))
+    })
 }
 
 fn is_appbase_dependency_contract_path(path: &str) -> bool {
@@ -622,35 +622,35 @@ pub async fn router_with_sqlite_product_catalog(
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
     finalize_product_router_with_federated_capabilities(
         router_with_runtime_stores_and_database_status(
-        Some(app_site_settings_store),
-        entity_uuid_generator,
-        trusted_subject_config,
-        app_session_config,
-        Some(payment_webhook_config),
-        Some(payment_callback_store),
-        Some(payment_intent_runtime_store),
-        payment_provider_registry,
-        Some(dashboard_read_store),
-        Some(settlements_dashboard_read_store),
-        Some(settings_store),
-        Some(usage_logs_read_store),
-        Some(app_gateway_traces_read_store),
-        Some(app_notification_store),
-        Some(app_chat_store),
-        Some(app_runtime_store),
-        None,
-        None,
-        None,
-        None,
-        Some(app_providers_read_store),
-        Some(app_routing_read_store),
-        Some(app_routing_strategy_store),
-        Some(app_routing_channel_command_store),
-        Some(model_catalog_router),
-        Some(&database_config),
-        RequestLimitsConfig::default(),
-        None,
-        api_key_runtime,
+            Some(app_site_settings_store),
+            entity_uuid_generator,
+            trusted_subject_config,
+            app_session_config,
+            Some(payment_webhook_config),
+            Some(payment_callback_store),
+            Some(payment_intent_runtime_store),
+            payment_provider_registry,
+            Some(dashboard_read_store),
+            Some(settlements_dashboard_read_store),
+            Some(settings_store),
+            Some(usage_logs_read_store),
+            Some(app_gateway_traces_read_store),
+            Some(app_notification_store),
+            Some(app_chat_store),
+            Some(app_runtime_store),
+            None,
+            None,
+            None,
+            None,
+            Some(app_providers_read_store),
+            Some(app_routing_read_store),
+            Some(app_routing_strategy_store),
+            Some(app_routing_channel_command_store),
+            Some(model_catalog_router),
+            Some(&database_config),
+            RequestLimitsConfig::default(),
+            None,
+            api_key_runtime,
         ),
         subject_boundary_config,
         Some(&database_config),
@@ -714,35 +714,35 @@ pub async fn router_with_postgres_product_catalog(
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
     finalize_product_router_with_federated_capabilities(
         router_with_runtime_stores_and_database_status(
-        Some(app_site_settings_store),
-        entity_uuid_generator,
-        trusted_subject_config,
-        app_session_config,
-        Some(payment_webhook_config),
-        Some(payment_callback_store),
-        Some(payment_intent_runtime_store),
-        payment_provider_registry,
-        Some(dashboard_read_store),
-        Some(settlements_dashboard_read_store),
-        Some(settings_store),
-        Some(usage_logs_read_store),
-        Some(app_gateway_traces_read_store),
-        Some(app_notification_store),
-        Some(app_chat_store),
-        Some(app_runtime_store),
-        None,
-        None,
-        None,
-        None,
-        Some(app_providers_read_store),
-        Some(app_routing_read_store),
-        Some(app_routing_strategy_store),
-        Some(app_routing_channel_command_store),
-        Some(model_catalog_router),
-        Some(&database_config),
-        RequestLimitsConfig::default(),
-        None,
-        api_key_runtime,
+            Some(app_site_settings_store),
+            entity_uuid_generator,
+            trusted_subject_config,
+            app_session_config,
+            Some(payment_webhook_config),
+            Some(payment_callback_store),
+            Some(payment_intent_runtime_store),
+            payment_provider_registry,
+            Some(dashboard_read_store),
+            Some(settlements_dashboard_read_store),
+            Some(settings_store),
+            Some(usage_logs_read_store),
+            Some(app_gateway_traces_read_store),
+            Some(app_notification_store),
+            Some(app_chat_store),
+            Some(app_runtime_store),
+            None,
+            None,
+            None,
+            None,
+            Some(app_providers_read_store),
+            Some(app_routing_read_store),
+            Some(app_routing_strategy_store),
+            Some(app_routing_channel_command_store),
+            Some(model_catalog_router),
+            Some(&database_config),
+            RequestLimitsConfig::default(),
+            None,
+            api_key_runtime,
         ),
         subject_boundary_config,
         Some(&database_config),
@@ -818,35 +818,35 @@ pub async fn router_with_sqlite_shared_runtime(
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
     finalize_product_router_with_federated_capabilities(
         router_with_runtime_stores_and_database_status(
-        Some(Arc::new(SqliteSiteSettingsStore::new(pool.clone()))),
-        entity_uuid_generator,
-        trusted_subject_config,
-        app_session_config,
-        Some(payment_webhook_config),
-        Some(payment_callback_store),
-        Some(payment_intent_runtime_store),
-        payment_provider_registry,
-        Some(dashboard_read_store),
-        Some(settlements_dashboard_read_store),
-        Some(settings_store),
-        Some(usage_logs_read_store),
-        Some(app_gateway_traces_read_store),
-        Some(app_notification_store),
-        Some(app_chat_store),
-        Some(app_runtime_store),
-        Some(catalog),
-        None,
-        Some(app_runtime_gateway_client),
-        Some(app_runtime_stream_bus),
-        Some(app_providers_read_store),
-        Some(app_routing_read_store),
-        Some(app_routing_strategy_store),
-        Some(app_routing_channel_command_store),
-        Some(model_catalog_router),
-        Some(&config),
-        request_limits_config,
-        None,
-        api_key_runtime,
+            Some(Arc::new(SqliteSiteSettingsStore::new(pool.clone()))),
+            entity_uuid_generator,
+            trusted_subject_config,
+            app_session_config,
+            Some(payment_webhook_config),
+            Some(payment_callback_store),
+            Some(payment_intent_runtime_store),
+            payment_provider_registry,
+            Some(dashboard_read_store),
+            Some(settlements_dashboard_read_store),
+            Some(settings_store),
+            Some(usage_logs_read_store),
+            Some(app_gateway_traces_read_store),
+            Some(app_notification_store),
+            Some(app_chat_store),
+            Some(app_runtime_store),
+            Some(catalog),
+            None,
+            Some(app_runtime_gateway_client),
+            Some(app_runtime_stream_bus),
+            Some(app_providers_read_store),
+            Some(app_routing_read_store),
+            Some(app_routing_strategy_store),
+            Some(app_routing_channel_command_store),
+            Some(model_catalog_router),
+            Some(&config),
+            request_limits_config,
+            None,
+            api_key_runtime,
         ),
         subject_boundary_config,
         Some(&config),
@@ -923,35 +923,35 @@ pub async fn router_with_postgres_shared_runtime(
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
     finalize_product_router_with_federated_capabilities(
         router_with_runtime_stores_and_database_status(
-        Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
-        entity_uuid_generator,
-        trusted_subject_config,
-        app_session_config,
-        Some(payment_webhook_config),
-        Some(payment_callback_store),
-        Some(payment_intent_runtime_store),
-        payment_provider_registry,
-        Some(dashboard_read_store),
-        Some(settlements_dashboard_read_store),
-        Some(settings_store),
-        Some(usage_logs_read_store),
-        Some(app_gateway_traces_read_store),
-        Some(app_notification_store),
-        Some(app_chat_store),
-        Some(app_runtime_store),
-        Some(catalog),
-        None,
-        Some(app_runtime_gateway_client),
-        Some(app_runtime_stream_bus),
-        Some(app_providers_read_store),
-        Some(app_routing_read_store),
-        Some(app_routing_strategy_store),
-        Some(app_routing_channel_command_store),
-        Some(model_catalog_router),
-        Some(&config),
-        request_limits_config,
-        None,
-        api_key_runtime,
+            Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
+            entity_uuid_generator,
+            trusted_subject_config,
+            app_session_config,
+            Some(payment_webhook_config),
+            Some(payment_callback_store),
+            Some(payment_intent_runtime_store),
+            payment_provider_registry,
+            Some(dashboard_read_store),
+            Some(settlements_dashboard_read_store),
+            Some(settings_store),
+            Some(usage_logs_read_store),
+            Some(app_gateway_traces_read_store),
+            Some(app_notification_store),
+            Some(app_chat_store),
+            Some(app_runtime_store),
+            Some(catalog),
+            None,
+            Some(app_runtime_gateway_client),
+            Some(app_runtime_stream_bus),
+            Some(app_providers_read_store),
+            Some(app_routing_read_store),
+            Some(app_routing_strategy_store),
+            Some(app_routing_channel_command_store),
+            Some(model_catalog_router),
+            Some(&config),
+            request_limits_config,
+            None,
+            api_key_runtime,
         ),
         subject_boundary_config,
         Some(&config),
@@ -1180,8 +1180,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
             let payment_callback_store = Arc::new(SqlitePaymentCallbackStore::new(pool.clone()));
             let payment_intent_runtime_store =
                 Arc::new(SqlitePaymentIntentRuntimeStore::new(pool.clone()));
-            let payment_provider_registry =
-                bootstrap_sqlite_payment_provider_registry(&pool).await;
+            let payment_provider_registry = bootstrap_sqlite_payment_provider_registry(&pool).await;
             let dashboard_read_store =
                 Arc::new(SqliteDashboardOverviewReadStore::new(pool.clone()));
             let settlements_dashboard_read_store =
@@ -1225,35 +1224,35 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
                 );
             finalize_product_router_with_federated_capabilities(
                 router_with_runtime_stores_and_database_status(
-                Some(Arc::new(SqliteSiteSettingsStore::new(pool.clone()))),
-                entity_uuid_generator,
-                trusted_subject_config,
-                app_session_config,
-                Some(payment_webhook_config),
-                Some(payment_callback_store),
-                Some(payment_intent_runtime_store),
-                payment_provider_registry,
-                Some(dashboard_read_store),
-                Some(settlements_dashboard_read_store),
-                Some(settings_store),
-                Some(usage_logs_read_store),
-                Some(app_gateway_traces_read_store),
-                Some(app_notification_store),
-                Some(app_chat_store),
-                Some(app_runtime_store),
-                Some(app_runtime_execution_catalog),
-                None,
-                Some(Arc::clone(&app_runtime_gateway_client)),
-                Some(Arc::clone(&app_runtime_stream_bus)),
-                Some(app_providers_read_store),
-                Some(app_routing_read_store),
-                Some(app_routing_strategy_store),
-                Some(app_routing_channel_command_store),
-                Some(model_catalog_router),
-                Some(&config),
-                request_limits_config,
-                readiness_check,
-                api_key_runtime,
+                    Some(Arc::new(SqliteSiteSettingsStore::new(pool.clone()))),
+                    entity_uuid_generator,
+                    trusted_subject_config,
+                    app_session_config,
+                    Some(payment_webhook_config),
+                    Some(payment_callback_store),
+                    Some(payment_intent_runtime_store),
+                    payment_provider_registry,
+                    Some(dashboard_read_store),
+                    Some(settlements_dashboard_read_store),
+                    Some(settings_store),
+                    Some(usage_logs_read_store),
+                    Some(app_gateway_traces_read_store),
+                    Some(app_notification_store),
+                    Some(app_chat_store),
+                    Some(app_runtime_store),
+                    Some(app_runtime_execution_catalog),
+                    None,
+                    Some(Arc::clone(&app_runtime_gateway_client)),
+                    Some(Arc::clone(&app_runtime_stream_bus)),
+                    Some(app_providers_read_store),
+                    Some(app_routing_read_store),
+                    Some(app_routing_strategy_store),
+                    Some(app_routing_channel_command_store),
+                    Some(model_catalog_router),
+                    Some(&config),
+                    request_limits_config,
+                    readiness_check,
+                    api_key_runtime,
                 ),
                 subject_boundary_config.clone(),
                 Some(&config),
@@ -1361,35 +1360,35 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
                 );
             finalize_product_router_with_federated_capabilities(
                 router_with_runtime_stores_and_database_status(
-                Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
-                entity_uuid_generator,
-                trusted_subject_config,
-                app_session_config,
-                Some(payment_webhook_config),
-                Some(payment_callback_store),
-                Some(payment_intent_runtime_store),
-                payment_provider_registry,
-                Some(dashboard_read_store),
-                Some(settlements_dashboard_read_store),
-                Some(settings_store),
-                Some(usage_logs_read_store),
-                Some(app_gateway_traces_read_store),
-                Some(app_notification_store),
-                Some(app_chat_store),
-                Some(app_runtime_store),
-                Some(app_runtime_execution_catalog),
-                None,
-                Some(Arc::clone(&app_runtime_gateway_client)),
-                Some(Arc::clone(&app_runtime_stream_bus)),
-                Some(app_providers_read_store),
-                Some(app_routing_read_store),
-                Some(app_routing_strategy_store),
-                Some(app_routing_channel_command_store),
-                Some(model_catalog_router),
-                Some(&config),
-                request_limits_config,
-                readiness_check,
-                api_key_runtime,
+                    Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
+                    entity_uuid_generator,
+                    trusted_subject_config,
+                    app_session_config,
+                    Some(payment_webhook_config),
+                    Some(payment_callback_store),
+                    Some(payment_intent_runtime_store),
+                    payment_provider_registry,
+                    Some(dashboard_read_store),
+                    Some(settlements_dashboard_read_store),
+                    Some(settings_store),
+                    Some(usage_logs_read_store),
+                    Some(app_gateway_traces_read_store),
+                    Some(app_notification_store),
+                    Some(app_chat_store),
+                    Some(app_runtime_store),
+                    Some(app_runtime_execution_catalog),
+                    None,
+                    Some(Arc::clone(&app_runtime_gateway_client)),
+                    Some(Arc::clone(&app_runtime_stream_bus)),
+                    Some(app_providers_read_store),
+                    Some(app_routing_read_store),
+                    Some(app_routing_strategy_store),
+                    Some(app_routing_channel_command_store),
+                    Some(model_catalog_router),
+                    Some(&config),
+                    request_limits_config,
+                    readiness_check,
+                    api_key_runtime,
                 ),
                 subject_boundary_config,
                 Some(&config),
@@ -1902,7 +1901,7 @@ async fn sqlite_model_ranking_schema_ready(pool: &SqlitePool) -> Result<bool, sq
         SELECT COUNT(1)
         FROM sqlite_master
         WHERE type = 'table'
-          AND name IN ('ai_model', 'ai_usage_fact', 'ai_model_rank_snapshot', 'ops_job_execution')
+          AND name IN ('ai_model', 'ai_usage', 'ai_model_rank_snapshot', 'ops_job_execution')
         "#,
     )
     .fetch_one(pool)
@@ -1919,7 +1918,7 @@ async fn sqlite_model_ranking_schema_ready(pool: &SqlitePool) -> Result<bool, sq
     let usage_column_count: i64 = sqlx::query_scalar(
         r#"
         SELECT COUNT(1)
-        FROM pragma_table_info('ai_usage_fact')
+        FROM pragma_table_info('ai_usage')
         WHERE name IN ('catalog_key', 'request_count', 'total_tokens', 'cost_amount', 'occurred_at')
         "#,
     )
@@ -1956,7 +1955,7 @@ async fn postgres_model_ranking_schema_ready(pool: &PgPool) -> Result<bool, sqlx
         SELECT COUNT(1)
         FROM information_schema.tables
         WHERE table_schema = current_schema()
-          AND table_name IN ('ai_model', 'ai_usage_fact', 'ai_model_rank_snapshot', 'ops_job_execution')
+          AND table_name IN ('ai_model', 'ai_usage', 'ai_model_rank_snapshot', 'ops_job_execution')
         "#,
     )
     .fetch_one(pool)
@@ -1977,7 +1976,7 @@ async fn postgres_model_ranking_schema_ready(pool: &PgPool) -> Result<bool, sqlx
         SELECT COUNT(1)
         FROM information_schema.columns
         WHERE table_schema = current_schema()
-          AND table_name = 'ai_usage_fact'
+          AND table_name = 'ai_usage'
           AND column_name IN ('catalog_key', 'request_count', 'total_tokens', 'cost_amount', 'occurred_at')
         "#,
     )
@@ -2680,7 +2679,7 @@ mod tests {
         .unwrap();
         sqlx::query(
             r#"
-            CREATE TABLE ai_usage_fact (
+            CREATE TABLE ai_usage (
                 catalog_key TEXT,
                 request_count INTEGER,
                 total_tokens INTEGER,

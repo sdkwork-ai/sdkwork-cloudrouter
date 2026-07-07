@@ -65,6 +65,10 @@ const TARGETS = [
     ],
     routeManifestPath:
       "sdks/_route-manifests/open-api/sdkwork-routes-clawrouter-open-api.route-manifest.json",
+    routeManifestPaths: [
+      "sdks/_route-manifests/open-api/sdkwork-routes-clawrouter-open-api.route-manifest.json",
+      "sdks/_route-manifests/open-api/sdkwork-router-open-api.route-manifest.json",
+    ],
   },
 ];
 
@@ -241,6 +245,13 @@ function buildRouteManifest(document, target) {
         path: routePath,
         operationId: operation.operationId ?? null,
         tags: Array.isArray(operation.tags) ? operation.tags : [],
+        ...(target.apiSurface === "open-api"
+          ? {
+              "x-sdkwork-wire-protocol": "external",
+              "x-sdkwork-external-protocol-id":
+                operation["x-sdkwork-external-protocol-id"] ?? inferExternalProtocolId(routePath),
+            }
+          : {}),
         auth: inferAuth(operation),
         handler: {
           module: "crate::routes",
@@ -290,15 +301,16 @@ async function processTarget(target, mode) {
       ? target.openApiPaths.filter((relativePath) => relativePath.startsWith("apis/"))
       : target.openApiPaths;
 
+  const routeManifestPaths = target.routeManifestPaths ?? [target.routeManifestPath];
   const outputs = [
     ...stampedOpenApiPaths.map((relativePath) => ({
       relativePath,
       content: openApiJson,
     })),
-    {
-      relativePath: target.routeManifestPath,
+    ...routeManifestPaths.map((relativePath) => ({
+      relativePath,
       content: manifestJson,
-    },
+    })),
   ];
 
   const messages = [];

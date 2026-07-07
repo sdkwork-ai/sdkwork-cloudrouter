@@ -1,7 +1,7 @@
 package com.sdkwork.clawrouter.backend
 
 data class ModelsDeleteResult(
-    val code: String? = null,
-    val data_: AdminDeleteResponse? = null,
-    val msg: String? = null
+    val code: Int? = null,
+    val data_: Any? = null,
+    val traceId: String? = null
 )

@@ -3,21 +3,20 @@ package com.sdkwork.clawrouter.backend.model;
 import java.util.List;
 
 public class ProblemDetail {
-    private String code;
+    private Integer code;
     private String detail;
     private List<FieldError> errors;
     private String instance;
-    private String requestId;
     private Integer status;
     private String title;
     private String traceId;
     private String type;
 
-    public String getCode() {
+    public Integer getCode() {
         return this.code;
     }
 
-    public void setCode(String code) {
+    public void setCode(Integer code) {
         this.code = code;
     }
 
@@ -43,14 +42,6 @@ public class ProblemDetail {
 
     public void setInstance(String instance) {
         this.instance = instance;
-    }
-
-    public String getRequestId() {
-        return this.requestId;
-    }
-
-    public void setRequestId(String requestId) {
-        this.requestId = requestId;
     }
 
     public Integer getStatus() {

@@ -48,19 +48,27 @@ client.setHeader("X-Custom-Header", value: "value")
 
 ## API Modules
 
+- `client.system` - system API
 - `client.ai` - ai API
 - `client.chat` - chat API
 - `client.iam` - iam API
 - `client.notification` - notification API
 - `client.runtime` - runtime API
-- `client.system` - system API
 
 ## Usage Examples
+
+### system
+
+```swift
+// List
+let result = try await client.system.afterSalesRequestsList()
+print(result)
+```
 
 ### ai
 
 ```swift
-// List groups
+// List
 let result = try await client.ai.channelGroupsList()
 print(result)
 ```
@@ -68,19 +76,15 @@ print(result)
 ### chat
 
 ```swift
-// List product chat conversations
-let params: [String: Any] = [
-    "page": "page",
-    "page_size": "page-size"
-]
-let result = try await client.chat.conversationsList(params: params)
+// List
+let result = try await client.chat.conversationsList()
 print(result)
 ```
 
 ### iam
 
 ```swift
-// List keys
+// List
 let result = try await client.iam.apiKeysList()
 print(result)
 ```
@@ -88,42 +92,16 @@ print(result)
 ### notification
 
 ```swift
-// List portal notifications
-let params: [String: Any] = [
-    "include_archived": true,
-    "page": "page",
-    "page_size": "page-size"
-]
-let result = try await client.notification.notificationsList(params: params)
+// List
+let result = try await client.notification.notificationsList()
 print(result)
 ```
 
 ### runtime
 
 ```swift
-// List runtime invocations
-let params: [String: Any] = [
-    "page": "page",
-    "page_size": "page-size",
-    "conversation_id": "1",
-    "chat_turn_id": "1",
-    "agent_session_id": "1",
-    "runtime": "runtime",
-    "status": "status"
-]
-let result = try await client.runtime.invocationsList(params: params)
-print(result)
-```
-
-### system
-
-```swift
-// Retrieve public site runtime branding settings
-let params: [String: Any] = [
-    "tenant_code": "ok",
-    "organization_code": "ok"
-]
-let result = try await client.system.siteRuntimeRetrieve(params: params)
+// List
+let result = try await client.runtime.invocationsList()
 print(result)
 ```
 

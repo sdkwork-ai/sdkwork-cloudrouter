@@ -165,6 +165,7 @@ export function CacheAdmin() {
               scannedItems: current.scannedItems + data.scannedItems,
               returnedItems: current.returnedItems + data.returnedItems,
               items: [...current.items, ...data.items],
+              pageInfo: data.pageInfo,
             }
           : data
       ));
@@ -387,7 +388,7 @@ export function CacheAdmin() {
                   <div className="truncate font-mono text-slate-700 dark:text-slate-200">{keyList.namespace}</div>
                   <div className="mt-0.5 truncate">{keyList.instanceName}</div>
                 </div>
-                {keyList.hasMore ? (
+                {keyList.pageInfo.hasMore ? (
                   <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
                     {t('admin.cache.keyList.truncated', 'Showing {{shown}} keys from a bounded scan of {{scanned}} keys. Load more to continue the safe scan.', {
                       shown: keyList.returnedItems,
@@ -422,12 +423,12 @@ export function CacheAdmin() {
                     </button>
                   ))}
                 </div>
-                {keyList.nextCursor ? (
+                {keyList.pageInfo.nextCursor ? (
                   <button
                     type="button"
                     disabled={operationBusy !== null}
                     onClick={() => {
-                      void inspectNamespaceKeys(keyList.namespace, keyList.nextCursor);
+                      void inspectNamespaceKeys(keyList.namespace, keyList.pageInfo.nextCursor);
                     }}
                     className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:border-emerald-500/40 dark:hover:text-emerald-300"
                   >

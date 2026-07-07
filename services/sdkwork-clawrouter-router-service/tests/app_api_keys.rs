@@ -171,9 +171,15 @@ async fn app_channel_group_list_returns_owner_groups_with_display_names() {
     assert_eq!(StatusCode::OK, response.status());
     let payload = json_payload(response).await;
     assert_eq!(0, payload["code"].as_i64().unwrap());
-    assert_eq!("premium", payload["data"]["items"][0]["code"].as_str().unwrap());
+    assert_eq!(
+        "premium",
+        payload["data"]["items"][0]["code"].as_str().unwrap()
+    );
     assert_eq!("Premium customers", payload["data"]["items"][0]["name"]);
-    assert_eq!("default", payload["data"]["items"][1]["code"].as_str().unwrap());
+    assert_eq!(
+        "default",
+        payload["data"]["items"][1]["code"].as_str().unwrap()
+    );
     assert_eq!("Default customers", payload["data"]["items"][1]["name"]);
     assert_eq!(2, payload["data"]["items"].as_array().unwrap().len());
     assert!(payload["data"]["pageInfo"].is_object());
@@ -286,8 +292,8 @@ impl GatewayApiKeyManagementReadStore for TestApiKeyReadStore {
             if self.include_owner_key {
                 snapshot.api_keys.push(GatewayApiKey {
                     id: 701,
-                    tenant_id: 10,
-                    organization_id: 20,
+                    tenant_id: 100001,
+                    organization_id: 0,
                     user_id: 30,
                     group_id: 501,
                     name: "Console Key".to_owned(),
@@ -342,7 +348,8 @@ impl GatewayApiKeyManagementReadStore for TestApiKeyReadStore {
     ) -> ApiKeyManagementReadFuture<'a, GatewayApiKeyListPage> {
         Box::pin(async move {
             let snapshot = self.load_gateway_api_key_management_snapshot().await?;
-            let scoped = snapshot.for_subject(query.tenant_id, query.organization_id, query.user_id);
+            let scoped =
+                snapshot.for_subject(query.tenant_id, query.organization_id, query.user_id);
             let mut items: Vec<_> = scoped
                 .api_keys
                 .into_iter()
@@ -351,10 +358,7 @@ impl GatewayApiKeyManagementReadStore for TestApiKeyReadStore {
                         let search = search.to_lowercase();
                         api_key.name.to_lowercase().contains(&search)
                             || api_key.key_prefix.to_lowercase().contains(&search)
-                            || api_key
-                                .key_display_masked
-                                .to_lowercase()
-                                .contains(&search)
+                            || api_key.key_display_masked.to_lowercase().contains(&search)
                     })
                 })
                 .collect();

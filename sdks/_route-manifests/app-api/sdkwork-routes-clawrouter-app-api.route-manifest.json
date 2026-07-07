@@ -20,7 +20,7 @@
       "path": "/app/v3/api/accounts/current/summary",
       "operationId": "accounts.current.summary.retrieve",
       "tags": [
-        "commerce"
+        "accounts"
       ],
       "auth": {
         "mode": "dual-token",
@@ -42,7 +42,7 @@
       "path": "/app/v3/api/addresses",
       "operationId": "addresses.list",
       "tags": [
-        "commerce"
+        "addresses"
       ],
       "auth": {
         "mode": "dual-token",
@@ -64,7 +64,7 @@
       "path": "/app/v3/api/addresses",
       "operationId": "addresses.create",
       "tags": [
-        "commerce"
+        "addresses"
       ],
       "auth": {
         "mode": "dual-token",
@@ -86,7 +86,7 @@
       "path": "/app/v3/api/addresses/{addressId}",
       "operationId": "addresses.delete",
       "tags": [
-        "commerce"
+        "addresses"
       ],
       "auth": {
         "mode": "dual-token",
@@ -108,7 +108,7 @@
       "path": "/app/v3/api/addresses/{addressId}",
       "operationId": "addresses.update",
       "tags": [
-        "commerce"
+        "addresses"
       ],
       "auth": {
         "mode": "dual-token",
@@ -130,7 +130,7 @@
       "path": "/app/v3/api/addresses/{addressId}/default_selection",
       "operationId": "addresses.defaultSelection.create",
       "tags": [
-        "commerce"
+        "addresses"
       ],
       "auth": {
         "mode": "dual-token",
@@ -482,7 +482,7 @@
       "path": "/app/v3/api/billing/history",
       "operationId": "billing.history.list",
       "tags": [
-        "commerce"
+        "billing"
       ],
       "auth": {
         "mode": "dual-token",
@@ -504,7 +504,7 @@
       "path": "/app/v3/api/cart/current",
       "operationId": "cart.current.retrieve",
       "tags": [
-        "commerce"
+        "cart"
       ],
       "auth": {
         "mode": "dual-token",
@@ -526,7 +526,7 @@
       "path": "/app/v3/api/cart/items",
       "operationId": "cart.items.create",
       "tags": [
-        "commerce"
+        "cart"
       ],
       "auth": {
         "mode": "dual-token",
@@ -548,7 +548,7 @@
       "path": "/app/v3/api/cart/items/{cartItemId}",
       "operationId": "cart.items.delete",
       "tags": [
-        "commerce"
+        "cart"
       ],
       "auth": {
         "mode": "dual-token",
@@ -570,7 +570,7 @@
       "path": "/app/v3/api/cart/items/{cartItemId}",
       "operationId": "cart.items.update",
       "tags": [
-        "commerce"
+        "cart"
       ],
       "auth": {
         "mode": "dual-token",
@@ -592,7 +592,7 @@
       "path": "/app/v3/api/catalog/attributes",
       "operationId": "catalog.attributes.list",
       "tags": [
-        "commerce"
+        "catalog"
       ],
       "auth": {
         "mode": "dual-token",
@@ -614,7 +614,7 @@
       "path": "/app/v3/api/catalog/categories",
       "operationId": "catalog.categories.list",
       "tags": [
-        "commerce"
+        "catalog"
       ],
       "auth": {
         "mode": "dual-token",
@@ -636,7 +636,7 @@
       "path": "/app/v3/api/catalog/categories/{categoryId}",
       "operationId": "catalog.categories.retrieve",
       "tags": [
-        "commerce"
+        "catalog"
       ],
       "auth": {
         "mode": "dual-token",
@@ -658,7 +658,7 @@
       "path": "/app/v3/api/catalog/products",
       "operationId": "catalog.products.list",
       "tags": [
-        "commerce"
+        "catalog"
       ],
       "auth": {
         "mode": "dual-token",
@@ -680,7 +680,7 @@
       "path": "/app/v3/api/catalog/products/{productId}",
       "operationId": "catalog.products.retrieve",
       "tags": [
-        "commerce"
+        "catalog"
       ],
       "auth": {
         "mode": "dual-token",
@@ -702,7 +702,7 @@
       "path": "/app/v3/api/catalog/skus/{skuId}",
       "operationId": "catalog.skus.retrieve",
       "tags": [
-        "commerce"
+        "catalog"
       ],
       "auth": {
         "mode": "dual-token",
@@ -724,7 +724,7 @@
       "path": "/app/v3/api/catalog/skus/{skuId}/prices",
       "operationId": "catalog.skus.prices.retrieve",
       "tags": [
-        "commerce"
+        "catalog"
       ],
       "auth": {
         "mode": "dual-token",
@@ -746,7 +746,7 @@
       "path": "/app/v3/api/catalog/spus",
       "operationId": "catalog.spus.list",
       "tags": [
-        "commerce"
+        "catalog"
       ],
       "auth": {
         "mode": "dual-token",
@@ -768,7 +768,7 @@
       "path": "/app/v3/api/catalog/spus/{spuId}",
       "operationId": "catalog.spus.retrieve",
       "tags": [
-        "commerce"
+        "catalog"
       ],
       "auth": {
         "mode": "dual-token",
@@ -922,7 +922,7 @@
       "path": "/app/v3/api/checkout/sessions",
       "operationId": "checkout.sessions.create",
       "tags": [
-        "commerce"
+        "checkout"
       ],
       "auth": {
         "mode": "dual-token",
@@ -944,7 +944,7 @@
       "path": "/app/v3/api/checkout/sessions/{checkoutSessionId}",
       "operationId": "checkout.sessions.retrieve",
       "tags": [
-        "commerce"
+        "checkout"
       ],
       "auth": {
         "mode": "dual-token",
@@ -966,7 +966,7 @@
       "path": "/app/v3/api/checkout/sessions/{checkoutSessionId}/orders",
       "operationId": "checkout.sessions.orders.create",
       "tags": [
-        "commerce"
+        "checkout"
       ],
       "auth": {
         "mode": "dual-token",
@@ -988,7 +988,7 @@
       "path": "/app/v3/api/checkout/sessions/{checkoutSessionId}/quotes",
       "operationId": "checkout.sessions.quotes.create",
       "tags": [
-        "commerce"
+        "checkout"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1010,7 +1010,7 @@
       "path": "/app/v3/api/fulfillments",
       "operationId": "fulfillments.list",
       "tags": [
-        "commerce"
+        "fulfillments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1032,7 +1032,7 @@
       "path": "/app/v3/api/fulfillments/{fulfillmentId}",
       "operationId": "fulfillments.retrieve",
       "tags": [
-        "commerce"
+        "fulfillments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1406,7 +1406,7 @@
       "path": "/app/v3/api/invoices",
       "operationId": "invoices.list",
       "tags": [
-        "commerce"
+        "invoices"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1428,7 +1428,7 @@
       "path": "/app/v3/api/invoices",
       "operationId": "invoices.create",
       "tags": [
-        "commerce"
+        "invoices"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1450,7 +1450,7 @@
       "path": "/app/v3/api/invoices/current",
       "operationId": "invoices.mine.list",
       "tags": [
-        "commerce"
+        "invoices"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1472,7 +1472,7 @@
       "path": "/app/v3/api/invoices/statistics",
       "operationId": "invoices.statistics.retrieve",
       "tags": [
-        "commerce"
+        "invoices"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1494,7 +1494,7 @@
       "path": "/app/v3/api/invoices/{invoiceId}",
       "operationId": "invoices.retrieve",
       "tags": [
-        "commerce"
+        "invoices"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1516,7 +1516,7 @@
       "path": "/app/v3/api/invoices/{invoiceId}",
       "operationId": "invoices.update",
       "tags": [
-        "commerce"
+        "invoices"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1538,7 +1538,7 @@
       "path": "/app/v3/api/invoices/{invoiceId}/cancellations",
       "operationId": "invoices.cancellations.create",
       "tags": [
-        "commerce"
+        "invoices"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1560,7 +1560,7 @@
       "path": "/app/v3/api/invoices/{invoiceId}/items",
       "operationId": "invoices.items.list",
       "tags": [
-        "commerce"
+        "invoices"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1582,7 +1582,7 @@
       "path": "/app/v3/api/invoices/{invoiceId}/submissions",
       "operationId": "invoices.submissions.create",
       "tags": [
-        "commerce"
+        "invoices"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1604,7 +1604,7 @@
       "path": "/app/v3/api/memberships/benefits",
       "operationId": "memberships.benefits.list",
       "tags": [
-        "commerce"
+        "memberships"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1626,7 +1626,7 @@
       "path": "/app/v3/api/memberships/current",
       "operationId": "memberships.current.retrieve",
       "tags": [
-        "commerce"
+        "memberships"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1648,7 +1648,7 @@
       "path": "/app/v3/api/memberships/current/status",
       "operationId": "memberships.current.status.retrieve",
       "tags": [
-        "commerce"
+        "memberships"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1670,7 +1670,7 @@
       "path": "/app/v3/api/memberships/package_groups",
       "operationId": "memberships.packageGroups.list",
       "tags": [
-        "commerce"
+        "memberships"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1692,7 +1692,7 @@
       "path": "/app/v3/api/memberships/package_groups/{packageGroupId}",
       "operationId": "memberships.packageGroups.retrieve",
       "tags": [
-        "commerce"
+        "memberships"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1714,7 +1714,7 @@
       "path": "/app/v3/api/memberships/package_groups/{packageGroupId}/packages",
       "operationId": "memberships.packageGroups.packages.list",
       "tags": [
-        "commerce"
+        "memberships"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1736,7 +1736,7 @@
       "path": "/app/v3/api/memberships/packages",
       "operationId": "memberships.packages.list",
       "tags": [
-        "commerce"
+        "memberships"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1758,7 +1758,7 @@
       "path": "/app/v3/api/memberships/packages/{packageId}",
       "operationId": "memberships.packages.retrieve",
       "tags": [
-        "commerce"
+        "memberships"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1780,7 +1780,7 @@
       "path": "/app/v3/api/memberships/plans",
       "operationId": "memberships.plans.list",
       "tags": [
-        "commerce"
+        "memberships"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1802,7 +1802,7 @@
       "path": "/app/v3/api/memberships/points/balance",
       "operationId": "memberships.points.balance.retrieve",
       "tags": [
-        "commerce"
+        "memberships"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1824,7 +1824,7 @@
       "path": "/app/v3/api/memberships/points/daily_rewards",
       "operationId": "memberships.points.dailyRewards.create",
       "tags": [
-        "commerce"
+        "memberships"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1846,7 +1846,7 @@
       "path": "/app/v3/api/memberships/points/daily_rewards/status",
       "operationId": "memberships.points.dailyRewards.status.retrieve",
       "tags": [
-        "commerce"
+        "memberships"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1868,7 +1868,7 @@
       "path": "/app/v3/api/memberships/points/history",
       "operationId": "memberships.points.history.list",
       "tags": [
-        "commerce"
+        "memberships"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1890,7 +1890,7 @@
       "path": "/app/v3/api/memberships/privileges/speed_ups",
       "operationId": "memberships.privileges.speedUps.create",
       "tags": [
-        "commerce"
+        "memberships"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1912,7 +1912,7 @@
       "path": "/app/v3/api/memberships/privileges/usage",
       "operationId": "memberships.privileges.usage.retrieve",
       "tags": [
-        "commerce"
+        "memberships"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1934,7 +1934,7 @@
       "path": "/app/v3/api/memberships/purchases",
       "operationId": "memberships.purchases.create",
       "tags": [
-        "commerce"
+        "memberships"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1956,7 +1956,7 @@
       "path": "/app/v3/api/memberships/purchases/renew",
       "operationId": "memberships.purchases.renew",
       "tags": [
-        "commerce"
+        "memberships"
       ],
       "auth": {
         "mode": "dual-token",
@@ -1978,7 +1978,7 @@
       "path": "/app/v3/api/memberships/purchases/upgrade",
       "operationId": "memberships.purchases.upgrade",
       "tags": [
-        "commerce"
+        "memberships"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2066,7 +2066,7 @@
       "path": "/app/v3/api/orders",
       "operationId": "orders.list",
       "tags": [
-        "commerce"
+        "orders"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2088,7 +2088,7 @@
       "path": "/app/v3/api/orders",
       "operationId": "orders.create",
       "tags": [
-        "commerce"
+        "orders"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2110,7 +2110,7 @@
       "path": "/app/v3/api/orders/statistics",
       "operationId": "orders.statistics.retrieve",
       "tags": [
-        "commerce"
+        "orders"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2132,7 +2132,7 @@
       "path": "/app/v3/api/orders/{orderId}",
       "operationId": "orders.retrieve",
       "tags": [
-        "commerce"
+        "orders"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2154,7 +2154,7 @@
       "path": "/app/v3/api/orders/{orderId}/cancel",
       "operationId": "orders.cancel",
       "tags": [
-        "commerce"
+        "orders"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2176,7 +2176,7 @@
       "path": "/app/v3/api/orders/{orderId}/cancellations",
       "operationId": "orders.cancellations.create",
       "tags": [
-        "commerce"
+        "orders"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2198,7 +2198,7 @@
       "path": "/app/v3/api/orders/{orderId}/events",
       "operationId": "orders.events.list",
       "tags": [
-        "commerce"
+        "orders"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2220,7 +2220,7 @@
       "path": "/app/v3/api/orders/{orderId}/payment_success",
       "operationId": "orders.paymentSuccess.retrieve",
       "tags": [
-        "commerce"
+        "orders"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2242,7 +2242,7 @@
       "path": "/app/v3/api/orders/{orderId}/payments",
       "operationId": "payments.orderPayments.list",
       "tags": [
-        "commerce"
+        "orders"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2264,7 +2264,7 @@
       "path": "/app/v3/api/orders/{orderId}/payments",
       "operationId": "orders.pay",
       "tags": [
-        "commerce"
+        "orders"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2286,7 +2286,7 @@
       "path": "/app/v3/api/orders/{orderId}/status",
       "operationId": "orders.status.retrieve",
       "tags": [
-        "commerce"
+        "orders"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2308,7 +2308,7 @@
       "path": "/app/v3/api/payments",
       "operationId": "payments.create",
       "tags": [
-        "commerce"
+        "payments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2330,7 +2330,7 @@
       "path": "/app/v3/api/payments/attempts/{paymentAttemptId}",
       "operationId": "payments.attempts.retrieve",
       "tags": [
-        "commerce"
+        "payments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2352,7 +2352,7 @@
       "path": "/app/v3/api/payments/checkout/{paymentId}",
       "operationId": "payments.checkout.retrieve",
       "tags": [
-        "commerce"
+        "payments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2374,7 +2374,7 @@
       "path": "/app/v3/api/payments/intents",
       "operationId": "payments.intents.create",
       "tags": [
-        "commerce"
+        "payments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2396,7 +2396,7 @@
       "path": "/app/v3/api/payments/intents/{paymentIntentId}",
       "operationId": "payments.intents.retrieve",
       "tags": [
-        "commerce"
+        "payments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2418,7 +2418,7 @@
       "path": "/app/v3/api/payments/intents/{paymentIntentId}/attempts",
       "operationId": "payments.intents.attempts.create",
       "tags": [
-        "commerce"
+        "payments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2440,7 +2440,7 @@
       "path": "/app/v3/api/payments/intents/{paymentIntentId}/cancel",
       "operationId": "payments.intents.cancel",
       "tags": [
-        "commerce"
+        "payments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2462,7 +2462,7 @@
       "path": "/app/v3/api/payments/methods",
       "operationId": "payments.methods.list",
       "tags": [
-        "commerce"
+        "payments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2484,7 +2484,7 @@
       "path": "/app/v3/api/payments/reconciliations",
       "operationId": "payments.reconcile",
       "tags": [
-        "commerce"
+        "payments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2506,7 +2506,7 @@
       "path": "/app/v3/api/payments/records",
       "operationId": "payments.records.list",
       "tags": [
-        "commerce"
+        "payments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2528,7 +2528,7 @@
       "path": "/app/v3/api/payments/records/{paymentId}",
       "operationId": "payments.records.retrieve",
       "tags": [
-        "commerce"
+        "payments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2550,7 +2550,7 @@
       "path": "/app/v3/api/payments/statistics",
       "operationId": "payments.statistics.retrieve",
       "tags": [
-        "commerce"
+        "payments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2572,7 +2572,7 @@
       "path": "/app/v3/api/payments/status/out_trade_no/{outTradeNo}",
       "operationId": "payments.status.retrieveByOutTradeNo",
       "tags": [
-        "commerce"
+        "payments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2594,7 +2594,7 @@
       "path": "/app/v3/api/payments/status/{paymentId}",
       "operationId": "payments.status.retrieve",
       "tags": [
-        "commerce"
+        "payments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2616,7 +2616,7 @@
       "path": "/app/v3/api/payments/{paymentId}/close",
       "operationId": "payments.close",
       "tags": [
-        "commerce"
+        "payments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2924,7 +2924,7 @@
       "path": "/app/v3/api/recharges/orders",
       "operationId": "recharges.orders.create",
       "tags": [
-        "commerce"
+        "recharges"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2946,7 +2946,7 @@
       "path": "/app/v3/api/recharges/orders/{orderId}",
       "operationId": "recharges.orders.retrieve",
       "tags": [
-        "commerce"
+        "recharges"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2968,7 +2968,7 @@
       "path": "/app/v3/api/recharges/orders/{orderId}/cancellations",
       "operationId": "recharges.orders.cancel",
       "tags": [
-        "commerce"
+        "recharges"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2990,11 +2990,11 @@
       "path": "/app/v3/api/recharges/packages",
       "operationId": "recharges.packages.list",
       "tags": [
-        "commerce"
+        "recharges"
       ],
       "auth": {
-        "mode": "public",
-        "required": false
+        "mode": "dual-token",
+        "required": true
       },
       "handler": {
         "module": "crate::routes",
@@ -3012,7 +3012,7 @@
       "path": "/app/v3/api/recharges/settings",
       "operationId": "recharges.settings.retrieve",
       "tags": [
-        "commerce"
+        "recharges"
       ],
       "auth": {
         "mode": "dual-token",
@@ -3034,7 +3034,7 @@
       "path": "/app/v3/api/refunds",
       "operationId": "refunds.list",
       "tags": [
-        "commerce"
+        "refunds"
       ],
       "auth": {
         "mode": "dual-token",
@@ -3056,7 +3056,7 @@
       "path": "/app/v3/api/refunds",
       "operationId": "refunds.create",
       "tags": [
-        "commerce"
+        "refunds"
       ],
       "auth": {
         "mode": "dual-token",
@@ -3078,7 +3078,7 @@
       "path": "/app/v3/api/refunds/{refundId}",
       "operationId": "refunds.retrieve",
       "tags": [
-        "commerce"
+        "refunds"
       ],
       "auth": {
         "mode": "dual-token",
@@ -3298,7 +3298,7 @@
       "path": "/app/v3/api/shipments/{shipmentId}",
       "operationId": "shipments.retrieve",
       "tags": [
-        "commerce"
+        "shipments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -3320,7 +3320,7 @@
       "path": "/app/v3/api/shipments/{shipmentId}/packages",
       "operationId": "shipments.packages.list",
       "tags": [
-        "commerce"
+        "shipments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -3342,7 +3342,7 @@
       "path": "/app/v3/api/shipments/{shipmentId}/tracking_events",
       "operationId": "shipments.trackingEvents.list",
       "tags": [
-        "commerce"
+        "shipments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4486,51 +4486,7 @@
       "path": "/app/v3/api/wallet/accounts",
       "operationId": "wallet.accounts.list",
       "tags": [
-        "commerce"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/wallet/accounts/overview",
-      "operationId": "wallet.accounts.overview.retrieve",
-      "tags": [
-        "commerce"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/wallet/accounts/points",
-      "operationId": "wallet.accounts.points.retrieve",
-      "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4552,7 +4508,51 @@
       "path": "/app/v3/api/wallet/accounts/cash",
       "operationId": "wallet.accounts.cash.retrieve",
       "tags": [
-        "commerce"
+        "wallet"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-clawrouter",
+        "apiAuthority": "sdkwork-clawrouter-app-api"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/accounts/overview",
+      "operationId": "wallet.accounts.overview.retrieve",
+      "tags": [
+        "wallet"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-clawrouter",
+        "apiAuthority": "sdkwork-clawrouter-app-api"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/wallet/accounts/points",
+      "operationId": "wallet.accounts.points.retrieve",
+      "tags": [
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4574,7 +4574,7 @@
       "path": "/app/v3/api/wallet/accounts/tokens",
       "operationId": "wallet.accounts.tokens.retrieve",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4596,7 +4596,7 @@
       "path": "/app/v3/api/wallet/accounts/{accountId}",
       "operationId": "wallet.accounts.retrieve",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4618,7 +4618,7 @@
       "path": "/app/v3/api/wallet/adjustments",
       "operationId": "wallet.adjustments.create",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4640,7 +4640,7 @@
       "path": "/app/v3/api/wallet/exchange_rate",
       "operationId": "wallet.exchangeRate.retrieve",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4662,7 +4662,7 @@
       "path": "/app/v3/api/wallet/exchange_rules",
       "operationId": "wallet.exchangeRules.list",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4684,7 +4684,7 @@
       "path": "/app/v3/api/wallet/holds",
       "operationId": "wallet.holds.list",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4706,7 +4706,7 @@
       "path": "/app/v3/api/wallet/holds",
       "operationId": "wallet.holds.create",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4728,7 +4728,7 @@
       "path": "/app/v3/api/wallet/holds/releases",
       "operationId": "wallet.holds.releases.create",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4750,7 +4750,7 @@
       "path": "/app/v3/api/wallet/holds/settlements",
       "operationId": "wallet.holds.settlements.create",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4772,7 +4772,7 @@
       "path": "/app/v3/api/wallet/ledger_entries",
       "operationId": "wallet.ledgerEntries.list",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4794,7 +4794,7 @@
       "path": "/app/v3/api/wallet/ledger_entries/points",
       "operationId": "wallet.ledgerEntries.points.list",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4816,7 +4816,7 @@
       "path": "/app/v3/api/wallet/ledger_entries/{ledgerEntryId}",
       "operationId": "wallet.ledgerEntries.retrieve",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4838,7 +4838,7 @@
       "path": "/app/v3/api/wallet/overview",
       "operationId": "wallet.overview.retrieve",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4860,7 +4860,7 @@
       "path": "/app/v3/api/wallet/point_exchanges",
       "operationId": "wallet.pointExchanges.create",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4882,7 +4882,7 @@
       "path": "/app/v3/api/wallet/point_exchanges/{exchangeNo}",
       "operationId": "wallet.pointExchanges.retrieve",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4904,7 +4904,7 @@
       "path": "/app/v3/api/wallet/point_transfers",
       "operationId": "wallet.pointTransfers.create",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4926,7 +4926,7 @@
       "path": "/app/v3/api/wallet/points/exchanges/rules",
       "operationId": "wallet.points.exchangeRules.list",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4948,7 +4948,7 @@
       "path": "/app/v3/api/wallet/requests/{requestNo}",
       "operationId": "wallet.requests.retrieve",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4970,7 +4970,7 @@
       "path": "/app/v3/api/wallet/tokens",
       "operationId": "wallet.tokens.retrieve",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -4992,7 +4992,7 @@
       "path": "/app/v3/api/wallet/topup_transfers",
       "operationId": "wallet.topupTransfers.create",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -5014,7 +5014,7 @@
       "path": "/app/v3/api/wallet/transactions",
       "operationId": "wallet.transactions.list",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -5036,7 +5036,7 @@
       "path": "/app/v3/api/wallet/transactions/{transactionId}",
       "operationId": "wallet.transactions.retrieve",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",
@@ -5058,7 +5058,7 @@
       "path": "/app/v3/api/wallet/withdrawal_transfers",
       "operationId": "wallet.withdrawalTransfers.create",
       "tags": [
-        "commerce"
+        "wallet"
       ],
       "auth": {
         "mode": "dual-token",

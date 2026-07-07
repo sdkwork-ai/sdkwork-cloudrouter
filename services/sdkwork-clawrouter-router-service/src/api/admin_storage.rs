@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
+use std::sync::Arc;
 
 use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
@@ -10,7 +10,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{json_success_list_response, problem_from_wire_code, success_envelope};
-use sdkwork_utils_rust::offset_limit_page_info;
 use crate::domain::DomainError;
 use crate::ports::{
     AdminStorageCollection, AdminStorageJsonRecord, AdminStorageStore, AdminStorageSubject,
@@ -20,6 +19,7 @@ use crate::ports::{
     ListAdminStorageRecordsQuery, SetStorageDefaultBucketCommand, UpdateStorageBucketCommand,
     UpdateStorageProviderCommand,
 };
+use sdkwork_utils_rust::offset_limit_page_info;
 
 const DEFAULT_LIMIT: i64 = 20;
 const MAX_LIMIT: i64 = 200;
@@ -80,7 +80,7 @@ struct AdminStorageState {
 #[derive(Debug, Deserialize)]
 struct AdminStorageQuery {
     cursor: Option<String>,
-    limit: Option<i64>,
+    page_size: Option<i64>,
     status: Option<String>,
     logical_scope: Option<String>,
     scope_type: Option<String>,
@@ -347,13 +347,7 @@ async fn list_buckets(
     _headers: HeaderMap,
     Query(query): Query<AdminStorageQuery>,
 ) -> Response {
-    list_response(
-        scoped,
-        query,
-        |query| state.store.list_buckets(query),
-        None,
-    )
-    .await
+    list_response(scoped, query, |query| state.store.list_buckets(query), None).await
 }
 
 async fn create_bucket(
@@ -421,19 +415,16 @@ async fn set_default_bucket(
     Path(logical_scope): Path<String>,
     Json(request): Json<SetStorageDefaultBucketRequest>,
 ) -> Response {
-    let command = match validated_default_bucket_command(scoped, &headers, logical_scope, request)
-    {
+    let command = match validated_default_bucket_command(scoped, &headers, logical_scope, request) {
         Ok(command) => command,
         Err(response) => return response,
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.set_default_bucket(command).await {
-        Ok(default_bucket) => Json(success_envelope(
-            StorageDefaultBucketMutationResponse {
-                default_bucket,
-                request_id,
-            },
-        ))
+        Ok(default_bucket) => Json(success_envelope(StorageDefaultBucketMutationResponse {
+            default_bucket,
+            request_id,
+        }))
         .into_response(),
         Err(error) => storage_error_response("storage default bucket update is unavailable", error),
     }
@@ -547,13 +538,13 @@ async fn create_reconciliation_run(
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.create_reconciliation_run(command).await {
-        Ok(reconciliation_run) => Json(success_envelope(
-            StorageReconciliationRunMutationResponse {
+        Ok(reconciliation_run) => {
+            Json(success_envelope(StorageReconciliationRunMutationResponse {
                 reconciliation_run,
                 request_id,
-            },
-        ))
-        .into_response(),
+            }))
+            .into_response()
+        }
         Err(error) => storage_error_response("storage reconciliation create is unavailable", error),
     }
 }
@@ -564,13 +555,7 @@ async fn list_gc_jobs(
     _headers: HeaderMap,
     Query(query): Query<AdminStorageQuery>,
 ) -> Response {
-    list_response(
-        scoped,
-        query,
-        |query| state.store.list_gc_jobs(query),
-        None,
-    )
-    .await
+    list_response(scoped, query, |query| state.store.list_gc_jobs(query), None).await
 }
 
 async fn create_gc_job(
@@ -631,10 +616,10 @@ fn validated_list_query(
     scope_types: Option<&'static [&'static str]>,
 ) -> Result<ListAdminStorageRecordsQuery, Response> {
     let subject = scoped.into();
-    let limit = query.limit.unwrap_or(DEFAULT_LIMIT);
+    let limit = query.page_size.unwrap_or(DEFAULT_LIMIT);
     if !(1..=MAX_LIMIT).contains(&limit) {
         return Err(bad_request(format!(
-            "limit must be between 1 and {MAX_LIMIT}"
+            "page_size must be between 1 and {MAX_LIMIT}"
         )));
     }
     let cursor = normalize_optional_text(query.cursor, "cursor", 256)?;

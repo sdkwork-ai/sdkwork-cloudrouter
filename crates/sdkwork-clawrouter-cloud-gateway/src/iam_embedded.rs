@@ -5,8 +5,8 @@ use std::path::PathBuf;
 
 use axum::Router;
 use sdkwork_iam_embedded_application_bootstrap::{
-    ensure_tenant_application_from_app_root_with_env_and_fallback,
-    resolve_application_app_root, resolve_bootstrap_environment,
+    ensure_tenant_application_from_app_root_with_env_and_fallback, resolve_application_app_root,
+    resolve_bootstrap_environment,
 };
 
 use crate::runtime::GatewayRouterError;
@@ -45,9 +45,7 @@ pub async fn build_claw_embedded_iam_app_api_router() -> Result<Router, GatewayR
 
 pub async fn build_claw_embedded_iam_backend_api_router() -> Result<Router, GatewayRouterError> {
     ensure_clawrouter_embedded_iam_bootstrap().await?;
-    Ok(
-        sdkwork_routes_iam_backend_api::build_sdkwork_iam_backend_api_router_from_env().await,
-    )
+    Ok(sdkwork_routes_iam_backend_api::build_sdkwork_iam_backend_api_router_from_env().await)
 }
 
 fn resolve_clawrouter_app_root() -> PathBuf {

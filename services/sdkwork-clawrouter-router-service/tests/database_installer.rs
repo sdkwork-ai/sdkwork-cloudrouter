@@ -1,5 +1,11 @@
 use sdkwork_clawrouter_router_service::application::{PasswordHasher, Pbkdf2Sha256PasswordHasher};
 use sdkwork_clawrouter_router_service::domain::DecimalValue;
+use sdkwork_clawrouter_router_service::infrastructure::sql::commerce_bootstrap::commerce_database_tables;
+use sdkwork_clawrouter_router_service::infrastructure::sql::commerce_bootstrap::{
+    commerce_payment_channel_seeds, commerce_payment_method_seeds,
+    commerce_payment_provider_account_seeds, commerce_payment_provider_seeds,
+    commerce_payment_route_rule_seeds, membership_package_group_seeds, membership_plan_seeds,
+};
 use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
     CatalogRefreshOptions, DatabaseInstallOptions, DatabaseInstaller, InstallationStatus,
     CURRENT_SCHEMA_VERSION,
@@ -13,12 +19,6 @@ use sdkwork_clawrouter_router_service::ports::{
     UpdateAdminUserCommand,
 };
 use sdkwork_clawrouter_router_service_test_support::repair_sqlite_pool;
-use sdkwork_clawrouter_router_service::infrastructure::sql::commerce_bootstrap::{
-    commerce_payment_channel_seeds, commerce_payment_method_seeds,
-    commerce_payment_provider_account_seeds, commerce_payment_provider_seeds,
-    commerce_payment_route_rule_seeds, membership_package_group_seeds, membership_plan_seeds,
-};
-use sdkwork_clawrouter_router_service::infrastructure::sql::commerce_bootstrap::commerce_database_tables;
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::{Row, SqlitePool};
 use std::collections::{BTreeMap, BTreeSet};

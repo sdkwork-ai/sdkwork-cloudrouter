@@ -1,6 +1,6 @@
+use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
 use axum::body::Bytes;
 use axum::extract::State;
@@ -226,7 +226,6 @@ async fn update_auth_settings(
         }
     }
 }
-
 
 fn parse_json_body<T>(body: &[u8], entity_name: &str) -> Result<T, String>
 where

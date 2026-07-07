@@ -28,7 +28,7 @@ async fn admin_api_key_rate_limit_route_creates_and_lists_token_limits() {
                 .method("POST")
                 .uri("/backend/v3/api/router/rate_limits/api_keys")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"keyPrefix":"sk-test","user":"30","rps":7,"rpd":1200,"burst":14}"#,
                 ))
@@ -52,7 +52,7 @@ async fn admin_api_key_rate_limit_route_creates_and_lists_token_limits() {
             Request::builder()
                 .method("GET")
                 .uri("/backend/v3/api/router/rate_limits/api_keys")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -80,7 +80,7 @@ async fn admin_api_key_rate_limit_route_rejects_placeholder_prefix_without_calli
                 .method("POST")
                 .uri("/backend/v3/api/router/rate_limits/api_keys")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"keyPrefix":"sk-proj-...","user":"30","rps":7,"rpd":1200,"burst":14}"#,
                 ))

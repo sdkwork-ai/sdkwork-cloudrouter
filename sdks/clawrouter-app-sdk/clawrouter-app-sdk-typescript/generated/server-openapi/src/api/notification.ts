@@ -1,9 +1,6 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { NotificationsAcknowledgeCreateResult, NotificationsPopupSeenCreateResult, SdkWorkPageData } from '../types';
-
-
 export class NotificationPopupSeenApi {
   private client: HttpClient;
 
@@ -13,8 +10,8 @@ export class NotificationPopupSeenApi {
 
 
 /** Create */
-  async create(notificationId: string): Promise<NotificationsPopupSeenCreateResult> {
-    return this.client.post<NotificationsPopupSeenCreateResult>(appApiPath(`/notification/notifications/${serializePathParameter(notificationId, { name: 'notificationId', style: 'simple', explode: false })}/popup_seen`));
+  async create(notificationId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/notification/notifications/${serializePathParameter(notificationId, { name: 'notificationId', style: 'simple', explode: false })}/popup_seen`));
   }
 }
 
@@ -27,8 +24,8 @@ export class NotificationAcknowledgeApi {
 
 
 /** Create */
-  async create(notificationId: string): Promise<NotificationsAcknowledgeCreateResult> {
-    return this.client.post<NotificationsAcknowledgeCreateResult>(appApiPath(`/notification/notifications/${serializePathParameter(notificationId, { name: 'notificationId', style: 'simple', explode: false })}/acknowledge`));
+  async create(notificationId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/notification/notifications/${serializePathParameter(notificationId, { name: 'notificationId', style: 'simple', explode: false })}/acknowledge`));
   }
 }
 
@@ -45,8 +42,8 @@ export class NotificationApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/notification/notifications`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/notification/notifications`));
   }
 }
 

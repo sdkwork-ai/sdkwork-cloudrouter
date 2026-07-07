@@ -386,6 +386,8 @@ function resolvePythonCommand() {
 export function applyStrictTypeScriptContractFiles(files, spec) {
   const closedEmptySchemas = collectClosedEmptySchemaComponents(spec);
   const multipartRequestSchemas = collectMultipartRequestSchemas(spec);
+  const sdkworkV3ResponseTypes = collectSdkworkV3UnwrappedResponseTypes(spec);
+  const operationEnvelopeTypeNames = collectGeneratedOperationEnvelopeTypeNames(files, sdkworkV3ResponseTypes);
   const closedEmptyFiles = new Map(
     Array.from(closedEmptySchemas).map((schemaName) => [
       `src/types/${toKebabCase(schemaName)}.ts`,
@@ -401,6 +403,13 @@ export function applyStrictTypeScriptContractFiles(files, spec) {
   );
   return files
     .filter((file) => normalizeGeneratedPath(file.path) !== 'src/types/no-data.ts')
+    .filter((file) => {
+      const normalizedPath = normalizeGeneratedPath(file.path);
+      if (!normalizedPath.startsWith('src/types/') || !normalizedPath.endsWith('.ts')) {
+        return true;
+      }
+      return !operationEnvelopeTypeNameForPath(normalizedPath, operationEnvelopeTypeNames);
+    })
     .map((file) => {
       const normalizedPath = normalizeGeneratedPath(file.path);
       let content = file.content;
@@ -415,6 +424,8 @@ export function applyStrictTypeScriptContractFiles(files, spec) {
 
       if (normalizedPath.startsWith('src/api/') && normalizedPath.endsWith('.ts')) {
         content = standardizeMultipartMethodBodies(content, multipartRequestSchemas);
+        content = standardizeSdkworkV3MethodResponseTypes(content, sdkworkV3ResponseTypes);
+        content = standardizeNoDataMethodResponseTypes(content);
       }
 
       const typedMapModel = typedMapFiles.get(normalizedPath);
@@ -437,12 +448,138 @@ export function applyStrictTypeScriptContractFiles(files, spec) {
       }
       return {
         ...file,
-        content: file.content.replace(
-          /^\s*export\s+type\s+\{\s*NoData\s*\}\s+from\s+['"]\.\/no-data['"];\s*$/gm,
-          '',
-        ).replace(/\n{3,}/g, '\n\n'),
+        content: removeTypeExports(file.content, new Set(['NoData', ...operationEnvelopeTypeNames]))
+          .replace(/\n{3,}/g, '\n\n'),
       };
     });
+}
+
+function collectSdkworkV3UnwrappedResponseTypes(spec) {
+  const result = new Map();
+  const paths = spec?.paths;
+  if (!paths || typeof paths !== 'object' || Array.isArray(paths)) {
+    return result;
+  }
+
+  for (const pathItem of Object.values(paths)) {
+    if (!pathItem || typeof pathItem !== 'object' || Array.isArray(pathItem)) {
+      continue;
+    }
+    for (const [method, operation] of Object.entries(pathItem)) {
+      if (!isHttpOperation(method, operation)) {
+        continue;
+      }
+      const responses = operation.responses;
+      if (!responses || typeof responses !== 'object' || Array.isArray(responses)) {
+        continue;
+      }
+      for (const [statusCode, response] of Object.entries(responses)) {
+        if (!String(statusCode).startsWith('2')) {
+          continue;
+        }
+        const schema = response?.content?.['application/json']?.schema;
+        const sourceName = schemaComponentName(schema);
+        if (!sourceName) {
+          continue;
+        }
+        const unwrapped = sdkworkV3UnwrappedResponseSchema(spec, schema);
+        const targetName = schemaComponentName(unwrapped);
+        if (!targetName || targetName === sourceName) {
+          continue;
+        }
+        result.set(sourceName, targetName);
+      }
+    }
+  }
+  return result;
+}
+
+function collectGeneratedOperationEnvelopeTypeNames(files, responseTypeMap) {
+  const result = new Set();
+  const mappedSourceNames = new Set(responseTypeMap.keys());
+  for (const sourceName of responseTypeMap.keys()) {
+    if (!isCanonicalSdkworkEnvelopeSchema(sourceName)) {
+      result.add(sourceName);
+    }
+  }
+  for (const file of files) {
+    const normalizedPath = normalizeGeneratedPath(file.path);
+    if (!normalizedPath.startsWith('src/types/') || !normalizedPath.endsWith('.ts')) {
+      continue;
+    }
+    if (/^src\/types\/sdk-work-/u.test(normalizedPath) || normalizedPath === 'src/types/problem-detail.ts') {
+      continue;
+    }
+    if (!/\bcode:\s*0;[\s\S]*\btraceId\b/u.test(file.content)) {
+      continue;
+    }
+    const typeName = exportedTypeName(file.content);
+    if (
+      !mappedSourceNames.has(typeName)
+      && !Array.from(mappedSourceNames).some((sourceName) => file.content.includes(sourceName))
+    ) {
+      continue;
+    }
+    if (typeName) {
+      result.add(typeName);
+    }
+  }
+  return result;
+}
+
+function operationEnvelopeTypeNameForPath(normalizedPath, operationEnvelopeTypeNames) {
+  for (const typeName of operationEnvelopeTypeNames) {
+    if (normalizedPath === `src/types/${toKebabCase(typeName)}.ts`) {
+      return typeName;
+    }
+  }
+  return '';
+}
+
+function exportedTypeName(content) {
+  const match = content.match(/\bexport\s+(?:interface|type)\s+([A-Za-z_$][A-Za-z0-9_$]*)\b/u);
+  return match?.[1] || '';
+}
+
+function standardizeSdkworkV3MethodResponseTypes(content, responseTypeMap) {
+  let updated = content;
+  for (const [sourceName, targetName] of responseTypeMap.entries()) {
+    const before = updated;
+    updated = updated.replace(new RegExp(`\\bPromise<${escapeRegExp(sourceName)}>`, 'g'), `Promise<${targetName}>`);
+    updated = updated.replace(new RegExp(`<${escapeRegExp(sourceName)}>`, 'g'), `<${targetName}>`);
+    if (updated !== before) {
+      updated = removeTypeImportNames(updated, '../types', new Set([sourceName]));
+      updated = ensureTypeImportName(updated, '../types', targetName);
+    }
+  }
+  return updated;
+}
+
+function standardizeNoDataMethodResponseTypes(content) {
+  if (!content.includes('NoData')) {
+    return content;
+  }
+  let updated = content.replace(/\bPromise<NoData>/g, 'Promise<Record<string, never>>');
+  updated = updated.replace(/<NoData>/g, '<Record<string, never>>');
+  updated = removeTypeImportNames(updated, '../types', new Set(['NoData']));
+  return updated;
+}
+
+function removeTypeExports(content, typeNames) {
+  if (!typeNames || typeNames.size === 0) {
+    return content;
+  }
+  let updated = content;
+  for (const typeName of typeNames) {
+    updated = updated.replace(
+      new RegExp(
+        `^\\s*export\\s+type\\s+\\{\\s*${escapeRegExp(typeName)}\\s*\\}\\s+from\\s+['"]\\./${escapeRegExp(toKebabCase(typeName))}['"];\\s*$`,
+        'gm',
+      ),
+      '',
+    );
+  }
+  return updated;
 }
 
 export function prepareStrictTypeScriptGenerationSpec(spec, options = {}) {
@@ -479,6 +616,102 @@ export function prepareStrictTypeScriptGenerationSpec(spec, options = {}) {
     cloned.tags = mergeSdkDomainTags(cloned.tags, sdkDomains);
   }
   return cloned;
+}
+
+function sdkworkV3UnwrappedResponseSchema(spec, schema, seenRefs = new Set()) {
+  if (!schema || typeof schema !== 'object' || Array.isArray(schema)) {
+    return null;
+  }
+
+  if (typeof schema.$ref === 'string') {
+    const resolved = resolveComponentSchema(spec, schema.$ref);
+    if (!resolved || seenRefs.has(schema.$ref)) {
+      return null;
+    }
+    seenRefs.add(schema.$ref);
+    const unwrapped = sdkworkV3UnwrappedResponseSchema(spec, resolved, seenRefs);
+    seenRefs.delete(schema.$ref);
+    return unwrapped;
+  }
+
+  if (Array.isArray(schema.allOf) && schema.allOf.some((part) => part?.$ref === '#/components/schemas/SdkWorkApiResponse')) {
+    const dataSchema = sdkworkV3EnvelopeDataSchema(schema);
+    return sdkworkV3RuntimePayloadSchema(spec, dataSchema);
+  }
+
+  if (hasSdkworkEnvelopeShape(schema)) {
+    return sdkworkV3RuntimePayloadSchema(spec, schema.properties.data);
+  }
+
+  return null;
+}
+
+function sdkworkV3EnvelopeDataSchema(schema) {
+  for (const part of schema.allOf || []) {
+    if (!part || typeof part !== 'object' || Array.isArray(part) || part.$ref === '#/components/schemas/SdkWorkApiResponse') {
+      continue;
+    }
+    const dataSchema = part.properties?.data;
+    if (dataSchema) {
+      return dataSchema;
+    }
+  }
+  return null;
+}
+
+function sdkworkV3RuntimePayloadSchema(spec, dataSchema) {
+  const normalized = unwrapSingleAllOfRef(dataSchema);
+  if (!normalized || typeof normalized !== 'object' || Array.isArray(normalized)) {
+    return null;
+  }
+
+  if (typeof normalized.$ref === 'string') {
+    const resolved = resolveComponentSchema(spec, normalized.$ref);
+    if (resolved?.properties?.item) {
+      return unwrapSingleAllOfRef(resolved.properties.item) || resolved.properties.item;
+    }
+    return { $ref: normalized.$ref };
+  }
+
+  if (normalized.properties?.item) {
+    return unwrapSingleAllOfRef(normalized.properties.item) || normalized.properties.item;
+  }
+
+  return structuredClone(normalized);
+}
+
+function unwrapSingleAllOfRef(schema) {
+  if (!schema || typeof schema !== 'object' || Array.isArray(schema)) {
+    return schema;
+  }
+  if (Array.isArray(schema.allOf) && schema.allOf.length === 1 && typeof schema.allOf[0]?.$ref === 'string') {
+    return { $ref: schema.allOf[0].$ref };
+  }
+  return schema;
+}
+
+function hasSdkworkEnvelopeShape(schema) {
+  return Boolean(schema?.properties?.code && schema?.properties?.data && schema?.properties?.traceId);
+}
+
+function isCanonicalSdkworkEnvelopeSchema(name) {
+  return [
+    'SdkWorkApiResponse',
+    'SdkWorkResourceData',
+    'SdkWorkPageData',
+    'SdkWorkCommandData',
+    'SdkWorkResourceResponse',
+    'SdkWorkListResponse',
+    'SdkWorkCommandResponse',
+  ].includes(name);
+}
+
+function resolveComponentSchema(spec, ref) {
+  if (typeof ref !== 'string' || !ref.startsWith('#/components/schemas/')) {
+    return null;
+  }
+  const name = ref.split('/').pop();
+  return spec.components?.schemas?.[name] || null;
 }
 
 function usesSdkDomainAsTypeScriptSurface(sdkDomain) {
@@ -648,7 +881,7 @@ export function removeTypeImportNames(content, importPath, namesToRemove) {
   }
 
   const importPattern = new RegExp(
-    `^\\s*import\\s+type\\s+\\{([\\s\\S]*?)\\}\\s+from\\s+['"]${escapeRegExp(importPath)}['"];\\s*$`,
+    `^\\s*import\\s+type\\s+\\{([^}]*)\\}\\s+from\\s+['"]${escapeRegExp(importPath)}['"];\\s*$`,
     'gm',
   );
   return content.replace(importPattern, (match, namesRaw) => {
@@ -666,7 +899,7 @@ export function removeTypeImportNames(content, importPath, namesToRemove) {
 
 function ensureTypeImportName(content, importPath, nameToAdd) {
   const importPattern = new RegExp(
-    `^\\s*import\\s+type\\s+\\{([\\s\\S]*?)\\}\\s+from\\s+['"]${escapeRegExp(importPath)}['"];\\s*$`,
+    `^\\s*import\\s+type\\s+\\{([^}]*)\\}\\s+from\\s+['"]${escapeRegExp(importPath)}['"];\\s*$`,
     'm',
   );
   const match = content.match(importPattern);

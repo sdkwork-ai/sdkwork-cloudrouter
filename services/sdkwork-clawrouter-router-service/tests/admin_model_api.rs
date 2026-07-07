@@ -95,8 +95,7 @@ async fn admin_model_catalog_route_returns_plus_result_with_catalog_price_view()
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
     assert_eq!(0, payload["code"].as_i64().unwrap());
-    
-    
+
     assert_eq!("gpt-4o-mini", payload["data"]["items"][0]["model"]);
     assert_eq!("openai", payload["data"]["items"][0]["vendorCode"]);
     assert_eq!(

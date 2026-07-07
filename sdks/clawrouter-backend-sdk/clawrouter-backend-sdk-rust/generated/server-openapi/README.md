@@ -44,15 +44,8 @@ client.set_header("X-Custom-Header", "value");
 ## API Modules
 
 - `client.ai()` - ai API
-- `client.content()` - content API
-- `client.iam()` - iam API
 - `client.integration()` - integration API
-- `client.mcp()` - mcp API
-- `client.messaging()` - messaging API
-- `client.prompts()` - prompts API
-- `client.service_providers()` - service_providers API
 - `client.sites()` - sites API
-- `client.storage()` - storage API
 - `client.system()` - system API
 
 ## Usage Examples
@@ -60,126 +53,31 @@ client.set_header("X-Custom-Header", "value");
 ### ai
 
 ```rust
-// List groups
+// List
 let result = client.ai().channel_groups_list().await?;
-println!("{result:?}");
-```
-
-### content
-
-```rust
-// List announcements
-let result = client.content().announcements_list().await?;
-println!("{result:?}");
-```
-
-### iam
-
-```rust
-// Delete API key
-let api_key_id = "1";
-let result = client.iam().api_keys_delete(api_key_id).await?;
 println!("{result:?}");
 ```
 
 ### integration
 
 ```rust
-// List channels
+// List
 let result = client.integration().channels_list().await?;
-println!("{result:?}");
-```
-
-### mcp
-
-```rust
-use std::collections::HashMap;
-// List MCP servers
-let mut query = HashMap::new();
-query.insert("page".to_string(), serde_json::json!("page"));
-query.insert("page_size".to_string(), serde_json::json!("page-size"));
-query.insert("q".to_string(), serde_json::json!("q"));
-query.insert("transport".to_string(), serde_json::json!("transport"));
-query.insert("visibility".to_string(), serde_json::json!("visibility"));
-query.insert("status".to_string(), serde_json::json!("status"));
-query.insert("category_id".to_string(), serde_json::json!("1"));
-let result = client.mcp().servers_list(Some(&query)).await?;
-println!("{result:?}");
-```
-
-### messaging
-
-```rust
-use std::collections::HashMap;
-// Messaging provider accounts list
-let mut query = HashMap::new();
-query.insert("page".to_string(), serde_json::json!("page"));
-query.insert("page_size".to_string(), serde_json::json!("page-size"));
-query.insert("q".to_string(), serde_json::json!("q"));
-query.insert("status".to_string(), serde_json::json!("status"));
-query.insert("channel".to_string(), serde_json::json!("sms"));
-query.insert("provider_code".to_string(), serde_json::json!("ok"));
-let result = client.messaging().provider_accounts_list(Some(&query)).await?;
-println!("{result:?}");
-```
-
-### prompts
-
-```rust
-use std::collections::HashMap;
-// List admin prompts
-let mut query = HashMap::new();
-query.insert("page".to_string(), serde_json::json!("page"));
-query.insert("page_size".to_string(), serde_json::json!("page-size"));
-query.insert("q".to_string(), serde_json::json!("q"));
-query.insert("prompt_type".to_string(), serde_json::json!("prompt-type"));
-query.insert("visibility".to_string(), serde_json::json!("visibility"));
-query.insert("status".to_string(), serde_json::json!("status"));
-query.insert("category_id".to_string(), serde_json::json!("1"));
-let result = client.prompts().definitions_list(Some(&query)).await?;
-println!("{result:?}");
-```
-
-### service_providers
-
-```rust
-use std::collections::HashMap;
-// Service Provider Adjustments List
-let mut query = HashMap::new();
-query.insert("page".to_string(), serde_json::json!("page"));
-query.insert("page_size".to_string(), serde_json::json!("page-size"));
-query.insert("status".to_string(), serde_json::json!("status"));
-query.insert("provider_id".to_string(), serde_json::json!("1"));
-query.insert("seller_provider_id".to_string(), serde_json::json!("1"));
-query.insert("buyer_provider_id".to_string(), serde_json::json!("1"));
-query.insert("edge_id".to_string(), serde_json::json!("1"));
-let result = client.service_providers().adjustments_list(Some(&query)).await?;
 println!("{result:?}");
 ```
 
 ### sites
 
 ```rust
-use std::collections::HashMap;
-// List sites
-let mut query = HashMap::new();
-query.insert("q".to_string(), serde_json::json!("q"));
-let result = client.sites().site_catalog_list(Some(&query)).await?;
-println!("{result:?}");
-```
-
-### storage
-
-```rust
-// List storage providers
-let result = client.storage().oss_providers_list().await?;
+// List
+let result = client.sites().site_catalog_list().await?;
 println!("{result:?}");
 ```
 
 ### system
 
 ```rust
-// Retrieve IAM auth runtime settings
+// Retrieve
 let result = client.system().auth_settings_retrieve().await?;
 println!("{result:?}");
 ```

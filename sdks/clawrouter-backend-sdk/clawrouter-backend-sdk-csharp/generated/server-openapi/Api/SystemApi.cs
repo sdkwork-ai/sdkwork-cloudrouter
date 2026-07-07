@@ -16,22 +16,30 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// List overview
+        /// Create
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.Backend.Models.AnalyticsAdminOverviewRetrieveResult?> AnalyticsAdminOverviewRetrieveAsync(string? timeRange = null, string? startTime = null, string? endTime = null, string? limit = null)
+        public async Task<Sdkwork.ClawRouter.Backend.Models.AfterSalesReviewsCreateResult?> AfterSalesReviewsCreateAsync(string afterSalesRequestId)
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.AfterSalesReviewsCreateResult>(ApiPaths.BackendPath($"/system/after_sales/requests/{SerializePathParameter(afterSalesRequestId, new PathParameterSpec("afterSalesRequestId", "simple", false))}/reviews"), null);
+        }
+
+        /// <summary>
+        /// Retrieve
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.AnalyticsAdminOverviewRetrieveResult?> AnalyticsAdminOverviewRetrieveAsync(string? timeRange = null, string? startTime = null, string? endTime = null, int? rankingSize = null)
         {
             var queryString = BuildQueryString(new[]
             {
                 new QueryParameterSpec("time_range", timeRange, "form", true, false, null),
                 new QueryParameterSpec("start_time", startTime, "form", true, false, null),
                 new QueryParameterSpec("end_time", endTime, "form", true, false, null),
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("ranking_size", rankingSize, "form", true, false, null),
             });
             return await _client.GetAsync<Sdkwork.ClawRouter.Backend.Models.AnalyticsAdminOverviewRetrieveResult>(ApiPaths.AppendQueryString(ApiPaths.BackendPath("/system/analytics/admin/overview"), queryString));
         }
 
         /// <summary>
-        /// Retrieve IAM auth runtime settings
+        /// Retrieve
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.AuthSettingsRetrieveResult?> AuthSettingsRetrieveAsync()
         {
@@ -39,15 +47,15 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// Update IAM auth runtime settings
+        /// Update
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.Backend.Models.AuthSettingsUpdateResult?> AuthSettingsUpdateAsync(Sdkwork.ClawRouter.Backend.Models.AdminAuthSettingsUpdateRequest body)
+        public async Task<Sdkwork.ClawRouter.Backend.Models.AuthSettingsUpdateResult?> AuthSettingsUpdateAsync()
         {
-            return await _client.PatchAsync<Sdkwork.ClawRouter.Backend.Models.AuthSettingsUpdateResult>(ApiPaths.BackendPath("/system/auth/settings"), body, null, null, "application/json");
+            return await _client.PatchAsync<Sdkwork.ClawRouter.Backend.Models.AuthSettingsUpdateResult>(ApiPaths.BackendPath("/system/auth/settings"), null);
         }
 
         /// <summary>
-        /// Delete one runtime cache instance
+        /// Delete
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.CacheInstancesDeleteResult?> CacheInstancesDeleteAsync(string instanceName)
         {
@@ -55,7 +63,7 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// Refresh one runtime cache instance
+        /// Create
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.CacheInstancesRefreshCreateResult?> CacheInstancesRefreshCreateAsync(string instanceName)
         {
@@ -63,7 +71,7 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// Delete a runtime cache namespace
+        /// Delete
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.CacheNamespacesDeleteResult?> CacheNamespacesDeleteAsync(string namespace_)
         {
@@ -71,20 +79,20 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// List runtime cache keys in a namespace
+        /// List
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.Backend.Models.CacheNamespacesKeysListResult?> CacheNamespacesKeysListAsync(string namespace_, string? limit = null, string? cursor = null)
+        public async Task<Sdkwork.ClawRouter.Backend.Models.CacheNamespacesKeysListResult?> CacheNamespacesKeysListAsync(string namespace_, int? pageSize = null, string? cursor = null)
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
                 new QueryParameterSpec("cursor", cursor, "form", true, false, null),
             });
             return await _client.GetAsync<Sdkwork.ClawRouter.Backend.Models.CacheNamespacesKeysListResult>(ApiPaths.AppendQueryString(ApiPaths.BackendPath($"/system/cache/namespaces/{SerializePathParameter(namespace_, new PathParameterSpec("namespace", "simple", false))}/keys"), queryString));
         }
 
         /// <summary>
-        /// Delete a runtime cache key
+        /// Delete
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.CacheNamespacesKeysDeleteResult?> CacheNamespacesKeysDeleteAsync(string namespace_, string key)
         {
@@ -92,7 +100,7 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// Refresh one runtime cache namespace
+        /// Create
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.CacheNamespacesRefreshCreateResult?> CacheNamespacesRefreshCreateAsync(string namespace_)
         {
@@ -100,7 +108,7 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// Retrieve runtime cache overview
+        /// Retrieve
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.CacheOverviewRetrieveResult?> CacheOverviewRetrieveAsync()
         {
@@ -108,7 +116,7 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// Refresh all runtime cache instances
+        /// Create
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.CacheRefreshCreateResult?> CacheRefreshCreateAsync()
         {
@@ -116,7 +124,7 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// List dashboard data
+        /// Retrieve
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.DashboardAdminOverviewRetrieveResult?> DashboardAdminOverviewRetrieveAsync()
         {
@@ -124,7 +132,7 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// List firewalls
+        /// List
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.FirewallsRulesListResult?> FirewallsRulesListAsync()
         {
@@ -132,15 +140,15 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// Create firewall
+        /// Create
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.Backend.Models.FirewallsRulesCreateResult?> FirewallsRulesCreateAsync(Sdkwork.ClawRouter.Backend.Models.AdminFirewallRuleCreateRequest body)
+        public async Task<Sdkwork.ClawRouter.Backend.Models.FirewallsRulesCreateResult?> FirewallsRulesCreateAsync()
         {
-            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.FirewallsRulesCreateResult>(ApiPaths.BackendPath("/system/firewalls/rules"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.FirewallsRulesCreateResult>(ApiPaths.BackendPath("/system/firewalls/rules"), null);
         }
 
         /// <summary>
-        /// Delete firewall
+        /// Delete
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.FirewallsRulesDeleteResult?> FirewallsRulesDeleteAsync(string ruleId)
         {
@@ -148,7 +156,7 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// List installation status
+        /// Retrieve
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.InstallationStatusRetrieveResult?> InstallationStatusRetrieveAsync()
         {
@@ -156,7 +164,7 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// List referral stats
+        /// List
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.MarketingReferralStatsListResult?> MarketingReferralStatsListAsync()
         {
@@ -164,7 +172,7 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// List alerts
+        /// List
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.MonitorAlertsListResult?> MonitorAlertsListAsync()
         {
@@ -172,7 +180,7 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// List nodes
+        /// List
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.MonitorNodesListResult?> MonitorNodesListAsync()
         {
@@ -180,7 +188,7 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// List performance data
+        /// List
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.MonitorPerformanceListResult?> MonitorPerformanceListAsync()
         {
@@ -188,7 +196,7 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// List token limits
+        /// List
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.RateLimitsApiKeysListResult?> RateLimitsApiKeysListAsync()
         {
@@ -196,15 +204,15 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// Create token limit
+        /// Create
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.Backend.Models.RateLimitsApiKeysCreateResult?> RateLimitsApiKeysCreateAsync(Sdkwork.ClawRouter.Backend.Models.AdminTokenLimitCreateRequest body)
+        public async Task<Sdkwork.ClawRouter.Backend.Models.RateLimitsApiKeysCreateResult?> RateLimitsApiKeysCreateAsync()
         {
-            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.RateLimitsApiKeysCreateResult>(ApiPaths.BackendPath("/system/rate_limits/api_keys"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.RateLimitsApiKeysCreateResult>(ApiPaths.BackendPath("/system/rate_limits/api_keys"), null);
         }
 
         /// <summary>
-        /// List IP limits
+        /// List
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.RateLimitsIpListResult?> RateLimitsIpListAsync()
         {
@@ -212,15 +220,15 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// Create IP limit
+        /// Create
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.Backend.Models.RateLimitsIpCreateResult?> RateLimitsIpCreateAsync(Sdkwork.ClawRouter.Backend.Models.AdminIpLimitCreateRequest body)
+        public async Task<Sdkwork.ClawRouter.Backend.Models.RateLimitsIpCreateResult?> RateLimitsIpCreateAsync()
         {
-            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.RateLimitsIpCreateResult>(ApiPaths.BackendPath("/system/rate_limits/ip"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.RateLimitsIpCreateResult>(ApiPaths.BackendPath("/system/rate_limits/ip"), null);
         }
 
         /// <summary>
-        /// List model limits
+        /// List
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.RateLimitsModelsListResult?> RateLimitsModelsListAsync()
         {
@@ -228,31 +236,23 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// Create model limit
+        /// Create
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.Backend.Models.RateLimitsModelsCreateResult?> RateLimitsModelsCreateAsync(Sdkwork.ClawRouter.Backend.Models.AdminModelLimitCreateRequest body)
+        public async Task<Sdkwork.ClawRouter.Backend.Models.RateLimitsModelsCreateResult?> RateLimitsModelsCreateAsync()
         {
-            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.RateLimitsModelsCreateResult>(ApiPaths.BackendPath("/system/rate_limits/models"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.RateLimitsModelsCreateResult>(ApiPaths.BackendPath("/system/rate_limits/models"), null);
         }
 
         /// <summary>
-        /// List logs
+        /// List
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.Backend.Models.RecordsListResult?> RecordsListAsync(string? page = null, string? pageSize = null, string? user = null, string? token = null, string? model = null)
+        public async Task<Sdkwork.ClawRouter.Backend.Models.RecordsListResult?> RecordsListAsync()
         {
-            var queryString = BuildQueryString(new[]
-            {
-                new QueryParameterSpec("page", page, "form", true, false, null),
-                new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
-                new QueryParameterSpec("user", user, "form", true, false, null),
-                new QueryParameterSpec("token", token, "form", true, false, null),
-                new QueryParameterSpec("model", model, "form", true, false, null),
-            });
-            return await _client.GetAsync<Sdkwork.ClawRouter.Backend.Models.RecordsListResult>(ApiPaths.AppendQueryString(ApiPaths.BackendPath("/system/records"), queryString));
+            return await _client.GetAsync<Sdkwork.ClawRouter.Backend.Models.RecordsListResult>(ApiPaths.BackendPath("/system/records"));
         }
 
         /// <summary>
-        /// Retrieve runtime region settings
+        /// Retrieve
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.RuntimeRegionSettingsRetrieveResult?> RuntimeRegionSettingsRetrieveAsync()
         {
@@ -260,36 +260,31 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// Update runtime region settings
+        /// Update
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.Backend.Models.RuntimeRegionSettingsUpdateResult?> RuntimeRegionSettingsUpdateAsync(Sdkwork.ClawRouter.Backend.Models.AdminRuntimeRegionSettingsUpdateRequest body)
+        public async Task<Sdkwork.ClawRouter.Backend.Models.RuntimeRegionSettingsUpdateResult?> RuntimeRegionSettingsUpdateAsync()
         {
-            return await _client.PatchAsync<Sdkwork.ClawRouter.Backend.Models.RuntimeRegionSettingsUpdateResult>(ApiPaths.BackendPath("/system/runtime_region/settings"), body, null, null, "application/json");
+            return await _client.PatchAsync<Sdkwork.ClawRouter.Backend.Models.RuntimeRegionSettingsUpdateResult>(ApiPaths.BackendPath("/system/runtime_region/settings"), null);
         }
 
         /// <summary>
-        /// List service nodes
+        /// List
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.Backend.Models.ServiceNodesListResult?> ServiceNodesListAsync(string? q = null, string? status = null)
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ServiceNodesListResult?> ServiceNodesListAsync()
         {
-            var queryString = BuildQueryString(new[]
-            {
-                new QueryParameterSpec("q", q, "form", true, false, null),
-                new QueryParameterSpec("status", status, "form", true, false, null),
-            });
-            return await _client.GetAsync<Sdkwork.ClawRouter.Backend.Models.ServiceNodesListResult>(ApiPaths.AppendQueryString(ApiPaths.BackendPath("/system/service_nodes"), queryString));
+            return await _client.GetAsync<Sdkwork.ClawRouter.Backend.Models.ServiceNodesListResult>(ApiPaths.BackendPath("/system/service_nodes"));
         }
 
         /// <summary>
-        /// Create service node
+        /// Create
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.Backend.Models.ServiceNodesCreateResult?> ServiceNodesCreateAsync(Sdkwork.ClawRouter.Backend.Models.AdminServiceNodeCreateRequest body)
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ServiceNodesCreateResult?> ServiceNodesCreateAsync()
         {
-            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ServiceNodesCreateResult>(ApiPaths.BackendPath("/system/service_nodes"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ServiceNodesCreateResult>(ApiPaths.BackendPath("/system/service_nodes"), null);
         }
 
         /// <summary>
-        /// Delete service node
+        /// Delete
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.ServiceNodesDeleteResult?> ServiceNodesDeleteAsync(string nodeId)
         {
@@ -297,23 +292,263 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// Update service node
+        /// Update
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.Backend.Models.ServiceNodesUpdateResult?> ServiceNodesUpdateAsync(string nodeId, Sdkwork.ClawRouter.Backend.Models.AdminServiceNodeUpdateRequest body)
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ServiceNodesUpdateResult?> ServiceNodesUpdateAsync(string nodeId)
         {
-            return await _client.PutAsync<Sdkwork.ClawRouter.Backend.Models.ServiceNodesUpdateResult>(ApiPaths.BackendPath($"/system/service_nodes/{SerializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false))}"), body, null, null, "application/json");
+            return await _client.PutAsync<Sdkwork.ClawRouter.Backend.Models.ServiceNodesUpdateResult>(ApiPaths.BackendPath($"/system/service_nodes/{SerializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false))}"), null);
         }
 
         /// <summary>
-        /// Update service node status
+        /// Update
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.Backend.Models.ServiceNodesStatusUpdateResult?> ServiceNodesStatusUpdateAsync(string nodeId, Sdkwork.ClawRouter.Backend.Models.AdminServiceNodeStatusUpdateRequest body)
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ServiceNodesStatusUpdateResult?> ServiceNodesStatusUpdateAsync(string nodeId)
         {
-            return await _client.PutAsync<Sdkwork.ClawRouter.Backend.Models.ServiceNodesStatusUpdateResult>(ApiPaths.BackendPath($"/system/service_nodes/{SerializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false))}/status"), body, null, null, "application/json");
+            return await _client.PutAsync<Sdkwork.ClawRouter.Backend.Models.ServiceNodesStatusUpdateResult>(ApiPaths.BackendPath($"/system/service_nodes/{SerializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false))}/status"), null);
         }
 
         /// <summary>
-        /// Retrieve site branding and deployment personalization settings
+        /// Create
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsCreateResult?> ShopsCreateAsync()
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ShopsCreateResult>(ApiPaths.BackendPath("/system/shops"), null);
+        }
+
+        /// <summary>
+        /// Update
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsUpdateResult?> ShopsUpdateAsync(string shopId)
+        {
+            return await _client.PatchAsync<Sdkwork.ClawRouter.Backend.Models.ShopsUpdateResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}"), null);
+        }
+
+        /// <summary>
+        /// Approve
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsApproveResult?> ShopsApproveAsync(string shopId)
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ShopsApproveResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/approve"), null);
+        }
+
+        /// <summary>
+        /// Upsert
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsBrandAuthorizationsUpsertResult?> ShopsBrandAuthorizationsUpsertAsync(string shopId)
+        {
+            return await _client.PutAsync<Sdkwork.ClawRouter.Backend.Models.ShopsBrandAuthorizationsUpsertResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/brand_authorizations"), null);
+        }
+
+        /// <summary>
+        /// Update
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsBusinessHoursUpdateResult?> ShopsBusinessHoursUpdateAsync(string shopId)
+        {
+            return await _client.PatchAsync<Sdkwork.ClawRouter.Backend.Models.ShopsBusinessHoursUpdateResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/business_hours"), null);
+        }
+
+        /// <summary>
+        /// Upsert
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsCategoryBindingsUpsertResult?> ShopsCategoryBindingsUpsertAsync(string shopId)
+        {
+            return await _client.PutAsync<Sdkwork.ClawRouter.Backend.Models.ShopsCategoryBindingsUpsertResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/category_bindings"), null);
+        }
+
+        /// <summary>
+        /// Create
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsChannelsCreateResult?> ShopsChannelsCreateAsync(string shopId)
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ShopsChannelsCreateResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/channels"), null);
+        }
+
+        /// <summary>
+        /// Update
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsChannelsUpdateResult?> ShopsChannelsUpdateAsync(string shopId, string channelId)
+        {
+            return await _client.PatchAsync<Sdkwork.ClawRouter.Backend.Models.ShopsChannelsUpdateResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/channels/{SerializePathParameter(channelId, new PathParameterSpec("channelId", "simple", false))}"), null);
+        }
+
+        /// <summary>
+        /// Close
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsCloseResult?> ShopsCloseAsync(string shopId)
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ShopsCloseResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/close"), null);
+        }
+
+        /// <summary>
+        /// Upsert
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsCustomerServicesUpsertResult?> ShopsCustomerServicesUpsertAsync(string shopId)
+        {
+            return await _client.PutAsync<Sdkwork.ClawRouter.Backend.Models.ShopsCustomerServicesUpsertResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/customer_services"), null);
+        }
+
+        /// <summary>
+        /// Update
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsDepositAccountUpdateResult?> ShopsDepositAccountUpdateAsync(string shopId)
+        {
+            return await _client.PatchAsync<Sdkwork.ClawRouter.Backend.Models.ShopsDepositAccountUpdateResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/deposit_account"), null);
+        }
+
+        /// <summary>
+        /// Review
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsDepositAccountReviewResult?> ShopsDepositAccountReviewAsync(string shopId)
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ShopsDepositAccountReviewResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/deposit_account/review"), null);
+        }
+
+        /// <summary>
+        /// Update
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsFulfillmentProfileUpdateResult?> ShopsFulfillmentProfileUpdateAsync(string shopId)
+        {
+            return await _client.PatchAsync<Sdkwork.ClawRouter.Backend.Models.ShopsFulfillmentProfileUpdateResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/fulfillment_profile"), null);
+        }
+
+        /// <summary>
+        /// Create
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsPoliciesCreateResult?> ShopsPoliciesCreateAsync(string shopId)
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ShopsPoliciesCreateResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/policies"), null);
+        }
+
+        /// <summary>
+        /// Update
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsPoliciesUpdateResult?> ShopsPoliciesUpdateAsync(string shopId, string policyId)
+        {
+            return await _client.PatchAsync<Sdkwork.ClawRouter.Backend.Models.ShopsPoliciesUpdateResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/policies/{SerializePathParameter(policyId, new PathParameterSpec("policyId", "simple", false))}"), null);
+        }
+
+        /// <summary>
+        /// Upsert
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsQualificationsUpsertResult?> ShopsQualificationsUpsertAsync(string shopId)
+        {
+            return await _client.PutAsync<Sdkwork.ClawRouter.Backend.Models.ShopsQualificationsUpsertResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/qualifications"), null);
+        }
+
+        /// <summary>
+        /// Reject
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsRejectResult?> ShopsRejectAsync(string shopId)
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ShopsRejectResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/reject"), null);
+        }
+
+        /// <summary>
+        /// Resume
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsResumeResult?> ShopsResumeAsync(string shopId)
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ShopsResumeResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/resume"), null);
+        }
+
+        /// <summary>
+        /// Upsert
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsReturnAddressesUpsertResult?> ShopsReturnAddressesUpsertAsync(string shopId)
+        {
+            return await _client.PutAsync<Sdkwork.ClawRouter.Backend.Models.ShopsReturnAddressesUpsertResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/return_addresses"), null);
+        }
+
+        /// <summary>
+        /// Create
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsRiskSignalsCreateResult?> ShopsRiskSignalsCreateAsync(string shopId)
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ShopsRiskSignalsCreateResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/risk_signals"), null);
+        }
+
+        /// <summary>
+        /// Resolve
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsRiskSignalsResolveResult?> ShopsRiskSignalsResolveAsync(string shopId, string riskSignalId)
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ShopsRiskSignalsResolveResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/risk_signals/{SerializePathParameter(riskSignalId, new PathParameterSpec("riskSignalId", "simple", false))}/resolve"), null);
+        }
+
+        /// <summary>
+        /// Create
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsServiceAreasCreateResult?> ShopsServiceAreasCreateAsync(string shopId)
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ShopsServiceAreasCreateResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/service_areas"), null);
+        }
+
+        /// <summary>
+        /// Update
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsServiceAreasUpdateResult?> ShopsServiceAreasUpdateAsync(string shopId, string serviceAreaId)
+        {
+            return await _client.PatchAsync<Sdkwork.ClawRouter.Backend.Models.ShopsServiceAreasUpdateResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/service_areas/{SerializePathParameter(serviceAreaId, new PathParameterSpec("serviceAreaId", "simple", false))}"), null);
+        }
+
+        /// <summary>
+        /// Update
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsSettlementProfileUpdateResult?> ShopsSettlementProfileUpdateAsync(string shopId)
+        {
+            return await _client.PatchAsync<Sdkwork.ClawRouter.Backend.Models.ShopsSettlementProfileUpdateResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/settlement_profile"), null);
+        }
+
+        /// <summary>
+        /// Approve
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsSettlementProfileApproveResult?> ShopsSettlementProfileApproveAsync(string shopId)
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ShopsSettlementProfileApproveResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/settlement_profile/approve"), null);
+        }
+
+        /// <summary>
+        /// Reject
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsSettlementProfileRejectResult?> ShopsSettlementProfileRejectAsync(string shopId)
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ShopsSettlementProfileRejectResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/settlement_profile/reject"), null);
+        }
+
+        /// <summary>
+        /// Upsert
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsShippingTemplatesUpsertResult?> ShopsShippingTemplatesUpsertAsync(string shopId)
+        {
+            return await _client.PutAsync<Sdkwork.ClawRouter.Backend.Models.ShopsShippingTemplatesUpsertResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/shipping_templates"), null);
+        }
+
+        /// <summary>
+        /// Create review
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsSubmitReviewResult?> ShopsSubmitReviewAsync(string shopId)
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ShopsSubmitReviewResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/submit_review"), null);
+        }
+
+        /// <summary>
+        /// Suspend
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsSuspendResult?> ShopsSuspendAsync(string shopId)
+        {
+            return await _client.PostAsync<Sdkwork.ClawRouter.Backend.Models.ShopsSuspendResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/suspend"), null);
+        }
+
+        /// <summary>
+        /// Update
+        /// </summary>
+        public async Task<Sdkwork.ClawRouter.Backend.Models.ShopsVerificationsUpdateResult?> ShopsVerificationsUpdateAsync(string shopId, string verificationId)
+        {
+            return await _client.PatchAsync<Sdkwork.ClawRouter.Backend.Models.ShopsVerificationsUpdateResult>(ApiPaths.BackendPath($"/system/shops/{SerializePathParameter(shopId, new PathParameterSpec("shopId", "simple", false))}/verifications/{SerializePathParameter(verificationId, new PathParameterSpec("verificationId", "simple", false))}"), null);
+        }
+
+        /// <summary>
+        /// Retrieve
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Backend.Models.SiteSettingsRetrieveResult?> SiteSettingsRetrieveAsync()
         {
@@ -321,11 +556,11 @@ namespace Sdkwork.ClawRouter.Backend.Api
         }
 
         /// <summary>
-        /// Update site branding and deployment personalization settings
+        /// Update
         /// </summary>
-        public async Task<Sdkwork.ClawRouter.Backend.Models.SiteSettingsUpdateResult?> SiteSettingsUpdateAsync(Sdkwork.ClawRouter.Backend.Models.AdminSiteSettingsUpdateRequest body)
+        public async Task<Sdkwork.ClawRouter.Backend.Models.SiteSettingsUpdateResult?> SiteSettingsUpdateAsync()
         {
-            return await _client.PatchAsync<Sdkwork.ClawRouter.Backend.Models.SiteSettingsUpdateResult>(ApiPaths.BackendPath("/system/site/settings"), body, null, null, "application/json");
+            return await _client.PatchAsync<Sdkwork.ClawRouter.Backend.Models.SiteSettingsUpdateResult>(ApiPaths.BackendPath("/system/site/settings"), null);
         }
 
         private sealed record PathParameterSpec(string Name, string Style, bool Explode);

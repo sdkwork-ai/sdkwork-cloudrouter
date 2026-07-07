@@ -1,6 +1,6 @@
+use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
@@ -243,11 +243,7 @@ async fn fetch_channels(
     match state.store.list_channels(query).await {
         Ok(page) => json_success_list_response(
             None,
-            page
-                .items
-                .into_iter()
-                .map(to_safe_item_response)
-                .collect(),
+            page.items.into_iter().map(to_safe_item_response).collect(),
             offset_page_info(page.page_no, page.page_size, page.total),
         ),
         Err(error) => channel_system_response("channel read model is unavailable", error),
@@ -385,7 +381,6 @@ async fn test_channel(
         Err(error) => channel_system_response("channel command store is unavailable", error),
     }
 }
-
 
 fn parse_json_object(
     body: &[u8],

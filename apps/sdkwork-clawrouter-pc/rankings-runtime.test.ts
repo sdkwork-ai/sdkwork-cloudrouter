@@ -169,7 +169,7 @@ test("ranking service uses generated app SDK snapshot history instead of local s
     (url) => {
       const requestUrl = new URL(url, "http://localhost");
       assert.equal(requestUrl.pathname, "/app/v3/api/ai/model_rankings");
-      assert.equal(requestUrl.searchParams.get("limit"), "200");
+      assert.equal(requestUrl.searchParams.get("page_size"), "200");
       return {
         source: {
           sourceLabel: "Usage ranking snapshot",
@@ -254,7 +254,7 @@ test("ranking service uses generated app SDK snapshot history instead of local s
       const snapshot = await RankingService.fetchModelRankings();
 
       assert.deepEqual(captured.map((request) => `${request.method} ${request.url}`), [
-        "GET /app/v3/api/ai/model_rankings?limit=200",
+        "GET /app/v3/api/ai/model_rankings?page_size=200",
       ]);
       assert.equal(snapshot.catalog.length, 2);
       assert.deepEqual(snapshot.catalog.map((model) => ({
@@ -908,7 +908,7 @@ test("ranking service sends page filters through the generated app SDK query con
       assert.equal(requestUrl.searchParams.get("q"), "gpt");
       assert.equal(requestUrl.searchParams.has("search_query"), false);
       assert.equal(requestUrl.searchParams.has("searchQuery"), false);
-      assert.equal(requestUrl.searchParams.get("limit"), "100");
+      assert.equal(requestUrl.searchParams.get("page_size"), "100");
       return {
         source: {
           sourceLabel: "Published model ranking snapshot",
@@ -954,11 +954,11 @@ test("ranking service sends page filters through the generated app SDK query con
         vendorCode: "openai",
         modality: "llm",
         searchQuery: "gpt",
-        limit: 100,
+        pageSize: 100,
       });
 
       assert.deepEqual(captured.map((request) => `${request.method} ${request.url}`), [
-        "GET /app/v3/api/ai/model_rankings?rank_scope=commercial-default&vendor_code=openai&modality=llm&q=gpt&limit=100",
+        "GET /app/v3/api/ai/model_rankings?rank_scope=commercial-default&vendor_code=openai&modality=llm&q=gpt&page_size=100",
       ]);
       assert.equal(snapshot.catalog[0].vendorCode, "openai");
       assert.deepEqual(snapshot.history, []);

@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::sync::Once;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -8,44 +9,37 @@ use sdkwork_claw_config::DatabaseConfig;
 use sdkwork_claw_test_support::{
     api_key_security_config, app_session_config, payment_webhook_config, trusted_subject_config,
 };
+use sdkwork_web_core::encode_unsigned_test_jwt;
+use serde_json::json;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use std::str::FromStr;
 use tower::ServiceExt;
 
 static DB_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+static STANDARD_APP_API_INTEGRATION_ENV: Once = Once::new();
+const TEST_TENANT_ID: i64 = 100_001;
+const TEST_ORGANIZATION_ID: i64 = 0;
+const TEST_USER_ID: i64 = 30;
 
 #[tokio::test]
 async fn database_config_app_model_rankings_route_reads_installed_catalog_snapshot() {
     let database_url = unique_sqlite_url();
-    let router =
-        sdkwork_clawrouter_standalone_gateway::router_with_database_config_api_key_trusted_subject_and_app_session_config(
-            DatabaseConfig::from_url_with_max_connections(database_url.as_str(), 1).unwrap(),
-            api_key_security_config().unwrap(),
-            trusted_subject_config().unwrap(),
-            app_session_config().unwrap(),
-            payment_webhook_config().unwrap(),
-        )
-        .await
-        .unwrap();
+    let router = configured_router(&database_url).await;
 
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/app/v3/api/ai/model_rankings?limit=5")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(app_get_request("/app/v3/api/ai/model_rankings?page_size=5"))
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, response.status());
+    let status = response.status();
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();
+    assert_eq!(StatusCode::OK, status, "{}", String::from_utf8_lossy(&body));
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
+    assert_eq!("offset", payload["data"]["pageInfo"]["mode"]);
     assert_eq!(
         "Published model ranking snapshot",
         payload["data"]["source"]["sourceLabel"]
@@ -75,13 +69,21 @@ async fn database_config_app_model_rankings_route_reads_installed_catalog_snapsh
     for item in items {
         assert!(item["rank"].as_u64().is_some_and(|rank| rank > 0));
         assert!(item["name"].as_str().is_some_and(|name| !name.is_empty()));
-        assert!(item["vendor"]
-            .as_str()
-            .is_some_and(|vendor| !vendor.is_empty()));
-        assert!(item["vendorCode"]
-            .as_str()
-            .is_some_and(|vendor_code| !vendor_code.is_empty()));
-        assert_eq!("LLM", item["modality"]);
+        assert!(
+            item["vendor"]
+                .as_str()
+                .is_some_and(|vendor| !vendor.is_empty())
+        );
+        assert!(
+            item["vendorCode"]
+                .as_str()
+                .is_some_and(|vendor_code| !vendor_code.is_empty())
+        );
+        assert!(
+            item["modality"]
+                .as_str()
+                .is_some_and(|modality| !modality.is_empty())
+        );
         let id = item["id"].as_str().unwrap();
         assert!(
             !id.starts_with(&format!("{expected_observed_at}:")),
@@ -113,13 +115,26 @@ async fn database_config_app_startup_worker_auto_refreshes_rankings_and_records_
         SELECT catalog_key, model
         FROM ai_model
         WHERE status = 1
-          AND tenant_id = 0
-          AND organization_id = 0
+          AND (
+              (tenant_id = ? AND organization_id = ?)
+              OR (tenant_id = 0 AND organization_id = 0)
+          )
           AND catalog_key <> ''
-        ORDER BY rank_score DESC, id ASC
+        ORDER BY
+            CASE
+                WHEN tenant_id = ? AND organization_id = ? THEN 2
+                WHEN tenant_id = 0 AND organization_id = 0 THEN 1
+                ELSE 0
+            END DESC,
+            rank_score DESC,
+            id ASC
         LIMIT 1
         "#,
     )
+    .bind(TEST_TENANT_ID)
+    .bind(TEST_ORGANIZATION_ID)
+    .bind(TEST_TENANT_ID)
+    .bind(TEST_ORGANIZATION_ID)
     .fetch_one(&pool)
     .await
     .unwrap();
@@ -133,12 +148,15 @@ async fn database_config_app_startup_worker_auto_refreshes_rankings_and_records_
              prompt_tokens, completion_tokens, total_tokens, billable_quantity, cost_amount,
              currency, pricing_snapshot, occurred_at)
         VALUES
-            (9001, 'usage-app-startup-ranking', 0, 0, 30, 'app-startup-ranking-request', 1, '{}',
+            (9001, 'usage-app-startup-ranking', ?, ?, ?, 'app-startup-ranking-request', 1, '{}',
              ?, ?, 1, 1, 'llm_input_token', 11,
              800, 400, 1200, '1200', '2.500000',
              'USD', '{"source":"app-startup-test"}', strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '-1 day'))
         "#,
     )
+    .bind(TEST_TENANT_ID)
+    .bind(TEST_ORGANIZATION_ID)
+    .bind(TEST_USER_ID)
     .bind(&catalog_key)
     .bind(&model)
     .execute(&pool)
@@ -146,33 +164,27 @@ async fn database_config_app_startup_worker_auto_refreshes_rankings_and_records_
     .unwrap();
     pool.close().await;
 
-    let router =
-        sdkwork_clawrouter_standalone_gateway::router_with_database_config_api_key_trusted_subject_and_app_session_config(
-            DatabaseConfig::from_url_with_max_connections(database_url.as_str(), 1).unwrap(),
-            api_key_security_config().unwrap(),
-            trusted_subject_config().unwrap(),
-            app_session_config().unwrap(),
-            payment_webhook_config().unwrap(),
-        )
-        .await
-        .unwrap();
+    let router = configured_router(&database_url).await;
 
     let snapshot_count = wait_for_startup_ranking_snapshot(&database_url, &catalog_key).await;
     assert_eq!(1, snapshot_count);
 
     let payload = request_json(
         router,
-        "/app/v3/api/ai/model_rankings?rank_scope=commercial-default&limit=5",
+        "/app/v3/api/ai/model_rankings?rank_scope=commercial-default&page_size=5",
     )
     .await;
-    assert_eq!("2000", payload["code"]);
-    assert!(payload["data"]["items"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|item| item["id"]
-            .as_str()
-            .is_some_and(|id| id.ends_with(&catalog_key))));
+    assert_eq!(0, payload["code"].as_i64().unwrap());
+    assert_eq!("offset", payload["data"]["pageInfo"]["mode"]);
+    assert!(
+        payload["data"]["items"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|item| item["id"]
+                .as_str()
+                .is_some_and(|id| id.ends_with(&catalog_key)))
+    );
 
     let pool = connect_sqlite_for_test(&database_url).await;
     let audit = sqlx::query(
@@ -202,35 +214,24 @@ async fn database_config_app_startup_worker_auto_refreshes_rankings_and_records_
 #[tokio::test]
 async fn database_config_app_models_route_reads_global_commercial_catalog() {
     let database_url = unique_sqlite_url();
-    let router =
-        sdkwork_clawrouter_standalone_gateway::router_with_database_config_api_key_trusted_subject_and_app_session_config(
-            DatabaseConfig::from_url_with_max_connections(database_url.as_str(), 1).unwrap(),
-            api_key_security_config().unwrap(),
-            trusted_subject_config().unwrap(),
-            app_session_config().unwrap(),
-            payment_webhook_config().unwrap(),
-        )
-        .await
-        .unwrap();
+    let router = configured_router(&database_url).await;
 
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/app/v3/api/ai/models?billing_meter=llm_input_token")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(app_get_request(
+            "/app/v3/api/ai/models?billing_meter=llm_input_token&page_size=200",
+        ))
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, response.status());
+    let status = response.status();
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();
+    assert_eq!(StatusCode::OK, status, "{}", String::from_utf8_lossy(&body));
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
+    assert_eq!("offset", payload["data"]["pageInfo"]["mode"]);
     let items = payload["data"]["items"].as_array().unwrap();
     let catalog = sdkwork_models::load_bundled_catalog().unwrap();
     assert!(
@@ -310,16 +311,7 @@ async fn database_config_app_models_route_reads_global_commercial_catalog() {
 #[tokio::test]
 async fn database_config_app_models_route_reads_multimodal_reference_prices() {
     let database_url = unique_sqlite_url();
-    let router =
-        sdkwork_clawrouter_standalone_gateway::router_with_database_config_api_key_trusted_subject_and_app_session_config(
-            DatabaseConfig::from_url_with_max_connections(database_url.as_str(), 1).unwrap(),
-            api_key_security_config().unwrap(),
-            trusted_subject_config().unwrap(),
-            app_session_config().unwrap(),
-            payment_webhook_config().unwrap(),
-        )
-        .await
-        .unwrap();
+    let router = configured_router(&database_url).await;
 
     assert_catalog_meter_contains(
         &router,
@@ -336,7 +328,8 @@ async fn database_config_app_models_route_reads_multimodal_reference_prices() {
     .await;
     assert_catalog_meter_contains(&router, "stt_audio_minute", &["gpt-4o-transcribe"]).await;
     assert_catalog_meter_contains(&router, "music_output_second", &["suno-v5"]).await;
-    assert_catalog_meter_contains(&router, "sfx_result", &["eleven_text_to_sound_v2"]).await;
+    assert_catalog_meter_contains(&router, "audio_output_minute", &["eleven_text_to_sound_v2"])
+        .await;
 }
 
 async fn assert_catalog_meter_contains(
@@ -346,24 +339,20 @@ async fn assert_catalog_meter_contains(
 ) {
     let response = router
         .clone()
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri(format!(
-                    "/app/v3/api/ai/models?billing_meter={billing_meter}"
-                ))
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(app_get_request(&format!(
+            "/app/v3/api/ai/models?billing_meter={billing_meter}&page_size=200"
+        )))
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, response.status());
+    let status = response.status();
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();
+    assert_eq!(StatusCode::OK, status, "{}", String::from_utf8_lossy(&body));
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
+    assert_eq!("offset", payload["data"]["pageInfo"]["mode"]);
     let items = payload["data"]["items"].as_array().unwrap();
 
     for expected_model in expected_models {
@@ -413,30 +402,64 @@ fn assert_model_catalog_has_reference_price(
                 region_code, item["catalogKey"]
             )
         });
-    assert!(price["unitPrice"]
-        .as_str()
-        .is_some_and(|value| !value.is_empty()));
-    assert!(price["currency"]
-        .as_str()
-        .is_some_and(|value| !value.is_empty()));
+    assert!(
+        price["unitPrice"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty())
+    );
+    assert!(
+        price["currency"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty())
+    );
 }
 
 async fn request_json(router: axum::Router, path: &str) -> serde_json::Value {
-    let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri(path)
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    assert_eq!(StatusCode::OK, response.status());
+    let response = router.oneshot(app_get_request(path)).await.unwrap();
+    let status = response.status();
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();
+    assert_eq!(StatusCode::OK, status, "{}", String::from_utf8_lossy(&body));
     serde_json::from_slice(&body).unwrap()
+}
+
+async fn configured_router(database_url: &str) -> axum::Router {
+    enable_standard_app_api_web_framework_for_integration_tests();
+    let database_config = DatabaseConfig::from_url_with_max_connections(database_url, 1).unwrap();
+    let router =
+        sdkwork_clawrouter_standalone_gateway::router_with_database_config_api_key_trusted_subject_and_app_session_config(
+        database_config.clone(),
+        api_key_security_config().unwrap(),
+        trusted_subject_config().unwrap(),
+        app_session_config().unwrap(),
+        payment_webhook_config().unwrap(),
+    )
+    .await
+    .unwrap();
+    sdkwork_clawrouter_standalone_gateway::maybe_wrap_router_with_web_framework_and_database_config(
+        router,
+        &database_config,
+    )
+    .await
+}
+
+fn enable_standard_app_api_web_framework_for_integration_tests() {
+    STANDARD_APP_API_INTEGRATION_ENV.call_once(|| {
+        std::env::set_var("SDKWORK_CLAW_WEB_FRAMEWORK_LEGACY", "false");
+        std::env::set_var("SDKWORK_CLAW_WEB_FRAMEWORK_ENABLED", "true");
+        std::env::set_var("SDKWORK_IAM_ALLOW_DEV_AUTH_FALLBACK", "true");
+        std::env::set_var("SDKWORK_CLAW_MODEL_RANKING_REFRESH_WORKER_ENABLED", "true");
+        std::env::set_var(
+            "SDKWORK_CLAW_MODEL_RANKING_TENANT_ID",
+            TEST_TENANT_ID.to_string(),
+        );
+        std::env::set_var(
+            "SDKWORK_CLAW_MODEL_RANKING_ORGANIZATION_ID",
+            TEST_ORGANIZATION_ID.to_string(),
+        );
+        std::env::set_var("SDKWORK_CLAW_MODEL_RANKING_RUN_ON_STARTUP", "true");
+    });
 }
 
 async fn wait_for_startup_ranking_snapshot(database_url: &str, catalog_key: &str) -> i64 {
@@ -446,14 +469,16 @@ async fn wait_for_startup_ranking_snapshot(database_url: &str, catalog_key: &str
             r#"
             SELECT COUNT(1)
             FROM ai_model_rank_snapshot
-            WHERE tenant_id = 0
-              AND organization_id = 0
+            WHERE tenant_id = ?
+              AND organization_id = ?
               AND rank_scope = 'commercial-default'
               AND catalog_key = ?
               AND request_count = 11
               AND status = 1
             "#,
         )
+        .bind(TEST_TENANT_ID)
+        .bind(TEST_ORGANIZATION_ID)
         .bind(catalog_key)
         .fetch_one(&pool)
         .await
@@ -465,6 +490,39 @@ async fn wait_for_startup_ranking_snapshot(database_url: &str, catalog_key: &str
         tokio::time::sleep(Duration::from_millis(20)).await;
     }
     0
+}
+
+fn app_get_request(uri: &str) -> Request<Body> {
+    let auth_token = encode_unsigned_test_jwt(json!({
+        "token_type": "auth",
+        "tenant_id": TEST_TENANT_ID.to_string(),
+        "organization_id": TEST_ORGANIZATION_ID.to_string(),
+        "user_id": TEST_USER_ID.to_string(),
+        "session_id": "clawrouter-model-rankings-test-session",
+        "app_id": "sdkwork-clawrouter",
+        "auth_level": "password",
+        "login_scope": "TENANT",
+        "subject_type": "user",
+    }));
+    let access_token = encode_unsigned_test_jwt(json!({
+        "token_type": "access",
+        "tenant_id": TEST_TENANT_ID.to_string(),
+        "organization_id": TEST_ORGANIZATION_ID.to_string(),
+        "user_id": TEST_USER_ID.to_string(),
+        "session_id": "clawrouter-model-rankings-test-session",
+        "app_id": "sdkwork-clawrouter",
+        "environment": "dev",
+        "deployment_mode": "local",
+        "login_scope": "TENANT",
+        "subject_type": "user",
+    }));
+    Request::builder()
+        .method("GET")
+        .uri(uri)
+        .header("authorization", format!("Bearer {auth_token}"))
+        .header("Access-Token", access_token)
+        .body(Body::empty())
+        .unwrap()
 }
 
 fn unique_sqlite_url() -> String {

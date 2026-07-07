@@ -238,6 +238,7 @@ sdkwork_account_database_host = { package = "sdkwork-account-database-host", pat
 sdkwork_routes_payment_app_api = { package = "sdkwork-routes-payment-app-api", path = "../sdkwork-payment/crates/sdkwork-routes-payment-app-api" }
 sdkwork_payment_service_host = { package = "sdkwork-payment-service-host", path = "../sdkwork-payment/crates/sdkwork-payment-service-host" }
 sdkwork_payment_database_host = { package = "sdkwork-payment-database-host", path = "../sdkwork-payment/crates/sdkwork-payment-database-host" }
+sdkwork_payment_providers = { package = "sdkwork-payment-providers", path = "../sdkwork-payment/crates/sdkwork-payment-providers" }
 sdkwork_routes_promotion_app_api = { package = "sdkwork-routes-promotion-app-api", path = "../sdkwork-promotion/crates/sdkwork-routes-promotion-app-api" }
 sdkwork_promotion_service_host = { package = "sdkwork-promotion-service-host", path = "../sdkwork-promotion/crates/sdkwork-promotion-service-host" }
 sdkwork_promotion_database_host = { package = "sdkwork-promotion-database-host", path = "../sdkwork-promotion/crates/sdkwork-promotion-database-host" }

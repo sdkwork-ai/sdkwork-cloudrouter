@@ -39,16 +39,36 @@ function createBackendSdkMock() {
   };
 }
 
-function createOverviewEnvelope(overrides: Record<string, unknown> = {}) {
+function createOverviewPayload(overrides: Record<string, unknown> = {}) {
   return {
-    code: 2000,
-    data: {
-      summary: {
-        runtimeTarget: 'service',
-        totalInstances: 1,
-        totalNamespaces: 1,
-        totalEntries: 3,
-        expiredEntries: 0,
+    summary: {
+      runtimeTarget: 'service',
+      totalInstances: 1,
+      totalNamespaces: 1,
+      totalEntries: 3,
+      expiredEntries: 0,
+      cacheHits: 12,
+      cacheMisses: 3,
+      cacheWrites: 8,
+      cacheDeletes: 2,
+      cacheRefreshes: 1,
+      cacheInspections: 4,
+      cacheErrors: 1,
+    },
+    instances: [
+      {
+        name: 'redis-default',
+        providerKind: 'redis_cache',
+        purpose: 'Shared service cache',
+        keyPrefix: 'claw',
+        defaultTtlSeconds: 900,
+        maxEntries: null,
+        connectionProfileName: 'primary-redis',
+        supportsInspect: true,
+        supportsRefresh: true,
+        supportsDelete: true,
+        entryCount: 3,
+        expiredEntryCount: 0,
         cacheHits: 12,
         cacheMisses: 3,
         cacheWrites: 8,
@@ -56,48 +76,76 @@ function createOverviewEnvelope(overrides: Record<string, unknown> = {}) {
         cacheRefreshes: 1,
         cacheInspections: 4,
         cacheErrors: 1,
+        status: 'healthy',
       },
-      instances: [
-        {
-          name: 'redis-default',
-          providerKind: 'redis_cache',
-          purpose: 'Shared service cache',
-          keyPrefix: 'claw',
-          defaultTtlSeconds: 900,
-          maxEntries: null,
-          connectionProfileName: 'primary-redis',
-          supportsInspect: true,
-          supportsRefresh: true,
-          supportsDelete: true,
-          entryCount: 3,
-          expiredEntryCount: 0,
-          cacheHits: 12,
-          cacheMisses: 3,
-          cacheWrites: 8,
-          cacheDeletes: 2,
-          cacheRefreshes: 1,
-          cacheInspections: 4,
-          cacheErrors: 1,
-          status: 'healthy',
-        },
-      ],
-      namespacePolicies: [
-        {
-          namespace: 'auth.qr.challenge',
-          instanceName: 'redis-default',
-          ttlSeconds: 120,
-          scope: 'session',
-          sensitivity: 'credential',
-          failureMode: 'fail_closed',
-          consistency: 'coordination_critical',
-          jitterPercent: 0,
-          staleWhileRevalidateSeconds: 0,
-          tags: ['auth', 'qr'],
-          enabled: true,
-        },
-      ],
-      ...overrides,
-    },
+    ],
+    namespacePolicies: [
+      {
+        namespace: 'auth.qr.challenge',
+        instanceName: 'redis-default',
+        ttlSeconds: 120,
+        scope: 'session',
+        sensitivity: 'credential',
+        failureMode: 'fail_closed',
+        consistency: 'coordination_critical',
+        jitterPercent: 0,
+        staleWhileRevalidateSeconds: 0,
+        tags: ['auth', 'qr'],
+        enabled: true,
+      },
+    ],
+    ...overrides,
+  };
+}
+
+function createOperationOutcome(overrides: Record<string, unknown> = {}) {
+  return {
+    operation: 'delete_key',
+    instanceName: 'redis-default',
+    namespace: 'auth.qr.challenge',
+    cacheKey: 'login-qr-1',
+    deletedEntries: 1,
+    refreshedEntries: 0,
+    status: 'completed',
+    ...overrides,
+  };
+}
+
+function createPageInfo(overrides: Record<string, unknown> = {}) {
+  return {
+    mode: 'cursor',
+    pageSize: 200,
+    hasMore: false,
+    nextCursor: null,
+    ...overrides,
+  };
+}
+
+function createKeyListPayload(overrides: Record<string, unknown> = {}) {
+  return {
+    namespace: 'auth.qr.challenge',
+    instanceName: 'redis-default',
+    scannedItems: 2,
+    returnedItems: 2,
+    scanComplete: true,
+    pageInfo: createPageInfo(),
+    items: [
+      {
+        key: 'login-qr-1',
+        namespace: 'auth.qr.challenge',
+        instanceName: 'redis-default',
+        status: 'active',
+        expiresInSeconds: 119,
+      },
+      {
+        key: 'login-qr-2',
+        namespace: 'auth.qr.challenge',
+        instanceName: 'redis-default',
+        status: 'active',
+        expiresInSeconds: null,
+      },
+    ],
+    ...overrides,
   };
 }
 
@@ -108,7 +156,7 @@ describe('AdminCacheService', () => {
 
   it('loads cache overview through the generated backend SDK and normalizes the response', async () => {
     const backendSdk = createBackendSdkMock();
-    backendSdk.system.cache.overview.retrieve.mockResolvedValue(createOverviewEnvelope());
+    backendSdk.system.cache.overview.retrieve.mockResolvedValue(createOverviewPayload());
     mockedGetBackendClient.mockReturnValue(backendSdk as never);
 
     const overview = await AdminCacheService.fetchOverview();
@@ -152,7 +200,7 @@ describe('AdminCacheService', () => {
 
   it('rejects overview payloads that omit required collection fields', async () => {
     const backendSdk = createBackendSdkMock();
-    backendSdk.system.cache.overview.retrieve.mockResolvedValue(createOverviewEnvelope({ instances: undefined }));
+    backendSdk.system.cache.overview.retrieve.mockResolvedValue(createOverviewPayload({ instances: undefined }));
     mockedGetBackendClient.mockReturnValue(backendSdk as never);
 
     await expect(AdminCacheService.fetchOverview()).rejects.toThrow('Cache instances are required');
@@ -160,7 +208,7 @@ describe('AdminCacheService', () => {
 
   it('rejects overview payloads whose summary counts do not match returned collections', async () => {
     const backendSdk = createBackendSdkMock();
-    backendSdk.system.cache.overview.retrieve.mockResolvedValue(createOverviewEnvelope({
+    backendSdk.system.cache.overview.retrieve.mockResolvedValue(createOverviewPayload({
       summary: {
         runtimeTarget: 'service',
         totalInstances: 2,
@@ -185,7 +233,7 @@ describe('AdminCacheService', () => {
     const backendSdk = createBackendSdkMock();
     mockedGetBackendClient.mockReturnValue(backendSdk as never);
 
-    backendSdk.system.cache.overview.retrieve.mockResolvedValueOnce(createOverviewEnvelope({
+    backendSdk.system.cache.overview.retrieve.mockResolvedValueOnce(createOverviewPayload({
       summary: {
         runtimeTarget: 'service',
         totalInstances: 1,
@@ -203,7 +251,7 @@ describe('AdminCacheService', () => {
     }));
     await expect(AdminCacheService.fetchOverview()).rejects.toThrow('Cache hit metric does not match returned instances');
 
-    backendSdk.system.cache.overview.retrieve.mockResolvedValueOnce(createOverviewEnvelope({
+    backendSdk.system.cache.overview.retrieve.mockResolvedValueOnce(createOverviewPayload({
       summary: {
         runtimeTarget: 'service',
         totalInstances: 1,
@@ -221,7 +269,7 @@ describe('AdminCacheService', () => {
     }));
     await expect(AdminCacheService.fetchOverview()).rejects.toThrow('Cache error metric is lower than returned instance errors');
 
-    backendSdk.system.cache.overview.retrieve.mockResolvedValueOnce(createOverviewEnvelope({
+    backendSdk.system.cache.overview.retrieve.mockResolvedValueOnce(createOverviewPayload({
       summary: {
         runtimeTarget: 'service',
         totalInstances: 1,
@@ -251,7 +299,7 @@ describe('AdminCacheService', () => {
 
   it('rejects namespace policies that use unsupported policy values', async () => {
     const backendSdk = createBackendSdkMock();
-    backendSdk.system.cache.overview.retrieve.mockResolvedValue(createOverviewEnvelope({
+    backendSdk.system.cache.overview.retrieve.mockResolvedValue(createOverviewPayload({
       namespacePolicies: [
         {
           namespace: 'auth.qr.challenge',
@@ -275,35 +323,18 @@ describe('AdminCacheService', () => {
 
   it('routes cache operations through the generated backend SDK', async () => {
     const backendSdk = createBackendSdkMock();
-    const outcome = {
-      code: 2000,
-      data: {
-        operation: 'delete_key',
-        instanceName: 'redis-default',
-        namespace: 'auth.qr.challenge',
-        cacheKey: 'login-qr-1',
-        deletedEntries: 1,
-        refreshedEntries: 0,
-        status: 'completed',
-      },
-    };
+    const outcome = createOperationOutcome();
     backendSdk.system.cache.refresh.create.mockResolvedValue(outcome);
     backendSdk.system.cache.instances.delete.mockResolvedValue({
       ...outcome,
-      data: {
-        ...outcome.data,
-        operation: 'delete_instance',
-        namespace: null,
-        cacheKey: null,
-      },
+      operation: 'delete_instance',
+      namespace: null,
+      cacheKey: null,
     });
     backendSdk.system.cache.instances.refresh.create.mockResolvedValue(outcome);
     backendSdk.system.cache.namespaces.refresh.create.mockResolvedValue({
       ...outcome,
-      data: {
-        ...outcome.data,
-        operation: 'refresh_namespace',
-      },
+      operation: 'refresh_namespace',
     });
     backendSdk.system.cache.namespaces.delete.mockResolvedValue(outcome);
     backendSdk.system.cache.namespaces.keys.delete.mockResolvedValue(outcome);
@@ -333,49 +364,24 @@ describe('AdminCacheService', () => {
 
   it('lists namespace cache keys through the generated backend SDK and normalizes safe metadata only', async () => {
     const backendSdk = createBackendSdkMock();
-    backendSdk.system.cache.namespaces.keys.list.mockResolvedValue({
-      code: 2000,
-      data: {
-        namespace: 'auth.qr.challenge',
-        instanceName: 'redis-default',
-        scannedItems: 2,
-        returnedItems: 2,
-        limit: 200,
-        hasMore: false,
-        scanComplete: true,
-        nextCursor: null,
-        items: [
-          {
-            key: 'login-qr-1',
-            namespace: 'auth.qr.challenge',
-            instanceName: 'redis-default',
-            status: 'active',
-            expiresInSeconds: 119,
-          },
-          {
-            key: 'login-qr-2',
-            namespace: 'auth.qr.challenge',
-            instanceName: 'redis-default',
-            status: 'active',
-            expiresInSeconds: null,
-          },
-        ],
-      },
-    });
+    backendSdk.system.cache.namespaces.keys.list.mockResolvedValue(createKeyListPayload());
     mockedGetBackendClient.mockReturnValue(backendSdk as never);
 
     const keys = await AdminCacheService.listKeys('auth.qr.challenge');
 
-    expect(backendSdk.system.cache.namespaces.keys.list).toHaveBeenCalledWith('auth.qr.challenge', { limit: 200 });
+    expect(backendSdk.system.cache.namespaces.keys.list).toHaveBeenCalledWith('auth.qr.challenge', { pageSize: 200 });
     expect(keys).toEqual({
       namespace: 'auth.qr.challenge',
       instanceName: 'redis-default',
       scannedItems: 2,
       returnedItems: 2,
-      limit: 200,
-      hasMore: false,
       scanComplete: true,
-      nextCursor: null,
+      pageInfo: {
+        mode: 'cursor',
+        pageSize: 200,
+        hasMore: false,
+        nextCursor: null,
+      },
       items: [
         {
           key: 'login-qr-1',
@@ -399,105 +405,89 @@ describe('AdminCacheService', () => {
 
   it('rejects namespace key list payloads whose scanned counts do not match returned items', async () => {
     const backendSdk = createBackendSdkMock();
-    backendSdk.system.cache.namespaces.keys.list.mockResolvedValue({
-      code: 2000,
-      data: {
-        namespace: 'auth.qr.challenge',
-        instanceName: 'redis-default',
-        scannedItems: 2,
-        returnedItems: 2,
-        limit: 200,
-        hasMore: true,
-        scanComplete: false,
-        nextCursor: 'cursor-page-2',
-        items: [
-          {
-            key: 'login-qr-1',
-            namespace: 'auth.qr.challenge',
-            instanceName: 'redis-default',
-            status: 'active',
-            expiresInSeconds: 119,
-          },
-        ],
-      },
-    });
+    backendSdk.system.cache.namespaces.keys.list.mockResolvedValue(createKeyListPayload({
+      scannedItems: 2,
+      returnedItems: 2,
+      scanComplete: false,
+      pageInfo: createPageInfo({ hasMore: true, nextCursor: 'cursor-page-2' }),
+      items: [
+        {
+          key: 'login-qr-1',
+          namespace: 'auth.qr.challenge',
+          instanceName: 'redis-default',
+          status: 'active',
+          expiresInSeconds: 119,
+        },
+      ],
+    }));
     mockedGetBackendClient.mockReturnValue(backendSdk as never);
 
     await expect(AdminCacheService.listKeys('auth.qr.challenge')).rejects.toThrow('Cache returned key count does not match returned items');
   });
 
-  it('passes an explicit safe limit when listing namespace cache keys', async () => {
+  it('passes an explicit safe page size when listing namespace cache keys', async () => {
     const backendSdk = createBackendSdkMock();
-    backendSdk.system.cache.namespaces.keys.list.mockResolvedValue({
-      code: 2000,
-      data: {
-        namespace: 'auth.qr.challenge',
-        instanceName: 'redis-default',
-        scannedItems: 1,
-        returnedItems: 1,
-        limit: 50,
-        hasMore: false,
-        scanComplete: true,
-        nextCursor: null,
-        items: [
-          {
-            key: 'login-qr-1',
-            namespace: 'auth.qr.challenge',
-            instanceName: 'redis-default',
-            status: 'active',
-            expiresInSeconds: 119,
-          },
-        ],
-      },
-    });
+    backendSdk.system.cache.namespaces.keys.list.mockResolvedValue(createKeyListPayload({
+      scannedItems: 1,
+      returnedItems: 1,
+      pageInfo: createPageInfo({ pageSize: 50 }),
+      items: [
+        {
+          key: 'login-qr-1',
+          namespace: 'auth.qr.challenge',
+          instanceName: 'redis-default',
+          status: 'active',
+          expiresInSeconds: 119,
+        },
+      ],
+    }));
     mockedGetBackendClient.mockReturnValue(backendSdk as never);
 
     await expect(AdminCacheService.listKeys('auth.qr.challenge', 50)).resolves.toMatchObject({
       scannedItems: 1,
       returnedItems: 1,
-      limit: 50,
-      hasMore: false,
       scanComplete: true,
-      nextCursor: null,
+      pageInfo: {
+        mode: 'cursor',
+        pageSize: 50,
+        hasMore: false,
+        nextCursor: null,
+      },
     });
 
-    expect(backendSdk.system.cache.namespaces.keys.list).toHaveBeenCalledWith('auth.qr.challenge', { limit: 50 });
+    expect(backendSdk.system.cache.namespaces.keys.list).toHaveBeenCalledWith('auth.qr.challenge', { pageSize: 50 });
   });
 
   it('passes an opaque cursor when loading the next namespace cache key page', async () => {
     const backendSdk = createBackendSdkMock();
-    backendSdk.system.cache.namespaces.keys.list.mockResolvedValue({
-      code: 2000,
-      data: {
-        namespace: 'auth.qr.challenge',
-        instanceName: 'redis-default',
-        scannedItems: 1,
-        returnedItems: 1,
-        limit: 50,
-        hasMore: false,
-        scanComplete: true,
-        nextCursor: null,
-        items: [
-          {
-            key: 'login-qr-3',
-            namespace: 'auth.qr.challenge',
-            instanceName: 'redis-default',
-            status: 'active',
-            expiresInSeconds: 90,
-          },
-        ],
-      },
-    });
+    backendSdk.system.cache.namespaces.keys.list.mockResolvedValue(createKeyListPayload({
+      scannedItems: 1,
+      returnedItems: 1,
+      pageInfo: createPageInfo({ pageSize: 50 }),
+      items: [
+        {
+          key: 'login-qr-3',
+          namespace: 'auth.qr.challenge',
+          instanceName: 'redis-default',
+          status: 'active',
+          expiresInSeconds: 90,
+        },
+      ],
+    }));
     mockedGetBackendClient.mockReturnValue(backendSdk as never);
 
     await expect(AdminCacheService.listKeys('auth.qr.challenge', 50, 'cursor-page-2')).resolves.toMatchObject({
       returnedItems: 1,
-      nextCursor: null,
+      pageInfo: {
+        pageSize: 50,
+        hasMore: false,
+        nextCursor: null,
+      },
       items: [{ key: 'login-qr-3' }],
     });
 
     expect(backendSdk.system.cache.namespaces.keys.list).toHaveBeenCalledWith('auth.qr.challenge', {
-      limit: 50,
+      pageSize: 50,
       cursor: 'cursor-page-2',
     });
   });
@@ -506,52 +496,34 @@ describe('AdminCacheService', () => {
     const backendSdk = createBackendSdkMock();
     mockedGetBackendClient.mockReturnValue(backendSdk as never);
 
-    backendSdk.system.cache.namespaces.keys.list.mockResolvedValueOnce({
-      code: 2000,
-      data: {
-        namespace: 'auth.qr.challenge',
-        instanceName: 'redis-default',
-        scannedItems: 1,
-        returnedItems: 1,
-        limit: 200,
-        hasMore: false,
-        scanComplete: true,
-        nextCursor: null,
-        items: [
-          {
-            key: 'login-qr-1',
-            namespace: 'runtime.invocation',
-            instanceName: 'redis-default',
-            status: 'active',
-            expiresInSeconds: 119,
-          },
-        ],
-      },
-    });
+    backendSdk.system.cache.namespaces.keys.list.mockResolvedValueOnce(createKeyListPayload({
+      scannedItems: 1,
+      returnedItems: 1,
+      items: [
+        {
+          key: 'login-qr-1',
+          namespace: 'runtime.invocation',
+          instanceName: 'redis-default',
+          status: 'active',
+          expiresInSeconds: 119,
+        },
+      ],
+    }));
     await expect(AdminCacheService.listKeys('auth.qr.challenge')).rejects.toThrow('Cache key item namespace does not match list namespace');
 
-    backendSdk.system.cache.namespaces.keys.list.mockResolvedValueOnce({
-      code: 2000,
-      data: {
-        namespace: 'auth.qr.challenge',
-        instanceName: 'redis-default',
-        scannedItems: 1,
-        returnedItems: 1,
-        limit: 200,
-        hasMore: false,
-        scanComplete: true,
-        nextCursor: null,
-        items: [
-          {
-            key: 'login-qr-1',
-            namespace: 'auth.qr.challenge',
-            instanceName: 'redis-default',
-            status: 'active',
-            expiresInSeconds: 'soon',
-          },
-        ],
-      },
-    });
+    backendSdk.system.cache.namespaces.keys.list.mockResolvedValueOnce(createKeyListPayload({
+      scannedItems: 1,
+      returnedItems: 1,
+      items: [
+        {
+          key: 'login-qr-1',
+          namespace: 'auth.qr.challenge',
+          instanceName: 'redis-default',
+          status: 'active',
+          expiresInSeconds: 'soon',
+        },
+      ],
+    }));
     await expect(AdminCacheService.listKeys('auth.qr.challenge')).rejects.toThrow('Cache numeric field is invalid: expiresInSeconds');
   });
 
@@ -559,52 +531,37 @@ describe('AdminCacheService', () => {
     const backendSdk = createBackendSdkMock();
     mockedGetBackendClient.mockReturnValue(backendSdk as never);
 
-    backendSdk.system.cache.namespaces.keys.list.mockResolvedValueOnce({
-      code: 2000,
-      data: {
-        namespace: 'auth.qr.challenge',
-        instanceName: 'redis-default',
-        scannedItems: 2,
-        returnedItems: 1,
-        limit: 1,
-        hasMore: true,
-        scanComplete: false,
-        nextCursor: null,
-        items: [
-          {
-            key: 'login-qr-1',
-            namespace: 'auth.qr.challenge',
-            instanceName: 'redis-default',
-            status: 'active',
-            expiresInSeconds: 119,
-          },
-        ],
-      },
-    });
+    backendSdk.system.cache.namespaces.keys.list.mockResolvedValueOnce(createKeyListPayload({
+      scannedItems: 2,
+      returnedItems: 1,
+      scanComplete: false,
+      pageInfo: createPageInfo({ pageSize: 1, hasMore: true, nextCursor: null }),
+      items: [
+        {
+          key: 'login-qr-1',
+          namespace: 'auth.qr.challenge',
+          instanceName: 'redis-default',
+          status: 'active',
+          expiresInSeconds: 119,
+        },
+      ],
+    }));
     await expect(AdminCacheService.listKeys('auth.qr.challenge')).rejects.toThrow('Cache next cursor is required when more keys are available');
 
-    backendSdk.system.cache.namespaces.keys.list.mockResolvedValueOnce({
-      code: 2000,
-      data: {
-        namespace: 'auth.qr.challenge',
-        instanceName: 'redis-default',
-        scannedItems: 1,
-        returnedItems: 1,
-        limit: 1,
-        hasMore: false,
-        scanComplete: true,
-        nextCursor: 'unexpected-cursor',
-        items: [
-          {
-            key: 'login-qr-1',
-            namespace: 'auth.qr.challenge',
-            instanceName: 'redis-default',
-            status: 'active',
-            expiresInSeconds: 119,
-          },
-        ],
-      },
-    });
+    backendSdk.system.cache.namespaces.keys.list.mockResolvedValueOnce(createKeyListPayload({
+      scannedItems: 1,
+      returnedItems: 1,
+      pageInfo: createPageInfo({ pageSize: 1, nextCursor: 'unexpected-cursor' }),
+      items: [
+        {
+          key: 'login-qr-1',
+          namespace: 'auth.qr.challenge',
+          instanceName: 'redis-default',
+          status: 'active',
+          expiresInSeconds: 119,
+        },
+      ],
+    }));
     await expect(AdminCacheService.listKeys('auth.qr.challenge')).rejects.toThrow('Cache next cursor must be empty after a complete scan');
   });
 });

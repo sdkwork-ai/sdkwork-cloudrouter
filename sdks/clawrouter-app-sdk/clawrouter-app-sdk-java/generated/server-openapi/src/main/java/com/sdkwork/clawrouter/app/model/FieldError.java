@@ -2,15 +2,15 @@ package com.sdkwork.clawrouter.app.model;
 
 
 public class FieldError {
-    private String code;
+    private Integer code;
     private String field;
     private String message;
 
-    public String getCode() {
+    public Integer getCode() {
         return this.code;
     }
 
-    public void setCode(String code) {
+    public void setCode(Integer code) {
         this.code = code;
     }
 

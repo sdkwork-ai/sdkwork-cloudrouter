@@ -1,9 +1,6 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { ApiKeysCreateResult, ApiKeysUpdateResult, SdkWorkCommandData, SdkWorkPageData, UsersSettingsRetrieveResult, UsersSettingsUpdateResult } from '../types';
-
-
 export class IamUsersSettingsApi {
   private client: HttpClient;
 
@@ -13,13 +10,13 @@ export class IamUsersSettingsApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<UsersSettingsRetrieveResult> {
-    return this.client.get<UsersSettingsRetrieveResult>(appApiPath(`/iam/users/settings`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/iam/users/settings`));
   }
 
 /** Update */
-  async update(): Promise<UsersSettingsUpdateResult> {
-    return this.client.put<UsersSettingsUpdateResult>(appApiPath(`/iam/users/settings`));
+  async update(): Promise<Record<string, never>> {
+    return this.client.put<Record<string, never>>(appApiPath(`/iam/users/settings`));
   }
 }
 
@@ -43,23 +40,23 @@ export class IamApiKeysApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/iam/api_keys`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/iam/api_keys`));
   }
 
 /** Create */
-  async create(): Promise<ApiKeysCreateResult> {
-    return this.client.post<ApiKeysCreateResult>(appApiPath(`/iam/api_keys`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/iam/api_keys`));
   }
 
 /** Delete */
-  async delete(apiKeyId: string): Promise<SdkWorkCommandData> {
-    return this.client.delete<SdkWorkCommandData>(appApiPath(`/iam/api_keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}`));
+  async delete(apiKeyId: string): Promise<Record<string, never>> {
+    return this.client.delete<Record<string, never>>(appApiPath(`/iam/api_keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}`));
   }
 
 /** Update */
-  async update(apiKeyId: string): Promise<ApiKeysUpdateResult> {
-    return this.client.patch<ApiKeysUpdateResult>(appApiPath(`/iam/api_keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}`));
+  async update(apiKeyId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(appApiPath(`/iam/api_keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}`));
   }
 }
 

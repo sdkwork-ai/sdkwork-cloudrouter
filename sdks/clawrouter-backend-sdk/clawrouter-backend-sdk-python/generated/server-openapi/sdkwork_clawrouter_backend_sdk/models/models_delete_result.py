@@ -3,12 +3,12 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 if TYPE_CHECKING:
-    from .admin_delete_response import AdminDeleteResponse
+    from .no_data import NoData
 
 
 @dataclass
 class ModelsDeleteResult:
     """Models delete result schema exposed by Claw Router."""
-    code: str
-    data: Optional[AdminDeleteResponse] = None
-    msg: Optional[str] = None
+    code: int
+    data: Any
+    trace_id: str

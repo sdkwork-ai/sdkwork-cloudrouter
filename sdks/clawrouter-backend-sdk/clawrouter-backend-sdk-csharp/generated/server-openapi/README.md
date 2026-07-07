@@ -51,15 +51,8 @@ client.SetHeader("X-Custom-Header", "value");
 ## API Modules
 
 - `client.Ai` - ai API
-- `client.Content` - content API
-- `client.Iam` - iam API
 - `client.Integration` - integration API
-- `client.Mcp` - mcp API
-- `client.Messaging` - messaging API
-- `client.Prompts` - prompts API
-- `client.ServiceProviders` - service_providers API
 - `client.Sites` - sites API
-- `client.Storage` - storage API
 - `client.System` - system API
 
 ## Usage Examples
@@ -67,131 +60,31 @@ client.SetHeader("X-Custom-Header", "value");
 ### ai
 
 ```csharp
-// List groups
+// List
 var result = await client.Ai.ChannelGroupsListAsync();
-Console.WriteLine(result);
-```
-
-### content
-
-```csharp
-// List announcements
-var result = await client.Content.AnnouncementsListAsync();
-Console.WriteLine(result);
-```
-
-### iam
-
-```csharp
-// Delete API key
-var apiKeyId = "1";
-var result = await client.Iam.ApiKeysDeleteAsync(apiKeyId);
 Console.WriteLine(result);
 ```
 
 ### integration
 
 ```csharp
-// List channels
+// List
 var result = await client.Integration.ChannelsListAsync();
-Console.WriteLine(result);
-```
-
-### mcp
-
-```csharp
-// List MCP servers
-var query = new Dictionary<string, object>
-{
-    ["page"] = "page",
-    ["page_size"] = "page-size",
-    ["q"] = "q",
-    ["transport"] = "transport",
-    ["visibility"] = "visibility",
-    ["status"] = "status",
-    ["category_id"] = "1",
-};
-var result = await client.Mcp.ServersListAsync(query);
-Console.WriteLine(result);
-```
-
-### messaging
-
-```csharp
-// Messaging provider accounts list
-var query = new Dictionary<string, object>
-{
-    ["page"] = "page",
-    ["page_size"] = "page-size",
-    ["q"] = "q",
-    ["status"] = "status",
-    ["channel"] = "sms",
-    ["provider_code"] = "ok",
-};
-var result = await client.Messaging.ProviderAccountsListAsync(query);
-Console.WriteLine(result);
-```
-
-### prompts
-
-```csharp
-// List admin prompts
-var query = new Dictionary<string, object>
-{
-    ["page"] = "page",
-    ["page_size"] = "page-size",
-    ["q"] = "q",
-    ["prompt_type"] = "prompt-type",
-    ["visibility"] = "visibility",
-    ["status"] = "status",
-    ["category_id"] = "1",
-};
-var result = await client.Prompts.DefinitionsListAsync(query);
-Console.WriteLine(result);
-```
-
-### service_providers
-
-```csharp
-// Service Provider Adjustments List
-var query = new Dictionary<string, object>
-{
-    ["page"] = "page",
-    ["page_size"] = "page-size",
-    ["status"] = "status",
-    ["provider_id"] = "1",
-    ["seller_provider_id"] = "1",
-    ["buyer_provider_id"] = "1",
-    ["edge_id"] = "1",
-};
-var result = await client.ServiceProviders.AdjustmentsListAsync(query);
 Console.WriteLine(result);
 ```
 
 ### sites
 
 ```csharp
-// List sites
-var query = new Dictionary<string, object>
-{
-    ["q"] = "q",
-};
-var result = await client.Sites.SiteCatalogListAsync(query);
-Console.WriteLine(result);
-```
-
-### storage
-
-```csharp
-// List storage providers
-var result = await client.Storage.OssProvidersListAsync();
+// List
+var result = await client.Sites.SiteCatalogListAsync();
 Console.WriteLine(result);
 ```
 
 ### system
 
 ```csharp
-// Retrieve IAM auth runtime settings
+// Retrieve
 var result = await client.System.AuthSettingsRetrieveAsync();
 Console.WriteLine(result);
 ```

@@ -121,13 +121,22 @@ async fn sqlite_gateway_usage_recorder_upserts_trace_and_usage_fact_without_dupl
     assert_eq!("standard", usage.get::<String, _>("pricing_plan_code"));
     let pricing_snapshot: serde_json::Value =
         serde_json::from_str(&usage.get::<String, _>("pricing_snapshot")).unwrap();
-    assert_eq!("openai", pricing_snapshot["vendor"]["code"].as_i64().unwrap());
+    assert_eq!(
+        "openai",
+        pricing_snapshot["vendor"]["code"].as_i64().unwrap()
+    );
     assert_eq!(
         "openai/gpt-4o-mini",
         pricing_snapshot["model"]["catalogKey"]
     );
-    assert_eq!("openrouter", pricing_snapshot["provider"]["code"].as_i64().unwrap());
-    assert_eq!("standard", pricing_snapshot["pricingPlan"]["code"].as_i64().unwrap());
+    assert_eq!(
+        "openrouter",
+        pricing_snapshot["provider"]["code"].as_i64().unwrap()
+    );
+    assert_eq!(
+        "standard",
+        pricing_snapshot["pricingPlan"]["code"].as_i64().unwrap()
+    );
     assert_eq!("1.000000", pricing_snapshot["multipliers"]["rate"]);
     assert_eq!("1.320000", pricing_snapshot["multipliers"]["reference"]);
     assert_eq!(

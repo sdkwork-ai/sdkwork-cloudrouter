@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::api::paths::backend_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{AdminAuthSettingsUpdateRequest, AdminFirewallRuleCreateRequest, AdminIpLimitCreateRequest, AdminModelLimitCreateRequest, AdminRuntimeRegionSettingsUpdateRequest, AdminServiceNodeCreateRequest, AdminServiceNodeStatusUpdateRequest, AdminServiceNodeUpdateRequest, AdminSiteSettingsUpdateRequest, AdminTokenLimitCreateRequest, AnalyticsAdminOverviewRetrieveResult, AuthSettingsRetrieveResult, AuthSettingsUpdateResult, CacheInstancesDeleteResult, CacheInstancesRefreshCreateResult, CacheNamespacesDeleteResult, CacheNamespacesKeysDeleteResult, CacheNamespacesKeysListResult, CacheNamespacesRefreshCreateResult, CacheOverviewRetrieveResult, CacheRefreshCreateResult, DashboardAdminOverviewRetrieveResult, FirewallsRulesCreateResult, FirewallsRulesDeleteResult, FirewallsRulesListResult, InstallationStatusRetrieveResult, MarketingReferralStatsListResult, MonitorAlertsListResult, MonitorNodesListResult, MonitorPerformanceListResult, RateLimitsApiKeysCreateResult, RateLimitsApiKeysListResult, RateLimitsIpCreateResult, RateLimitsIpListResult, RateLimitsModelsCreateResult, RateLimitsModelsListResult, RecordsListResult, RuntimeRegionSettingsRetrieveResult, RuntimeRegionSettingsUpdateResult, ServiceNodesCreateResult, ServiceNodesDeleteResult, ServiceNodesListResult, ServiceNodesStatusUpdateResult, ServiceNodesUpdateResult, SiteSettingsRetrieveResult, SiteSettingsUpdateResult};
+use crate::models::{AfterSalesReviewsCreateResult, AnalyticsAdminOverviewRetrieveResult, AuthSettingsRetrieveResult, AuthSettingsUpdateResult, CacheInstancesDeleteResult, CacheInstancesRefreshCreateResult, CacheNamespacesDeleteResult, CacheNamespacesKeysDeleteResult, CacheNamespacesKeysListResult, CacheNamespacesRefreshCreateResult, CacheOverviewRetrieveResult, CacheRefreshCreateResult, DashboardAdminOverviewRetrieveResult, FirewallsRulesCreateResult, FirewallsRulesDeleteResult, FirewallsRulesListResult, InstallationStatusRetrieveResult, MarketingReferralStatsListResult, MonitorAlertsListResult, MonitorNodesListResult, MonitorPerformanceListResult, RateLimitsApiKeysCreateResult, RateLimitsApiKeysListResult, RateLimitsIpCreateResult, RateLimitsIpListResult, RateLimitsModelsCreateResult, RateLimitsModelsListResult, RecordsListResult, RuntimeRegionSettingsRetrieveResult, RuntimeRegionSettingsUpdateResult, ServiceNodesCreateResult, ServiceNodesDeleteResult, ServiceNodesListResult, ServiceNodesStatusUpdateResult, ServiceNodesUpdateResult, ShopsApproveResult, ShopsBrandAuthorizationsUpsertResult, ShopsBusinessHoursUpdateResult, ShopsCategoryBindingsUpsertResult, ShopsChannelsCreateResult, ShopsChannelsUpdateResult, ShopsCloseResult, ShopsCreateResult, ShopsCustomerServicesUpsertResult, ShopsDepositAccountReviewResult, ShopsDepositAccountUpdateResult, ShopsFulfillmentProfileUpdateResult, ShopsPoliciesCreateResult, ShopsPoliciesUpdateResult, ShopsQualificationsUpsertResult, ShopsRejectResult, ShopsResumeResult, ShopsReturnAddressesUpsertResult, ShopsRiskSignalsCreateResult, ShopsRiskSignalsResolveResult, ShopsServiceAreasCreateResult, ShopsServiceAreasUpdateResult, ShopsSettlementProfileApproveResult, ShopsSettlementProfileRejectResult, ShopsSettlementProfileUpdateResult, ShopsShippingTemplatesUpsertResult, ShopsSubmitReviewResult, ShopsSuspendResult, ShopsUpdateResult, ShopsVerificationsUpdateResult, SiteSettingsRetrieveResult, SiteSettingsUpdateResult};
 
 #[derive(Clone)]
 pub struct SystemApi {
@@ -15,241 +15,416 @@ impl SystemApi {
         Self { client }
     }
 
-    /// List overview
-    pub async fn analytics_admin_overview_retrieve(&self, time_range: Option<&str>, start_time: Option<&str>, end_time: Option<&str>, limit: Option<&str>) -> Result<AnalyticsAdminOverviewRetrieveResult, SdkworkError> {
+    /// Create
+    pub async fn after_sales_reviews_create(&self, after_sales_request_id: &str) -> Result<AfterSalesReviewsCreateResult, SdkworkError> {
+        let path = backend_path(&format!("/system/after_sales/requests/{}/reviews", serialize_path_parameter(after_sales_request_id, PathParameterSpec::new("afterSalesRequestId", "simple", false))));
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Retrieve
+    pub async fn analytics_admin_overview_retrieve(&self, time_range: Option<&str>, start_time: Option<&str>, end_time: Option<&str>, ranking_size: Option<i64>) -> Result<AnalyticsAdminOverviewRetrieveResult, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("time_range", time_range, "form", true, false, None),
             QueryParameterSpec::new("start_time", start_time, "form", true, false, None),
             QueryParameterSpec::new("end_time", end_time, "form", true, false, None),
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("ranking_size", ranking_size, "form", true, false, None),
         ]);
         let path = append_query_string(backend_path(&"/system/analytics/admin/overview".to_string()), &query);
         self.client.get(&path, None, None).await
     }
 
-    /// Retrieve IAM auth runtime settings
+    /// Retrieve
     pub async fn auth_settings_retrieve(&self) -> Result<AuthSettingsRetrieveResult, SdkworkError> {
         let path = backend_path(&"/system/auth/settings".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// Update IAM auth runtime settings
-    pub async fn auth_settings_update(&self, body: &AdminAuthSettingsUpdateRequest) -> Result<AuthSettingsUpdateResult, SdkworkError> {
+    /// Update
+    pub async fn auth_settings_update(&self) -> Result<AuthSettingsUpdateResult, SdkworkError> {
         let path = backend_path(&"/system/auth/settings".to_string());
-        self.client.patch(&path, Some(body), None, None, Some("application/json")).await
+        self.client.patch(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// Delete one runtime cache instance
+    /// Delete
     pub async fn cache_instances_delete(&self, instance_name: &str) -> Result<CacheInstancesDeleteResult, SdkworkError> {
         let path = backend_path(&format!("/system/cache/instances/{}", serialize_path_parameter(instance_name, PathParameterSpec::new("instanceName", "simple", false))));
         self.client.delete(&path, None, None).await
     }
 
-    /// Refresh one runtime cache instance
+    /// Create
     pub async fn cache_instances_refresh_create(&self, instance_name: &str) -> Result<CacheInstancesRefreshCreateResult, SdkworkError> {
         let path = backend_path(&format!("/system/cache/instances/{}/refresh", serialize_path_parameter(instance_name, PathParameterSpec::new("instanceName", "simple", false))));
         self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// Delete a runtime cache namespace
+    /// Delete
     pub async fn cache_namespaces_delete(&self, namespace: &str) -> Result<CacheNamespacesDeleteResult, SdkworkError> {
         let path = backend_path(&format!("/system/cache/namespaces/{}", serialize_path_parameter(namespace, PathParameterSpec::new("namespace", "simple", false))));
         self.client.delete(&path, None, None).await
     }
 
-    /// List runtime cache keys in a namespace
-    pub async fn cache_namespaces_keys_list(&self, namespace: &str, limit: Option<&str>, cursor: Option<&str>) -> Result<CacheNamespacesKeysListResult, SdkworkError> {
+    /// List
+    pub async fn cache_namespaces_keys_list(&self, namespace: &str, page_size: Option<i64>, cursor: Option<&str>) -> Result<CacheNamespacesKeysListResult, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
             QueryParameterSpec::new("cursor", cursor, "form", true, false, None),
         ]);
         let path = append_query_string(backend_path(&format!("/system/cache/namespaces/{}/keys", serialize_path_parameter(namespace, PathParameterSpec::new("namespace", "simple", false)))), &query);
         self.client.get(&path, None, None).await
     }
 
-    /// Delete a runtime cache key
+    /// Delete
     pub async fn cache_namespaces_keys_delete(&self, namespace: &str, key: &str) -> Result<CacheNamespacesKeysDeleteResult, SdkworkError> {
         let path = backend_path(&format!("/system/cache/namespaces/{}/keys/{}", serialize_path_parameter(namespace, PathParameterSpec::new("namespace", "simple", false)), serialize_path_parameter(key, PathParameterSpec::new("key", "simple", false))));
         self.client.delete(&path, None, None).await
     }
 
-    /// Refresh one runtime cache namespace
+    /// Create
     pub async fn cache_namespaces_refresh_create(&self, namespace: &str) -> Result<CacheNamespacesRefreshCreateResult, SdkworkError> {
         let path = backend_path(&format!("/system/cache/namespaces/{}/refresh", serialize_path_parameter(namespace, PathParameterSpec::new("namespace", "simple", false))));
         self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// Retrieve runtime cache overview
+    /// Retrieve
     pub async fn cache_overview_retrieve(&self) -> Result<CacheOverviewRetrieveResult, SdkworkError> {
         let path = backend_path(&"/system/cache/overview".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// Refresh all runtime cache instances
+    /// Create
     pub async fn cache_refresh_create(&self) -> Result<CacheRefreshCreateResult, SdkworkError> {
         let path = backend_path(&"/system/cache/refresh".to_string());
         self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// List dashboard data
+    /// Retrieve
     pub async fn dashboard_admin_overview_retrieve(&self) -> Result<DashboardAdminOverviewRetrieveResult, SdkworkError> {
         let path = backend_path(&"/system/dashboard/admin/overview".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// List firewalls
+    /// List
     pub async fn firewalls_rules_list(&self) -> Result<FirewallsRulesListResult, SdkworkError> {
         let path = backend_path(&"/system/firewalls/rules".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// Create firewall
-    pub async fn firewalls_rules_create(&self, body: &AdminFirewallRuleCreateRequest) -> Result<FirewallsRulesCreateResult, SdkworkError> {
+    /// Create
+    pub async fn firewalls_rules_create(&self) -> Result<FirewallsRulesCreateResult, SdkworkError> {
         let path = backend_path(&"/system/firewalls/rules".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// Delete firewall
+    /// Delete
     pub async fn firewalls_rules_delete(&self, rule_id: &str) -> Result<FirewallsRulesDeleteResult, SdkworkError> {
         let path = backend_path(&format!("/system/firewalls/rules/{}", serialize_path_parameter(rule_id, PathParameterSpec::new("ruleId", "simple", false))));
         self.client.delete(&path, None, None).await
     }
 
-    /// List installation status
+    /// Retrieve
     pub async fn installation_status_retrieve(&self) -> Result<InstallationStatusRetrieveResult, SdkworkError> {
         let path = backend_path(&"/system/installation/status".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// List referral stats
+    /// List
     pub async fn marketing_referral_stats_list(&self) -> Result<MarketingReferralStatsListResult, SdkworkError> {
         let path = backend_path(&"/system/marketing/referral_stats".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// List alerts
+    /// List
     pub async fn monitor_alerts_list(&self) -> Result<MonitorAlertsListResult, SdkworkError> {
         let path = backend_path(&"/system/monitor/alerts".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// List nodes
+    /// List
     pub async fn monitor_nodes_list(&self) -> Result<MonitorNodesListResult, SdkworkError> {
         let path = backend_path(&"/system/monitor/nodes".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// List performance data
+    /// List
     pub async fn monitor_performance_list(&self) -> Result<MonitorPerformanceListResult, SdkworkError> {
         let path = backend_path(&"/system/monitor/performance".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// List token limits
+    /// List
     pub async fn rate_limits_api_keys_list(&self) -> Result<RateLimitsApiKeysListResult, SdkworkError> {
         let path = backend_path(&"/system/rate_limits/api_keys".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// Create token limit
-    pub async fn rate_limits_api_keys_create(&self, body: &AdminTokenLimitCreateRequest) -> Result<RateLimitsApiKeysCreateResult, SdkworkError> {
+    /// Create
+    pub async fn rate_limits_api_keys_create(&self) -> Result<RateLimitsApiKeysCreateResult, SdkworkError> {
         let path = backend_path(&"/system/rate_limits/api_keys".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// List IP limits
+    /// List
     pub async fn rate_limits_ip_list(&self) -> Result<RateLimitsIpListResult, SdkworkError> {
         let path = backend_path(&"/system/rate_limits/ip".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// Create IP limit
-    pub async fn rate_limits_ip_create(&self, body: &AdminIpLimitCreateRequest) -> Result<RateLimitsIpCreateResult, SdkworkError> {
+    /// Create
+    pub async fn rate_limits_ip_create(&self) -> Result<RateLimitsIpCreateResult, SdkworkError> {
         let path = backend_path(&"/system/rate_limits/ip".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// List model limits
+    /// List
     pub async fn rate_limits_models_list(&self) -> Result<RateLimitsModelsListResult, SdkworkError> {
         let path = backend_path(&"/system/rate_limits/models".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// Create model limit
-    pub async fn rate_limits_models_create(&self, body: &AdminModelLimitCreateRequest) -> Result<RateLimitsModelsCreateResult, SdkworkError> {
+    /// Create
+    pub async fn rate_limits_models_create(&self) -> Result<RateLimitsModelsCreateResult, SdkworkError> {
         let path = backend_path(&"/system/rate_limits/models".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// List logs
-    pub async fn records_list(&self, page: Option<&str>, page_size: Option<&str>, user: Option<&str>, token: Option<&str>, model: Option<&str>) -> Result<RecordsListResult, SdkworkError> {
-        let query = build_query_string(&[
-            QueryParameterSpec::new("page", page, "form", true, false, None),
-            QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
-            QueryParameterSpec::new("user", user, "form", true, false, None),
-            QueryParameterSpec::new("token", token, "form", true, false, None),
-            QueryParameterSpec::new("model", model, "form", true, false, None),
-        ]);
-        let path = append_query_string(backend_path(&"/system/records".to_string()), &query);
+    /// List
+    pub async fn records_list(&self) -> Result<RecordsListResult, SdkworkError> {
+        let path = backend_path(&"/system/records".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// Retrieve runtime region settings
+    /// Retrieve
     pub async fn runtime_region_settings_retrieve(&self) -> Result<RuntimeRegionSettingsRetrieveResult, SdkworkError> {
         let path = backend_path(&"/system/runtime_region/settings".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// Update runtime region settings
-    pub async fn runtime_region_settings_update(&self, body: &AdminRuntimeRegionSettingsUpdateRequest) -> Result<RuntimeRegionSettingsUpdateResult, SdkworkError> {
+    /// Update
+    pub async fn runtime_region_settings_update(&self) -> Result<RuntimeRegionSettingsUpdateResult, SdkworkError> {
         let path = backend_path(&"/system/runtime_region/settings".to_string());
-        self.client.patch(&path, Some(body), None, None, Some("application/json")).await
+        self.client.patch(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// List service nodes
-    pub async fn service_nodes_list(&self, q: Option<&str>, status: Option<&str>) -> Result<ServiceNodesListResult, SdkworkError> {
-        let query = build_query_string(&[
-            QueryParameterSpec::new("q", q, "form", true, false, None),
-            QueryParameterSpec::new("status", status, "form", true, false, None),
-        ]);
-        let path = append_query_string(backend_path(&"/system/service_nodes".to_string()), &query);
+    /// List
+    pub async fn service_nodes_list(&self) -> Result<ServiceNodesListResult, SdkworkError> {
+        let path = backend_path(&"/system/service_nodes".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// Create service node
-    pub async fn service_nodes_create(&self, body: &AdminServiceNodeCreateRequest) -> Result<ServiceNodesCreateResult, SdkworkError> {
+    /// Create
+    pub async fn service_nodes_create(&self) -> Result<ServiceNodesCreateResult, SdkworkError> {
         let path = backend_path(&"/system/service_nodes".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// Delete service node
+    /// Delete
     pub async fn service_nodes_delete(&self, node_id: &str) -> Result<ServiceNodesDeleteResult, SdkworkError> {
         let path = backend_path(&format!("/system/service_nodes/{}", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
         self.client.delete(&path, None, None).await
     }
 
-    /// Update service node
-    pub async fn service_nodes_update(&self, node_id: &str, body: &AdminServiceNodeUpdateRequest) -> Result<ServiceNodesUpdateResult, SdkworkError> {
+    /// Update
+    pub async fn service_nodes_update(&self, node_id: &str) -> Result<ServiceNodesUpdateResult, SdkworkError> {
         let path = backend_path(&format!("/system/service_nodes/{}", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
-        self.client.put(&path, Some(body), None, None, Some("application/json")).await
+        self.client.put(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// Update service node status
-    pub async fn service_nodes_status_update(&self, node_id: &str, body: &AdminServiceNodeStatusUpdateRequest) -> Result<ServiceNodesStatusUpdateResult, SdkworkError> {
+    /// Update
+    pub async fn service_nodes_status_update(&self, node_id: &str) -> Result<ServiceNodesStatusUpdateResult, SdkworkError> {
         let path = backend_path(&format!("/system/service_nodes/{}/status", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
-        self.client.put(&path, Some(body), None, None, Some("application/json")).await
+        self.client.put(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// Retrieve site branding and deployment personalization settings
+    /// Create
+    pub async fn shops_create(&self) -> Result<ShopsCreateResult, SdkworkError> {
+        let path = backend_path(&"/system/shops".to_string());
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Update
+    pub async fn shops_update(&self, shop_id: &str) -> Result<ShopsUpdateResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.patch(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Approve
+    pub async fn shops_approve(&self, shop_id: &str) -> Result<ShopsApproveResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/approve", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Upsert
+    pub async fn shops_brand_authorizations_upsert(&self, shop_id: &str) -> Result<ShopsBrandAuthorizationsUpsertResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/brand_authorizations", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.put(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Update
+    pub async fn shops_business_hours_update(&self, shop_id: &str) -> Result<ShopsBusinessHoursUpdateResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/business_hours", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.patch(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Upsert
+    pub async fn shops_category_bindings_upsert(&self, shop_id: &str) -> Result<ShopsCategoryBindingsUpsertResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/category_bindings", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.put(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Create
+    pub async fn shops_channels_create(&self, shop_id: &str) -> Result<ShopsChannelsCreateResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/channels", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Update
+    pub async fn shops_channels_update(&self, shop_id: &str, channel_id: &str) -> Result<ShopsChannelsUpdateResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/channels/{}", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false)), serialize_path_parameter(channel_id, PathParameterSpec::new("channelId", "simple", false))));
+        self.client.patch(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Close
+    pub async fn shops_close(&self, shop_id: &str) -> Result<ShopsCloseResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/close", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Upsert
+    pub async fn shops_customer_services_upsert(&self, shop_id: &str) -> Result<ShopsCustomerServicesUpsertResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/customer_services", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.put(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Update
+    pub async fn shops_deposit_account_update(&self, shop_id: &str) -> Result<ShopsDepositAccountUpdateResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/deposit_account", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.patch(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Review
+    pub async fn shops_deposit_account_review(&self, shop_id: &str) -> Result<ShopsDepositAccountReviewResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/deposit_account/review", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Update
+    pub async fn shops_fulfillment_profile_update(&self, shop_id: &str) -> Result<ShopsFulfillmentProfileUpdateResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/fulfillment_profile", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.patch(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Create
+    pub async fn shops_policies_create(&self, shop_id: &str) -> Result<ShopsPoliciesCreateResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/policies", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Update
+    pub async fn shops_policies_update(&self, shop_id: &str, policy_id: &str) -> Result<ShopsPoliciesUpdateResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/policies/{}", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false)), serialize_path_parameter(policy_id, PathParameterSpec::new("policyId", "simple", false))));
+        self.client.patch(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Upsert
+    pub async fn shops_qualifications_upsert(&self, shop_id: &str) -> Result<ShopsQualificationsUpsertResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/qualifications", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.put(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Reject
+    pub async fn shops_reject(&self, shop_id: &str) -> Result<ShopsRejectResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/reject", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Resume
+    pub async fn shops_resume(&self, shop_id: &str) -> Result<ShopsResumeResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/resume", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Upsert
+    pub async fn shops_return_addresses_upsert(&self, shop_id: &str) -> Result<ShopsReturnAddressesUpsertResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/return_addresses", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.put(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Create
+    pub async fn shops_risk_signals_create(&self, shop_id: &str) -> Result<ShopsRiskSignalsCreateResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/risk_signals", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Resolve
+    pub async fn shops_risk_signals_resolve(&self, shop_id: &str, risk_signal_id: &str) -> Result<ShopsRiskSignalsResolveResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/risk_signals/{}/resolve", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false)), serialize_path_parameter(risk_signal_id, PathParameterSpec::new("riskSignalId", "simple", false))));
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Create
+    pub async fn shops_service_areas_create(&self, shop_id: &str) -> Result<ShopsServiceAreasCreateResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/service_areas", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Update
+    pub async fn shops_service_areas_update(&self, shop_id: &str, service_area_id: &str) -> Result<ShopsServiceAreasUpdateResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/service_areas/{}", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false)), serialize_path_parameter(service_area_id, PathParameterSpec::new("serviceAreaId", "simple", false))));
+        self.client.patch(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Update
+    pub async fn shops_settlement_profile_update(&self, shop_id: &str) -> Result<ShopsSettlementProfileUpdateResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/settlement_profile", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.patch(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Approve
+    pub async fn shops_settlement_profile_approve(&self, shop_id: &str) -> Result<ShopsSettlementProfileApproveResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/settlement_profile/approve", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Reject
+    pub async fn shops_settlement_profile_reject(&self, shop_id: &str) -> Result<ShopsSettlementProfileRejectResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/settlement_profile/reject", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Upsert
+    pub async fn shops_shipping_templates_upsert(&self, shop_id: &str) -> Result<ShopsShippingTemplatesUpsertResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/shipping_templates", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.put(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Create review
+    pub async fn shops_submit_review(&self, shop_id: &str) -> Result<ShopsSubmitReviewResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/submit_review", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Suspend
+    pub async fn shops_suspend(&self, shop_id: &str) -> Result<ShopsSuspendResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/suspend", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false))));
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Update
+    pub async fn shops_verifications_update(&self, shop_id: &str, verification_id: &str) -> Result<ShopsVerificationsUpdateResult, SdkworkError> {
+        let path = backend_path(&format!("/system/shops/{}/verifications/{}", serialize_path_parameter(shop_id, PathParameterSpec::new("shopId", "simple", false)), serialize_path_parameter(verification_id, PathParameterSpec::new("verificationId", "simple", false))));
+        self.client.patch(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    /// Retrieve
     pub async fn site_settings_retrieve(&self) -> Result<SiteSettingsRetrieveResult, SdkworkError> {
         let path = backend_path(&"/system/site/settings".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// Update site branding and deployment personalization settings
-    pub async fn site_settings_update(&self, body: &AdminSiteSettingsUpdateRequest) -> Result<SiteSettingsUpdateResult, SdkworkError> {
+    /// Update
+    pub async fn site_settings_update(&self) -> Result<SiteSettingsUpdateResult, SdkworkError> {
         let path = backend_path(&"/system/site/settings".to_string());
-        self.client.patch(&path, Some(body), None, None, Some("application/json")).await
+        self.client.patch(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
 }

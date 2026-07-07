@@ -9,8 +9,7 @@ const SQLITE_USAGE_SETTLEMENT_STORE: &str =
 #[test]
 fn sqlite_usage_settlement_upsert_never_reopens_successful_bridge() {
     assert!(
-        SQLITE_USAGE_SETTLEMENT_STORE
-            .contains("WHERE commerce_settlement.settlement_status <> ?"),
+        SQLITE_USAGE_SETTLEMENT_STORE.contains("WHERE commerce_settlement.settlement_status <> ?"),
         "SQLite usage settlement upsert must not overwrite successful settlement bridge rows"
     );
     assert!(
@@ -131,11 +130,10 @@ async fn sqlite_usage_settlement_debits_appbase_points_once_and_links_usage_to_l
         .get::<String, _>("remark")
         .contains("usage_request=req-usage-501"));
 
-    let usage =
-        sqlx::query("SELECT settlement_status, settlement_id FROM ai_usage WHERE id = 501")
-            .fetch_one(&pool)
-            .await
-            .unwrap();
+    let usage = sqlx::query("SELECT settlement_status, settlement_id FROM ai_usage WHERE id = 501")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert_eq!(2, usage.get::<i64, _>("settlement_status"));
     assert_eq!(settlement_id, usage.get::<i64, _>("settlement_id"));
 }

@@ -13,216 +13,240 @@ public class AiApi {
         this.client = client;
     }
 
-    /** List groups */
+    /** List */
     public ChannelGroupsListResult channelGroupsList() throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/ai/channel_groups"));
         return client.convertValue(raw, new TypeReference<ChannelGroupsListResult>() {});
     }
 
-    /** Create group */
-    public ChannelGroupsCreateResult channelGroupsCreate(AdminChannelGroupCreateRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.backendPath("/ai/channel_groups"), body, null, null, "application/json");
+    /** Create */
+    public ChannelGroupsCreateResult channelGroupsCreate() throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/ai/channel_groups"), null);
         return client.convertValue(raw, new TypeReference<ChannelGroupsCreateResult>() {});
     }
 
-    /** Delete group */
+    /** Delete */
     public ChannelGroupsDeleteResult channelGroupsDelete(String channelGroupId) throws Exception {
         Object raw = client.delete(ApiPaths.backendPath("/ai/channel_groups/" + serializePathParameter(channelGroupId, new PathParameterSpec("channelGroupId", "simple", false)) + ""));
         return client.convertValue(raw, new TypeReference<ChannelGroupsDeleteResult>() {});
     }
 
-    /** Update group */
-    public ChannelGroupsUpdateResult channelGroupsUpdate(String channelGroupId, AdminChannelGroupUpdateRequest body) throws Exception {
-        Object raw = client.patch(ApiPaths.backendPath("/ai/channel_groups/" + serializePathParameter(channelGroupId, new PathParameterSpec("channelGroupId", "simple", false)) + ""), body, null, null, "application/json");
+    /** Update */
+    public ChannelGroupsUpdateResult channelGroupsUpdate(String channelGroupId) throws Exception {
+        Object raw = client.patch(ApiPaths.backendPath("/ai/channel_groups/" + serializePathParameter(channelGroupId, new PathParameterSpec("channelGroupId", "simple", false)) + ""), null);
         return client.convertValue(raw, new TypeReference<ChannelGroupsUpdateResult>() {});
     }
 
-    /** List group channel bindings */
+    /** List */
     public ChannelGroupsChannelBindingsListResult channelGroupsBindingsList(String channelGroupId) throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/ai/channel_groups/" + serializePathParameter(channelGroupId, new PathParameterSpec("channelGroupId", "simple", false)) + "/channel_bindings"));
         return client.convertValue(raw, new TypeReference<ChannelGroupsChannelBindingsListResult>() {});
     }
 
-    /** Replace group channel bindings */
-    public ChannelGroupsChannelBindingsUpdateResult channelGroupsBindingsUpdate(String channelGroupId, AdminChannelGroupChannelBindingsReplaceRequest body) throws Exception {
-        Object raw = client.put(ApiPaths.backendPath("/ai/channel_groups/" + serializePathParameter(channelGroupId, new PathParameterSpec("channelGroupId", "simple", false)) + "/channel_bindings"), body, null, null, "application/json");
+    /** Update */
+    public ChannelGroupsChannelBindingsUpdateResult channelGroupsBindingsUpdate(String channelGroupId) throws Exception {
+        Object raw = client.put(ApiPaths.backendPath("/ai/channel_groups/" + serializePathParameter(channelGroupId, new PathParameterSpec("channelGroupId", "simple", false)) + "/channel_bindings"), null);
         return client.convertValue(raw, new TypeReference<ChannelGroupsChannelBindingsUpdateResult>() {});
     }
 
-    /** List group route explain */
+    /** Retrieve */
     public ChannelGroupsRouteExplainRetrieveResult channelGroupsRouteExplainRetrieve(String channelGroupId) throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/ai/channel_groups/" + serializePathParameter(channelGroupId, new PathParameterSpec("channelGroupId", "simple", false)) + "/route_explain"));
         return client.convertValue(raw, new TypeReference<ChannelGroupsRouteExplainRetrieveResult>() {});
     }
 
-    /** List model mappings */
-    public ModelMappingsListResult modelMappingsList(String bindingType, String vendorCode, String channelId, String channelCode, String q) throws Exception {
-        String query = buildQueryString(List.of(
-            new QueryParameterSpec("binding_type", bindingType, "form", true, false, null),
-            new QueryParameterSpec("vendor_code", vendorCode, "form", true, false, null),
-            new QueryParameterSpec("channel_id", channelId, "form", true, false, null),
-            new QueryParameterSpec("channel_code", channelCode, "form", true, false, null),
-            new QueryParameterSpec("q", q, "form", true, false, null)
-        ));
-        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/ai/model_mappings"), query));
+    /** List */
+    public ModelMappingOptionsListResult modelMappingOptionsList() throws Exception {
+        Object raw = client.get(ApiPaths.backendPath("/ai/model_mapping_options"));
+        return client.convertValue(raw, new TypeReference<ModelMappingOptionsListResult>() {});
+    }
+
+    /** List */
+    public ModelMappingsListResult modelMappingsList() throws Exception {
+        Object raw = client.get(ApiPaths.backendPath("/ai/model_mappings"));
         return client.convertValue(raw, new TypeReference<ModelMappingsListResult>() {});
     }
 
-    /** Create model mapping */
-    public ModelMappingsCreateResult modelMappingsCreate(AdminModelMappingCreateRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.backendPath("/ai/model_mappings"), body, null, null, "application/json");
+    /** Create */
+    public ModelMappingsCreateResult modelMappingsCreate() throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/ai/model_mappings"), null);
         return client.convertValue(raw, new TypeReference<ModelMappingsCreateResult>() {});
     }
 
-    /** Resolve model mapping */
-    public ModelMappingsResolveCreateResult modelMappingsResolveCreate(AdminModelMappingResolveRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.backendPath("/ai/model_mappings/resolve"), body, null, null, "application/json");
+    /** Replace */
+    public ModelMappingsReplaceResult modelMappingsReplace() throws Exception {
+        Object raw = client.put(ApiPaths.backendPath("/ai/model_mappings"), null);
+        return client.convertValue(raw, new TypeReference<ModelMappingsReplaceResult>() {});
+    }
+
+    /** Create */
+    public ModelMappingsResolveCreateResult modelMappingsResolveCreate() throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/ai/model_mappings/resolve"), null);
         return client.convertValue(raw, new TypeReference<ModelMappingsResolveCreateResult>() {});
     }
 
-    /** Delete model mapping */
+    /** Delete */
     public ModelMappingsDeleteResult modelMappingsDelete(String mappingId) throws Exception {
         Object raw = client.delete(ApiPaths.backendPath("/ai/model_mappings/" + serializePathParameter(mappingId, new PathParameterSpec("mappingId", "simple", false)) + ""));
         return client.convertValue(raw, new TypeReference<ModelMappingsDeleteResult>() {});
     }
 
-    /** Update model mapping */
-    public ModelMappingsUpdateResult modelMappingsUpdate(String mappingId, AdminModelMappingUpdateRequest body) throws Exception {
-        Object raw = client.patch(ApiPaths.backendPath("/ai/model_mappings/" + serializePathParameter(mappingId, new PathParameterSpec("mappingId", "simple", false)) + ""), body, null, null, "application/json");
+    /** Update */
+    public ModelMappingsUpdateResult modelMappingsUpdate(String mappingId) throws Exception {
+        Object raw = client.patch(ApiPaths.backendPath("/ai/model_mappings/" + serializePathParameter(mappingId, new PathParameterSpec("mappingId", "simple", false)) + ""), null);
         return client.convertValue(raw, new TypeReference<ModelMappingsUpdateResult>() {});
     }
 
-    /** List model rankings */
-    public ModelRankingsListResult modelRankingsList(String rankScope, String vendorCode, String modality, String q, String limit) throws Exception {
+    /** List */
+    public ModelRankingsListResult modelRankingsList(String rankScope, String vendorCode, String modality, String q, Integer pageSize) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("rank_scope", rankScope, "form", true, false, null),
             new QueryParameterSpec("vendor_code", vendorCode, "form", true, false, null),
             new QueryParameterSpec("modality", modality, "form", true, false, null),
             new QueryParameterSpec("q", q, "form", true, false, null),
-            new QueryParameterSpec("limit", limit, "form", true, false, null)
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/ai/model_rankings"), query));
         return client.convertValue(raw, new TypeReference<ModelRankingsListResult>() {});
     }
 
-    /** List model ranking refresh jobs */
-    public ModelRankingsJobsListResult modelRankingsJobsList(String rankScope, String limit) throws Exception {
+    /** List */
+    public ModelRankingsJobsListResult modelRankingsJobsList(String rankScope, Integer pageSize) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("rank_scope", rankScope, "form", true, false, null),
-            new QueryParameterSpec("limit", limit, "form", true, false, null)
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/ai/model_rankings/jobs"), query));
         return client.convertValue(raw, new TypeReference<ModelRankingsJobsListResult>() {});
     }
 
-    /** Trigger model ranking refresh */
-    public ModelRankingsRefreshResult modelRankingsRefresh(ModelRankingRefreshTriggerRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.backendPath("/ai/model_rankings/refresh"), body, null, null, "application/json");
+    /** Refresh */
+    public ModelRankingsRefreshResult modelRankingsRefresh() throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/ai/model_rankings/refresh"), null);
         return client.convertValue(raw, new TypeReference<ModelRankingsRefreshResult>() {});
     }
 
-    /** List model ranking refresh status */
-    public ModelRankingsStatusRetrieveResult modelRankingsStatusRetrieve(String rankScope) throws Exception {
+    /** Retrieve */
+    public ModelRankingsStatusRetrieveResult modelRankingsStatusRetrieve(Integer page, Integer pageSize, String q, String billingMeter, List<String> vendorCodes, List<String> modalities, List<String> capabilities, List<String> categories, List<String> groups) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("rank_scope", rankScope, "form", true, false, null)
+            new QueryParameterSpec("page", page, "form", true, false, null),
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+            new QueryParameterSpec("q", q, "form", true, false, null),
+            new QueryParameterSpec("billing_meter", billingMeter, "form", true, false, null),
+            new QueryParameterSpec("vendor_codes", vendorCodes, "form", false, false, null),
+            new QueryParameterSpec("modalities", modalities, "form", false, false, null),
+            new QueryParameterSpec("capabilities", capabilities, "form", false, false, null),
+            new QueryParameterSpec("categories", categories, "form", false, false, null),
+            new QueryParameterSpec("groups", groups, "form", false, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/ai/model_rankings/status"), query));
         return client.convertValue(raw, new TypeReference<ModelRankingsStatusRetrieveResult>() {});
     }
 
-    /** List vendors */
+    /** List */
     public ModelVendorsListResult modelVendorsList() throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/ai/model_vendors"));
         return client.convertValue(raw, new TypeReference<ModelVendorsListResult>() {});
     }
 
-    /** Create vendor */
-    public ModelVendorsCreateResult modelVendorsCreate(AdminModelVendorCreateRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.backendPath("/ai/model_vendors"), body, null, null, "application/json");
+    /** Create */
+    public ModelVendorsCreateResult modelVendorsCreate() throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/ai/model_vendors"), null);
         return client.convertValue(raw, new TypeReference<ModelVendorsCreateResult>() {});
     }
 
-    /** List models */
-    public ModelsListResult modelsList() throws Exception {
-        Object raw = client.get(ApiPaths.backendPath("/ai/models"));
+    /** List */
+    public ModelsListResult modelsList(Integer page, Integer pageSize, String q, String billingMeter, List<String> vendorCodes, List<String> modalities, List<String> capabilities, List<String> categories, List<String> groups) throws Exception {
+        String query = buildQueryString(List.of(
+            new QueryParameterSpec("page", page, "form", true, false, null),
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+            new QueryParameterSpec("q", q, "form", true, false, null),
+            new QueryParameterSpec("billing_meter", billingMeter, "form", true, false, null),
+            new QueryParameterSpec("vendor_codes", vendorCodes, "form", false, false, null),
+            new QueryParameterSpec("modalities", modalities, "form", false, false, null),
+            new QueryParameterSpec("capabilities", capabilities, "form", false, false, null),
+            new QueryParameterSpec("categories", categories, "form", false, false, null),
+            new QueryParameterSpec("groups", groups, "form", false, false, null)
+        ));
+        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/ai/models"), query));
         return client.convertValue(raw, new TypeReference<ModelsListResult>() {});
     }
 
-    /** Create model */
-    public ModelsCreateResult modelsCreate(AdminAiModelCreateRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.backendPath("/ai/models"), body, null, null, "application/json");
+    /** Create */
+    public ModelsCreateResult modelsCreate() throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/ai/models"), null);
         return client.convertValue(raw, new TypeReference<ModelsCreateResult>() {});
     }
 
-    /** Sync vendors and models */
-    public ModelsRefreshResult modelsRefresh(AdminModelCatalogSyncRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.backendPath("/ai/models/refresh"), body, null, null, "application/json");
+    /** Refresh */
+    public ModelsRefreshResult modelsRefresh() throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/ai/models/refresh"), null);
         return client.convertValue(raw, new TypeReference<ModelsRefreshResult>() {});
     }
 
-    /** Delete model */
+    /** Delete */
     public ModelsDeleteResult modelsDelete(String modelId) throws Exception {
         Object raw = client.delete(ApiPaths.backendPath("/ai/models/" + serializePathParameter(modelId, new PathParameterSpec("modelId", "simple", false)) + ""));
         return client.convertValue(raw, new TypeReference<ModelsDeleteResult>() {});
     }
 
-    /** Update model */
-    public ModelsUpdateResult modelsUpdate(String modelId, AdminAiModelUpdateRequest body) throws Exception {
-        Object raw = client.patch(ApiPaths.backendPath("/ai/models/" + serializePathParameter(modelId, new PathParameterSpec("modelId", "simple", false)) + ""), body, null, null, "application/json");
+    /** Update */
+    public ModelsUpdateResult modelsUpdate(String modelId) throws Exception {
+        Object raw = client.patch(ApiPaths.backendPath("/ai/models/" + serializePathParameter(modelId, new PathParameterSpec("modelId", "simple", false)) + ""), null);
         return client.convertValue(raw, new TypeReference<ModelsUpdateResult>() {});
     }
 
-    /** List resource groups */
+    /** List */
     public AiResourceGroupsListResult getResourceGroupsList() throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/ai/resource_groups"));
         return client.convertValue(raw, new TypeReference<AiResourceGroupsListResult>() {});
     }
 
-    /** Create resource group */
-    public AiResourceGroupsCreateResult resourceGroupsCreate(AdminAiResourceGroupCreateRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.backendPath("/ai/resource_groups"), body, null, null, "application/json");
+    /** Create */
+    public AiResourceGroupsCreateResult resourceGroupsCreate() throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/ai/resource_groups"), null);
         return client.convertValue(raw, new TypeReference<AiResourceGroupsCreateResult>() {});
     }
 
-    /** List resource group resources */
+    /** List */
     public AiResourceGroupsResourcesListResult getResourceGroupsListResourceGroups(String groupIdOrCode) throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/ai/resource_groups/" + serializePathParameter(groupIdOrCode, new PathParameterSpec("groupIdOrCode", "simple", false)) + "/resources"));
         return client.convertValue(raw, new TypeReference<AiResourceGroupsResourcesListResult>() {});
     }
 
-    /** Delete resource group */
+    /** Delete */
     public AiResourceGroupsDeleteResult resourceGroupsDelete(String groupId) throws Exception {
         Object raw = client.delete(ApiPaths.backendPath("/ai/resource_groups/" + serializePathParameter(groupId, new PathParameterSpec("groupId", "simple", false)) + ""));
         return client.convertValue(raw, new TypeReference<AiResourceGroupsDeleteResult>() {});
     }
 
-    /** Update resource group */
-    public AiResourceGroupsUpdateResult resourceGroupsUpdate(String groupId, AdminAiResourceGroupUpdateRequest body) throws Exception {
-        Object raw = client.patch(ApiPaths.backendPath("/ai/resource_groups/" + serializePathParameter(groupId, new PathParameterSpec("groupId", "simple", false)) + ""), body, null, null, "application/json");
+    /** Update */
+    public AiResourceGroupsUpdateResult resourceGroupsUpdate(String groupId) throws Exception {
+        Object raw = client.patch(ApiPaths.backendPath("/ai/resource_groups/" + serializePathParameter(groupId, new PathParameterSpec("groupId", "simple", false)) + ""), null);
         return client.convertValue(raw, new TypeReference<AiResourceGroupsUpdateResult>() {});
     }
 
-    /** List ai resources */
+    /** List */
     public AiResourcesListResult resourcesList() throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/ai/resources"));
         return client.convertValue(raw, new TypeReference<AiResourcesListResult>() {});
     }
 
-    /** Create ai resource */
-    public AiResourcesCreateResult resourcesCreate(AdminAiResourceCreateRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.backendPath("/ai/resources"), body, null, null, "application/json");
+    /** Create */
+    public AiResourcesCreateResult resourcesCreate() throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/ai/resources"), null);
         return client.convertValue(raw, new TypeReference<AiResourcesCreateResult>() {});
     }
 
-    /** Update ai resource */
-    public AiResourcesUpdateResult resourcesUpdate(String resourceId, AdminAiResourceUpdateRequest body) throws Exception {
-        Object raw = client.put(ApiPaths.backendPath("/ai/resources/" + serializePathParameter(resourceId, new PathParameterSpec("resourceId", "simple", false)) + ""), body, null, null, "application/json");
+    /** Update */
+    public AiResourcesUpdateResult resourcesUpdate(String resourceId) throws Exception {
+        Object raw = client.put(ApiPaths.backendPath("/ai/resources/" + serializePathParameter(resourceId, new PathParameterSpec("resourceId", "simple", false)) + ""), null);
         return client.convertValue(raw, new TypeReference<AiResourcesUpdateResult>() {});
     }
 
-    /** List runtime route explain */
-    public RouteExplainCreateResult routeExplainCreate(AdminRuntimeRouteExplainRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.backendPath("/ai/route_explain"), body, null, null, "application/json");
+    /** Create */
+    public RouteExplainCreateResult routeExplainCreate() throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/ai/route_explain"), null);
         return client.convertValue(raw, new TypeReference<RouteExplainCreateResult>() {});
     }
 

@@ -3,12 +3,12 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 if TYPE_CHECKING:
-    from .admin_channel_group_mutation_response import AdminChannelGroupMutationResponse
+    from .no_data import NoData
 
 
 @dataclass
 class ChannelGroupsCreateResult:
     """Channel groups create result schema exposed by Claw Router."""
-    code: str
-    data: Optional[AdminChannelGroupMutationResponse] = None
-    msg: Optional[str] = None
+    code: int
+    data: Any
+    trace_id: str

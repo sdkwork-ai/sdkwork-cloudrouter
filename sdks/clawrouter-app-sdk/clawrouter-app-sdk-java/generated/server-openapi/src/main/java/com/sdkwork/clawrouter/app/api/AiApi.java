@@ -13,101 +13,87 @@ public class AiApi {
         this.client = client;
     }
 
-    /** List groups */
+    /** List */
     public ChannelGroupsListResult channelGroupsList() throws Exception {
         Object raw = client.get(ApiPaths.appPath("/ai/channel_groups"));
         return client.convertValue(raw, new TypeReference<ChannelGroupsListResult>() {});
     }
 
-    /** List dashboard overview */
-    public DashboardOverviewRetrieveResult dashboardOverviewRetrieve(String timeRange, String startTime, String endTime) throws Exception {
-        String query = buildQueryString(List.of(
-            new QueryParameterSpec("time_range", timeRange, "form", true, false, null),
-            new QueryParameterSpec("start_time", startTime, "form", true, false, null),
-            new QueryParameterSpec("end_time", endTime, "form", true, false, null)
-        ));
-        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/ai/dashboard/overview"), query));
+    /** Retrieve */
+    public DashboardOverviewRetrieveResult dashboardOverviewRetrieve() throws Exception {
+        Object raw = client.get(ApiPaths.appPath("/ai/dashboard/overview"));
         return client.convertValue(raw, new TypeReference<DashboardOverviewRetrieveResult>() {});
     }
 
-    /** List traces */
+    /** List */
     public GatewayTracesListResult gatewayTracesList() throws Exception {
         Object raw = client.get(ApiPaths.appPath("/ai/gateway/traces"));
         return client.convertValue(raw, new TypeReference<GatewayTracesListResult>() {});
     }
 
-    /** List model rankings */
-    public ModelRankingsListResult modelRankingsList(String rankScope, String vendorCode, String modality, String q, String limit) throws Exception {
+    /** List */
+    public ModelRankingsListResult modelRankingsList(String rankScope, String vendorCode, String modality, String q, Integer pageSize) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("rank_scope", rankScope, "form", true, false, null),
             new QueryParameterSpec("vendor_code", vendorCode, "form", true, false, null),
             new QueryParameterSpec("modality", modality, "form", true, false, null),
             new QueryParameterSpec("q", q, "form", true, false, null),
-            new QueryParameterSpec("limit", limit, "form", true, false, null)
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/ai/model_rankings"), query));
         return client.convertValue(raw, new TypeReference<ModelRankingsListResult>() {});
     }
 
-    /** List ranking vendor filters */
+    /** List */
     public ModelVendorsListResult modelVendorsList() throws Exception {
         Object raw = client.get(ApiPaths.appPath("/ai/model_vendors"));
         return client.convertValue(raw, new TypeReference<ModelVendorsListResult>() {});
     }
 
-    /** List model catalog for Playground */
-    public ModelsListResult modelsList(String billingMeter, String vendorCode, List<String> vendorCodes, List<String> modalities, List<String> capabilities, List<String> categories, List<String> groups, String q, String limit, String offset) throws Exception {
+    /** List */
+    public ModelsListResult modelsList(Integer page, Integer pageSize, String q, String billingMeter, List<String> vendorCodes, List<String> modalities, List<String> capabilities, List<String> categories, List<String> groups) throws Exception {
         String query = buildQueryString(List.of(
+            new QueryParameterSpec("page", page, "form", true, false, null),
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+            new QueryParameterSpec("q", q, "form", true, false, null),
             new QueryParameterSpec("billing_meter", billingMeter, "form", true, false, null),
-            new QueryParameterSpec("vendor_code", vendorCode, "form", true, false, null),
             new QueryParameterSpec("vendor_codes", vendorCodes, "form", false, false, null),
             new QueryParameterSpec("modalities", modalities, "form", false, false, null),
             new QueryParameterSpec("capabilities", capabilities, "form", false, false, null),
             new QueryParameterSpec("categories", categories, "form", false, false, null),
-            new QueryParameterSpec("groups", groups, "form", false, false, null),
-            new QueryParameterSpec("q", q, "form", true, false, null),
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
-            new QueryParameterSpec("offset", offset, "form", true, false, null)
+            new QueryParameterSpec("groups", groups, "form", false, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/ai/models"), query));
         return client.convertValue(raw, new TypeReference<ModelsListResult>() {});
     }
 
-    /** List routing API keys */
+    /** List */
     public RoutingApiKeysListResult routingApiKeysList() throws Exception {
         Object raw = client.get(ApiPaths.appPath("/ai/routing/api_keys"));
         return client.convertValue(raw, new TypeReference<RoutingApiKeysListResult>() {});
     }
 
-    /** List routing channels */
+    /** List */
     public RoutingChannelsListResult routingChannelsList() throws Exception {
         Object raw = client.get(ApiPaths.appPath("/ai/routing/channels"));
         return client.convertValue(raw, new TypeReference<RoutingChannelsListResult>() {});
     }
 
-    /** List routing request traces */
+    /** List */
     public RoutingRequestTracesListResult routingRequestTracesList() throws Exception {
         Object raw = client.get(ApiPaths.appPath("/ai/routing/request_traces"));
         return client.convertValue(raw, new TypeReference<RoutingRequestTracesListResult>() {});
     }
 
-    /** List routing usage */
+    /** List */
     public RoutingUsageListResult routingUsageList() throws Exception {
         Object raw = client.get(ApiPaths.appPath("/ai/routing/usage"));
         return client.convertValue(raw, new TypeReference<RoutingUsageListResult>() {});
     }
 
-    /** List logs */
-    public UsageLogsListResult usageLogsList(String page, String pageSize, String q, String status, String startTime, String endTime) throws Exception {
-        String query = buildQueryString(List.of(
-            new QueryParameterSpec("page", page, "form", true, false, null),
-            new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
-            new QueryParameterSpec("q", q, "form", true, false, null),
-            new QueryParameterSpec("status", status, "form", true, false, null),
-            new QueryParameterSpec("start_time", startTime, "form", true, false, null),
-            new QueryParameterSpec("end_time", endTime, "form", true, false, null)
-        ));
-        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/ai/usage/logs"), query));
+    /** List */
+    public UsageLogsListResult usageLogsList() throws Exception {
+        Object raw = client.get(ApiPaths.appPath("/ai/usage/logs"));
         return client.convertValue(raw, new TypeReference<UsageLogsListResult>() {});
     }
 

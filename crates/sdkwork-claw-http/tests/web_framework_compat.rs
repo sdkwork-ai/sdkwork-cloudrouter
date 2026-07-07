@@ -4,18 +4,21 @@ use axum::middleware::from_fn;
 use axum::routing::get;
 use axum::Router;
 use sdkwork_web_core::{
-    ServerRequestId, WebApiSurface, WebAuthLevel, WebAuthMode, WebDeploymentMode,
-    WebEnvironment, WebLoginScope, WebRequestContext, WebRequestPrincipal, WebTransportFacts,
+    ServerRequestId, WebApiSurface, WebAuthLevel, WebAuthMode, WebDeploymentMode, WebEnvironment,
+    WebLoginScope, WebRequestContext, WebRequestPrincipal, WebTransportFacts,
 };
 use tower::ServiceExt;
 
-use sdkwork_claw_http::{
-    project_trusted_subject_from_web_request_context, TrustedRequestSubject,
-};
+use sdkwork_claw_http::{project_trusted_subject_from_web_request_context, TrustedRequestSubject};
 
 async fn echo_subject(subject: Option<TrustedRequestSubject>) -> String {
     subject
-        .map(|value| format!("{}:{}:{}", value.tenant_id, value.organization_id, value.user_id))
+        .map(|value| {
+            format!(
+                "{}:{}:{}",
+                value.tenant_id, value.organization_id, value.user_id
+            )
+        })
         .unwrap_or_else(|| "missing".to_owned())
 }
 
@@ -65,12 +68,14 @@ async fn project_trusted_subject_middleware_resolves_from_web_request_context() 
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .expect("body");
-    assert_eq!("100001:0:30", String::from_utf8(body.to_vec()).expect("utf8"));
+    assert_eq!(
+        "100001:0:30",
+        String::from_utf8(body.to_vec()).expect("utf8")
+    );
 }
 
 #[tokio::test]
-async fn project_trusted_subject_middleware_returns_projection_error_for_non_numeric_principal(
-) {
+async fn project_trusted_subject_middleware_returns_projection_error_for_non_numeric_principal() {
     let router = Router::new()
         .route("/probe", get(echo_subject))
         .layer(from_fn(project_trusted_subject_from_web_request_context));
@@ -112,7 +117,10 @@ async fn project_trusted_subject_middleware_returns_projection_error_for_non_num
     request.extensions_mut().insert(context);
 
     let response = router.oneshot(request).await.expect("response");
-    assert_eq!(axum::http::StatusCode::INTERNAL_SERVER_ERROR, response.status());
+    assert_eq!(
+        axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+        response.status()
+    );
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .expect("body");

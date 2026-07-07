@@ -49,7 +49,7 @@ async fn app_runtime_create_invocation_uses_product_runtime_namespace_and_store_
                 .method("POST")
                 .uri("/app/v3/api/runtime/invocations")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{
                       "invocationType":"chat_response",
@@ -121,7 +121,7 @@ async fn app_runtime_records_events_and_artifacts_under_invocation() {
                 .method("POST")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{
                       "eventType":"response.output_text.delta",
@@ -151,7 +151,7 @@ async fn app_runtime_records_events_and_artifacts_under_invocation() {
                 .method("POST")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/artifacts")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r##"{
                       "artifactType":"file",
@@ -218,7 +218,7 @@ async fn app_runtime_lists_invocations_events_and_artifacts_for_trusted_subject(
             Request::builder()
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations?conversation_id=chat-conversation-1&page=1&page_size=20")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -235,7 +235,7 @@ async fn app_runtime_lists_invocations_events_and_artifacts_for_trusted_subject(
             Request::builder()
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -251,7 +251,7 @@ async fn app_runtime_lists_invocations_events_and_artifacts_for_trusted_subject(
             Request::builder()
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/artifacts")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -296,7 +296,7 @@ async fn app_runtime_streams_invocation_events_as_sse_for_trusted_subject() {
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream")
                 .header("accept", "text/event-stream")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -345,7 +345,7 @@ async fn app_runtime_create_event_preserves_stream_text_delta_whitespace() {
                 .method("POST")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     json!({
                         "eventType": "response.output_text.delta",
@@ -407,7 +407,7 @@ async fn app_runtime_stream_executes_openai_compatible_invocation_and_persists_d
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream")
                 .header("accept", "text/event-stream")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -488,7 +488,7 @@ async fn app_runtime_stream_persists_usage_only_provider_chunks_for_chat_billing
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream")
                 .header("accept", "text/event-stream")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -562,7 +562,7 @@ async fn app_runtime_stream_routes_catalog_model_through_channel_route_without_m
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream")
                 .header("accept", "text/event-stream")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -623,7 +623,7 @@ async fn app_runtime_stream_flushes_runtime_events_before_provider_stream_finish
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream")
                 .header("accept", "text/event-stream")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -691,7 +691,7 @@ async fn app_runtime_stream_execution_continues_after_client_disconnect_and_reco
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream")
                 .header("accept", "text/event-stream")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -734,7 +734,7 @@ async fn app_runtime_stream_execution_continues_after_client_disconnect_and_reco
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream")
                 .header("accept", "text/event-stream")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -800,7 +800,7 @@ async fn app_runtime_stream_reconnect_on_another_node_uses_shared_stream_bus_wit
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream")
                 .header("accept", "text/event-stream")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -826,7 +826,7 @@ async fn app_runtime_stream_reconnect_on_another_node_uses_shared_stream_bus_wit
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream?after_event_no=1")
                 .header("accept", "text/event-stream")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -897,14 +897,14 @@ async fn app_runtime_stream_parallel_subscribers_on_different_nodes_receive_comp
         .method("GET")
         .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream")
         .header("accept", "text/event-stream")
-        .internal_trusted_subject(10, 20, 30)
+        .internal_trusted_subject(100001, 0, 30)
         .body(Body::empty())
         .unwrap();
     let request_b = Request::builder()
         .method("GET")
         .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream")
         .header("accept", "text/event-stream")
-        .internal_trusted_subject(10, 20, 30)
+        .internal_trusted_subject(100001, 0, 30)
         .body(Body::empty())
         .unwrap();
     let (response_a, response_b) =
@@ -988,7 +988,7 @@ async fn app_runtime_stream_cancel_on_another_node_stops_provider_execution() {
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream")
                 .header("accept", "text/event-stream")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -1013,7 +1013,7 @@ async fn app_runtime_stream_cancel_on_another_node_stops_provider_execution() {
                 .method("POST")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/complete")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{
                       "status":"cancelled",
@@ -1108,7 +1108,7 @@ async fn app_runtime_stream_completion_preserves_existing_cancelled_terminal_eve
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream")
                 .header("accept", "text/event-stream")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -1187,7 +1187,7 @@ async fn app_runtime_stream_reconnect_after_terminal_event_does_not_restart_prov
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream?after_event_no=1")
                 .header("accept", "text/event-stream")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -1244,7 +1244,7 @@ async fn app_runtime_stream_rechecks_terminal_event_after_execution_claim() {
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream")
                 .header("accept", "text/event-stream")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -1298,7 +1298,7 @@ async fn app_runtime_stream_completed_invocation_without_events_does_not_restart
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream")
                 .header("accept", "text/event-stream")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -1351,7 +1351,7 @@ async fn app_runtime_stream_failed_terminal_event_is_serialized_before_done() {
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream")
                 .header("accept", "text/event-stream")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -1408,7 +1408,7 @@ async fn app_runtime_stream_start_failure_returns_failed_sse_event_without_http_
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream")
                 .header("accept", "text/event-stream")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -1444,7 +1444,7 @@ async fn app_runtime_complete_invocation_updates_status_and_response_snapshot() 
                 .method("POST")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/complete")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{
                       "status":"completed",
@@ -1495,7 +1495,7 @@ async fn app_runtime_cancel_complete_preserves_existing_completed_terminal_event
                 .method("POST")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/complete")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{
                       "status":"cancelled",
@@ -1534,7 +1534,7 @@ async fn app_runtime_does_not_expose_playground_backend_namespace() {
                 .method("POST")
                 .uri("/app/v3/api/playground/runtime/invocations")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from("{}"))
                 .unwrap(),
         )
@@ -1584,7 +1584,7 @@ async fn app_runtime_gateway_executor_routes_openai_chat_invocations_to_gateway_
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream")
                 .header("accept", "text/event-stream")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -3440,7 +3440,7 @@ async fn runtime_stream_request(router: axum::Router) -> axum::response::Respons
                 .method("GET")
                 .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream")
                 .header("accept", "text/event-stream")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -4554,7 +4554,7 @@ impl AppRuntimeGatewayClient for RecordingGatewayRuntimeClient {
                 )
             } else if response_kind == GatewayResponseKind::ConfiguredRouteMismatch {
                 Body::from(
-                    "{\"error\":{\"message\":\"provider route is not available for model: openai/gpt-5.5; route diagnostics: requested_model=openai/gpt-5.5; api_key_id=1; tenant_id=10; organization_id=20; user_id=2; channel_group_id=1; channel_group_code=grp; capability=Chat; model_routes_loaded=1; channel_routes_loaded=1; any_group_bindings=true; matching_group_bound_channels=0; scoped_model_routes=0; scoped_channel_routes=0\",\"type\":\"server_error\",\"code\":\"provider_route_not_available\"}}",
+                    "{\"error\":{\"message\":\"provider route is not available for model: openai/gpt-5.5; route diagnostics: requested_model=openai/gpt-5.5; api_key_id=1; tenant_id=100001; organization_id=0; user_id=2; channel_group_id=1; channel_group_code=grp; capability=Chat; model_routes_loaded=1; channel_routes_loaded=1; any_group_bindings=true; matching_group_bound_channels=0; scoped_model_routes=0; scoped_channel_routes=0\",\"type\":\"server_error\",\"code\":\"provider_route_not_available\"}}",
                 )
             } else if request.path == "/v1/images/generations" || request.path == "/v1/images/edits"
             {

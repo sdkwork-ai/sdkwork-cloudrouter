@@ -1,6 +1,6 @@
+use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
 use axum::body::Bytes;
 use axum::extract::{Query, State};
@@ -231,7 +231,6 @@ async fn fetch_site_runtime_settings(
         Err(error) => site_settings_system_response("site runtime settings are unavailable", error),
     }
 }
-
 
 fn parse_json_body<T>(body: &[u8], entity_name: &str) -> Result<T, String>
 where

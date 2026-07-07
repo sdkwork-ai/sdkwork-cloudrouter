@@ -50,19 +50,27 @@ client.SetHeader("X-Custom-Header", "value");
 
 ## API Modules
 
+- `client.System` - system API
 - `client.Ai` - ai API
 - `client.Chat` - chat API
 - `client.Iam` - iam API
 - `client.Notification` - notification API
 - `client.Runtime` - runtime API
-- `client.System` - system API
 
 ## Usage Examples
+
+### system
+
+```csharp
+// List
+var result = await client.System.AfterSalesRequestsListAsync();
+Console.WriteLine(result);
+```
 
 ### ai
 
 ```csharp
-// List groups
+// List
 var result = await client.Ai.ChannelGroupsListAsync();
 Console.WriteLine(result);
 ```
@@ -70,20 +78,15 @@ Console.WriteLine(result);
 ### chat
 
 ```csharp
-// List product chat conversations
-var query = new Dictionary<string, object>
-{
-    ["page"] = "page",
-    ["page_size"] = "page-size",
-};
-var result = await client.Chat.ConversationsListAsync(query);
+// List
+var result = await client.Chat.ConversationsListAsync();
 Console.WriteLine(result);
 ```
 
 ### iam
 
 ```csharp
-// List keys
+// List
 var result = await client.Iam.ApiKeysListAsync();
 Console.WriteLine(result);
 ```
@@ -91,45 +94,16 @@ Console.WriteLine(result);
 ### notification
 
 ```csharp
-// List portal notifications
-var query = new Dictionary<string, object>
-{
-    ["include_archived"] = true,
-    ["page"] = "page",
-    ["page_size"] = "page-size",
-};
-var result = await client.Notification.NotificationsListAsync(query);
+// List
+var result = await client.Notification.NotificationsListAsync();
 Console.WriteLine(result);
 ```
 
 ### runtime
 
 ```csharp
-// List runtime invocations
-var query = new Dictionary<string, object>
-{
-    ["page"] = "page",
-    ["page_size"] = "page-size",
-    ["conversation_id"] = "1",
-    ["chat_turn_id"] = "1",
-    ["agent_session_id"] = "1",
-    ["runtime"] = "runtime",
-    ["status"] = "status",
-};
-var result = await client.Runtime.InvocationsListAsync(query);
-Console.WriteLine(result);
-```
-
-### system
-
-```csharp
-// Retrieve public site runtime branding settings
-var query = new Dictionary<string, object>
-{
-    ["tenant_code"] = "ok",
-    ["organization_code"] = "ok",
-};
-var result = await client.System.SiteRuntimeRetrieveAsync(query);
+// List
+var result = await client.Runtime.InvocationsListAsync();
 Console.WriteLine(result);
 ```
 

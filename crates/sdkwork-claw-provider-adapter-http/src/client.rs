@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use bytes::Bytes;
 use http_body_util::{BodyExt, Full};
-use hyper::header::{CONTENT_TYPE, AUTHORIZATION};
+use hyper::header::{AUTHORIZATION, CONTENT_TYPE};
 use hyper::{Method, Request, Uri};
 use hyper_rustls::HttpsConnector;
 use hyper_util::client::legacy::connect::HttpConnector;
@@ -111,20 +111,18 @@ impl ProviderAdapterHttpClient {
 
         // Wrap the entire request (connect + send + receive headers) in a timeout
         // to prevent indefinite hangs on unresponsive adapter services.
-        let response = tokio::time::timeout(
-            DEFAULT_ADAPTER_TIMEOUT,
-            self.client.request(http_request),
-        )
-        .await
-        .map_err(|_| {
-            ProviderAdapterHttpError::retryable(format!(
-                "adapter request timed out after {}s",
-                DEFAULT_ADAPTER_TIMEOUT.as_secs()
-            ))
-        })?
-        .map_err(|error| {
-            ProviderAdapterHttpError::retryable(format!("adapter request failed: {error}"))
-        })?;
+        let response =
+            tokio::time::timeout(DEFAULT_ADAPTER_TIMEOUT, self.client.request(http_request))
+                .await
+                .map_err(|_| {
+                    ProviderAdapterHttpError::retryable(format!(
+                        "adapter request timed out after {}s",
+                        DEFAULT_ADAPTER_TIMEOUT.as_secs()
+                    ))
+                })?
+                .map_err(|error| {
+                    ProviderAdapterHttpError::retryable(format!("adapter request failed: {error}"))
+                })?;
 
         let status_code = response.status().as_u16();
         let content_type = response
@@ -171,30 +169,28 @@ impl ProviderAdapterHttpClient {
         }
 
         // Non-streaming: buffer and deserialize as JSON.
-        let bytes = tokio::time::timeout(
-            DEFAULT_ADAPTER_TIMEOUT,
-            response.into_body().collect(),
-        )
-        .await
-        .map_err(|_| {
-            ProviderAdapterHttpError::retryable(format!(
-                "adapter response body timed out after {}s",
-                DEFAULT_ADAPTER_TIMEOUT.as_secs()
-            ))
-        })?
-        .map_err(|error| {
-            ProviderAdapterHttpError::retryable(format!(
-                "adapter response body failed: {error}"
-            ))
-        })?
-        .to_bytes();
+        let bytes = tokio::time::timeout(DEFAULT_ADAPTER_TIMEOUT, response.into_body().collect())
+            .await
+            .map_err(|_| {
+                ProviderAdapterHttpError::retryable(format!(
+                    "adapter response body timed out after {}s",
+                    DEFAULT_ADAPTER_TIMEOUT.as_secs()
+                ))
+            })?
+            .map_err(|error| {
+                ProviderAdapterHttpError::retryable(format!(
+                    "adapter response body failed: {error}"
+                ))
+            })?
+            .to_bytes();
 
-        serde_json::from_slice::<AdapterInvocationResponse>(&bytes).map_err(|error| {
-            ProviderAdapterHttpError::non_retryable(format!(
-                "adapter returned invalid response JSON: {error}"
-            ))
-        })
-        .map(AdapterInvokeResult::Buffered)
+        serde_json::from_slice::<AdapterInvocationResponse>(&bytes)
+            .map_err(|error| {
+                ProviderAdapterHttpError::non_retryable(format!(
+                    "adapter returned invalid response JSON: {error}"
+                ))
+            })
+            .map(AdapterInvokeResult::Buffered)
     }
 
     pub async fn fetch_manifest(
@@ -213,39 +209,36 @@ impl ProviderAdapterHttpClient {
                 ))
             })?;
 
-        let response = tokio::time::timeout(
-            DEFAULT_ADAPTER_TIMEOUT,
-            self.client.request(http_request),
-        )
-        .await
-        .map_err(|_| {
-            ProviderAdapterHttpError::retryable(format!(
-                "adapter manifest request timed out after {}s",
-                DEFAULT_ADAPTER_TIMEOUT.as_secs()
-            ))
-        })?
-        .map_err(|error| {
-            ProviderAdapterHttpError::retryable(format!("adapter manifest request failed: {error}"))
-        })?;
+        let response =
+            tokio::time::timeout(DEFAULT_ADAPTER_TIMEOUT, self.client.request(http_request))
+                .await
+                .map_err(|_| {
+                    ProviderAdapterHttpError::retryable(format!(
+                        "adapter manifest request timed out after {}s",
+                        DEFAULT_ADAPTER_TIMEOUT.as_secs()
+                    ))
+                })?
+                .map_err(|error| {
+                    ProviderAdapterHttpError::retryable(format!(
+                        "adapter manifest request failed: {error}"
+                    ))
+                })?;
 
         let status_code = response.status().as_u16();
-        let bytes = tokio::time::timeout(
-            DEFAULT_ADAPTER_TIMEOUT,
-            response.into_body().collect(),
-        )
-        .await
-        .map_err(|_| {
-            ProviderAdapterHttpError::retryable(format!(
-                "adapter manifest response body timed out after {}s",
-                DEFAULT_ADAPTER_TIMEOUT.as_secs()
-            ))
-        })?
-        .map_err(|error| {
-            ProviderAdapterHttpError::retryable(format!(
-                "adapter manifest response body failed: {error}"
-            ))
-        })?
-        .to_bytes();
+        let bytes = tokio::time::timeout(DEFAULT_ADAPTER_TIMEOUT, response.into_body().collect())
+            .await
+            .map_err(|_| {
+                ProviderAdapterHttpError::retryable(format!(
+                    "adapter manifest response body timed out after {}s",
+                    DEFAULT_ADAPTER_TIMEOUT.as_secs()
+                ))
+            })?
+            .map_err(|error| {
+                ProviderAdapterHttpError::retryable(format!(
+                    "adapter manifest response body failed: {error}"
+                ))
+            })?
+            .to_bytes();
 
         if !(200..300).contains(&status_code) {
             return Err(ProviderAdapterHttpError {

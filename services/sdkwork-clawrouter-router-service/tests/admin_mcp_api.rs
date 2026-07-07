@@ -560,7 +560,7 @@ fn signed_empty_request(method: &str, path: &str) -> Request<Body> {
     Request::builder()
         .method(method)
         .uri(path)
-        .internal_trusted_subject(10, 20, 30)
+        .internal_trusted_subject(100001, 0, 30)
         .body(Body::empty())
         .unwrap()
 }
@@ -569,7 +569,7 @@ fn signed_json_request(method: &str, path: &str, body: Value) -> Request<Body> {
     Request::builder()
         .method(method)
         .uri(path)
-        .internal_trusted_subject(10, 20, 30)
+        .internal_trusted_subject(100001, 0, 30)
         .header("content-type", "application/json")
         .body(Body::from(body.to_string()))
         .unwrap()

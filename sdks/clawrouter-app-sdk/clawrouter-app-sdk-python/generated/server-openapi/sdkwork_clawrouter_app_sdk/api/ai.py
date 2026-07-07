@@ -146,7 +146,7 @@ class AiChannelGroupsApi:
 
 
     def list(self) -> ChannelGroupsListResult:
-        """List groups"""
+        """List"""
         return self._client.get(f"/app/v3/api/ai/channel_groups")
 
 class AiDashboardApi:
@@ -164,14 +164,9 @@ class AiDashboardOverviewApi:
         self._client = client
 
 
-    def retrieve(self, time_range: Optional[str] = None, start_time: Optional[str] = None, end_time: Optional[str] = None) -> DashboardOverviewRetrieveResult:
-        """List dashboard overview"""
-        query = build_query_string([
-            {'name': 'time_range', 'value': time_range, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'start_time', 'value': start_time, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'end_time', 'value': end_time, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/ai/dashboard/overview", query))
+    def retrieve(self) -> DashboardOverviewRetrieveResult:
+        """Retrieve"""
+        return self._client.get(f"/app/v3/api/ai/dashboard/overview")
 
 class AiGatewayApi:
     """ai ai.gateway API client."""
@@ -189,7 +184,7 @@ class AiGatewayTracesApi:
 
 
     def list(self) -> GatewayTracesListResult:
-        """List traces"""
+        """List"""
         return self._client.get(f"/app/v3/api/ai/gateway/traces")
 
 class AiModelRankingsApi:
@@ -199,14 +194,14 @@ class AiModelRankingsApi:
         self._client = client
 
 
-    def list(self, rank_scope: Optional[str] = None, vendor_code: Optional[str] = None, modality: Optional[str] = None, q: Optional[str] = None, limit: Optional[str] = None) -> ModelRankingsListResult:
-        """List model rankings"""
+    def list(self, rank_scope: Optional[str] = None, vendor_code: Optional[str] = None, modality: Optional[str] = None, q: Optional[str] = None, page_size: Optional[int] = None) -> ModelRankingsListResult:
+        """List"""
         query = build_query_string([
             {'name': 'rank_scope', 'value': rank_scope, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'vendor_code', 'value': vendor_code, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'modality', 'value': modality, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'q', 'value': q, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/ai/model_rankings", query))
 
@@ -218,7 +213,7 @@ class AiModelVendorsApi:
 
 
     def list(self) -> ModelVendorsListResult:
-        """List ranking vendor filters"""
+        """List"""
         return self._client.get(f"/app/v3/api/ai/model_vendors")
 
 class AiModelsApi:
@@ -228,19 +223,18 @@ class AiModelsApi:
         self._client = client
 
 
-    def list(self, billing_meter: Optional[str] = None, vendor_code: Optional[str] = None, vendor_codes: Optional[List[str]] = None, modalities: Optional[List[str]] = None, capabilities: Optional[List[str]] = None, categories: Optional[List[str]] = None, groups: Optional[List[str]] = None, q: Optional[str] = None, limit: Optional[str] = None, offset: Optional[str] = None) -> ModelsListResult:
-        """List model catalog for Playground"""
+    def list(self, page: Optional[int] = None, page_size: Optional[int] = None, q: Optional[str] = None, billing_meter: Optional[str] = None, vendor_codes: Optional[List[str]] = None, modalities: Optional[List[str]] = None, capabilities: Optional[List[str]] = None, categories: Optional[List[str]] = None, groups: Optional[List[str]] = None) -> ModelsListResult:
+        """List"""
         query = build_query_string([
+            {'name': 'page', 'value': page, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'q', 'value': q, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'billing_meter', 'value': billing_meter, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'vendor_code', 'value': vendor_code, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'vendor_codes', 'value': vendor_codes, 'style': 'form', 'explode': False, 'allow_reserved': False},
             {'name': 'modalities', 'value': modalities, 'style': 'form', 'explode': False, 'allow_reserved': False},
             {'name': 'capabilities', 'value': capabilities, 'style': 'form', 'explode': False, 'allow_reserved': False},
             {'name': 'categories', 'value': categories, 'style': 'form', 'explode': False, 'allow_reserved': False},
             {'name': 'groups', 'value': groups, 'style': 'form', 'explode': False, 'allow_reserved': False},
-            {'name': 'q', 'value': q, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'offset', 'value': offset, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/ai/models", query))
 
@@ -263,7 +257,7 @@ class AiRoutingApiKeysApi:
 
 
     def list(self) -> RoutingApiKeysListResult:
-        """List routing API keys"""
+        """List"""
         return self._client.get(f"/app/v3/api/ai/routing/api_keys")
 
 class AiRoutingChannelsApi:
@@ -274,7 +268,7 @@ class AiRoutingChannelsApi:
 
 
     def list(self) -> RoutingChannelsListResult:
-        """List routing channels"""
+        """List"""
         return self._client.get(f"/app/v3/api/ai/routing/channels")
 
 class AiRoutingRequestTracesApi:
@@ -285,7 +279,7 @@ class AiRoutingRequestTracesApi:
 
 
     def list(self) -> RoutingRequestTracesListResult:
-        """List routing request traces"""
+        """List"""
         return self._client.get(f"/app/v3/api/ai/routing/request_traces")
 
 class AiRoutingUsageApi:
@@ -296,7 +290,7 @@ class AiRoutingUsageApi:
 
 
     def list(self) -> RoutingUsageListResult:
-        """List routing usage"""
+        """List"""
         return self._client.get(f"/app/v3/api/ai/routing/usage")
 
 class AiUsageApi:
@@ -314,14 +308,6 @@ class AiUsageLogsApi:
         self._client = client
 
 
-    def list(self, page: Optional[str] = None, page_size: Optional[str] = None, q: Optional[str] = None, status: Optional[str] = None, start_time: Optional[str] = None, end_time: Optional[str] = None) -> UsageLogsListResult:
-        """List logs"""
-        query = build_query_string([
-            {'name': 'page', 'value': page, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'q', 'value': q, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'status', 'value': status, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'start_time', 'value': start_time, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'end_time', 'value': end_time, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/ai/usage/logs", query))
+    def list(self) -> UsageLogsListResult:
+        """List"""
+        return self._client.get(f"/app/v3/api/ai/usage/logs")

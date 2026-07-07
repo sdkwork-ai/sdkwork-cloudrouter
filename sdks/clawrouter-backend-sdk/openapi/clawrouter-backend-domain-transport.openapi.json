@@ -1,6 +1,33 @@
 {
   "components": {
     "schemas": {
+      "AuditCommerceEventsListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by audit commerce events list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Audit commerce events list result schema exposed by Claw Router.",
+        "x-operation-id": "audit.commerceEvents.list"
+      },
       "FieldError": {
         "additionalProperties": false,
         "properties": {
@@ -13,8 +40,30 @@
           "field": {
             "type": "string"
           },
+          "i18nKey": {
+            "type": "string"
+          },
           "message": {
             "type": "string"
+          },
+          "params": {
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "type": "object"
           }
         },
         "required": [
@@ -23,46 +72,10 @@
         ],
         "type": "object"
       },
-      "PageInfo": {
+      "NoData": {
         "additionalProperties": false,
-        "properties": {
-          "hasMore": {
-            "type": "boolean"
-          },
-          "mode": {
-            "enum": [
-              "offset",
-              "cursor"
-            ],
-            "type": "string"
-          },
-          "nextCursor": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "page": {
-            "minimum": 1,
-            "type": "integer"
-          },
-          "pageSize": {
-            "maximum": 200,
-            "minimum": 1,
-            "type": "integer"
-          },
-          "totalItems": {
-            "pattern": "^[0-9]+$",
-            "type": "string"
-          },
-          "totalPages": {
-            "minimum": 0,
-            "type": "integer"
-          }
-        },
-        "required": [
-          "mode"
-        ],
+        "description": "Closed empty payload for operations that complete without business data.",
+        "properties": {},
         "type": "object"
       },
       "ProblemDetail": {
@@ -80,7 +93,15 @@
             },
             "type": "array"
           },
+          "i18nKey": {
+            "description": "Optional stable localization key such as errors.result.40001.",
+            "type": "string"
+          },
           "instance": {
+            "type": "string"
+          },
+          "locale": {
+            "description": "Optional effective BCP 47 locale used by framework message mapping.",
             "type": "string"
           },
           "status": {
@@ -139,44 +160,6 @@
         ],
         "type": "object"
       },
-      "SdkWorkListResponse": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "properties": {
-              "data": {
-                "$ref": "#/components/schemas/SdkWorkPageData"
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ]
-      },
-      "SdkWorkPageData": {
-        "additionalProperties": false,
-        "properties": {
-          "items": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "pageInfo": {
-            "$ref": "#/components/schemas/PageInfo"
-          }
-        },
-        "required": [
-          "items",
-          "pageInfo"
-        ],
-        "type": "object"
-      },
       "SdkWorkPlatformErrorCode": {
         "description": "Platform or domain error code per API_SPEC.md §15.3.",
         "format": "int32",
@@ -219,7 +202,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SdkWorkListResponse"
+                  "$ref": "#/components/schemas/AuditCommerceEventsListResult"
                 }
               }
             },

@@ -1,7 +1,5 @@
 import {
-  ensureSdkworkApiSuccess,
   isRecord,
-  readApiRecord,
   readNullableString,
   readNumber,
   readRequiredNonNegativeNumber,
@@ -20,14 +18,14 @@ export interface AdminAnalyticsQuery {
   timeRange?: AdminAnalyticsTimeRange;
   startTime?: string;
   endTime?: string;
-  limit?: number;
+  rankingSize?: number;
 }
 
 type AdminAnalyticsSdkQuery = {
   timeRange?: AdminAnalyticsTimeRange;
   startTime?: string;
   endTime?: string;
-  limit?: string;
+  rankingSize?: number;
 };
 
 export interface PieChartData {
@@ -103,7 +101,7 @@ export interface AdminAnalyticsOverview {
   timeRange: AdminAnalyticsTimeRange;
   startTime: string | null;
   endTime: string | null;
-  limit: number;
+  rankingSize: number;
   summary: AdminAnalyticsSummary;
   trend: AdminAnalyticsTrendPoint[];
   userRankings: AdminAnalyticsRankings<AdminAnalyticsUserRankItem>;
@@ -114,9 +112,9 @@ export interface AdminAnalyticsOverview {
 }
 
 const DEFAULT_TIME_RANGE: AdminAnalyticsTimeRange = 'daily';
-const DEFAULT_LIMIT = 10;
-const MIN_LIMIT = 3;
-const MAX_LIMIT = 50;
+const DEFAULT_RANKING_SIZE = 10;
+const MIN_RANKING_SIZE = 3;
+const MAX_RANKING_SIZE = 50;
 const TIME_RANGES = new Set<AdminAnalyticsTimeRange>(['hourly', 'daily', 'weekly', 'monthly', 'yearly']);
 const INSIGHT_SEVERITIES = new Set<AdminAnalyticsInsightSeverity>(['info', 'warning', 'critical']);
 
@@ -124,8 +122,7 @@ export class AdminAnalyticsService {
   static async fetchOverview(query: AdminAnalyticsQuery = {}): Promise<AdminAnalyticsOverview> {
     const params = normalizeAnalyticsQuery(query);
     const result = await getClawRouterBackendSdkClient().system.analytics.admin.overview.retrieve(params);
-    ensureSdkworkApiSuccess(result, 'Failed to fetch admin analytics');
-    const overview = normalizeOverview(readApiRecord(result));
+    const overview = normalizeOverview(readRequiredRecord(result, 'Admin analytics overview is required'));
     return overview;
   }
 }
@@ -133,7 +130,7 @@ export class AdminAnalyticsService {
 function normalizeAnalyticsQuery(query: AdminAnalyticsQuery): AdminAnalyticsSdkQuery {
   const params: AdminAnalyticsSdkQuery = {
     timeRange: normalizeTimeRange(query.timeRange, 'timeRange'),
-    limit: String(normalizeLimit(query.limit)),
+    rankingSize: normalizeRankingSize(query.rankingSize),
   };
   const startTime = optionalText(query.startTime, 'startTime', 64);
   const endTime = optionalText(query.endTime, 'endTime', 64);
@@ -151,7 +148,7 @@ function normalizeOverview(record: ApiRecord): AdminAnalyticsOverview {
     timeRange: readTimeRange(record, 'timeRange', 'Analytics time range is required'),
     startTime: readNullableString(record, 'startTime'),
     endTime: readNullableString(record, 'endTime'),
-    limit: readLimit(record),
+    rankingSize: readRankingSize(record),
     summary: normalizeSummary(readRequiredRecord(record.summary, 'Analytics summary is required')),
     trend: readOptionalRecordArray(record, 'trend', 'Analytics trend point is required')
       .map(normalizeTrendPoint),
@@ -280,22 +277,22 @@ function normalizeRankings<T>(
   };
 }
 
-function normalizeLimit(value: unknown): number {
+function normalizeRankingSize(value: unknown): number {
   if (value === undefined || value === null || value === '') {
-    return DEFAULT_LIMIT;
+    return DEFAULT_RANKING_SIZE;
   }
-  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < MIN_LIMIT || value > MAX_LIMIT) {
-    throw new Error(`limit must be between ${MIN_LIMIT} and ${MAX_LIMIT}`);
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < MIN_RANKING_SIZE || value > MAX_RANKING_SIZE) {
+    throw new Error(`rankingSize must be between ${MIN_RANKING_SIZE} and ${MAX_RANKING_SIZE}`);
   }
   return value;
 }
 
-function readLimit(record: ApiRecord): number {
-  const limit = readRequiredNonNegativeNumber(record, 'limit', 'Analytics limit is required');
-  if (!Number.isSafeInteger(limit) || limit < MIN_LIMIT || limit > MAX_LIMIT) {
-    throw new Error(`Analytics limit must be between ${MIN_LIMIT} and ${MAX_LIMIT}`);
+function readRankingSize(record: ApiRecord): number {
+  const rankingSize = readRequiredNonNegativeNumber(record, 'rankingSize', 'Analytics ranking size is required');
+  if (!Number.isSafeInteger(rankingSize) || rankingSize < MIN_RANKING_SIZE || rankingSize > MAX_RANKING_SIZE) {
+    throw new Error(`Analytics ranking size must be between ${MIN_RANKING_SIZE} and ${MAX_RANKING_SIZE}`);
   }
-  return limit;
+  return rankingSize;
 }
 
 function normalizeTimeRange(value: unknown, fieldName: string): AdminAnalyticsTimeRange {
@@ -362,7 +359,7 @@ export function createEmptyAnalyticsOverview(timeRange: AdminAnalyticsTimeRange 
     timeRange,
     startTime: null,
     endTime: null,
-    limit: DEFAULT_LIMIT,
+    rankingSize: DEFAULT_RANKING_SIZE,
     summary: {
       totalUsers: 0,
       activeUsers: 0,

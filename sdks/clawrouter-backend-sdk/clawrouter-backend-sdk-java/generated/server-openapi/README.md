@@ -62,15 +62,8 @@ client.getHttpClient().setHeader("X-Custom-Header", "value");
 ## API Modules
 
 - `client.getAi()` - ai API
-- `client.getContent()` - content API
-- `client.getIam()` - iam API
 - `client.getIntegration()` - integration API
-- `client.getMcp()` - mcp API
-- `client.getMessaging()` - messaging API
-- `client.getPrompts()` - prompts API
-- `client.getServiceProviders()` - service_providers API
 - `client.getSites()` - sites API
-- `client.getStorage()` - storage API
 - `client.getSystem()` - system API
 
 ## Usage Examples
@@ -78,121 +71,31 @@ client.getHttpClient().setHeader("X-Custom-Header", "value");
 ### ai
 
 ```java
-// List groups
+// List
 ChannelGroupsListResult result = client.getAi().channelGroupsList();
-System.out.println(result);
-```
-
-### content
-
-```java
-// List announcements
-AnnouncementsListResult result = client.getContent().announcementsList();
-System.out.println(result);
-```
-
-### iam
-
-```java
-// Delete API key
-String apiKeyId = "1";
-ApiKeysDeleteResult result = client.getIam().apiKeysDelete(apiKeyId);
 System.out.println(result);
 ```
 
 ### integration
 
 ```java
-// List channels
+// List
 ChannelsListResult result = client.getIntegration().channelsList();
-System.out.println(result);
-```
-
-### mcp
-
-```java
-// List MCP servers
-Map<String, Object> params = new LinkedHashMap<>();
-params.put("page", "page");
-params.put("page_size", "page-size");
-params.put("q", "q");
-params.put("transport", "transport");
-params.put("visibility", "visibility");
-params.put("status", "status");
-params.put("category_id", "1");
-ServersListResult result = client.getMcp().serversList(params);
-System.out.println(result);
-```
-
-### messaging
-
-```java
-// Messaging provider accounts list
-Map<String, Object> params = new LinkedHashMap<>();
-params.put("page", "page");
-params.put("page_size", "page-size");
-params.put("q", "q");
-params.put("status", "status");
-params.put("channel", "sms");
-params.put("provider_code", "ok");
-ProviderAccountsListResult result = client.getMessaging().providerAccountsList(params);
-System.out.println(result);
-```
-
-### prompts
-
-```java
-// List admin prompts
-Map<String, Object> params = new LinkedHashMap<>();
-params.put("page", "page");
-params.put("page_size", "page-size");
-params.put("q", "q");
-params.put("prompt_type", "prompt-type");
-params.put("visibility", "visibility");
-params.put("status", "status");
-params.put("category_id", "1");
-DefinitionsListResult result = client.getPrompts().definitionsList(params);
-System.out.println(result);
-```
-
-### service_providers
-
-```java
-// Service Provider Adjustments List
-Map<String, Object> params = new LinkedHashMap<>();
-params.put("page", "page");
-params.put("page_size", "page-size");
-params.put("status", "status");
-params.put("provider_id", "1");
-params.put("seller_provider_id", "1");
-params.put("buyer_provider_id", "1");
-params.put("edge_id", "1");
-AdjustmentsListResult result = client.getServiceProviders().adjustmentsList(params);
 System.out.println(result);
 ```
 
 ### sites
 
 ```java
-// List sites
-Map<String, Object> params = new LinkedHashMap<>();
-params.put("q", "q");
-SiteCatalogListResult result = client.getSites().siteCatalogList(params);
-System.out.println(result);
-```
-
-### storage
-
-```java
-// List storage providers
-OssProvidersListResult result = client.getStorage().ossProvidersList();
+// List
+SiteCatalogListResult result = client.getSites().siteCatalogList();
 System.out.println(result);
 ```
 
 ### system
 
 ```java
-// Retrieve IAM auth runtime settings
+// Retrieve
 AuthSettingsRetrieveResult result = client.getSystem().authSettingsRetrieve();
 System.out.println(result);
 ```

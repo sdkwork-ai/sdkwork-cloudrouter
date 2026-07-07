@@ -28,7 +28,9 @@ use sdkwork_claw_provider_adapter_contract::{
     AdapterInvocationShape, AdapterProviderContext, AdapterSecret, AdapterSubject,
     AdapterUsageLine,
 };
-use sdkwork_claw_provider_adapter_http::{AdapterInvokeResult, ProviderAdapterHttpClient, ProviderAdapterHttpError};
+use sdkwork_claw_provider_adapter_http::{
+    AdapterInvokeResult, ProviderAdapterHttpClient, ProviderAdapterHttpError,
+};
 use sdkwork_claw_provider_adapter_registry::{
     ProviderAdapterLookup, ProviderAdapterRegistry, ProviderAdapterRouteConfig,
     ProviderInvocationMode,
@@ -617,8 +619,7 @@ impl ProviderPassthroughRuntime {
                 let bytes = axum::body::to_bytes(stream_body, ADAPTER_STREAMING_RESPONSE_MAX_BYTES)
                     .await
                     .map_err(|e| format!("failed to read streaming adapter response: {e}"))?;
-                let body =
-                    serde_json::from_slice(&bytes).unwrap_or(serde_json::Value::Null);
+                let body = serde_json::from_slice(&bytes).unwrap_or(serde_json::Value::Null);
                 let mut response = AdapterInvocationResponse::json(status_code, body);
                 if let Some(ct) = content_type {
                     response.headers.insert("content-type".to_owned(), ct);

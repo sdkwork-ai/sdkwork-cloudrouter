@@ -139,12 +139,12 @@ mod tests {
     #[test]
     fn admin_scope_maps_from_app_sql_scope() {
         let admin = SqlScopedAdminSubject::from(SqlScopedSubject {
-            tenant_id: 10,
-            organization_id: 20,
+            tenant_id: 100001,
+            organization_id: 0,
             user_id: 30,
         });
-        assert_eq!(10, admin.tenant_id);
-        assert_eq!(20, admin.organization_id);
+        assert_eq!(100001, admin.tenant_id);
+        assert_eq!(0, admin.organization_id);
         assert_eq!(30, admin.operator_id);
         assert_eq!(APP_USER_OPERATOR_TYPE, admin.operator_type);
     }

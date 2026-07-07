@@ -1,6 +1,6 @@
+use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
@@ -228,8 +228,7 @@ async fn fetch_sites(
     {
         Ok(page) => json_success_list_response(
             None,
-            page
-                .items
+            page.items
                 .into_iter()
                 .map(to_site_response)
                 .collect::<Vec<_>>(),
@@ -346,8 +345,7 @@ async fn fetch_site_channels(
     {
         Ok(page) => json_success_list_response(
             None,
-            page
-                .items
+            page.items
                 .into_iter()
                 .map(to_site_channel_response)
                 .collect::<Vec<_>>(),
@@ -398,7 +396,6 @@ async fn site_connection_action(
         Err(error) => system_response("Site connection check is unavailable", error),
     }
 }
-
 
 fn build_create_site_command(
     state: AdminSiteState,

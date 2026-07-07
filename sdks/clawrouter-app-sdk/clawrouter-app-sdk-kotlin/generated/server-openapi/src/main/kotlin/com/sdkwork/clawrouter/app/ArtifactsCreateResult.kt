@@ -1,7 +1,7 @@
 package com.sdkwork.clawrouter.app
 
 data class ArtifactsCreateResult(
-    val code: String? = null,
-    val data_: RuntimeArtifactResponse? = null,
-    val msg: String? = null
+    val code: Int? = null,
+    val data_: Any? = null,
+    val traceId: String? = null
 )

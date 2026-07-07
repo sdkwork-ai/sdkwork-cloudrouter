@@ -13,6 +13,8 @@ use sdkwork_clawrouter_router_service::ports::{
 };
 use tokio::sync::Notify;
 
+const TEST_TENANT_ID: i64 = 100_001;
+
 #[tokio::test]
 async fn model_ranking_refresh_worker_run_once_builds_windowed_snapshot_command() {
     let store = Arc::new(RecordingRankingRefreshStore::new(
@@ -32,7 +34,7 @@ async fn model_ranking_refresh_worker_run_once_builds_windowed_snapshot_command(
         store.clone(),
         ModelRankingRefreshWorkerConfig {
             enabled: true,
-            tenant_id: 0,
+            tenant_id: TEST_TENANT_ID,
             organization_id: 0,
             rank_scope: "commercial-default".to_owned(),
             snapshot_period: "daily".to_owned(),
@@ -55,7 +57,7 @@ async fn model_ranking_refresh_worker_run_once_builds_windowed_snapshot_command(
     assert_eq!(9, outcome.source_count);
     let commands = store.commands.lock().unwrap();
     assert_eq!(1, commands.len());
-    assert_eq!(0, commands[0].tenant_id);
+    assert_eq!(TEST_TENANT_ID, commands[0].tenant_id);
     assert_eq!(0, commands[0].organization_id);
     assert_eq!("commercial-default", commands[0].rank_scope);
     assert_eq!("daily", commands[0].snapshot_period);

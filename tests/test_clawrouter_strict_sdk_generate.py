@@ -413,6 +413,218 @@ class ClawRouterStrictSdkGenerateTest(unittest.TestCase):
             self.assertNotIn("public readonly oss: StorageApi;", files["src/sdk.ts"])
             self.assertNotIn("public readonly oss: OssOssApi;", files["src/api/oss.ts"])
 
+    def test_sdkwork_v3_generation_unwraps_result_envelopes_in_public_methods(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            temp_root = Path(tmp)
+            output = temp_root / "sdk"
+            spec_path = temp_root / "openapi.json"
+            spec = {
+                "openapi": "3.1.2",
+                "info": {"title": "Strict SDKWork v3 Test", "version": "0.1.0"},
+                "servers": [{"url": "http://localhost:18081"}],
+                "security": [{"AuthToken": [], "AccessToken": []}],
+                "paths": {
+                    "/backend/v3/api/system/analytics/admin/overview": {
+                        "get": {
+                            "operationId": "analytics.admin.overview.retrieve",
+                            "tags": ["system"],
+                            "security": [{"AuthToken": [], "AccessToken": []}],
+                            "responses": {
+                                "200": {
+                                    "description": "OK",
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {
+                                                "$ref": "#/components/schemas/AnalyticsAdminOverviewRetrieveResult"
+                                            }
+                                        }
+                                    },
+                                }
+                            },
+                        }
+                    },
+                    "/backend/v3/api/system/cache/namespaces/{namespace}/keys": {
+                        "get": {
+                            "operationId": "cache.namespaces.keys.list",
+                            "tags": ["system"],
+                            "security": [{"AuthToken": [], "AccessToken": []}],
+                            "parameters": [
+                                {
+                                    "name": "namespace",
+                                    "in": "path",
+                                    "required": True,
+                                    "schema": {"type": "string"},
+                                },
+                                {
+                                    "name": "page_size",
+                                    "in": "query",
+                                    "required": False,
+                                    "schema": {"type": "integer", "minimum": 1, "maximum": 200},
+                                },
+                            ],
+                            "responses": {
+                                "200": {
+                                    "description": "OK",
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {
+                                                "$ref": "#/components/schemas/CacheNamespacesKeysListResult"
+                                            }
+                                        }
+                                    },
+                                }
+                            },
+                        }
+                    },
+                },
+                "components": {
+                    "securitySchemes": {
+                        "AuthToken": {"type": "http", "scheme": "bearer"},
+                        "AccessToken": {"type": "apiKey", "in": "header", "name": "Access-Token"},
+                    },
+                    "schemas": {
+                        "ProblemDetail": {
+                            "type": "object",
+                            "required": ["type", "title", "status", "code", "traceId"],
+                            "properties": {
+                                "type": {"type": "string"},
+                                "title": {"type": "string"},
+                                "status": {"type": "integer"},
+                                "code": {"type": "integer", "format": "int32"},
+                                "traceId": {"type": "string"},
+                            },
+                        },
+                        "SdkWorkApiResponse": {
+                            "type": "object",
+                            "additionalProperties": False,
+                            "required": ["code", "data", "traceId"],
+                            "properties": {
+                                "code": {"type": "integer", "format": "int32", "enum": [0]},
+                                "data": True,
+                                "traceId": {"type": "string"},
+                            },
+                        },
+                        "PageInfo": {
+                            "type": "object",
+                            "additionalProperties": False,
+                            "required": ["mode"],
+                            "properties": {
+                                "mode": {"type": "string", "enum": ["offset", "cursor"]},
+                                "pageSize": {"type": "integer"},
+                            },
+                        },
+                        "AdminAnalyticsOverview": {
+                            "type": "object",
+                            "additionalProperties": False,
+                            "required": ["rankingSize"],
+                            "properties": {"rankingSize": {"type": "integer"}},
+                        },
+                        "CacheNamespaceKey": {
+                            "type": "object",
+                            "additionalProperties": False,
+                            "required": ["key", "namespace"],
+                            "properties": {
+                                "key": {"type": "string"},
+                                "namespace": {"type": "string"},
+                            },
+                        },
+                        "CacheNamespaceKeyPage": {
+                            "type": "object",
+                            "additionalProperties": False,
+                            "required": ["items", "pageInfo"],
+                            "properties": {
+                                "items": {
+                                    "type": "array",
+                                    "items": {"$ref": "#/components/schemas/CacheNamespaceKey"},
+                                },
+                                "pageInfo": {"$ref": "#/components/schemas/PageInfo"},
+                            },
+                        },
+                        "AnalyticsAdminOverviewRetrieveResult": {
+                            "allOf": [
+                                {"$ref": "#/components/schemas/SdkWorkApiResponse"},
+                                {
+                                    "type": "object",
+                                    "additionalProperties": False,
+                                    "required": ["data"],
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {"$ref": "#/components/schemas/AdminAnalyticsOverview"}
+                                            ]
+                                        }
+                                    },
+                                },
+                            ],
+                        },
+                        "CacheNamespacesKeysListResult": {
+                            "allOf": [
+                                {"$ref": "#/components/schemas/SdkWorkApiResponse"},
+                                {
+                                    "type": "object",
+                                    "additionalProperties": False,
+                                    "required": ["data"],
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/CacheNamespaceKeyPage"
+                                        }
+                                    },
+                                },
+                            ],
+                        },
+                    }
+                },
+            }
+            spec_path.write_text(json.dumps(spec, indent=2) + "\n", encoding="utf-8")
+
+            completed = subprocess.run(
+                [
+                    "node",
+                    "tools/clawrouter_strict_sdk_generate.mjs",
+                    "generate",
+                    "-i",
+                    str(spec_path),
+                    "-o",
+                    str(output),
+                    "-n",
+                    "clawrouter-backend-sdk",
+                    "-t",
+                    "backend",
+                    "-l",
+                    "typescript",
+                    "--base-url",
+                    "http://localhost:18081",
+                    "--api-prefix",
+                    "/backend/v3/api",
+                    "--package-name",
+                    "@sdkwork/clawrouter-backend-sdk",
+                    "--fixed-sdk-version",
+                    "0.1.0",
+                    "--no-sync-published-version",
+                    "--standard-profile",
+                    "sdkwork-v3",
+                    "--dry-run",
+                    "--json",
+                ],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            payload = json.loads(completed.stdout)
+            files = {file["path"]: file["content"] for file in payload["files"]}
+            generated_source = "\n".join(files.values())
+
+            self.assertNotIn("AnalyticsAdminOverviewRetrieveResult", generated_source)
+            self.assertNotIn("CacheNamespacesKeysListResult", generated_source)
+            self.assertNotIn("src/types/analytics-admin-overview-retrieve-result.ts", files)
+            self.assertNotIn("src/types/cache-namespaces-keys-list-result.ts", files)
+            self.assertIn("Promise<AdminAnalyticsOverview>", generated_source)
+            self.assertIn("Promise<CacheNamespaceKeyPage>", generated_source)
+            self.assertIn("{ name: 'page_size', value: params?.pageSize", generated_source)
+
     def test_apply_generation_runs_project_runtime_standardizer(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             temp_root = Path(tmp)

@@ -170,7 +170,7 @@ export function Rankings() {
       vendorCode: selectedVendorCode,
       modality: activeBackendModality,
       searchQuery,
-      limit: 200,
+      pageSize: 200,
     })
       .then((snapshot) => {
         if (cancelled) {

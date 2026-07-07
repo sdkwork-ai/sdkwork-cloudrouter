@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
+use std::sync::Arc;
 
 use axum::extract::{Query, State};
 use axum::http::{HeaderMap, StatusCode};
@@ -134,8 +134,7 @@ fn validated_query(
     query: AdminFinanceRequestQuery,
 ) -> Result<ValidatedFinanceListQuery, Response> {
     let subject = scoped.into();
-    let pagination = parse_offset_list_query(query.page, query.page_size)
-        .map_err(bad_request)?;
+    let pagination = parse_offset_list_query(query.page, query.page_size).map_err(bad_request)?;
 
     Ok(ValidatedFinanceListQuery {
         subject,

@@ -17,13 +17,23 @@ func NewSystemApi(client *sdkhttp.Client) *SystemApi {
     return &SystemApi{client: client}
 }
 
-// List overview
-func (a *SystemApi) AnalyticsAdminOverviewRetrieve(timeRange *string, startTime *string, endTime *string, limit *string) (sdktypes.AnalyticsAdminOverviewRetrieveResult, error) {
+// Create
+func (a *SystemApi) AfterSalesReviewsCreate(afterSalesRequestId string) (sdktypes.AfterSalesReviewsCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath(fmt.Sprintf("/system/after_sales/requests/%s/reviews", SerializePathParameter(afterSalesRequestId, PathParameterSpec{Name: "afterSalesRequestId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.AfterSalesReviewsCreateResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.AfterSalesReviewsCreateResult](raw)
+}
+
+// Retrieve
+func (a *SystemApi) AnalyticsAdminOverviewRetrieve(timeRange *string, startTime *string, endTime *string, rankingSize *int) (sdktypes.AnalyticsAdminOverviewRetrieveResult, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "time_range", Value: func() interface{} { if timeRange == nil { return nil }; return *timeRange }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "start_time", Value: func() interface{} { if startTime == nil { return nil }; return *startTime }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "end_time", Value: func() interface{} { if endTime == nil { return nil }; return *endTime }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "ranking_size", Value: func() interface{} { if rankingSize == nil { return nil }; return *rankingSize }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(BackendApiPath("/system/analytics/admin/overview"), query), nil, nil)
     if err != nil {
@@ -33,7 +43,7 @@ func (a *SystemApi) AnalyticsAdminOverviewRetrieve(timeRange *string, startTime 
     return decodeResult[sdktypes.AnalyticsAdminOverviewRetrieveResult](raw)
 }
 
-// Retrieve IAM auth runtime settings
+// Retrieve
 func (a *SystemApi) AuthSettingsRetrieve() (sdktypes.AuthSettingsRetrieveResult, error) {
     raw, err := a.client.Get(BackendApiPath("/system/auth/settings"), nil, nil)
     if err != nil {
@@ -43,9 +53,9 @@ func (a *SystemApi) AuthSettingsRetrieve() (sdktypes.AuthSettingsRetrieveResult,
     return decodeResult[sdktypes.AuthSettingsRetrieveResult](raw)
 }
 
-// Update IAM auth runtime settings
-func (a *SystemApi) AuthSettingsUpdate(body sdktypes.AdminAuthSettingsUpdateRequest) (sdktypes.AuthSettingsUpdateResult, error) {
-    raw, err := a.client.Patch(BackendApiPath("/system/auth/settings"), body, nil, nil, "application/json")
+// Update
+func (a *SystemApi) AuthSettingsUpdate() (sdktypes.AuthSettingsUpdateResult, error) {
+    raw, err := a.client.Patch(BackendApiPath("/system/auth/settings"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.AuthSettingsUpdateResult
         return zero, err
@@ -53,7 +63,7 @@ func (a *SystemApi) AuthSettingsUpdate(body sdktypes.AdminAuthSettingsUpdateRequ
     return decodeResult[sdktypes.AuthSettingsUpdateResult](raw)
 }
 
-// Delete one runtime cache instance
+// Delete
 func (a *SystemApi) CacheInstancesDelete(instanceName string) (sdktypes.CacheInstancesDeleteResult, error) {
     raw, err := a.client.Delete(BackendApiPath(fmt.Sprintf("/system/cache/instances/%s", SerializePathParameter(instanceName, PathParameterSpec{Name: "instanceName", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
@@ -63,7 +73,7 @@ func (a *SystemApi) CacheInstancesDelete(instanceName string) (sdktypes.CacheIns
     return decodeResult[sdktypes.CacheInstancesDeleteResult](raw)
 }
 
-// Refresh one runtime cache instance
+// Create
 func (a *SystemApi) CacheInstancesRefreshCreate(instanceName string) (sdktypes.CacheInstancesRefreshCreateResult, error) {
     raw, err := a.client.Post(BackendApiPath(fmt.Sprintf("/system/cache/instances/%s/refresh", SerializePathParameter(instanceName, PathParameterSpec{Name: "instanceName", Style: "simple", Explode: false}))), nil, nil, nil, "")
     if err != nil {
@@ -73,7 +83,7 @@ func (a *SystemApi) CacheInstancesRefreshCreate(instanceName string) (sdktypes.C
     return decodeResult[sdktypes.CacheInstancesRefreshCreateResult](raw)
 }
 
-// Delete a runtime cache namespace
+// Delete
 func (a *SystemApi) CacheNamespacesDelete(namespace string) (sdktypes.CacheNamespacesDeleteResult, error) {
     raw, err := a.client.Delete(BackendApiPath(fmt.Sprintf("/system/cache/namespaces/%s", SerializePathParameter(namespace, PathParameterSpec{Name: "namespace", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
@@ -83,10 +93,10 @@ func (a *SystemApi) CacheNamespacesDelete(namespace string) (sdktypes.CacheNames
     return decodeResult[sdktypes.CacheNamespacesDeleteResult](raw)
 }
 
-// List runtime cache keys in a namespace
-func (a *SystemApi) CacheNamespacesKeysList(namespace string, limit *string, cursor *string) (sdktypes.CacheNamespacesKeysListResult, error) {
+// List
+func (a *SystemApi) CacheNamespacesKeysList(namespace string, pageSize *int, cursor *string) (sdktypes.CacheNamespacesKeysListResult, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "cursor", Value: func() interface{} { if cursor == nil { return nil }; return *cursor }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(BackendApiPath(fmt.Sprintf("/system/cache/namespaces/%s/keys", SerializePathParameter(namespace, PathParameterSpec{Name: "namespace", Style: "simple", Explode: false}))), query), nil, nil)
@@ -97,7 +107,7 @@ func (a *SystemApi) CacheNamespacesKeysList(namespace string, limit *string, cur
     return decodeResult[sdktypes.CacheNamespacesKeysListResult](raw)
 }
 
-// Delete a runtime cache key
+// Delete
 func (a *SystemApi) CacheNamespacesKeysDelete(namespace string, key string) (sdktypes.CacheNamespacesKeysDeleteResult, error) {
     raw, err := a.client.Delete(BackendApiPath(fmt.Sprintf("/system/cache/namespaces/%s/keys/%s", SerializePathParameter(namespace, PathParameterSpec{Name: "namespace", Style: "simple", Explode: false}), SerializePathParameter(key, PathParameterSpec{Name: "key", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
@@ -107,7 +117,7 @@ func (a *SystemApi) CacheNamespacesKeysDelete(namespace string, key string) (sdk
     return decodeResult[sdktypes.CacheNamespacesKeysDeleteResult](raw)
 }
 
-// Refresh one runtime cache namespace
+// Create
 func (a *SystemApi) CacheNamespacesRefreshCreate(namespace string) (sdktypes.CacheNamespacesRefreshCreateResult, error) {
     raw, err := a.client.Post(BackendApiPath(fmt.Sprintf("/system/cache/namespaces/%s/refresh", SerializePathParameter(namespace, PathParameterSpec{Name: "namespace", Style: "simple", Explode: false}))), nil, nil, nil, "")
     if err != nil {
@@ -117,7 +127,7 @@ func (a *SystemApi) CacheNamespacesRefreshCreate(namespace string) (sdktypes.Cac
     return decodeResult[sdktypes.CacheNamespacesRefreshCreateResult](raw)
 }
 
-// Retrieve runtime cache overview
+// Retrieve
 func (a *SystemApi) CacheOverviewRetrieve() (sdktypes.CacheOverviewRetrieveResult, error) {
     raw, err := a.client.Get(BackendApiPath("/system/cache/overview"), nil, nil)
     if err != nil {
@@ -127,7 +137,7 @@ func (a *SystemApi) CacheOverviewRetrieve() (sdktypes.CacheOverviewRetrieveResul
     return decodeResult[sdktypes.CacheOverviewRetrieveResult](raw)
 }
 
-// Refresh all runtime cache instances
+// Create
 func (a *SystemApi) CacheRefreshCreate() (sdktypes.CacheRefreshCreateResult, error) {
     raw, err := a.client.Post(BackendApiPath("/system/cache/refresh"), nil, nil, nil, "")
     if err != nil {
@@ -137,7 +147,7 @@ func (a *SystemApi) CacheRefreshCreate() (sdktypes.CacheRefreshCreateResult, err
     return decodeResult[sdktypes.CacheRefreshCreateResult](raw)
 }
 
-// List dashboard data
+// Retrieve
 func (a *SystemApi) DashboardAdminOverviewRetrieve() (sdktypes.DashboardAdminOverviewRetrieveResult, error) {
     raw, err := a.client.Get(BackendApiPath("/system/dashboard/admin/overview"), nil, nil)
     if err != nil {
@@ -147,7 +157,7 @@ func (a *SystemApi) DashboardAdminOverviewRetrieve() (sdktypes.DashboardAdminOve
     return decodeResult[sdktypes.DashboardAdminOverviewRetrieveResult](raw)
 }
 
-// List firewalls
+// List
 func (a *SystemApi) FirewallsRulesList() (sdktypes.FirewallsRulesListResult, error) {
     raw, err := a.client.Get(BackendApiPath("/system/firewalls/rules"), nil, nil)
     if err != nil {
@@ -157,9 +167,9 @@ func (a *SystemApi) FirewallsRulesList() (sdktypes.FirewallsRulesListResult, err
     return decodeResult[sdktypes.FirewallsRulesListResult](raw)
 }
 
-// Create firewall
-func (a *SystemApi) FirewallsRulesCreate(body sdktypes.AdminFirewallRuleCreateRequest) (sdktypes.FirewallsRulesCreateResult, error) {
-    raw, err := a.client.Post(BackendApiPath("/system/firewalls/rules"), body, nil, nil, "application/json")
+// Create
+func (a *SystemApi) FirewallsRulesCreate() (sdktypes.FirewallsRulesCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath("/system/firewalls/rules"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.FirewallsRulesCreateResult
         return zero, err
@@ -167,7 +177,7 @@ func (a *SystemApi) FirewallsRulesCreate(body sdktypes.AdminFirewallRuleCreateRe
     return decodeResult[sdktypes.FirewallsRulesCreateResult](raw)
 }
 
-// Delete firewall
+// Delete
 func (a *SystemApi) FirewallsRulesDelete(ruleId string) (sdktypes.FirewallsRulesDeleteResult, error) {
     raw, err := a.client.Delete(BackendApiPath(fmt.Sprintf("/system/firewalls/rules/%s", SerializePathParameter(ruleId, PathParameterSpec{Name: "ruleId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
@@ -177,7 +187,7 @@ func (a *SystemApi) FirewallsRulesDelete(ruleId string) (sdktypes.FirewallsRules
     return decodeResult[sdktypes.FirewallsRulesDeleteResult](raw)
 }
 
-// List installation status
+// Retrieve
 func (a *SystemApi) InstallationStatusRetrieve() (sdktypes.InstallationStatusRetrieveResult, error) {
     raw, err := a.client.Get(BackendApiPath("/system/installation/status"), nil, nil)
     if err != nil {
@@ -187,7 +197,7 @@ func (a *SystemApi) InstallationStatusRetrieve() (sdktypes.InstallationStatusRet
     return decodeResult[sdktypes.InstallationStatusRetrieveResult](raw)
 }
 
-// List referral stats
+// List
 func (a *SystemApi) MarketingReferralStatsList() (sdktypes.MarketingReferralStatsListResult, error) {
     raw, err := a.client.Get(BackendApiPath("/system/marketing/referral_stats"), nil, nil)
     if err != nil {
@@ -197,7 +207,7 @@ func (a *SystemApi) MarketingReferralStatsList() (sdktypes.MarketingReferralStat
     return decodeResult[sdktypes.MarketingReferralStatsListResult](raw)
 }
 
-// List alerts
+// List
 func (a *SystemApi) MonitorAlertsList() (sdktypes.MonitorAlertsListResult, error) {
     raw, err := a.client.Get(BackendApiPath("/system/monitor/alerts"), nil, nil)
     if err != nil {
@@ -207,7 +217,7 @@ func (a *SystemApi) MonitorAlertsList() (sdktypes.MonitorAlertsListResult, error
     return decodeResult[sdktypes.MonitorAlertsListResult](raw)
 }
 
-// List nodes
+// List
 func (a *SystemApi) MonitorNodesList() (sdktypes.MonitorNodesListResult, error) {
     raw, err := a.client.Get(BackendApiPath("/system/monitor/nodes"), nil, nil)
     if err != nil {
@@ -217,7 +227,7 @@ func (a *SystemApi) MonitorNodesList() (sdktypes.MonitorNodesListResult, error) 
     return decodeResult[sdktypes.MonitorNodesListResult](raw)
 }
 
-// List performance data
+// List
 func (a *SystemApi) MonitorPerformanceList() (sdktypes.MonitorPerformanceListResult, error) {
     raw, err := a.client.Get(BackendApiPath("/system/monitor/performance"), nil, nil)
     if err != nil {
@@ -227,7 +237,7 @@ func (a *SystemApi) MonitorPerformanceList() (sdktypes.MonitorPerformanceListRes
     return decodeResult[sdktypes.MonitorPerformanceListResult](raw)
 }
 
-// List token limits
+// List
 func (a *SystemApi) RateLimitsApiKeysList() (sdktypes.RateLimitsApiKeysListResult, error) {
     raw, err := a.client.Get(BackendApiPath("/system/rate_limits/api_keys"), nil, nil)
     if err != nil {
@@ -237,9 +247,9 @@ func (a *SystemApi) RateLimitsApiKeysList() (sdktypes.RateLimitsApiKeysListResul
     return decodeResult[sdktypes.RateLimitsApiKeysListResult](raw)
 }
 
-// Create token limit
-func (a *SystemApi) RateLimitsApiKeysCreate(body sdktypes.AdminTokenLimitCreateRequest) (sdktypes.RateLimitsApiKeysCreateResult, error) {
-    raw, err := a.client.Post(BackendApiPath("/system/rate_limits/api_keys"), body, nil, nil, "application/json")
+// Create
+func (a *SystemApi) RateLimitsApiKeysCreate() (sdktypes.RateLimitsApiKeysCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath("/system/rate_limits/api_keys"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.RateLimitsApiKeysCreateResult
         return zero, err
@@ -247,7 +257,7 @@ func (a *SystemApi) RateLimitsApiKeysCreate(body sdktypes.AdminTokenLimitCreateR
     return decodeResult[sdktypes.RateLimitsApiKeysCreateResult](raw)
 }
 
-// List IP limits
+// List
 func (a *SystemApi) RateLimitsIpList() (sdktypes.RateLimitsIpListResult, error) {
     raw, err := a.client.Get(BackendApiPath("/system/rate_limits/ip"), nil, nil)
     if err != nil {
@@ -257,9 +267,9 @@ func (a *SystemApi) RateLimitsIpList() (sdktypes.RateLimitsIpListResult, error) 
     return decodeResult[sdktypes.RateLimitsIpListResult](raw)
 }
 
-// Create IP limit
-func (a *SystemApi) RateLimitsIpCreate(body sdktypes.AdminIpLimitCreateRequest) (sdktypes.RateLimitsIpCreateResult, error) {
-    raw, err := a.client.Post(BackendApiPath("/system/rate_limits/ip"), body, nil, nil, "application/json")
+// Create
+func (a *SystemApi) RateLimitsIpCreate() (sdktypes.RateLimitsIpCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath("/system/rate_limits/ip"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.RateLimitsIpCreateResult
         return zero, err
@@ -267,7 +277,7 @@ func (a *SystemApi) RateLimitsIpCreate(body sdktypes.AdminIpLimitCreateRequest) 
     return decodeResult[sdktypes.RateLimitsIpCreateResult](raw)
 }
 
-// List model limits
+// List
 func (a *SystemApi) RateLimitsModelsList() (sdktypes.RateLimitsModelsListResult, error) {
     raw, err := a.client.Get(BackendApiPath("/system/rate_limits/models"), nil, nil)
     if err != nil {
@@ -277,9 +287,9 @@ func (a *SystemApi) RateLimitsModelsList() (sdktypes.RateLimitsModelsListResult,
     return decodeResult[sdktypes.RateLimitsModelsListResult](raw)
 }
 
-// Create model limit
-func (a *SystemApi) RateLimitsModelsCreate(body sdktypes.AdminModelLimitCreateRequest) (sdktypes.RateLimitsModelsCreateResult, error) {
-    raw, err := a.client.Post(BackendApiPath("/system/rate_limits/models"), body, nil, nil, "application/json")
+// Create
+func (a *SystemApi) RateLimitsModelsCreate() (sdktypes.RateLimitsModelsCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath("/system/rate_limits/models"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.RateLimitsModelsCreateResult
         return zero, err
@@ -287,16 +297,9 @@ func (a *SystemApi) RateLimitsModelsCreate(body sdktypes.AdminModelLimitCreateRe
     return decodeResult[sdktypes.RateLimitsModelsCreateResult](raw)
 }
 
-// List logs
-func (a *SystemApi) RecordsList(page *string, pageSize *string, user *string, token *string, model *string) (sdktypes.RecordsListResult, error) {
-    query := BuildQueryString([]QueryParameterSpec{
-        {Name: "page", Value: func() interface{} { if page == nil { return nil }; return *page }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "user", Value: func() interface{} { if user == nil { return nil }; return *user }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "token", Value: func() interface{} { if token == nil { return nil }; return *token }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "model", Value: func() interface{} { if model == nil { return nil }; return *model }(), Style: "form", Explode: true, AllowReserved: false},
-    })
-    raw, err := a.client.Get(AppendQueryString(BackendApiPath("/system/records"), query), nil, nil)
+// List
+func (a *SystemApi) RecordsList() (sdktypes.RecordsListResult, error) {
+    raw, err := a.client.Get(BackendApiPath("/system/records"), nil, nil)
     if err != nil {
         var zero sdktypes.RecordsListResult
         return zero, err
@@ -304,7 +307,7 @@ func (a *SystemApi) RecordsList(page *string, pageSize *string, user *string, to
     return decodeResult[sdktypes.RecordsListResult](raw)
 }
 
-// Retrieve runtime region settings
+// Retrieve
 func (a *SystemApi) RuntimeRegionSettingsRetrieve() (sdktypes.RuntimeRegionSettingsRetrieveResult, error) {
     raw, err := a.client.Get(BackendApiPath("/system/runtime_region/settings"), nil, nil)
     if err != nil {
@@ -314,9 +317,9 @@ func (a *SystemApi) RuntimeRegionSettingsRetrieve() (sdktypes.RuntimeRegionSetti
     return decodeResult[sdktypes.RuntimeRegionSettingsRetrieveResult](raw)
 }
 
-// Update runtime region settings
-func (a *SystemApi) RuntimeRegionSettingsUpdate(body sdktypes.AdminRuntimeRegionSettingsUpdateRequest) (sdktypes.RuntimeRegionSettingsUpdateResult, error) {
-    raw, err := a.client.Patch(BackendApiPath("/system/runtime_region/settings"), body, nil, nil, "application/json")
+// Update
+func (a *SystemApi) RuntimeRegionSettingsUpdate() (sdktypes.RuntimeRegionSettingsUpdateResult, error) {
+    raw, err := a.client.Patch(BackendApiPath("/system/runtime_region/settings"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.RuntimeRegionSettingsUpdateResult
         return zero, err
@@ -324,13 +327,9 @@ func (a *SystemApi) RuntimeRegionSettingsUpdate(body sdktypes.AdminRuntimeRegion
     return decodeResult[sdktypes.RuntimeRegionSettingsUpdateResult](raw)
 }
 
-// List service nodes
-func (a *SystemApi) ServiceNodesList(q *string, status *string) (sdktypes.ServiceNodesListResult, error) {
-    query := BuildQueryString([]QueryParameterSpec{
-        {Name: "q", Value: func() interface{} { if q == nil { return nil }; return *q }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "status", Value: func() interface{} { if status == nil { return nil }; return *status }(), Style: "form", Explode: true, AllowReserved: false},
-    })
-    raw, err := a.client.Get(AppendQueryString(BackendApiPath("/system/service_nodes"), query), nil, nil)
+// List
+func (a *SystemApi) ServiceNodesList() (sdktypes.ServiceNodesListResult, error) {
+    raw, err := a.client.Get(BackendApiPath("/system/service_nodes"), nil, nil)
     if err != nil {
         var zero sdktypes.ServiceNodesListResult
         return zero, err
@@ -338,9 +337,9 @@ func (a *SystemApi) ServiceNodesList(q *string, status *string) (sdktypes.Servic
     return decodeResult[sdktypes.ServiceNodesListResult](raw)
 }
 
-// Create service node
-func (a *SystemApi) ServiceNodesCreate(body sdktypes.AdminServiceNodeCreateRequest) (sdktypes.ServiceNodesCreateResult, error) {
-    raw, err := a.client.Post(BackendApiPath("/system/service_nodes"), body, nil, nil, "application/json")
+// Create
+func (a *SystemApi) ServiceNodesCreate() (sdktypes.ServiceNodesCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath("/system/service_nodes"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ServiceNodesCreateResult
         return zero, err
@@ -348,7 +347,7 @@ func (a *SystemApi) ServiceNodesCreate(body sdktypes.AdminServiceNodeCreateReque
     return decodeResult[sdktypes.ServiceNodesCreateResult](raw)
 }
 
-// Delete service node
+// Delete
 func (a *SystemApi) ServiceNodesDelete(nodeId string) (sdktypes.ServiceNodesDeleteResult, error) {
     raw, err := a.client.Delete(BackendApiPath(fmt.Sprintf("/system/service_nodes/%s", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
@@ -358,9 +357,9 @@ func (a *SystemApi) ServiceNodesDelete(nodeId string) (sdktypes.ServiceNodesDele
     return decodeResult[sdktypes.ServiceNodesDeleteResult](raw)
 }
 
-// Update service node
-func (a *SystemApi) ServiceNodesUpdate(nodeId string, body sdktypes.AdminServiceNodeUpdateRequest) (sdktypes.ServiceNodesUpdateResult, error) {
-    raw, err := a.client.Put(BackendApiPath(fmt.Sprintf("/system/service_nodes/%s", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+// Update
+func (a *SystemApi) ServiceNodesUpdate(nodeId string) (sdktypes.ServiceNodesUpdateResult, error) {
+    raw, err := a.client.Put(BackendApiPath(fmt.Sprintf("/system/service_nodes/%s", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}))), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ServiceNodesUpdateResult
         return zero, err
@@ -368,9 +367,9 @@ func (a *SystemApi) ServiceNodesUpdate(nodeId string, body sdktypes.AdminService
     return decodeResult[sdktypes.ServiceNodesUpdateResult](raw)
 }
 
-// Update service node status
-func (a *SystemApi) ServiceNodesStatusUpdate(nodeId string, body sdktypes.AdminServiceNodeStatusUpdateRequest) (sdktypes.ServiceNodesStatusUpdateResult, error) {
-    raw, err := a.client.Put(BackendApiPath(fmt.Sprintf("/system/service_nodes/%s/status", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+// Update
+func (a *SystemApi) ServiceNodesStatusUpdate(nodeId string) (sdktypes.ServiceNodesStatusUpdateResult, error) {
+    raw, err := a.client.Put(BackendApiPath(fmt.Sprintf("/system/service_nodes/%s/status", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}))), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ServiceNodesStatusUpdateResult
         return zero, err
@@ -378,7 +377,307 @@ func (a *SystemApi) ServiceNodesStatusUpdate(nodeId string, body sdktypes.AdminS
     return decodeResult[sdktypes.ServiceNodesStatusUpdateResult](raw)
 }
 
-// Retrieve site branding and deployment personalization settings
+// Create
+func (a *SystemApi) ShopsCreate() (sdktypes.ShopsCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath("/system/shops"), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsCreateResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsCreateResult](raw)
+}
+
+// Update
+func (a *SystemApi) ShopsUpdate(shopId string) (sdktypes.ShopsUpdateResult, error) {
+    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/system/shops/%s", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsUpdateResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsUpdateResult](raw)
+}
+
+// Approve
+func (a *SystemApi) ShopsApprove(shopId string) (sdktypes.ShopsApproveResult, error) {
+    raw, err := a.client.Post(BackendApiPath(fmt.Sprintf("/system/shops/%s/approve", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsApproveResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsApproveResult](raw)
+}
+
+// Upsert
+func (a *SystemApi) ShopsBrandAuthorizationsUpsert(shopId string) (sdktypes.ShopsBrandAuthorizationsUpsertResult, error) {
+    raw, err := a.client.Put(BackendApiPath(fmt.Sprintf("/system/shops/%s/brand_authorizations", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsBrandAuthorizationsUpsertResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsBrandAuthorizationsUpsertResult](raw)
+}
+
+// Update
+func (a *SystemApi) ShopsBusinessHoursUpdate(shopId string) (sdktypes.ShopsBusinessHoursUpdateResult, error) {
+    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/system/shops/%s/business_hours", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsBusinessHoursUpdateResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsBusinessHoursUpdateResult](raw)
+}
+
+// Upsert
+func (a *SystemApi) ShopsCategoryBindingsUpsert(shopId string) (sdktypes.ShopsCategoryBindingsUpsertResult, error) {
+    raw, err := a.client.Put(BackendApiPath(fmt.Sprintf("/system/shops/%s/category_bindings", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsCategoryBindingsUpsertResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsCategoryBindingsUpsertResult](raw)
+}
+
+// Create
+func (a *SystemApi) ShopsChannelsCreate(shopId string) (sdktypes.ShopsChannelsCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath(fmt.Sprintf("/system/shops/%s/channels", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsChannelsCreateResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsChannelsCreateResult](raw)
+}
+
+// Update
+func (a *SystemApi) ShopsChannelsUpdate(shopId string, channelId string) (sdktypes.ShopsChannelsUpdateResult, error) {
+    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/system/shops/%s/channels/%s", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}), SerializePathParameter(channelId, PathParameterSpec{Name: "channelId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsChannelsUpdateResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsChannelsUpdateResult](raw)
+}
+
+// Close
+func (a *SystemApi) ShopsClose(shopId string) (sdktypes.ShopsCloseResult, error) {
+    raw, err := a.client.Post(BackendApiPath(fmt.Sprintf("/system/shops/%s/close", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsCloseResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsCloseResult](raw)
+}
+
+// Upsert
+func (a *SystemApi) ShopsCustomerServicesUpsert(shopId string) (sdktypes.ShopsCustomerServicesUpsertResult, error) {
+    raw, err := a.client.Put(BackendApiPath(fmt.Sprintf("/system/shops/%s/customer_services", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsCustomerServicesUpsertResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsCustomerServicesUpsertResult](raw)
+}
+
+// Update
+func (a *SystemApi) ShopsDepositAccountUpdate(shopId string) (sdktypes.ShopsDepositAccountUpdateResult, error) {
+    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/system/shops/%s/deposit_account", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsDepositAccountUpdateResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsDepositAccountUpdateResult](raw)
+}
+
+// Review
+func (a *SystemApi) ShopsDepositAccountReview(shopId string) (sdktypes.ShopsDepositAccountReviewResult, error) {
+    raw, err := a.client.Post(BackendApiPath(fmt.Sprintf("/system/shops/%s/deposit_account/review", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsDepositAccountReviewResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsDepositAccountReviewResult](raw)
+}
+
+// Update
+func (a *SystemApi) ShopsFulfillmentProfileUpdate(shopId string) (sdktypes.ShopsFulfillmentProfileUpdateResult, error) {
+    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/system/shops/%s/fulfillment_profile", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsFulfillmentProfileUpdateResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsFulfillmentProfileUpdateResult](raw)
+}
+
+// Create
+func (a *SystemApi) ShopsPoliciesCreate(shopId string) (sdktypes.ShopsPoliciesCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath(fmt.Sprintf("/system/shops/%s/policies", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsPoliciesCreateResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsPoliciesCreateResult](raw)
+}
+
+// Update
+func (a *SystemApi) ShopsPoliciesUpdate(shopId string, policyId string) (sdktypes.ShopsPoliciesUpdateResult, error) {
+    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/system/shops/%s/policies/%s", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}), SerializePathParameter(policyId, PathParameterSpec{Name: "policyId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsPoliciesUpdateResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsPoliciesUpdateResult](raw)
+}
+
+// Upsert
+func (a *SystemApi) ShopsQualificationsUpsert(shopId string) (sdktypes.ShopsQualificationsUpsertResult, error) {
+    raw, err := a.client.Put(BackendApiPath(fmt.Sprintf("/system/shops/%s/qualifications", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsQualificationsUpsertResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsQualificationsUpsertResult](raw)
+}
+
+// Reject
+func (a *SystemApi) ShopsReject(shopId string) (sdktypes.ShopsRejectResult, error) {
+    raw, err := a.client.Post(BackendApiPath(fmt.Sprintf("/system/shops/%s/reject", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsRejectResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsRejectResult](raw)
+}
+
+// Resume
+func (a *SystemApi) ShopsResume(shopId string) (sdktypes.ShopsResumeResult, error) {
+    raw, err := a.client.Post(BackendApiPath(fmt.Sprintf("/system/shops/%s/resume", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsResumeResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsResumeResult](raw)
+}
+
+// Upsert
+func (a *SystemApi) ShopsReturnAddressesUpsert(shopId string) (sdktypes.ShopsReturnAddressesUpsertResult, error) {
+    raw, err := a.client.Put(BackendApiPath(fmt.Sprintf("/system/shops/%s/return_addresses", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsReturnAddressesUpsertResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsReturnAddressesUpsertResult](raw)
+}
+
+// Create
+func (a *SystemApi) ShopsRiskSignalsCreate(shopId string) (sdktypes.ShopsRiskSignalsCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath(fmt.Sprintf("/system/shops/%s/risk_signals", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsRiskSignalsCreateResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsRiskSignalsCreateResult](raw)
+}
+
+// Resolve
+func (a *SystemApi) ShopsRiskSignalsResolve(shopId string, riskSignalId string) (sdktypes.ShopsRiskSignalsResolveResult, error) {
+    raw, err := a.client.Post(BackendApiPath(fmt.Sprintf("/system/shops/%s/risk_signals/%s/resolve", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}), SerializePathParameter(riskSignalId, PathParameterSpec{Name: "riskSignalId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsRiskSignalsResolveResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsRiskSignalsResolveResult](raw)
+}
+
+// Create
+func (a *SystemApi) ShopsServiceAreasCreate(shopId string) (sdktypes.ShopsServiceAreasCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath(fmt.Sprintf("/system/shops/%s/service_areas", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsServiceAreasCreateResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsServiceAreasCreateResult](raw)
+}
+
+// Update
+func (a *SystemApi) ShopsServiceAreasUpdate(shopId string, serviceAreaId string) (sdktypes.ShopsServiceAreasUpdateResult, error) {
+    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/system/shops/%s/service_areas/%s", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}), SerializePathParameter(serviceAreaId, PathParameterSpec{Name: "serviceAreaId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsServiceAreasUpdateResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsServiceAreasUpdateResult](raw)
+}
+
+// Update
+func (a *SystemApi) ShopsSettlementProfileUpdate(shopId string) (sdktypes.ShopsSettlementProfileUpdateResult, error) {
+    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/system/shops/%s/settlement_profile", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsSettlementProfileUpdateResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsSettlementProfileUpdateResult](raw)
+}
+
+// Approve
+func (a *SystemApi) ShopsSettlementProfileApprove(shopId string) (sdktypes.ShopsSettlementProfileApproveResult, error) {
+    raw, err := a.client.Post(BackendApiPath(fmt.Sprintf("/system/shops/%s/settlement_profile/approve", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsSettlementProfileApproveResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsSettlementProfileApproveResult](raw)
+}
+
+// Reject
+func (a *SystemApi) ShopsSettlementProfileReject(shopId string) (sdktypes.ShopsSettlementProfileRejectResult, error) {
+    raw, err := a.client.Post(BackendApiPath(fmt.Sprintf("/system/shops/%s/settlement_profile/reject", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsSettlementProfileRejectResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsSettlementProfileRejectResult](raw)
+}
+
+// Upsert
+func (a *SystemApi) ShopsShippingTemplatesUpsert(shopId string) (sdktypes.ShopsShippingTemplatesUpsertResult, error) {
+    raw, err := a.client.Put(BackendApiPath(fmt.Sprintf("/system/shops/%s/shipping_templates", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsShippingTemplatesUpsertResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsShippingTemplatesUpsertResult](raw)
+}
+
+// Create review
+func (a *SystemApi) ShopsSubmitReview(shopId string) (sdktypes.ShopsSubmitReviewResult, error) {
+    raw, err := a.client.Post(BackendApiPath(fmt.Sprintf("/system/shops/%s/submit_review", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsSubmitReviewResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsSubmitReviewResult](raw)
+}
+
+// Suspend
+func (a *SystemApi) ShopsSuspend(shopId string) (sdktypes.ShopsSuspendResult, error) {
+    raw, err := a.client.Post(BackendApiPath(fmt.Sprintf("/system/shops/%s/suspend", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsSuspendResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsSuspendResult](raw)
+}
+
+// Update
+func (a *SystemApi) ShopsVerificationsUpdate(shopId string, verificationId string) (sdktypes.ShopsVerificationsUpdateResult, error) {
+    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/system/shops/%s/verifications/%s", SerializePathParameter(shopId, PathParameterSpec{Name: "shopId", Style: "simple", Explode: false}), SerializePathParameter(verificationId, PathParameterSpec{Name: "verificationId", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ShopsVerificationsUpdateResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ShopsVerificationsUpdateResult](raw)
+}
+
+// Retrieve
 func (a *SystemApi) SiteSettingsRetrieve() (sdktypes.SiteSettingsRetrieveResult, error) {
     raw, err := a.client.Get(BackendApiPath("/system/site/settings"), nil, nil)
     if err != nil {
@@ -388,9 +687,9 @@ func (a *SystemApi) SiteSettingsRetrieve() (sdktypes.SiteSettingsRetrieveResult,
     return decodeResult[sdktypes.SiteSettingsRetrieveResult](raw)
 }
 
-// Update site branding and deployment personalization settings
-func (a *SystemApi) SiteSettingsUpdate(body sdktypes.AdminSiteSettingsUpdateRequest) (sdktypes.SiteSettingsUpdateResult, error) {
-    raw, err := a.client.Patch(BackendApiPath("/system/site/settings"), body, nil, nil, "application/json")
+// Update
+func (a *SystemApi) SiteSettingsUpdate() (sdktypes.SiteSettingsUpdateResult, error) {
+    raw, err := a.client.Patch(BackendApiPath("/system/site/settings"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.SiteSettingsUpdateResult
         return zero, err

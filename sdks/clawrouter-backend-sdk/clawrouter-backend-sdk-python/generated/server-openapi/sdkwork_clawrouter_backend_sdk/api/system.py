@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import AdminAuthSettingsUpdateRequest, AdminFirewallRuleCreateRequest, AdminIpLimitCreateRequest, AdminModelLimitCreateRequest, AdminRuntimeRegionSettingsUpdateRequest, AdminServiceNodeCreateRequest, AdminServiceNodeStatusUpdateRequest, AdminServiceNodeUpdateRequest, AdminSiteSettingsUpdateRequest, AdminTokenLimitCreateRequest, AnalyticsAdminOverviewRetrieveResult, AuthSettingsRetrieveResult, AuthSettingsUpdateResult, CacheInstancesDeleteResult, CacheInstancesRefreshCreateResult, CacheNamespacesDeleteResult, CacheNamespacesKeysDeleteResult, CacheNamespacesKeysListResult, CacheNamespacesRefreshCreateResult, CacheOverviewRetrieveResult, CacheRefreshCreateResult, DashboardAdminOverviewRetrieveResult, FirewallsRulesCreateResult, FirewallsRulesDeleteResult, FirewallsRulesListResult, InstallationStatusRetrieveResult, MarketingReferralStatsListResult, MonitorAlertsListResult, MonitorNodesListResult, MonitorPerformanceListResult, RateLimitsApiKeysCreateResult, RateLimitsApiKeysListResult, RateLimitsIpCreateResult, RateLimitsIpListResult, RateLimitsModelsCreateResult, RateLimitsModelsListResult, RecordsListResult, RuntimeRegionSettingsRetrieveResult, RuntimeRegionSettingsUpdateResult, ServiceNodesCreateResult, ServiceNodesDeleteResult, ServiceNodesListResult, ServiceNodesStatusUpdateResult, ServiceNodesUpdateResult, SiteSettingsRetrieveResult, SiteSettingsUpdateResult
+from ..models import AfterSalesReviewsCreateResult, AnalyticsAdminOverviewRetrieveResult, AuthSettingsRetrieveResult, AuthSettingsUpdateResult, CacheInstancesDeleteResult, CacheInstancesRefreshCreateResult, CacheNamespacesDeleteResult, CacheNamespacesKeysDeleteResult, CacheNamespacesKeysListResult, CacheNamespacesRefreshCreateResult, CacheOverviewRetrieveResult, CacheRefreshCreateResult, DashboardAdminOverviewRetrieveResult, FirewallsRulesCreateResult, FirewallsRulesDeleteResult, FirewallsRulesListResult, InstallationStatusRetrieveResult, MarketingReferralStatsListResult, MonitorAlertsListResult, MonitorNodesListResult, MonitorPerformanceListResult, RateLimitsApiKeysCreateResult, RateLimitsApiKeysListResult, RateLimitsIpCreateResult, RateLimitsIpListResult, RateLimitsModelsCreateResult, RateLimitsModelsListResult, RecordsListResult, RuntimeRegionSettingsRetrieveResult, RuntimeRegionSettingsUpdateResult, ServiceNodesCreateResult, ServiceNodesDeleteResult, ServiceNodesListResult, ServiceNodesStatusUpdateResult, ServiceNodesUpdateResult, ShopsApproveResult, ShopsBrandAuthorizationsUpsertResult, ShopsBusinessHoursUpdateResult, ShopsCategoryBindingsUpsertResult, ShopsChannelsCreateResult, ShopsChannelsUpdateResult, ShopsCloseResult, ShopsCreateResult, ShopsCustomerServicesUpsertResult, ShopsDepositAccountReviewResult, ShopsDepositAccountUpdateResult, ShopsFulfillmentProfileUpdateResult, ShopsPoliciesCreateResult, ShopsPoliciesUpdateResult, ShopsQualificationsUpsertResult, ShopsRejectResult, ShopsResumeResult, ShopsReturnAddressesUpsertResult, ShopsRiskSignalsCreateResult, ShopsRiskSignalsResolveResult, ShopsServiceAreasCreateResult, ShopsServiceAreasUpdateResult, ShopsSettlementProfileApproveResult, ShopsSettlementProfileRejectResult, ShopsSettlementProfileUpdateResult, ShopsShippingTemplatesUpsertResult, ShopsSubmitReviewResult, ShopsSuspendResult, ShopsUpdateResult, ShopsVerificationsUpdateResult, SiteSettingsRetrieveResult, SiteSettingsUpdateResult
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -189,6 +189,7 @@ class SystemApi:
 
     def __init__(self, client: HttpClient):
         self._client = client
+        self.after_sales = SystemAfterSalesApi(client)
         self.analytics = SystemAnalyticsApi(client)
         self.auth = SystemAuthApi(client)
         self.cache = SystemCacheApi(client)
@@ -201,8 +202,28 @@ class SystemApi:
         self.records = SystemRecordsApi(client)
         self.runtime_region = SystemRuntimeRegionApi(client)
         self.service_nodes = SystemServiceNodesApi(client)
+        self.shops = SystemShopsApi(client)
         self.site = SystemSiteApi(client)
 
+
+class SystemAfterSalesApi:
+    """system system.after_sales API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+        self.reviews = SystemAfterSalesReviewsApi(client)
+
+
+class SystemAfterSalesReviewsApi:
+    """system system.after_sales.reviews API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def create(self, after_sales_request_id: str) -> AfterSalesReviewsCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/system/after_sales/requests/{serialize_path_parameter(after_sales_request_id, {'name': 'afterSalesRequestId', 'style': 'simple', 'explode': False})}/reviews")
 
 class SystemAnalyticsApi:
     """system system.analytics API client."""
@@ -227,13 +248,13 @@ class SystemAnalyticsAdminOverviewApi:
         self._client = client
 
 
-    def retrieve(self, time_range: Optional[str] = None, start_time: Optional[str] = None, end_time: Optional[str] = None, limit: Optional[str] = None) -> AnalyticsAdminOverviewRetrieveResult:
-        """List overview"""
+    def retrieve(self, time_range: Optional[str] = None, start_time: Optional[str] = None, end_time: Optional[str] = None, ranking_size: Optional[int] = None) -> AnalyticsAdminOverviewRetrieveResult:
+        """Retrieve"""
         query = build_query_string([
             {'name': 'time_range', 'value': time_range, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'start_time', 'value': start_time, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'end_time', 'value': end_time, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'ranking_size', 'value': ranking_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/backend/v3/api/system/analytics/admin/overview", query))
 
@@ -253,12 +274,12 @@ class SystemAuthSettingsApi:
 
 
     def retrieve(self) -> AuthSettingsRetrieveResult:
-        """Retrieve IAM auth runtime settings"""
+        """Retrieve"""
         return self._client.get(f"/backend/v3/api/system/auth/settings")
 
-    def update(self, body: AdminAuthSettingsUpdateRequest) -> AuthSettingsUpdateResult:
-        """Update IAM auth runtime settings"""
-        return self._client.patch(f"/backend/v3/api/system/auth/settings", json=body)
+    def update(self) -> AuthSettingsUpdateResult:
+        """Update"""
+        return self._client.patch(f"/backend/v3/api/system/auth/settings")
 
 class SystemCacheApi:
     """system system.cache API client."""
@@ -280,7 +301,7 @@ class SystemCacheInstancesApi:
 
 
     def delete(self, instance_name: str) -> CacheInstancesDeleteResult:
-        """Delete one runtime cache instance"""
+        """Delete"""
         return self._client.delete(f"/backend/v3/api/system/cache/instances/{serialize_path_parameter(instance_name, {'name': 'instanceName', 'style': 'simple', 'explode': False})}")
 
 class SystemCacheInstancesRefreshApi:
@@ -291,7 +312,7 @@ class SystemCacheInstancesRefreshApi:
 
 
     def create(self, instance_name: str) -> CacheInstancesRefreshCreateResult:
-        """Refresh one runtime cache instance"""
+        """Create"""
         return self._client.post(f"/backend/v3/api/system/cache/instances/{serialize_path_parameter(instance_name, {'name': 'instanceName', 'style': 'simple', 'explode': False})}/refresh")
 
 class SystemCacheNamespacesApi:
@@ -304,7 +325,7 @@ class SystemCacheNamespacesApi:
 
 
     def delete(self, namespace: str) -> CacheNamespacesDeleteResult:
-        """Delete a runtime cache namespace"""
+        """Delete"""
         return self._client.delete(f"/backend/v3/api/system/cache/namespaces/{serialize_path_parameter(namespace, {'name': 'namespace', 'style': 'simple', 'explode': False})}")
 
 class SystemCacheNamespacesKeysApi:
@@ -314,16 +335,16 @@ class SystemCacheNamespacesKeysApi:
         self._client = client
 
 
-    def list(self, namespace: str, limit: Optional[str] = None, cursor: Optional[str] = None) -> CacheNamespacesKeysListResult:
-        """List runtime cache keys in a namespace"""
+    def list(self, namespace: str, page_size: Optional[int] = None, cursor: Optional[str] = None) -> CacheNamespacesKeysListResult:
+        """List"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'cursor', 'value': cursor, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/backend/v3/api/system/cache/namespaces/{serialize_path_parameter(namespace, {'name': 'namespace', 'style': 'simple', 'explode': False})}/keys", query))
 
     def delete(self, namespace: str, key: str) -> CacheNamespacesKeysDeleteResult:
-        """Delete a runtime cache key"""
+        """Delete"""
         return self._client.delete(f"/backend/v3/api/system/cache/namespaces/{serialize_path_parameter(namespace, {'name': 'namespace', 'style': 'simple', 'explode': False})}/keys/{serialize_path_parameter(key, {'name': 'key', 'style': 'simple', 'explode': False})}")
 
 class SystemCacheNamespacesRefreshApi:
@@ -334,7 +355,7 @@ class SystemCacheNamespacesRefreshApi:
 
 
     def create(self, namespace: str) -> CacheNamespacesRefreshCreateResult:
-        """Refresh one runtime cache namespace"""
+        """Create"""
         return self._client.post(f"/backend/v3/api/system/cache/namespaces/{serialize_path_parameter(namespace, {'name': 'namespace', 'style': 'simple', 'explode': False})}/refresh")
 
 class SystemCacheOverviewApi:
@@ -345,7 +366,7 @@ class SystemCacheOverviewApi:
 
 
     def retrieve(self) -> CacheOverviewRetrieveResult:
-        """Retrieve runtime cache overview"""
+        """Retrieve"""
         return self._client.get(f"/backend/v3/api/system/cache/overview")
 
 class SystemCacheRefreshApi:
@@ -356,7 +377,7 @@ class SystemCacheRefreshApi:
 
 
     def create(self) -> CacheRefreshCreateResult:
-        """Refresh all runtime cache instances"""
+        """Create"""
         return self._client.post(f"/backend/v3/api/system/cache/refresh")
 
 class SystemDashboardApi:
@@ -383,7 +404,7 @@ class SystemDashboardAdminOverviewApi:
 
 
     def retrieve(self) -> DashboardAdminOverviewRetrieveResult:
-        """List dashboard data"""
+        """Retrieve"""
         return self._client.get(f"/backend/v3/api/system/dashboard/admin/overview")
 
 class SystemFirewallsApi:
@@ -402,15 +423,15 @@ class SystemFirewallsRulesApi:
 
 
     def list(self) -> FirewallsRulesListResult:
-        """List firewalls"""
+        """List"""
         return self._client.get(f"/backend/v3/api/system/firewalls/rules")
 
-    def create(self, body: AdminFirewallRuleCreateRequest) -> FirewallsRulesCreateResult:
-        """Create firewall"""
-        return self._client.post(f"/backend/v3/api/system/firewalls/rules", json=body)
+    def create(self) -> FirewallsRulesCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/system/firewalls/rules")
 
     def delete(self, rule_id: str) -> FirewallsRulesDeleteResult:
-        """Delete firewall"""
+        """Delete"""
         return self._client.delete(f"/backend/v3/api/system/firewalls/rules/{serialize_path_parameter(rule_id, {'name': 'ruleId', 'style': 'simple', 'explode': False})}")
 
 class SystemInstallationApi:
@@ -429,7 +450,7 @@ class SystemInstallationStatusApi:
 
 
     def retrieve(self) -> InstallationStatusRetrieveResult:
-        """List installation status"""
+        """Retrieve"""
         return self._client.get(f"/backend/v3/api/system/installation/status")
 
 class SystemMarketingApi:
@@ -448,7 +469,7 @@ class SystemMarketingReferralStatsApi:
 
 
     def list(self) -> MarketingReferralStatsListResult:
-        """List referral stats"""
+        """List"""
         return self._client.get(f"/backend/v3/api/system/marketing/referral_stats")
 
 class SystemMonitorApi:
@@ -469,7 +490,7 @@ class SystemMonitorAlertsApi:
 
 
     def list(self) -> MonitorAlertsListResult:
-        """List alerts"""
+        """List"""
         return self._client.get(f"/backend/v3/api/system/monitor/alerts")
 
 class SystemMonitorNodesApi:
@@ -480,7 +501,7 @@ class SystemMonitorNodesApi:
 
 
     def list(self) -> MonitorNodesListResult:
-        """List nodes"""
+        """List"""
         return self._client.get(f"/backend/v3/api/system/monitor/nodes")
 
 class SystemMonitorPerformanceApi:
@@ -491,7 +512,7 @@ class SystemMonitorPerformanceApi:
 
 
     def list(self) -> MonitorPerformanceListResult:
-        """List performance data"""
+        """List"""
         return self._client.get(f"/backend/v3/api/system/monitor/performance")
 
 class SystemRateLimitsApi:
@@ -512,12 +533,12 @@ class SystemRateLimitsApiKeysApi:
 
 
     def list(self) -> RateLimitsApiKeysListResult:
-        """List token limits"""
+        """List"""
         return self._client.get(f"/backend/v3/api/system/rate_limits/api_keys")
 
-    def create(self, body: AdminTokenLimitCreateRequest) -> RateLimitsApiKeysCreateResult:
-        """Create token limit"""
-        return self._client.post(f"/backend/v3/api/system/rate_limits/api_keys", json=body)
+    def create(self) -> RateLimitsApiKeysCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/system/rate_limits/api_keys")
 
 class SystemRateLimitsIpApi:
     """system system.rate_limits.ip API client."""
@@ -527,12 +548,12 @@ class SystemRateLimitsIpApi:
 
 
     def list(self) -> RateLimitsIpListResult:
-        """List IP limits"""
+        """List"""
         return self._client.get(f"/backend/v3/api/system/rate_limits/ip")
 
-    def create(self, body: AdminIpLimitCreateRequest) -> RateLimitsIpCreateResult:
-        """Create IP limit"""
-        return self._client.post(f"/backend/v3/api/system/rate_limits/ip", json=body)
+    def create(self) -> RateLimitsIpCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/system/rate_limits/ip")
 
 class SystemRateLimitsModelsApi:
     """system system.rate_limits.models API client."""
@@ -542,12 +563,12 @@ class SystemRateLimitsModelsApi:
 
 
     def list(self) -> RateLimitsModelsListResult:
-        """List model limits"""
+        """List"""
         return self._client.get(f"/backend/v3/api/system/rate_limits/models")
 
-    def create(self, body: AdminModelLimitCreateRequest) -> RateLimitsModelsCreateResult:
-        """Create model limit"""
-        return self._client.post(f"/backend/v3/api/system/rate_limits/models", json=body)
+    def create(self) -> RateLimitsModelsCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/system/rate_limits/models")
 
 class SystemRecordsApi:
     """system system.records API client."""
@@ -556,16 +577,9 @@ class SystemRecordsApi:
         self._client = client
 
 
-    def list(self, page: Optional[str] = None, page_size: Optional[str] = None, user: Optional[str] = None, token: Optional[str] = None, model: Optional[str] = None) -> RecordsListResult:
-        """List logs"""
-        query = build_query_string([
-            {'name': 'page', 'value': page, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'user', 'value': user, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'token', 'value': token, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'model', 'value': model, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/backend/v3/api/system/records", query))
+    def list(self) -> RecordsListResult:
+        """List"""
+        return self._client.get(f"/backend/v3/api/system/records")
 
 class SystemRuntimeRegionApi:
     """system system.runtime_region API client."""
@@ -583,12 +597,12 @@ class SystemRuntimeRegionSettingsApi:
 
 
     def retrieve(self) -> RuntimeRegionSettingsRetrieveResult:
-        """Retrieve runtime region settings"""
+        """Retrieve"""
         return self._client.get(f"/backend/v3/api/system/runtime_region/settings")
 
-    def update(self, body: AdminRuntimeRegionSettingsUpdateRequest) -> RuntimeRegionSettingsUpdateResult:
-        """Update runtime region settings"""
-        return self._client.patch(f"/backend/v3/api/system/runtime_region/settings", json=body)
+    def update(self) -> RuntimeRegionSettingsUpdateResult:
+        """Update"""
+        return self._client.patch(f"/backend/v3/api/system/runtime_region/settings")
 
 class SystemServiceNodesApi:
     """system system.service_nodes API client."""
@@ -598,25 +612,21 @@ class SystemServiceNodesApi:
         self.status = SystemServiceNodesStatusApi(client)
 
 
-    def list(self, q: Optional[str] = None, status: Optional[str] = None) -> ServiceNodesListResult:
-        """List service nodes"""
-        query = build_query_string([
-            {'name': 'q', 'value': q, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'status', 'value': status, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/backend/v3/api/system/service_nodes", query))
+    def list(self) -> ServiceNodesListResult:
+        """List"""
+        return self._client.get(f"/backend/v3/api/system/service_nodes")
 
-    def create(self, body: AdminServiceNodeCreateRequest) -> ServiceNodesCreateResult:
-        """Create service node"""
-        return self._client.post(f"/backend/v3/api/system/service_nodes", json=body)
+    def create(self) -> ServiceNodesCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/system/service_nodes")
 
     def delete(self, node_id: str) -> ServiceNodesDeleteResult:
-        """Delete service node"""
+        """Delete"""
         return self._client.delete(f"/backend/v3/api/system/service_nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}")
 
-    def update(self, node_id: str, body: AdminServiceNodeUpdateRequest) -> ServiceNodesUpdateResult:
-        """Update service node"""
-        return self._client.put(f"/backend/v3/api/system/service_nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}", json=body)
+    def update(self, node_id: str) -> ServiceNodesUpdateResult:
+        """Update"""
+        return self._client.put(f"/backend/v3/api/system/service_nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}")
 
 class SystemServiceNodesStatusApi:
     """system system.service_nodes.status API client."""
@@ -625,9 +635,256 @@ class SystemServiceNodesStatusApi:
         self._client = client
 
 
-    def update(self, node_id: str, body: AdminServiceNodeStatusUpdateRequest) -> ServiceNodesStatusUpdateResult:
-        """Update service node status"""
-        return self._client.put(f"/backend/v3/api/system/service_nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/status", json=body)
+    def update(self, node_id: str) -> ServiceNodesStatusUpdateResult:
+        """Update"""
+        return self._client.put(f"/backend/v3/api/system/service_nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/status")
+
+class SystemShopsApi:
+    """system system.shops API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+        self.brand_authorizations = SystemShopsBrandAuthorizationsApi(client)
+        self.business_hours = SystemShopsBusinessHoursApi(client)
+        self.category_bindings = SystemShopsCategoryBindingsApi(client)
+        self.channels = SystemShopsChannelsApi(client)
+        self.customer_services = SystemShopsCustomerServicesApi(client)
+        self.deposit_account = SystemShopsDepositAccountApi(client)
+        self.fulfillment_profile = SystemShopsFulfillmentProfileApi(client)
+        self.policies = SystemShopsPoliciesApi(client)
+        self.qualifications = SystemShopsQualificationsApi(client)
+        self.return_addresses = SystemShopsReturnAddressesApi(client)
+        self.risk_signals = SystemShopsRiskSignalsApi(client)
+        self.service_areas = SystemShopsServiceAreasApi(client)
+        self.settlement_profile = SystemShopsSettlementProfileApi(client)
+        self.shipping_templates = SystemShopsShippingTemplatesApi(client)
+        self.verifications = SystemShopsVerificationsApi(client)
+
+
+    def create(self) -> ShopsCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/system/shops")
+
+    def update(self, shop_id: str) -> ShopsUpdateResult:
+        """Update"""
+        return self._client.patch(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}")
+
+    def approve(self, shop_id: str) -> ShopsApproveResult:
+        """Approve"""
+        return self._client.post(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/approve")
+
+    def close(self, shop_id: str) -> ShopsCloseResult:
+        """Close"""
+        return self._client.post(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/close")
+
+    def reject(self, shop_id: str) -> ShopsRejectResult:
+        """Reject"""
+        return self._client.post(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/reject")
+
+    def resume(self, shop_id: str) -> ShopsResumeResult:
+        """Resume"""
+        return self._client.post(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/resume")
+
+    def submit_review(self, shop_id: str) -> ShopsSubmitReviewResult:
+        """Create review"""
+        return self._client.post(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/submit_review")
+
+    def suspend(self, shop_id: str) -> ShopsSuspendResult:
+        """Suspend"""
+        return self._client.post(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/suspend")
+
+class SystemShopsBrandAuthorizationsApi:
+    """system system.shops.brand_authorizations API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def upsert(self, shop_id: str) -> ShopsBrandAuthorizationsUpsertResult:
+        """Upsert"""
+        return self._client.put(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/brand_authorizations")
+
+class SystemShopsBusinessHoursApi:
+    """system system.shops.business_hours API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def update(self, shop_id: str) -> ShopsBusinessHoursUpdateResult:
+        """Update"""
+        return self._client.patch(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/business_hours")
+
+class SystemShopsCategoryBindingsApi:
+    """system system.shops.category_bindings API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def upsert(self, shop_id: str) -> ShopsCategoryBindingsUpsertResult:
+        """Upsert"""
+        return self._client.put(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/category_bindings")
+
+class SystemShopsChannelsApi:
+    """system system.shops.channels API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def create(self, shop_id: str) -> ShopsChannelsCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/channels")
+
+    def update(self, shop_id: str, channel_id: str) -> ShopsChannelsUpdateResult:
+        """Update"""
+        return self._client.patch(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/channels/{serialize_path_parameter(channel_id, {'name': 'channelId', 'style': 'simple', 'explode': False})}")
+
+class SystemShopsCustomerServicesApi:
+    """system system.shops.customer_services API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def upsert(self, shop_id: str) -> ShopsCustomerServicesUpsertResult:
+        """Upsert"""
+        return self._client.put(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/customer_services")
+
+class SystemShopsDepositAccountApi:
+    """system system.shops.deposit_account API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def update(self, shop_id: str) -> ShopsDepositAccountUpdateResult:
+        """Update"""
+        return self._client.patch(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/deposit_account")
+
+    def review(self, shop_id: str) -> ShopsDepositAccountReviewResult:
+        """Review"""
+        return self._client.post(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/deposit_account/review")
+
+class SystemShopsFulfillmentProfileApi:
+    """system system.shops.fulfillment_profile API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def update(self, shop_id: str) -> ShopsFulfillmentProfileUpdateResult:
+        """Update"""
+        return self._client.patch(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/fulfillment_profile")
+
+class SystemShopsPoliciesApi:
+    """system system.shops.policies API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def create(self, shop_id: str) -> ShopsPoliciesCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/policies")
+
+    def update(self, shop_id: str, policy_id: str) -> ShopsPoliciesUpdateResult:
+        """Update"""
+        return self._client.patch(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/policies/{serialize_path_parameter(policy_id, {'name': 'policyId', 'style': 'simple', 'explode': False})}")
+
+class SystemShopsQualificationsApi:
+    """system system.shops.qualifications API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def upsert(self, shop_id: str) -> ShopsQualificationsUpsertResult:
+        """Upsert"""
+        return self._client.put(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/qualifications")
+
+class SystemShopsReturnAddressesApi:
+    """system system.shops.return_addresses API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def upsert(self, shop_id: str) -> ShopsReturnAddressesUpsertResult:
+        """Upsert"""
+        return self._client.put(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/return_addresses")
+
+class SystemShopsRiskSignalsApi:
+    """system system.shops.risk_signals API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def create(self, shop_id: str) -> ShopsRiskSignalsCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/risk_signals")
+
+    def resolve(self, shop_id: str, risk_signal_id: str) -> ShopsRiskSignalsResolveResult:
+        """Resolve"""
+        return self._client.post(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/risk_signals/{serialize_path_parameter(risk_signal_id, {'name': 'riskSignalId', 'style': 'simple', 'explode': False})}/resolve")
+
+class SystemShopsServiceAreasApi:
+    """system system.shops.service_areas API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def create(self, shop_id: str) -> ShopsServiceAreasCreateResult:
+        """Create"""
+        return self._client.post(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/service_areas")
+
+    def update(self, shop_id: str, service_area_id: str) -> ShopsServiceAreasUpdateResult:
+        """Update"""
+        return self._client.patch(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/service_areas/{serialize_path_parameter(service_area_id, {'name': 'serviceAreaId', 'style': 'simple', 'explode': False})}")
+
+class SystemShopsSettlementProfileApi:
+    """system system.shops.settlement_profile API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def update(self, shop_id: str) -> ShopsSettlementProfileUpdateResult:
+        """Update"""
+        return self._client.patch(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/settlement_profile")
+
+    def approve(self, shop_id: str) -> ShopsSettlementProfileApproveResult:
+        """Approve"""
+        return self._client.post(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/settlement_profile/approve")
+
+    def reject(self, shop_id: str) -> ShopsSettlementProfileRejectResult:
+        """Reject"""
+        return self._client.post(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/settlement_profile/reject")
+
+class SystemShopsShippingTemplatesApi:
+    """system system.shops.shipping_templates API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def upsert(self, shop_id: str) -> ShopsShippingTemplatesUpsertResult:
+        """Upsert"""
+        return self._client.put(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/shipping_templates")
+
+class SystemShopsVerificationsApi:
+    """system system.shops.verifications API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def update(self, shop_id: str, verification_id: str) -> ShopsVerificationsUpdateResult:
+        """Update"""
+        return self._client.patch(f"/backend/v3/api/system/shops/{serialize_path_parameter(shop_id, {'name': 'shopId', 'style': 'simple', 'explode': False})}/verifications/{serialize_path_parameter(verification_id, {'name': 'verificationId', 'style': 'simple', 'explode': False})}")
 
 class SystemSiteApi:
     """system system.site API client."""
@@ -645,9 +902,9 @@ class SystemSiteSettingsApi:
 
 
     def retrieve(self) -> SiteSettingsRetrieveResult:
-        """Retrieve site branding and deployment personalization settings"""
+        """Retrieve"""
         return self._client.get(f"/backend/v3/api/system/site/settings")
 
-    def update(self, body: AdminSiteSettingsUpdateRequest) -> SiteSettingsUpdateResult:
-        """Update site branding and deployment personalization settings"""
-        return self._client.patch(f"/backend/v3/api/system/site/settings", json=body)
+    def update(self) -> SiteSettingsUpdateResult:
+        """Update"""
+        return self._client.patch(f"/backend/v3/api/system/site/settings")

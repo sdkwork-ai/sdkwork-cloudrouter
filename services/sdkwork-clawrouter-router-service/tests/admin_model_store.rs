@@ -885,10 +885,7 @@ async fn sqlite_admin_model_store_sync_catalog_reapplies_sdkwork_models_catalog(
     assert_eq!("official_refresh", synced.mode);
     assert!(!synced.dry_run);
     assert_eq!(catalog_version, synced.catalog_version);
-    assert_eq!(
-        Some(catalog_version),
-        synced.requested_catalog_version
-    );
+    assert_eq!(Some(catalog_version), synced.requested_catalog_version);
     assert_eq!(None, synced.catalog_root);
     assert_eq!(vec!["alibaba".to_owned()], synced.vendor_codes);
     assert_eq!(64, synced.source_hash.len());

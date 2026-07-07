@@ -10,6 +10,8 @@ use sdkwork_clawrouter_router_service::domain::{
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use tower::ServiceExt;
 
+mod common;
+
 fn catalog() -> InMemoryPricingCatalog {
     let mut catalog = InMemoryPricingCatalog::default();
     catalog.add_vendor(ModelVendorDefinition::new(
@@ -195,6 +197,10 @@ fn catalog() -> InMemoryPricingCatalog {
     catalog
 }
 
+fn app_request(uri: &str) -> Request<Body> {
+    common::web_framework_app_request("GET", uri, Body::empty(), "100001", Some("0"), "30")
+}
+
 #[tokio::test]
 async fn app_model_catalog_route_returns_standard_items_for_playground_grouping() {
     let mut catalog = catalog();
@@ -220,13 +226,7 @@ async fn app_model_catalog_route_returns_standard_items_for_playground_grouping(
     let router =
         sdkwork_clawrouter_router_service::api::app_model_catalog_router(Arc::new(catalog));
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/app/v3/api/ai/models")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(app_request("/app/v3/api/ai/models"))
         .await
         .unwrap();
 
@@ -311,13 +311,7 @@ async fn app_model_catalog_route_excludes_deprecated_hidden_and_unroutable_model
     let router =
         sdkwork_clawrouter_router_service::api::app_model_catalog_router(Arc::new(catalog));
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/app/v3/api/ai/models")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(app_request("/app/v3/api/ai/models"))
         .await
         .unwrap();
 
@@ -344,13 +338,7 @@ async fn app_model_vendor_route_returns_catalog_vendors_with_model_counts() {
     let router =
         sdkwork_clawrouter_router_service::api::app_model_catalog_router(Arc::new(catalog()));
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/app/v3/api/ai/model_vendors")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(app_request("/app/v3/api/ai/model_vendors"))
         .await
         .unwrap();
 
@@ -376,13 +364,9 @@ async fn app_model_catalog_route_returns_public_plus_result_without_secret_mater
     let router =
         sdkwork_clawrouter_router_service::api::app_model_catalog_router(Arc::new(catalog()));
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/app/v3/api/ai/models?vendor_code=openai&billing_meter=llm_input_token")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(app_request(
+            "/app/v3/api/ai/models?vendor_code=openai&billing_meter=llm_input_token",
+        ))
         .await
         .unwrap();
 
@@ -394,7 +378,7 @@ async fn app_model_catalog_route_returns_public_plus_result_without_secret_mater
     let payload: serde_json::Value = serde_json::from_str(&body_text).unwrap();
 
     assert_eq!(0, payload["code"].as_i64().unwrap());
-    
+
     assert_eq!(None, payload.get("message"));
     assert_eq!(1, payload["data"]["items"].as_array().unwrap().len());
     assert_eq!("gpt-4o-mini", payload["data"]["items"][0]["model"]);
@@ -520,13 +504,7 @@ async fn app_model_catalog_route_returns_complete_public_reference_prices_in_one
     let router =
         sdkwork_clawrouter_router_service::api::app_model_catalog_router(Arc::new(catalog()));
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/app/v3/api/ai/models?vendor_code=openai")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(app_request("/app/v3/api/ai/models?vendor_code=openai"))
         .await
         .unwrap();
 
@@ -558,13 +536,7 @@ async fn app_model_catalog_route_marks_non_default_meter_reference_prices_availa
     let router =
         sdkwork_clawrouter_router_service::api::app_model_catalog_router(Arc::new(catalog()));
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/app/v3/api/ai/models?vendor_code=kuaishou")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(app_request("/app/v3/api/ai/models?vendor_code=kuaishou"))
         .await
         .unwrap();
 
@@ -593,13 +565,7 @@ async fn app_model_catalog_route_keeps_unpriced_models_explicitly_unavailable() 
     let router =
         sdkwork_clawrouter_router_service::api::app_model_catalog_router(Arc::new(catalog()));
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/app/v3/api/ai/models")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(app_request("/app/v3/api/ai/models"))
         .await
         .unwrap();
 
@@ -655,13 +621,7 @@ async fn app_model_catalog_route_returns_public_taxonomy_and_filters_server_side
     let router =
         sdkwork_clawrouter_router_service::api::app_model_catalog_router(Arc::new(catalog));
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/app/v3/api/ai/models?vendor_codes=openai,anthropic&modalities=text&capabilities=tools&categories=Recommended,Proprietary&groups=premium-lab&q=gpt&limit=10")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(app_request("/app/v3/api/ai/models?vendor_codes=openai,anthropic&modalities=text&capabilities=tools&categories=Recommended,Proprietary&groups=premium-lab&q=gpt&page_size=10"))
         .await
         .unwrap();
 
@@ -694,28 +654,16 @@ async fn app_model_catalog_route_returns_public_taxonomy_and_filters_server_side
 }
 
 #[tokio::test]
-async fn app_model_catalog_route_applies_offset_after_server_side_filters() {
+async fn app_model_catalog_route_applies_standard_page_after_server_side_filters() {
     let router =
         sdkwork_clawrouter_router_service::api::app_model_catalog_router(Arc::new(catalog()));
     let first_response = router
         .clone()
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/app/v3/api/ai/models?limit=1&offset=0")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(app_request("/app/v3/api/ai/models?page=1&page_size=1"))
         .await
         .unwrap();
     let second_response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/app/v3/api/ai/models?limit=1&offset=1")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(app_request("/app/v3/api/ai/models?page=2&page_size=1"))
         .await
         .unwrap();
 
@@ -747,13 +695,7 @@ async fn app_model_catalog_router_exposes_only_standard_ai_catalog_paths() {
         sdkwork_clawrouter_router_service::api::app_model_catalog_router(Arc::new(catalog()));
     let response = router
         .clone()
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/app/v3/api/router/models")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(app_request("/app/v3/api/router/models"))
         .await
         .unwrap();
 
@@ -761,13 +703,7 @@ async fn app_model_catalog_router_exposes_only_standard_ai_catalog_paths() {
 
     let response = router
         .clone()
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/app/v3/api/router/model_vendors")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(app_request("/app/v3/api/router/model_vendors"))
         .await
         .unwrap();
 
@@ -775,13 +711,7 @@ async fn app_model_catalog_router_exposes_only_standard_ai_catalog_paths() {
 
     let removed_playground_models_path = format!("{}{}", "/app/v3/api/ai/playground", "/models");
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri(removed_playground_models_path.as_str())
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(app_request(removed_playground_models_path.as_str()))
         .await
         .unwrap();
 
@@ -793,13 +723,9 @@ async fn app_model_catalog_route_rejects_non_standard_query_parameters() {
     let router =
         sdkwork_clawrouter_router_service::api::app_model_catalog_router(Arc::new(catalog()));
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/app/v3/api/ai/models?vendor_code=openai&billing_meter=llm_input_token&search_query=gpt")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(app_request(
+            "/app/v3/api/ai/models?vendor_code=openai&billing_meter=llm_input_token&search_query=gpt",
+        ))
         .await
         .unwrap();
 

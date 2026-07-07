@@ -1,7 +1,7 @@
 package com.sdkwork.clawrouter.backend
 
 data class MonitorPerformanceListResult(
-    val code: String? = null,
-    val data_: AdminMonitorPerformanceResponse? = null,
-    val msg: String? = null
+    val code: Int? = null,
+    val data_: Any? = null,
+    val traceId: String? = null
 )

@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
-use crate::api::base::{RequestHeaders};
 use crate::api::paths::app_path;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{ApiKeysCreateResult, ApiKeysDeleteResult, ApiKeysListResult, ApiKeysUpdateResult, CreateApiKeyRequest, UpdateApiKeyRequest, UpdateSettingsRequest, UsersSettingsRetrieveResult, UsersSettingsUpdateResult};
+use crate::models::{ApiKeysCreateResult, ApiKeysDeleteResult, ApiKeysListResult, ApiKeysUpdateResult, UsersSettingsRetrieveResult, UsersSettingsUpdateResult};
 
 #[derive(Clone)]
 pub struct IamApi {
@@ -15,46 +14,40 @@ impl IamApi {
         Self { client }
     }
 
-    /// List keys
+    /// List
     pub async fn api_keys_list(&self) -> Result<ApiKeysListResult, SdkworkError> {
         let path = app_path(&"/iam/api_keys".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// Create key
-    pub async fn api_keys_create(&self, body: &CreateApiKeyRequest, idempotency_key: &str) -> Result<ApiKeysCreateResult, SdkworkError> {
+    /// Create
+    pub async fn api_keys_create(&self) -> Result<ApiKeysCreateResult, SdkworkError> {
         let path = app_path(&"/iam/api_keys".to_string());
-        let headers = build_request_headers(
-            &[
-                ("Idempotency-Key", HeaderParameterSpec::new(idempotency_key, "simple", false, None)),
-            ],
-            &[],
-        );
-        self.client.post(&path, Some(body), None, headers.as_ref(), Some("application/json")).await
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// Delete key
+    /// Delete
     pub async fn api_keys_delete(&self, api_key_id: &str) -> Result<ApiKeysDeleteResult, SdkworkError> {
         let path = app_path(&format!("/iam/api_keys/{}", serialize_path_parameter(api_key_id, PathParameterSpec::new("apiKeyId", "simple", false))));
         self.client.delete(&path, None, None).await
     }
 
-    /// Update key
-    pub async fn api_keys_update(&self, api_key_id: &str, body: &UpdateApiKeyRequest) -> Result<ApiKeysUpdateResult, SdkworkError> {
+    /// Update
+    pub async fn api_keys_update(&self, api_key_id: &str) -> Result<ApiKeysUpdateResult, SdkworkError> {
         let path = app_path(&format!("/iam/api_keys/{}", serialize_path_parameter(api_key_id, PathParameterSpec::new("apiKeyId", "simple", false))));
-        self.client.patch(&path, Some(body), None, None, Some("application/json")).await
+        self.client.patch(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    /// List settings
+    /// Retrieve
     pub async fn users_settings_retrieve(&self) -> Result<UsersSettingsRetrieveResult, SdkworkError> {
         let path = app_path(&"/iam/users/settings".to_string());
         self.client.get(&path, None, None).await
     }
 
-    /// Update settings
-    pub async fn users_settings_update(&self, body: &UpdateSettingsRequest) -> Result<UsersSettingsUpdateResult, SdkworkError> {
+    /// Update
+    pub async fn users_settings_update(&self) -> Result<UsersSettingsUpdateResult, SdkworkError> {
         let path = app_path(&"/iam/users/settings".to_string());
-        self.client.put(&path, Some(body), None, None, Some("application/json")).await
+        self.client.put(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
 }
@@ -157,118 +150,6 @@ fn path_primitive_prefix(name: &str, style: &str) -> String {
     }
 }
 
-struct HeaderParameterSpec {
-    value: serde_json::Value,
-    explode: bool,
-    content_type: Option<&'static str>,
-}
-
-impl HeaderParameterSpec {
-    fn new<T: serde::Serialize>(
-        value: T,
-        _style: &'static str,
-        explode: bool,
-        content_type: Option<&'static str>,
-    ) -> Self {
-        Self {
-            value: serde_json::to_value(value).unwrap_or(serde_json::Value::Null),
-            explode,
-            content_type,
-        }
-    }
-}
-
-fn build_request_headers(headers: &[(&str, HeaderParameterSpec)], cookies: &[(&str, HeaderParameterSpec)]) -> Option<RequestHeaders> {
-    let mut request_headers = RequestHeaders::new();
-    for (name, parameter) in headers {
-        if let Some(value) = serialize_header_parameter(parameter) {
-            request_headers.insert((*name).to_string(), value);
-        }
-    }
-
-    let cookie_header = build_cookie_header(cookies);
-    if !cookie_header.is_empty() {
-        request_headers
-            .entry("Cookie".to_string())
-            .and_modify(|existing| {
-                existing.push_str("; ");
-                existing.push_str(&cookie_header);
-            })
-            .or_insert(cookie_header);
-    }
-
-    if request_headers.is_empty() {
-        None
-    } else {
-        Some(request_headers)
-    }
-}
-
-fn build_cookie_header(cookies: &[(&str, HeaderParameterSpec)]) -> String {
-    cookies
-        .iter()
-        .filter_map(|(name, value)| {
-            serialize_header_parameter(value)
-                .map(|value| format!("{}={}", percent_encode(name), percent_encode(&value)))
-        })
-        .collect::<Vec<_>>()
-        .join("; ")
-}
-
-fn serialize_header_parameter(parameter: &HeaderParameterSpec) -> Option<String> {
-    if parameter.value.is_null() {
-        return None;
-    }
-    if parameter.content_type.is_some() {
-        return Some(parameter.value.to_string());
-    }
-    match &parameter.value {
-        serde_json::Value::Null => None,
-        serde_json::Value::String(value) => Some(value.clone()),
-        serde_json::Value::Number(value) => Some(value.to_string()),
-        serde_json::Value::Bool(value) => Some(value.to_string()),
-        serde_json::Value::Array(values) => {
-            let serialized = values
-                .iter()
-                .filter_map(serialize_json_value)
-                .collect::<Vec<_>>();
-            if serialized.is_empty() {
-                None
-            } else {
-                Some(serialized.join(","))
-            }
-        }
-        serde_json::Value::Object(values) => {
-            let serialized = values
-                .iter()
-                .filter_map(|(key, value)| {
-                    serialize_json_value(value).map(|serialized| {
-                        if parameter.explode {
-                            format!("{}={}", key, serialized)
-                        } else {
-                            format!("{},{}", key, serialized)
-                        }
-                    })
-                })
-                .collect::<Vec<_>>();
-            if serialized.is_empty() {
-                None
-            } else {
-                Some(serialized.join(","))
-            }
-        }
-    }
-}
-
-fn serialize_json_value(value: &serde_json::Value) -> Option<String> {
-    match value {
-        serde_json::Value::Null => None,
-        serde_json::Value::String(value) => Some(value.clone()),
-        serde_json::Value::Number(value) => Some(value.to_string()),
-        serde_json::Value::Bool(value) => Some(value.to_string()),
-        other => Some(other.to_string()),
-    }
-}
 
 
 fn primitive_to_string(value: &serde_json::Value) -> String {

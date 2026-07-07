@@ -107,8 +107,7 @@ fn catalog() -> InMemoryPricingCatalog {
 
 #[tokio::test]
 async fn injected_product_catalog_route_overrides_manifest_fallback() {
-    let router =
-        sdkwork_clawrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
+    let router = sdkwork_clawrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
     let response = router
         .oneshot(
             Request::builder()
@@ -136,8 +135,7 @@ async fn injected_product_catalog_route_overrides_manifest_fallback() {
 
 #[tokio::test]
 async fn runtime_route_explain_uses_selector_and_masks_provider_secrets() {
-    let router =
-        sdkwork_clawrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
+    let router = sdkwork_clawrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
     let response = router
         .oneshot(
             Request::builder()
@@ -201,8 +199,7 @@ async fn runtime_route_explain_uses_selector_and_masks_provider_secrets() {
 
 #[tokio::test]
 async fn runtime_route_explain_reports_selector_pricing_blocking_reason() {
-    let router =
-        sdkwork_clawrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
+    let router = sdkwork_clawrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
     let response = router
         .oneshot(
             Request::builder()
@@ -241,8 +238,7 @@ async fn runtime_route_explain_reports_selector_pricing_blocking_reason() {
 
 #[tokio::test]
 async fn runtime_route_explain_reports_selector_route_blocking_reason() {
-    let router =
-        sdkwork_clawrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
+    let router = sdkwork_clawrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
     let response = router
         .oneshot(
             Request::builder()

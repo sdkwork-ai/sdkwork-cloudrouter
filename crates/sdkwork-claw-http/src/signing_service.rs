@@ -22,9 +22,8 @@
 
 use hmac::Mac;
 use sdkwork_claw_security::asymmetric_signing::{
-    deserialize_key_material, generate_signing_key, serialize_key_material,
-    sign_message, verify_signature, KeyGenerationOptions, SigningAlgorithm,
-    SigningError, SigningKeyMaterial,
+    deserialize_key_material, generate_signing_key, serialize_key_material, sign_message,
+    verify_signature, KeyGenerationOptions, SigningAlgorithm, SigningError, SigningKeyMaterial,
 };
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -212,7 +211,10 @@ impl SessionTokenSigningService {
     }
 
     /// Initialize with an existing key store.
-    pub fn with_key_store(config: SigningServiceConfig, key_store: Arc<InMemorySigningKeyStore>) -> Self {
+    pub fn with_key_store(
+        config: SigningServiceConfig,
+        key_store: Arc<InMemorySigningKeyStore>,
+    ) -> Self {
         let fallback_key = config.fallback_secret.clone().map(|s| s.into_bytes());
         Self {
             config,
@@ -230,7 +232,9 @@ impl SessionTokenSigningService {
                     .config
                     .master_encryption_key
                     .as_deref()
-                    .ok_or_else(|| SigningError::InvalidKey("no master encryption key".to_string()))?;
+                    .ok_or_else(|| {
+                        SigningError::InvalidKey("no master encryption key".to_string())
+                    })?;
 
                 let key_material = deserialize_key_material(encrypted, master_key)?;
                 let signature = sign_message(&key_material, payload)?;
@@ -260,7 +264,9 @@ impl SessionTokenSigningService {
             return Ok(signature);
         }
 
-        Err(SigningError::InvalidKey("no signing key available".to_string()))
+        Err(SigningError::InvalidKey(
+            "no signing key available".to_string(),
+        ))
     }
 
     /// Verify a token signature using the tenant's key or fallback.
@@ -275,11 +281,13 @@ impl SessionTokenSigningService {
         if let Some(kid_str) = kid {
             if let Some(key) = self.key_store.resolve_by_kid(kid_str).await {
                 if let Some(ref encrypted) = key.encrypted_key {
-                    let master_key = self
-                        .config
-                        .master_encryption_key
-                        .as_deref()
-                        .ok_or_else(|| SigningError::InvalidKey("no master encryption key".to_string()))?;
+                    let master_key =
+                        self.config
+                            .master_encryption_key
+                            .as_deref()
+                            .ok_or_else(|| {
+                                SigningError::InvalidKey("no master encryption key".to_string())
+                            })?;
 
                     let key_material = deserialize_key_material(encrypted, master_key)?;
                     verify_signature(&key_material, payload, signature_b64)?;
@@ -303,7 +311,9 @@ impl SessionTokenSigningService {
                     .config
                     .master_encryption_key
                     .as_deref()
-                    .ok_or_else(|| SigningError::InvalidKey("no master encryption key".to_string()))?;
+                    .ok_or_else(|| {
+                        SigningError::InvalidKey("no master encryption key".to_string())
+                    })?;
 
                 let key_material = deserialize_key_material(encrypted, master_key)?;
                 verify_signature(&key_material, payload, signature_b64)?;
@@ -322,8 +332,8 @@ impl SessionTokenSigningService {
         if let Some(ref secret) = self.fallback_key {
             let mut mac = hmac_sha256_simple(secret)?;
             mac.update(payload);
-            let sig_bytes = hex::decode(signature_b64)
-                .map_err(|_| SigningError::InvalidSignatureFormat)?;
+            let sig_bytes =
+                hex::decode(signature_b64).map_err(|_| SigningError::InvalidSignatureFormat)?;
 
             if mac.verify_slice(&sig_bytes).is_ok() {
                 debug!(
@@ -338,7 +348,10 @@ impl SessionTokenSigningService {
     }
 
     /// Ensure an active key exists for a tenant, generating one if necessary.
-    pub async fn ensure_active_key(&self, tenant_id: &str) -> Result<TenantSigningKey, SigningError> {
+    pub async fn ensure_active_key(
+        &self,
+        tenant_id: &str,
+    ) -> Result<TenantSigningKey, SigningError> {
         if let Some(key) = self.key_store.get_active_key(tenant_id).await {
             // Check if key needs rotation
             if let Some(retired_at) = key.retired_at {
@@ -393,7 +406,11 @@ pub struct TokenWithKid {
 
 impl SessionTokenSigningService {
     /// Sign a token and include the key ID in the result.
-    pub async fn sign_with_kid(&self, tenant_id: &str, payload: &[u8]) -> Result<TokenWithKid, SigningError> {
+    pub async fn sign_with_kid(
+        &self,
+        tenant_id: &str,
+        payload: &[u8],
+    ) -> Result<TokenWithKid, SigningError> {
         let key = self.ensure_active_key(tenant_id).await?;
         let signature = self.sign(tenant_id, payload).await?;
 
@@ -482,7 +499,8 @@ mod tests {
         let sig1 = service.sign("tenant-3", b"payload").await.unwrap();
 
         // Verify first key works
-        assert!(service.verify("tenant-3", Some(&key1.kid), b"payload", &sig1)
+        assert!(service
+            .verify("tenant-3", Some(&key1.kid), b"payload", &sig1)
             .await
             .is_ok());
 
@@ -494,7 +512,8 @@ mod tests {
         assert_ne!(key1.kid, key2.kid);
 
         // Old signature should still verify with historical key
-        assert!(service.verify("tenant-3", Some(&key1.kid), b"payload", &sig1)
+        assert!(service
+            .verify("tenant-3", Some(&key1.kid), b"payload", &sig1)
             .await
             .is_ok());
 

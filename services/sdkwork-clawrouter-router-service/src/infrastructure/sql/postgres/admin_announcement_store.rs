@@ -232,7 +232,10 @@ async fn list_announcements(
         .first()
         .and_then(|row| row.try_get::<i64, _>("total").ok())
         .unwrap_or(0);
-    let items = rows.iter().map(item_from_row).collect::<DomainResult<Vec<_>>>()?;
+    let items = rows
+        .iter()
+        .map(item_from_row)
+        .collect::<DomainResult<Vec<_>>>()?;
     Ok(AdminAnnouncementListPage {
         items,
         total,

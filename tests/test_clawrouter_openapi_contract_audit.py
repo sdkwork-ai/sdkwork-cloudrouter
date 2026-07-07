@@ -123,19 +123,21 @@ class ClawRouterOpenApiContractAuditTest(unittest.TestCase):
                         },
                     },
                     "CreateModelVendorResult": {
-                        "type": "object",
-                        "additionalProperties": False,
-                        "required": ["code"],
-                        "x-operation-id": "modelVendors.create",
-                        "properties": {
-                            "code": {"type": "string"},
-                            "msg": {"type": "string"},
-                            "message": {"type": "string"},
-                            "data": {
-                                "allOf": [{"$ref": "#/components/schemas/AiModelVendorRecord"}],
-                                "description": "Created model vendor payload.",
+                        "allOf": [
+                            {"$ref": "#/components/schemas/SdkWorkApiResponse"},
+                            {
+                                "type": "object",
+                                "additionalProperties": False,
+                                "required": ["data"],
+                                "properties": {
+                                    "data": {
+                                        "allOf": [{"$ref": "#/components/schemas/AiModelVendorRecord"}],
+                                        "description": "Created model vendor payload.",
+                                    },
+                                },
                             },
-                        },
+                        ],
+                        "x-operation-id": "modelVendors.create",
                     },
                     "AiModelVendorRecord": {
                         "type": "object",
@@ -144,19 +146,21 @@ class ClawRouterOpenApiContractAuditTest(unittest.TestCase):
                             "vendorCode": {"type": "string"},
                         },
                     },
-                    "PlusApiResult": {
+                    "SdkWorkApiResponse": {
                         "type": "object",
                         "additionalProperties": False,
-                        "required": ["code"],
+                        "required": ["code", "data", "traceId"],
                         "properties": {
-                            "code": {"type": "string"},
-                            "msg": {"type": "string"},
-                            "message": {"type": "string"},
-                            "data": {
-                                "allOf": [{"$ref": "#/components/schemas/NoData"}],
-                                "description": "Default empty data payload for the base response envelope.",
-                            },
+                            "code": {"type": "integer", "format": "int32", "enum": [0], "minimum": 0, "maximum": 0},
+                            "data": {"description": "Operation-specific payload."},
+                            "traceId": {"type": "string", "format": "uuid"},
                         },
+                    },
+                    "SdkWorkPlatformErrorCode": {
+                        "type": "integer",
+                        "format": "int32",
+                        "minimum": 40001,
+                        "maximum": 79999,
                     },
                     "NoData": {
                         "type": "object",
@@ -165,42 +169,44 @@ class ClawRouterOpenApiContractAuditTest(unittest.TestCase):
                         "description": "Closed empty payload for operations that complete without business data.",
                     },
                     "RefreshModelVendorsResult": {
-                        "type": "object",
-                        "additionalProperties": False,
-                        "required": ["code"],
-                        "x-operation-id": "modelVendors.refresh",
-                        "properties": {
-                            "code": {"type": "string"},
-                            "msg": {"type": "string"},
-                            "message": {"type": "string"},
-                            "data": {
-                                "allOf": [{"$ref": "#/components/schemas/NoData"}],
-                                "description": "No business data returned by this operation.",
+                        "allOf": [
+                            {"$ref": "#/components/schemas/SdkWorkApiResponse"},
+                            {
+                                "type": "object",
+                                "additionalProperties": False,
+                                "required": ["data"],
+                                "properties": {
+                                    "data": {
+                                        "allOf": [{"$ref": "#/components/schemas/NoData"}],
+                                        "description": "No business data returned by this operation.",
+                                    },
+                                },
                             },
-                        },
+                        ],
+                        "x-operation-id": "modelVendors.refresh",
                     },
                     "FieldError": {
                         "type": "object",
                         "additionalProperties": False,
+                        "required": ["field", "message"],
                         "properties": {
                             "field": {"type": "string"},
-                            "code": {"type": "string"},
+                            "code": {"type": "integer", "format": "int32", "minimum": 40011, "maximum": 40099},
                             "message": {"type": "string"},
                         },
                     },
                     "ProblemDetail": {
                         "type": "object",
                         "additionalProperties": {"$ref": "#/components/schemas/JsonValue"},
-                        "required": ["type", "title", "status"],
+                        "required": ["type", "title", "status", "code", "traceId"],
                         "properties": {
                             "type": {"type": "string", "format": "uri-reference"},
                             "title": {"type": "string"},
                             "status": {"type": "integer", "minimum": 100, "maximum": 599},
                             "detail": {"type": "string"},
                             "instance": {"type": "string"},
-                            "requestId": {"type": "string"},
-                            "code": {"type": "string"},
-                            "traceId": {"type": "string"},
+                            "code": {"$ref": "#/components/schemas/SdkWorkPlatformErrorCode"},
+                            "traceId": {"type": "string", "format": "uuid"},
                             "errors": {
                                 "type": "array",
                                 "items": {"$ref": "#/components/schemas/FieldError"},
@@ -669,18 +675,18 @@ class ClawRouterOpenApiContractAuditTest(unittest.TestCase):
                 result.messages,
             )
 
-    def test_rejects_problem_detail_without_request_id(self) -> None:
+    def test_rejects_problem_detail_with_request_id(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             spec = self.valid_spec("app")
-            del spec["components"]["schemas"]["ProblemDetail"]["properties"]["requestId"]
+            spec["components"]["schemas"]["ProblemDetail"]["properties"]["requestId"] = {"type": "string"}
             self.write_specs(root, app_spec=spec)
 
             result = ClawRouterOpenApiContractAudit(root=root).run()
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "app schema component ProblemDetail.requestId must be declared",
+                "app schema component ProblemDetail must not declare forbidden wire field requestId",
                 result.messages,
             )
 
@@ -725,7 +731,7 @@ class ClawRouterOpenApiContractAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             spec = self.valid_spec("app")
-            spec["components"]["schemas"]["CreateModelVendorResult"]["properties"]["data"] = {
+            spec["components"]["schemas"]["CreateModelVendorResult"]["allOf"][1]["properties"]["data"] = {
                 "$ref": "#/components/schemas/AiModelVendorRecord",
                 "description": "Ignored by OpenAPI Reference Object rules.",
             }
@@ -735,7 +741,7 @@ class ClawRouterOpenApiContractAuditTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "app components.schemas.CreateModelVendorResult.properties.data $ref must not have sibling fields; use allOf/oneOf composition",
+                "app components.schemas.CreateModelVendorResult.allOf[1].properties.data $ref must not have sibling fields; use allOf/oneOf composition",
                 result.messages,
             )
 
@@ -750,7 +756,7 @@ class ClawRouterOpenApiContractAuditTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "backend components.schemas.CreateModelVendorResult.properties.data.allOf[0] references missing component schema AiModelVendorRecord",
+                "backend components.schemas.CreateModelVendorResult.allOf[1].properties.data.allOf[0] references missing component schema AiModelVendorRecord",
                 result.messages,
             )
 
@@ -767,7 +773,7 @@ class ClawRouterOpenApiContractAuditTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "app POST /app/v3/api/ai/model_vendors/refresh 200 response must reference an operation-specific *Result schema, not PlusApiResult",
+                "app POST /app/v3/api/ai/model_vendors/refresh 200 response must use SdkWorkApiResponse envelope, not legacy PlusApiResult",
                 result.messages,
             )
 
@@ -784,7 +790,7 @@ class ClawRouterOpenApiContractAuditTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "app POST /app/v3/api/ai/model_vendors 200 response must reference an operation-specific *Result schema, not PlusApiResult",
+                "app POST /app/v3/api/ai/model_vendors 200 response must use SdkWorkApiResponse envelope, not legacy PlusApiResult",
                 result.messages,
             )
 
@@ -792,7 +798,7 @@ class ClawRouterOpenApiContractAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             spec = self.valid_spec("app")
-            spec["components"]["schemas"]["CreateModelVendorResult"]["properties"]["data"] = {
+            spec["components"]["schemas"]["CreateModelVendorResult"]["allOf"][1]["properties"]["data"] = {
                 "$ref": "#/components/schemas/PlusApiResult"
             }
             self.write_specs(root, app_spec=spec)
@@ -809,7 +815,7 @@ class ClawRouterOpenApiContractAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             spec = self.valid_spec("backend")
-            del spec["components"]["schemas"]["CreateModelVendorResult"]["properties"]["data"]
+            del spec["components"]["schemas"]["CreateModelVendorResult"]["allOf"][1]["properties"]["data"]
             self.write_specs(root, backend_spec=spec)
 
             result = ClawRouterOpenApiContractAudit(root=root).run()
@@ -820,12 +826,13 @@ class ClawRouterOpenApiContractAuditTest(unittest.TestCase):
                 result.messages,
             )
 
-    def test_rejects_plus_api_result_data_property(self) -> None:
+    def test_rejects_plus_api_result_component(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             spec = self.valid_spec("backend")
-            spec["components"]["schemas"]["PlusApiResult"]["properties"]["data"] = {
-                "$ref": "#/components/schemas/AiModelVendorRecord"
+            spec["components"]["schemas"]["PlusApiResult"] = {
+                "type": "object",
+                "properties": {"code": {"type": "string"}, "data": {"type": "object"}},
             }
             self.write_specs(root, backend_spec=spec)
 
@@ -833,7 +840,7 @@ class ClawRouterOpenApiContractAuditTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "backend schema component PlusApiResult.data must reference NoData as its default empty payload",
+                "backend schema component PlusApiResult is forbidden; use SdkWorkApiResponse per API_SPEC.md section 15",
                 result.messages,
             )
 

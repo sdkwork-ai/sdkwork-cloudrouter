@@ -56,15 +56,8 @@ client.SetHeader("X-Custom-Header", "value")
 ## API Modules
 
 - `client.Ai` - ai API
-- `client.Content` - content API
-- `client.Iam` - iam API
 - `client.Integration` - integration API
-- `client.Mcp` - mcp API
-- `client.Messaging` - messaging API
-- `client.Prompts` - prompts API
-- `client.ServiceProviders` - service_providers API
 - `client.Sites` - sites API
-- `client.Storage` - storage API
 - `client.System` - system API
 
 ## Usage Examples
@@ -72,31 +65,8 @@ client.SetHeader("X-Custom-Header", "value")
 ### ai
 
 ```go
-// List groups
+// List
 result, err := client.Ai.ChannelGroupsList()
-if err != nil {
-    panic(err)
-}
-fmt.Println(result)
-```
-
-### content
-
-```go
-// List announcements
-result, err := client.Content.AnnouncementsList()
-if err != nil {
-    panic(err)
-}
-fmt.Println(result)
-```
-
-### iam
-
-```go
-// Delete API key
-apiKeyId := "1"
-result, err := client.Iam.ApiKeysDelete(apiKeyId)
 if err != nil {
     panic(err)
 }
@@ -106,87 +76,8 @@ fmt.Println(result)
 ### integration
 
 ```go
-// List channels
+// List
 result, err := client.Integration.ChannelsList()
-if err != nil {
-    panic(err)
-}
-fmt.Println(result)
-```
-
-### mcp
-
-```go
-// List MCP servers
-params := map[string]interface{}{
-    "page": "page",
-    "page_size": "page_size",
-    "q": "q",
-    "transport": "transport",
-    "visibility": "visibility",
-    "status": "status",
-    "category_id": "category_id",
-}
-result, err := client.Mcp.ServersList(params)
-if err != nil {
-    panic(err)
-}
-fmt.Println(result)
-```
-
-### messaging
-
-```go
-// Messaging provider accounts list
-params := map[string]interface{}{
-    "page": "page",
-    "page_size": "page_size",
-    "q": "q",
-    "status": "status",
-    "channel": "sms",
-    "provider_code": "provider_code",
-}
-result, err := client.Messaging.ProviderAccountsList(params)
-if err != nil {
-    panic(err)
-}
-fmt.Println(result)
-```
-
-### prompts
-
-```go
-// List admin prompts
-params := map[string]interface{}{
-    "page": "page",
-    "page_size": "page_size",
-    "q": "q",
-    "prompt_type": "prompt_type",
-    "visibility": "visibility",
-    "status": "status",
-    "category_id": "category_id",
-}
-result, err := client.Prompts.DefinitionsList(params)
-if err != nil {
-    panic(err)
-}
-fmt.Println(result)
-```
-
-### service_providers
-
-```go
-// Service Provider Adjustments List
-params := map[string]interface{}{
-    "page": "page",
-    "page_size": "page_size",
-    "status": "status",
-    "provider_id": "provider_id",
-    "seller_provider_id": "seller_provider_id",
-    "buyer_provider_id": "buyer_provider_id",
-    "edge_id": "edge_id",
-}
-result, err := client.ServiceProviders.AdjustmentsList(params)
 if err != nil {
     panic(err)
 }
@@ -196,22 +87,8 @@ fmt.Println(result)
 ### sites
 
 ```go
-// List sites
-params := map[string]interface{}{
-    "q": "q",
-}
-result, err := client.Sites.SiteCatalogList(params)
-if err != nil {
-    panic(err)
-}
-fmt.Println(result)
-```
-
-### storage
-
-```go
-// List storage providers
-result, err := client.Storage.OssProvidersList()
+// List
+result, err := client.Sites.SiteCatalogList()
 if err != nil {
     panic(err)
 }
@@ -221,7 +98,7 @@ fmt.Println(result)
 ### system
 
 ```go
-// Retrieve IAM auth runtime settings
+// Retrieve
 result, err := client.System.AuthSettingsRetrieve()
 if err != nil {
     panic(err)

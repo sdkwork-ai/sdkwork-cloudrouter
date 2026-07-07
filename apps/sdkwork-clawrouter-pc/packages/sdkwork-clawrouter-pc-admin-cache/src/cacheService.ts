@@ -1,7 +1,5 @@
 import {
-  ensureSdkworkApiSuccess,
   isRecord,
-  readApiRecord,
   readRequiredNonNegativeNumber,
   readRequiredString,
   readString,
@@ -94,14 +92,19 @@ export interface CacheKeyList {
   instanceName: string;
   scannedItems: number;
   returnedItems: number;
-  limit: number | null;
-  hasMore: boolean;
   scanComplete: boolean;
-  nextCursor: string | null;
+  pageInfo: CachePageInfo;
   items: CacheKeyItem[];
 }
 
-const DEFAULT_CACHE_KEY_LIST_LIMIT = 200;
+export interface CachePageInfo {
+  mode: 'cursor' | 'offset';
+  pageSize: number | null;
+  hasMore: boolean;
+  nextCursor: string | null;
+}
+
+const DEFAULT_CACHE_KEY_LIST_PAGE_SIZE = 200;
 const PROVIDER_KINDS = new Set<CacheProviderKind>(['local_cache', 'redis_cache']);
 const RUNTIME_TARGETS = new Set<CacheRuntimeTarget>(['desktop_packaged', 'service']);
 const CACHE_NAMESPACE_SCOPES = new Set(['global', 'tenant', 'tenant_user', 'user', 'session', 'request']);
@@ -113,57 +116,49 @@ const CACHE_KEY_STATUSES = new Set(['active', 'expired']);
 export class AdminCacheService {
   static async fetchOverview(): Promise<CacheOverview> {
     const result = await getClawRouterBackendSdkClient().system.cache.overview.retrieve();
-    ensureSdkworkApiSuccess(result, 'Failed to fetch cache overview');
-    return normalizeOverview(readApiRecord(result));
+    return normalizeOverview(readRequiredRecord(result, 'Cache overview is required'));
   }
 
   static async refreshAll(): Promise<CacheOperationOutcome> {
     const result = await getClawRouterBackendSdkClient().system.cache.refresh.create();
-    ensureSdkworkApiSuccess(result, 'Failed to refresh cache');
-    return normalizeOperation(readApiRecord(result));
+    return normalizeOperation(readRequiredRecord(result, 'Cache refresh outcome is required'));
   }
 
   static async refreshInstance(instanceName: string): Promise<CacheOperationOutcome> {
     const result = await getClawRouterBackendSdkClient().system.cache.instances.refresh.create(instanceName);
-    ensureSdkworkApiSuccess(result, 'Failed to refresh cache instance');
-    return normalizeOperation(readApiRecord(result));
+    return normalizeOperation(readRequiredRecord(result, 'Cache instance refresh outcome is required'));
   }
 
   static async deleteInstance(instanceName: string): Promise<CacheOperationOutcome> {
     const result = await getClawRouterBackendSdkClient().system.cache.instances.delete(instanceName);
-    ensureSdkworkApiSuccess(result, 'Failed to delete cache instance');
-    return normalizeOperation(readApiRecord(result));
+    return normalizeOperation(readRequiredRecord(result, 'Cache instance delete outcome is required'));
   }
 
   static async refreshNamespace(namespace: string): Promise<CacheOperationOutcome> {
     const result = await getClawRouterBackendSdkClient().system.cache.namespaces.refresh.create(namespace);
-    ensureSdkworkApiSuccess(result, 'Failed to refresh cache namespace');
-    return normalizeOperation(readApiRecord(result));
+    return normalizeOperation(readRequiredRecord(result, 'Cache namespace refresh outcome is required'));
   }
 
   static async deleteNamespace(namespace: string): Promise<CacheOperationOutcome> {
     const result = await getClawRouterBackendSdkClient().system.cache.namespaces.delete(namespace);
-    ensureSdkworkApiSuccess(result, 'Failed to delete cache namespace');
-    return normalizeOperation(readApiRecord(result));
+    return normalizeOperation(readRequiredRecord(result, 'Cache namespace delete outcome is required'));
   }
 
   static async deleteKey(namespace: string, key: string): Promise<CacheOperationOutcome> {
     const result = await getClawRouterBackendSdkClient().system.cache.namespaces.keys.delete(namespace, key);
-    ensureSdkworkApiSuccess(result, 'Failed to delete cache key');
-    return normalizeOperation(readApiRecord(result));
+    return normalizeOperation(readRequiredRecord(result, 'Cache key delete outcome is required'));
   }
 
   static async listKeys(
     namespace: string,
-    limit = DEFAULT_CACHE_KEY_LIST_LIMIT,
+    pageSize = DEFAULT_CACHE_KEY_LIST_PAGE_SIZE,
     cursor?: string | null,
   ): Promise<CacheKeyList> {
     const result = await getClawRouterBackendSdkClient().system.cache.namespaces.keys.list(namespace, {
-      limit: String(limit),
+      pageSize,
       ...(cursor ? { cursor } : {}),
     });
-    ensureSdkworkApiSuccess(result, 'Failed to list cache keys');
-    return normalizeKeyList(readApiRecord(result));
+    return normalizeKeyList(readRequiredRecord(result, 'Cache key list is required'));
   }
 }
 
@@ -358,17 +353,12 @@ function normalizeKeyList(record: ApiRecord): CacheKeyList {
   if (returnedItems > scannedItems) {
     throw new Error('Cache returned key count exceeds scanned key count');
   }
-  const limit = readNullableNonNegativeNumber(record, 'limit');
-  if (limit !== null && (limit < 1 || limit > 1000)) {
-    throw new Error(`Cache key list limit must be between 1 and 1000: ${limit}`);
-  }
-  const hasMore = readBoolean(record, 'hasMore');
+  const pageInfo = normalizePageInfo(readRequiredRecord(record.pageInfo, 'Cache key page info is required'));
   const scanComplete = readBoolean(record, 'scanComplete');
-  const nextCursor = readNullableText(record, 'nextCursor');
-  if ((hasMore || !scanComplete) && !nextCursor) {
+  if ((pageInfo.hasMore || !scanComplete) && !pageInfo.nextCursor) {
     throw new Error('Cache next cursor is required when more keys are available');
   }
-  if (!hasMore && scanComplete && nextCursor) {
+  if (!pageInfo.hasMore && scanComplete && pageInfo.nextCursor) {
     throw new Error('Cache next cursor must be empty after a complete scan');
   }
   return {
@@ -376,11 +366,26 @@ function normalizeKeyList(record: ApiRecord): CacheKeyList {
     instanceName,
     scannedItems,
     returnedItems,
-    limit,
-    hasMore,
     scanComplete,
-    nextCursor,
+    pageInfo,
     items,
+  };
+}
+
+function normalizePageInfo(record: ApiRecord): CachePageInfo {
+  const mode = readRequiredString(record, 'mode', 'Cache page mode is required');
+  if (mode !== 'cursor' && mode !== 'offset') {
+    throw new Error(`Unsupported cache page mode: ${mode}`);
+  }
+  const pageSize = readNullableNonNegativeNumber(record, 'pageSize');
+  if (pageSize !== null && (pageSize < 1 || pageSize > DEFAULT_CACHE_KEY_LIST_PAGE_SIZE)) {
+    throw new Error(`Cache page size must be between 1 and ${DEFAULT_CACHE_KEY_LIST_PAGE_SIZE}: ${pageSize}`);
+  }
+  return {
+    mode,
+    pageSize,
+    hasMore: readBoolean(record, 'hasMore'),
+    nextCursor: readNullableText(record, 'nextCursor'),
   };
 }
 

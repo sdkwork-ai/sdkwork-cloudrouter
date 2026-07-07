@@ -4,7 +4,9 @@
   "version": "0.1.0",
   "language": "kotlin",
   "sdkType": "backend",
-  "packageName": "com.sdkwork.clawrouter:clawrouter-backend-sdk",
+  "packageName": "sdkwork-clawrouter-backend-sdk-generated-typescript",
+  "transportPackageName": "sdkwork-clawrouter-backend-sdk-generated-typescript",
+  "consumerPackageName": "@sdkwork/clawrouter-backend-sdk",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

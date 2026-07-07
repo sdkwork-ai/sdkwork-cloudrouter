@@ -1,14 +1,11 @@
 import {
-  ensureSdkworkApiSuccess,
   getClawRouterBackendSdkClient,
   isRecord,
-  readApiRecord,
   readDecimalString,
   readRequiredNonNegativeNumber,
   readRequiredString,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
-import type { InstallationStatusResponse } from '@sdkwork/clawrouter-backend-sdk';
 
 export type AdminDashboardTranslator = (key: string, fallback: string, options?: Record<string, unknown>) => string;
 export type DashboardTrafficTimeRange = 'hourly' | 'daily' | 'weekly' | 'monthly';
@@ -65,6 +62,18 @@ export interface DashboardDataSnapshot {
   traffic: TrafficData[];
   modelDistribution: PieChartData[];
   recentUsage: RecentUsageTrace[];
+}
+
+export interface InstallationStatusResponse {
+  status: 'not_installed' | 'installed' | 'upgrade_required' | 'incomplete' | 'corrupt';
+  schemaVersion: string;
+  catalogVersion: string;
+  catalogSource: string;
+  externalCatalog: boolean;
+  lastCatalogRefreshStatus: 'not_run' | 'success' | 'dry_run' | 'failed';
+  environment: string;
+  seedProfile: string;
+  changed: boolean;
 }
 
 interface DashboardAnalyticsSummary {
@@ -148,8 +157,7 @@ export class AdminDashboardService {
   ): Promise<DashboardDataSnapshot> {
     const trafficTimeRange = normalizeDashboardTrafficTimeRange(query.timeRange);
     const result = await getClawRouterBackendSdkClient().system.dashboard.admin.overview.retrieve();
-    ensureSdkworkApiSuccess(result, 'Failed to fetch admin dashboard');
-    const data = readApiRecord(result);
+    const data = readRequiredRecord(result, 'Admin dashboard overview is required');
     const activeUsers = readRequiredNonNegativeNumber(data, 'activeUsers', 'Dashboard active users are required');
     const backendUserConsumption = readRequiredRecordArray(data, 'userConsumption', 'Dashboard userConsumption is required', 'Dashboard pie chart record is required')
       .map(normalizePieChartData);
@@ -183,8 +191,7 @@ export class AdminDashboardService {
 
   static async fetchInstallationStatus(): Promise<InstallationStatusResponse> {
     const result = await getClawRouterBackendSdkClient().system.installation.status.retrieve();
-    ensureSdkworkApiSuccess(result, 'Failed to fetch installation status');
-    return normalizeInstallationStatus(readApiRecord(result));
+    return normalizeInstallationStatus(readRequiredRecord(result, 'Installation status is required'));
   }
 }
 
@@ -193,10 +200,9 @@ async function fetchDashboardAnalyticsForTimeRange(
 ): Promise<DashboardAnalyticsSnapshot> {
   const result = await getClawRouterBackendSdkClient().system.analytics.admin.overview.retrieve({
     timeRange,
-    limit: String(TRAFFIC_POINT_LIMITS[timeRange]),
+    rankingSize: TRAFFIC_POINT_LIMITS[timeRange],
   });
-  ensureSdkworkApiSuccess(result, 'Failed to fetch admin dashboard traffic analytics');
-  const data = readApiRecord(result);
+  const data = readRequiredRecord(result, 'Dashboard traffic analytics overview is required');
   return {
     summary: normalizeAnalyticsSummary(readRequiredRecord(data.summary, 'Dashboard traffic analytics summary is required')),
     traffic: readRequiredRecordArray(

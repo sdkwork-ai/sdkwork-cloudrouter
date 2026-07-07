@@ -49,15 +49,8 @@ client.setHeader("X-Custom-Header", value: "value")
 ## API Modules
 
 - `client.ai` - ai API
-- `client.content` - content API
-- `client.iam` - iam API
 - `client.integration` - integration API
-- `client.mcp` - mcp API
-- `client.messaging` - messaging API
-- `client.prompts` - prompts API
-- `client.serviceProviders` - service_providers API
 - `client.sites` - sites API
-- `client.storage` - storage API
 - `client.system` - system API
 
 ## Usage Examples
@@ -65,126 +58,31 @@ client.setHeader("X-Custom-Header", value: "value")
 ### ai
 
 ```swift
-// List groups
+// List
 let result = try await client.ai.channelGroupsList()
-print(result)
-```
-
-### content
-
-```swift
-// List announcements
-let result = try await client.content.announcementsList()
-print(result)
-```
-
-### iam
-
-```swift
-// Delete API key
-let apiKeyId = "1"
-let result = try await client.iam.apiKeysDelete(apiKeyId: apiKeyId)
 print(result)
 ```
 
 ### integration
 
 ```swift
-// List channels
+// List
 let result = try await client.integration.channelsList()
-print(result)
-```
-
-### mcp
-
-```swift
-// List MCP servers
-let params: [String: Any] = [
-    "page": "page",
-    "page_size": "page-size",
-    "q": "q",
-    "transport": "transport",
-    "visibility": "visibility",
-    "status": "status",
-    "category_id": "1"
-]
-let result = try await client.mcp.serversList(params: params)
-print(result)
-```
-
-### messaging
-
-```swift
-// Messaging provider accounts list
-let params: [String: Any] = [
-    "page": "page",
-    "page_size": "page-size",
-    "q": "q",
-    "status": "status",
-    "channel": "sms",
-    "provider_code": "ok"
-]
-let result = try await client.messaging.providerAccountsList(params: params)
-print(result)
-```
-
-### prompts
-
-```swift
-// List admin prompts
-let params: [String: Any] = [
-    "page": "page",
-    "page_size": "page-size",
-    "q": "q",
-    "prompt_type": "prompt-type",
-    "visibility": "visibility",
-    "status": "status",
-    "category_id": "1"
-]
-let result = try await client.prompts.definitionsList(params: params)
-print(result)
-```
-
-### service_providers
-
-```swift
-// Service Provider Adjustments List
-let params: [String: Any] = [
-    "page": "page",
-    "page_size": "page-size",
-    "status": "status",
-    "provider_id": "1",
-    "seller_provider_id": "1",
-    "buyer_provider_id": "1",
-    "edge_id": "1"
-]
-let result = try await client.serviceProviders.adjustmentsList(params: params)
 print(result)
 ```
 
 ### sites
 
 ```swift
-// List sites
-let params: [String: Any] = [
-    "q": "q"
-]
-let result = try await client.sites.siteCatalogList(params: params)
-print(result)
-```
-
-### storage
-
-```swift
-// List storage providers
-let result = try await client.storage.ossProvidersList()
+// List
+let result = try await client.sites.siteCatalogList()
 print(result)
 ```
 
 ### system
 
 ```swift
-// Retrieve IAM auth runtime settings
+// Retrieve
 let result = try await client.system.authSettingsRetrieve()
 print(result)
 ```

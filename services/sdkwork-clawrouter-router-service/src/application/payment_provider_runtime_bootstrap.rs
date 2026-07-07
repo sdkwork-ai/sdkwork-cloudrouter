@@ -46,8 +46,7 @@ pub async fn bootstrap_payment_provider_registry(
     };
     let payment_secret_resolver: Arc<dyn PaymentProviderSecretResolver> =
         Arc::new(ProviderSecretPaymentBridge::new(secret_resolver));
-    let assembler =
-        PaymentProviderRuntimeAssembler::with_default_factory(payment_secret_resolver);
+    let assembler = PaymentProviderRuntimeAssembler::with_default_factory(payment_secret_resolver);
 
     let query = ListAdminTransactionRecordsQuery {
         subject: platform_subject,
@@ -79,10 +78,7 @@ pub async fn bootstrap_payment_provider_registry(
         }
     };
 
-    let records = collection
-        .items
-        .iter()
-        .collect::<Vec<_>>();
+    let records = collection.items.iter().collect::<Vec<_>>();
     if records.is_empty() {
         tracing::info!(
             environment = target_environment,

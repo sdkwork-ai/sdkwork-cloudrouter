@@ -1,220 +1,292 @@
 {
   "components": {
     "schemas": {
-      "AiResourceGroupsCreateResult": {
+      "AiResourceGroupResourcesPage": {
         "additionalProperties": false,
-        "description": "Ai resource groups create result schema exposed by Claw Router.",
+        "description": "Ai resource group resources page schema exposed by Claw Router.",
+        "name": "AiResourceGroupResourcesPage",
         "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+          "items": {
+            "description": "Items field on ai resource group resources page.",
+            "items": {
+              "additionalProperties": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/JsonValue"
+                  }
+                ],
+                "description": "Items field on ai resource group resources page."
+              },
+              "description": "Items field on ai resource group resources page.",
+              "type": "object"
+            },
+            "type": "array"
           },
-          "data": {
+          "pageInfo": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/NoData"
+                "$ref": "#/components/schemas/PageInfo"
               }
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "description": "Page info field on ai resource group resources page."
           }
         },
         "required": [
-          "code"
+          "items",
+          "pageInfo"
         ],
-        "type": "object",
+        "type": "object"
+      },
+      "AiResourceGroupsCreateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by ai resource groups create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Ai resource groups create result schema exposed by Claw Router.",
         "x-operation-id": "aiResourceGroups.create"
       },
       "AiResourceGroupsDeleteResult": {
-        "additionalProperties": false,
-        "description": "Ai resource groups delete result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by ai resource groups delete result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Ai resource groups delete result schema exposed by Claw Router.",
         "x-operation-id": "aiResourceGroups.delete"
       },
       "AiResourceGroupsListResult": {
-        "additionalProperties": false,
-        "description": "Ai resource groups list result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by ai resource groups list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Ai resource groups list result schema exposed by Claw Router.",
         "x-operation-id": "aiResourceGroups.list"
       },
       "AiResourceGroupsResourcesListResult": {
-        "additionalProperties": false,
-        "description": "Ai resource groups resources list result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by ai resource groups resources list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AiResourceGroupResourcesPage"
+                  }
+                ],
+                "description": "Data field on ai resource groups resources list result."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Ai resource groups resources list result schema exposed by Claw Router.",
         "x-operation-id": "aiResourceGroups.resources.list"
       },
       "AiResourceGroupsUpdateResult": {
-        "additionalProperties": false,
-        "description": "Ai resource groups update result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by ai resource groups update result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Ai resource groups update result schema exposed by Claw Router.",
         "x-operation-id": "aiResourceGroups.update"
       },
       "AiResourcesCreateResult": {
-        "additionalProperties": false,
-        "description": "Ai resources create result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by ai resources create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Ai resources create result schema exposed by Claw Router.",
         "x-operation-id": "aiResources.create"
       },
       "AiResourcesListResult": {
-        "additionalProperties": false,
-        "description": "Ai resources list result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by ai resources list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AiResourcesPage"
+                  }
+                ],
+                "description": "Data field on ai resources list result."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Ai resources list result schema exposed by Claw Router.",
         "x-operation-id": "aiResources.list"
       },
-      "AiResourcesUpdateResult": {
+      "AiResourcesPage": {
         "additionalProperties": false,
-        "description": "Ai resources update result schema exposed by Claw Router.",
+        "description": "Ai resources page schema exposed by Claw Router.",
+        "name": "AiResourcesPage",
         "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+          "items": {
+            "description": "Items field on ai resources page.",
+            "items": {
+              "additionalProperties": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/JsonValue"
+                  }
+                ],
+                "description": "Items field on ai resources page."
+              },
+              "description": "Items field on ai resources page.",
+              "type": "object"
+            },
+            "type": "array"
           },
-          "data": {
+          "pageInfo": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/NoData"
+                "$ref": "#/components/schemas/PageInfo"
               }
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "description": "Page info field on ai resources page."
           }
         },
         "required": [
-          "code"
+          "items",
+          "pageInfo"
         ],
-        "type": "object",
+        "type": "object"
+      },
+      "AiResourcesUpdateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by ai resources update result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Ai resources update result schema exposed by Claw Router.",
         "x-operation-id": "aiResources.update"
       },
       "FieldError": {
@@ -299,463 +371,634 @@
           }
         ]
       },
-      "ModelMappingsCreateResult": {
+      "ModelCatalogPage": {
         "additionalProperties": false,
-        "description": "Model mappings create result schema exposed by Claw Router.",
+        "description": "Model catalog page schema exposed by Claw Router.",
+        "name": "ModelCatalogPage",
         "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+          "groups": {
+            "description": "Groups field on model catalog page.",
+            "items": {
+              "additionalProperties": false,
+              "description": "Groups field on model catalog page.",
+              "properties": {
+                "key": {
+                  "description": "Key field on model catalog page.",
+                  "type": "string"
+                },
+                "label": {
+                  "description": "Label field on model catalog page.",
+                  "type": "string"
+                },
+                "modelCount": {
+                  "description": "Model count field on model catalog page.",
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                }
+              },
+              "required": [
+                "key",
+                "label",
+                "modelCount"
+              ],
+              "type": "object"
+            },
+            "type": "array"
           },
-          "data": {
+          "items": {
+            "description": "Items field on model catalog page.",
+            "items": {
+              "additionalProperties": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/JsonValue"
+                  }
+                ],
+                "description": "Items field on model catalog page."
+              },
+              "description": "Items field on model catalog page.",
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/NoData"
+                "$ref": "#/components/schemas/PageInfo"
               }
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "description": "Page info field on model catalog page."
           }
         },
         "required": [
-          "code"
+          "items",
+          "groups",
+          "pageInfo"
         ],
-        "type": "object",
+        "type": "object"
+      },
+      "ModelMappingsCreateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by model mappings create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Model mappings create result schema exposed by Claw Router.",
         "x-operation-id": "modelMappings.create"
       },
       "ModelMappingsDeleteResult": {
-        "additionalProperties": false,
-        "description": "Model mappings delete result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by model mappings delete result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Model mappings delete result schema exposed by Claw Router.",
         "x-operation-id": "modelMappings.delete"
       },
       "ModelMappingsListResult": {
-        "additionalProperties": false,
-        "description": "Model mappings list result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by model mappings list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Model mappings list result schema exposed by Claw Router.",
         "x-operation-id": "modelMappings.list"
       },
       "ModelMappingsReplaceResult": {
-        "additionalProperties": false,
-        "description": "Model mappings replace result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by model mappings replace result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Model mappings replace result schema exposed by Claw Router.",
         "x-operation-id": "modelMappings.replace"
       },
       "ModelMappingsResolveCreateResult": {
-        "additionalProperties": false,
-        "description": "Model mappings resolve create result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by model mappings resolve create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Model mappings resolve create result schema exposed by Claw Router.",
         "x-operation-id": "modelMappings.resolve.create"
       },
       "ModelMappingsUpdateResult": {
-        "additionalProperties": false,
-        "description": "Model mappings update result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by model mappings update result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Model mappings update result schema exposed by Claw Router.",
         "x-operation-id": "modelMappings.update"
       },
-      "ModelRankingsJobsListResult": {
+      "ModelRankingRefreshJobHistoryPage": {
         "additionalProperties": false,
-        "description": "Model rankings jobs list result schema exposed by Claw Router.",
+        "description": "Model ranking refresh job history page schema exposed by Claw Router.",
+        "name": "ModelRankingRefreshJobHistoryPage",
         "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+          "items": {
+            "description": "Items field on model ranking refresh job history page.",
+            "items": {
+              "additionalProperties": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/JsonValue"
+                  }
+                ],
+                "description": "Items field on model ranking refresh job history page."
+              },
+              "description": "Items field on model ranking refresh job history page.",
+              "type": "object"
+            },
+            "type": "array"
           },
-          "data": {
+          "pageInfo": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/NoData"
+                "$ref": "#/components/schemas/PageInfo"
               }
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "description": "Page info field on model ranking refresh job history page."
           }
         },
         "required": [
-          "code"
+          "items",
+          "pageInfo"
         ],
-        "type": "object",
+        "type": "object"
+      },
+      "ModelRankingsJobsListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by model rankings jobs list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ModelRankingRefreshJobHistoryPage"
+                  }
+                ],
+                "description": "Data field on model rankings jobs list result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Model rankings jobs list result schema exposed by Claw Router.",
         "x-operation-id": "modelRankings.jobs.list"
       },
       "ModelRankingsListResult": {
-        "additionalProperties": false,
-        "description": "Model rankings list result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by model rankings list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ModelRankingsPage"
+                  }
+                ],
+                "description": "Data field on model rankings list result."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Model rankings list result schema exposed by Claw Router.",
         "x-operation-id": "modelRankings.list"
       },
-      "ModelRankingsRefreshResult": {
+      "ModelRankingsPage": {
         "additionalProperties": false,
-        "description": "Model rankings refresh result schema exposed by Claw Router.",
+        "description": "Model rankings page schema exposed by Claw Router.",
+        "name": "ModelRankingsPage",
         "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+          "history": {
+            "description": "History field on model rankings page.",
+            "items": {
+              "additionalProperties": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/JsonValue"
+                  }
+                ],
+                "description": "History field on model rankings page."
+              },
+              "description": "History field on model rankings page.",
+              "type": "object"
+            },
+            "type": "array"
           },
-          "data": {
+          "items": {
+            "description": "Items field on model rankings page.",
+            "items": {
+              "additionalProperties": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/JsonValue"
+                  }
+                ],
+                "description": "Items field on model rankings page."
+              },
+              "description": "Items field on model rankings page.",
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/NoData"
+                "$ref": "#/components/schemas/PageInfo"
               }
             ],
-            "description": "No business data returned by this operation."
+            "description": "Page info field on model rankings page."
           },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+          "source": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              ],
+              "description": "Source field on model rankings page."
+            },
+            "description": "Source field on model rankings page.",
+            "type": "object"
           }
         },
         "required": [
-          "code"
+          "items",
+          "history",
+          "source",
+          "pageInfo"
         ],
-        "type": "object",
+        "type": "object"
+      },
+      "ModelRankingsRefreshResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by model rankings refresh result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Model rankings refresh result schema exposed by Claw Router.",
         "x-operation-id": "modelRankings.refresh"
       },
       "ModelRankingsStatusRetrieveResult": {
-        "additionalProperties": false,
-        "description": "Model rankings status retrieve result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by model rankings status retrieve result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ModelCatalogPage"
+                  }
+                ],
+                "description": "Data field on model rankings status retrieve result."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Model rankings status retrieve result schema exposed by Claw Router.",
         "x-operation-id": "modelRankings.status.retrieve"
       },
       "ModelVendorsCreateResult": {
-        "additionalProperties": false,
-        "description": "Model vendors create result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by model vendors create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Model vendors create result schema exposed by Claw Router.",
         "x-operation-id": "modelVendors.create"
       },
       "ModelVendorsListResult": {
-        "additionalProperties": false,
-        "description": "Model vendors list result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by model vendors list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Model vendors list result schema exposed by Claw Router.",
         "x-operation-id": "modelVendors.list"
       },
       "ModelsCreateResult": {
-        "additionalProperties": false,
-        "description": "Models create result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by models create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Models create result schema exposed by Claw Router.",
         "x-operation-id": "models.create"
       },
       "ModelsDeleteResult": {
-        "additionalProperties": false,
-        "description": "Models delete result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by models delete result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Models delete result schema exposed by Claw Router.",
         "x-operation-id": "models.delete"
       },
       "ModelsListResult": {
-        "additionalProperties": false,
-        "description": "Models list result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by models list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ModelCatalogPage"
+                  }
+                ],
+                "description": "Data field on models list result."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Models list result schema exposed by Claw Router.",
         "x-operation-id": "models.list"
       },
       "ModelsRefreshResult": {
-        "additionalProperties": false,
-        "description": "Models refresh result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by models refresh result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Models refresh result schema exposed by Claw Router.",
         "x-operation-id": "models.refresh"
       },
       "ModelsUpdateResult": {
-        "additionalProperties": false,
-        "description": "Models update result schema exposed by Claw Router.",
-        "properties": {
-          "code": {
-            "description": "Business response code.",
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
-          "data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoData"
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by models update result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
               }
+            },
+            "required": [
+              "data"
             ],
-            "description": "No business data returned by this operation."
-          },
-          "msg": {
-            "description": "Human-readable response message.",
-            "type": "string"
+            "type": "object"
           }
-        },
-        "required": [
-          "code"
         ],
-        "type": "object",
+        "description": "Models update result schema exposed by Claw Router.",
         "x-operation-id": "models.update"
       },
       "NoData": {
@@ -1026,7 +1269,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SdkWorkListResponse"
+                  "$ref": "#/components/schemas/ModelMappingsListResult"
                 }
               }
             },
@@ -1107,30 +1350,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "properties": {
-                            "item": {
-                              "$ref": "#/components/schemas/ModelMappingsCreateResult"
-                            }
-                          },
-                          "required": [
-                            "item"
-                          ],
-                          "type": "object"
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ],
-                      "type": "object"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ModelMappingsCreateResult"
                 }
               }
             },
@@ -1213,30 +1433,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "properties": {
-                            "item": {
-                              "$ref": "#/components/schemas/ModelMappingsReplaceResult"
-                            }
-                          },
-                          "required": [
-                            "item"
-                          ],
-                          "type": "object"
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ],
-                      "type": "object"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ModelMappingsReplaceResult"
                 }
               }
             },
@@ -1321,30 +1518,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "properties": {
-                            "item": {
-                              "$ref": "#/components/schemas/ModelMappingsResolveCreateResult"
-                            }
-                          },
-                          "required": [
-                            "item"
-                          ],
-                          "type": "object"
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ],
-                      "type": "object"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ModelMappingsResolveCreateResult"
                 }
               }
             },
@@ -1439,7 +1613,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SdkWorkCommandResponse"
+                  "$ref": "#/components/schemas/ModelMappingsDeleteResult"
                 }
               }
             },
@@ -1532,30 +1706,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "properties": {
-                            "item": {
-                              "$ref": "#/components/schemas/ModelMappingsUpdateResult"
-                            }
-                          },
-                          "required": [
-                            "item"
-                          ],
-                          "type": "object"
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ],
-                      "type": "object"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ModelMappingsUpdateResult"
                 }
               }
             },
@@ -1634,13 +1785,63 @@
       "get": {
         "description": "List. Reads ai. Writes none. File targets none.",
         "operationId": "modelRankings.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Ranking snapshot scope.",
+            "in": "query",
+            "name": "rank_scope",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Vendor code filter.",
+            "in": "query",
+            "name": "vendor_code",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Model modality filter.",
+            "in": "query",
+            "name": "modality",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Free-text ranking search query.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Number of ranking rows returned in the current page.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SdkWorkListResponse"
+                  "$ref": "#/components/schemas/ModelRankingsListResult"
                 }
               }
             },
@@ -1717,13 +1918,36 @@
       "get": {
         "description": "List. Reads ai. Writes none. File targets none.",
         "operationId": "modelRankings.jobs.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Ranking snapshot scope.",
+            "in": "query",
+            "name": "rank_scope",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Number of refresh jobs returned in the current page.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SdkWorkListResponse"
+                  "$ref": "#/components/schemas/ModelRankingsJobsListResult"
                 }
               }
             },
@@ -1806,30 +2030,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "properties": {
-                            "item": {
-                              "$ref": "#/components/schemas/ModelRankingsRefreshResult"
-                            }
-                          },
-                          "required": [
-                            "item"
-                          ],
-                          "type": "object"
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ],
-                      "type": "object"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ModelRankingsRefreshResult"
                 }
               }
             },
@@ -1908,36 +2109,127 @@
       "get": {
         "description": "Retrieve. Reads ai. Writes none. File targets none.",
         "operationId": "modelRankings.status.retrieve",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "One-based page index.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of models returned in the current page.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Free-text model search query.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Billing meter code filter.",
+            "in": "query",
+            "name": "billing_meter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated vendor code filter.",
+            "explode": false,
+            "in": "query",
+            "name": "vendor_codes",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Comma-separated modality filter.",
+            "explode": false,
+            "in": "query",
+            "name": "modalities",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Comma-separated capability filter.",
+            "explode": false,
+            "in": "query",
+            "name": "capabilities",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Comma-separated model category filter.",
+            "explode": false,
+            "in": "query",
+            "name": "categories",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Comma-separated channel group filter.",
+            "explode": false,
+            "in": "query",
+            "name": "groups",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "properties": {
-                            "item": {
-                              "$ref": "#/components/schemas/ModelRankingsStatusRetrieveResult"
-                            }
-                          },
-                          "required": [
-                            "item"
-                          ],
-                          "type": "object"
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ],
-                      "type": "object"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ModelRankingsStatusRetrieveResult"
                 }
               }
             },
@@ -2020,7 +2312,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SdkWorkListResponse"
+                  "$ref": "#/components/schemas/ModelVendorsListResult"
                 }
               }
             },
@@ -2101,30 +2393,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "properties": {
-                            "item": {
-                              "$ref": "#/components/schemas/ModelVendorsCreateResult"
-                            }
-                          },
-                          "required": [
-                            "item"
-                          ],
-                          "type": "object"
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ],
-                      "type": "object"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ModelVendorsCreateResult"
                 }
               }
             },
@@ -2203,13 +2472,127 @@
       "get": {
         "description": "List. Reads ai. Writes none. File targets none.",
         "operationId": "models.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "One-based page index.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of models returned in the current page.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Free-text model search query.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Billing meter code filter.",
+            "in": "query",
+            "name": "billing_meter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated vendor code filter.",
+            "explode": false,
+            "in": "query",
+            "name": "vendor_codes",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Comma-separated modality filter.",
+            "explode": false,
+            "in": "query",
+            "name": "modalities",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Comma-separated capability filter.",
+            "explode": false,
+            "in": "query",
+            "name": "capabilities",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Comma-separated model category filter.",
+            "explode": false,
+            "in": "query",
+            "name": "categories",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Comma-separated channel group filter.",
+            "explode": false,
+            "in": "query",
+            "name": "groups",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SdkWorkListResponse"
+                  "$ref": "#/components/schemas/ModelsListResult"
                 }
               }
             },
@@ -2290,30 +2673,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "properties": {
-                            "item": {
-                              "$ref": "#/components/schemas/ModelsCreateResult"
-                            }
-                          },
-                          "required": [
-                            "item"
-                          ],
-                          "type": "object"
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ],
-                      "type": "object"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ModelsCreateResult"
                 }
               }
             },
@@ -2398,30 +2758,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "properties": {
-                            "item": {
-                              "$ref": "#/components/schemas/ModelsRefreshResult"
-                            }
-                          },
-                          "required": [
-                            "item"
-                          ],
-                          "type": "object"
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ],
-                      "type": "object"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ModelsRefreshResult"
                 }
               }
             },
@@ -2516,7 +2853,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SdkWorkCommandResponse"
+                  "$ref": "#/components/schemas/ModelsDeleteResult"
                 }
               }
             },
@@ -2609,30 +2946,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "properties": {
-                            "item": {
-                              "$ref": "#/components/schemas/ModelsUpdateResult"
-                            }
-                          },
-                          "required": [
-                            "item"
-                          ],
-                          "type": "object"
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ],
-                      "type": "object"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ModelsUpdateResult"
                 }
               }
             },
@@ -2717,7 +3031,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SdkWorkListResponse"
+                  "$ref": "#/components/schemas/AiResourceGroupsListResult"
                 }
               }
             },
@@ -2798,30 +3112,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "properties": {
-                            "item": {
-                              "$ref": "#/components/schemas/AiResourceGroupsCreateResult"
-                            }
-                          },
-                          "required": [
-                            "item"
-                          ],
-                          "type": "object"
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ],
-                      "type": "object"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/AiResourceGroupsCreateResult"
                 }
               }
             },
@@ -2909,6 +3200,40 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "description": "One-based page index.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of resources returned in the current page.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Free-text resource search query.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2916,7 +3241,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SdkWorkListResponse"
+                  "$ref": "#/components/schemas/AiResourceGroupsResourcesListResult"
                 }
               }
             },
@@ -3009,7 +3334,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SdkWorkCommandResponse"
+                  "$ref": "#/components/schemas/AiResourceGroupsDeleteResult"
                 }
               }
             },
@@ -3102,30 +3427,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "properties": {
-                            "item": {
-                              "$ref": "#/components/schemas/AiResourceGroupsUpdateResult"
-                            }
-                          },
-                          "required": [
-                            "item"
-                          ],
-                          "type": "object"
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ],
-                      "type": "object"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/AiResourceGroupsUpdateResult"
                 }
               }
             },
@@ -3204,13 +3506,48 @@
       "get": {
         "description": "List. Reads ai. Writes none. File targets none.",
         "operationId": "aiResources.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "One-based page index.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of resources returned in the current page.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Free-text resource search query.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SdkWorkListResponse"
+                  "$ref": "#/components/schemas/AiResourcesListResult"
                 }
               }
             },
@@ -3291,30 +3628,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "properties": {
-                            "item": {
-                              "$ref": "#/components/schemas/AiResourcesCreateResult"
-                            }
-                          },
-                          "required": [
-                            "item"
-                          ],
-                          "type": "object"
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ],
-                      "type": "object"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/AiResourcesCreateResult"
                 }
               }
             },
@@ -3409,30 +3723,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "properties": {
-                            "item": {
-                              "$ref": "#/components/schemas/AiResourcesUpdateResult"
-                            }
-                          },
-                          "required": [
-                            "item"
-                          ],
-                          "type": "object"
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ],
-                      "type": "object"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/AiResourcesUpdateResult"
                 }
               }
             },

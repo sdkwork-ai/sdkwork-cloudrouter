@@ -9,9 +9,9 @@ use crate::infrastructure::sql::sql_admin_product_center::{
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     AdjustAdminUserBalanceCommand, AdminUserApiKeyItem, AdminUserApiKeyListPage,
-    AdminUserCommandFuture, AdminUserItem, AdminUserListPage, AdminUserStore, CreateAdminUserApiKeyCommand, CreateAdminUserCommand,
-    DeleteAdminUserApiKeyCommand, ListAdminUserApiKeysQuery, ListAdminUsersQuery,
-    UpdateAdminUserCommand,
+    AdminUserCommandFuture, AdminUserItem, AdminUserListPage, AdminUserStore,
+    CreateAdminUserApiKeyCommand, CreateAdminUserCommand, DeleteAdminUserApiKeyCommand,
+    ListAdminUserApiKeysQuery, ListAdminUsersQuery, UpdateAdminUserCommand,
 };
 
 const API_KEY_STATUS_ACTIVE: i32 = 1;
@@ -442,7 +442,10 @@ async fn list_users(pool: &PgPool, query: ListAdminUsersQuery) -> DomainResult<A
         .first()
         .and_then(|row| row.try_get::<i64, _>("total").ok())
         .unwrap_or(0);
-    let items = rows.into_iter().map(user_from_row).collect::<DomainResult<Vec<_>>>()?;
+    let items = rows
+        .into_iter()
+        .map(user_from_row)
+        .collect::<DomainResult<Vec<_>>>()?;
     Ok(AdminUserListPage {
         items,
         total,

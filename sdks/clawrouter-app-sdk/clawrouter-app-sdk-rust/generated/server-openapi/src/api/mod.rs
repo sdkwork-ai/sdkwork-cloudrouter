@@ -1,5 +1,7 @@
 pub mod base;
 pub mod paths;
+pub mod system;
+pub use system::SystemApi;
 pub mod ai;
 pub use ai::AiApi;
 pub mod chat;
@@ -10,5 +12,3 @@ pub mod notification;
 pub use notification::NotificationApi;
 pub mod runtime;
 pub use runtime::RuntimeApi;
-pub mod system;
-pub use system::SystemApi;

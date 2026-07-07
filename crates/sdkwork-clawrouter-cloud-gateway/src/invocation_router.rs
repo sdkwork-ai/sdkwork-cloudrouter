@@ -3,7 +3,9 @@ use std::sync::Arc;
 use axum::body::Body;
 use axum::http::Request;
 use axum::Router;
-use sdkwork_claw_config::{ProviderAdapterConfig, RedisConfig, RequestLimitsConfig, RuntimeTomlConfig};
+use sdkwork_claw_config::{
+    ProviderAdapterConfig, RedisConfig, RequestLimitsConfig, RuntimeTomlConfig,
+};
 use sdkwork_clawrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_clawrouter_router_service::application::{
     AccountResolutionInterceptor, BillingPolicyInterceptor, CircuitBreakerConfig,
@@ -407,8 +409,7 @@ where
 
     pipeline = pipeline.with_interceptor(PricingPreflightInterceptor::new(Arc::clone(&catalog)));
 
-    pipeline = pipeline
-        .with_interceptor(ResponseNormalizationInterceptor::default());
+    pipeline = pipeline.with_interceptor(ResponseNormalizationInterceptor::default());
 
     // H-9: bound per-tenant in-flight provider requests just before dispatch so
     // a tenant cannot exhaust the gateway's provider connection pool. The slot

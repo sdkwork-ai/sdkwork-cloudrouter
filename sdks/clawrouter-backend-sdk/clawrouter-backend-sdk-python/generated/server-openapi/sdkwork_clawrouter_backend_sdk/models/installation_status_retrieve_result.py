@@ -3,12 +3,12 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 if TYPE_CHECKING:
-    from .installation_status_response import InstallationStatusResponse
+    from .no_data import NoData
 
 
 @dataclass
 class InstallationStatusRetrieveResult:
     """Installation status retrieve result schema exposed by Claw Router."""
-    code: str
-    data: Optional[InstallationStatusResponse] = None
-    msg: Optional[str] = None
+    code: int
+    data: Any
+    trace_id: str

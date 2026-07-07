@@ -43,19 +43,27 @@ client.set_header("X-Custom-Header", "value");
 
 ## API Modules
 
+- `client.system()` - system API
 - `client.ai()` - ai API
 - `client.chat()` - chat API
 - `client.iam()` - iam API
 - `client.notification()` - notification API
 - `client.runtime()` - runtime API
-- `client.system()` - system API
 
 ## Usage Examples
+
+### system
+
+```rust
+// List
+let result = client.system().after_sales_requests_list().await?;
+println!("{result:?}");
+```
 
 ### ai
 
 ```rust
-// List groups
+// List
 let result = client.ai().channel_groups_list().await?;
 println!("{result:?}");
 ```
@@ -63,19 +71,15 @@ println!("{result:?}");
 ### chat
 
 ```rust
-use std::collections::HashMap;
-// List product chat conversations
-let mut query = HashMap::new();
-query.insert("page".to_string(), serde_json::json!("page"));
-query.insert("page_size".to_string(), serde_json::json!("page-size"));
-let result = client.chat().conversations_list(Some(&query)).await?;
+// List
+let result = client.chat().conversations_list().await?;
 println!("{result:?}");
 ```
 
 ### iam
 
 ```rust
-// List keys
+// List
 let result = client.iam().api_keys_list().await?;
 println!("{result:?}");
 ```
@@ -83,42 +87,16 @@ println!("{result:?}");
 ### notification
 
 ```rust
-use std::collections::HashMap;
-// List portal notifications
-let mut query = HashMap::new();
-query.insert("include_archived".to_string(), serde_json::json!(true));
-query.insert("page".to_string(), serde_json::json!("page"));
-query.insert("page_size".to_string(), serde_json::json!("page-size"));
-let result = client.notification().notifications_list(Some(&query)).await?;
+// List
+let result = client.notification().notifications_list().await?;
 println!("{result:?}");
 ```
 
 ### runtime
 
 ```rust
-use std::collections::HashMap;
-// List runtime invocations
-let mut query = HashMap::new();
-query.insert("page".to_string(), serde_json::json!("page"));
-query.insert("page_size".to_string(), serde_json::json!("page-size"));
-query.insert("conversation_id".to_string(), serde_json::json!("1"));
-query.insert("chat_turn_id".to_string(), serde_json::json!("1"));
-query.insert("agent_session_id".to_string(), serde_json::json!("1"));
-query.insert("runtime".to_string(), serde_json::json!("runtime"));
-query.insert("status".to_string(), serde_json::json!("status"));
-let result = client.runtime().invocations_list(Some(&query)).await?;
-println!("{result:?}");
-```
-
-### system
-
-```rust
-use std::collections::HashMap;
-// Retrieve public site runtime branding settings
-let mut query = HashMap::new();
-query.insert("tenant_code".to_string(), serde_json::json!("ok"));
-query.insert("organization_code".to_string(), serde_json::json!("ok"));
-let result = client.system().site_runtime_retrieve(Some(&query)).await?;
+// List
+let result = client.runtime().invocations_list().await?;
 println!("{result:?}");
 ```
 

@@ -88,3 +88,72 @@ where
     request.extensions_mut().insert(context);
     request
 }
+
+pub fn web_framework_backend_request<B>(
+    method: &str,
+    uri: &str,
+    body: B,
+    tenant_id: &str,
+    organization_id: Option<&str>,
+    user_id: &str,
+) -> Request<B>
+where
+    B: Send + 'static,
+{
+    let tenant = tenant_id.parse::<i64>().expect("tenant id");
+    let organization = organization_id
+        .unwrap_or("0")
+        .parse::<i64>()
+        .expect("organization id");
+    let user = user_id.parse::<i64>().expect("user id");
+    let mut request = web_framework_backend_request_without_subject(method, uri, body);
+    request
+        .headers_mut()
+        .insert(INTERNAL_TENANT_HEADER, tenant.to_string().parse().unwrap());
+    request.headers_mut().insert(
+        INTERNAL_ORGANIZATION_HEADER,
+        organization.to_string().parse().unwrap(),
+    );
+    request
+        .headers_mut()
+        .insert(INTERNAL_USER_HEADER, user.to_string().parse().unwrap());
+    enable_legacy_trusted_subject_headers();
+    request
+}
+
+pub fn web_framework_backend_request_without_subject<B>(
+    method: &str,
+    uri: &str,
+    body: B,
+) -> Request<B>
+where
+    B: Send + 'static,
+{
+    let context = WebRequestContext {
+        request_id: ServerRequestId("router-test".to_owned()),
+        trace_id: None,
+        api_surface: WebApiSurface::BackendApi,
+        auth_mode: WebAuthMode::DualToken,
+        transport: WebTransportFacts {
+            path: uri.to_owned(),
+            method: method.to_owned(),
+            auth_token_present: true,
+            access_token_present: true,
+            api_key_present: false,
+            oauth_bearer_present: false,
+            agent_token_present: false,
+        },
+        principal: None,
+        locale: None,
+        client_kind: None,
+        operation: None,
+    };
+
+    let mut request = Request::builder()
+        .method(method)
+        .uri(uri)
+        .body(body)
+        .expect("request");
+    request.extensions_mut().insert(context);
+    request
+}

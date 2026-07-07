@@ -1,6 +1,6 @@
+use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
@@ -126,9 +126,7 @@ async fn update_stock(
         Err(response) => return response,
     };
     match state.store.update_stock(command).await {
-        Ok(item) => {
-            Json(success_envelope(InventoryResourceResponse { item })).into_response()
-        }
+        Ok(item) => Json(success_envelope(InventoryResourceResponse { item })).into_response(),
         Err(error) => domain_error_response("inventory stock command failed", error),
     }
 }
@@ -162,8 +160,8 @@ fn validated_list_query(
     request: InventoryListQueryRequest,
 ) -> Result<ListAdminInventoryRecordsQuery, Response> {
     let subject = scoped.into();
-    let pagination = parse_offset_list_query(request.page, request.page_size)
-        .map_err(bad_request)?;
+    let pagination =
+        parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
     Ok(ListAdminInventoryRecordsQuery {
         subject,
         page_no: pagination.page_no,
@@ -223,7 +221,6 @@ fn stock_update_command(
         requested_at: current_timestamp_string(),
     })
 }
-
 
 fn parse_json_body<T>(body: &Bytes, resource: &str) -> Result<T, String>
 where

@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
+use std::sync::Arc;
 
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -106,7 +106,9 @@ fn monitor_query(
     })
 }
 
-fn monitor_success<T: serde::Serialize>(collection: crate::ports::AdminMonitorCollection<T>) -> Response {
+fn monitor_success<T: serde::Serialize>(
+    collection: crate::ports::AdminMonitorCollection<T>,
+) -> Response {
     json_success_list_response(
         None,
         collection.items,

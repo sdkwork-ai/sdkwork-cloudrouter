@@ -30,7 +30,7 @@ async fn admin_announcement_route_creates_lists_updates_and_soft_deletes_items()
                 .method("POST")
                 .uri("/backend/v3/api/content/announcements")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"title":"Gateway maintenance","target":"all","status":"draft","showAsPopup":true,"content":"Maintenance window at 23:00 UTC"}"#,
                 ))
@@ -61,7 +61,7 @@ async fn admin_announcement_route_creates_lists_updates_and_soft_deletes_items()
                 .method("PATCH")
                 .uri("/backend/v3/api/content/announcements/1")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"status":"published","target":"vip","showAsPopup":false}"#,
                 ))
@@ -85,7 +85,7 @@ async fn admin_announcement_route_creates_lists_updates_and_soft_deletes_items()
         .oneshot(
             Request::builder()
                 .uri("/backend/v3/api/content/announcements")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -106,7 +106,7 @@ async fn admin_announcement_route_creates_lists_updates_and_soft_deletes_items()
             Request::builder()
                 .method("DELETE")
                 .uri("/backend/v3/api/content/announcements/1")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -121,7 +121,7 @@ async fn admin_announcement_route_creates_lists_updates_and_soft_deletes_items()
         .oneshot(
             Request::builder()
                 .uri("/backend/v3/api/content/announcements")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -174,7 +174,7 @@ async fn admin_announcement_route_rejects_invalid_payload_without_calling_store(
                 .method("POST")
                 .uri("/backend/v3/api/content/announcements")
                 .header("content-type", "application/json")
-                .internal_trusted_subject(10, 20, 30)
+                .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
                     r#"{"title":"","target":"all","status":"published","content":"x"}"#,
                 ))

@@ -29,7 +29,14 @@ pub fn ensure_iam_database_env_for_claw_database(database_config: &DatabaseConfi
 /// exporting `SDKWORK_CLAW_DATABASE_URL`; invoice and other federated hosts must still
 /// resolve the same database URL/engine as the product installer.
 const FEDERATED_CAPABILITY_SERVICE_CODES: &[&str] = &[
-    "ACCOUNT", "CATALOG", "INVOICE", "MEMBERSHIP", "ORDER", "PAYMENT", "PROMOTION", "SHOP",
+    "ACCOUNT",
+    "CATALOG",
+    "INVOICE",
+    "MEMBERSHIP",
+    "ORDER",
+    "PAYMENT",
+    "PROMOTION",
+    "SHOP",
 ];
 
 const FEDERATED_CAPABILITY_REPO_DIRS: &[(&str, &str)] = &[
@@ -57,6 +64,22 @@ fn materialize_federated_commerce_lifecycle_env() {
     // migrations must not run against that schema until the unified cutover is complete.
     materialize_capability_auto_migrate_env("ACCOUNT", false);
     materialize_capability_auto_migrate_env("MEMBERSHIP", false);
+    materialize_capability_env_when_unset("SDKWORK_PAYMENT_FEDERATED_COMMERCE", "true");
+}
+
+fn materialize_capability_env_when_unset(key: &str, value: &str) {
+    if std::env::var(key)
+        .ok()
+        .filter(|existing| !existing.trim().is_empty())
+        .is_some()
+    {
+        return;
+    }
+
+    // SAFETY: router bootstrap runs sequentially on the main thread before async handlers start.
+    unsafe {
+        std::env::set_var(key, value);
+    }
 }
 
 fn materialize_capability_auto_migrate_env(service_code: &str, auto_migrate: bool) {
@@ -78,7 +101,10 @@ fn materialize_capability_auto_migrate_env(service_code: &str, auto_migrate: boo
 fn materialize_federated_capability_app_roots() {
     let claw_root = resolve_clawrouter_app_root();
     for (service_code, repo_dir) in FEDERATED_CAPABILITY_REPO_DIRS {
-        materialize_capability_app_root_env(service_code, sibling_capability_app_root(&claw_root, repo_dir));
+        materialize_capability_app_root_env(
+            service_code,
+            sibling_capability_app_root(&claw_root, repo_dir),
+        );
     }
 }
 

@@ -260,8 +260,7 @@ impl ObservabilityConfig {
                     .ok()
                     .and_then(|v| v.parse().ok())
                     .unwrap_or(9090),
-                path: std::env::var("METRICS_PATH")
-                    .unwrap_or_else(|_| "/metrics".to_string()),
+                path: std::env::var("METRICS_PATH").unwrap_or_else(|_| "/metrics".to_string()),
                 include_runtime_metrics: std::env::var("METRICS_INCLUDE_RUNTIME")
                     .map(|v| v == "true")
                     .unwrap_or(true),
@@ -269,12 +268,10 @@ impl ObservabilityConfig {
                     0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0,
                 ],
                 request_size_buckets: vec![
-                    100.0, 500.0, 1000.0, 5000.0, 10000.0, 50000.0, 100000.0, 500000.0,
-                    1000000.0,
+                    100.0, 500.0, 1000.0, 5000.0, 10000.0, 50000.0, 100000.0, 500000.0, 1000000.0,
                 ],
                 response_size_buckets: vec![
-                    100.0, 500.0, 1000.0, 5000.0, 10000.0, 50000.0, 100000.0, 500000.0,
-                    1000000.0,
+                    100.0, 500.0, 1000.0, 5000.0, 10000.0, 50000.0, 100000.0, 500000.0, 1000000.0,
                 ],
             },
             slo: SloConfig::default(),
@@ -354,16 +351,14 @@ impl SloMetrics {
     /// Get overall SLO health status.
     pub fn health_status(&self, config: &SloConfig) -> SloHealthStatus {
         let availability_ok = self.is_availability_slo_met(config.availability_target);
-        let latency_ok = self.is_latency_slo_met(
-            config.latency_p95_target_ms,
-            config.latency_p99_target_ms,
-        );
+        let latency_ok =
+            self.is_latency_slo_met(config.latency_p95_target_ms, config.latency_p99_target_ms);
 
         let availability_critical_threshold = config.availability_target * 0.95;
         let latency_critical_p95 = config.latency_p95_target_ms as f64 * 1.5;
         let latency_critical_p99 = config.latency_p99_target_ms as f64 * 1.5;
-        let latency_critical =
-            self.p95_latency_ms > latency_critical_p95 || self.p99_latency_ms > latency_critical_p99;
+        let latency_critical = self.p95_latency_ms > latency_critical_p95
+            || self.p99_latency_ms > latency_critical_p99;
 
         if availability_ok && latency_ok {
             SloHealthStatus::Healthy
@@ -588,7 +583,10 @@ mod tests {
 
     #[test]
     fn test_config_from_env() {
-        std::env::set_var("OTEL_EXPORTER_OTLP_ENDPOINT", "https://otel.example.com:4317");
+        std::env::set_var(
+            "OTEL_EXPORTER_OTLP_ENDPOINT",
+            "https://otel.example.com:4317",
+        );
         std::env::set_var("METRICS_PORT", "9091");
 
         let config = ObservabilityConfig::from_env();

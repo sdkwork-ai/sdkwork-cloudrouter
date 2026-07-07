@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import ArtifactsCreateResult, ArtifactsListResult, InvocationEventsCreateResult, InvocationEventsListResult, InvocationEventStreamsListResult, InvocationsCreateResult, InvocationsListResult, InvocationsRetrieveResult, InvocationsSubmitResult, RuntimeArtifactCreateRequest, RuntimeEventCreateRequest, RuntimeInvocationCompleteRequest, RuntimeInvocationCreateRequest
+from ..models import ArtifactsCreateResult, ArtifactsListResult, InvocationEventsCreateResult, InvocationEventsListResult, InvocationEventStreamsListResult, InvocationsCreateResult, InvocationsListResult, InvocationsRetrieveResult, InvocationsSubmitResult
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -71,170 +71,7 @@ def serialize_path_primitive(value: Any) -> str:
     return str(value)
 
 
-def build_query_string(parameters: List[Dict[str, Any]]) -> str:
-    pairs: List[str] = []
-    for parameter in parameters:
-        append_serialized_parameter(pairs, parameter)
-    return '&'.join(pairs)
 
-
-def append_serialized_parameter(pairs: List[str], parameter: Dict[str, Any]) -> None:
-    value = parameter.get('value')
-    if value is None:
-        return
-
-    name = str(parameter.get('name') or '')
-    allow_reserved = bool(parameter.get('allow_reserved'))
-    content_type = parameter.get('content_type')
-    if content_type:
-        import json
-
-        pairs.append(f"{encode_query_component(name)}={encode_query_value(json.dumps(value, separators=(',', ':')), allow_reserved)}")
-        return
-
-    style = str(parameter.get('style') or 'form')
-    explode = bool(parameter.get('explode'))
-    if style == 'deepObject':
-        append_deep_object_parameter(pairs, name, value, allow_reserved)
-        return
-    if isinstance(value, (list, tuple)):
-        append_array_parameter(pairs, name, value, style, explode, allow_reserved)
-        return
-    if isinstance(value, dict):
-        append_object_parameter(pairs, name, value, style, explode, allow_reserved)
-        return
-
-    pairs.append(f"{encode_query_component(name)}={encode_query_value(serialize_primitive(value), allow_reserved)}")
-
-
-def append_array_parameter(
-    pairs: List[str],
-    name: str,
-    value: Any,
-    style: str,
-    explode: bool,
-    allow_reserved: bool,
-) -> None:
-    values = [serialize_primitive(item) for item in value if item is not None]
-    if not values:
-        return
-
-    if style == 'form' and explode:
-        for item in values:
-            pairs.append(f"{encode_query_component(name)}={encode_query_value(item, allow_reserved)}")
-        return
-
-    pairs.append(f"{encode_query_component(name)}={encode_query_value(','.join(values), allow_reserved)}")
-
-
-def append_object_parameter(
-    pairs: List[str],
-    name: str,
-    value: Dict[str, Any],
-    style: str,
-    explode: bool,
-    allow_reserved: bool,
-) -> None:
-    entries = [(key, entry_value) for key, entry_value in value.items() if entry_value is not None]
-    if not entries:
-        return
-
-    if style == 'form' and explode:
-        for key, entry_value in entries:
-            pairs.append(f"{encode_query_component(str(key))}={encode_query_value(serialize_primitive(entry_value), allow_reserved)}")
-        return
-
-    serialized = ','.join(
-        item
-        for key, entry_value in entries
-        for item in (str(key), serialize_primitive(entry_value))
-    )
-    pairs.append(f"{encode_query_component(name)}={encode_query_value(serialized, allow_reserved)}")
-
-
-def append_deep_object_parameter(pairs: List[str], name: str, value: Any, allow_reserved: bool) -> None:
-    if not isinstance(value, dict):
-        pairs.append(f"{encode_query_component(name)}={encode_query_value(serialize_primitive(value), allow_reserved)}")
-        return
-
-    for key, entry_value in value.items():
-        if entry_value is None:
-            continue
-        pairs.append(f"{encode_query_component(f'{name}[{key}]')}={encode_query_value(serialize_primitive(entry_value), allow_reserved)}")
-
-
-def serialize_primitive(value: Any) -> str:
-    if isinstance(value, dict):
-        import json
-
-        return json.dumps(value, separators=(',', ':'))
-    return str(value)
-
-
-def encode_query_component(value: str) -> str:
-    from urllib.parse import quote
-
-    return quote(value, safe='')
-
-
-def encode_query_value(value: str, allow_reserved: bool) -> str:
-    from urllib.parse import quote
-
-    return quote(value, safe=':/?#[]@!$&\'()*+,;=' if allow_reserved else '')
-
-def build_request_headers(headers: Dict[str, Dict[str, Any]], cookies: Optional[Dict[str, Dict[str, Any]]] = None) -> Optional[Dict[str, str]]:
-    request_headers: Dict[str, str] = {}
-    for name, parameter in headers.items():
-        serialized = serialize_parameter_value(parameter)
-        if serialized is not None:
-            request_headers[name] = serialized
-
-    cookie_header = build_cookie_header(cookies or {})
-    if cookie_header:
-        request_headers['Cookie'] = (
-            f"{request_headers['Cookie']}; {cookie_header}"
-            if 'Cookie' in request_headers
-            else cookie_header
-        )
-
-    return request_headers or None
-
-
-def build_cookie_header(cookies: Dict[str, Dict[str, Any]]) -> Optional[str]:
-    from urllib.parse import quote
-
-    pairs: List[str] = []
-    for name, parameter in cookies.items():
-        serialized = serialize_parameter_value(parameter)
-        if serialized is not None:
-            pairs.append(f"{quote(str(name), safe='')}={quote(serialized, safe='')}")
-    return '; '.join(pairs) if pairs else None
-
-
-def serialize_parameter_value(parameter: Optional[Dict[str, Any]]) -> Optional[str]:
-    value = None if parameter is None else parameter.get('value')
-    if value is None:
-        return None
-    if parameter and parameter.get('content_type'):
-        import json
-
-        return json.dumps(value, separators=(',', ':'))
-    if isinstance(value, (list, tuple)):
-        return ','.join(serialize_header_primitive(item) for item in value if item is not None)
-    if isinstance(value, dict):
-        return serialize_header_object(value, bool(parameter and parameter.get('explode')))
-    return serialize_header_primitive(value)
-
-
-def serialize_header_object(value: Dict[str, Any], explode: bool) -> str:
-    entries = [(key, entry_value) for key, entry_value in value.items() if entry_value is not None]
-    if explode:
-        return ','.join(f"{key}={serialize_header_primitive(entry_value)}" for key, entry_value in entries)
-    return ','.join(item for key, entry_value in entries for item in (str(key), serialize_header_primitive(entry_value)))
-
-
-def serialize_header_primitive(value: Any) -> str:
-    return str(value)
 
 
 class RuntimeApi:
@@ -255,42 +92,21 @@ class RuntimeInvocationsApi:
         self._client = client
 
 
-    def list(self, page: Optional[str] = None, page_size: Optional[str] = None, conversation_id: Optional[str] = None, chat_turn_id: Optional[str] = None, agent_session_id: Optional[str] = None, runtime: Optional[str] = None, status: Optional[str] = None) -> InvocationsListResult:
-        """List runtime invocations"""
-        query = build_query_string([
-            {'name': 'page', 'value': page, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'conversation_id', 'value': conversation_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'chat_turn_id', 'value': chat_turn_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'agent_session_id', 'value': agent_session_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'runtime', 'value': runtime, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'status', 'value': status, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/runtime/invocations", query))
+    def list(self) -> InvocationsListResult:
+        """List"""
+        return self._client.get(f"/app/v3/api/runtime/invocations")
 
-    def create(self, body: RuntimeInvocationCreateRequest, idempotency_key: str) -> InvocationsCreateResult:
-        """Create runtime invocation"""
-        request_headers = build_request_headers(
-            {
-                'Idempotency-Key': {'value': idempotency_key, 'style': 'simple', 'explode': False},
-            },
-            {}
-        )
-        return self._client.post(f"/app/v3/api/runtime/invocations", json=body, headers=request_headers)
+    def create(self) -> InvocationsCreateResult:
+        """Create"""
+        return self._client.post(f"/app/v3/api/runtime/invocations")
 
     def retrieve(self, invocation_id: str) -> InvocationsRetrieveResult:
-        """Retrieve runtime invocation"""
+        """Retrieve"""
         return self._client.get(f"/app/v3/api/runtime/invocations/{serialize_path_parameter(invocation_id, {'name': 'invocationId', 'style': 'simple', 'explode': False})}")
 
-    def submit(self, invocation_id: str, body: RuntimeInvocationCompleteRequest, idempotency_key: str) -> InvocationsSubmitResult:
-        """Complete runtime invocation"""
-        request_headers = build_request_headers(
-            {
-                'Idempotency-Key': {'value': idempotency_key, 'style': 'simple', 'explode': False},
-            },
-            {}
-        )
-        return self._client.post(f"/app/v3/api/runtime/invocations/{serialize_path_parameter(invocation_id, {'name': 'invocationId', 'style': 'simple', 'explode': False})}/complete", json=body, headers=request_headers)
+    def submit(self, invocation_id: str) -> InvocationsSubmitResult:
+        """Create"""
+        return self._client.post(f"/app/v3/api/runtime/invocations/{serialize_path_parameter(invocation_id, {'name': 'invocationId', 'style': 'simple', 'explode': False})}/complete")
 
 class RuntimeArtifactsApi:
     """runtime runtime.artifacts API client."""
@@ -299,23 +115,13 @@ class RuntimeArtifactsApi:
         self._client = client
 
 
-    def list(self, invocation_id: str, page: Optional[str] = None, page_size: Optional[str] = None) -> ArtifactsListResult:
-        """List runtime artifacts"""
-        query = build_query_string([
-            {'name': 'page', 'value': page, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/runtime/invocations/{serialize_path_parameter(invocation_id, {'name': 'invocationId', 'style': 'simple', 'explode': False})}/artifacts", query))
+    def list(self, invocation_id: str) -> ArtifactsListResult:
+        """List"""
+        return self._client.get(f"/app/v3/api/runtime/invocations/{serialize_path_parameter(invocation_id, {'name': 'invocationId', 'style': 'simple', 'explode': False})}/artifacts")
 
-    def create(self, invocation_id: str, body: RuntimeArtifactCreateRequest, idempotency_key: str) -> ArtifactsCreateResult:
-        """Create runtime artifact"""
-        request_headers = build_request_headers(
-            {
-                'Idempotency-Key': {'value': idempotency_key, 'style': 'simple', 'explode': False},
-            },
-            {}
-        )
-        return self._client.post(f"/app/v3/api/runtime/invocations/{serialize_path_parameter(invocation_id, {'name': 'invocationId', 'style': 'simple', 'explode': False})}/artifacts", json=body, headers=request_headers)
+    def create(self, invocation_id: str) -> ArtifactsCreateResult:
+        """Create"""
+        return self._client.post(f"/app/v3/api/runtime/invocations/{serialize_path_parameter(invocation_id, {'name': 'invocationId', 'style': 'simple', 'explode': False})}/artifacts")
 
 class RuntimeInvocationEventsApi:
     """runtime runtime.invocation_events API client."""
@@ -324,23 +130,13 @@ class RuntimeInvocationEventsApi:
         self._client = client
 
 
-    def list(self, invocation_id: str, page: Optional[str] = None, page_size: Optional[str] = None) -> InvocationEventsListResult:
-        """List runtime invocation events"""
-        query = build_query_string([
-            {'name': 'page', 'value': page, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/runtime/invocations/{serialize_path_parameter(invocation_id, {'name': 'invocationId', 'style': 'simple', 'explode': False})}/events", query))
+    def list(self, invocation_id: str) -> InvocationEventsListResult:
+        """List"""
+        return self._client.get(f"/app/v3/api/runtime/invocations/{serialize_path_parameter(invocation_id, {'name': 'invocationId', 'style': 'simple', 'explode': False})}/events")
 
-    def create(self, invocation_id: str, body: RuntimeEventCreateRequest, idempotency_key: str) -> InvocationEventsCreateResult:
-        """Create runtime invocation event"""
-        request_headers = build_request_headers(
-            {
-                'Idempotency-Key': {'value': idempotency_key, 'style': 'simple', 'explode': False},
-            },
-            {}
-        )
-        return self._client.post(f"/app/v3/api/runtime/invocations/{serialize_path_parameter(invocation_id, {'name': 'invocationId', 'style': 'simple', 'explode': False})}/events", json=body, headers=request_headers)
+    def create(self, invocation_id: str) -> InvocationEventsCreateResult:
+        """Create"""
+        return self._client.post(f"/app/v3/api/runtime/invocations/{serialize_path_parameter(invocation_id, {'name': 'invocationId', 'style': 'simple', 'explode': False})}/events")
 
 class RuntimeInvocationEventStreamsApi:
     """runtime runtime.invocation_event_streams API client."""
@@ -350,5 +146,5 @@ class RuntimeInvocationEventStreamsApi:
 
 
     def list(self, invocation_id: str) -> InvocationEventStreamsListResult:
-        """Stream runtime invocation events"""
+        """List"""
         return self._client.get(f"/app/v3/api/runtime/invocations/{serialize_path_parameter(invocation_id, {'name': 'invocationId', 'style': 'simple', 'explode': False})}/events/stream")

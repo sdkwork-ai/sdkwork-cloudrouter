@@ -44,76 +44,54 @@ client.setHeader('X-Custom-Header', 'value');
 
 ## API Modules
 
+- `client.system` - system API
 - `client.ai` - ai API
 - `client.chat` - chat API
 - `client.iam` - iam API
 - `client.notification` - notification API
 - `client.runtime` - runtime API
-- `client.system` - system API
 
 ## Usage Examples
 
+### system
+```dart
+// List
+final result = await client.system.afterSalesRequestsList();
+print(result);
+```
+
 ### ai
 ```dart
-// List groups
+// List
 final result = await client.ai.channelGroupsList();
 print(result);
 ```
 
 ### chat
 ```dart
-// List product chat conversations
-final params = <String, dynamic>{
-  'page': 'page',
-  'page_size': 'page-size',
-};
-final result = await client.chat.conversationsList(params);
+// List
+final result = await client.chat.conversationsList();
 print(result);
 ```
 
 ### iam
 ```dart
-// List keys
+// List
 final result = await client.iam.apiKeysList();
 print(result);
 ```
 
 ### notification
 ```dart
-// List portal notifications
-final params = <String, dynamic>{
-  'include_archived': true,
-  'page': 'page',
-  'page_size': 'page-size',
-};
-final result = await client.notification.notificationsList(params);
+// List
+final result = await client.notification.notificationsList();
 print(result);
 ```
 
 ### runtime
 ```dart
-// List runtime invocations
-final params = <String, dynamic>{
-  'page': 'page',
-  'page_size': 'page-size',
-  'conversation_id': '1',
-  'chat_turn_id': '1',
-  'agent_session_id': '1',
-  'runtime': 'runtime',
-  'status': 'status',
-};
-final result = await client.runtime.invocationsList(params);
-print(result);
-```
-
-### system
-```dart
-// Retrieve public site runtime branding settings
-final params = <String, dynamic>{
-  'tenant_code': 'ok',
-  'organization_code': 'ok',
-};
-final result = await client.system.siteRuntimeRetrieve(params);
+// List
+final result = await client.runtime.invocationsList();
 print(result);
 ```
 

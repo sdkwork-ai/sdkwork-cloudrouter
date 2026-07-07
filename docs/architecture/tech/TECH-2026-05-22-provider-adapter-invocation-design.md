@@ -430,7 +430,7 @@ The gateway sends a stable envelope rather than only forwarding the standard req
     "traceId": "trace_..."
   },
   "subject": {
-    "tenantId": 10,
+    "tenantId": 100001,
     "organizationId": 20,
     "userId": 30,
     "apiKeyId": 100,
@@ -809,4 +809,3 @@ The design is intentionally complete, but implementation should still land in sa
 - Adapter hit and miss behavior is covered by focused tests.
 - Provider-specific tests are isolated under each provider package.
 - Secret values are not logged, traced, or returned.
-

@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "f1cab8bbdce1f44b5200edc701ae063e1993f726c059d46350dba86d8ff28b50",
+  "changeFingerprint": "f0316584c9d81eac1391b4220861835067bb47fd2afdec44dc761de88f1715cf",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -32,15 +32,8 @@
           "Sources/API/AiApi.swift",
           "Sources/API/API.swift",
           "Sources/API/ApiPaths.swift",
-          "Sources/API/ContentApi.swift",
-          "Sources/API/IamApi.swift",
           "Sources/API/IntegrationApi.swift",
-          "Sources/API/McpApi.swift",
-          "Sources/API/MessagingApi.swift",
-          "Sources/API/PromptsApi.swift",
-          "Sources/API/ServiceProvidersApi.swift",
           "Sources/API/SitesApi.swift",
-          "Sources/API/StorageApi.swift",
           "Sources/API/SystemApi.swift"
         ]
       },
@@ -173,21 +166,21 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 25,
-    "models": 428,
-    "apis": 11,
+    "totalFiles": 18,
+    "models": 129,
+    "apis": 4,
     "types": 0
   },
   "warnings": [],
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 25,
+    "writtenFiles": 18,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "f1cab8bbdce1f44b5200edc701ae063e1993f726c059d46350dba86d8ff28b50",
+    "changeFingerprint": "f0316584c9d81eac1391b4220861835067bb47fd2afdec44dc761de88f1715cf",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -201,15 +194,8 @@
         "Sources/API/AiApi.swift",
         "Sources/API/API.swift",
         "Sources/API/ApiPaths.swift",
-        "Sources/API/ContentApi.swift",
-        "Sources/API/IamApi.swift",
         "Sources/API/IntegrationApi.swift",
-        "Sources/API/McpApi.swift",
-        "Sources/API/MessagingApi.swift",
-        "Sources/API/PromptsApi.swift",
-        "Sources/API/ServiceProvidersApi.swift",
         "Sources/API/SitesApi.swift",
-        "Sources/API/StorageApi.swift",
         "Sources/API/SystemApi.swift",
         "Sources/HTTP/HttpClient.swift",
         "Sources/Models.swift",
@@ -243,15 +229,8 @@
             "Sources/API/AiApi.swift",
             "Sources/API/API.swift",
             "Sources/API/ApiPaths.swift",
-            "Sources/API/ContentApi.swift",
-            "Sources/API/IamApi.swift",
             "Sources/API/IntegrationApi.swift",
-            "Sources/API/McpApi.swift",
-            "Sources/API/MessagingApi.swift",
-            "Sources/API/PromptsApi.swift",
-            "Sources/API/ServiceProvidersApi.swift",
             "Sources/API/SitesApi.swift",
-            "Sources/API/StorageApi.swift",
             "Sources/API/SystemApi.swift"
           ]
         },

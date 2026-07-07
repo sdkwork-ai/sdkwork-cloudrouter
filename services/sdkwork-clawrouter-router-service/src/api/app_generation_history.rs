@@ -86,7 +86,11 @@ async fn fetch_history(
         Err(message) => return bad_request(message),
     };
 
-    match state.read_store.load_generation_history(subject, query).await {
+    match state
+        .read_store
+        .load_generation_history(subject, query)
+        .await
+    {
         Ok(page) => json_success_list_response(
             None,
             page.items,

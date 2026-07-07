@@ -437,6 +437,31 @@ class ClawRouterOpenApiContractAudit:
         if not isinstance(result_schema, dict):
             messages.append(f"{label} 200 response references missing result schema {component_name}")
             return messages
+        result_envelope_data_schema = self._sdkwork_envelope_data_schema(result_schema)
+        if result_envelope_data_schema is not None:
+            properties = result_envelope_data_schema.get("properties")
+            data_schema = properties.get("data") if isinstance(properties, dict) else None
+            if not isinstance(data_schema, dict):
+                messages.append(f"{label} result schema {component_name}.data must be explicitly declared")
+                return messages
+            if self._schema_refers_to(data_schema, "#/components/schemas/PlusApiResult"):
+                messages.append(f"{label} result schema {component_name}.data must not reference PlusApiResult")
+                return messages
+            messages.extend(
+                self._validate_component_schema(
+                    label=label,
+                    component_name=component_name,
+                    schema=data_schema,
+                    schemas=schemas,
+                    context=f"result schema {component_name}.data",
+                    allow_empty_closed_object=False,
+                    visited={component_name},
+                )
+            )
+            return messages
+        if self._schema_uses_sdkwork_api_response(result_schema):
+            messages.append(f"{label} result schema {component_name}.data must be explicitly declared")
+            return messages
         if result_schema.get("type") != "object":
             messages.append(f"{label} result schema {component_name} must be an object")
         if result_schema.get("additionalProperties") is not False:
@@ -462,6 +487,13 @@ class ClawRouterOpenApiContractAudit:
                 )
             )
         return messages
+
+    def _schema_uses_sdkwork_api_response(self, schema: dict[str, Any]) -> bool:
+        all_of = schema.get("allOf")
+        return isinstance(all_of, list) and any(
+            isinstance(item, dict) and item.get("$ref") == self.SDKWORK_API_RESPONSE_REF
+            for item in all_of
+        )
 
     def _sdkwork_envelope_data_schema(self, schema: dict[str, Any]) -> dict[str, Any] | None:
         all_of = schema.get("allOf")

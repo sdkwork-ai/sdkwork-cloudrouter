@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
+use std::sync::Arc;
 
 use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
@@ -402,15 +402,12 @@ async fn publish_template_version(
     headers: HeaderMap,
     Path((template_id, version_id)): Path<(String, String)>,
 ) -> Response {
-    let command = match validated_publish_template_version_command(
-        scoped,
-        &headers,
-        template_id,
-        version_id,
-    ) {
-        Ok(command) => command,
-        Err(response) => return response,
-    };
+    let command =
+        match validated_publish_template_version_command(scoped, &headers, template_id, version_id)
+        {
+            Ok(command) => command,
+            Err(response) => return response,
+        };
     match state.store.publish_template_version(command).await {
         Ok(item) => Json(success_envelope(item)).into_response(),
         Err(error) => {
@@ -450,10 +447,7 @@ async fn list_send_requests(
     _headers: HeaderMap,
     Query(query): Query<AdminMessagingListRequestQuery>,
 ) -> Response {
-    list_response(scoped, query, |query| {
-        state.store.list_send_requests(query)
-    })
-    .await
+    list_response(scoped, query, |query| state.store.list_send_requests(query)).await
 }
 
 async fn simulate_route(
@@ -608,8 +602,7 @@ fn validated_list_query(
     query: AdminMessagingListRequestQuery,
 ) -> Result<ListAdminMessagingRecordsQuery, Response> {
     let subject = scoped.into();
-    let pagination = parse_offset_list_query(query.page, query.page_size)
-        .map_err(bad_request)?;
+    let pagination = parse_offset_list_query(query.page, query.page_size).map_err(bad_request)?;
     Ok(ListAdminMessagingRecordsQuery {
         subject,
         page_no: pagination.page_no,
@@ -1130,7 +1123,6 @@ fn validated_verification_policy_update_command(
         request_id,
     })
 }
-
 
 fn required_header(headers: &HeaderMap, name: &str) -> Result<String, Response> {
     optional_header(headers, name)?.ok_or_else(|| bad_request(format!("{name} header is required")))

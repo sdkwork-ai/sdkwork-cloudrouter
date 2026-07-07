@@ -4,8 +4,8 @@ use std::pin::Pin;
 
 use crate::catalog::standard_paas_service_groups;
 use crate::contract::{
-    PaasDocumentPage, PaasImageInput, PaasOcrRequest, PaasOcrResponse,
-    PaasProviderRequestContext, PaasStandardRequest, PaasStandardResponse,
+    PaasDocumentPage, PaasImageInput, PaasOcrRequest, PaasOcrResponse, PaasProviderRequestContext,
+    PaasStandardRequest, PaasStandardResponse,
 };
 use crate::operation::{PaasCapability, PaasOperation};
 
@@ -147,9 +147,7 @@ impl PaasProviderPlugin for BaiduPaasProviderPlugin {
     ) -> PaasProviderPluginFuture<'a> {
         Box::pin(async move {
             match request {
-                PaasStandardRequest::Ocr(ocr_request) => {
-                    invoke_baidu_ocr(context, ocr_request)
-                }
+                PaasStandardRequest::Ocr(ocr_request) => invoke_baidu_ocr(context, ocr_request),
                 _ => Err(PaasProviderPluginError::ProviderNotConfigured {
                     provider_code: context.provider_code,
                     operation: request.operation(),
@@ -174,11 +172,7 @@ fn invoke_baidu_ocr(
     request: PaasOcrRequest,
 ) -> Result<PaasStandardResponse, PaasProviderPluginError> {
     let operation = request.operation;
-    let provider_request_id = format!(
-        "baidu-ocr-{}-t{}",
-        operation.as_str(),
-        context.tenant_id
-    );
+    let provider_request_id = format!("baidu-ocr-{}-t{}", operation.as_str(), context.tenant_id);
     let input_summary = summarize_image_input(&request.image);
 
     Ok(PaasStandardResponse::Ocr(PaasOcrResponse {

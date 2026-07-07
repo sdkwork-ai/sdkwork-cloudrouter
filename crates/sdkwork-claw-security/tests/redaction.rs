@@ -69,10 +69,7 @@ fn redact_url_redacts_empty_and_invalid_input() {
         "[REDACTED]",
         sdkwork_claw_security::redact_url("://missing-scheme")
     );
-    assert_eq!(
-        "[REDACTED]",
-        sdkwork_claw_security::redact_url("https://")
-    );
+    assert_eq!("[REDACTED]", sdkwork_claw_security::redact_url("https://"));
 }
 
 #[test]

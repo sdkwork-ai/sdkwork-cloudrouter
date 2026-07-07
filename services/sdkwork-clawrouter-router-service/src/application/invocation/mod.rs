@@ -41,7 +41,9 @@ pub use account_resolution::AccountResolutionInterceptor;
 pub use billing::{BillingMode, BillingQuantitySource, InvocationBilling};
 pub use billing_policy::BillingPolicyInterceptor;
 pub use body::InvocationBody;
-pub use circuit_breaker::{CircuitBreakerConfig, CircuitBreakerInterceptor, CircuitBreakerStateStore};
+pub use circuit_breaker::{
+    CircuitBreakerConfig, CircuitBreakerInterceptor, CircuitBreakerStateStore,
+};
 pub use classification::{
     InvocationClassification, InvocationClassificationRequest, InvocationResourceClassifier,
 };

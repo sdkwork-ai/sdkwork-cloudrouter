@@ -775,10 +775,7 @@ fn required_value(label: &str, value: Option<String>) -> Result<String, String> 
 }
 
 /// Workspace-standard development passwords from ENVIRONMENT_SPEC §7.1.
-const WORKSPACE_DEVELOPMENT_POSTGRES_PASSWORDS: &[&str] = &[
-    "sdkworkdev123",
-    "postgres_admin_pass",
-];
+const WORKSPACE_DEVELOPMENT_POSTGRES_PASSWORDS: &[&str] = &["sdkworkdev123", "postgres_admin_pass"];
 
 /// Known example/dev passwords that must never reach a production database URL.
 const KNOWN_PLACEHOLDER_POSTGRES_PASSWORDS: &[&str] = &[

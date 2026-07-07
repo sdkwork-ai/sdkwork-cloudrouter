@@ -8,12 +8,12 @@ use axum::http::request::Parts;
 use axum::http::{Extensions, HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::Json;
+use sdkwork_claw_http::TrustedRequestSubject;
 use sdkwork_iam_bootstrap::{
     is_legacy_opaque_iam_subject_id, parse_iam_sql_organization_id, parse_iam_sql_tenant_id,
     parse_iam_sql_user_id, IamSqlSubjectParseError,
 };
 use sdkwork_web_core::{TenantAppContext, WebRequestContext};
-use sdkwork_claw_http::TrustedRequestSubject;
 
 use sdkwork_claw_http::TenantIsolationViolation;
 
@@ -45,7 +45,9 @@ pub enum SqlScopedSubjectMappingError {
 }
 
 impl SqlScopedSubject {
-    pub fn from_tenant_app(context: &TenantAppContext) -> Result<Self, SqlScopedSubjectMappingError> {
+    pub fn from_tenant_app(
+        context: &TenantAppContext,
+    ) -> Result<Self, SqlScopedSubjectMappingError> {
         Ok(Self {
             tenant_id: map_iam_sql_parse_error(
                 parse_iam_sql_tenant_id(&context.tenant_id),
@@ -86,7 +88,12 @@ impl SqlScopedSubject {
         table: &str,
         row_tenant_id: i64,
     ) -> Result<(), TenantIsolationViolation> {
-        sdkwork_claw_http::ensure_row_tenant_matches(table, "app-sql", self.tenant_id, row_tenant_id)
+        sdkwork_claw_http::ensure_row_tenant_matches(
+            table,
+            "app-sql",
+            self.tenant_id,
+            row_tenant_id,
+        )
     }
 
     pub fn operator_type() -> i32 {
@@ -178,10 +185,7 @@ where
 {
     type Rejection = Response;
 
-    async fn from_request_parts(
-        parts: &mut Parts,
-        _state: &S,
-    ) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         Ok(Self(resolve_optional_app_sql_subject(
             &parts.headers,
             &parts.extensions,
@@ -196,10 +200,7 @@ where
 {
     type Rejection = Response;
 
-    async fn from_request_parts(
-        parts: &mut Parts,
-        _state: &S,
-    ) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         match resolve_optional_app_sql_subject(&parts.headers, &parts.extensions, true)? {
             Some(subject) => Ok(Self(subject)),
             None => Err(unauthorized_subject_response()),
@@ -233,14 +234,13 @@ pub fn resolve_optional_app_sql_subject(
 ) -> Result<Option<SqlScopedSubject>, Response> {
     if let Some(context) = extensions.get::<WebRequestContext>() {
         if let Some(principal) = context.principal.as_ref() {
-            let tenant_app = TenantAppContext::try_from_request_context(context)
-                .map_err(|_| {
-                    subject_mapping_failed_response(
-                        principal.tenant_id(),
-                        principal.user_id(),
-                        SqlScopedSubjectMappingError::InvalidUserId,
-                    )
-                })?;
+            let tenant_app = TenantAppContext::try_from_request_context(context).map_err(|_| {
+                subject_mapping_failed_response(
+                    principal.tenant_id(),
+                    principal.user_id(),
+                    SqlScopedSubjectMappingError::InvalidUserId,
+                )
+            })?;
             return match SqlScopedSubject::from_tenant_app(&tenant_app) {
                 Ok(subject) => Ok(Some(subject)),
                 Err(error) => {
@@ -276,8 +276,8 @@ pub fn subject_mapping_failed_response(
     user_id: &str,
     error: SqlScopedSubjectMappingError,
 ) -> Response {
-    let legacy = is_legacy_opaque_iam_subject_id(tenant_id)
-        || is_legacy_opaque_iam_subject_id(user_id);
+    let legacy =
+        is_legacy_opaque_iam_subject_id(tenant_id) || is_legacy_opaque_iam_subject_id(user_id);
     let message = if legacy {
         "authenticated principal uses a legacy opaque IAM id; restart the application to repair IAM subject ids or sign in again with a snowflake-backed account"
     } else {
@@ -306,11 +306,11 @@ fn map_iam_sql_parse_error<T>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sdkwork_web_core::{
-        WebApiSurface, WebAuthLevel, WebAuthMode, WebDeploymentMode, WebEnvironment,
-        WebLoginScope, WebRequestPrincipal, WebTransportFacts,
-    };
     use sdkwork_web_core::{ServerRequestId, WebRequestContext};
+    use sdkwork_web_core::{
+        WebApiSurface, WebAuthLevel, WebAuthMode, WebDeploymentMode, WebEnvironment, WebLoginScope,
+        WebRequestPrincipal, WebTransportFacts,
+    };
 
     #[test]
     fn from_tenant_app_maps_numeric_snowflake_ids() {

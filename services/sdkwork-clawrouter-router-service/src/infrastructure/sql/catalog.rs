@@ -174,24 +174,21 @@ impl SqlPricingCatalogSnapshot {
             .iter()
             .map(|vendor| (vendor.vendor_code.clone(), vendor.clone()))
             .collect();
-        self.provider_routes_by_key = self
-            .provider_routes
-            .iter()
-            .fold(HashMap::new(), |mut acc, route| {
-                acc.entry(route.catalog_key.trim().to_owned())
-                    .or_default()
-                    .push(route.clone());
-                acc
-            });
-        self.prices_by_key = self
-            .prices
-            .iter()
-            .fold(HashMap::new(), |mut acc, price| {
-                acc.entry(price.catalog_key.trim().to_owned())
-                    .or_default()
-                    .push(price.clone());
-                acc
-            });
+        self.provider_routes_by_key =
+            self.provider_routes
+                .iter()
+                .fold(HashMap::new(), |mut acc, route| {
+                    acc.entry(route.catalog_key.trim().to_owned())
+                        .or_default()
+                        .push(route.clone());
+                    acc
+                });
+        self.prices_by_key = self.prices.iter().fold(HashMap::new(), |mut acc, price| {
+            acc.entry(price.catalog_key.trim().to_owned())
+                .or_default()
+                .push(price.clone());
+            acc
+        });
     }
 
     pub fn managed_provider_secrets(&self) -> BTreeMap<String, String> {
@@ -549,22 +546,17 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
         provider_code: Option<&str>,
         pricing_plan_code: Option<&str>,
     ) -> Option<ModelPrice> {
-        self.prices_by_key
-            .get(model.trim())
-            .and_then(|prices| {
-                prices
-                    .iter()
-                    .find(|price| {
-                        price.price_side == price_side
-                            && price.billing_meter == billing_meter
-                            && option_matches(price.provider_code.as_deref(), provider_code)
-                            && option_matches(
-                                price.pricing_plan_code.as_deref(),
-                                pricing_plan_code,
-                            )
-                    })
-                    .cloned()
-            })
+        self.prices_by_key.get(model.trim()).and_then(|prices| {
+            prices
+                .iter()
+                .find(|price| {
+                    price.price_side == price_side
+                        && price.billing_meter == billing_meter
+                        && option_matches(price.provider_code.as_deref(), provider_code)
+                        && option_matches(price.pricing_plan_code.as_deref(), pricing_plan_code)
+                })
+                .cloned()
+        })
     }
 }
 

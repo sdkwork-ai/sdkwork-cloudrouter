@@ -1,5 +1,6 @@
 package com.sdkwork.clawrouter.backend
 
 data class ModelRankingRefreshJobHistoryPage(
-    val items: List<ModelRankingRefreshJobItem>? = null
+    val items: List<Map<String, String>>? = null,
+    val pageInfo: PageInfo? = null
 )

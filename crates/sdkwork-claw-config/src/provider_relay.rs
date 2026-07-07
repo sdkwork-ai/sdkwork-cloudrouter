@@ -720,7 +720,6 @@ impl fmt::Debug for ProviderPassthroughHeader {
     }
 }
 
-
 /// Validate that `base_url` is an absolute HTTPS URL whose host does not
 /// resolve to a private, loopback, link-local, carrier-grade NAT, or
 /// unspecified address. IP literals are checked directly; domain names are

@@ -13,10 +13,9 @@ use axum::{Json, Router};
 use sdkwork_claw_config::{DeploymentMode, RequestLimitsConfig, StartupInstallMode};
 use sdkwork_claw_test_support::{
     app_session_config, app_session_dual_token_headers, default_trusted_request_subject,
-    payment_webhook_config, seeded_sqlite_catalog, trusted_request_subject,
-    trusted_subject_config, SeededSqliteCatalog,
+    payment_webhook_config, seeded_sqlite_catalog, trusted_request_subject, trusted_subject_config,
+    SeededSqliteCatalog,
 };
-use sdkwork_web_core::bootstrap_access_token_jwt;
 use sdkwork_clawrouter_router_service::application::{
     default_desktop_cache_manager, InMemoryRuntimeStreamBus, ModelRankingRefreshWorkerConfig,
     UsageSettlementWorkerConfig,
@@ -27,6 +26,7 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::SqlitePricingCatalogLoader;
 use sdkwork_clawrouter_router_service::infrastructure::AppRuntimeGatewayHttpClient;
+use sdkwork_web_core::bootstrap_access_token_jwt;
 use serde_json::json;
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
@@ -470,7 +470,8 @@ async fn edge_server_proxies_real_sqlite_gateway_admin_and_app_services() {
     .await;
     assert_eq!(StatusCode::OK, admin_models.status);
     assert_eq!("2000", admin_models.json["code"]);
-    let admin_model = model_item_by_code(&admin_models.json["data"]["items"], "qwen3.6-max-preview");
+    let admin_model =
+        model_item_by_code(&admin_models.json["data"]["items"], "qwen3.6-max-preview");
     assert!(admin_model["id"].as_str().is_some());
     assert!(admin_model["vendorId"].as_str().is_some());
     assert_eq!("alibaba", admin_model["vendorCode"]);
@@ -510,10 +511,7 @@ async fn edge_server_proxies_real_sqlite_gateway_admin_and_app_services() {
     assert_eq!("2000", app_models.json["code"]);
     let app_model = model_item_by_code(&app_models.json["data"]["items"], "qwen3.6-max-preview");
     assert_eq!("qwen3.6-max-preview", app_model["model"]);
-    assert_eq!(
-        "reference",
-        app_model["priceAvailability"]["status"]
-    );
+    assert_eq!("reference", app_model["priceAvailability"]["status"]);
 
     let portal_home = text_request(edge_router.clone(), Method::GET, "/").await;
     assert_eq!(StatusCode::OK, portal_home.status);
@@ -947,8 +945,7 @@ async fn iam_credential_entry_allows_bootstrap_access_token_jwt() {
         DeploymentMode::Desktop,
     )
     .await;
-    let bootstrap_access =
-        bootstrap_access_token_jwt("100001", "sdkwork-clawrouter");
+    let bootstrap_access = bootstrap_access_token_jwt("100001", "sdkwork-clawrouter");
 
     let device_authorization = json_request(
         app_router.clone(),

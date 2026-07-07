@@ -52,7 +52,7 @@
     },
     {
       "path": "src/api/ai.ts",
-      "sha256": "f5bc6739ba5f60d40c3e467f0f125e17267ed3f710c892b2fa3e02a1bd33cda1"
+      "sha256": "b05666c63ebf3aec7668c8dbabe82c514d158c1935192c77b7c21197d72135f0"
     },
     {
       "path": "src/api/base.ts",
@@ -60,11 +60,11 @@
     },
     {
       "path": "src/api/chat.ts",
-      "sha256": "07441fe90f70915cbe40dac1468e6173caa5020b9d9ee8b1127ad74cfaee25c3"
+      "sha256": "03717240d3f0032a252d847b9009cef3aaa94809ee0da55711bb5f70d1147a51"
     },
     {
       "path": "src/api/iam.ts",
-      "sha256": "19b9a4f54831d5a6faeb2f23a47a550f451dfb8964c5b84a25155f112d2085c2"
+      "sha256": "4d9118b87a5f6d3590b6ddf185a3ba2d5ea14957acf6f77118f86611b70e2739"
     },
     {
       "path": "src/api/index.ts",
@@ -72,7 +72,7 @@
     },
     {
       "path": "src/api/notification.ts",
-      "sha256": "d0ecc55991672e6b19977413c0c805b256d4c26c34d1d92334e84a902ff88cc3"
+      "sha256": "9bd22cb480d5674bddf47c9c4742294c636829b0a3260eb3fe5c651daee4850d"
     },
     {
       "path": "src/api/paths.ts",
@@ -80,11 +80,11 @@
     },
     {
       "path": "src/api/runtime.ts",
-      "sha256": "268efa977b1daedbb0e230a5f37c7eac237e1e3d8613627f7f46de24dff27952"
+      "sha256": "2be4b7952dc5147dce6bf3878338069a6e6fc7ea47bc556169c024b2a85f9cc0"
     },
     {
       "path": "src/api/system.ts",
-      "sha256": "0542f37d3bf8f3ea9634c8ffda71fd2deeea2718fa544be890cd983b0ff9b442"
+      "sha256": "b0f49ceb5caac80572de0e8c0e806704cc27fd91c1e3695f782647d63b02b857"
     },
     {
       "path": "src/auth/index.ts",
@@ -107,88 +107,8 @@
       "sha256": "2fb39b2e8b99f1727276d8a0188eaf6973da2cac723a8c2740d4d6b17f822bf0"
     },
     {
-      "path": "src/types/after-sales-requests-create-response.ts",
-      "sha256": "13fae24b7744d2731c18e808dc9757d47edd67ec65938c4f9a06be8619449b8f"
-    },
-    {
-      "path": "src/types/after-sales-requests-create-result.ts",
-      "sha256": "dcaa11505728705f1beff30fd8f5d38be6aa0d1a634d796da37e357da801c6f8"
-    },
-    {
-      "path": "src/types/after-sales-requests-retrieve-response.ts",
-      "sha256": "8c641da6fe63ebe77ed4a640ae103edbe261c4f9c836be209670d846d602c065"
-    },
-    {
-      "path": "src/types/after-sales-requests-retrieve-result.ts",
-      "sha256": "fdf3f29df4369dcf025a0a83e93a066796e6014c4dd62ad7bc6c00e1da2f71bd"
-    },
-    {
-      "path": "src/types/after-sales-requests-update-response.ts",
-      "sha256": "53c7851d9a839c1a3b798074e843476435f3684983d0822cbc3a04647b7d7299"
-    },
-    {
-      "path": "src/types/after-sales-requests-update-result.ts",
-      "sha256": "5d82ac265840f44ffa51edbb41fecf4208dd65219634f81d516a100cab278ad0"
-    },
-    {
-      "path": "src/types/after-sales-return-shipments-create-response.ts",
-      "sha256": "55e7557fe65af5fa928f2a9f1baa165d764e72a87f443d8b1582e94032dc69b6"
-    },
-    {
-      "path": "src/types/after-sales-return-shipments-create-result.ts",
-      "sha256": "4becda72064569944c907a409bd9293f33f866c249a7eb73d438200793353b34"
-    },
-    {
-      "path": "src/types/api-keys-create-response.ts",
-      "sha256": "5b24027ab9827c3b2dfea2b050cc4764e705256f3245f2ca7a25682e6ec4d474"
-    },
-    {
-      "path": "src/types/api-keys-create-result.ts",
-      "sha256": "1ffb8ff215ac9d06fecb3e8d0dcaf9d87140321114ad121f96485cf8e92a9e0d"
-    },
-    {
-      "path": "src/types/api-keys-update-response.ts",
-      "sha256": "b91df622e2668fbdc7888e09a1db18e3c13b6308ec084233328f4d7e718f282d"
-    },
-    {
-      "path": "src/types/api-keys-update-result.ts",
-      "sha256": "2a045fa0bc4188bdd0eda2e932b834bed980d6f31ee2ce2ad90a94a677fc9ba8"
-    },
-    {
-      "path": "src/types/artifacts-create-response.ts",
-      "sha256": "a9b10b0c7d7c35df5a8e2761e50781454724db9ea239d9b272b67fc589176a87"
-    },
-    {
-      "path": "src/types/artifacts-create-result.ts",
-      "sha256": "a7f6d8aa5445869e22e682e84b265459844e99fa9fbebe21af3720bb4b4cb8be"
-    },
-    {
       "path": "src/types/common.ts",
       "sha256": "d2506be8c4bdbe8e7059393467e6e71d75ef1d8c018dbf997bb0ab2a77b6c7b6"
-    },
-    {
-      "path": "src/types/conversations-create-response.ts",
-      "sha256": "a7ccc956632874c465e5ecf2869489ae390893656cec993875c4390bdb75801e"
-    },
-    {
-      "path": "src/types/conversations-create-result.ts",
-      "sha256": "84e49e5df88e87649f6dd6de0290610c5bc98acf26807e18f1235923029e6764"
-    },
-    {
-      "path": "src/types/conversations-retrieve-response.ts",
-      "sha256": "b83cc130d15a99dbc9b931e19f31994a03c831662c8c8439185d983d2f326768"
-    },
-    {
-      "path": "src/types/conversations-retrieve-result.ts",
-      "sha256": "00b8ab74d1289755a58a50e92615b8a06f6c964b6434c3f346a1c2e8ff3c7d86"
-    },
-    {
-      "path": "src/types/dashboard-overview-retrieve-response.ts",
-      "sha256": "bdae48ddd4f576967e9ebbde9078ad972c75ec08aec3c3b89da62ba00435408e"
-    },
-    {
-      "path": "src/types/dashboard-overview-retrieve-result.ts",
-      "sha256": "7db62d002730d63d395dd76dba0d041f36a419bcc5da3ddacf8110fdd11fec02"
     },
     {
       "path": "src/types/field-error.ts",
@@ -196,55 +116,27 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "9edeb8e3971e954b6b3875daf960ef1c977b06024fc3deca60d89178e4644fa2"
+      "sha256": "a4451ef951aeb1cdf3c7512975297fad4db6754902a6a2b60e5e93fe00b245b2"
     },
     {
-      "path": "src/types/invocation-events-create-response.ts",
-      "sha256": "dee9a40005ac2982890420ce61fe45ecd66588fc527a8f12e49d39a11834562f"
+      "path": "src/types/json-null.ts",
+      "sha256": "2ef891ef2a54f476c457aeca7ec7d3d5d2cbdca19343fdefd8dfcbcd2767d856"
     },
     {
-      "path": "src/types/invocation-events-create-result.ts",
-      "sha256": "b8cb5d919e28474c24c9a1a765286189255c844126428d492f5743892ab82fea"
+      "path": "src/types/json-object.ts",
+      "sha256": "261439f39531b4f7231fe74b3e58f79dbdf1feb47be2aa5984001657ee0a3170"
     },
     {
-      "path": "src/types/invocations-create-response.ts",
-      "sha256": "37c6f5fdd6ae26cc2bc0f7e7240f8d99efbf24da58e4c9060d530400c516470a"
+      "path": "src/types/json-value.ts",
+      "sha256": "22654cfefd5c2d5b7d4055c69738f83a6ec78e22cf28435ee38e04224788116d"
     },
     {
-      "path": "src/types/invocations-create-result.ts",
-      "sha256": "c3acdf7d498094a5d4180384738b533ff3aadc3de0380a277ba9a99c5d2aa562"
+      "path": "src/types/model-catalog-page.ts",
+      "sha256": "4826ed773da6b331cac3244aa931cbe48f5f3be7ba983dc88843efcc16b0ce6e"
     },
     {
-      "path": "src/types/invocations-retrieve-response.ts",
-      "sha256": "f2643c8d3aba4f44c786ea7c4b7bd26e7c83e72bb4222f9c2ad36e5b7bc3b399"
-    },
-    {
-      "path": "src/types/invocations-retrieve-result.ts",
-      "sha256": "9f59c0d8a5a063807669ff2b5c39c891d7f89dd0e7475f4501a89ebead81883f"
-    },
-    {
-      "path": "src/types/invocations-submit-response.ts",
-      "sha256": "30b169ab1fe88866332ec59e3132eb7c91a63371203e612ce9eed196c5c67f10"
-    },
-    {
-      "path": "src/types/invocations-submit-result.ts",
-      "sha256": "5c02560bde07b3299137014fe80334e24993b69c5fed873cc48d1f9638dd0b37"
-    },
-    {
-      "path": "src/types/notifications-acknowledge-create-response.ts",
-      "sha256": "ac2454bdd43051b52bb6caacb99340356e966249c3456ed69bca556ffdfbabb6"
-    },
-    {
-      "path": "src/types/notifications-acknowledge-create-result.ts",
-      "sha256": "feec7460a40f4be8fedc50e696442cc6345f0514647dc4ad7ec302ec8fe8ad7f"
-    },
-    {
-      "path": "src/types/notifications-popup-seen-create-response.ts",
-      "sha256": "f2c67dd5b82c9277f207d85588bbd2686fe94dcd0e15a8ca187a1dce1031a251"
-    },
-    {
-      "path": "src/types/notifications-popup-seen-create-result.ts",
-      "sha256": "57d9147081fbad4dbe5120c1efafca65536b3e443ade9fd71fcbc026d77b9aac"
+      "path": "src/types/model-rankings-page.ts",
+      "sha256": "a38c85802c55fabe906e386422733a3025d9d364c72b1de4043776906474f97f"
     },
     {
       "path": "src/types/page-info.ts",
@@ -259,296 +151,8 @@
       "sha256": "79cef2c8e584ba8b8e96c6c77ccf6bda087b0c68cbed63cb97d5fb1ff3e47e1a"
     },
     {
-      "path": "src/types/sdk-work-command-data.ts",
-      "sha256": "a875c230e70650e636ac09c1af57ae8ea0f512a89dd21482bb9e6292bb6bad5a"
-    },
-    {
-      "path": "src/types/sdk-work-command-response.ts",
-      "sha256": "36f82aede9b7b352a9b57545705da4003816785c7913fb2436df633f5c2e8447"
-    },
-    {
-      "path": "src/types/sdk-work-list-response.ts",
-      "sha256": "eeb07e413d7e912345eda1cb1093e8e6abfe9b42d8350482f7b580138c7936c5"
-    },
-    {
-      "path": "src/types/sdk-work-page-data.ts",
-      "sha256": "b9f6e60cc3bc39eed4cdf6029a401cc88b6001e4f4c72703487f478001024743"
-    },
-    {
       "path": "src/types/sdk-work-platform-error-code.ts",
       "sha256": "f5e30be72be3d1aebd8200627bfac368f10cdd69d2271d24e6b4a2d7edf97fb7"
-    },
-    {
-      "path": "src/types/shops-current-applications-create-response.ts",
-      "sha256": "c530a33d8e02faac1f458d97589faaae7f5fc609aba2bcce2b2b1838c54baeaa"
-    },
-    {
-      "path": "src/types/shops-current-applications-create-result.ts",
-      "sha256": "7a7dc63f65115a572c5d04bdeb1bac8fef8e1f55b83b8037f508c4a3fc315c7d"
-    },
-    {
-      "path": "src/types/shops-current-brand-authorizations-upsert-response.ts",
-      "sha256": "b121b34500a79d8e0f266dae30d5a411484203fbca2af897b029170c08a189d8"
-    },
-    {
-      "path": "src/types/shops-current-brand-authorizations-upsert-result.ts",
-      "sha256": "3fda51147a21ca5b868765d693590323fa6fd09d37bb5c8532ecc60d39eab129"
-    },
-    {
-      "path": "src/types/shops-current-business-hours-retrieve-response.ts",
-      "sha256": "ac91d8827b02ade95f356668cb887ba80a474a7379b5d672603603f7eb35b308"
-    },
-    {
-      "path": "src/types/shops-current-business-hours-retrieve-result.ts",
-      "sha256": "de05ff71c2d56685e396cfef7df938266642d0a98a6524d142e3439cb8bf4336"
-    },
-    {
-      "path": "src/types/shops-current-business-hours-update-response.ts",
-      "sha256": "a4d027b23e41f9184ab5bd7487fa9d82051e1684a4e99a1d40ef03d749231296"
-    },
-    {
-      "path": "src/types/shops-current-business-hours-update-result.ts",
-      "sha256": "85509633ef38d04cc40e5789a3dc4a94a734a7eed14a094249f9447a13bd1b2f"
-    },
-    {
-      "path": "src/types/shops-current-category-bindings-upsert-response.ts",
-      "sha256": "8a5727805bd8222f68d17fc4828a209f1a7f12cd1c98f8014510c1a60da56e6f"
-    },
-    {
-      "path": "src/types/shops-current-category-bindings-upsert-result.ts",
-      "sha256": "26a788e2031e2b2d44d0549abae4d5bf2c4679dfcfab1dcb3fe960d19e4c3a63"
-    },
-    {
-      "path": "src/types/shops-current-channels-update-response.ts",
-      "sha256": "e4c2da2941d243907375de12402d5070a94c84a2ae6730751fe613fd28db07d4"
-    },
-    {
-      "path": "src/types/shops-current-channels-update-result.ts",
-      "sha256": "1a0f7fd39fc5c4735ebbff7850ae0ba3a1e6f577ef2c09f315ccfdcce12f4414"
-    },
-    {
-      "path": "src/types/shops-current-customer-services-upsert-response.ts",
-      "sha256": "3d58a0e86a8a9c7b9f0a12c013bc9a90f825dc520a3b838e61504fde1b18aee4"
-    },
-    {
-      "path": "src/types/shops-current-customer-services-upsert-result.ts",
-      "sha256": "281ba8ac70d7cf8117359e7324b2158b5a731f55b66516584b0a4b923d575806"
-    },
-    {
-      "path": "src/types/shops-current-dashboard-retrieve-response.ts",
-      "sha256": "39f6e697f614092e85635bb2ea9c3492b1667c7cb55474a45e572cac19cbfefe"
-    },
-    {
-      "path": "src/types/shops-current-dashboard-retrieve-result.ts",
-      "sha256": "547a28f989b5b0e097d4a873be1470c295728072e71caab4ace1d820b6a84e20"
-    },
-    {
-      "path": "src/types/shops-current-deposit-account-retrieve-response.ts",
-      "sha256": "0ea954e9bd20386eba6efd376b2bfbc278da78c00ac686d3db40195fad77aec8"
-    },
-    {
-      "path": "src/types/shops-current-deposit-account-retrieve-result.ts",
-      "sha256": "1c00215b0a2ab44dbfcac64893baea0bf91fb9b3c9226ceca85ee058eb1cd789"
-    },
-    {
-      "path": "src/types/shops-current-fulfillment-profile-retrieve-response.ts",
-      "sha256": "b5556a3d3cdc71e6873a03b7f4d2dfae2f94c52979d1d94c38be817819213bd6"
-    },
-    {
-      "path": "src/types/shops-current-fulfillment-profile-retrieve-result.ts",
-      "sha256": "7c3298f50f728cdf4c9a8d186faf29693f8d8e418e41cb19109fe5075b232a2c"
-    },
-    {
-      "path": "src/types/shops-current-fulfillment-profile-update-response.ts",
-      "sha256": "9cc4a7d84956944f8d1b4707f770bc549a467df3f9a028afd857e024fb6413ff"
-    },
-    {
-      "path": "src/types/shops-current-fulfillment-profile-update-result.ts",
-      "sha256": "ade9ce00da5506ae4c05e4505c4117afb9e644ae475ea578bde06512763c6d55"
-    },
-    {
-      "path": "src/types/shops-current-inventory-stocks-adjustments-create-response.ts",
-      "sha256": "0026ab92e86e1dba393dca32f501041f86720cc5cf379303a56c2d05253f00b8"
-    },
-    {
-      "path": "src/types/shops-current-inventory-stocks-adjustments-create-result.ts",
-      "sha256": "11290fa316e0ed1ebd7af36af624bac3df71869222129d814b8d751b33cb37d0"
-    },
-    {
-      "path": "src/types/shops-current-orders-fulfillments-create-response.ts",
-      "sha256": "c9c930c9de44745cf3e44f533efe2e0abab6bee206e384470260af2d94b4b8c6"
-    },
-    {
-      "path": "src/types/shops-current-orders-fulfillments-create-result.ts",
-      "sha256": "4ea62d047a7230bbfbc1ec9d5e359f6d6f6edb3de4e94600c3939b15f832d259"
-    },
-    {
-      "path": "src/types/shops-current-orders-retrieve-response.ts",
-      "sha256": "da76aa5dc9efd9596df0a0179da8a9a5e7ba33e80285615c4a5074a1c19b6059"
-    },
-    {
-      "path": "src/types/shops-current-orders-retrieve-result.ts",
-      "sha256": "c4f3c2a2e78a05536067b0f2b40bea09e71743aead6296e6ad9c34839e47e850"
-    },
-    {
-      "path": "src/types/shops-current-policies-update-response.ts",
-      "sha256": "fcb71a102586d763f65bd64987eb99760da89b7bafa457e37e7fe228a8722840"
-    },
-    {
-      "path": "src/types/shops-current-policies-update-result.ts",
-      "sha256": "820178d4e2ece068bf5c4782730f60bc663ebb91ab637cbc3743a14e096ea219"
-    },
-    {
-      "path": "src/types/shops-current-products-create-response.ts",
-      "sha256": "d7ee9dfd0b158eb54eb219392c6ddce86329b4d52bdf7899d14d18f0e4363976"
-    },
-    {
-      "path": "src/types/shops-current-products-create-result.ts",
-      "sha256": "957070a8ef036d166f742e8e6a66c011d68b70f9fdeb9655ee370325c5cdf03c"
-    },
-    {
-      "path": "src/types/shops-current-products-publish-response.ts",
-      "sha256": "7473863fe95bfda089cf3aecc6dbc78787466c59f5701a81e31e49e3d8ae18ae"
-    },
-    {
-      "path": "src/types/shops-current-products-publish-result.ts",
-      "sha256": "7bb6fa56f9058fa7cb7260d99a2321d6ff930763156786c1255aff56036db6e2"
-    },
-    {
-      "path": "src/types/shops-current-products-unpublish-response.ts",
-      "sha256": "a8d15a2de528b0b1a74e8ea89dffcb2b21425872563443ec8b0486f37ef7c303"
-    },
-    {
-      "path": "src/types/shops-current-products-unpublish-result.ts",
-      "sha256": "8d91e1055c90b1d4046af5d9b960a1215535f87487599d452a3501710f499f68"
-    },
-    {
-      "path": "src/types/shops-current-products-update-response.ts",
-      "sha256": "c2f076cbec509a23c9f9043ceecac31267d3bef0d57cfb3c05fe38e3738dce72"
-    },
-    {
-      "path": "src/types/shops-current-products-update-result.ts",
-      "sha256": "8631fb906f96fe8ae6a992b3fcec5e4316da6ddbedf8f95c41f206f3fd32b42f"
-    },
-    {
-      "path": "src/types/shops-current-qualifications-upsert-response.ts",
-      "sha256": "adb2e026164d6a70302f2f8c4f8d35e2ef7f3ef2dd2760008625559dd6b8630c"
-    },
-    {
-      "path": "src/types/shops-current-qualifications-upsert-result.ts",
-      "sha256": "c02e038789062bae355840c4ba266e49aca95185332bdf5a31e1049d77783755"
-    },
-    {
-      "path": "src/types/shops-current-readiness-retrieve-response.ts",
-      "sha256": "6e3a3d4f138be68971a8c63f1add258849c8e2bb0e35e68fb512785bbf030575"
-    },
-    {
-      "path": "src/types/shops-current-readiness-retrieve-result.ts",
-      "sha256": "6734fa24b521cc04d0f7a9c627f1580e75b790a4ab1a21124c7fe6bdd554f571"
-    },
-    {
-      "path": "src/types/shops-current-retrieve-response.ts",
-      "sha256": "0e9cc7888a0d111970520f0787a0f22e445129e8bb30e80cf2571f16a085fc5e"
-    },
-    {
-      "path": "src/types/shops-current-retrieve-result.ts",
-      "sha256": "04d80856273edaecbbef96ae496572dea7c1c7f05cee96dac307eb677332221f"
-    },
-    {
-      "path": "src/types/shops-current-return-addresses-upsert-response.ts",
-      "sha256": "1ce09b91bb17809a215199d7e08fb1edc0a2b9f42a4ffc8ccb9d2db8f58d30a9"
-    },
-    {
-      "path": "src/types/shops-current-return-addresses-upsert-result.ts",
-      "sha256": "cc5067d7e8d47c031343c6f6d68ac8bb1e5aed69420ae230869000356be2d34e"
-    },
-    {
-      "path": "src/types/shops-current-service-areas-create-response.ts",
-      "sha256": "bb659c9a6d7f0f55056d37070b4d8fe79f1a352f78e32d5ec8acea769af643c8"
-    },
-    {
-      "path": "src/types/shops-current-service-areas-create-result.ts",
-      "sha256": "433fe94d43b3b834d14032d00baa384fd5c766bdfea9584811fd7050f3ed575f"
-    },
-    {
-      "path": "src/types/shops-current-service-areas-update-response.ts",
-      "sha256": "c31d79b11feee454d67ec215205f8e9e91be0e9ff58026bcb839243fac8656ab"
-    },
-    {
-      "path": "src/types/shops-current-service-areas-update-result.ts",
-      "sha256": "d547c73acc11cacaaa66f0e0b87e831adfa220f9a480536b14126770a162522c"
-    },
-    {
-      "path": "src/types/shops-current-settlement-profile-retrieve-response.ts",
-      "sha256": "d57b47c39e8cfbbcda777d2ef7dc666db7e13344749ef6bc70ea814ca07eb00e"
-    },
-    {
-      "path": "src/types/shops-current-settlement-profile-retrieve-result.ts",
-      "sha256": "f02a4f8f35afc00d964454f4e96416f207095dd90c0a6611028331c18a6810d9"
-    },
-    {
-      "path": "src/types/shops-current-settlement-profile-update-response.ts",
-      "sha256": "b28e4b781679daba62b976a9a8d1fb15b199d9b73d2c57f5bd775cc0641aa31b"
-    },
-    {
-      "path": "src/types/shops-current-settlement-profile-update-result.ts",
-      "sha256": "b6babe68564f6d1005aae4eca7f671f4f605aa6143fe17709609c6f9044e81be"
-    },
-    {
-      "path": "src/types/shops-current-shipping-templates-upsert-response.ts",
-      "sha256": "7dce36415f5061faa14eb86f283eaddee8ab8ef04970348b4e68e296e6b2dd71"
-    },
-    {
-      "path": "src/types/shops-current-shipping-templates-upsert-result.ts",
-      "sha256": "ed3a07f6b0ae4686e0f1df09f33187e04b363bc4e3613942fcd3b0c8c1be052c"
-    },
-    {
-      "path": "src/types/shops-retrieve-response.ts",
-      "sha256": "892584cb5a32292608b9f50ea184691a0b15c23f46ee8427298ecc6ddeb66030"
-    },
-    {
-      "path": "src/types/shops-retrieve-result.ts",
-      "sha256": "591697cc02ab4d3bc2699f5d93da3b54b65c754bedc0f5bee0cf243456c7e698"
-    },
-    {
-      "path": "src/types/site-runtime-retrieve-response.ts",
-      "sha256": "8f6bb68397c5b4abe6d9e41ce2cfd5484c2595d4734b21d178718c2a28129f09"
-    },
-    {
-      "path": "src/types/site-runtime-retrieve-result.ts",
-      "sha256": "0eed688b6e2bf95e1ca4d23aff6420bdbd053ee64e70591600869f9be329d891"
-    },
-    {
-      "path": "src/types/turn-responses-create-response.ts",
-      "sha256": "5bc23d5cefd9b19ee0fe70e03779d300c9bb2140738feb74562469e34b633ece"
-    },
-    {
-      "path": "src/types/turn-responses-create-result.ts",
-      "sha256": "ca2b3e00f50d89cd6d0967e6e44b1d22382a7dfc3f4b53e171c3bb1a480d2cb4"
-    },
-    {
-      "path": "src/types/turns-create-response.ts",
-      "sha256": "f9cb7b03e4f61caa6fcfdbde04ff79cd363e57570b6e40318aedf49fe94129d0"
-    },
-    {
-      "path": "src/types/turns-create-result.ts",
-      "sha256": "d3dfca151f53249422b1004aca3a93635081b3376afbbfe31ba5f8121e10f214"
-    },
-    {
-      "path": "src/types/users-settings-retrieve-response.ts",
-      "sha256": "fa2e4046f0a132633790aefb388f42e191ff0dc8376cd7ab234402bb23e41f18"
-    },
-    {
-      "path": "src/types/users-settings-retrieve-result.ts",
-      "sha256": "1a4d4d20ab3526e40319b2700d665d4e6c8d5e8c0a6a885559b48848e11e10cf"
-    },
-    {
-      "path": "src/types/users-settings-update-response.ts",
-      "sha256": "8ad07352849c10b8bb46f8f9cad144409bac6bbe032e8e5a503508adcead67df"
-    },
-    {
-      "path": "src/types/users-settings-update-result.ts",
-      "sha256": "6a63fe9b23864e98852306cf8400b1963084e881af7397717948d317763fafde"
     },
     {
       "path": "tsconfig.json",

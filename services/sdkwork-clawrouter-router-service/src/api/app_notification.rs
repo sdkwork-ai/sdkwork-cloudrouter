@@ -182,7 +182,8 @@ async fn mark_popup_seen(
     Path(notification_id): Path<String>,
     Query(query): Query<NotificationCommandQuery>,
 ) -> Response {
-    let subject = map_required_app_sql_subject(subject, |scoped| AppNotificationSubject::from(scoped));
+    let subject =
+        map_required_app_sql_subject(subject, |scoped| AppNotificationSubject::from(scoped));
     let app_id = match normalized_app_id(query.app_id.as_deref()) {
         Ok(app_id) => app_id,
         Err(response) => return response,
@@ -214,7 +215,8 @@ async fn acknowledge(
     Path(notification_id): Path<String>,
     Query(query): Query<NotificationCommandQuery>,
 ) -> Response {
-    let subject = map_required_app_sql_subject(subject, |scoped| AppNotificationSubject::from(scoped));
+    let subject =
+        map_required_app_sql_subject(subject, |scoped| AppNotificationSubject::from(scoped));
     let app_id = match normalized_app_id(query.app_id.as_deref()) {
         Ok(app_id) => app_id,
         Err(response) => return response,

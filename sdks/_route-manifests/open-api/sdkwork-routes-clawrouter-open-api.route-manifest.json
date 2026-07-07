@@ -22,6 +22,8 @@
       "tags": [
         "Files/anthropic"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -44,6 +46,8 @@
       "tags": [
         "Files/anthropic"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -66,6 +70,8 @@
       "tags": [
         "Files/anthropic"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -88,6 +94,8 @@
       "tags": [
         "Files/anthropic"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -110,6 +118,8 @@
       "tags": [
         "Files/anthropic"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -132,6 +142,8 @@
       "tags": [
         "Chat/anthropic"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -154,6 +166,8 @@
       "tags": [
         "Batches/anthropic"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -176,6 +190,8 @@
       "tags": [
         "Batches/anthropic"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -198,6 +214,8 @@
       "tags": [
         "Batches/anthropic"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -220,6 +238,8 @@
       "tags": [
         "Batches/anthropic"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -242,6 +262,8 @@
       "tags": [
         "Chat/anthropic"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -264,6 +286,8 @@
       "tags": [
         "Responses/google"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -286,6 +310,8 @@
       "tags": [
         "Responses/google"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -308,6 +334,8 @@
       "tags": [
         "Responses/google"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -330,6 +358,8 @@
       "tags": [
         "Responses/google"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -352,6 +382,8 @@
       "tags": [
         "Files/google"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -374,6 +406,8 @@
       "tags": [
         "Files/google"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -396,6 +430,8 @@
       "tags": [
         "Files/google"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -418,6 +454,8 @@
       "tags": [
         "Files/google"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -440,6 +478,8 @@
       "tags": [
         "Embeddings/google"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -462,6 +502,8 @@
       "tags": [
         "Chat/google"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -484,6 +526,8 @@
       "tags": [
         "Embeddings/google"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -506,6 +550,8 @@
       "tags": [
         "Chat/google"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -528,6 +574,8 @@
       "tags": [
         "Chat/google"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -550,6 +598,8 @@
       "tags": [
         "Videos/kling"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "kling-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -572,6 +622,8 @@
       "tags": [
         "Videos/kling"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "kling-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -594,6 +646,8 @@
       "tags": [
         "Images/midjourney"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "midjourney-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -616,6 +670,8 @@
       "tags": [
         "Images/midjourney"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "midjourney-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -638,6 +694,8 @@
       "tags": [
         "Images/nano-banana"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "nano-banana-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -660,6 +718,8 @@
       "tags": [
         "Images/nano-banana"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "nano-banana-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -682,6 +742,8 @@
       "tags": [
         "Audio/suno"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "suno-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -704,6 +766,8 @@
       "tags": [
         "Audio/suno"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "suno-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -726,6 +790,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -748,6 +814,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -770,6 +838,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -792,6 +862,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -814,6 +886,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -836,6 +910,8 @@
       "tags": [
         "Audio"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -858,6 +934,8 @@
       "tags": [
         "Audio"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -880,6 +958,8 @@
       "tags": [
         "Audio"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -902,6 +982,8 @@
       "tags": [
         "Audio"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -924,6 +1006,8 @@
       "tags": [
         "Audio"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -946,6 +1030,8 @@
       "tags": [
         "Audio"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -968,6 +1054,8 @@
       "tags": [
         "Audio"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -990,6 +1078,8 @@
       "tags": [
         "Audio"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1012,6 +1102,8 @@
       "tags": [
         "Audio"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1034,6 +1126,8 @@
       "tags": [
         "Audio"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1056,6 +1150,8 @@
       "tags": [
         "Audio"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1078,6 +1174,8 @@
       "tags": [
         "Batches"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1100,6 +1198,8 @@
       "tags": [
         "Batches"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1122,6 +1222,8 @@
       "tags": [
         "Batches"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1144,6 +1246,8 @@
       "tags": [
         "Batches"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1166,6 +1270,8 @@
       "tags": [
         "Chat"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1188,6 +1294,8 @@
       "tags": [
         "Chat"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1210,6 +1318,8 @@
       "tags": [
         "Chat"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1232,6 +1342,8 @@
       "tags": [
         "Chat"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1254,6 +1366,8 @@
       "tags": [
         "Chat"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1276,6 +1390,8 @@
       "tags": [
         "Chat"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1298,6 +1414,8 @@
       "tags": [
         "Completions"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1320,6 +1438,8 @@
       "tags": [
         "Containers"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1342,6 +1462,8 @@
       "tags": [
         "Containers"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1364,6 +1486,8 @@
       "tags": [
         "Containers"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1386,6 +1510,8 @@
       "tags": [
         "Containers"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1408,6 +1534,8 @@
       "tags": [
         "Containers"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1430,6 +1558,8 @@
       "tags": [
         "Containers"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1452,6 +1582,8 @@
       "tags": [
         "Containers"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1474,6 +1606,8 @@
       "tags": [
         "Containers"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1496,6 +1630,8 @@
       "tags": [
         "Containers"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1518,6 +1654,8 @@
       "tags": [
         "Conversations"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1540,6 +1678,8 @@
       "tags": [
         "Conversations"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1562,6 +1702,8 @@
       "tags": [
         "Conversations"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1584,6 +1726,8 @@
       "tags": [
         "Conversations"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1606,6 +1750,8 @@
       "tags": [
         "Conversations"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1628,6 +1774,8 @@
       "tags": [
         "Conversations"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1650,6 +1798,8 @@
       "tags": [
         "Conversations"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1672,6 +1822,8 @@
       "tags": [
         "Conversations"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1694,6 +1846,8 @@
       "tags": [
         "Conversations"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1716,6 +1870,8 @@
       "tags": [
         "Embeddings"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1738,6 +1894,8 @@
       "tags": [
         "Evals"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1760,6 +1918,8 @@
       "tags": [
         "Evals"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1782,6 +1942,8 @@
       "tags": [
         "Evals"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1804,6 +1966,8 @@
       "tags": [
         "Evals"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1826,6 +1990,8 @@
       "tags": [
         "Evals"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1848,6 +2014,8 @@
       "tags": [
         "Evals"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1870,6 +2038,8 @@
       "tags": [
         "Evals"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1892,6 +2062,8 @@
       "tags": [
         "Evals"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1914,6 +2086,8 @@
       "tags": [
         "Evals"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1936,6 +2110,8 @@
       "tags": [
         "Evals"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1958,6 +2134,8 @@
       "tags": [
         "Evals"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -1980,6 +2158,8 @@
       "tags": [
         "Evals"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2002,6 +2182,8 @@
       "tags": [
         "Files"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2024,6 +2206,8 @@
       "tags": [
         "Files"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2046,6 +2230,8 @@
       "tags": [
         "Files"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2068,6 +2254,8 @@
       "tags": [
         "Files"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2090,6 +2278,8 @@
       "tags": [
         "Files"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2112,6 +2302,8 @@
       "tags": [
         "Fine Tuning"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2134,6 +2326,8 @@
       "tags": [
         "Fine Tuning"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2156,6 +2350,8 @@
       "tags": [
         "Fine Tuning"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2178,6 +2374,8 @@
       "tags": [
         "Fine Tuning"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2200,6 +2398,8 @@
       "tags": [
         "Fine Tuning"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2222,6 +2422,8 @@
       "tags": [
         "Fine Tuning"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2244,6 +2446,8 @@
       "tags": [
         "Fine Tuning"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2266,6 +2470,8 @@
       "tags": [
         "Fine Tuning"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2288,6 +2494,8 @@
       "tags": [
         "Fine Tuning"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2310,6 +2518,8 @@
       "tags": [
         "Fine Tuning"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2332,6 +2542,8 @@
       "tags": [
         "Fine Tuning"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2354,6 +2566,8 @@
       "tags": [
         "Fine Tuning"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2376,6 +2590,8 @@
       "tags": [
         "Fine Tuning"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2398,6 +2614,8 @@
       "tags": [
         "Images"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2420,6 +2638,8 @@
       "tags": [
         "Images"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2442,6 +2662,8 @@
       "tags": [
         "Images"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2464,6 +2686,8 @@
       "tags": [
         "Models"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2486,6 +2710,8 @@
       "tags": [
         "Models"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2508,6 +2734,8 @@
       "tags": [
         "Models"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2530,6 +2758,8 @@
       "tags": [
         "Moderations"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2552,6 +2782,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2574,6 +2806,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2596,6 +2830,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2618,6 +2854,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2640,6 +2878,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2662,6 +2902,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2684,6 +2926,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2706,6 +2950,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2728,6 +2974,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2750,6 +2998,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2772,6 +3022,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2794,6 +3046,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2816,6 +3070,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2838,6 +3094,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2860,6 +3118,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2882,6 +3142,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2904,6 +3166,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2926,6 +3190,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2948,6 +3214,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2970,6 +3238,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -2992,6 +3262,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3014,6 +3286,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3036,6 +3310,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3058,6 +3334,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3080,6 +3358,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3102,6 +3382,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3124,6 +3406,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3146,6 +3430,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3168,6 +3454,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3190,6 +3478,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3212,6 +3502,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3234,6 +3526,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3256,6 +3550,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3278,6 +3574,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3300,6 +3598,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3322,6 +3622,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3344,6 +3646,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3366,6 +3670,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3388,6 +3694,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3410,6 +3718,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3432,6 +3742,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3454,6 +3766,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3476,6 +3790,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3498,6 +3814,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3520,6 +3838,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3542,6 +3862,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3564,6 +3886,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3586,6 +3910,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3608,6 +3934,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3630,6 +3958,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3652,6 +3982,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3674,6 +4006,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3696,6 +4030,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3718,6 +4054,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3740,6 +4078,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3762,6 +4102,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3784,6 +4126,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3806,6 +4150,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3828,6 +4174,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3850,6 +4198,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3872,6 +4222,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3894,6 +4246,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3916,6 +4270,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3938,6 +4294,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3960,6 +4318,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -3982,6 +4342,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4004,6 +4366,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4026,6 +4390,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4048,6 +4414,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4070,6 +4438,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4092,6 +4462,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4114,6 +4486,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4136,6 +4510,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4158,6 +4534,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4180,6 +4558,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4202,6 +4582,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4224,6 +4606,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4246,6 +4630,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4268,6 +4654,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4290,6 +4678,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4312,6 +4702,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4334,6 +4726,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4356,6 +4750,8 @@
       "tags": [
         "Administration"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4378,6 +4774,8 @@
       "tags": [
         "Realtime"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4400,6 +4798,8 @@
       "tags": [
         "Realtime"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4422,6 +4822,8 @@
       "tags": [
         "Realtime"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4444,6 +4846,8 @@
       "tags": [
         "Realtime"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4466,6 +4870,8 @@
       "tags": [
         "Realtime"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4488,6 +4894,8 @@
       "tags": [
         "Realtime"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4510,6 +4918,8 @@
       "tags": [
         "Realtime"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4532,6 +4942,8 @@
       "tags": [
         "Realtime"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4554,6 +4966,8 @@
       "tags": [
         "Realtime"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4576,6 +4990,8 @@
       "tags": [
         "Responses"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4598,6 +5014,8 @@
       "tags": [
         "Responses"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4620,6 +5038,8 @@
       "tags": [
         "Responses"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4642,6 +5062,8 @@
       "tags": [
         "Responses"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4664,6 +5086,8 @@
       "tags": [
         "Responses"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4686,6 +5110,8 @@
       "tags": [
         "Responses"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4708,6 +5134,8 @@
       "tags": [
         "Responses"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4730,6 +5158,8 @@
       "tags": [
         "Skills"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4752,6 +5182,8 @@
       "tags": [
         "Skills"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4774,6 +5206,8 @@
       "tags": [
         "Skills"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4796,6 +5230,8 @@
       "tags": [
         "Skills"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4818,6 +5254,8 @@
       "tags": [
         "Skills"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4840,6 +5278,8 @@
       "tags": [
         "Skills"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4862,6 +5302,8 @@
       "tags": [
         "Skills"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4884,6 +5326,8 @@
       "tags": [
         "Skills"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4906,6 +5350,8 @@
       "tags": [
         "Skills"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4928,6 +5374,8 @@
       "tags": [
         "Skills"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4950,6 +5398,8 @@
       "tags": [
         "Skills"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4972,6 +5422,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -4994,6 +5446,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5016,6 +5470,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5038,6 +5494,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5060,6 +5518,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5082,6 +5542,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5104,6 +5566,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5126,6 +5590,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5148,6 +5614,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5170,6 +5638,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5192,6 +5662,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5214,6 +5686,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5236,6 +5710,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5258,6 +5734,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5280,6 +5758,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5302,6 +5782,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5324,6 +5806,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5346,6 +5830,8 @@
       "tags": [
         "Assistants"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5368,6 +5854,8 @@
       "tags": [
         "Uploads"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5390,6 +5878,8 @@
       "tags": [
         "Uploads"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5412,6 +5902,8 @@
       "tags": [
         "Uploads"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5434,6 +5926,8 @@
       "tags": [
         "Uploads"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5456,6 +5950,8 @@
       "tags": [
         "Vector Stores"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5478,6 +5974,8 @@
       "tags": [
         "Vector Stores"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5500,6 +5998,8 @@
       "tags": [
         "Vector Stores"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5522,6 +6022,8 @@
       "tags": [
         "Vector Stores"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5544,6 +6046,8 @@
       "tags": [
         "Vector Stores"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5566,6 +6070,8 @@
       "tags": [
         "Vector Stores"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5588,6 +6094,8 @@
       "tags": [
         "Vector Stores"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5610,6 +6118,8 @@
       "tags": [
         "Vector Stores"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5632,6 +6142,8 @@
       "tags": [
         "Vector Stores"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5654,6 +6166,8 @@
       "tags": [
         "Vector Stores"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5676,6 +6190,8 @@
       "tags": [
         "Vector Stores"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5698,6 +6214,8 @@
       "tags": [
         "Vector Stores"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5720,6 +6238,8 @@
       "tags": [
         "Vector Stores"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5742,6 +6262,8 @@
       "tags": [
         "Vector Stores"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5764,6 +6286,8 @@
       "tags": [
         "Vector Stores"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5786,6 +6310,8 @@
       "tags": [
         "Videos"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5808,6 +6334,8 @@
       "tags": [
         "Videos"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5830,6 +6358,8 @@
       "tags": [
         "Videos"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5852,6 +6382,8 @@
       "tags": [
         "Videos"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5874,6 +6406,8 @@
       "tags": [
         "Videos"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5896,6 +6430,8 @@
       "tags": [
         "Videos"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5918,6 +6454,8 @@
       "tags": [
         "Videos"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5940,6 +6478,8 @@
       "tags": [
         "Videos"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5962,6 +6502,8 @@
       "tags": [
         "Videos"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -5984,6 +6526,8 @@
       "tags": [
         "Videos"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -6006,6 +6550,8 @@
       "tags": [
         "Videos/vidu"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "vidu-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -6028,6 +6574,8 @@
       "tags": [
         "Images/vidu"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "vidu-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -6050,6 +6598,8 @@
       "tags": [
         "Videos/vidu"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "vidu-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -6072,6 +6622,8 @@
       "tags": [
         "Videos/vidu"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "vidu-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -6094,6 +6646,8 @@
       "tags": [
         "Videos/vidu"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "vidu-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -6116,6 +6670,8 @@
       "tags": [
         "Videos/vidu"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "vidu-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -6138,6 +6694,8 @@
       "tags": [
         "Videos/volcengine"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "volcengine-v1",
       "auth": {
         "mode": "dual-token",
         "required": true
@@ -6160,6 +6718,8 @@
       "tags": [
         "Videos/volcengine"
       ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "volcengine-v1",
       "auth": {
         "mode": "dual-token",
         "required": true

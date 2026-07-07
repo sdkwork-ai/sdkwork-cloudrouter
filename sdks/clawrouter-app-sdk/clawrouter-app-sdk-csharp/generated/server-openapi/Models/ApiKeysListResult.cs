@@ -6,8 +6,8 @@ namespace Sdkwork.ClawRouter.App.Models
 {
     public class ApiKeysListResult
     {
-        public string Code { get; set; }
-        public AppApiKeyListResponse? Data { get; set; }
-        public string? Msg { get; set; }
+        public int Code { get; set; }
+        public object Data { get; set; }
+        public string TraceId { get; set; }
     }
 }

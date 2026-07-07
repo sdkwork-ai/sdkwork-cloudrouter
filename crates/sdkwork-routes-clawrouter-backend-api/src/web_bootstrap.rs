@@ -6,7 +6,9 @@ use sdkwork_claw_http::{
     claw_service_security_policy, iam_web_resolver_for_claw_database,
     inject_legacy_handler_context_from_web_context, resolve_claw_web_environment_from_process_env,
 };
-use sdkwork_iam_web_adapter::{iam_app_context_from_web_request, IamAuthorizationPolicy, IamWebRequestContextResolver};
+use sdkwork_iam_web_adapter::{
+    iam_app_context_from_web_request, IamAuthorizationPolicy, IamWebRequestContextResolver,
+};
 use sdkwork_web_axum::{with_web_request_context, WebFrameworkLayer};
 use sdkwork_web_core::{DomainContextInjector, WebRequestContext, WebRequestContextProfile};
 use sqlx::PgPool;
@@ -61,7 +63,10 @@ pub fn wrap_router_with_web_framework(
     resolver: IamWebRequestContextResolver,
     router: Router,
 ) -> Router {
-    with_web_request_context(router, build_claw_router_backend_web_framework_layer(resolver))
+    with_web_request_context(
+        router,
+        build_claw_router_backend_web_framework_layer(resolver),
+    )
 }
 
 pub async fn iam_web_resolver_from_env(

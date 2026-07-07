@@ -1,15 +1,14 @@
 use std::sync::Arc;
 
 use crate::ports::{
-    AdminAiResourceGroupItem, AdminAiResourceGroupResourceItem, AdminAiResourceItem,
-    AdminAiResourceReadFuture, AdminAiResourceStore, AdminChannelCommandFuture,
-    AdminChannelGroupChannelBindingItem, AdminChannelGroupCommandFuture, AdminChannelGroupItem,
-    AdminChannelGroupListPage, AdminChannelGroupStore, AdminChannelItem, AdminChannelListPage,
-    AdminChannelStore, AdminChannelTestOutcome,
+    AdminAiResourceGroupItem, AdminAiResourceGroupResourcesPage, AdminAiResourceItem,
+    AdminAiResourceListPage, AdminAiResourceReadFuture, AdminAiResourceStore,
+    AdminChannelCommandFuture, AdminChannelGroupChannelBindingItem, AdminChannelGroupCommandFuture,
+    AdminChannelGroupItem, AdminChannelGroupListPage, AdminChannelGroupStore, AdminChannelItem,
+    AdminChannelListPage, AdminChannelStore, AdminChannelTestOutcome,
     AdminProviderSecretCommandFuture, AdminProviderSecretItem, AdminProviderSecretListPage,
-    AdminProviderSecretStore,
-    CreateAdminAiResourceCommand, CreateAdminAiResourceGroupCommand, CreateAdminChannelCommand,
-    CreateAdminChannelGroupCommand, CreateAdminProviderSecretCommand,
+    AdminProviderSecretStore, CreateAdminAiResourceCommand, CreateAdminAiResourceGroupCommand,
+    CreateAdminChannelCommand, CreateAdminChannelGroupCommand, CreateAdminProviderSecretCommand,
     DeleteAdminAiResourceGroupCommand, DeleteAdminChannelCommand, DeleteAdminChannelGroupCommand,
     DeleteAdminProviderSecretCommand, ListAdminAiResourceGroupResourcesQuery,
     ListAdminAiResourceGroupsQuery, ListAdminAiResourcesQuery,
@@ -167,7 +166,7 @@ impl AdminAiResourceStore for AiRoutingCacheInvalidatingAdminAiResourceStore {
     fn list_ai_resources<'a>(
         &'a self,
         query: ListAdminAiResourcesQuery,
-    ) -> AdminAiResourceReadFuture<'a, Vec<AdminAiResourceItem>> {
+    ) -> AdminAiResourceReadFuture<'a, AdminAiResourceListPage> {
         self.inner.list_ai_resources(query)
     }
 
@@ -205,7 +204,7 @@ impl AdminAiResourceStore for AiRoutingCacheInvalidatingAdminAiResourceStore {
     fn list_ai_resource_group_resources<'a>(
         &'a self,
         query: ListAdminAiResourceGroupResourcesQuery,
-    ) -> AdminAiResourceReadFuture<'a, Vec<AdminAiResourceGroupResourceItem>> {
+    ) -> AdminAiResourceReadFuture<'a, AdminAiResourceGroupResourcesPage> {
         self.inner.list_ai_resource_group_resources(query)
     }
 
@@ -459,9 +458,7 @@ impl AdminChannelGroupStore for AiRoutingCacheInvalidatingAdminChannelGroupStore
     ) -> AdminChannelGroupCommandFuture<'a, Vec<AdminChannelGroupChannelBindingItem>> {
         Box::pin(async move {
             let items = self.inner.replace_channel_bindings(command).await?;
-            self.invalidator
-                .invalidate_routing_binding_facts()
-                .await?;
+            self.invalidator.invalidate_routing_binding_facts().await?;
             Ok(items)
         })
     }

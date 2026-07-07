@@ -3,9 +3,8 @@ use sqlx::{Row, SqlitePool};
 use crate::error::{store_error, RepositoryResult};
 use crate::modality;
 use crate::snapshot::{
-    build_snapshot, scope_filter, vendor_from_catalog_key, AnalyticsModelRankRow,
-    AnalyticsPieRow, AnalyticsSummaryRow, AnalyticsTrendRow, AnalyticsUserRankRow, PI_LIMIT,
-    USER_MODEL_LIMIT,
+    build_snapshot, scope_filter, vendor_from_catalog_key, AnalyticsModelRankRow, AnalyticsPieRow,
+    AnalyticsSummaryRow, AnalyticsTrendRow, AnalyticsUserRankRow, PI_LIMIT, USER_MODEL_LIMIT,
 };
 use crate::types::{
     AdminAnalyticsQuery, AdminAnalyticsReadFuture, AdminAnalyticsReadStore, AdminAnalyticsSnapshot,
@@ -135,17 +134,10 @@ async fn load_snapshot(
     let user_model_distributions =
         load_user_model_distributions(pool, tenant_id, organization_id, start_time, end_time)
             .await?;
-    let model_distribution_rows = load_model_distribution(
-        pool,
-        tenant_id,
-        organization_id,
-        start_time,
-        end_time,
-    )
-    .await?;
+    let model_distribution_rows =
+        load_model_distribution(pool, tenant_id, organization_id, start_time, end_time).await?;
     let modality_distribution_rows =
-        load_modality_distribution(pool, tenant_id, organization_id, start_time, end_time)
-            .await?;
+        load_modality_distribution(pool, tenant_id, organization_id, start_time, end_time).await?;
 
     Ok(build_snapshot(
         query.time_range,
@@ -216,8 +208,8 @@ async fn load_summary(
     .await
     .map_err(|error| store_error("admin analytics query", error))?;
 
-    let failed_requests = load_failed_requests(pool, tenant_id, organization_id, start_time, end_time)
-        .await?;
+    let failed_requests =
+        load_failed_requests(pool, tenant_id, organization_id, start_time, end_time).await?;
 
     Ok(AnalyticsSummaryRow {
         total_users: integer_cell(&row, "total_users"),

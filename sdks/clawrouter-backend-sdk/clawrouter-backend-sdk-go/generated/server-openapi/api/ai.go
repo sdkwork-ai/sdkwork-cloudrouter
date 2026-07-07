@@ -17,7 +17,7 @@ func NewAiApi(client *sdkhttp.Client) *AiApi {
     return &AiApi{client: client}
 }
 
-// List groups
+// List
 func (a *AiApi) ChannelGroupsList() (sdktypes.ChannelGroupsListResult, error) {
     raw, err := a.client.Get(BackendApiPath("/ai/channel_groups"), nil, nil)
     if err != nil {
@@ -27,9 +27,9 @@ func (a *AiApi) ChannelGroupsList() (sdktypes.ChannelGroupsListResult, error) {
     return decodeResult[sdktypes.ChannelGroupsListResult](raw)
 }
 
-// Create group
-func (a *AiApi) ChannelGroupsCreate(body sdktypes.AdminChannelGroupCreateRequest) (sdktypes.ChannelGroupsCreateResult, error) {
-    raw, err := a.client.Post(BackendApiPath("/ai/channel_groups"), body, nil, nil, "application/json")
+// Create
+func (a *AiApi) ChannelGroupsCreate() (sdktypes.ChannelGroupsCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath("/ai/channel_groups"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ChannelGroupsCreateResult
         return zero, err
@@ -37,7 +37,7 @@ func (a *AiApi) ChannelGroupsCreate(body sdktypes.AdminChannelGroupCreateRequest
     return decodeResult[sdktypes.ChannelGroupsCreateResult](raw)
 }
 
-// Delete group
+// Delete
 func (a *AiApi) ChannelGroupsDelete(channelGroupId string) (sdktypes.ChannelGroupsDeleteResult, error) {
     raw, err := a.client.Delete(BackendApiPath(fmt.Sprintf("/ai/channel_groups/%s", SerializePathParameter(channelGroupId, PathParameterSpec{Name: "channelGroupId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
@@ -47,9 +47,9 @@ func (a *AiApi) ChannelGroupsDelete(channelGroupId string) (sdktypes.ChannelGrou
     return decodeResult[sdktypes.ChannelGroupsDeleteResult](raw)
 }
 
-// Update group
-func (a *AiApi) ChannelGroupsUpdate(channelGroupId string, body sdktypes.AdminChannelGroupUpdateRequest) (sdktypes.ChannelGroupsUpdateResult, error) {
-    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/ai/channel_groups/%s", SerializePathParameter(channelGroupId, PathParameterSpec{Name: "channelGroupId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+// Update
+func (a *AiApi) ChannelGroupsUpdate(channelGroupId string) (sdktypes.ChannelGroupsUpdateResult, error) {
+    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/ai/channel_groups/%s", SerializePathParameter(channelGroupId, PathParameterSpec{Name: "channelGroupId", Style: "simple", Explode: false}))), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ChannelGroupsUpdateResult
         return zero, err
@@ -57,7 +57,7 @@ func (a *AiApi) ChannelGroupsUpdate(channelGroupId string, body sdktypes.AdminCh
     return decodeResult[sdktypes.ChannelGroupsUpdateResult](raw)
 }
 
-// List group channel bindings
+// List
 func (a *AiApi) ChannelGroupsBindingsList(channelGroupId string) (sdktypes.ChannelGroupsChannelBindingsListResult, error) {
     raw, err := a.client.Get(BackendApiPath(fmt.Sprintf("/ai/channel_groups/%s/channel_bindings", SerializePathParameter(channelGroupId, PathParameterSpec{Name: "channelGroupId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
@@ -67,9 +67,9 @@ func (a *AiApi) ChannelGroupsBindingsList(channelGroupId string) (sdktypes.Chann
     return decodeResult[sdktypes.ChannelGroupsChannelBindingsListResult](raw)
 }
 
-// Replace group channel bindings
-func (a *AiApi) ChannelGroupsBindingsUpdate(channelGroupId string, body sdktypes.AdminChannelGroupChannelBindingsReplaceRequest) (sdktypes.ChannelGroupsChannelBindingsUpdateResult, error) {
-    raw, err := a.client.Put(BackendApiPath(fmt.Sprintf("/ai/channel_groups/%s/channel_bindings", SerializePathParameter(channelGroupId, PathParameterSpec{Name: "channelGroupId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+// Update
+func (a *AiApi) ChannelGroupsBindingsUpdate(channelGroupId string) (sdktypes.ChannelGroupsChannelBindingsUpdateResult, error) {
+    raw, err := a.client.Put(BackendApiPath(fmt.Sprintf("/ai/channel_groups/%s/channel_bindings", SerializePathParameter(channelGroupId, PathParameterSpec{Name: "channelGroupId", Style: "simple", Explode: false}))), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ChannelGroupsChannelBindingsUpdateResult
         return zero, err
@@ -77,7 +77,7 @@ func (a *AiApi) ChannelGroupsBindingsUpdate(channelGroupId string, body sdktypes
     return decodeResult[sdktypes.ChannelGroupsChannelBindingsUpdateResult](raw)
 }
 
-// List group route explain
+// Retrieve
 func (a *AiApi) ChannelGroupsRouteExplainRetrieve(channelGroupId string) (sdktypes.ChannelGroupsRouteExplainRetrieveResult, error) {
     raw, err := a.client.Get(BackendApiPath(fmt.Sprintf("/ai/channel_groups/%s/route_explain", SerializePathParameter(channelGroupId, PathParameterSpec{Name: "channelGroupId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
@@ -87,16 +87,19 @@ func (a *AiApi) ChannelGroupsRouteExplainRetrieve(channelGroupId string) (sdktyp
     return decodeResult[sdktypes.ChannelGroupsRouteExplainRetrieveResult](raw)
 }
 
-// List model mappings
-func (a *AiApi) ModelMappingsList(bindingType *string, vendorCode *string, channelId *string, channelCode *string, q *string) (sdktypes.ModelMappingsListResult, error) {
-    query := BuildQueryString([]QueryParameterSpec{
-        {Name: "binding_type", Value: func() interface{} { if bindingType == nil { return nil }; return *bindingType }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "vendor_code", Value: func() interface{} { if vendorCode == nil { return nil }; return *vendorCode }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "channel_id", Value: func() interface{} { if channelId == nil { return nil }; return *channelId }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "channel_code", Value: func() interface{} { if channelCode == nil { return nil }; return *channelCode }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "q", Value: func() interface{} { if q == nil { return nil }; return *q }(), Style: "form", Explode: true, AllowReserved: false},
-    })
-    raw, err := a.client.Get(AppendQueryString(BackendApiPath("/ai/model_mappings"), query), nil, nil)
+// List
+func (a *AiApi) ModelMappingOptionsList() (sdktypes.ModelMappingOptionsListResult, error) {
+    raw, err := a.client.Get(BackendApiPath("/ai/model_mapping_options"), nil, nil)
+    if err != nil {
+        var zero sdktypes.ModelMappingOptionsListResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ModelMappingOptionsListResult](raw)
+}
+
+// List
+func (a *AiApi) ModelMappingsList() (sdktypes.ModelMappingsListResult, error) {
+    raw, err := a.client.Get(BackendApiPath("/ai/model_mappings"), nil, nil)
     if err != nil {
         var zero sdktypes.ModelMappingsListResult
         return zero, err
@@ -104,9 +107,9 @@ func (a *AiApi) ModelMappingsList(bindingType *string, vendorCode *string, chann
     return decodeResult[sdktypes.ModelMappingsListResult](raw)
 }
 
-// Create model mapping
-func (a *AiApi) ModelMappingsCreate(body sdktypes.AdminModelMappingCreateRequest) (sdktypes.ModelMappingsCreateResult, error) {
-    raw, err := a.client.Post(BackendApiPath("/ai/model_mappings"), body, nil, nil, "application/json")
+// Create
+func (a *AiApi) ModelMappingsCreate() (sdktypes.ModelMappingsCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath("/ai/model_mappings"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ModelMappingsCreateResult
         return zero, err
@@ -114,9 +117,19 @@ func (a *AiApi) ModelMappingsCreate(body sdktypes.AdminModelMappingCreateRequest
     return decodeResult[sdktypes.ModelMappingsCreateResult](raw)
 }
 
-// Resolve model mapping
-func (a *AiApi) ModelMappingsResolveCreate(body sdktypes.AdminModelMappingResolveRequest) (sdktypes.ModelMappingsResolveCreateResult, error) {
-    raw, err := a.client.Post(BackendApiPath("/ai/model_mappings/resolve"), body, nil, nil, "application/json")
+// Replace
+func (a *AiApi) ModelMappingsReplace() (sdktypes.ModelMappingsReplaceResult, error) {
+    raw, err := a.client.Put(BackendApiPath("/ai/model_mappings"), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ModelMappingsReplaceResult
+        return zero, err
+    }
+    return decodeResult[sdktypes.ModelMappingsReplaceResult](raw)
+}
+
+// Create
+func (a *AiApi) ModelMappingsResolveCreate() (sdktypes.ModelMappingsResolveCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath("/ai/model_mappings/resolve"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ModelMappingsResolveCreateResult
         return zero, err
@@ -124,7 +137,7 @@ func (a *AiApi) ModelMappingsResolveCreate(body sdktypes.AdminModelMappingResolv
     return decodeResult[sdktypes.ModelMappingsResolveCreateResult](raw)
 }
 
-// Delete model mapping
+// Delete
 func (a *AiApi) ModelMappingsDelete(mappingId string) (sdktypes.ModelMappingsDeleteResult, error) {
     raw, err := a.client.Delete(BackendApiPath(fmt.Sprintf("/ai/model_mappings/%s", SerializePathParameter(mappingId, PathParameterSpec{Name: "mappingId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
@@ -134,9 +147,9 @@ func (a *AiApi) ModelMappingsDelete(mappingId string) (sdktypes.ModelMappingsDel
     return decodeResult[sdktypes.ModelMappingsDeleteResult](raw)
 }
 
-// Update model mapping
-func (a *AiApi) ModelMappingsUpdate(mappingId string, body sdktypes.AdminModelMappingUpdateRequest) (sdktypes.ModelMappingsUpdateResult, error) {
-    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/ai/model_mappings/%s", SerializePathParameter(mappingId, PathParameterSpec{Name: "mappingId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+// Update
+func (a *AiApi) ModelMappingsUpdate(mappingId string) (sdktypes.ModelMappingsUpdateResult, error) {
+    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/ai/model_mappings/%s", SerializePathParameter(mappingId, PathParameterSpec{Name: "mappingId", Style: "simple", Explode: false}))), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ModelMappingsUpdateResult
         return zero, err
@@ -144,14 +157,14 @@ func (a *AiApi) ModelMappingsUpdate(mappingId string, body sdktypes.AdminModelMa
     return decodeResult[sdktypes.ModelMappingsUpdateResult](raw)
 }
 
-// List model rankings
-func (a *AiApi) ModelRankingsList(rankScope *string, vendorCode *string, modality *string, q *string, limit *string) (sdktypes.ModelRankingsListResult, error) {
+// List
+func (a *AiApi) ModelRankingsList(rankScope *string, vendorCode *string, modality *string, q *string, pageSize *int) (sdktypes.ModelRankingsListResult, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "rank_scope", Value: func() interface{} { if rankScope == nil { return nil }; return *rankScope }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "vendor_code", Value: func() interface{} { if vendorCode == nil { return nil }; return *vendorCode }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "modality", Value: func() interface{} { if modality == nil { return nil }; return *modality }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "q", Value: func() interface{} { if q == nil { return nil }; return *q }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(BackendApiPath("/ai/model_rankings"), query), nil, nil)
     if err != nil {
@@ -161,11 +174,11 @@ func (a *AiApi) ModelRankingsList(rankScope *string, vendorCode *string, modalit
     return decodeResult[sdktypes.ModelRankingsListResult](raw)
 }
 
-// List model ranking refresh jobs
-func (a *AiApi) ModelRankingsJobsList(rankScope *string, limit *string) (sdktypes.ModelRankingsJobsListResult, error) {
+// List
+func (a *AiApi) ModelRankingsJobsList(rankScope *string, pageSize *int) (sdktypes.ModelRankingsJobsListResult, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "rank_scope", Value: func() interface{} { if rankScope == nil { return nil }; return *rankScope }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(BackendApiPath("/ai/model_rankings/jobs"), query), nil, nil)
     if err != nil {
@@ -175,9 +188,9 @@ func (a *AiApi) ModelRankingsJobsList(rankScope *string, limit *string) (sdktype
     return decodeResult[sdktypes.ModelRankingsJobsListResult](raw)
 }
 
-// Trigger model ranking refresh
-func (a *AiApi) ModelRankingsRefresh(body sdktypes.ModelRankingRefreshTriggerRequest) (sdktypes.ModelRankingsRefreshResult, error) {
-    raw, err := a.client.Post(BackendApiPath("/ai/model_rankings/refresh"), body, nil, nil, "application/json")
+// Refresh
+func (a *AiApi) ModelRankingsRefresh() (sdktypes.ModelRankingsRefreshResult, error) {
+    raw, err := a.client.Post(BackendApiPath("/ai/model_rankings/refresh"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ModelRankingsRefreshResult
         return zero, err
@@ -185,10 +198,18 @@ func (a *AiApi) ModelRankingsRefresh(body sdktypes.ModelRankingRefreshTriggerReq
     return decodeResult[sdktypes.ModelRankingsRefreshResult](raw)
 }
 
-// List model ranking refresh status
-func (a *AiApi) ModelRankingsStatusRetrieve(rankScope *string) (sdktypes.ModelRankingsStatusRetrieveResult, error) {
+// Retrieve
+func (a *AiApi) ModelRankingsStatusRetrieve(page *int, pageSize *int, q *string, billingMeter *string, vendorCodes []string, modalities []string, capabilities []string, categories []string, groups []string) (sdktypes.ModelRankingsStatusRetrieveResult, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "rank_scope", Value: func() interface{} { if rankScope == nil { return nil }; return *rankScope }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page", Value: func() interface{} { if page == nil { return nil }; return *page }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "q", Value: func() interface{} { if q == nil { return nil }; return *q }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "billing_meter", Value: func() interface{} { if billingMeter == nil { return nil }; return *billingMeter }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "vendor_codes", Value: func() interface{} { if vendorCodes == nil { return nil }; return *vendorCodes }(), Style: "form", Explode: false, AllowReserved: false},
+        {Name: "modalities", Value: func() interface{} { if modalities == nil { return nil }; return *modalities }(), Style: "form", Explode: false, AllowReserved: false},
+        {Name: "capabilities", Value: func() interface{} { if capabilities == nil { return nil }; return *capabilities }(), Style: "form", Explode: false, AllowReserved: false},
+        {Name: "categories", Value: func() interface{} { if categories == nil { return nil }; return *categories }(), Style: "form", Explode: false, AllowReserved: false},
+        {Name: "groups", Value: func() interface{} { if groups == nil { return nil }; return *groups }(), Style: "form", Explode: false, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(BackendApiPath("/ai/model_rankings/status"), query), nil, nil)
     if err != nil {
@@ -198,7 +219,7 @@ func (a *AiApi) ModelRankingsStatusRetrieve(rankScope *string) (sdktypes.ModelRa
     return decodeResult[sdktypes.ModelRankingsStatusRetrieveResult](raw)
 }
 
-// List vendors
+// List
 func (a *AiApi) ModelVendorsList() (sdktypes.ModelVendorsListResult, error) {
     raw, err := a.client.Get(BackendApiPath("/ai/model_vendors"), nil, nil)
     if err != nil {
@@ -208,9 +229,9 @@ func (a *AiApi) ModelVendorsList() (sdktypes.ModelVendorsListResult, error) {
     return decodeResult[sdktypes.ModelVendorsListResult](raw)
 }
 
-// Create vendor
-func (a *AiApi) ModelVendorsCreate(body sdktypes.AdminModelVendorCreateRequest) (sdktypes.ModelVendorsCreateResult, error) {
-    raw, err := a.client.Post(BackendApiPath("/ai/model_vendors"), body, nil, nil, "application/json")
+// Create
+func (a *AiApi) ModelVendorsCreate() (sdktypes.ModelVendorsCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath("/ai/model_vendors"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ModelVendorsCreateResult
         return zero, err
@@ -218,9 +239,20 @@ func (a *AiApi) ModelVendorsCreate(body sdktypes.AdminModelVendorCreateRequest) 
     return decodeResult[sdktypes.ModelVendorsCreateResult](raw)
 }
 
-// List models
-func (a *AiApi) ModelsList() (sdktypes.ModelsListResult, error) {
-    raw, err := a.client.Get(BackendApiPath("/ai/models"), nil, nil)
+// List
+func (a *AiApi) ModelsList(page *int, pageSize *int, q *string, billingMeter *string, vendorCodes []string, modalities []string, capabilities []string, categories []string, groups []string) (sdktypes.ModelsListResult, error) {
+    query := BuildQueryString([]QueryParameterSpec{
+        {Name: "page", Value: func() interface{} { if page == nil { return nil }; return *page }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "q", Value: func() interface{} { if q == nil { return nil }; return *q }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "billing_meter", Value: func() interface{} { if billingMeter == nil { return nil }; return *billingMeter }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "vendor_codes", Value: func() interface{} { if vendorCodes == nil { return nil }; return *vendorCodes }(), Style: "form", Explode: false, AllowReserved: false},
+        {Name: "modalities", Value: func() interface{} { if modalities == nil { return nil }; return *modalities }(), Style: "form", Explode: false, AllowReserved: false},
+        {Name: "capabilities", Value: func() interface{} { if capabilities == nil { return nil }; return *capabilities }(), Style: "form", Explode: false, AllowReserved: false},
+        {Name: "categories", Value: func() interface{} { if categories == nil { return nil }; return *categories }(), Style: "form", Explode: false, AllowReserved: false},
+        {Name: "groups", Value: func() interface{} { if groups == nil { return nil }; return *groups }(), Style: "form", Explode: false, AllowReserved: false},
+    })
+    raw, err := a.client.Get(AppendQueryString(BackendApiPath("/ai/models"), query), nil, nil)
     if err != nil {
         var zero sdktypes.ModelsListResult
         return zero, err
@@ -228,9 +260,9 @@ func (a *AiApi) ModelsList() (sdktypes.ModelsListResult, error) {
     return decodeResult[sdktypes.ModelsListResult](raw)
 }
 
-// Create model
-func (a *AiApi) ModelsCreate(body sdktypes.AdminAiModelCreateRequest) (sdktypes.ModelsCreateResult, error) {
-    raw, err := a.client.Post(BackendApiPath("/ai/models"), body, nil, nil, "application/json")
+// Create
+func (a *AiApi) ModelsCreate() (sdktypes.ModelsCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath("/ai/models"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ModelsCreateResult
         return zero, err
@@ -238,9 +270,9 @@ func (a *AiApi) ModelsCreate(body sdktypes.AdminAiModelCreateRequest) (sdktypes.
     return decodeResult[sdktypes.ModelsCreateResult](raw)
 }
 
-// Sync vendors and models
-func (a *AiApi) ModelsRefresh(body sdktypes.AdminModelCatalogSyncRequest) (sdktypes.ModelsRefreshResult, error) {
-    raw, err := a.client.Post(BackendApiPath("/ai/models/refresh"), body, nil, nil, "application/json")
+// Refresh
+func (a *AiApi) ModelsRefresh() (sdktypes.ModelsRefreshResult, error) {
+    raw, err := a.client.Post(BackendApiPath("/ai/models/refresh"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ModelsRefreshResult
         return zero, err
@@ -248,7 +280,7 @@ func (a *AiApi) ModelsRefresh(body sdktypes.AdminModelCatalogSyncRequest) (sdkty
     return decodeResult[sdktypes.ModelsRefreshResult](raw)
 }
 
-// Delete model
+// Delete
 func (a *AiApi) ModelsDelete(modelId string) (sdktypes.ModelsDeleteResult, error) {
     raw, err := a.client.Delete(BackendApiPath(fmt.Sprintf("/ai/models/%s", SerializePathParameter(modelId, PathParameterSpec{Name: "modelId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
@@ -258,9 +290,9 @@ func (a *AiApi) ModelsDelete(modelId string) (sdktypes.ModelsDeleteResult, error
     return decodeResult[sdktypes.ModelsDeleteResult](raw)
 }
 
-// Update model
-func (a *AiApi) ModelsUpdate(modelId string, body sdktypes.AdminAiModelUpdateRequest) (sdktypes.ModelsUpdateResult, error) {
-    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/ai/models/%s", SerializePathParameter(modelId, PathParameterSpec{Name: "modelId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+// Update
+func (a *AiApi) ModelsUpdate(modelId string) (sdktypes.ModelsUpdateResult, error) {
+    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/ai/models/%s", SerializePathParameter(modelId, PathParameterSpec{Name: "modelId", Style: "simple", Explode: false}))), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.ModelsUpdateResult
         return zero, err
@@ -268,7 +300,7 @@ func (a *AiApi) ModelsUpdate(modelId string, body sdktypes.AdminAiModelUpdateReq
     return decodeResult[sdktypes.ModelsUpdateResult](raw)
 }
 
-// List resource groups
+// List
 func (a *AiApi) GetResourceGroupsList() (sdktypes.AiResourceGroupsListResult, error) {
     raw, err := a.client.Get(BackendApiPath("/ai/resource_groups"), nil, nil)
     if err != nil {
@@ -278,9 +310,9 @@ func (a *AiApi) GetResourceGroupsList() (sdktypes.AiResourceGroupsListResult, er
     return decodeResult[sdktypes.AiResourceGroupsListResult](raw)
 }
 
-// Create resource group
-func (a *AiApi) ResourceGroupsCreate(body sdktypes.AdminAiResourceGroupCreateRequest) (sdktypes.AiResourceGroupsCreateResult, error) {
-    raw, err := a.client.Post(BackendApiPath("/ai/resource_groups"), body, nil, nil, "application/json")
+// Create
+func (a *AiApi) ResourceGroupsCreate() (sdktypes.AiResourceGroupsCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath("/ai/resource_groups"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.AiResourceGroupsCreateResult
         return zero, err
@@ -288,7 +320,7 @@ func (a *AiApi) ResourceGroupsCreate(body sdktypes.AdminAiResourceGroupCreateReq
     return decodeResult[sdktypes.AiResourceGroupsCreateResult](raw)
 }
 
-// List resource group resources
+// List
 func (a *AiApi) GetResourceGroupsListResourceGroups(groupIdOrCode string) (sdktypes.AiResourceGroupsResourcesListResult, error) {
     raw, err := a.client.Get(BackendApiPath(fmt.Sprintf("/ai/resource_groups/%s/resources", SerializePathParameter(groupIdOrCode, PathParameterSpec{Name: "groupIdOrCode", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
@@ -298,7 +330,7 @@ func (a *AiApi) GetResourceGroupsListResourceGroups(groupIdOrCode string) (sdkty
     return decodeResult[sdktypes.AiResourceGroupsResourcesListResult](raw)
 }
 
-// Delete resource group
+// Delete
 func (a *AiApi) ResourceGroupsDelete(groupId string) (sdktypes.AiResourceGroupsDeleteResult, error) {
     raw, err := a.client.Delete(BackendApiPath(fmt.Sprintf("/ai/resource_groups/%s", SerializePathParameter(groupId, PathParameterSpec{Name: "groupId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
@@ -308,9 +340,9 @@ func (a *AiApi) ResourceGroupsDelete(groupId string) (sdktypes.AiResourceGroupsD
     return decodeResult[sdktypes.AiResourceGroupsDeleteResult](raw)
 }
 
-// Update resource group
-func (a *AiApi) ResourceGroupsUpdate(groupId string, body sdktypes.AdminAiResourceGroupUpdateRequest) (sdktypes.AiResourceGroupsUpdateResult, error) {
-    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/ai/resource_groups/%s", SerializePathParameter(groupId, PathParameterSpec{Name: "groupId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+// Update
+func (a *AiApi) ResourceGroupsUpdate(groupId string) (sdktypes.AiResourceGroupsUpdateResult, error) {
+    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/ai/resource_groups/%s", SerializePathParameter(groupId, PathParameterSpec{Name: "groupId", Style: "simple", Explode: false}))), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.AiResourceGroupsUpdateResult
         return zero, err
@@ -318,7 +350,7 @@ func (a *AiApi) ResourceGroupsUpdate(groupId string, body sdktypes.AdminAiResour
     return decodeResult[sdktypes.AiResourceGroupsUpdateResult](raw)
 }
 
-// List ai resources
+// List
 func (a *AiApi) ResourcesList() (sdktypes.AiResourcesListResult, error) {
     raw, err := a.client.Get(BackendApiPath("/ai/resources"), nil, nil)
     if err != nil {
@@ -328,9 +360,9 @@ func (a *AiApi) ResourcesList() (sdktypes.AiResourcesListResult, error) {
     return decodeResult[sdktypes.AiResourcesListResult](raw)
 }
 
-// Create ai resource
-func (a *AiApi) ResourcesCreate(body sdktypes.AdminAiResourceCreateRequest) (sdktypes.AiResourcesCreateResult, error) {
-    raw, err := a.client.Post(BackendApiPath("/ai/resources"), body, nil, nil, "application/json")
+// Create
+func (a *AiApi) ResourcesCreate() (sdktypes.AiResourcesCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath("/ai/resources"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.AiResourcesCreateResult
         return zero, err
@@ -338,9 +370,9 @@ func (a *AiApi) ResourcesCreate(body sdktypes.AdminAiResourceCreateRequest) (sdk
     return decodeResult[sdktypes.AiResourcesCreateResult](raw)
 }
 
-// Update ai resource
-func (a *AiApi) ResourcesUpdate(resourceId string, body sdktypes.AdminAiResourceUpdateRequest) (sdktypes.AiResourcesUpdateResult, error) {
-    raw, err := a.client.Put(BackendApiPath(fmt.Sprintf("/ai/resources/%s", SerializePathParameter(resourceId, PathParameterSpec{Name: "resourceId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+// Update
+func (a *AiApi) ResourcesUpdate(resourceId string) (sdktypes.AiResourcesUpdateResult, error) {
+    raw, err := a.client.Put(BackendApiPath(fmt.Sprintf("/ai/resources/%s", SerializePathParameter(resourceId, PathParameterSpec{Name: "resourceId", Style: "simple", Explode: false}))), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.AiResourcesUpdateResult
         return zero, err
@@ -348,9 +380,9 @@ func (a *AiApi) ResourcesUpdate(resourceId string, body sdktypes.AdminAiResource
     return decodeResult[sdktypes.AiResourcesUpdateResult](raw)
 }
 
-// List runtime route explain
-func (a *AiApi) RouteExplainCreate(body sdktypes.AdminRuntimeRouteExplainRequest) (sdktypes.RouteExplainCreateResult, error) {
-    raw, err := a.client.Post(BackendApiPath("/ai/route_explain"), body, nil, nil, "application/json")
+// Create
+func (a *AiApi) RouteExplainCreate() (sdktypes.RouteExplainCreateResult, error) {
+    raw, err := a.client.Post(BackendApiPath("/ai/route_explain"), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.RouteExplainCreateResult
         return zero, err

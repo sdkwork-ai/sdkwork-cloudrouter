@@ -5,7 +5,9 @@ use sdkwork_clawrouter_app_gateway_traces_repository_sqlx::{
 };
 
 use crate::domain::DomainError;
-use crate::ports::{AppGatewayTracesListQuery, AppGatewayTracesReadFuture, AppGatewayTracesReadStore};
+use crate::ports::{
+    AppGatewayTracesListQuery, AppGatewayTracesReadFuture, AppGatewayTracesReadStore,
+};
 
 #[derive(Debug, Clone)]
 pub struct PostgresAppGatewayTracesReadStore(RepositoryPostgresAppGatewayTracesReadStore);

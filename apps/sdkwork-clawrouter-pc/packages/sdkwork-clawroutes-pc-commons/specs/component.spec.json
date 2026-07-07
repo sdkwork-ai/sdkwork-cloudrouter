@@ -350,7 +350,12 @@
       "../../../../../specs/dependency-api-surfaces.json"
     ],
     "routeManifest": null,
-    "dependencyApiSurfaces": "../../../../../specs/dependency-api-surfaces.json"
+    "dependencyApiSurfaces": [
+      {
+        "mode": "manifest-ref",
+        "manifestRef": "../../../../../specs/dependency-api-surfaces.json"
+      }
+    ]
   },
   "integration": {
     "authority": "Root SDKWork specs remain authoritative. Local specs may extend but must not contradict them.",

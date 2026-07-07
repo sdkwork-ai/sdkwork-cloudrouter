@@ -55,19 +55,30 @@ client.SetHeader("X-Custom-Header", "value")
 
 ## API Modules
 
+- `client.System` - system API
 - `client.Ai` - ai API
 - `client.Chat` - chat API
 - `client.Iam` - iam API
 - `client.Notification` - notification API
 - `client.Runtime` - runtime API
-- `client.System` - system API
 
 ## Usage Examples
+
+### system
+
+```go
+// List
+result, err := client.System.AfterSalesRequestsList()
+if err != nil {
+    panic(err)
+}
+fmt.Println(result)
+```
 
 ### ai
 
 ```go
-// List groups
+// List
 result, err := client.Ai.ChannelGroupsList()
 if err != nil {
     panic(err)
@@ -78,12 +89,8 @@ fmt.Println(result)
 ### chat
 
 ```go
-// List product chat conversations
-params := map[string]interface{}{
-    "page": "page",
-    "page_size": "page_size",
-}
-result, err := client.Chat.ConversationsList(params)
+// List
+result, err := client.Chat.ConversationsList()
 if err != nil {
     panic(err)
 }
@@ -93,7 +100,7 @@ fmt.Println(result)
 ### iam
 
 ```go
-// List keys
+// List
 result, err := client.Iam.ApiKeysList()
 if err != nil {
     panic(err)
@@ -104,13 +111,8 @@ fmt.Println(result)
 ### notification
 
 ```go
-// List portal notifications
-params := map[string]interface{}{
-    "include_archived": true,
-    "page": "page",
-    "page_size": "page_size",
-}
-result, err := client.Notification.NotificationsList(params)
+// List
+result, err := client.Notification.NotificationsList()
 if err != nil {
     panic(err)
 }
@@ -120,32 +122,8 @@ fmt.Println(result)
 ### runtime
 
 ```go
-// List runtime invocations
-params := map[string]interface{}{
-    "page": "page",
-    "page_size": "page_size",
-    "conversation_id": "conversation_id",
-    "chat_turn_id": "chat_turn_id",
-    "agent_session_id": "agent_session_id",
-    "runtime": "runtime",
-    "status": "status",
-}
-result, err := client.Runtime.InvocationsList(params)
-if err != nil {
-    panic(err)
-}
-fmt.Println(result)
-```
-
-### system
-
-```go
-// Retrieve public site runtime branding settings
-params := map[string]interface{}{
-    "tenant_code": "tenant_code",
-    "organization_code": "organization_code",
-}
-result, err := client.System.SiteRuntimeRetrieve(params)
+// List
+result, err := client.Runtime.InvocationsList()
 if err != nil {
     panic(err)
 }

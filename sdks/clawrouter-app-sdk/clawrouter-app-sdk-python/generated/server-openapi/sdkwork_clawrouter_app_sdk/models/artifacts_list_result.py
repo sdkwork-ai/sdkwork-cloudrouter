@@ -3,12 +3,12 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 if TYPE_CHECKING:
-    from .runtime_artifact_list_response import RuntimeArtifactListResponse
+    from .no_data import NoData
 
 
 @dataclass
 class ArtifactsListResult:
     """Artifacts list result schema exposed by Claw Router."""
-    code: str
-    data: Optional[RuntimeArtifactListResponse] = None
-    msg: Optional[str] = None
+    code: int
+    data: Any
+    trace_id: str

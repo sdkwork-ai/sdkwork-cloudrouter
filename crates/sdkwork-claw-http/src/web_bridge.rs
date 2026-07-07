@@ -1,9 +1,9 @@
 use axum::extract::Request;
 use axum::http::Extensions;
-use sdkwork_iam_context_service::IamAppContext;
 use sdkwork_iam_bootstrap::{
     parse_iam_sql_organization_id, parse_iam_sql_tenant_id, parse_iam_sql_user_id,
 };
+use sdkwork_iam_context_service::IamAppContext;
 use sdkwork_web_core::WebRequestContext;
 
 use crate::auth::{
@@ -38,9 +38,7 @@ fn trusted_request_subject_from_ids(
 
 /// Returns true when sdkwork-web-framework already authenticated a principal but the
 /// legacy `TrustedRequestSubject` bridge could not map string IDs into `i64` fields.
-pub fn authenticated_principal_failed_trusted_subject_projection(
-    extensions: &Extensions,
-) -> bool {
+pub fn authenticated_principal_failed_trusted_subject_projection(extensions: &Extensions) -> bool {
     let Some(context) = extensions.get::<WebRequestContext>() else {
         return false;
     };
@@ -82,8 +80,7 @@ pub fn trusted_request_subject_from_web_context(
 ) -> Option<TrustedRequestSubject> {
     let principal = context.principal.as_ref()?;
     let tenant_id = parse_legacy_subject_tenant_i64(principal.tenant_id())?;
-    let organization_id =
-        parse_legacy_subject_organization_id(principal.organization_id());
+    let organization_id = parse_legacy_subject_organization_id(principal.organization_id());
     let user_id = parse_legacy_subject_user_i64(principal.user_id())?;
     Some(trusted_request_subject_from_ids(
         tenant_id,
@@ -366,7 +363,10 @@ mod tests {
         request.extensions_mut().insert(context);
 
         assert!(trusted_request_subject_from_web_context(
-            request.extensions().get::<WebRequestContext>().expect("context")
+            request
+                .extensions()
+                .get::<WebRequestContext>()
+                .expect("context")
         )
         .is_none());
         assert!(authenticated_principal_failed_trusted_subject_projection(

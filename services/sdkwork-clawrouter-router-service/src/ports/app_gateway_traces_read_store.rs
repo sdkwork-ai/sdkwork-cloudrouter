@@ -2,8 +2,8 @@ use std::future::Future;
 use std::pin::Pin;
 
 pub use sdkwork_clawrouter_app_gateway_traces_repository_sqlx::{
-    AppGatewayTraceItem, AppGatewayTraceItems, AppGatewayTracesListPage,
-    AppGatewayTracesListQuery, AppGatewayTracesSubject,
+    AppGatewayTraceItem, AppGatewayTraceItems, AppGatewayTracesListPage, AppGatewayTracesListQuery,
+    AppGatewayTracesSubject,
 };
 
 use crate::domain::DomainResult;

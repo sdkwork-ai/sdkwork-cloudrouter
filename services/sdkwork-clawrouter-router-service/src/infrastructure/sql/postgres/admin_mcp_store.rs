@@ -5,8 +5,8 @@ use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::model_catalog_import::stable_uuid;
 use crate::ports::{
     AdminMcpBindingItem, AdminMcpCommandFuture, AdminMcpDiscoveryResult, AdminMcpHealthCheckItem,
-    AdminMcpListPage, AdminMcpServerItem, AdminMcpServerRevisionItem, AdminMcpStore, AdminMcpSubject,
-    AdminMcpToolItem, CreateAdminMcpBindingCommand, CreateAdminMcpServerCommand,
+    AdminMcpListPage, AdminMcpServerItem, AdminMcpServerRevisionItem, AdminMcpStore,
+    AdminMcpSubject, AdminMcpToolItem, CreateAdminMcpBindingCommand, CreateAdminMcpServerCommand,
     CreateAdminMcpServerRevisionCommand, DiscoverAdminMcpToolsCommand, GetAdminMcpServerQuery,
     ListAdminMcpBindingsQuery, ListAdminMcpServerRevisionsQuery, ListAdminMcpServersQuery,
     ListAdminMcpToolsQuery, PublishAdminMcpServerRevisionCommand, TestAdminMcpServerHealthCommand,
@@ -179,7 +179,10 @@ async fn list_servers(
         .first()
         .and_then(|row| row.try_get::<i64, _>("total").ok())
         .unwrap_or(0);
-    let items = rows.iter().map(row_to_server).collect::<DomainResult<Vec<_>>>()?;
+    let items = rows
+        .iter()
+        .map(row_to_server)
+        .collect::<DomainResult<Vec<_>>>()?;
     Ok(AdminMcpListPage {
         items,
         total,
@@ -381,7 +384,10 @@ async fn list_revisions(
         .first()
         .and_then(|row| row.try_get::<i64, _>("total").ok())
         .unwrap_or(0);
-    let items = rows.iter().map(row_to_revision).collect::<DomainResult<Vec<_>>>()?;
+    let items = rows
+        .iter()
+        .map(row_to_revision)
+        .collect::<DomainResult<Vec<_>>>()?;
     Ok(AdminMcpListPage {
         items,
         total,
@@ -629,7 +635,10 @@ async fn list_tools(
         .first()
         .and_then(|row| row.try_get::<i64, _>("total").ok())
         .unwrap_or(0);
-    let items = rows.iter().map(row_to_tool).collect::<DomainResult<Vec<_>>>()?;
+    let items = rows
+        .iter()
+        .map(row_to_tool)
+        .collect::<DomainResult<Vec<_>>>()?;
     Ok(AdminMcpListPage {
         items,
         total,
@@ -788,7 +797,10 @@ async fn list_bindings(
         .first()
         .and_then(|row| row.try_get::<i64, _>("total").ok())
         .unwrap_or(0);
-    let items = rows.iter().map(row_to_binding).collect::<DomainResult<Vec<_>>>()?;
+    let items = rows
+        .iter()
+        .map(row_to_binding)
+        .collect::<DomainResult<Vec<_>>>()?;
     Ok(AdminMcpListPage {
         items,
         total,

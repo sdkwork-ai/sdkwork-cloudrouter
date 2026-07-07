@@ -64,23 +64,109 @@ export function resolvePortalPackageJson(packageName, configDir, parentUrl) {
   }
 
   const pnpmRoot = path.join(configDir, 'node_modules', '.pnpm');
-  if (!fs.existsSync(pnpmRoot)) {
-    return null;
-  }
-
-  const encodedPrefix = packageName.replace('/', '+');
-  const candidates = fs.readdirSync(pnpmRoot)
-    .filter((entry) => entry.startsWith(encodedPrefix.slice(0, Math.min(encodedPrefix.length, 24))))
-    .sort();
-  for (const candidate of candidates) {
-    const packageJsonPath = path.join(pnpmRoot, candidate, 'node_modules', ...packageName.split('/'), 'package.json');
-    if (fs.existsSync(packageJsonPath)) {
-      return packageJsonPath;
+  if (fs.existsSync(pnpmRoot)) {
+    const encodedPrefix = packageName.replace('/', '+');
+    const candidates = fs.readdirSync(pnpmRoot)
+      .filter((entry) => entry.startsWith(encodedPrefix.slice(0, Math.min(encodedPrefix.length, 24))))
+      .sort();
+    for (const candidate of candidates) {
+      const packageJsonPath = path.join(pnpmRoot, candidate, 'node_modules', ...packageName.split('/'), 'package.json');
+      if (fs.existsSync(packageJsonPath)) {
+        return packageJsonPath;
+      }
+    }
+    for (const candidate of fs.readdirSync(pnpmRoot).sort()) {
+      const packageJsonPath = path.join(pnpmRoot, candidate, 'node_modules', ...packageName.split('/'), 'package.json');
+      if (fs.existsSync(packageJsonPath)) {
+        return packageJsonPath;
+      }
     }
   }
-  for (const candidate of fs.readdirSync(pnpmRoot).sort()) {
-    const packageJsonPath = path.join(pnpmRoot, candidate, 'node_modules', ...packageName.split('/'), 'package.json');
-    if (fs.existsSync(packageJsonPath)) {
+
+  return resolvePortalPackageJsonFromWorkspaces(packageName, configDir);
+}
+
+function readPnpmWorkspacePackageGlobs(configDir) {
+  const repoRoot = path.resolve(configDir, '../..');
+  const workspaceFile = path.join(repoRoot, 'pnpm-workspace.yaml');
+  if (!fs.existsSync(workspaceFile)) {
+    return [];
+  }
+
+  const entries = [];
+  for (const line of fs.readFileSync(workspaceFile, 'utf8').split(/\r?\n/u)) {
+    const match = line.match(/^\s*-\s+"([^"]+)"\s*$/u) ?? line.match(/^\s*-\s+'([^']+)'\s*$/u);
+    if (match) {
+      entries.push(match[1]);
+    }
+  }
+  return entries;
+}
+
+function appendExpandedWorkspaceGlob(basePathWithGlob, appendRoot) {
+  const normalizedEntry = basePathWithGlob.replace(/\\/g, '/');
+  if (!normalizedEntry.includes('*')) {
+    appendRoot(normalizedEntry);
+    return;
+  }
+
+  const starIndex = normalizedEntry.indexOf('*');
+  const prefix = path.resolve(normalizedEntry.slice(0, starIndex));
+  const suffix = normalizedEntry.slice(starIndex + 1).replace(/^\//u, '');
+  if (!fs.existsSync(prefix)) {
+    return;
+  }
+
+  for (const child of fs.readdirSync(prefix, { withFileTypes: true })) {
+    if (!child.isDirectory()) {
+      continue;
+    }
+    appendRoot(suffix ? path.join(prefix, child.name, suffix) : path.join(prefix, child.name));
+  }
+}
+
+function expandPortalWorkspaceEntries(configDir) {
+  const repoRoot = path.resolve(configDir, '../..');
+  const workspaceSources = [];
+  const portalPackageJsonPath = path.join(configDir, 'package.json');
+  if (fs.existsSync(portalPackageJsonPath)) {
+    const portalPackageJson = readPackageJsonManifest(portalPackageJsonPath);
+    for (const entry of portalPackageJson.workspaces ?? []) {
+      workspaceSources.push(path.resolve(configDir, entry));
+    }
+  }
+  for (const entry of readPnpmWorkspacePackageGlobs(configDir)) {
+    workspaceSources.push(path.resolve(repoRoot, entry));
+  }
+
+  const roots = [];
+  const seen = new Set();
+
+  function appendRoot(candidate) {
+    const resolved = path.resolve(candidate);
+    const normalized = normalizeFsPath(resolved);
+    if (seen.has(normalized)) {
+      return;
+    }
+    seen.add(normalized);
+    roots.push(resolved);
+  }
+
+  for (const source of workspaceSources) {
+    appendExpandedWorkspaceGlob(source, appendRoot);
+  }
+
+  return roots;
+}
+
+function resolvePortalPackageJsonFromWorkspaces(packageName, configDir) {
+  for (const workspaceRoot of expandPortalWorkspaceEntries(configDir)) {
+    const packageJsonPath = path.join(workspaceRoot, 'package.json');
+    if (!fs.existsSync(packageJsonPath)) {
+      continue;
+    }
+    const packageJson = readPackageJsonManifest(packageJsonPath);
+    if (packageJson.name === packageName) {
       return packageJsonPath;
     }
   }
@@ -243,22 +329,36 @@ function resolveSrcFallback(packageRoot, parsedSpecifier, entry) {
   return null;
 }
 
-export function resolvePortalPackageModule(specifier, configDir, parentUrl) {
-  const compatSpecifier = resolvePortalCompatSpecifier(specifier);
-  const cacheKey = `${compatSpecifier}::${parentUrl ?? ''}`;
-  const cached = portalPackageModuleCache.get(cacheKey);
-  if (cached !== undefined) {
-    return cached;
-  }
+function normalizePackageRootPath(packageRoot) {
+  return packageRoot.replaceAll('\\', '/');
+}
 
-  const parsedSpecifier = parsePackageSpecifier(compatSpecifier);
-  const packageJsonPath = resolvePortalPackageJson(parsedSpecifier.packageName, configDir, parentUrl);
-  if (!packageJsonPath) {
-    portalPackageModuleCache.set(cacheKey, null);
+function isTransportPackageManifest(packageJson) {
+  return (
+    packageJson.sdkworkRole === 'transport'
+    || String(packageJson.name ?? '').endsWith('-generated-typescript')
+  );
+}
+
+function resolveComposedFacadeRootFromTransportPackageRoot(packageRoot) {
+  const normalized = normalizePackageRootPath(packageRoot);
+  if (normalized.endsWith('/generated/domains/server-openapi')) {
+    const composedRoot = path.resolve(packageRoot, '../../..');
+    return fs.existsSync(path.join(composedRoot, 'package.json')) ? composedRoot : null;
+  }
+  if (normalized.endsWith('/generated/server-openapi')) {
+    const composedRoot = path.resolve(packageRoot, '../..');
+    return fs.existsSync(path.join(composedRoot, 'package.json')) ? composedRoot : null;
+  }
+  return null;
+}
+
+function resolvePortalPackageModuleFromRoot(parsedSpecifier, packageRoot) {
+  const packageJsonPath = path.join(packageRoot, 'package.json');
+  if (!fs.existsSync(packageJsonPath)) {
     return null;
   }
 
-  const packageRoot = path.dirname(packageJsonPath);
   const packageJson = readPackageJsonManifest(packageJsonPath);
   const entry = parsedSpecifier.subpath
     ? readPackageImportEntry(packageJson.exports, `./${parsedSpecifier.subpath}`)
@@ -271,8 +371,33 @@ export function resolvePortalPackageModule(specifier, configDir, parentUrl) {
       resolved = srcFallback;
     }
   }
-  if (!fs.existsSync(resolved)) {
-    portalPackageModuleCache.set(cacheKey, null);
+  return fs.existsSync(resolved) ? resolved : null;
+}
+
+export function resolvePortalPackageModule(specifier, configDir, parentUrl) {
+  const compatSpecifier = resolvePortalCompatSpecifier(specifier);
+  const cacheKey = `${compatSpecifier}::${parentUrl ?? ''}`;
+  const cached = portalPackageModuleCache.get(cacheKey);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const parsedSpecifier = parsePackageSpecifier(compatSpecifier);
+  const packageJsonPath = resolvePortalPackageJson(parsedSpecifier.packageName, configDir, parentUrl);
+  if (!packageJsonPath) {
+    return null;
+  }
+
+  const packageRoot = path.dirname(packageJsonPath);
+  const packageJson = readPackageJsonManifest(packageJsonPath);
+  let resolved = resolvePortalPackageModuleFromRoot(parsedSpecifier, packageRoot);
+  if (!resolved && isTransportPackageManifest(packageJson)) {
+    const composedRoot = resolveComposedFacadeRootFromTransportPackageRoot(packageRoot);
+    if (composedRoot) {
+      resolved = resolvePortalPackageModuleFromRoot(parsedSpecifier, composedRoot);
+    }
+  }
+  if (!resolved) {
     return null;
   }
   portalPackageModuleCache.set(cacheKey, resolved);

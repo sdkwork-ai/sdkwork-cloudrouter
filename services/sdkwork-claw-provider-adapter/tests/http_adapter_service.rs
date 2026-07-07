@@ -2,13 +2,13 @@ use std::sync::Arc;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use sdkwork_claw_provider_adapter_contract::{
-    AdapterInvocationMetadata, AdapterInvocationRequest, AdapterInvocationResponse,
-    AdapterInvocationShape, AdapterProviderContext, AdapterSecret, AdapterSubject,
-};
 use sdkwork_claw_provider_adapter::{
     AdapterInvocationContext, AdapterInvocationFuture, EndpointAdapter, ProviderAdapter,
     ProviderAdapterEndpoint,
+};
+use sdkwork_claw_provider_adapter_contract::{
+    AdapterInvocationMetadata, AdapterInvocationRequest, AdapterInvocationResponse,
+    AdapterInvocationShape, AdapterProviderContext, AdapterSecret, AdapterSubject,
 };
 use serde_json::json;
 use std::collections::{BTreeMap, BTreeSet};

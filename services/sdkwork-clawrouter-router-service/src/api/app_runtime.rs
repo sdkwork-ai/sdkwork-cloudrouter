@@ -4,6 +4,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use crate::api::app_sql_subject::{map_required_app_sql_subject, RequiredAppSqlScopedSubject};
 use axum::body::Body;
 use axum::extract::{Path, Query, State};
 use axum::http::{header, HeaderMap, HeaderValue, Method, StatusCode};
@@ -14,7 +15,6 @@ use base64::{engine::general_purpose, Engine as _};
 use bytes::Bytes;
 use futures_util::{Stream, StreamExt};
 use http_body_util::BodyExt;
-use crate::api::app_sql_subject::{map_required_app_sql_subject, RequiredAppSqlScopedSubject};
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::{Map, Value};
@@ -285,12 +285,14 @@ impl AppRuntimeStore for EmptyAppRuntimeStore {
         _subject: AppRuntimeSubject,
         _query: AppRuntimeInvocationQuery,
     ) -> AppRuntimeFuture<'a, AppRuntimeInvocationList> {
-        Box::pin(async move { Ok(AppRuntimeInvocationList {
-            items: Vec::new(),
-            total: 0,
-            page_no: _query.page.max(1),
-            page_size: _query.page_size.max(1),
-        }) })
+        Box::pin(async move {
+            Ok(AppRuntimeInvocationList {
+                items: Vec::new(),
+                total: 0,
+                page_no: _query.page.max(1),
+                page_size: _query.page_size.max(1),
+            })
+        })
     }
 
     fn get_invocation<'a>(
@@ -338,12 +340,14 @@ impl AppRuntimeStore for EmptyAppRuntimeStore {
         _page: i64,
         _page_size: i64,
     ) -> AppRuntimeFuture<'a, AppRuntimeEventList> {
-        Box::pin(async move { Ok(AppRuntimeEventList {
-            items: Vec::new(),
-            total: 0,
-            page_no: _page.max(1),
-            page_size: _page_size.max(1),
-        }) })
+        Box::pin(async move {
+            Ok(AppRuntimeEventList {
+                items: Vec::new(),
+                total: 0,
+                page_no: _page.max(1),
+                page_size: _page_size.max(1),
+            })
+        })
     }
 
     fn list_events_after<'a>(
@@ -353,12 +357,14 @@ impl AppRuntimeStore for EmptyAppRuntimeStore {
         _after_event_no: i64,
         _limit: i64,
     ) -> AppRuntimeFuture<'a, AppRuntimeEventList> {
-        Box::pin(async move { Ok(AppRuntimeEventList {
-            items: Vec::new(),
-            total: 0,
-            page_no: 1,
-            page_size: _limit.max(1),
-        }) })
+        Box::pin(async move {
+            Ok(AppRuntimeEventList {
+                items: Vec::new(),
+                total: 0,
+                page_no: 1,
+                page_size: _limit.max(1),
+            })
+        })
     }
 
     fn has_terminal_event<'a>(
@@ -395,12 +401,14 @@ impl AppRuntimeStore for EmptyAppRuntimeStore {
         _page: i64,
         _page_size: i64,
     ) -> AppRuntimeFuture<'a, AppRuntimeArtifactList> {
-        Box::pin(async move { Ok(AppRuntimeArtifactList {
-            items: Vec::new(),
-            total: 0,
-            page_no: _page.max(1),
-            page_size: _page_size.max(1),
-        }) })
+        Box::pin(async move {
+            Ok(AppRuntimeArtifactList {
+                items: Vec::new(),
+                total: 0,
+                page_no: _page.max(1),
+                page_size: _page_size.max(1),
+            })
+        })
     }
 
     fn create_artifact<'a>(
@@ -658,10 +666,7 @@ async fn create_invocation(
         }
     };
     match state.store.create_invocation(command).await {
-        Ok(item) => Json(success_envelope(AppRuntimeInvocationEnvelope {
-            item,
-        }))
-        .into_response(),
+        Ok(item) => Json(success_envelope(AppRuntimeInvocationEnvelope { item })).into_response(),
         Err(error) if error.is_conflict() => conflict(error.to_string()),
         Err(error) => app_runtime_system_response("app runtime invocation is unavailable", error),
     }
@@ -719,10 +724,8 @@ async fn complete_invocation(
                 .await
                 {
                     Ok(item) => {
-                        return Json(success_envelope(AppRuntimeInvocationEnvelope {
-                            item,
-                        }))
-                        .into_response();
+                        return Json(success_envelope(AppRuntimeInvocationEnvelope { item }))
+                            .into_response();
                     }
                     Err(error) if error.is_not_found() => return not_found(error.to_string()),
                     Err(error) if error.is_conflict() => return conflict(error.to_string()),
@@ -737,10 +740,7 @@ async fn complete_invocation(
         }
     }
     match state.store.complete_invocation(command).await {
-        Ok(item) => Json(success_envelope(AppRuntimeInvocationEnvelope {
-            item,
-        }))
-        .into_response(),
+        Ok(item) => Json(success_envelope(AppRuntimeInvocationEnvelope { item })).into_response(),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) if error.is_conflict() => conflict(error.to_string()),
         Err(error) => app_runtime_system_response("app runtime invocation is unavailable", error),
@@ -793,7 +793,12 @@ async fn list_events(
     };
     match state
         .store
-        .list_events(subject, invocation_id, pagination.page_no, pagination.page_size)
+        .list_events(
+            subject,
+            invocation_id,
+            pagination.page_no,
+            pagination.page_size,
+        )
         .await
     {
         Ok(list) => json_success_list_response(
@@ -990,7 +995,12 @@ async fn list_artifacts(
     };
     match state
         .store
-        .list_artifacts(subject, invocation_id, pagination.page_no, pagination.page_size)
+        .list_artifacts(
+            subject,
+            invocation_id,
+            pagination.page_no,
+            pagination.page_size,
+        )
         .await
     {
         Ok(list) => Json(success_envelope(list)).into_response(),
@@ -1015,9 +1025,7 @@ async fn create_artifact(
         }
     };
     match state.store.create_artifact(command).await {
-        Ok(item) => {
-            Json(success_envelope(AppRuntimeArtifactEnvelope { item })).into_response()
-        }
+        Ok(item) => Json(success_envelope(AppRuntimeArtifactEnvelope { item })).into_response(),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) if error.is_conflict() => conflict(error.to_string()),
         Err(error) => app_runtime_system_response("app runtime artifact is unavailable", error),

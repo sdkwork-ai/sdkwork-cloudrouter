@@ -1,14 +1,17 @@
-use axum::extract::{Path, Query, State};
-use axum::http::StatusCode;
+use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
+use crate::api::query_string::{parse_usize_query_param, query_pairs};
+use axum::extract::{Path, State};
+use axum::http::{StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, get, post};
 use axum::{Json, Router};
-use serde::Deserialize;
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
+use sdkwork_utils_rust::{PageInfo, PageMode, SdkWorkResultCode};
+use serde::Serialize;
 
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{platform_problem, problem_from_wire_code, success_envelope};
 use crate::application::{
-    CacheNamespaceKeyList, CacheOperationOutcome, CacheRuntimeSnapshot, RuntimeCacheManager,
+    CacheKeyMetadata, CacheNamespaceKeyList, CacheOperationOutcome, CacheRuntimeSnapshot,
+    RuntimeCacheManager,
 };
 
 #[derive(Clone)]
@@ -16,10 +19,22 @@ struct AdminCacheState {
     manager: RuntimeCacheManager,
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Default)]
 struct CacheKeyListQuery {
-    limit: Option<usize>,
+    page_size: Option<usize>,
     cursor: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CacheNamespaceKeyPage {
+    namespace: String,
+    instance_name: String,
+    scanned_items: usize,
+    returned_items: usize,
+    scan_complete: bool,
+    items: Vec<CacheKeyMetadata>,
+    page_info: PageInfo,
 }
 
 pub fn admin_cache_router_with_manager(manager: RuntimeCacheManager) -> Router {
@@ -121,22 +136,26 @@ async fn list_namespace_keys(
     State(state): State<AdminCacheState>,
     RequiredAdminSqlScopedSubject(_scoped): RequiredAdminSqlScopedSubject,
     Path(namespace): Path<String>,
-    Query(query): Query<CacheKeyListQuery>,
+    uri: Uri,
 ) -> Response {
-    let limit = match normalize_key_list_limit(query.limit) {
-        Ok(limit) => limit,
-        Err(error) => return cache_system_response("cache namespace keys list failed", error),
+    let query = match parse_cache_key_list_query(uri.query()) {
+        Ok(query) => query,
+        Err(error) => return cache_invalid_parameter_response(error),
+    };
+    let page_size = match normalize_key_list_page_size(query.page_size) {
+        Ok(page_size) => page_size,
+        Err(error) => return cache_invalid_parameter_response(error),
     };
     let cursor = match normalize_key_list_cursor(query.cursor) {
         Ok(cursor) => cursor,
-        Err(error) => return cache_system_response("cache namespace keys list failed", error),
+        Err(error) => return cache_invalid_parameter_response(error),
     };
     match state
         .manager
-        .list_namespace_keys(&namespace, limit, cursor.as_deref())
+        .list_namespace_keys(&namespace, Some(page_size), cursor.as_deref())
         .await
     {
-        Ok(keys) => cache_success(keys),
+        Ok(keys) => cache_success(cache_key_page(keys, page_size)),
         Err(error) => cache_system_response("cache namespace keys list failed", error),
     }
 }
@@ -160,23 +179,47 @@ where
 }
 
 const DEFAULT_CACHE_KEY_LIST_LIMIT: usize = 200;
+const MAX_CACHE_KEY_LIST_PAGE_SIZE: usize = 200;
 
-fn normalize_key_list_limit(limit: Option<usize>) -> crate::domain::DomainResult<Option<usize>> {
-    match limit {
-        None => Ok(Some(DEFAULT_CACHE_KEY_LIST_LIMIT)),
-        Some(0) => Err(crate::domain::DomainError::conflict(
-            "cache key list limit must be between 1 and 1000",
-        )),
-        Some(value) if value > 1_000 => Err(crate::domain::DomainError::conflict(
-            "cache key list limit must be between 1 and 1000",
-        )),
-        Some(value) => Ok(Some(value)),
+fn parse_cache_key_list_query(query: Option<&str>) -> Result<CacheKeyListQuery, String> {
+    let mut parsed = CacheKeyListQuery::default();
+    for (key, value) in query_pairs(query) {
+        match key.as_str() {
+            "page_size" => {
+                if parsed.page_size.is_some() {
+                    return Err("page_size must be provided once".to_owned());
+                }
+                parsed.page_size = Some(parse_usize_query_param("page_size", &value)?);
+            }
+            "cursor" => {
+                if parsed.cursor.is_some() {
+                    return Err("cursor must be provided once".to_owned());
+                }
+                parsed.cursor = Some(value);
+            }
+            "limit" | "pageSize" | "page_no" | "pageNo" | "per_page" | "size" | "offset" => {
+                return Err(format!(
+                    "{key} is not a supported pagination parameter; use page_size"
+                ));
+            }
+            "" => {}
+            _ => return Err(format!("unsupported cache key list query parameter: {key}")),
+        }
     }
+    Ok(parsed)
 }
 
-fn normalize_key_list_cursor(
-    cursor: Option<String>,
-) -> crate::domain::DomainResult<Option<String>> {
+fn normalize_key_list_page_size(page_size: Option<usize>) -> Result<usize, String> {
+    let page_size = page_size.unwrap_or(DEFAULT_CACHE_KEY_LIST_LIMIT);
+    if !(1..=MAX_CACHE_KEY_LIST_PAGE_SIZE).contains(&page_size) {
+        return Err(format!(
+            "page_size must be between 1 and {MAX_CACHE_KEY_LIST_PAGE_SIZE}"
+        ));
+    }
+    Ok(page_size)
+}
+
+fn normalize_key_list_cursor(cursor: Option<String>) -> Result<Option<String>, String> {
     let Some(cursor) = cursor else {
         return Ok(None);
     };
@@ -184,11 +227,37 @@ fn normalize_key_list_cursor(
         return Ok(None);
     }
     if cursor.len() > 2_048 {
-        return Err(crate::domain::DomainError::conflict(
-            "cache key list cursor must not exceed 2048 characters",
-        ));
+        return Err("cache key list cursor must not exceed 2048 characters".to_owned());
     }
     Ok(Some(cursor))
+}
+
+fn cache_key_page(keys: CacheNamespaceKeyList, page_size: usize) -> CacheNamespaceKeyPage {
+    CacheNamespaceKeyPage {
+        namespace: keys.namespace,
+        instance_name: keys.instance_name,
+        scanned_items: keys.scanned_items,
+        returned_items: keys.returned_items,
+        scan_complete: keys.scan_complete,
+        items: keys.items,
+        page_info: PageInfo {
+            mode: PageMode::Cursor,
+            page: None,
+            page_size: Some(page_size as i32),
+            total_items: None,
+            total_pages: None,
+            next_cursor: keys.next_cursor,
+            has_more: Some(keys.has_more),
+        },
+    }
+}
+
+fn cache_invalid_parameter_response(detail: impl Into<String>) -> Response {
+    (
+        StatusCode::BAD_REQUEST,
+        platform_problem(SdkWorkResultCode::InvalidParameter, detail),
+    )
+        .into_response()
 }
 
 fn cache_system_response(context: &str, error: crate::domain::DomainError) -> Response {

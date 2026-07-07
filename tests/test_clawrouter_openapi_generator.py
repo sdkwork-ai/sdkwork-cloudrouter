@@ -14,6 +14,21 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
         self.assertNotEqual("", schema.get("description", "").strip())
         self.assertNotIn("$ref", schema)
 
+    def assertSdkWorkResponseDataSchema(
+        self,
+        schema: dict[str, object],
+        expected_data_schema: dict[str, object],
+    ) -> None:
+        self.assertEqual([{"$ref": "#/components/schemas/SdkWorkApiResponse"}], schema.get("allOf")[:1])
+        overlay = schema.get("allOf")[1]
+        self.assertIsInstance(overlay, dict)
+        self.assertEqual(["data"], overlay.get("required"))
+        data_schema = overlay.get("properties", {}).get("data")
+        self.assertEqual(expected_data_schema, data_schema)
+        self.assertNotIn("code", overlay.get("properties", {}))
+        self.assertNotIn("msg", overlay.get("properties", {}))
+        self.assertNotIn("message", overlay.get("properties", {}))
+
     def walk_schema_nodes(self, value: object):
         if isinstance(value, dict):
             yield value
@@ -479,8 +494,13 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
                 )
 
             problem_detail = schemas["ProblemDetail"]
-            self.assertEqual(["type", "title", "status"], problem_detail["required"])
+            self.assertEqual(["type", "title", "status", "code", "traceId"], problem_detail["required"])
+            self.assertDescribedSchemaRef(
+                problem_detail["properties"]["code"],
+                "#/components/schemas/SdkWorkPlatformErrorCode",
+            )
             self.assertIn("traceId", problem_detail["properties"])
+            self.assertNotIn("requestId", problem_detail["properties"])
             self.assertIn("errors", problem_detail["properties"])
 
     def test_emits_path_parameters_request_body_and_query_marker(self) -> None:
@@ -506,14 +526,17 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
             backend_schemas = backend_spec["components"]["schemas"]
             self.assertIn("AnnouncementsUpdateResult", backend_schemas)
             self.assertIn("NoData", backend_schemas)
-            self.assertEqual({"code", "msg", "message", "data"}, set(backend_schemas["PlusApiResult"]["properties"]))
-            self.assertDescribedSchemaRef(
-                backend_schemas["AnnouncementsUpdateResult"]["properties"]["data"],
-                "#/components/schemas/NoData",
+            self.assertNotIn("PlusApiResult", backend_schemas)
+            self.assertSdkWorkResponseDataSchema(
+                backend_schemas["AnnouncementsUpdateResult"],
+                {
+                    "allOf": [{"$ref": "#/components/schemas/NoData"}],
+                    "description": "No business data returned by this operation.",
+                },
             )
 
             app_spec = ClawRouterOpenApiGenerator(root=root).generate("app")
-            query_operation = app_spec["paths"]["/app/v3/api/platform/store/categories"]["get"]
+            query_operation = app_spec["paths"]["/app/v3/api/ecosystem/skills/categories"]["get"]
             self.assertEqual([], query_operation["parameters"])
 
             self.assertNotIn("/app/v3/api/content/feeds/{feedId}/collect", app_spec["paths"])
@@ -546,7 +569,7 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
             )
             self.assertNotIn("requestBody", post_query_operation)
 
-    def test_void_operation_uses_operation_result_with_no_data_schema(self) -> None:
+    def test_void_operation_uses_sdkwork_response_with_no_data_schema(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_manifest(root)
@@ -561,10 +584,13 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
             )
             self.assertIn("CommentsDeleteResult", schemas)
             self.assertIn("NoData", schemas)
-            self.assertEqual({"code", "msg", "message", "data"}, set(schemas["PlusApiResult"]["properties"]))
-            self.assertDescribedSchemaRef(
-                schemas["CommentsDeleteResult"]["properties"]["data"],
-                "#/components/schemas/NoData",
+            self.assertNotIn("PlusApiResult", schemas)
+            self.assertSdkWorkResponseDataSchema(
+                schemas["CommentsDeleteResult"],
+                {
+                    "allOf": [{"$ref": "#/components/schemas/NoData"}],
+                    "description": "No business data returned by this operation.",
+                },
             )
             for schema_name, schema in schemas.items():
                 properties = schema.get("properties") if isinstance(schema, dict) else None
@@ -592,16 +618,22 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
             )
             self.assertEqual(["name", "group"], schemas["CreateApiKeyRequest"]["required"])
             self.assertEqual(128, schemas["CreateApiKeyRequest"]["properties"]["name"]["maxLength"])
-            self.assertDescribedSchemaRef(
-                schemas["ApiKeysCreateResult"]["properties"]["data"],
-                "#/components/schemas/CreateApiKeyResponse",
+            self.assertSdkWorkResponseDataSchema(
+                schemas["ApiKeysCreateResult"],
+                {
+                    "allOf": [{"$ref": "#/components/schemas/CreateApiKeyResponse"}],
+                    "description": "Data field on api keys create result.",
+                },
             )
             self.assertEqual(["item", "rawKey"], schemas["CreateApiKeyResponse"]["required"])
 
             qr_result = schemas["LoginQrCodesCreateResult"]
-            self.assertDescribedSchemaRef(
-                qr_result["properties"]["data"],
-                "#/components/schemas/IamLoginQrCodeResponse",
+            self.assertSdkWorkResponseDataSchema(
+                qr_result,
+                {
+                    "allOf": [{"$ref": "#/components/schemas/IamLoginQrCodeResponse"}],
+                    "description": "Data field on login qr codes create result.",
+                },
             )
             self.assertEqual(
                 ["qrKey", "qrContent"],
@@ -833,9 +865,25 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
                 {"$ref": "#/components/schemas/PromotionsUserCouponsWalletListResult"},
                 operation["responses"]["200"]["content"]["application/json"]["schema"],
             )
-            self.assertDescribedSchemaRef(
-                schemas["PromotionsUserCouponsWalletListResult"]["properties"]["data"],
-                "#/components/schemas/PromotionUserCouponWalletResponse",
+            self.assertSdkWorkResponseDataSchema(
+                schemas["PromotionsUserCouponsWalletListResult"],
+                {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["items", "pageInfo"],
+                    "properties": {
+                        "items": {
+                            "type": "array",
+                            "items": {"$ref": "#/components/schemas/PromotionUserCouponWalletItem"},
+                            "description": "Items field on promotions user coupons wallet list result.",
+                        },
+                        "pageInfo": {
+                            "allOf": [{"$ref": "#/components/schemas/PageInfo"}],
+                            "description": "Page info field on promotions user coupons wallet list result.",
+                        },
+                    },
+                    "description": "Data field on promotions user coupons wallet list result.",
+                },
             )
             self.assertEqual("array", schemas["PromotionUserCouponWalletResponse"]["type"])
             self.assertEqual(
@@ -955,15 +1003,26 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
                 operation["responses"]["200"]["content"]["application/json"]["schema"],
             )
             result_schema = app_spec["components"]["schemas"]["ModelVendorsListResult"]
-            self.assertEqual(
+            self.assertSdkWorkResponseDataSchema(
+                result_schema,
                 {
-                    "type": "array",
-                    "items": {"$ref": "#/components/schemas/AiModelVendorRecord"},
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["items", "pageInfo"],
+                    "properties": {
+                        "items": {
+                            "type": "array",
+                            "items": {"$ref": "#/components/schemas/AiModelVendorRecord"},
+                            "description": "Items field on model vendors list result.",
+                        },
+                        "pageInfo": {
+                            "allOf": [{"$ref": "#/components/schemas/PageInfo"}],
+                            "description": "Page info field on model vendors list result.",
+                        },
+                    },
                     "description": "Data field on model vendors list result.",
                 },
-                result_schema["properties"]["data"],
             )
-            self.assertEqual(["code"], result_schema["required"])
 
     def test_get_single_read_source_with_path_param_uses_record_response_wrapper(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -979,9 +1038,12 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
                 operation["responses"]["200"]["content"]["application/json"]["schema"],
             )
             result_schema = app_spec["components"]["schemas"]["ModelVendorsRetrieveResult"]
-            self.assertDescribedSchemaRef(
-                result_schema["properties"]["data"],
-                "#/components/schemas/AiModelVendorRecord",
+            self.assertSdkWorkResponseDataSchema(
+                result_schema,
+                {
+                    "allOf": [{"$ref": "#/components/schemas/AiModelVendorRecord"}],
+                    "description": "Data field on model vendors retrieve result.",
+                },
             )
 
     def test_dotted_operation_ids_are_structural_and_unique_per_surface(self) -> None:
@@ -997,7 +1059,6 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
             ]
 
             self.assertEqual(len(operation_ids), len(set(operation_ids)))
-            self.assertIn("store.categories.list", operation_ids)
             self.assertIn("categories.list", operation_ids)
             self.assertTrue(all("." in operation_id for operation_id in operation_ids))
 
@@ -1080,7 +1141,7 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
             schemas = app_spec["components"]["schemas"]
 
             tag_names = {tag["name"] for tag in app_spec["tags"]}
-            self.assertIn("platform", tag_names)
+            self.assertIn("ecosystem", tag_names)
             self.assertTrue(all(tag.get("description") for tag in app_spec["tags"]))
             self.assertEqual([{"AuthToken": [], "AccessToken": []}], app_spec["security"])
             self.assertEqual(
@@ -1114,9 +1175,12 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
                 redeem_operation["responses"]["200"]["content"]["application/json"]["schema"],
             )
             self.assertIn("PromotionsCodesRedemptionsCreateResult", schemas)
-            self.assertDescribedSchemaRef(
-                schemas["PromotionsCodesRedemptionsCreateResult"]["properties"]["data"],
-                "#/components/schemas/NoData",
+            self.assertSdkWorkResponseDataSchema(
+                schemas["PromotionsCodesRedemptionsCreateResult"],
+                {
+                    "allOf": [{"$ref": "#/components/schemas/NoData"}],
+                    "description": "No business data returned by this operation.",
+                },
             )
             self.assertTrue(redeem_operation["requestBody"]["description"])
 
@@ -1128,7 +1192,7 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
 
             path_operation = app_spec["paths"]["/app/v3/api/ai/model_vendors/{vendorCode}"]["get"]
             self.assertTrue(path_operation["parameters"][0]["description"])
-            query_operation = app_spec["paths"]["/app/v3/api/platform/store/categories"]["get"]
+            query_operation = app_spec["paths"]["/app/v3/api/ecosystem/skills/categories"]["get"]
             self.assertEqual([], query_operation["parameters"])
 
             self.assertTrue(schemas["CreateApiKeyRequest"]["description"])
@@ -1149,11 +1213,10 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
             self.assertIn("PromotionsCodesRedemptionsCreateRequest", schemas)
             self.assertIn("JsonValue", schemas)
             self.assertIn("JsonNull", schemas)
-            self.assertEqual({"code", "msg", "message", "data"}, set(schemas["PlusApiResult"]["properties"]))
-            self.assertDescribedSchemaRef(
-                schemas["PlusApiResult"]["properties"]["data"],
-                "#/components/schemas/NoData",
-            )
+            self.assertIn("SdkWorkApiResponse", schemas)
+            self.assertIn("SdkWorkPlatformErrorCode", schemas)
+            self.assertIn("PageInfo", schemas)
+            self.assertNotIn("PlusApiResult", schemas)
 
             nullable_ref = schemas["NullableRetryCarrier"]["properties"]["retryPolicy"]
             self.assertEqual(
@@ -1172,7 +1235,7 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
             self.assertNotIn("$ref", nullable_ref)
             self.assertNotIn("nullable", nullable_ref)
 
-    def test_success_responses_always_use_operation_results_with_explicit_data(self) -> None:
+    def test_success_responses_always_use_sdkwork_envelopes_with_explicit_data(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_manifest(root)
@@ -1207,11 +1270,8 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
                 self.assertNotIn("OperationResponse", schemas)
                 self.assertNotIn("PageResult", schemas)
                 self.assertIn("NoData", schemas)
-                self.assertEqual({"code", "msg", "message", "data"}, set(schemas["PlusApiResult"]["properties"]))
-                self.assertDescribedSchemaRef(
-                    schemas["PlusApiResult"]["properties"]["data"],
-                    "#/components/schemas/NoData",
-                )
+                self.assertIn("SdkWorkApiResponse", schemas)
+                self.assertNotIn("PlusApiResult", schemas)
                 for path, path_item in spec["paths"].items():
                     for method, operation in path_item.items():
                         with self.subTest(surface=surface, method=method, path=path):
@@ -1220,12 +1280,99 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
                             self.assertTrue(schema.get("$ref", "").endswith("Result"))
                             component_name = schema["$ref"].rsplit("/", 1)[-1]
                             self.assertIn(component_name, schemas)
-                            self.assertIn("data", schemas[component_name]["properties"])
+                            self.assertSdkWorkResponseDataSchema(
+                                schemas[component_name],
+                                schemas[component_name]["allOf"][1]["properties"]["data"],
+                            )
                 for component_name, schema in schemas.items():
-                    if component_name == "PlusApiResult" or not component_name.endswith("Result") or not isinstance(schema, dict):
+                    if not component_name.endswith("Result") or not isinstance(schema, dict):
                         continue
                     with self.subTest(surface=surface, result=component_name):
-                        self.assertIn("data", schema["properties"])
+                        self.assertSdkWorkResponseDataSchema(
+                            schema,
+                            schema["allOf"][1]["properties"]["data"],
+                        )
+
+    def test_explicit_page_payload_stays_typed_inside_sdkwork_response(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest = self.write_manifest(root)
+            payload = json.loads(manifest.read_text(encoding="utf-8"))
+            payload["operations"].append(
+                {
+                    "api_surface": "backend",
+                    "api_method": "GET",
+                    "api_path": "/backend/v3/api/system/cache/namespaces/{namespace}/keys",
+                    "operation": "listCacheNamespaceKeys",
+                    "operation_id": "cache.namespaces.keys.list",
+                    "tag": "system",
+                    "sdk_domain": "system",
+                    "kind": "read",
+                    "module": "cache",
+                    "path_params": ["namespace"],
+                    "source": "apps/portal/cacheService.ts",
+                    "read_sources": ["system"],
+                    "write_tables": [],
+                    "query_parameters_declared": True,
+                    "query_parameters": [
+                        {
+                            "name": "page_size",
+                            "schema": {
+                                "type": "integer",
+                                "format": "int32",
+                                "minimum": 1,
+                                "maximum": 200,
+                                "default": 200,
+                            },
+                        },
+                        {
+                            "name": "cursor",
+                            "schema": {"type": "string", "maxLength": 2048},
+                        },
+                    ],
+                    "response_schema": {
+                        "name": "CacheNamespaceKeyPage",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": False,
+                            "required": ["items", "pageInfo"],
+                            "properties": {
+                                "items": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "additionalProperties": False,
+                                        "required": ["key"],
+                                        "properties": {"key": {"type": "string"}},
+                                    },
+                                },
+                                "pageInfo": {"$ref": "#/components/schemas/PageInfo"},
+                            },
+                        },
+                    },
+                }
+            )
+            manifest.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+            backend_spec = ClawRouterOpenApiGenerator(root=root).generate("backend")
+            operation = backend_spec["paths"]["/backend/v3/api/system/cache/namespaces/{namespace}/keys"]["get"]
+            schemas = backend_spec["components"]["schemas"]
+
+            self.assertEqual(
+                {"$ref": "#/components/schemas/CacheNamespacesKeysListResult"},
+                operation["responses"]["200"]["content"]["application/json"]["schema"],
+            )
+            self.assertEqual(["page_size", "cursor"], [param["name"] for param in operation["parameters"][1:]])
+            self.assertNotIn("SdkWorkListResponse", operation["responses"]["200"]["content"]["application/json"]["schema"].get("$ref", ""))
+            self.assertSdkWorkResponseDataSchema(
+                schemas["CacheNamespacesKeysListResult"],
+                {
+                    "allOf": [{"$ref": "#/components/schemas/CacheNamespaceKeyPage"}],
+                    "description": "Data field on cache namespaces keys list result.",
+                },
+            )
+            self.assertNotIn("code", schemas["CacheNamespacesKeysListResult"].get("properties", {}))
+            self.assertNotIn("msg", schemas["CacheNamespacesKeysListResult"].get("properties", {}))
     def test_writes_and_checks_specs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -1238,6 +1385,10 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
                 {
                     "app": root / "generated" / "openapi" / "clawrouter-app-openapi.json",
                     "backend": root / "generated" / "openapi" / "clawrouter-backend-openapi.json",
+                    "models-catalog-app": root / "generated" / "openapi" / "clawrouter-models-catalog-app-openapi.json",
+                    "models-catalog-backend": root / "generated" / "openapi" / "clawrouter-models-catalog-backend-openapi.json",
+                    "domain-transport-app": root / "sdks" / "clawrouter-app-sdk" / "openapi" / "clawrouter-app-domain-transport.openapi.json",
+                    "domain-transport-backend": root / "sdks" / "clawrouter-backend-sdk" / "openapi" / "clawrouter-backend-domain-transport.openapi.json",
                 },
                 outputs,
             )

@@ -1,9 +1,9 @@
+use sdkwork_claw_provider_adapter::{
+    AdapterInvocationContext, AdapterInvocationFuture, EndpointAdapter, ProviderAdapterEndpoint,
+};
 use sdkwork_claw_provider_adapter_contract::{
     AdapterError, AdapterErrorKind, AdapterInvocationRequest, AdapterInvocationResponse,
     AdapterInvocationShape,
-};
-use sdkwork_claw_provider_adapter::{
-    AdapterInvocationContext, AdapterInvocationFuture, EndpointAdapter, ProviderAdapterEndpoint,
 };
 
 pub const ENDPOINT_KEY: &str = "video.start_end2video";

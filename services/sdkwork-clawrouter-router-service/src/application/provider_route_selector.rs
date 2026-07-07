@@ -168,11 +168,11 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
         &self,
         query: SelectProviderRouteQuery,
     ) -> Result<SelectedProviderRoute, ProviderRouteSelectionError> {
-        self.select_plan(query)?
-            .first_route()
-            .ok_or_else(|| ProviderRouteSelectionError::provider_route_unavailable(
+        self.select_plan(query)?.first_route().ok_or_else(|| {
+            ProviderRouteSelectionError::provider_route_unavailable(
                 "selected provider route plan contains no routes",
-            ))
+            )
+        })
     }
 
     pub fn select_plan(

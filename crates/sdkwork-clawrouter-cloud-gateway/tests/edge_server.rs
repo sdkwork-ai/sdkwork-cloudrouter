@@ -2949,7 +2949,10 @@ async fn edge_server_hsts_absent_by_default_when_not_configured() {
 
     assert_eq!(StatusCode::OK, response.status());
     assert!(
-        response.headers().get("strict-transport-security").is_none(),
+        response
+            .headers()
+            .get("strict-transport-security")
+            .is_none(),
         "HSTS header must be absent when not explicitly configured"
     );
 

@@ -135,8 +135,8 @@ fn build_otlp_layer(
     >,
     String,
 > {
-    use opentelemetry::KeyValue;
     use opentelemetry::trace::TracerProvider as _;
+    use opentelemetry::KeyValue;
     use opentelemetry_otlp::WithExportConfig;
     use opentelemetry_sdk::runtime::Tokio;
     use opentelemetry_sdk::trace::TracerProvider as SdkTracerProvider;

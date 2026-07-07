@@ -54,15 +54,8 @@ val client = SdkworkBackendClient(config)
 ## API Modules
 
 - `client.ai` - ai API
-- `client.content` - content API
-- `client.iam` - iam API
 - `client.integration` - integration API
-- `client.mcp` - mcp API
-- `client.messaging` - messaging API
-- `client.prompts` - prompts API
-- `client.serviceProviders` - service_providers API
 - `client.sites` - sites API
-- `client.storage` - storage API
 - `client.system` - system API
 
 ## Usage Examples
@@ -70,126 +63,31 @@ val client = SdkworkBackendClient(config)
 ### ai
 
 ```kotlin
-// List groups
+// List
 val result = client.ai.channelGroupsList()
-println(result)
-```
-
-### content
-
-```kotlin
-// List announcements
-val result = client.content.announcementsList()
-println(result)
-```
-
-### iam
-
-```kotlin
-// Delete API key
-val apiKeyId = "1"
-val result = client.iam.apiKeysDelete(apiKeyId)
 println(result)
 ```
 
 ### integration
 
 ```kotlin
-// List channels
+// List
 val result = client.integration.channelsList()
-println(result)
-```
-
-### mcp
-
-```kotlin
-// List MCP servers
-val params = linkedMapOf<String, Any>(
-    "page" to "page",
-    "page_size" to "page-size",
-    "q" to "q",
-    "transport" to "transport",
-    "visibility" to "visibility",
-    "status" to "status",
-    "category_id" to "1"
-)
-val result = client.mcp.serversList(params)
-println(result)
-```
-
-### messaging
-
-```kotlin
-// Messaging provider accounts list
-val params = linkedMapOf<String, Any>(
-    "page" to "page",
-    "page_size" to "page-size",
-    "q" to "q",
-    "status" to "status",
-    "channel" to "sms",
-    "provider_code" to "ok"
-)
-val result = client.messaging.providerAccountsList(params)
-println(result)
-```
-
-### prompts
-
-```kotlin
-// List admin prompts
-val params = linkedMapOf<String, Any>(
-    "page" to "page",
-    "page_size" to "page-size",
-    "q" to "q",
-    "prompt_type" to "prompt-type",
-    "visibility" to "visibility",
-    "status" to "status",
-    "category_id" to "1"
-)
-val result = client.prompts.definitionsList(params)
-println(result)
-```
-
-### service_providers
-
-```kotlin
-// Service Provider Adjustments List
-val params = linkedMapOf<String, Any>(
-    "page" to "page",
-    "page_size" to "page-size",
-    "status" to "status",
-    "provider_id" to "1",
-    "seller_provider_id" to "1",
-    "buyer_provider_id" to "1",
-    "edge_id" to "1"
-)
-val result = client.serviceProviders.adjustmentsList(params)
 println(result)
 ```
 
 ### sites
 
 ```kotlin
-// List sites
-val params = linkedMapOf<String, Any>(
-    "q" to "q"
-)
-val result = client.sites.siteCatalogList(params)
-println(result)
-```
-
-### storage
-
-```kotlin
-// List storage providers
-val result = client.storage.ossProvidersList()
+// List
+val result = client.sites.siteCatalogList()
 println(result)
 ```
 
 ### system
 
 ```kotlin
-// Retrieve IAM auth runtime settings
+// Retrieve
 val result = client.system.authSettingsRetrieve()
 println(result)
 ```

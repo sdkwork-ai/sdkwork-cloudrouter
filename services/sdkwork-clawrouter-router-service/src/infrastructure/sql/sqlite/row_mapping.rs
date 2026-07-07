@@ -558,7 +558,9 @@ pub fn channel_group_from_row(row: &SqliteRow) -> DomainResult<crate::domain::Ch
         code: row.try_get("code").map_err(row_error)?,
         pricing_plan_code: row.try_get("pricing_plan_code").map_err(row_error)?,
         rate_multiplier: row.try_get("rate_multiplier").map_err(row_error)?,
-        official_price_multiplier: row.try_get("official_price_multiplier").map_err(row_error)?,
+        official_price_multiplier: row
+            .try_get("official_price_multiplier")
+            .map_err(row_error)?,
     }
     .try_into_domain()
 }

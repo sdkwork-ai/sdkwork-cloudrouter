@@ -1,7 +1,7 @@
+use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 
 use axum::body::Bytes;
 use axum::extract::{Query, State};
@@ -175,7 +175,6 @@ async fn create_ip_rate_limit(
         }
     }
 }
-
 
 fn parse_json_body<T>(body: &[u8], entity_name: &str) -> Result<T, String>
 where

@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
+use std::sync::Arc;
 
 use axum::extract::State;
 use axum::http::StatusCode;
@@ -37,8 +37,9 @@ async fn fetch_admin_dashboard_overview(
     match state.read_store.load_dashboard(query).await {
         Ok(snapshot) => Json(success_envelope(snapshot)).into_response(),
         Err(error) => problem_from_wire_code(
-                "5000",
-                format!("admin dashboard read model is unavailable: {error}"),
-            ).into_response(),
+            "5000",
+            format!("admin dashboard read model is unavailable: {error}"),
+        )
+        .into_response(),
     }
 }
