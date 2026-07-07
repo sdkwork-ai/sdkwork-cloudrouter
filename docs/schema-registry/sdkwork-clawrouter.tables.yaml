@@ -159,6 +159,7 @@ table_fragments:
 - tables/ai-routing.yaml
 - tables/ai-metering.yaml
 - tables/ai-pricing.yaml
+- tables/iam-gateway.yaml
 modules:
   ai-routing:
     owner: claw-router-platform
@@ -210,6 +211,18 @@ modules:
     - ai_pricing_rule
     - ai_pricing_tier
     ddl_location: database/migrations/ai-pricing.sql
+  iam-gateway:
+    owner: claw-router-platform
+    description: Gateway-owned IAM API key, access policy, channel-group binding, and risk rule tables used by Claw Router
+      runtime.
+    compliance_level: L2
+    tables_count: 4
+    tables:
+    - iam_gateway_access_policy
+    - iam_gateway_api_key
+    - iam_gateway_api_key_channel_group
+    - iam_gateway_risk_rule
+    ddl_location: database/migrations/iam-gateway.sql
 registry_dependencies:
 - module_id: sdkwork-iam
   locator: ../sdkwork-iam
@@ -422,12 +435,12 @@ data_flow:
     - "sdkwork-ops-sdk\u8C03\u7528"
     - "ops_metric\u5199\u5165\uFF08sdkwork-ops\u672C\u5730\uFF09"
 statistics:
-  claw_router_local_tables: 29
+  claw_router_local_tables: 33
   combined_module_tables: 45
-  total_tables: 74
+  total_tables: 78
   table_prefix_distribution:
     ai_: 33
-    iam_: 5
+    iam_: 9
     commerce_: 18
     integration_: 17
     ops_: 7
@@ -435,7 +448,7 @@ statistics:
     catalog_: 1
     system_: 2
   module_distribution:
-    claw-router: 29
+    claw-router: 33
     sdkwork-iam: 5
     sdkwork-account: 3
     sdkwork-order: 2
@@ -450,10 +463,15 @@ statistics:
     sdkwork-analytics: 2
     sdkwork-catalog: 1
     sdkwork-platform: 2
+    iam-gateway: 4
 compliance:
   financial_tables:
   - ai_usage
-  security_tables: []
+  security_tables:
+  - iam_gateway_access_policy
+  - iam_gateway_api_key
+  - iam_gateway_api_key_channel_group
+  - iam_gateway_risk_rule
   audit_tables:
   - ai_request_trace
   - ai_routing_decision_log

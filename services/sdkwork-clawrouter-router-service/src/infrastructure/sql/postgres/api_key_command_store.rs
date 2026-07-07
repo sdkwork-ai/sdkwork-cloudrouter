@@ -288,22 +288,28 @@ async fn insert_access_policy(
     }
     let allowed_capabilities_json = to_json(&command.allowed_capabilities)?;
     let ip_allowlist_json = to_json(&command.ip_allowlist)?;
-    let id: i64 = sqlx::query_scalar(
+    let id = next_claw_runtime_id("gateway access policy creation")?;
+    sqlx::query(
         r#"
         INSERT INTO iam_gateway_access_policy
-            (uuid, name, allowed_capabilities, ip_allowlist, network_policy_mode, ip_rule_count, status, effective_from)
+            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, name, allowed_capabilities, ip_allowlist, network_policy_mode, ip_rule_count, effective_from)
         VALUES
-            ($1, $2, $3::jsonb, $4::jsonb, $5, $6, 1, CURRENT_TIMESTAMP)
-        RETURNING id
+            ($1, $2, $3, $4, 1, 1, $5::timestamptz, $6::timestamptz, 0, $7, $8::jsonb, $9::jsonb, $10, $11, $12::timestamptz)
         "#,
     )
+    .bind(id)
     .bind(&command.access_policy_uuid)
+    .bind(command.tenant_id)
+    .bind(command.organization_id)
+    .bind(&command.created_at)
+    .bind(&command.created_at)
     .bind(format!("{} access policy", command.name))
     .bind(allowed_capabilities_json)
     .bind(ip_allowlist_json)
     .bind(if command.ip_allowlist.is_empty() { 0_i32 } else { 1_i32 })
     .bind(command.ip_allowlist.len() as i32)
-    .fetch_one(&mut **tx)
+    .bind(&command.created_at)
+    .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to create api key access policy", error))?;
 
@@ -356,15 +362,16 @@ async fn insert_api_key(
     api_key_secret_codec: &(dyn ApiKeySecretCodec + Send + Sync),
 ) -> DomainResult<GatewayApiKey> {
     let metadata = api_key_metadata_json(command, api_key_secret_codec)?;
-    let id: i64 = sqlx::query_scalar(
+    let id = next_claw_runtime_id("gateway api key creation")?;
+    sqlx::query(
         r#"
         INSERT INTO iam_gateway_api_key
-            (uuid, tenant_id, organization_id, user_id, channel_group_id, name, key_prefix, key_display_masked, key_hash, hash_alg, secret_version, idempotency_key, policy_id, quota_policy_id, status, created_at, updated_at, expire_at, last_revealed_at, metadata)
+            (id, uuid, tenant_id, organization_id, user_id, channel_group_id, name, key_prefix, key_display_masked, key_hash, hash_alg, secret_version, idempotency_key, policy_id, quota_policy_id, status, created_at, updated_at, expire_at, last_revealed_at, metadata)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 1, $15::timestamptz, $16::timestamptz, $17::timestamptz, CURRENT_TIMESTAMP, $18::jsonb)
-        RETURNING id
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 1, $16::timestamptz, $17::timestamptz, $18::timestamptz, CURRENT_TIMESTAMP, $19::jsonb)
         "#,
     )
+    .bind(id)
     .bind(&command.api_key_uuid)
     .bind(command.tenant_id)
     .bind(command.organization_id)
@@ -383,7 +390,7 @@ async fn insert_api_key(
     .bind(&command.created_at)
     .bind(command.expire_at.as_deref())
     .bind(&metadata)
-    .fetch_one(&mut **tx)
+    .execute(&mut **tx)
     .await
     .map_err(store_create_api_key_error)?;
 
@@ -765,22 +772,28 @@ async fn upsert_update_access_policy(
             ip_allowlist,
         )));
     }
-    let id: i64 = sqlx::query_scalar(
+    let id = next_claw_runtime_id("gateway access policy update creation")?;
+    sqlx::query(
         r#"
         INSERT INTO iam_gateway_access_policy
-            (uuid, name, allowed_capabilities, ip_allowlist, network_policy_mode, ip_rule_count, status, effective_from)
+            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, name, allowed_capabilities, ip_allowlist, network_policy_mode, ip_rule_count, effective_from)
         VALUES
-            ($1, $2, $3::jsonb, $4::jsonb, $5, $6, 1, CURRENT_TIMESTAMP)
-        RETURNING id
+            ($1, $2, $3, $4, 1, 1, $5::timestamptz, $6::timestamptz, 0, $7, $8::jsonb, $9::jsonb, $10, $11, $12::timestamptz)
         "#,
     )
+    .bind(id)
     .bind(&command.access_policy_uuid)
+    .bind(command.tenant_id)
+    .bind(command.organization_id)
+    .bind(&command.requested_at)
+    .bind(&command.requested_at)
     .bind(format!("api key {} access policy", command.api_key_id))
     .bind(to_json(&allowed_capabilities)?)
     .bind(to_json(&ip_allowlist)?)
     .bind(if ip_allowlist.is_empty() { 0_i32 } else { 1_i32 })
     .bind(ip_allowlist.len() as i32)
-    .fetch_one(&mut **tx)
+    .bind(&command.requested_at)
+    .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to create api key access policy", error))?;
     Ok(Some(GatewayAccessPolicy::new(

@@ -29,7 +29,11 @@
     "ai_site",
     "ai_site_service",
     "ai_usage",
-    "ai_usage_service_provider_edge"
+    "ai_usage_service_provider_edge",
+    "iam_gateway_access_policy",
+    "iam_gateway_api_key",
+    "iam_gateway_api_key_channel_group",
+    "iam_gateway_risk_rule"
   ],
   "routes": {
     "/": {
@@ -322,16 +326,16 @@
   },
   "summary": {
     "api_surface_counts": {
-      "app": 38,
-      "backend": 48,
+      "app": 42,
+      "backend": 52,
       "openai_v1": 3,
-      "worker": 44
+      "worker": 48
     },
     "external_legacy_table_count": 0,
     "frontend_route_count": 18,
-    "generated_table_count": 29,
+    "generated_table_count": 33,
     "legacy_table_count": 0,
-    "table_count": 48
+    "table_count": 52
   },
   "tables": [
     {
@@ -15625,6 +15629,1249 @@
         }
       ],
       "write_owner": "sdkwork-models-platform"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "name",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "policy_type",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "subject_type",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "subject_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "subject_ref_hash",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "subject_ref_masked",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "allowed_capabilities",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "denied_capabilities",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "allowed_models",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "denied_models",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "network_policy_mode",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "ip_rule_count",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "ip_allowlist",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "ip_denylist",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "region_allowlist",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "max_context_tokens",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "data_retention_mode",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "effective_from",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "effective_to",
+          "source": "explicit",
+          "type": "instant"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "iam_gateway",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "subject_type",
+            "subject_id",
+            "status"
+          ],
+          "name": "idx_iam_gateway_access_policy_tenant_subject_status",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "subject_type",
+            "subject_ref_hash",
+            "status"
+          ],
+          "name": "idx_iam_gateway_access_policy_subject_ref",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "tenant_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "iam_gateway_access_policy",
+      "unique_constraints": [],
+      "write_owner": "gateway-iam-service"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "user_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "owner_type",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "owner_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "legacy_api_key_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "channel_group_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "name",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "key_prefix",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "key_display_masked",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "key_hash",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "hash_alg",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "secret_version",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "idempotency_key",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "policy_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "quota_policy_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "rate_limit_policy_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "environment",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "expire_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "last_used_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "last_used_ip_hash",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "last_used_ip_masked",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "last_used_ip_region",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "last_revealed_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "rotated_from_key_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "revoked_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "revoked_by",
+          "source": "explicit",
+          "type": "int64"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "iam_gateway",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "status",
+            "updated_at",
+            "id"
+          ],
+          "name": "idx_iam_gateway_api_key_tenant_user_status",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "channel_group_id",
+            "status",
+            "updated_at",
+            "id"
+          ],
+          "name": "idx_iam_gateway_api_key_ai_channel_group_status",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "tenant_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "iam_gateway_api_key",
+      "unique_constraints": [
+        {
+          "columns": [
+            "key_hash"
+          ],
+          "name": "uk_iam_gateway_api_key_hash"
+        },
+        {
+          "columns": [
+            "legacy_api_key_id"
+          ],
+          "name": "uk_iam_gateway_api_key_legacy"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "idempotency_key"
+          ],
+          "name": "uk_iam_gateway_api_key_idempotency"
+        }
+      ],
+      "write_owner": "gateway-iam-service"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "user_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "owner_type",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "owner_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "api_key_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "channel_group_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "channel_group_code",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "binding_role",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "routing_strategy",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "priority",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "weight",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "effective_from",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "effective_to",
+          "source": "explicit",
+          "type": "instant"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "iam_gateway",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "api_key_id",
+            "status",
+            "priority",
+            "weight",
+            "id"
+          ],
+          "name": "idx_iam_gateway_api_key_channel_group_active",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "channel_group_id",
+            "status",
+            "priority",
+            "id"
+          ],
+          "name": "idx_iam_gateway_api_key_channel_group_group",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "tenant_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "iam_gateway_api_key_channel_group",
+      "unique_constraints": [
+        {
+          "columns": [
+            "uuid"
+          ],
+          "name": "uk_iam_gateway_api_key_channel_group_uuid"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "api_key_id",
+            "channel_group_id",
+            "binding_role"
+          ],
+          "name": "uk_iam_gateway_api_key_channel_group_binding"
+        }
+      ],
+      "write_owner": "gateway-iam-service"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "rule_name",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "rule_category",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "rule_type",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "scope_type",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "scope_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "target_type",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "target_value",
+          "source": "explicit",
+          "type": "string(256)"
+        },
+        {
+          "name": "target_value_hash",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "target_value_masked",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "target_value_cipher_ref",
+          "source": "explicit",
+          "type": "string(256)"
+        },
+        {
+          "name": "match_mode",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "reason",
+          "source": "explicit",
+          "type": "string(512)"
+        },
+        {
+          "name": "action",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "priority",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "requests_per_second",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "requests_per_minute",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "requests_per_day",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "tokens_per_minute",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "burst_limit",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "block_duration_seconds",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "effective_from",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "effective_to",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "hit_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "last_hit_at",
+          "source": "explicit",
+          "type": "instant"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "iam_gateway",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "rule_category",
+            "scope_type",
+            "scope_id",
+            "priority",
+            "status"
+          ],
+          "name": "idx_iam_gateway_risk_rule_scope_priority",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "target_type",
+            "target_value_hash",
+            "status"
+          ],
+          "name": "idx_iam_gateway_risk_rule_target_hash",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "tenant_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "iam_gateway_risk_rule",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "rule_type",
+            "target_type",
+            "target_value"
+          ],
+          "name": "uk_iam_gateway_risk_rule_tenant_target"
+        }
+      ],
+      "write_owner": "gateway-iam-service"
     }
   ]
 }

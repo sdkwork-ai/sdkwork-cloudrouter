@@ -208,6 +208,18 @@ modules:
     - ai_pricing_rule
     - ai_pricing_tier
     ddl_location: database/migrations/ai-pricing.sql
+  iam-gateway:
+    owner: claw-router-platform
+    description: Gateway-owned IAM API key, access policy, channel-group binding,
+      and risk rule tables used by Claw Router runtime.
+    compliance_level: L2
+    tables_count: 4
+    tables:
+    - iam_gateway_access_policy
+    - iam_gateway_api_key
+    - iam_gateway_api_key_channel_group
+    - iam_gateway_risk_rule
+    ddl_location: database/migrations/iam-gateway.sql
 data_flow:
   usage_to_account:
     description: 用量推送到账户模块
@@ -230,12 +242,12 @@ data_flow:
     - sdkwork-ops-sdk调用
     - ops_metric写入（sdkwork-ops本地）
 statistics:
-  claw_router_local_tables: 29
+  claw_router_local_tables: 33
   combined_module_tables: 45
-  total_tables: 74
+  total_tables: 78
   table_prefix_distribution:
     ai_: 33
-    iam_: 5
+    iam_: 9
     commerce_: 18
     integration_: 17
     ops_: 7
@@ -243,7 +255,7 @@ statistics:
     catalog_: 1
     system_: 2
   module_distribution:
-    claw-router: 29
+    claw-router: 33
     sdkwork-iam: 5
     sdkwork-account: 3
     sdkwork-order: 2
@@ -258,10 +270,15 @@ statistics:
     sdkwork-analytics: 2
     sdkwork-catalog: 1
     sdkwork-platform: 2
+    iam-gateway: 4
 compliance:
   financial_tables:
   - ai_usage
-  security_tables: []
+  security_tables:
+  - iam_gateway_access_policy
+  - iam_gateway_api_key
+  - iam_gateway_api_key_channel_group
+  - iam_gateway_risk_rule
   audit_tables:
   - ai_request_trace
   - ai_routing_decision_log
@@ -3825,3 +3842,250 @@ tables:
   generated_by_this_project: false
   imported: true
   imported_from_module: sdkwork-models
+- table: iam_gateway_access_policy
+  domain: iam_gateway
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: gateway-iam-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    name: string(128)
+    policy_type: int32
+    subject_type: int32
+    subject_id: int64
+    subject_ref_hash: string(128)
+    subject_ref_masked: string(128)
+    allowed_capabilities: json
+    denied_capabilities: json
+    allowed_models: json
+    denied_models: json
+    network_policy_mode: int32
+    ip_rule_count: int32
+    ip_allowlist: json
+    ip_denylist: json
+    region_allowlist: json
+    max_context_tokens: int64
+    data_retention_mode: int32
+    effective_from: instant
+    effective_to: instant
+  indexes:
+  - name: idx_iam_gateway_access_policy_tenant_subject_status
+    columns:
+    - tenant_id
+    - organization_id
+    - subject_type
+    - subject_id
+    - status
+  - name: idx_iam_gateway_access_policy_subject_ref
+    columns:
+    - tenant_id
+    - organization_id
+    - subject_type
+    - subject_ref_hash
+    - status
+  imported: false
+- table: iam_gateway_api_key
+  domain: iam_gateway
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: gateway-iam-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    user_id:
+      type: int64
+      constraints: NOT NULL
+    owner_type: int32
+    owner_id: int64
+    legacy_api_key_id: int64
+    channel_group_id: int64
+    name: string(128)
+    key_prefix: string(32)
+    key_display_masked: string(64)
+    key_hash: string(128)
+    hash_alg: string(32)
+    secret_version: int64
+    idempotency_key:
+      type: string(128)
+      constraints: NOT NULL
+    policy_id: int64
+    quota_policy_id: int64
+    rate_limit_policy_id: int64
+    environment: int32
+    expire_at: instant
+    last_used_at: instant
+    last_used_ip_hash: string(128)
+    last_used_ip_masked: string(64)
+    last_used_ip_region: string(128)
+    last_revealed_at: instant
+    rotated_from_key_id: int64
+    revoked_at: instant
+    revoked_by: int64
+  unique_constraints:
+  - name: uk_iam_gateway_api_key_hash
+    columns:
+    - key_hash
+  - name: uk_iam_gateway_api_key_legacy
+    columns:
+    - legacy_api_key_id
+  - name: uk_iam_gateway_api_key_idempotency
+    columns:
+    - tenant_id
+    - idempotency_key
+  indexes:
+  - name: idx_iam_gateway_api_key_tenant_user_status
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - status
+    - updated_at
+    - id
+  - name: idx_iam_gateway_api_key_ai_channel_group_status
+    columns:
+    - tenant_id
+    - organization_id
+    - channel_group_id
+    - status
+    - updated_at
+    - id
+  imported: false
+- table: iam_gateway_api_key_channel_group
+  domain: iam_gateway
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: gateway-iam-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    user_id:
+      type: int64
+      constraints: NOT NULL
+    owner_type: int32
+    owner_id: int64
+    api_key_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    channel_group_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    channel_group_code: string(64)
+    binding_role:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'route'
+    routing_strategy:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'auto'
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    weight:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    effective_from: instant
+    effective_to: instant
+  unique_constraints:
+  - name: uk_iam_gateway_api_key_channel_group_uuid
+    columns:
+    - uuid
+  - name: uk_iam_gateway_api_key_channel_group_binding
+    columns:
+    - tenant_id
+    - organization_id
+    - api_key_id
+    - channel_group_id
+    - binding_role
+  indexes:
+  - name: idx_iam_gateway_api_key_channel_group_active
+    columns:
+    - tenant_id
+    - organization_id
+    - api_key_id
+    - status
+    - priority
+    - weight
+    - id
+  - name: idx_iam_gateway_api_key_channel_group_group
+    columns:
+    - tenant_id
+    - organization_id
+    - channel_group_id
+    - status
+    - priority
+    - id
+  imported: false
+- table: iam_gateway_risk_rule
+  domain: iam_gateway
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: gateway-iam-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    rule_name: string(128)
+    rule_category: int32
+    rule_type: int32
+    scope_type: int32
+    scope_id: int64
+    target_type: int32
+    target_value: string(256)
+    target_value_hash: string(128)
+    target_value_masked: string(128)
+    target_value_cipher_ref: string(256)
+    match_mode: int32
+    reason: string(512)
+    action: int32
+    priority: int32
+    requests_per_second: int64
+    requests_per_minute: int64
+    requests_per_day: int64
+    tokens_per_minute: int64
+    burst_limit: decimal
+    block_duration_seconds: int64
+    effective_from: instant
+    effective_to: instant
+    hit_count: int64
+    last_hit_at: instant
+  unique_constraints:
+  - name: uk_iam_gateway_risk_rule_tenant_target
+    columns:
+    - tenant_id
+    - organization_id
+    - rule_type
+    - target_type
+    - target_value
+  indexes:
+  - name: idx_iam_gateway_risk_rule_scope_priority
+    columns:
+    - tenant_id
+    - organization_id
+    - rule_category
+    - scope_type
+    - scope_id
+    - priority
+    - status
+  - name: idx_iam_gateway_risk_rule_target_hash
+    columns:
+    - tenant_id
+    - organization_id
+    - target_type
+    - target_value_hash
+    - status
+  imported: false
