@@ -54,7 +54,7 @@ source: docs/schema-registry/sdkwork-clawrouter.tables.yaml
 | 表名 | 说明 | profile | write_owner | 行业对标 |
 | --- | --- | --- | --- | --- |
 | `ai_usage` | 用量事实（核心计费数据）⭐ | `ledger_source_fact` | `router-service` | Stripe Usage Records |
-| `ai_usage_trace` | 用量追踪（请求链路日志） | `event_log` | `router-service` | AWS X-Ray Tracing |
+| `ai_request_trace` | 请求追踪（请求链路日志） | `event_log` | `router-service` | AWS X-Ray Tracing |
 
 **关键说明**：
 - `ai_usage`是Claw Router的核心价值表
@@ -127,7 +127,7 @@ source: docs/schema-registry/sdkwork-clawrouter.tables.yaml
 | Profile | 说明 | 示例表 |
 |---------|------|--------|
 | `ledger_source_fact` | 不可变账本事实表（金融级别） | ai_usage |
-| `event_log` | 事件日志表（append-only） | ai_routing_log, ai_usage_trace |
+| `event_log` | 事件日志表（append-only） | ai_routing_log, ai_request_trace |
 | `tenant_entity` | 租户级实体表（可修改） | ai_group, ai_routing_policy |
 | `credential_ref` | 凭据引用表（不存储明文） | ai_channel |
 | `relation_entity` | 关系绑定表 | ai_channel_binding, ai_group_resource |
@@ -216,7 +216,7 @@ source: docs/schema-registry/sdkwork-clawrouter.tables.yaml
 ```yaml
 Claw Router本地DDL:
   ai-metering模块:
-    - database/migrations/ai-metering.sql (ai_usage + ai_usage_trace)
+    - database/migrations/ai-metering.sql (ai_usage + ai_request_trace)
     - 合规等级: L3金融级别
     - 已生成完整DDL ✅
   

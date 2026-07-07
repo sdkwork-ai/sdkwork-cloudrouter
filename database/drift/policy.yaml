@@ -23,7 +23,7 @@ rules:
     # Partitioned tables: default partitions are managed by retention jobs.
     - "ai_request_trace_default.*"
     - "ai_routing_decision_log_default.*"
-    - "ai_usage_fact_default.*"
+    - "ai_usage_default.*"
     - "ai_usage_default.*"
     - "ai_usage_service_provider_edge_default.*"
     - "ops_audit_log_default.*"

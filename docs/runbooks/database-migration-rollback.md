@@ -108,7 +108,7 @@ recovery_target_time = '2026-06-27 02:00:00 UTC'
 ```bash
 kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
   psql -h postgres -U clawrouter -c \
-  "SELECT COUNT(*) FROM ai_usage_fact;
+  "SELECT COUNT(*) FROM ai_usage;
    SELECT COUNT(*) FROM ops_audit_log;
    SELECT COUNT(*) FROM ai_routing;"
 ```
@@ -117,7 +117,7 @@ kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
 
 | Check | Command / probe | Pass criteria |
 |-------|-----------------|---------------|
-| Table structure | `\d ai_usage_fact` against schema registry | Matches `docs/schema-registry/*.yaml` |
+| Table structure | `\d ai_usage` against schema registry | Matches `docs/schema-registry/*.yaml` |
 | Indexes present | `\di` for critical tables | No missing indexes vs baseline |
 | Row counts | `SELECT COUNT(*)` per critical table | Within tolerance of pre-migration snapshot |
 | Flyway history clean | `flyway_schema_history` query | No `success = false` rows |
@@ -135,9 +135,9 @@ kubectl scale deployment claw-router-admin-api --replicas=1 -n clawrouter
 ## Post-Incident Improvement
 
 - **Add the missing `down` migration** for the version that lacked one.
-- **Extend migration tests** — add a CI step that applies `up` then `down` on a
+- **Extend migration tests** 鈥?add a CI step that applies `up` then `down` on a
   throwaway database and asserts schema equivalence with the baseline.
-- **Tighten the schema guardian** — fail CI when a tenant-scoped table change
+- **Tighten the schema guardian** 鈥?fail CI when a tenant-scoped table change
   lacks a reversible counterpart (see `TECH-20-schema-guardian-quality-gate.md`).
 - Record the incident in the runbook index *Last Drill* tracker
   ([README.md](README.md)).

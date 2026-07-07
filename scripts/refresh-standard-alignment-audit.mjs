@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// @sdkwork/clawrouter-workspace �??refresh-standard-alignment-audit.mjs
+// @sdkwork/clawrouter-workspace 锟??refresh-standard-alignment-audit.mjs
 //
 // Generates `generated/audit/standard-alignment-facts.json` by reading the
 // repository source of truth. The audit document
@@ -397,7 +397,7 @@ function collectMetricsFacts() {
 function collectTableConsistencyFacts() {
   // Count claw-router-owned tables across the three owned sources of truth.
   // The 90-table effective registry and 154-table catalog include sibling
-  // module tables (iam, commerce, etc.) and are NOT drift �??they are a
+  // module tables (iam, commerce, etc.) and are NOT drift 锟??they are a
   // scope difference. The claw-router-owned count must be consistent.
   const ddlPath = "database/ddl/baseline/postgres/0001_clawrouter_baseline.sql";
   const registryPath = "database/contract/table-registry.json";
@@ -406,7 +406,7 @@ function collectTableConsistencyFacts() {
   let ddlCount = 0;
   if (fileExists(ddlPath)) {
     const ddl = readText(ddlPath);
-    // Count CREATE TABLE IF NOT EXISTS <name> ( �??this regex already excludes
+    // Count CREATE TABLE IF NOT EXISTS <name> ( 锟??this regex already excludes
     // PARTITION OF attachments because they end with DEFAULT; (no opening paren).
     ddlCount = (ddl.match(/CREATE TABLE IF NOT EXISTS\s+\w+\s*\(/g) || []).length;
   }
@@ -440,7 +440,7 @@ function collectTablePartitionFacts() {
   const requiredTables = [
     "ai_request_trace",
     "ai_routing_decision_log",
-    "ai_usage_fact",
+    "ai_usage",
     "ai_usage_service_provider_edge",
   ];
   if (!fileExists(ddlPath)) return { exists: false, allPartitioned: false, tables: [] };
@@ -547,7 +547,7 @@ function buildP0Status(facts) {
 
   items.push({
     id: "p0-high-traffic-table-partition",
-    title: "High-traffic table partitioning (ai_request_trace / ai_routing_decision_log / ai_usage_fact / ai_usage_service_provider_edge)",
+    title: "High-traffic table partitioning (ai_request_trace / ai_routing_decision_log / ai_usage / ai_usage_service_provider_edge)",
     status: facts.tablePartition.allPartitioned ? "done" : "pending",
     evidence: facts.tablePartition,
   });

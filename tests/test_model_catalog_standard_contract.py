@@ -687,8 +687,8 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
         ):
             self.assertRegex(pricing_block, rf"\b{column}\s+NUMERIC\(38,\s*12\)")
 
-        usage_fact_block = create_table_block(read_text(GENERATED_SCHEMA_PATH), "ai_usage_fact")
-        self.assertTrue(usage_fact_block, "ai_usage_fact table must exist in generated schema")
+        usage_fact_block = create_table_block(read_text(GENERATED_SCHEMA_PATH), "ai_usage")
+        self.assertTrue(usage_fact_block, "ai_usage table must exist in generated schema")
         for column in (
             "currency",
             "pricing_id",
@@ -705,7 +705,7 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
             self.assertRegex(
                 usage_fact_block,
                 rf"\b{column}\b",
-                f"ai_usage_fact missing pricing/settlement column {column}",
+                f"ai_usage missing pricing/settlement column {column}",
             )
 
     def test_installer_runtime_schema_uses_only_canonical_model_catalog_tables(self) -> None:
@@ -1495,7 +1495,7 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
             "ai_model_rank_snapshot": ("model",),
             "ai_routing_decision_log": ("requested_model", "resolved_model"),
             "ai_request_trace": ("requested_model", "provider_model", "provider_native_model"),
-            "ai_usage_fact": ("model", "provider_native_model"),
+            "ai_usage": ("model", "provider_native_model"),
             "ai_resource": ("model", "provider_native_model"),
         }
         for table_name, column_names in expected_model_identity_columns.items():
@@ -1865,7 +1865,7 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
             / "gateway_usage_recorder.rs"
         )
 
-        for table_name in ("ai_request_trace", "ai_usage_fact"):
+        for table_name in ("ai_request_trace", "ai_usage"):
             with self.subTest(table=table_name):
                 table = tables[table_name]
                 self.assertIn("region_code", table.get("columns", {}))

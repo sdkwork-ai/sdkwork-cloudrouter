@@ -2,7 +2,7 @@
   "interfaces": [
     {
       "data_sources": [
-        "ai_usage_fact",
+        "ai_usage",
         "ai_request_trace"
       ],
       "fields": [
@@ -19,7 +19,7 @@
     },
     {
       "data_sources": [
-        "ai_usage_fact",
+        "ai_usage",
         "ai_request_trace"
       ],
       "fields": [
@@ -43,7 +43,7 @@
     },
     {
       "data_sources": [
-        "ai_usage_fact",
+        "ai_usage",
         "ai_request_trace"
       ],
       "fields": [
@@ -94,7 +94,7 @@
     },
     {
       "data_sources": [
-        "ai_usage_fact",
+        "ai_usage",
         "ai_request_trace"
       ],
       "fields": [
@@ -110,7 +110,7 @@
     },
     {
       "data_sources": [
-        "ai_usage_fact",
+        "ai_usage",
         "ai_request_trace"
       ],
       "fields": [
@@ -134,7 +134,7 @@
     },
     {
       "data_sources": [
-        "ai_usage_fact",
+        "ai_usage",
         "ai_request_trace"
       ],
       "fields": [
@@ -151,7 +151,7 @@
     },
     {
       "data_sources": [
-        "ai_usage_fact"
+        "ai_usage"
       ],
       "fields": [
         "rank",
@@ -173,7 +173,7 @@
     },
     {
       "data_sources": [
-        "ai_usage_fact"
+        "ai_usage"
       ],
       "fields": [
         "name",
@@ -829,7 +829,7 @@
     },
     {
       "data_sources": [
-        "ai_usage_fact",
+        "ai_usage",
         "ai_request_trace"
       ],
       "fields": [
@@ -842,7 +842,7 @@
     },
     {
       "data_sources": [
-        "ai_usage_fact",
+        "ai_usage",
         "ai_request_trace"
       ],
       "fields": [
@@ -895,7 +895,7 @@
     },
     {
       "data_sources": [
-        "ai_usage_fact",
+        "ai_usage",
         "ai_request_trace"
       ],
       "fields": [
@@ -910,7 +910,7 @@
     },
     {
       "data_sources": [
-        "ai_usage_fact"
+        "ai_usage"
       ],
       "fields": [
         "name",
@@ -926,7 +926,7 @@
     {
       "data_sources": [
         "ai_request_trace",
-        "ai_usage_fact"
+        "ai_usage"
       ],
       "fields": [
         "id",
@@ -950,7 +950,7 @@
     {
       "data_sources": [
         "ai_request_trace",
-        "ai_usage_fact"
+        "ai_usage"
       ],
       "fields": [
         "time",
@@ -1555,7 +1555,7 @@
     {
       "data_sources": [
         "ai_request_trace",
-        "ai_usage_fact",
+        "ai_usage",
         "ai_routing_decision_log"
       ],
       "fields": [
@@ -1949,7 +1949,7 @@
     },
     {
       "data_sources": [
-        "ai_usage_fact"
+        "ai_usage"
       ],
       "fields": [
         "time",
@@ -1967,7 +1967,7 @@
     {
       "data_sources": [
         "ai_model_rank_snapshot",
-        "ai_usage_fact"
+        "ai_usage"
       ],
       "fields": [
         "rank",
@@ -2027,7 +2027,7 @@
     {
       "data_sources": [
         "ai_request_trace",
-        "ai_usage_fact",
+        "ai_usage",
         "ai_routing_decision_log",
         "ai_channel_group"
       ],
@@ -2307,7 +2307,7 @@
     },
     {
       "data_sources": [
-        "ai_usage_fact",
+        "ai_usage",
         "ai_model",
         "ai_model_capability"
       ],
@@ -2339,7 +2339,7 @@
     },
     {
       "data_sources": [
-        "ai_usage_fact"
+        "ai_usage"
       ],
       "fields": [
         "id",

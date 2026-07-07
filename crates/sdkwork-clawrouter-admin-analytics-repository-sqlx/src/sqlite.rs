@@ -1,10 +1,11 @@
 use sqlx::{Row, SqlitePool};
 
-use crate::error::{store_error, RepositoryResult};
+use crate::error::{RepositoryResult, store_error};
 use crate::modality;
 use crate::snapshot::{
-    build_snapshot, scope_filter, vendor_from_catalog_key, AnalyticsModelRankRow, AnalyticsPieRow,
-    AnalyticsSummaryRow, AnalyticsTrendRow, AnalyticsUserRankRow, PI_LIMIT, USER_MODEL_LIMIT,
+    AnalyticsModelRankRow, AnalyticsPieRow, AnalyticsSummaryRow, AnalyticsTrendRow,
+    AnalyticsUserRankRow, PI_LIMIT, USER_MODEL_LIMIT, build_snapshot, scope_filter,
+    vendor_from_catalog_key,
 };
 use crate::types::{
     AdminAnalyticsQuery, AdminAnalyticsReadFuture, AdminAnalyticsReadStore, AdminAnalyticsSnapshot,
@@ -176,7 +177,7 @@ async fn load_summary(
                 {POINTS_EXPR} AS points,
                 {UPSTREAM_COST_EXPR} AS upstream_cost,
                 COALESCE(NULLIF(request_id, ''), CAST(id AS TEXT)) AS request_key
-            FROM ai_usage_fact
+            FROM ai_usage
             WHERE status = 1
               AND {usage_scope}
               AND (?3 IS NULL OR occurred_at >= ?3)
@@ -234,7 +235,7 @@ async fn load_failed_requests(
         r#"
         SELECT CAST(COALESCE(COUNT(DISTINCT COALESCE(NULLIF(t.request_id, ''), CAST(t.id AS TEXT))), 0) AS TEXT) AS failed_requests
         FROM ai_request_trace t
-        INNER JOIN ai_usage_fact usage
+        INNER JOIN ai_usage usage
           ON usage.tenant_id = t.tenant_id
          AND usage.organization_id = t.organization_id
          AND usage.status = 1
@@ -290,7 +291,7 @@ async fn load_trend(
                 {REQUEST_COUNT_EXPR} AS request_count,
                 {TOKEN_COUNT_EXPR} AS total_tokens,
                 {POINTS_EXPR} AS points
-            FROM ai_usage_fact
+            FROM ai_usage
             WHERE status = 1
               AND {usage_scope}
               AND occurred_at IS NOT NULL
@@ -348,7 +349,7 @@ async fn load_user_rankings(
             CAST(COALESCE(SUM({TOKEN_COUNT_EXPR}), 0) AS TEXT) AS total_tokens,
             COALESCE(SUM({POINTS_EXPR}), 0) AS points_sort,
             CAST(COALESCE(SUM({POINTS_EXPR}), 0) AS TEXT) AS points
-        FROM ai_usage_fact
+        FROM ai_usage
         WHERE status = 1
           AND {usage_scope}
           AND (?3 IS NULL OR occurred_at >= ?3)
@@ -410,14 +411,14 @@ async fn load_model_rankings(
             CAST(COALESCE(SUM({UPSTREAM_COST_EXPR}), 0) AS TEXT) AS upstream_cost,
             CAST(COALESCE(COUNT(DISTINCT {USER_ID_EXPR}), 0) AS TEXT) AS user_count,
             CAST(COALESCE(COUNT(DISTINCT CASE WHEN failed_request.request_key IS NULL THEN NULL ELSE COALESCE(NULLIF(usage.request_id, ''), CAST(usage.id AS TEXT)) END), 0) AS TEXT) AS failed_requests
-        FROM ai_usage_fact usage
+        FROM ai_usage usage
         LEFT JOIN (
             SELECT DISTINCT
                 t.tenant_id,
                 t.organization_id,
                 COALESCE(NULLIF(t.request_id, ''), CAST(t.id AS TEXT)) AS request_key
             FROM ai_request_trace t
-            INNER JOIN ai_usage_fact matched_usage
+            INNER JOIN ai_usage matched_usage
               ON matched_usage.tenant_id = t.tenant_id
              AND matched_usage.organization_id = t.organization_id
              AND matched_usage.status = 1
@@ -502,7 +503,7 @@ async fn load_user_model_distributions(
                 {USER_ID_EXPR} AS user_id,
                 {MODEL_KEY_EXPR} AS name,
                 COALESCE(SUM({POINTS_EXPR}), 0) AS value
-            FROM ai_usage_fact
+            FROM ai_usage
             WHERE status = 1
               AND {usage_scope}
               AND (?3 IS NULL OR occurred_at >= ?3)
@@ -583,7 +584,7 @@ async fn load_model_distribution(
             SELECT
                 {MODEL_KEY_EXPR} AS name,
                 COALESCE(SUM({REQUEST_COUNT_EXPR}), 0) AS value
-            FROM ai_usage_fact
+            FROM ai_usage
             WHERE status = 1
               AND {usage_scope}
               AND (?3 IS NULL OR occurred_at >= ?3)
@@ -637,7 +638,7 @@ async fn load_modality_distribution(
             SELECT
                 COALESCE(CAST(modality AS TEXT), 'unknown') AS modality,
                 COALESCE(SUM({REQUEST_COUNT_EXPR}), 0) AS value
-            FROM ai_usage_fact
+            FROM ai_usage
             WHERE status = 1
               AND {usage_scope}
               AND (?3 IS NULL OR occurred_at >= ?3)

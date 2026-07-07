@@ -2029,7 +2029,7 @@ The rankings hardening covers:
 
 - `RANKING_SNAPSHOT_SOURCE` makes `/rankings` explicit as a published catalog
   snapshot observed on `2026-05-03`, while route classification keeps the
-  internal provenance tables `ai_model_rank_snapshot` and `ai_usage_fact`.
+  internal provenance tables `ai_model_rank_snapshot` and `ai_usage`.
 - `createRankingHistory` generates 40 deterministic weekly points anchored to
   `2026-05-03`; it no longer depends on the current browser/server date.
 - `filterRankingsForCatalog` trims vendor/search input, handles modality and

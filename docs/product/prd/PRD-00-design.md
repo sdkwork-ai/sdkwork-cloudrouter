@@ -1,79 +1,62 @@
-> Migrated from `docs/00-设计文档索引.md` on 2026-06-24.
+> Migrated from `docs/00-璁捐鏂囨。绱㈠紩.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
-> 版本：v0.1
-> 日期：2026-04-28 
-> 依据：`DATABASE_SPEC.md`、`apps/sdkwork-clawrouter-pc`、`legacy-java-plus-backend-api` 与 `legacy-java-plus-app-api` API 标准、 
+> 鐗堟湰锛歷0.1
+> 鏃ユ湡锛?026-04-28 
+> 渚濇嵁锛歚DATABASE_SPEC.md`銆乣apps/sdkwork-clawrouter-pc`銆乣legacy-java-plus-backend-api` 涓?`legacy-java-plus-app-api` API 鏍囧噯銆?
 
-## 1. 文档集
-
-| 文档 | 目标 |
+## 1. 鏂囨。闆?
+| 鏂囨。 | 鐩爣 |
 | --- | --- |
-| [01-PRD-sdkwork-clawrouter.md](./01-PRD-sdkwork-clawrouter.md) | 产品定位、目标用户、产品面、功能范围、版本路线和验收标准 |
-| [02-技术架构设计.md](./02-技术架构设计.md) | 总体架构、运行面、分层、状态真值、主链路和架构决策 |
-| [03-技术选型.md](./03-技术选型.md) | 后端、网关、前端、数据库、缓存、部署、观测、安全组件选型 |
-| [04-模块规划.md](./04-模块规划.md) | public、console、admin、gateway、domain、worker、ops 模块边界 |
-| [05-数据库设计.md](./05-数据库设计.md) | 数据库标准、存量表兼容、新建表前缀、核心表契约、索引和演进策略 |
-| [06-API-Gateway与接口标准设计.md](./06-API-Gateway与接口标准设计.md) | `/v1/*` 网关兼容面、`/backend/v3/api` 管理面、`/app/v3/api` 用户面 |
-| [07-性能设计.md](./07-性能设计.md) | 热路径、缓存、流式、异步、容量、压测与 SLO 门槛 |
-| [08-安全设计.md](./08-安全设计.md) | 身份、授权、密钥、租户隔离、审计、合规和供应链安全 |
-| [09-部署架构设计.md](./09-部署架构设计.md) | 本地桌面、Server、Docker、K8S 四种部署方式与发布治理 |
-| [10-API路径一致性与自由切换架构.md](./10-API路径一致性与自由切换架构.md) | Java app/backend API 路径一致性、base URL 切换和多部署自由切换标准 |
-| [11-数据契约与核心表设计.md](./11-数据契约与核心表设计.md) | 存量 `plus_*` 表复用边界、新增核心表字段契约、索引、留存、事件一致性和 CI 门禁 |
-| [12-前端功能模块与数据库表结构映射.md](./12-前端功能模块与数据库表结构映射.md) | 当前 portal 前端 public/console/admin 模块分析、模块到表映射、完整逻辑表结构清单 |
-| [13-页面级数据结构覆盖与SchemaRegistry落地设计.md](./13-页面级数据结构覆盖与SchemaRegistry落地设计.md) | portal 每个页面到事实表/投影表/API 面的覆盖矩阵、页面级验收口径和 Schema Registry 落地规则 |
-| [14-数据结构细节复核与补强记录.md](./14-数据结构细节复核与补强记录.md) | 基于前端 service/interface/mock data 的字段级复核、缺口修正、表契约补强和 DDL 生成前检查清单 |
-| [30-platform-data-model-v4.md](./30-platform-data-model-v4.md) | **现行** v4.1 平台/分类/技能/内容表命名与 greenfield 数据模型（替代 docs/17、docs/18 的 Plus 兼容方案） |
-| [schema-registry/sdkwork-clawrouter.tables.yaml](./schema-registry/sdkwork-clawrouter.tables.yaml) | 机器可校验表契约注册表，约束新增表前缀、API 面、页面覆盖、字段、索引、安全和生命周期 |
+| [01-PRD-sdkwork-clawrouter.md](./01-PRD-sdkwork-clawrouter.md) | 浜у搧瀹氫綅銆佺洰鏍囩敤鎴枫€佷骇鍝侀潰銆佸姛鑳借寖鍥淬€佺増鏈矾绾垮拰楠屾敹鏍囧噯 |
+| [02-鎶€鏈灦鏋勮璁?md](./02-鎶€鏈灦鏋勮璁?md) | 鎬讳綋鏋舵瀯銆佽繍琛岄潰銆佸垎灞傘€佺姸鎬佺湡鍊笺€佷富閾捐矾鍜屾灦鏋勫喅绛?|
+| [03-鎶€鏈€夊瀷.md](./03-鎶€鏈€夊瀷.md) | 鍚庣銆佺綉鍏炽€佸墠绔€佹暟鎹簱銆佺紦瀛樸€侀儴缃层€佽娴嬨€佸畨鍏ㄧ粍浠堕€夊瀷 |
+| [04-妯″潡瑙勫垝.md](./04-妯″潡瑙勫垝.md) | public銆乧onsole銆乤dmin銆乬ateway銆乨omain銆亀orker銆乷ps 妯″潡杈圭晫 |
+| [05-鏁版嵁搴撹璁?md](./05-鏁版嵁搴撹璁?md) | 鏁版嵁搴撴爣鍑嗐€佸瓨閲忚〃鍏煎銆佹柊寤鸿〃鍓嶇紑銆佹牳蹇冭〃濂戠害銆佺储寮曞拰婕旇繘绛栫暐 |
+| [06-API-Gateway涓庢帴鍙ｆ爣鍑嗚璁?md](./06-API-Gateway涓庢帴鍙ｆ爣鍑嗚璁?md) | `/v1/*` 缃戝叧鍏煎闈€乣/backend/v3/api` 绠＄悊闈€乣/app/v3/api` 鐢ㄦ埛闈?|
+| [07-鎬ц兘璁捐.md](./07-鎬ц兘璁捐.md) | 鐑矾寰勩€佺紦瀛樸€佹祦寮忋€佸紓姝ャ€佸閲忋€佸帇娴嬩笌 SLO 闂ㄦ |
+| [08-瀹夊叏璁捐.md](./08-瀹夊叏璁捐.md) | 韬唤銆佹巿鏉冦€佸瘑閽ャ€佺鎴烽殧绂汇€佸璁°€佸悎瑙勫拰渚涘簲閾惧畨鍏?|
+| [09-閮ㄧ讲鏋舵瀯璁捐.md](./09-閮ㄧ讲鏋舵瀯璁捐.md) | 鏈湴妗岄潰銆丼erver銆丏ocker銆並8S 鍥涚閮ㄧ讲鏂瑰紡涓庡彂甯冩不鐞?|
+| [10-API璺緞涓€鑷存€т笌鑷敱鍒囨崲鏋舵瀯.md](./10-API璺緞涓€鑷存€т笌鑷敱鍒囨崲鏋舵瀯.md) | Java app/backend API 璺緞涓€鑷存€с€乥ase URL 鍒囨崲鍜屽閮ㄧ讲鑷敱鍒囨崲鏍囧噯 |
+| [11-鏁版嵁濂戠害涓庢牳蹇冭〃璁捐.md](./11-鏁版嵁濂戠害涓庢牳蹇冭〃璁捐.md) | 瀛橀噺 `plus_*` 琛ㄥ鐢ㄨ竟鐣屻€佹柊澧炴牳蹇冭〃瀛楁濂戠害銆佺储寮曘€佺暀瀛樸€佷簨浠朵竴鑷存€у拰 CI 闂ㄧ |
+| [12-鍓嶇鍔熻兘妯″潡涓庢暟鎹簱琛ㄧ粨鏋勬槧灏?md](./12-鍓嶇鍔熻兘妯″潡涓庢暟鎹簱琛ㄧ粨鏋勬槧灏?md) | 褰撳墠 portal 鍓嶇 public/console/admin 妯″潡鍒嗘瀽銆佹ā鍧楀埌琛ㄦ槧灏勩€佸畬鏁撮€昏緫琛ㄧ粨鏋勬竻鍗?|
+| [13-椤甸潰绾ф暟鎹粨鏋勮鐩栦笌SchemaRegistry钀藉湴璁捐.md](./13-椤甸潰绾ф暟鎹粨鏋勮鐩栦笌SchemaRegistry钀藉湴璁捐.md) | portal 姣忎釜椤甸潰鍒颁簨瀹炶〃/鎶曞奖琛?API 闈㈢殑瑕嗙洊鐭╅樀銆侀〉闈㈢骇楠屾敹鍙ｅ緞鍜?Schema Registry 钀藉湴瑙勫垯 |
+| [14-鏁版嵁缁撴瀯缁嗚妭澶嶆牳涓庤ˉ寮鸿褰?md](./14-鏁版嵁缁撴瀯缁嗚妭澶嶆牳涓庤ˉ寮鸿褰?md) | 鍩轰簬鍓嶇 service/interface/mock data 鐨勫瓧娈电骇澶嶆牳銆佺己鍙ｄ慨姝ｃ€佽〃濂戠害琛ュ己鍜?DDL 鐢熸垚鍓嶆鏌ユ竻鍗?|
+| [30-platform-data-model-v4.md](./30-platform-data-model-v4.md) | **鐜拌** v4.1 骞冲彴/鍒嗙被/鎶€鑳?鍐呭琛ㄥ懡鍚嶄笌 greenfield 鏁版嵁妯″瀷锛堟浛浠?docs/17銆乨ocs/18 鐨?Plus 鍏煎鏂规锛?|
+| [schema-registry/sdkwork-clawrouter.tables.yaml](./schema-registry/sdkwork-clawrouter.tables.yaml) | 鏈哄櫒鍙牎楠岃〃濂戠害娉ㄥ唽琛紝绾︽潫鏂板琛ㄥ墠缂€銆丄PI 闈€侀〉闈㈣鐩栥€佸瓧娈点€佺储寮曘€佸畨鍏ㄥ拰鐢熷懡鍛ㄦ湡 |
 
-## 2. 本轮核心裁决
+## 2. 鏈疆鏍稿績瑁佸喅
 
-1. `sdkwork-clawrouter` 不按旧版多个前端应用继续拆分，产品面统一到 `apps/sdkwork-clawrouter-pc`，内部通过 public、console、admin 三个路由域隔离。
-2. 推荐采用“Rust-first Modular Runtime + Java-compatible API Contract + Generated SDK Boundary”的架构路线。`sdkwork-clawrouter` 的 gateway、app-api、admin-api、worker 和 product runtime 均以 Rust services 为主实现，Java app/backend 模块作为路径、OpenAPI、SDK 和既有实体兼容标准。
-3. Admin 控制台 API 必须走 `legacy-java-plus-backend-api` 标准，路径前缀为 Java `com.sdkwork.backend.api.ApiPaths.API_PREFIX`，即 `/backend/v3/api`，返回 `PlusApiResult<T>`，权限模型按后台角色和管理能力控制。
-4. Console、public portal、用户自助 API 必须走 `legacy-java-plus-app-api` 标准，路径前缀为 Java `com.sdkwork.app.api.ApiPaths.API_PREFIX`，即 `/app/v3/api`，返回 `PlusApiResult<T>`，用户上下文和资源归属在服务层强校验。
-5. OpenAI 兼容网关 API 保持 `/v1/*`，不得包装 `PlusApiResult<T>`，必须保持第三方 SDK 可直接调用。
-6. App/Backend 公共业务路径不得额外插入 `/claw-router`、`/router`、`/sdkwork` 等产品或部署命名空间；新增能力必须先进入 Java app-api/backend-api 的 controller、OpenAPI 和生成 SDK。
-7. 用户、VIP、account、优惠券、积分充值、订单、支付、退款、发票等交易账户域必须复用 `legacy-java-plus-entity` 中既有 `plus_*` 表结构，不在 claw-router 中创建替代表。
-8. 新建 claw-router 专属表必须遵守 `DATABASE_SPEC.md`，采用业务前缀：`ai_`、`integration_`、`iam_`、`commerce_`、`studio_`、`content_`、`ops_` 等，禁止使用 `claw_`、`router_`、`sdkwork_` 作为新业务表第一段前缀。
-9. 本地桌面、Server、Docker、K8S 必须是同一套核心能力的不同装配，不允许出现四套不同业务逻辑；API 自由切换只能通过 base URL resolver 完成。
-10. 数据库实现必须先过数据契约评审：`ai_usage_fact` 是用量事实，`commerce_usage_settlement` 是结算桥接，`plus_account_history` 才是最终账户流水事实。
-11. 前端模块不能反向污染数据库命名；public、console、admin 只是使用者，不能产生 `console_`、`admin_`、产品名或部署名前缀表。
+1. `sdkwork-clawrouter` 涓嶆寜鏃х増澶氫釜鍓嶇搴旂敤缁х画鎷嗗垎锛屼骇鍝侀潰缁熶竴鍒?`apps/sdkwork-clawrouter-pc`锛屽唴閮ㄩ€氳繃 public銆乧onsole銆乤dmin 涓変釜璺敱鍩熼殧绂汇€?2. 鎺ㄨ崘閲囩敤鈥淩ust-first Modular Runtime + Java-compatible API Contract + Generated SDK Boundary鈥濈殑鏋舵瀯璺嚎銆俙sdkwork-clawrouter` 鐨?gateway銆乤pp-api銆乤dmin-api銆亀orker 鍜?product runtime 鍧囦互 Rust services 涓轰富瀹炵幇锛孞ava app/backend 妯″潡浣滀负璺緞銆丱penAPI銆丼DK 鍜屾棦鏈夊疄浣撳吋瀹规爣鍑嗐€?3. Admin 鎺у埗鍙?API 蹇呴』璧?`legacy-java-plus-backend-api` 鏍囧噯锛岃矾寰勫墠缂€涓?Java `com.sdkwork.backend.api.ApiPaths.API_PREFIX`锛屽嵆 `/backend/v3/api`锛岃繑鍥?`PlusApiResult<T>`锛屾潈闄愭ā鍨嬫寜鍚庡彴瑙掕壊鍜岀鐞嗚兘鍔涙帶鍒躲€?4. Console銆乸ublic portal銆佺敤鎴疯嚜鍔?API 蹇呴』璧?`legacy-java-plus-app-api` 鏍囧噯锛岃矾寰勫墠缂€涓?Java `com.sdkwork.app.api.ApiPaths.API_PREFIX`锛屽嵆 `/app/v3/api`锛岃繑鍥?`PlusApiResult<T>`锛岀敤鎴蜂笂涓嬫枃鍜岃祫婧愬綊灞炲湪鏈嶅姟灞傚己鏍￠獙銆?5. OpenAI 鍏煎缃戝叧 API 淇濇寔 `/v1/*`锛屼笉寰楀寘瑁?`PlusApiResult<T>`锛屽繀椤讳繚鎸佺涓夋柟 SDK 鍙洿鎺ヨ皟鐢ㄣ€?6. App/Backend 鍏叡涓氬姟璺緞涓嶅緱棰濆鎻掑叆 `/claw-router`銆乣/router`銆乣/sdkwork` 绛変骇鍝佹垨閮ㄧ讲鍛藉悕绌洪棿锛涙柊澧炶兘鍔涘繀椤诲厛杩涘叆 Java app-api/backend-api 鐨?controller銆丱penAPI 鍜岀敓鎴?SDK銆?7. 鐢ㄦ埛銆乂IP銆乤ccount銆佷紭鎯犲埜銆佺Н鍒嗗厖鍊笺€佽鍗曘€佹敮浠樸€侀€€娆俱€佸彂绁ㄧ瓑浜ゆ槗璐︽埛鍩熷繀椤诲鐢?`legacy-java-plus-entity` 涓棦鏈?`plus_*` 琛ㄧ粨鏋勶紝涓嶅湪 claw-router 涓垱寤烘浛浠ｈ〃銆?8. 鏂板缓 claw-router 涓撳睘琛ㄥ繀椤婚伒瀹?`DATABASE_SPEC.md`锛岄噰鐢ㄤ笟鍔″墠缂€锛歚ai_`銆乣integration_`銆乣iam_`銆乣commerce_`銆乣studio_`銆乣content_`銆乣ops_` 绛夛紝绂佹浣跨敤 `claw_`銆乣router_`銆乣sdkwork_` 浣滀负鏂颁笟鍔¤〃绗竴娈靛墠缂€銆?9. 鏈湴妗岄潰銆丼erver銆丏ocker銆並8S 蹇呴』鏄悓涓€濂楁牳蹇冭兘鍔涚殑涓嶅悓瑁呴厤锛屼笉鍏佽鍑虹幇鍥涘涓嶅悓涓氬姟閫昏緫锛汚PI 鑷敱鍒囨崲鍙兘閫氳繃 base URL resolver 瀹屾垚銆?10. 鏁版嵁搴撳疄鐜板繀椤诲厛杩囨暟鎹绾﹁瘎瀹★細`ai_usage` 鏄敤閲忎簨瀹烇紝`commerce_usage_settlement` 鏄粨绠楁ˉ鎺ワ紝`plus_account_history` 鎵嶆槸鏈€缁堣处鎴锋祦姘翠簨瀹炪€?11. 鍓嶇妯″潡涓嶈兘鍙嶅悜姹℃煋鏁版嵁搴撳懡鍚嶏紱public銆乧onsole銆乤dmin 鍙槸浣跨敤鑰咃紝涓嶈兘浜х敓 `console_`銆乣admin_`銆佷骇鍝佸悕鎴栭儴缃插悕鍓嶇紑琛ㄣ€?
+## 3. 涓夌鏋舵瀯璺嚎瀵规瘮
 
-## 3. 三种架构路线对比
-
-| 路线 | 描述 | 优点 | 风险 | 结论 |
+| 璺嚎 | 鎻忚堪 | 浼樼偣 | 椋庨櫓 | 缁撹 |
 | --- | --- | --- | --- | --- |
-| A. Rust-first Modular Runtime | Rust services 承载 `/v1/**`、`/app/v3/api/**`、`/backend/v3/api/**`、worker 和 product runtime；Java-compatible app/backend 只作为 API/SDK/实体兼容标准 | 性能、部署、代码边界和长期演进最统一；适合全新应用无技术债目标 | 需要补齐 Rust app/admin handler、SDK 生成和 persistence 实现 | 推荐作为 P0/P1 主线 |
-| B. Rust Gateway + Java-compatible Remote Business | Rust 承载 `/v1/**`，部分 app/backend business 通过 generated SDK 调用远端 Java-compatible 服务 | 迁移风险低，能短期复用既有业务能力 | 容易长期形成双运行时，需要严格限制为过渡形态 | 作为迁移桥接路线 |
-| C. Desktop-local 优先轻量版 | 以本地 SQLite、内置 provider、前端桌面壳为主，server/kubernetes 能力后置 | 本地部署快，个人体验好 | 容易偏离 SaaS/企业级标准、API 和表结构治理 | 只作为 `desktop` profile，不作为总体架构 |
+| A. Rust-first Modular Runtime | Rust services 鎵胯浇 `/v1/**`銆乣/app/v3/api/**`銆乣/backend/v3/api/**`銆亀orker 鍜?product runtime锛汮ava-compatible app/backend 鍙綔涓?API/SDK/瀹炰綋鍏煎鏍囧噯 | 鎬ц兘銆侀儴缃层€佷唬鐮佽竟鐣屽拰闀挎湡婕旇繘鏈€缁熶竴锛涢€傚悎鍏ㄦ柊搴旂敤鏃犳妧鏈€虹洰鏍?| 闇€瑕佽ˉ榻?Rust app/admin handler銆丼DK 鐢熸垚鍜?persistence 瀹炵幇 | 鎺ㄨ崘浣滀负 P0/P1 涓荤嚎 |
+| B. Rust Gateway + Java-compatible Remote Business | Rust 鎵胯浇 `/v1/**`锛岄儴鍒?app/backend business 閫氳繃 generated SDK 璋冪敤杩滅 Java-compatible 鏈嶅姟 | 杩佺Щ椋庨櫓浣庯紝鑳界煭鏈熷鐢ㄦ棦鏈変笟鍔¤兘鍔?| 瀹规槗闀挎湡褰㈡垚鍙岃繍琛屾椂锛岄渶瑕佷弗鏍奸檺鍒朵负杩囨浮褰㈡€?| 浣滀负杩佺Щ妗ユ帴璺嚎 |
+| C. Desktop-local 浼樺厛杞婚噺鐗?| 浠ユ湰鍦?SQLite銆佸唴缃?provider銆佸墠绔闈㈠３涓轰富锛宻erver/kubernetes 鑳藉姏鍚庣疆 | 鏈湴閮ㄧ讲蹇紝涓汉浣撻獙濂?| 瀹规槗鍋忕 SaaS/浼佷笟绾ф爣鍑嗐€丄PI 鍜岃〃缁撴瀯娌荤悊 | 鍙綔涓?`desktop` profile锛屼笉浣滀负鎬讳綋鏋舵瀯 |
 
-## 4. 后续实施建议
+## 4. 鍚庣画瀹炴柦寤鸿
 
-1. 先冻结本文档集中的架构、API、数据和部署约束。
-2. 再拆分实现计划：后端模块、数据库契约与迁移、API SDK、前端服务替换、部署脚本、观测与安全门禁。
-3. 新建表先写 YAML/Markdown 表契约，再生成 DDL、ORM、DTO 和 OpenAPI。
-4. 前端不得继续长期使用 mock service，console/admin/public 均应迁移到生成 SDK；切换部署目标时只能切换 SDK base URL。
-5. 第一阶段交付目标应是“Rust-first 标准化可部署 MVP”，再做多 Region、复杂策略、行业高级能力和更深入的压测优化。
+1. 鍏堝喕缁撴湰鏂囨。闆嗕腑鐨勬灦鏋勩€丄PI銆佹暟鎹拰閮ㄧ讲绾︽潫銆?2. 鍐嶆媶鍒嗗疄鐜拌鍒掞細鍚庣妯″潡銆佹暟鎹簱濂戠害涓庤縼绉汇€丄PI SDK銆佸墠绔湇鍔℃浛鎹€侀儴缃茶剼鏈€佽娴嬩笌瀹夊叏闂ㄧ銆?3. 鏂板缓琛ㄥ厛鍐?YAML/Markdown 琛ㄥ绾︼紝鍐嶇敓鎴?DDL銆丱RM銆丏TO 鍜?OpenAPI銆?4. 鍓嶇涓嶅緱缁х画闀挎湡浣跨敤 mock service锛宑onsole/admin/public 鍧囧簲杩佺Щ鍒扮敓鎴?SDK锛涘垏鎹㈤儴缃茬洰鏍囨椂鍙兘鍒囨崲 SDK base URL銆?5. 绗竴闃舵浜や粯鐩爣搴旀槸鈥淩ust-first 鏍囧噯鍖栧彲閮ㄧ讲 MVP鈥濓紝鍐嶅仛澶?Region銆佸鏉傜瓥鐣ャ€佽涓氶珮绾ц兘鍔涘拰鏇存繁鍏ョ殑鍘嬫祴浼樺寲銆?
+## 5. 琛ュ厖鏂囨。绱㈠紩
 
-## 5. 补充文档索引
-
-| 文档 | 目标 |
+| 鏂囨。 | 鐩爣 |
 | --- | --- |
-| [15-new-api-sub2api价格体系对比与ClawRouter定价设计.md](./15-new-api-sub2api价格体系对比与ClawRouter定价设计.md) | 对比 new-api/sub2api 的价格体系，定义官方价、供应商价、客户价、定价方案、规则、阶梯与统一计量模型 |
-| [16-前端代码契约复核与数据设计覆盖检查.md](./16-前端代码契约复核与数据设计覆盖检查.md) | 基于 portal 当前前端代码的路由、service/interface 和 mock data 反向复核数据库设计覆盖情况与本轮修正记录 |
-| [17-AppCenter-PlusApp-compatible-design.md](./17-AppCenter-PlusApp-compatible-design.md) | **已废弃** — 见 [30-platform-data-model-v4.md](./30-platform-data-model-v4.md)；历史 Java platform_app/appstore_app 兼容设计（归档文件名保留） |
-| [18-SkillsHub-AgentSkills-PlusCategory-compatible-design.md](./18-SkillsHub-AgentSkills-PlusCategory-compatible-design.md) | **已废弃** — 见 [30-platform-data-model-v4.md](./30-platform-data-model-v4.md)；历史 AgentSkills/PlusCategory 兼容设计 |
-| [19-Finance-Trade-Java-compatible-design.md](./19-Finance-Trade-Java-compatible-design.md) | 支付、订单、退款、发票、账户、优惠券、VIP 等金融交易域按 Java 既有 Entity 和 API 标准复用，避免重复建模 |
-| [20-schema-guardian-quality-gate.md](./20-schema-guardian-quality-gate.md) | 将 Java-first、L0 legacy、禁止同义表、SkillsHub 表替换等数据标准固化为可执行质量门禁 |
-| [21-schema-compiler-postgres-ddl.md](./21-schema-compiler-postgres-ddl.md) | 将 Schema Registry 编译为 PostgreSQL DDL，并提供生成文件漂移检查，确保数据契约可以落库 |
-| [22-domain-type-generator.md](./22-domain-type-generator.md) | 从 Schema Registry 的 `domain_names` 生成 Java/Rust/TypeScript/OpenAPI 领域枚举，保证 `ModelVendor`、`BillingMeter` 等多端一致 |
-| [23-schema-manifest.md](./23-schema-manifest.md) | 将 Schema Registry 编译为机器可读 Manifest，统一输出表、路由、API surface、owner、字段、索引、安全和生命周期元数据 |
-| [24-openapi-schema-components.md](./24-openapi-schema-components.md) | 从 Schema Registry 生成 OpenAPI component schemas，统一 app/backend/SDK/前端使用的字段序列化标准 |
-| [25-frontend-contract-guardian.md](./25-frontend-contract-guardian.md) | 将 portal 实际路由与页面关键字段需求固化为可执行契约，持续校验 Schema Manifest 是否完整满足前端页面 |
-| [26-java-legacy-contract-audit.md](./26-java-legacy-contract-audit.md) | 将 Java-owned `plus_*` 表实体映射与声明列生成审计产物，防止 claw-router fork 或替代 Java 主表结构 |
-| [27-rust-runtime-and-sdk-integration-standard.md](./27-rust-runtime-and-sdk-integration-standard.md) | 固化 Rust runtime、Java-compatible app/backend API 路径、generated SDK 边界和 portal 不改 UI 的接入标准 |
-| [28-architecture-standard-guardian.md](./28-architecture-standard-guardian.md) | 将 Rust-first 架构和技术选型裁决固化为可执行文档守卫，防止核心文档回退到旧路线 |
-| [29-rust-backend-module-standard.md](./29-rust-backend-module-standard.md) | 固化 Rust 后端分包、Hexagonal architecture 模块形态、高性能和安全边界，并接入可执行守卫 |
-| [32-sdkwork-models-standard.md](./32-sdkwork-models-standard.md) | 定义独立 `sdkwork-models` 模型目录、vendor 分目录、JSON 契约、多语言 SDK 标准、ClawRouter 导入和子模块更新规则 |
+| [15-new-api-sub2api浠锋牸浣撶郴瀵规瘮涓嶤lawRouter瀹氫环璁捐.md](./15-new-api-sub2api浠锋牸浣撶郴瀵规瘮涓嶤lawRouter瀹氫环璁捐.md) | 瀵规瘮 new-api/sub2api 鐨勪环鏍间綋绯伙紝瀹氫箟瀹樻柟浠枫€佷緵搴斿晢浠枫€佸鎴蜂环銆佸畾浠锋柟妗堛€佽鍒欍€侀樁姊笌缁熶竴璁￠噺妯″瀷 |
+| [16-鍓嶇浠ｇ爜濂戠害澶嶆牳涓庢暟鎹璁¤鐩栨鏌?md](./16-鍓嶇浠ｇ爜濂戠害澶嶆牳涓庢暟鎹璁¤鐩栨鏌?md) | 鍩轰簬 portal 褰撳墠鍓嶇浠ｇ爜鐨勮矾鐢便€乻ervice/interface 鍜?mock data 鍙嶅悜澶嶆牳鏁版嵁搴撹璁¤鐩栨儏鍐典笌鏈疆淇璁板綍 |
+| [17-AppCenter-PlusApp-compatible-design.md](./17-AppCenter-PlusApp-compatible-design.md) | **宸插簾寮?* 鈥?瑙?[30-platform-data-model-v4.md](./30-platform-data-model-v4.md)锛涘巻鍙?Java platform_app/appstore_app 鍏煎璁捐锛堝綊妗ｆ枃浠跺悕淇濈暀锛?|
+| [18-SkillsHub-AgentSkills-PlusCategory-compatible-design.md](./18-SkillsHub-AgentSkills-PlusCategory-compatible-design.md) | **宸插簾寮?* 鈥?瑙?[30-platform-data-model-v4.md](./30-platform-data-model-v4.md)锛涘巻鍙?AgentSkills/PlusCategory 鍏煎璁捐 |
+| [19-Finance-Trade-Java-compatible-design.md](./19-Finance-Trade-Java-compatible-design.md) | 鏀粯銆佽鍗曘€侀€€娆俱€佸彂绁ㄣ€佽处鎴枫€佷紭鎯犲埜銆乂IP 绛夐噾铻嶄氦鏄撳煙鎸?Java 鏃㈡湁 Entity 鍜?API 鏍囧噯澶嶇敤锛岄伩鍏嶉噸澶嶅缓妯?|
+| [20-schema-guardian-quality-gate.md](./20-schema-guardian-quality-gate.md) | 灏?Java-first銆丩0 legacy銆佺姝㈠悓涔夎〃銆丼killsHub 琛ㄦ浛鎹㈢瓑鏁版嵁鏍囧噯鍥哄寲涓哄彲鎵ц璐ㄩ噺闂ㄧ |
+| [21-schema-compiler-postgres-ddl.md](./21-schema-compiler-postgres-ddl.md) | 灏?Schema Registry 缂栬瘧涓?PostgreSQL DDL锛屽苟鎻愪緵鐢熸垚鏂囦欢婕傜Щ妫€鏌ワ紝纭繚鏁版嵁濂戠害鍙互钀藉簱 |
+| [22-domain-type-generator.md](./22-domain-type-generator.md) | 浠?Schema Registry 鐨?`domain_names` 鐢熸垚 Java/Rust/TypeScript/OpenAPI 棰嗗煙鏋氫妇锛屼繚璇?`ModelVendor`銆乣BillingMeter` 绛夊绔竴鑷?|
+| [23-schema-manifest.md](./23-schema-manifest.md) | 灏?Schema Registry 缂栬瘧涓烘満鍣ㄥ彲璇?Manifest锛岀粺涓€杈撳嚭琛ㄣ€佽矾鐢便€丄PI surface銆乷wner銆佸瓧娈点€佺储寮曘€佸畨鍏ㄥ拰鐢熷懡鍛ㄦ湡鍏冩暟鎹?|
+| [24-openapi-schema-components.md](./24-openapi-schema-components.md) | 浠?Schema Registry 鐢熸垚 OpenAPI component schemas锛岀粺涓€ app/backend/SDK/鍓嶇浣跨敤鐨勫瓧娈靛簭鍒楀寲鏍囧噯 |
+| [25-frontend-contract-guardian.md](./25-frontend-contract-guardian.md) | 灏?portal 瀹為檯璺敱涓庨〉闈㈠叧閿瓧娈甸渶姹傚浐鍖栦负鍙墽琛屽绾︼紝鎸佺画鏍￠獙 Schema Manifest 鏄惁瀹屾暣婊¤冻鍓嶇椤甸潰 |
+| [26-java-legacy-contract-audit.md](./26-java-legacy-contract-audit.md) | 灏?Java-owned `plus_*` 琛ㄥ疄浣撴槧灏勪笌澹版槑鍒楃敓鎴愬璁′骇鐗╋紝闃叉 claw-router fork 鎴栨浛浠?Java 涓昏〃缁撴瀯 |
+| [27-rust-runtime-and-sdk-integration-standard.md](./27-rust-runtime-and-sdk-integration-standard.md) | 鍥哄寲 Rust runtime銆丣ava-compatible app/backend API 璺緞銆乬enerated SDK 杈圭晫鍜?portal 涓嶆敼 UI 鐨勬帴鍏ユ爣鍑?|
+| [28-architecture-standard-guardian.md](./28-architecture-standard-guardian.md) | 灏?Rust-first 鏋舵瀯鍜屾妧鏈€夊瀷瑁佸喅鍥哄寲涓哄彲鎵ц鏂囨。瀹堝崼锛岄槻姝㈡牳蹇冩枃妗ｅ洖閫€鍒版棫璺嚎 |
+| [29-rust-backend-module-standard.md](./29-rust-backend-module-standard.md) | 鍥哄寲 Rust 鍚庣鍒嗗寘銆丠exagonal architecture 妯″潡褰㈡€併€侀珮鎬ц兘鍜屽畨鍏ㄨ竟鐣岋紝骞舵帴鍏ュ彲鎵ц瀹堝崼 |
+| [32-sdkwork-models-standard.md](./32-sdkwork-models-standard.md) | 瀹氫箟鐙珛 `sdkwork-models` 妯″瀷鐩綍銆乿endor 鍒嗙洰褰曘€丣SON 濂戠害銆佸璇█ SDK 鏍囧噯銆丆lawRouter 瀵煎叆鍜屽瓙妯″潡鏇存柊瑙勫垯 |
 

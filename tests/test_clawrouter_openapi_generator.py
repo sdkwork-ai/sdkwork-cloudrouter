@@ -351,7 +351,7 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
                             "path_params": [],
                             "source": "apps/portal/playgroundService.ts",
                             "read_sources": ["ai_model"],
-                            "write_tables": ["ai_usage_fact"],
+                            "write_tables": ["ai_usage"],
                         },
                     ],
                 },
@@ -397,7 +397,7 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
                           nullable: true
                     AiUsageFactRecord:
                       type: object
-                      x-table: ai_usage_fact
+                      x-table: ai_usage
                       properties:
                         request_id:
                           type: string

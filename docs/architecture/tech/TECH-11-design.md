@@ -1,179 +1,179 @@
-> Migrated from `docs/11-数据契约与核心表设计.md` on 2026-06-24.
+> Migrated from `docs/11-鏁版嵁濂戠害涓庢牳蹇冭〃璁捐.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
-> 版本：v0.1
-> 日期�?026-04-28
-> 范围：`sdkwork-clawrouter` 新增数据域、存�?`plus_*` 表复用边界、核心表契约、索引、留存、事件一致性和 CI 校验�?> 依据：[DATABASE_SPEC.md](../DATABASE_SPEC.md)、[05-数据库设�?md](./05-数据库设�?md)、[12-前端功能模块与数据库表结构映�?md](./12-前端功能模块与数据库表结构映�?md)、[13-页面级数据结构覆盖与SchemaRegistry落地设计.md](./13-页面级数据结构覆盖与SchemaRegistry落地设计.md)、`legacy-java-plus-entity` 既有实体、`legacy-java-plus-app-api`、`legacy-java-plus-backend-api`�?
-## 1. 文档定位
+> 鐗堟湰锛歷0.1
+> 鏃ユ湡锟?026-04-28
+> 鑼冨洿锛歚sdkwork-clawrouter` 鏂板鏁版嵁鍩熴€佸瓨锟?`plus_*` 琛ㄥ鐢ㄨ竟鐣屻€佹牳蹇冭〃濂戠害銆佺储寮曘€佺暀瀛樸€佷簨浠朵竴鑷存€у拰 CI 鏍￠獙锟?> 渚濇嵁锛歔DATABASE_SPEC.md](../DATABASE_SPEC.md)銆乕05-鏁版嵁搴撹锟?md](./05-鏁版嵁搴撹锟?md)銆乕12-鍓嶇鍔熻兘妯″潡涓庢暟鎹簱琛ㄧ粨鏋勬槧锟?md](./12-鍓嶇鍔熻兘妯″潡涓庢暟鎹簱琛ㄧ粨鏋勬槧锟?md)銆乕13-椤甸潰绾ф暟鎹粨鏋勮鐩栦笌SchemaRegistry钀藉湴璁捐.md](./13-椤甸潰绾ф暟鎹粨鏋勮鐩栦笌SchemaRegistry钀藉湴璁捐.md)銆乣legacy-java-plus-entity` 鏃㈡湁瀹炰綋銆乣legacy-java-plus-app-api`銆乣legacy-java-plus-backend-api`锟?
+## 1. 鏂囨。瀹氫綅
 
-本文不是 SQL 迁移脚本，也不是 ORM 实体清单，而是建表前的数据契约。后续任�?DDL、JPA Entity、Repository、OpenAPI、TypeScript/Java SDK DTO、数据同步任务和 CI schema linter 都应从本文契约生成或反向校验�?
-本轮只打磨设计，不修�?`legacy-java-plus-entity` 既有表结构，不生成生产迁移�?
-当前 portal 前端 public、console、admin 模块到数据库表和字段的完整映射见 [12-前端功能模块与数据库表结构映�?md](./12-前端功能模块与数据库表结构映�?md)。页面级覆盖验收、字段级复核和机器可校验表注册表�?[13-页面级数据结构覆盖与SchemaRegistry落地设计.md](./13-页面级数据结构覆盖与SchemaRegistry落地设计.md)、[14-数据结构细节复核与补强记�?md](./14-数据结构细节复核与补强记�?md) �?[schema-registry/sdkwork-clawrouter.tables.yaml](./schema-registry/sdkwork-clawrouter.tables.yaml)。本文负责核心数据契约，12 号文档负责从前端产品面反推完整表结构覆盖�?3 号文档负责页面级覆盖闭环�?Registry 落地规则�?4 号文档负�?service/interface/mock data 字段级缺口复核�?
-核心目标�?
-- 保持用户、VIP、账户、优惠券、积分充值、订单、支付、退款、发票等 `plus_*` 表结构完全一致�?- 数据库模型采�?Java Entity first：任何新增数据模型先�?`legacy-java-plus-entity`；只要存�?`Plus*` Entity，就必须沿用对应 `plus_*` 表和 Java app/backend API，不得在 claw-router 下新建同义主数据表�?- �?claw-router 新增网关域能力设计标准化、可审计、可扩展的新表�?- 支撑本地桌面、Server、Docker、K8S 四种部署方式，保持同一套逻辑数据契约�?- 支撑 API 通过 Java app/backend 标准路径自由切换：用户面 `/app/v3/api`，管理面 `/backend/v3/api`，OpenAI 兼容�?`/v1/*`�?- 支撑高性能热路径：配置可缓存、请求事实可异步落地、用量结算可幂等补偿�?
-## 2. 数据架构总览
+鏈枃涓嶆槸 SQL 杩佺Щ鑴氭湰锛屼篃涓嶆槸 ORM 瀹炰綋娓呭崟锛岃€屾槸寤鸿〃鍓嶇殑鏁版嵁濂戠害銆傚悗缁换锟?DDL銆丣PA Entity銆丷epository銆丱penAPI銆乀ypeScript/Java SDK DTO銆佹暟鎹悓姝ヤ换鍔″拰 CI schema linter 閮藉簲浠庢湰鏂囧绾︾敓鎴愭垨鍙嶅悜鏍￠獙锟?
+鏈疆鍙墦纾ㄨ璁★紝涓嶄慨锟?`legacy-java-plus-entity` 鏃㈡湁琛ㄧ粨鏋勶紝涓嶇敓鎴愮敓浜ц縼绉伙拷?
+褰撳墠 portal 鍓嶇 public銆乧onsole銆乤dmin 妯″潡鍒版暟鎹簱琛ㄥ拰瀛楁鐨勫畬鏁存槧灏勮 [12-鍓嶇鍔熻兘妯″潡涓庢暟鎹簱琛ㄧ粨鏋勬槧锟?md](./12-鍓嶇鍔熻兘妯″潡涓庢暟鎹簱琛ㄧ粨鏋勬槧锟?md)銆傞〉闈㈢骇瑕嗙洊楠屾敹銆佸瓧娈电骇澶嶆牳鍜屾満鍣ㄥ彲鏍￠獙琛ㄦ敞鍐岃〃锟?[13-椤甸潰绾ф暟鎹粨鏋勮鐩栦笌SchemaRegistry钀藉湴璁捐.md](./13-椤甸潰绾ф暟鎹粨鏋勮鐩栦笌SchemaRegistry钀藉湴璁捐.md)銆乕14-鏁版嵁缁撴瀯缁嗚妭澶嶆牳涓庤ˉ寮鸿锟?md](./14-鏁版嵁缁撴瀯缁嗚妭澶嶆牳涓庤ˉ寮鸿锟?md) 锟?[schema-registry/sdkwork-clawrouter.tables.yaml](./schema-registry/sdkwork-clawrouter.tables.yaml)銆傛湰鏂囪礋璐ｆ牳蹇冩暟鎹绾︼紝12 鍙锋枃妗ｈ礋璐ｄ粠鍓嶇浜у搧闈㈠弽鎺ㄥ畬鏁磋〃缁撴瀯瑕嗙洊锟?3 鍙锋枃妗ｈ礋璐ｉ〉闈㈢骇瑕嗙洊闂幆锟?Registry 钀藉湴瑙勫垯锟?4 鍙锋枃妗ｈ礋锟?service/interface/mock data 瀛楁绾х己鍙ｅ鏍革拷?
+鏍稿績鐩爣锟?
+- 淇濇寔鐢ㄦ埛銆乂IP銆佽处鎴枫€佷紭鎯犲埜銆佺Н鍒嗗厖鍊笺€佽鍗曘€佹敮浠樸€侀€€娆俱€佸彂绁ㄧ瓑 `plus_*` 琛ㄧ粨鏋勫畬鍏ㄤ竴鑷达拷?- 鏁版嵁搴撴ā鍨嬮噰锟?Java Entity first锛氫换浣曟柊澧炴暟鎹ā鍨嬪厛锟?`legacy-java-plus-entity`锛涘彧瑕佸瓨锟?`Plus*` Entity锛屽氨蹇呴』娌跨敤瀵瑰簲 `plus_*` 琛ㄥ拰 Java app/backend API锛屼笉寰楀湪 claw-router 涓嬫柊寤哄悓涔変富鏁版嵁琛拷?- 锟?claw-router 鏂板缃戝叧鍩熻兘鍔涜璁℃爣鍑嗗寲銆佸彲瀹¤銆佸彲鎵╁睍鐨勬柊琛拷?- 鏀拺鏈湴妗岄潰銆丼erver銆丏ocker銆並8S 鍥涚閮ㄧ讲鏂瑰紡锛屼繚鎸佸悓涓€濂楅€昏緫鏁版嵁濂戠害锟?- 鏀拺 API 閫氳繃 Java app/backend 鏍囧噯璺緞鑷敱鍒囨崲锛氱敤鎴烽潰 `/app/v3/api`锛岀鐞嗛潰 `/backend/v3/api`锛孫penAI 鍏煎锟?`/v1/*`锟?- 鏀拺楂樻€ц兘鐑矾寰勶細閰嶇疆鍙紦瀛樸€佽姹備簨瀹炲彲寮傛钀藉湴銆佺敤閲忕粨绠楀彲骞傜瓑琛ュ伩锟?
+## 2. 鏁版嵁鏋舵瀯鎬昏
 
-### 2.1 分层模型
+### 2.1 鍒嗗眰妯″瀷
 
-| �?| 说明 | 代表�?| 写入 owner | 一致性要�?|
+| 锟?| 璇存槑 | 浠ｈ〃锟?| 鍐欏叆 owner | 涓€鑷存€ц锟?|
 | --- | --- | --- | --- | --- |
-| 存量主数据层 | Java 业务实体已有事实来源 | `plus_user`、`plus_account`、`plus_vip_*`、`plus_order`、`plus_payment` | 既有 Java service/repository | 保持现状，claw-router 不直接改结构 |
-| 控制面配置层 | 网关域配置、Provider、模型厂家、模型、策略、Key 扩展、卡券营销 | `iam_*`、`integration_*`、`ai_model_vendor`、`ai_model`、`ai_routing_*`、`promotion_*` | claw-router control-plane | 强一致写入，变更发布到缓�?|
-| 热路径事实层 | 请求决策、调�?trace、用量事�?| `ai_routing_decision_log`、`ai_request_trace`、`ai_usage_fact` | gateway runtime | append-only/�?append-only，支持异步落地和补偿 |
-| 结算投影�?| 用量�?appbase 资金/积分账户的桥接证�?| `commerce_usage_settlement`、`commerce_billing_export` | settlement worker | 幂等，引�?`commerce_account_ledger_entry`，不复制账务事实 |
-| 运营审计�?| 配置快照、审计、任务、告警、事�?| `ops_config_snapshot`、`ops_audit_log`、`ops_outbox_event`、`ops_inbox_event` | admin/ops/worker | L3 审计、留存、可追踪 |
-| 门户内容�?| 统一门户中的生态内�?| `studio_*`、`content_*` | portal/content service | 与核心账务隔离，可独立扩�?|
+| 瀛橀噺涓绘暟鎹眰 | Java 涓氬姟瀹炰綋宸叉湁浜嬪疄鏉ユ簮 | `plus_user`銆乣plus_account`銆乣plus_vip_*`銆乣plus_order`銆乣plus_payment` | 鏃㈡湁 Java service/repository | 淇濇寔鐜扮姸锛宑law-router 涓嶇洿鎺ユ敼缁撴瀯 |
+| 鎺у埗闈㈤厤缃眰 | 缃戝叧鍩熼厤缃€丳rovider銆佹ā鍨嬪巶瀹躲€佹ā鍨嬨€佺瓥鐣ャ€並ey 鎵╁睍銆佸崱鍒歌惀閿€ | `iam_*`銆乣integration_*`銆乣ai_model_vendor`銆乣ai_model`銆乣ai_routing_*`銆乣promotion_*` | claw-router control-plane | 寮轰竴鑷村啓鍏ワ紝鍙樻洿鍙戝竷鍒扮紦锟?|
+| 鐑矾寰勪簨瀹炲眰 | 璇锋眰鍐崇瓥銆佽皟锟?trace銆佺敤閲忎簨锟?| `ai_routing_decision_log`銆乣ai_request_trace`銆乣ai_usage` | gateway runtime | append-only/锟?append-only锛屾敮鎸佸紓姝ヨ惤鍦板拰琛ュ伩 |
+| 缁撶畻鎶曞奖锟?| 鐢ㄩ噺锟?appbase 璧勯噾/绉垎璐︽埛鐨勬ˉ鎺ヨ瘉锟?| `commerce_usage_settlement`銆乣commerce_billing_export` | settlement worker | 骞傜瓑锛屽紩锟?`commerce_account_ledger_entry`锛屼笉澶嶅埗璐﹀姟浜嬪疄 |
+| 杩愯惀瀹¤锟?| 閰嶇疆蹇収銆佸璁°€佷换鍔°€佸憡璀︺€佷簨锟?| `ops_config_snapshot`銆乣ops_audit_log`銆乣ops_outbox_event`銆乣ops_inbox_event` | admin/ops/worker | L3 瀹¤銆佺暀瀛樸€佸彲杩借釜 |
+| 闂ㄦ埛鍐呭锟?| 缁熶竴闂ㄦ埛涓殑鐢熸€佸唴锟?| `studio_*`銆乣content_*` | portal/content service | 涓庢牳蹇冭处鍔￠殧绂伙紝鍙嫭绔嬫墿锟?|
 
-### 2.2 写入边界
+### 2.2 鍐欏叆杈圭晫
 
-| 操作 | 正确写入路径 | 禁止路径 |
+| 鎿嶄綔 | 姝ｇ‘鍐欏叆璺緞 | 绂佹璺緞 |
 | --- | --- | --- |
-| 创建/更新用户 | Java app/backend 用户服务�?`plus_user` | �?claw-router 中创建用户镜像表 |
-| 充值、扣费、退款、积分变�?| 账户/VIP/交易服务�?`plus_account`、`plus_account_history`、`plus_vip_point_change`、`plus_payment`、`plus_refund` | 网关直接 update 余额；只写投影不写流�?|
-| 创建 API Key | 优先复用 Java `plus_api_key`；需要网关扩展时�?`iam_gateway_api_key` 作为 L3 Key 索引/扩展 | 保存明文 key；多个表各自生成同一用�?key |
-| 配置 Provider 账号 | �?`integration_provider_account`，secret 进入 Vault/Keychain/KMS，库中只保存 `secret_ref` �?hash | �?JSON 中保存上�?API key 明文 |
-| 配置路由策略 | �?`ai_routing_policy/profile/rule`，通过 outbox 发布缓存刷新 | 热路径实例本地配置漂移后不回�?|
-| 记录请求用量 | gateway �?`ai_usage_fact`，settlement worker 结转 | 直接�?trace �?access log 作为账务事实 |
-| 发布跨服务事�?| 本地事务�?`ops_outbox_event`，消费者写 `ops_inbox_event` 去重 | 只依赖内存队列或无幂等消息消�?|
+| 鍒涘缓/鏇存柊鐢ㄦ埛 | Java app/backend 鐢ㄦ埛鏈嶅姟锟?`plus_user` | 锟?claw-router 涓垱寤虹敤鎴烽暅鍍忚〃 |
+| 鍏呭€笺€佹墸璐广€侀€€娆俱€佺Н鍒嗗彉锟?| 璐︽埛/VIP/浜ゆ槗鏈嶅姟锟?`plus_account`銆乣plus_account_history`銆乣plus_vip_point_change`銆乣plus_payment`銆乣plus_refund` | 缃戝叧鐩存帴 update 浣欓锛涘彧鍐欐姇褰变笉鍐欐祦锟?|
+| 鍒涘缓 API Key | 浼樺厛澶嶇敤 Java `plus_api_key`锛涢渶瑕佺綉鍏虫墿灞曟椂锟?`iam_gateway_api_key` 浣滀负 L3 Key 绱㈠紩/鎵╁睍 | 淇濆瓨鏄庢枃 key锛涘涓〃鍚勮嚜鐢熸垚鍚屼竴鐢拷?key |
+| 閰嶇疆 Provider 璐﹀彿 | 锟?`integration_provider_account`锛宻ecret 杩涘叆 Vault/Keychain/KMS锛屽簱涓彧淇濆瓨 `secret_ref` 锟?hash | 锟?JSON 涓繚瀛樹笂锟?API key 鏄庢枃 |
+| 閰嶇疆璺敱绛栫暐 | 锟?`ai_routing_policy/profile/rule`锛岄€氳繃 outbox 鍙戝竷缂撳瓨鍒锋柊 | 鐑矾寰勫疄渚嬫湰鍦伴厤缃紓绉诲悗涓嶅洖锟?|
+| 璁板綍璇锋眰鐢ㄩ噺 | gateway 锟?`ai_usage`锛宻ettlement worker 缁撹浆 | 鐩存帴锟?trace 锟?access log 浣滀负璐﹀姟浜嬪疄 |
+| 鍙戝竷璺ㄦ湇鍔′簨锟?| 鏈湴浜嬪姟锟?`ops_outbox_event`锛屾秷璐硅€呭啓 `ops_inbox_event` 鍘婚噸 | 鍙緷璧栧唴瀛橀槦鍒楁垨鏃犲箓绛夋秷鎭秷锟?|
 
-## 3. 存量 `plus_*` 表复用契�?
-### 3.1 强制复用�?
-以下业务域不�?claw-router 中创建替代表。表结构、字段、索引、枚举转换、加密转换、审计字段均�?`legacy-java-plus-entity` 为准�?
-| 领域 | 事实来源�?| 本系统用�?|
+## 3. 瀛橀噺 `plus_*` 琛ㄥ鐢ㄥ锟?
+### 3.1 寮哄埗澶嶇敤锟?
+浠ヤ笅涓氬姟鍩熶笉锟?claw-router 涓垱寤烘浛浠ｈ〃銆傝〃缁撴瀯銆佸瓧娈点€佺储寮曘€佹灇涓捐浆鎹€佸姞瀵嗚浆鎹€佸璁″瓧娈靛潎锟?`legacy-java-plus-entity` 涓哄噯锟?
+| 棰嗗煙 | 浜嬪疄鏉ユ簮锟?| 鏈郴缁熺敤锟?|
 | --- | --- | --- |
-| 用户 | `plus_user`、`plus_user_address`、`plus_oauth_account` | 登录用户、租户归属、联系方式、OAuth 绑定 |
-| 租户组织权限 | `plus_tenant`、`plus_organization`、`plus_organization_member`、`plus_department`、`plus_position`、`plus_role`、`plus_permission`、`plus_role_permission`、`plus_user_role` | app/backend 权限上下文、后台管理权�?|
-| VIP | `plus_vip_user`、`plus_vip_level`、`plus_vip_benefit`、`plus_vip_level_benefit`、`plus_vip_benefit_usage` | VIP 状态、等级、权益、权益消�?|
-| 充值和积分 | `plus_vip_recharge`、`plus_vip_recharge_pack`、`plus_vip_recharge_method`、`plus_vip_point_change` | 充值记录、充值包、积分流�?|
-| 账户和账�?| `plus_account`、`plus_account_history`、`plus_ledger_bridge`、`plus_currency`、`plus_exchange_rate`、`plus_account_exchange_config` | 余额、积分、token、账户流水、汇�?|
-| 商品订单支付 | `plus_product`、`plus_sku`、`plus_order`、`plus_order_item`、`plus_payment`、`plus_payment_webhook_event`、`plus_refund` | 套餐、订单、支付、回调、退�?|
-| 服务订单派发 | `plus_order_dispatch_rule`、`plus_order_worker_dispatch_profile` | 服务订单派发规则、接单人员容量和评级配置 |
-| 卡券营销 | `promotion_offer`、`promotion_offer_version`、`promotion_coupon_stock`、`promotion_code`、`promotion_user_coupon`、`promotion_discount_application`、`promotion_coupon_ledger_entry`、`promotion_external_binding` | 券定义、版本、库存、兑换码、用户券、核销、流水和外部平台绑定 |
-| 发票购物�?| `plus_invoice`、`plus_invoice_item`、`plus_invoice_record`、`plus_shopping_cart`、`plus_shopping_cart_item` | 发票、购物车 |
+| 鐢ㄦ埛 | `plus_user`銆乣plus_user_address`銆乣plus_oauth_account` | 鐧诲綍鐢ㄦ埛銆佺鎴峰綊灞炪€佽仈绯绘柟寮忋€丱Auth 缁戝畾 |
+| 绉熸埛缁勭粐鏉冮檺 | `plus_tenant`銆乣plus_organization`銆乣plus_organization_member`銆乣plus_department`銆乣plus_position`銆乣plus_role`銆乣plus_permission`銆乣plus_role_permission`銆乣plus_user_role` | app/backend 鏉冮檺涓婁笅鏂囥€佸悗鍙扮鐞嗘潈锟?|
+| VIP | `plus_vip_user`銆乣plus_vip_level`銆乣plus_vip_benefit`銆乣plus_vip_level_benefit`銆乣plus_vip_benefit_usage` | VIP 鐘舵€併€佺瓑绾с€佹潈鐩娿€佹潈鐩婃秷锟?|
+| 鍏呭€煎拰绉垎 | `plus_vip_recharge`銆乣plus_vip_recharge_pack`銆乣plus_vip_recharge_method`銆乣plus_vip_point_change` | 鍏呭€艰褰曘€佸厖鍊煎寘銆佺Н鍒嗘祦锟?|
+| 璐︽埛鍜岃处锟?| `plus_account`銆乣plus_account_history`銆乣plus_ledger_bridge`銆乣plus_currency`銆乣plus_exchange_rate`銆乣plus_account_exchange_config` | 浣欓銆佺Н鍒嗐€乼oken銆佽处鎴锋祦姘淬€佹眹锟?|
+| 鍟嗗搧璁㈠崟鏀粯 | `plus_product`銆乣plus_sku`銆乣plus_order`銆乣plus_order_item`銆乣plus_payment`銆乣plus_payment_webhook_event`銆乣plus_refund` | 濂楅銆佽鍗曘€佹敮浠樸€佸洖璋冦€侀€€锟?|
+| 鏈嶅姟璁㈠崟娲惧彂 | `plus_order_dispatch_rule`銆乣plus_order_worker_dispatch_profile` | 鏈嶅姟璁㈠崟娲惧彂瑙勫垯銆佹帴鍗曚汉鍛樺閲忓拰璇勭骇閰嶇疆 |
+| 鍗″埜钀ラ攢 | `promotion_offer`銆乣promotion_offer_version`銆乣promotion_coupon_stock`銆乣promotion_code`銆乣promotion_user_coupon`銆乣promotion_discount_application`銆乣promotion_coupon_ledger_entry`銆乣promotion_external_binding` | 鍒稿畾涔夈€佺増鏈€佸簱瀛樸€佸厬鎹㈢爜銆佺敤鎴峰埜銆佹牳閿€銆佹祦姘村拰澶栭儴骞冲彴缁戝畾 |
+| 鍙戠エ璐墿锟?| `plus_invoice`銆乣plus_invoice_item`銆乣plus_invoice_record`銆乣plus_shopping_cart`銆乣plus_shopping_cart_item` | 鍙戠エ銆佽喘鐗╄溅 |
 
-### 3.2 现有实体观察结论
+### 3.2 鐜版湁瀹炰綋瑙傚療缁撹
 
-| �?| 观察到的关键契约 | claw-router 处理 |
+| 锟?| 瑙傚療鍒扮殑鍏抽敭濂戠害 | claw-router 澶勭悊 |
 | --- | --- | --- |
-| `plus_user` | 包含用户名、昵称、加密密码、平台、性别、邮箱、手机号、区域、OAuth JSON、角色关系、metadata �?| 只引用，不复�?PII；返回字段走 app/backend DTO 脱敏 |
-| `plus_account` | 唯一键为 `(tenant_id, organization_id, user_id, account_type)`；包含余额、冻结余额、积分、token、状�?| 所有扣�?充值必须走账户服务；不得绕过流�?|
-| `plus_account_history` | 包含 account、transaction、asset、before/after、source、usage_result、status | 用量结算的最终账务证据落在这�?|
-| `plus_vip_recharge*` | 充值包、充值方式、充值记�?| Console 充值页面复用既有结�?|
-| `plus_vip_point_change` | 积分流水 | 积分消耗和赠送由既有 VIP/账户逻辑处理 |
-| `promotion_*` | 券定义、库存、兑换码、用户券、核销和流�?| Billing/redeem 功能只调用标�?promotion 能力 |
-| `plus_api_key` | 保存 `key_value` 加密值、owner、状态、过期、最后使用时�?| P0 可复用；如新�?`iam_gateway_api_key`，必须声明一对一或扩展关�?|
-| `plus_channel*` | 存量渠道、渠道账号、代理配置，部分配置使用 JSON | 作为兼容输入；新敏感 Provider 账号优先进入 `integration_*` L3 �?|
-| `legacy_model_info` | 模型目录字段较丰富，包含能力、限制、价�?JSON、统计字�?| 可作为模型导入来源；网关标准目录�?`ai_model` |
-| `legacy_model_price` | 存量价格使用 `Double` 字段 | 不修改；新标准价格表 `ai_model_pricing` 必须使用 decimal |
-| `plus_usage_record` | 存量用量记录包含 token、count、duration、cost、currency、request/response time | 可兼容导入；网关计费事实�?`ai_usage_fact` 为准 |
+| `plus_user` | 鍖呭惈鐢ㄦ埛鍚嶃€佹樀绉般€佸姞瀵嗗瘑鐮併€佸钩鍙般€佹€у埆銆侀偖绠便€佹墜鏈哄彿銆佸尯鍩熴€丱Auth JSON銆佽鑹插叧绯汇€乵etadata 锟?| 鍙紩鐢紝涓嶅锟?PII锛涜繑鍥炲瓧娈佃蛋 app/backend DTO 鑴辨晱 |
+| `plus_account` | 鍞竴閿负 `(tenant_id, organization_id, user_id, account_type)`锛涘寘鍚綑棰濄€佸喕缁撲綑棰濄€佺Н鍒嗐€乼oken銆佺姸锟?| 鎵€鏈夋墸锟?鍏呭€煎繀椤昏蛋璐︽埛鏈嶅姟锛涗笉寰楃粫杩囨祦锟?|
+| `plus_account_history` | 鍖呭惈 account銆乼ransaction銆乤sset銆乥efore/after銆乻ource銆乽sage_result銆乻tatus | 鐢ㄩ噺缁撶畻鐨勬渶缁堣处鍔¤瘉鎹惤鍦ㄨ繖锟?|
+| `plus_vip_recharge*` | 鍏呭€煎寘銆佸厖鍊兼柟寮忋€佸厖鍊艰锟?| Console 鍏呭€奸〉闈㈠鐢ㄦ棦鏈夌粨锟?|
+| `plus_vip_point_change` | 绉垎娴佹按 | 绉垎娑堣€楀拰璧犻€佺敱鏃㈡湁 VIP/璐︽埛閫昏緫澶勭悊 |
+| `promotion_*` | 鍒稿畾涔夈€佸簱瀛樸€佸厬鎹㈢爜銆佺敤鎴峰埜銆佹牳閿€鍜屾祦锟?| Billing/redeem 鍔熻兘鍙皟鐢ㄦ爣锟?promotion 鑳藉姏 |
+| `plus_api_key` | 淇濆瓨 `key_value` 鍔犲瘑鍊笺€乷wner銆佺姸鎬併€佽繃鏈熴€佹渶鍚庝娇鐢ㄦ椂锟?| P0 鍙鐢紱濡傛柊锟?`iam_gateway_api_key`锛屽繀椤诲０鏄庝竴瀵逛竴鎴栨墿灞曞叧锟?|
+| `plus_channel*` | 瀛橀噺娓犻亾銆佹笭閬撹处鍙枫€佷唬鐞嗛厤缃紝閮ㄥ垎閰嶇疆浣跨敤 JSON | 浣滀负鍏煎杈撳叆锛涙柊鏁忔劅 Provider 璐﹀彿浼樺厛杩涘叆 `integration_*` L3 锟?|
+| `legacy_model_info` | 妯″瀷鐩綍瀛楁杈冧赴瀵岋紝鍖呭惈鑳藉姏銆侀檺鍒躲€佷环锟?JSON銆佺粺璁″瓧锟?| 鍙綔涓烘ā鍨嬪鍏ユ潵婧愶紱缃戝叧鏍囧噯鐩綍锟?`ai_model` |
+| `legacy_model_price` | 瀛橀噺浠锋牸浣跨敤 `Double` 瀛楁 | 涓嶄慨鏀癸紱鏂版爣鍑嗕环鏍艰〃 `ai_model_pricing` 蹇呴』浣跨敤 decimal |
+| `plus_usage_record` | 瀛橀噺鐢ㄩ噺璁板綍鍖呭惈 token銆乧ount銆乨uration銆乧ost銆乧urrency銆乺equest/response time | 鍙吋瀹瑰鍏ワ紱缃戝叧璁¤垂浜嬪疄锟?`ai_usage` 涓哄噯 |
 
-### 3.3 禁止创建的替代表
+### 3.3 绂佹鍒涘缓鐨勬浛浠ｈ〃
 
-本轮不得创建以下替代表，即使这些名称看起来符合标准前缀�?
-| 禁止�?| 原因 |
+鏈疆涓嶅緱鍒涘缓浠ヤ笅鏇夸唬琛紝鍗充娇杩欎簺鍚嶇О鐪嬭捣鏉ョ鍚堟爣鍑嗗墠缂€锟?
+| 绂佹锟?| 鍘熷洜 |
 | --- | --- |
-| `iam_user`、`iam_user_address`、`iam_user_oauth_account` | 会破�?`plus_user*` 事实来源一致�?|
-| `commerce_account`、`commerce_account_history` | 会形成双账户、双流水风险 |
-| `commerce_vip_user`、`commerce_vip_recharge`、`commerce_vip_point_change` | 会形成双 VIP/积分事实 |
-| �?`promotion_` 命名的卡券主�?| 会形成双券事�?|
-| `commerce_order`、`commerce_payment`、`commerce_refund`、`commerce_invoice` | 会绕开既有交易支付链路 |
-| 任意 `claw_*`、`router_*`、`sdkwork_*` 业务�?| 违反 `DATABASE_SPEC.md` 的业务前缀要求 |
+| `iam_user`銆乣iam_user_address`銆乣iam_user_oauth_account` | 浼氱牬锟?`plus_user*` 浜嬪疄鏉ユ簮涓€鑷达拷?|
+| `commerce_account`銆乣commerce_account_history` | 浼氬舰鎴愬弻璐︽埛銆佸弻娴佹按椋庨櫓 |
+| `commerce_vip_user`銆乣commerce_vip_recharge`銆乣commerce_vip_point_change` | 浼氬舰鎴愬弻 VIP/绉垎浜嬪疄 |
+| 锟?`promotion_` 鍛藉悕鐨勫崱鍒镐富锟?| 浼氬舰鎴愬弻鍒镐簨锟?|
+| `commerce_order`銆乣commerce_payment`銆乣commerce_refund`銆乣commerce_invoice` | 浼氱粫寮€鏃㈡湁浜ゆ槗鏀粯閾捐矾 |
+| 浠绘剰 `claw_*`銆乣router_*`銆乣sdkwork_*` 涓氬姟锟?| 杩濆弽 `DATABASE_SPEC.md` 鐨勪笟鍔″墠缂€瑕佹眰 |
 
-未来如果要把 `plus_*` 改名为标准业务前缀，必须另立迁移项目，先完成兼容视图、双写、回填、校验、读切换、写切换、收缩和回滚/前滚方案�?
-## 4. 公共字段模板
+鏈潵濡傛灉瑕佹妸 `plus_*` 鏀瑰悕涓烘爣鍑嗕笟鍔″墠缂€锛屽繀椤诲彟绔嬭縼绉婚」鐩紝鍏堝畬鎴愬吋瀹硅鍥俱€佸弻鍐欍€佸洖濉€佹牎楠屻€佽鍒囨崲銆佸啓鍒囨崲銆佹敹缂╁拰鍥炴粴/鍓嶆粴鏂规锟?
+## 4. 鍏叡瀛楁妯℃澘
 
-### 4.1 L2/L3 主表字段�?
-| 字段 | 逻辑类型 | 必填 | 说明 |
+### 4.1 L2/L3 涓昏〃瀛楁锟?
+| 瀛楁 | 閫昏緫绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `id` | int64 | �?| 内部主键，API 序列化为 string |
-| `uuid` | string(64) | �?| 外部稳定 ID，唯一 |
-| `tenant_id` | int64 | �?| 租户 ID；平台共享数据可�?0，但必须在契约中声明 |
-| `organization_id` | int64 | �?| 组织 ID；无组织�?0 |
-| `user_id` | int64 | 条件 | 用户私有或用户创建资源必�?|
-| `owner_type` | enum_int32 | 条件 | owner 模型，支�?user、organization、tenant、system、project �?|
-| `owner_id` | int64 | 条件 | owner ID |
-| `data_scope` | enum_int32 | �?| private、organization、tenant、public |
-| `status` | enum_int32 | �?| 状态机由表契约定义 |
-| `created_at` | instant | �?| UTC 创建时间 |
-| `updated_at` | instant | �?| UTC 更新时间 |
-| `version` | int64 | �?| 乐观锁，初始 0 |
-| `created_by` | int64 | 建议 | 创建�?|
-| `updated_by` | int64 | 建议 | 更新�?|
-| `deleted_at` | instant | 可�?| 软删除时�?|
-| `deleted_by` | int64 | 可�?| 删除�?|
-| `archived_at` | instant | 可�?| 归档时间 |
-| `retention_until` | instant | L3 建议 | 留存截止时间 |
-| `request_id` | string(128) | 条件 | 请求链路 ID |
-| `metadata` | json | 可�?| 仅放扩展字段，不放核心查询字�?|
+| `id` | int64 | 锟?| 鍐呴儴涓婚敭锛孉PI 搴忓垪鍖栦负 string |
+| `uuid` | string(64) | 锟?| 澶栭儴绋冲畾 ID锛屽敮涓€ |
+| `tenant_id` | int64 | 锟?| 绉熸埛 ID锛涘钩鍙板叡浜暟鎹彲锟?0锛屼絾蹇呴』鍦ㄥ绾︿腑澹版槑 |
+| `organization_id` | int64 | 锟?| 缁勭粐 ID锛涙棤缁勭粐锟?0 |
+| `user_id` | int64 | 鏉′欢 | 鐢ㄦ埛绉佹湁鎴栫敤鎴峰垱寤鸿祫婧愬繀锟?|
+| `owner_type` | enum_int32 | 鏉′欢 | owner 妯″瀷锛屾敮锟?user銆乷rganization銆乼enant銆乻ystem銆乸roject 锟?|
+| `owner_id` | int64 | 鏉′欢 | owner ID |
+| `data_scope` | enum_int32 | 锟?| private銆乷rganization銆乼enant銆乸ublic |
+| `status` | enum_int32 | 锟?| 鐘舵€佹満鐢辫〃濂戠害瀹氫箟 |
+| `created_at` | instant | 锟?| UTC 鍒涘缓鏃堕棿 |
+| `updated_at` | instant | 锟?| UTC 鏇存柊鏃堕棿 |
+| `version` | int64 | 锟?| 涔愯閿侊紝鍒濆 0 |
+| `created_by` | int64 | 寤鸿 | 鍒涘缓锟?|
+| `updated_by` | int64 | 寤鸿 | 鏇存柊锟?|
+| `deleted_at` | instant | 鍙拷?| 杞垹闄ゆ椂锟?|
+| `deleted_by` | int64 | 鍙拷?| 鍒犻櫎锟?|
+| `archived_at` | instant | 鍙拷?| 褰掓。鏃堕棿 |
+| `retention_until` | instant | L3 寤鸿 | 鐣欏瓨鎴鏃堕棿 |
+| `request_id` | string(128) | 鏉′欢 | 璇锋眰閾捐矾 ID |
+| `metadata` | json | 鍙拷?| 浠呮斁鎵╁睍瀛楁锛屼笉鏀炬牳蹇冩煡璇㈠瓧锟?|
 
-### 4.2 事件/事实表字段组
+### 4.2 浜嬩欢/浜嬪疄琛ㄥ瓧娈电粍
 
-| 字段 | 逻辑类型 | 必填 | 说明 |
+| 瀛楁 | 閫昏緫绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `id` | int64 | �?| 内部主键 |
-| `uuid` | string(64) | �?| 事件/事实外部 ID |
-| `tenant_id` | int64 | �?| 租户 |
-| `organization_id` | int64 | �?| 组织 |
-| `user_id` | int64 | 条件 | 用户 |
-| `request_id` | string(128) | �?| 请求 ID |
-| `trace_id` | string(128) | 建议 | 分布�?trace |
-| `span_id` | string(128) | 可�?| 分布�?span |
-| `idempotency_key` | string(128) | 条件 | 幂等�?|
-| `external_event_id` | string(128) | 条件 | 第三方事�?ID |
-| `payload_hash` | string(128) | L3 必填 | payload 摘要 |
-| `status` | enum_int32 | �?| 处理状�?|
-| `created_at` | instant | �?| 记录创建时间 |
-| `occurred_at` | instant | 条件 | 业务发生时间 |
-| `retention_until` | instant | L3 建议 | 留存截止 |
-| `legal_hold` | bool | L3 建议 | 法务冻结 |
+| `id` | int64 | 锟?| 鍐呴儴涓婚敭 |
+| `uuid` | string(64) | 锟?| 浜嬩欢/浜嬪疄澶栭儴 ID |
+| `tenant_id` | int64 | 锟?| 绉熸埛 |
+| `organization_id` | int64 | 锟?| 缁勭粐 |
+| `user_id` | int64 | 鏉′欢 | 鐢ㄦ埛 |
+| `request_id` | string(128) | 锟?| 璇锋眰 ID |
+| `trace_id` | string(128) | 寤鸿 | 鍒嗗竷锟?trace |
+| `span_id` | string(128) | 鍙拷?| 鍒嗗竷锟?span |
+| `idempotency_key` | string(128) | 鏉′欢 | 骞傜瓑锟?|
+| `external_event_id` | string(128) | 鏉′欢 | 绗笁鏂逛簨锟?ID |
+| `payload_hash` | string(128) | L3 蹇呭～ | payload 鎽樿 |
+| `status` | enum_int32 | 锟?| 澶勭悊鐘讹拷?|
+| `created_at` | instant | 锟?| 璁板綍鍒涘缓鏃堕棿 |
+| `occurred_at` | instant | 鏉′欢 | 涓氬姟鍙戠敓鏃堕棿 |
+| `retention_until` | instant | L3 寤鸿 | 鐣欏瓨鎴 |
+| `legal_hold` | bool | L3 寤鸿 | 娉曞姟鍐荤粨 |
 
-## 5. 前缀注册�?
-| 前缀 | bounded context | owner | 合规级别 | 可建表范�?|
+## 5. 鍓嶇紑娉ㄥ唽锟?
+| 鍓嶇紑 | bounded context | owner | 鍚堣绾у埆 | 鍙缓琛ㄨ寖锟?|
 | --- | --- | --- | --- | --- |
-| `iam_` | identity-access | 身份与访问团�?| L2/L3 | API Key 扩展、访问策略、风险策略；不替�?`plus_user` |
-| `integration_` | provider-integration | Provider 集成团队 | L2/L3 | Provider、渠道、上游账号、代理、健康快�?|
-| `ai_` | ai-routing-metering | AI 网关团队 | L2/L3 | 模型目录、模型价格、路由策略、决策日志、请�?trace、用量事�?|
-| `commerce_` | router-commerce-projection | 交易账户团队 | L3 | 用量结算投影、账单导出、价格计划映射；不替代账�?订单/支付 |
-| `studio_` | portal-studio-assets | 产品生态团�?| L2 | 应用中心、技能中心、设计时资产 |
-| `content_` | portal-content | 内容运营团队 | L2 | 公告、论坛、课程、评�?|
-| `ops_` | operations-observability | 平台运维团队 | L2/L3 | 审计、事件、配置快照、任务、告警、实例心�?|
+| `iam_` | identity-access | 韬唤涓庤闂洟锟?| L2/L3 | API Key 鎵╁睍銆佽闂瓥鐣ャ€侀闄╃瓥鐣ワ紱涓嶆浛锟?`plus_user` |
+| `integration_` | provider-integration | Provider 闆嗘垚鍥㈤槦 | L2/L3 | Provider銆佹笭閬撱€佷笂娓歌处鍙枫€佷唬鐞嗐€佸仴搴峰揩锟?|
+| `ai_` | ai-routing-metering | AI 缃戝叧鍥㈤槦 | L2/L3 | 妯″瀷鐩綍銆佹ā鍨嬩环鏍笺€佽矾鐢辩瓥鐣ャ€佸喅绛栨棩蹇椼€佽锟?trace銆佺敤閲忎簨锟?|
+| `commerce_` | router-commerce-projection | 浜ゆ槗璐︽埛鍥㈤槦 | L3 | 鐢ㄩ噺缁撶畻鎶曞奖銆佽处鍗曞鍑恒€佷环鏍艰鍒掓槧灏勶紱涓嶆浛浠ｈ处锟?璁㈠崟/鏀粯 |
+| `studio_` | portal-studio-assets | 浜у搧鐢熸€佸洟锟?| L2 | 搴旂敤涓績銆佹妧鑳戒腑蹇冦€佽璁℃椂璧勪骇 |
+| `content_` | portal-content | 鍐呭杩愯惀鍥㈤槦 | L2 | 鍏憡銆佽鍧涖€佽绋嬨€佽瘎锟?|
+| `ops_` | operations-observability | 骞冲彴杩愮淮鍥㈤槦 | L2/L3 | 瀹¤銆佷簨浠躲€侀厤缃揩鐓с€佷换鍔°€佸憡璀︺€佸疄渚嬪績锟?|
 
-## 6. IAM 核心契约
+## 6. IAM 鏍稿績濂戠害
 
 ### 6.1 `ai_channel_group`
 
-用途：API Key 分组、项目化管理、默认策略绑定。该表不保存 Key�?
-产品约束：创�?API Key 时选择的是该表中的分组。分组负责平台、计费类型、默认访问策略、默认配额策略、容量和默认定价方案；定价细节由 `ai_pricing_plan`、`ai_pricing_rule`、`ai_pricing_tier` 承担，不能再另建“价格分组”替代业务分组�?
-| 属�?| �?|
+鐢ㄩ€旓細API Key 鍒嗙粍銆侀」鐩寲绠＄悊銆侀粯璁ょ瓥鐣ョ粦瀹氥€傝琛ㄤ笉淇濆瓨 Key锟?
+浜у搧绾︽潫锛氬垱锟?API Key 鏃堕€夋嫨鐨勬槸璇ヨ〃涓殑鍒嗙粍銆傚垎缁勮礋璐ｅ钩鍙般€佽璐圭被鍨嬨€侀粯璁よ闂瓥鐣ャ€侀粯璁ら厤棰濈瓥鐣ャ€佸閲忓拰榛樿瀹氫环鏂规锛涘畾浠风粏鑺傜敱 `ai_pricing_plan`銆乣ai_pricing_rule`銆乣ai_pricing_tier` 鎵挎媴锛屼笉鑳藉啀鍙﹀缓鈥滀环鏍煎垎缁勨€濇浛浠ｄ笟鍔″垎缁勶拷?
+| 灞烇拷?| 锟?|
 | --- | --- |
 | profile | tenant_entity |
 | compliance_level | L2 |
 | system_of_record | true |
 | write_owner | claw-router-control |
 
-业务字段�?
-| 字段 | 类型 | 必填 | 说明 |
+涓氬姟瀛楁锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `name` | string(128) | �?| 分组名称 |
-| `code` | string(64) | �?| 租户内可读编�?|
-| `description` | string(512) | �?| 说明 |
-| `provider_code` | string(64) | �?| 默认 Provider/平台，支�?Admin Group �?platform 展示 |
-| `group_type` | enum_int32 | �?| public、dedicated、internal 等分组类�?|
-| `default_policy_id` | int64 | �?| 默认访问策略 |
-| `default_quota_policy_id` | int64 | �?| 默认配额策略 |
-| `environment` | enum_int32 | �?| prod、staging、dev、sandbox |
-| `pricing_plan_id` | int64 | �?| 默认绑定�?`ai_pricing_plan.id` |
-| `pricing_plan_code` | string(64) | �?| 定价方案编码快照 |
-| `rate_multiplier` | decimal_string | �?| 计费倍率 |
-| `price_reference_mode` | enum_int32 | �?| official_reference、upstream_cost、custom 等价格参考模�?|
-| `official_price_multiplier` | decimal_string | �?| 以官方参考价为基准的倍率，未单独设置时可等于 `rate_multiplier` |
-| `billing_type` | enum_int32 | �?| balance、postpaid、free、custom |
-| `capacity_limit` | int64 | �?| 分组容量上限 |
-| `allowed_origin` | json | �?| Web 来源白名单，核心权限仍在 policy �?|
+| `name` | string(128) | 锟?| 鍒嗙粍鍚嶇О |
+| `code` | string(64) | 锟?| 绉熸埛鍐呭彲璇荤紪锟?|
+| `description` | string(512) | 锟?| 璇存槑 |
+| `provider_code` | string(64) | 锟?| 榛樿 Provider/骞冲彴锛屾敮锟?Admin Group 锟?platform 灞曠ず |
+| `group_type` | enum_int32 | 锟?| public銆乨edicated銆乮nternal 绛夊垎缁勭被锟?|
+| `default_policy_id` | int64 | 锟?| 榛樿璁块棶绛栫暐 |
+| `default_quota_policy_id` | int64 | 锟?| 榛樿閰嶉绛栫暐 |
+| `environment` | enum_int32 | 锟?| prod銆乻taging銆乨ev銆乻andbox |
+| `pricing_plan_id` | int64 | 锟?| 榛樿缁戝畾锟?`ai_pricing_plan.id` |
+| `pricing_plan_code` | string(64) | 锟?| 瀹氫环鏂规缂栫爜蹇収 |
+| `rate_multiplier` | decimal_string | 锟?| 璁¤垂鍊嶇巼 |
+| `price_reference_mode` | enum_int32 | 锟?| official_reference銆乽pstream_cost銆乧ustom 绛変环鏍煎弬鑰冩ā锟?|
+| `official_price_multiplier` | decimal_string | 锟?| 浠ュ畼鏂瑰弬鑰冧环涓哄熀鍑嗙殑鍊嶇巼锛屾湭鍗曠嫭璁剧疆鏃跺彲绛変簬 `rate_multiplier` |
+| `billing_type` | enum_int32 | 锟?| balance銆乸ostpaid銆乫ree銆乧ustom |
+| `capacity_limit` | int64 | 锟?| 鍒嗙粍瀹归噺涓婇檺 |
+| `allowed_origin` | json | 锟?| Web 鏉ユ簮鐧藉悕鍗曪紝鏍稿績鏉冮檺浠嶅湪 policy 锟?|
 
-约束和索引：
+绾︽潫鍜岀储寮曪細
 
-| 名称 | 类型 | 字段 |
+| 鍚嶇О | 绫诲瀷 | 瀛楁 |
 | --- | --- | --- |
 | `uk_ai_channel_group_uuid` | unique | `uuid` |
 | `uk_ai_channel_group_tenant_code` | unique | `tenant_id, organization_id, code` |
@@ -183,105 +183,105 @@
 
 #### 6.1.1 `ai_channel_group_metric_snapshot`
 
-用途：Key 分组容量和使用量的高频列表投影，服务 `/admin/group` �?`/console/api-keys`。它可以�?Key、Provider account、usage fact 重建，不作为账务事实�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細Key 鍒嗙粍瀹归噺鍜屼娇鐢ㄩ噺鐨勯珮棰戝垪琛ㄦ姇褰憋紝鏈嶅姟 `/admin/group` 锟?`/console/api-keys`銆傚畠鍙互锟?Key銆丳rovider account銆乽sage fact 閲嶅缓锛屼笉浣滀负璐﹀姟浜嬪疄锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `group_id` | int64 | �?| 分组 ID |
-| `group_code` | string(64) | �?| 分组编码快照 |
-| `provider_code` | string(64) | �?| 平台/Provider |
-| `account_available_count` | int64 | �?| 可用账号�?|
-| `account_total_count` | int64 | �?| 总账号数 |
-| `capacity_used` | decimal_string | �?| 已用容量 |
-| `capacity_limit` | decimal_string | �?| 容量上限 |
-| `request_count_today` | int64 | �?| 今日请求�?|
-| `request_count_total` | int64 | �?| 累计请求�?|
-| `usage_amount_today` | decimal_string | �?| 今日用量或金�?|
-| `usage_amount_total` | decimal_string | �?| 累计用量或金�?|
-| `health_status` | enum_int32 | �?| normal、warning、error |
-| `snapshot_at` | instant | �?| 快照时间 |
+| `group_id` | int64 | 锟?| 鍒嗙粍 ID |
+| `group_code` | string(64) | 锟?| 鍒嗙粍缂栫爜蹇収 |
+| `provider_code` | string(64) | 锟?| 骞冲彴/Provider |
+| `account_available_count` | int64 | 锟?| 鍙敤璐﹀彿锟?|
+| `account_total_count` | int64 | 锟?| 鎬昏处鍙锋暟 |
+| `capacity_used` | decimal_string | 锟?| 宸茬敤瀹归噺 |
+| `capacity_limit` | decimal_string | 锟?| 瀹归噺涓婇檺 |
+| `request_count_today` | int64 | 锟?| 浠婃棩璇锋眰锟?|
+| `request_count_total` | int64 | 锟?| 绱璇锋眰锟?|
+| `usage_amount_today` | decimal_string | 锟?| 浠婃棩鐢ㄩ噺鎴栭噾锟?|
+| `usage_amount_total` | decimal_string | 锟?| 绱鐢ㄩ噺鎴栭噾锟?|
+| `health_status` | enum_int32 | 锟?| normal銆亀arning銆乪rror |
+| `snapshot_at` | instant | 锟?| 蹇収鏃堕棿 |
 
 ### 6.2 `iam_gateway_api_key`
 
-用途：网关 API Key 的标�?L3 索引/扩展表。若 P0 复用 `plus_api_key`，该表可以暂缓；若创建，该表不得替代用户、账户、余额或订单事实�?
-| 属�?| �?|
+鐢ㄩ€旓細缃戝叧 API Key 鐨勬爣锟?L3 绱㈠紩/鎵╁睍琛ㄣ€傝嫢 P0 澶嶇敤 `plus_api_key`锛岃琛ㄥ彲浠ユ殏缂擄紱鑻ュ垱寤猴紝璇ヨ〃涓嶅緱鏇夸唬鐢ㄦ埛銆佽处鎴枫€佷綑棰濇垨璁㈠崟浜嬪疄锟?
+| 灞烇拷?| 锟?|
 | --- | --- |
 | profile | user_entity + credential_index |
 | compliance_level | L3 |
-| system_of_record | 条件 true；若复用 `plus_api_key` 则为 extension/projection |
+| system_of_record | 鏉′欢 true锛涜嫢澶嶇敤 `plus_api_key` 鍒欎负 extension/projection |
 | write_owner | api-key-service |
 
-业务字段�?
-| 字段 | 类型 | 必填 | 说明 |
+涓氬姟瀛楁锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `legacy_api_key_id` | int64 | 条件 | 对应 `plus_api_key.id`；复用存量时必填 |
-| `group_id` | int64 | �?| API Key 分组 |
-| `name` | string(128) | �?| Key 名称 |
-| `key_prefix` | string(32) | �?| 展示和快速定位前缀，例�?`sk-...` 前几�?|
-| `key_display_masked` | string(64) | �?| Console/API 返回的脱敏展示值，例如 `sk-prod-abc****xyz` |
-| `key_hash` | string(128) | �?| HMAC-SHA256 摘要，不可�?|
-| `hash_alg` | string(32) | �?| 算法版本，例�?`hmac-sha256-v1` |
-| `secret_version` | int64 | �?| 密钥轮换版本，创建为 1，轮换递增 |
-| `policy_id` | int64 | �?| 访问策略 |
-| `quota_policy_id` | int64 | �?| 配额策略 |
-| `rate_limit_policy_id` | int64 | �?| 限流策略 |
-| `environment` | enum_int32 | �?| prod、staging、dev、sandbox |
-| `expire_at` | instant | �?| 过期时间 |
-| `last_used_at` | instant | �?| 最近使用时�?|
-| `last_used_ip_hash` | string(128) | �?| 最�?IP 摘要 |
-| `last_used_ip_masked` | string(64) | �?| 最�?IP 脱敏展示，不保存完整明文 IP |
-| `last_used_ip_region` | string(128) | �?| 最�?IP 解析区域 |
-| `last_revealed_at` | instant | �?| 创建响应一次性返回明文的时间 |
-| `rotated_from_key_id` | int64 | �?| 轮换来源 Key ID |
-| `revoked_at` | instant | �?| 吊销时间 |
-| `revoked_by` | int64 | �?| 吊销�?|
-| `risk_level` | enum_int32 | �?| 风险等级 |
+| `legacy_api_key_id` | int64 | 鏉′欢 | 瀵瑰簲 `plus_api_key.id`锛涘鐢ㄥ瓨閲忔椂蹇呭～ |
+| `group_id` | int64 | 锟?| API Key 鍒嗙粍 |
+| `name` | string(128) | 锟?| Key 鍚嶇О |
+| `key_prefix` | string(32) | 锟?| 灞曠ず鍜屽揩閫熷畾浣嶅墠缂€锛屼緥锟?`sk-...` 鍓嶅嚑锟?|
+| `key_display_masked` | string(64) | 锟?| Console/API 杩斿洖鐨勮劚鏁忓睍绀哄€硷紝渚嬪 `sk-prod-abc****xyz` |
+| `key_hash` | string(128) | 锟?| HMAC-SHA256 鎽樿锛屼笉鍙拷?|
+| `hash_alg` | string(32) | 锟?| 绠楁硶鐗堟湰锛屼緥锟?`hmac-sha256-v1` |
+| `secret_version` | int64 | 锟?| 瀵嗛挜杞崲鐗堟湰锛屽垱寤轰负 1锛岃疆鎹㈤€掑 |
+| `policy_id` | int64 | 锟?| 璁块棶绛栫暐 |
+| `quota_policy_id` | int64 | 锟?| 閰嶉绛栫暐 |
+| `rate_limit_policy_id` | int64 | 锟?| 闄愭祦绛栫暐 |
+| `environment` | enum_int32 | 锟?| prod銆乻taging銆乨ev銆乻andbox |
+| `expire_at` | instant | 锟?| 杩囨湡鏃堕棿 |
+| `last_used_at` | instant | 锟?| 鏈€杩戜娇鐢ㄦ椂锟?|
+| `last_used_ip_hash` | string(128) | 锟?| 鏈€锟?IP 鎽樿 |
+| `last_used_ip_masked` | string(64) | 锟?| 鏈€锟?IP 鑴辨晱灞曠ず锛屼笉淇濆瓨瀹屾暣鏄庢枃 IP |
+| `last_used_ip_region` | string(128) | 锟?| 鏈€锟?IP 瑙ｆ瀽鍖哄煙 |
+| `last_revealed_at` | instant | 锟?| 鍒涘缓鍝嶅簲涓€娆℃€ц繑鍥炴槑鏂囩殑鏃堕棿 |
+| `rotated_from_key_id` | int64 | 锟?| 杞崲鏉ユ簮 Key ID |
+| `revoked_at` | instant | 锟?| 鍚婇攢鏃堕棿 |
+| `revoked_by` | int64 | 锟?| 鍚婇攢锟?|
+| `risk_level` | enum_int32 | 锟?| 椋庨櫓绛夌骇 |
 
-约束和索引：
+绾︽潫鍜岀储寮曪細
 
-| 名称 | 类型 | 字段 |
+| 鍚嶇О | 绫诲瀷 | 瀛楁 |
 | --- | --- | --- |
 | `uk_iam_gateway_api_key_uuid` | unique | `uuid` |
 | `uk_iam_gateway_api_key_hash` | unique | `key_hash` |
-| `uk_iam_gateway_api_key_legacy` | unique | `legacy_api_key_id`，仅复用 `plus_api_key` 时启�?|
+| `uk_iam_gateway_api_key_legacy` | unique | `legacy_api_key_id`锛屼粎澶嶇敤 `plus_api_key` 鏃跺惎锟?|
 | `idx_iam_gateway_api_key_tenant_user_status` | index | `tenant_id, organization_id, user_id, status, updated_at, id` |
 | `idx_ai_channel_group_status` | index | `tenant_id, organization_id, group_id, status` |
 
-安全要求�?
-- API Key 明文只在创建响应中返回一次，禁止落库�?- 认证热路径按 `key_hash` 查找或通过缓存查找�?- `key_prefix` 只能用于展示和排障，不可作为认证凭据�?- `last_used_ip_hash` 使用�?pepper �?hash，pepper 不入库�?- `key_display_masked` 只能由创建或轮换时生成的脱敏值写入，不允许通过截断明文回读生成�?
+瀹夊叏瑕佹眰锟?
+- API Key 鏄庢枃鍙湪鍒涘缓鍝嶅簲涓繑鍥炰竴娆★紝绂佹钀藉簱锟?- 璁よ瘉鐑矾寰勬寜 `key_hash` 鏌ユ壘鎴栭€氳繃缂撳瓨鏌ユ壘锟?- `key_prefix` 鍙兘鐢ㄤ簬灞曠ず鍜屾帓闅滐紝涓嶅彲浣滀负璁よ瘉鍑嵁锟?- `last_used_ip_hash` 浣跨敤锟?pepper 锟?hash锛宲epper 涓嶅叆搴擄拷?- `key_display_masked` 鍙兘鐢卞垱寤烘垨杞崲鏃剁敓鎴愮殑鑴辨晱鍊煎啓鍏ワ紝涓嶅厑璁搁€氳繃鎴柇鏄庢枃鍥炶鐢熸垚锟?
 ### 6.3 `iam_gateway_access_policy`
 
-用途：API Key、分组、租户或组织的访问边界�?
-| 属�?| �?|
+鐢ㄩ€旓細API Key銆佸垎缁勩€佺鎴锋垨缁勭粐鐨勮闂竟鐣岋拷?
+| 灞烇拷?| 锟?|
 | --- | --- |
 | profile | tenant_entity |
 | compliance_level | L3 |
 | system_of_record | true |
 | write_owner | access-policy-service |
 
-业务字段�?
-| 字段 | 类型 | 必填 | 说明 |
+涓氬姟瀛楁锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `name` | string(128) | �?| 策略名称 |
-| `policy_type` | enum_int32 | �?| api_key、group、tenant、organization |
-| `subject_type` | enum_int32 | �?| 绑定主体类型 |
-| `subject_id` | int64 | �?| 绑定主体 ID |
-| `subject_ref_hash` | string(128) | �?| IP、外�?Key、匿名主体等�?int64 主体�?hash |
-| `subject_ref_masked` | string(128) | �?| �?int64 主体的脱敏展�?|
-| `allowed_capabilities` | json | �?| 允许能力，如 chat、responses、embedding、image、audio、video |
-| `denied_capabilities` | json | �?| 禁止能力 |
-| `allowed_models` | json | �?| 模型白名�?|
-| `denied_models` | json | �?| 模型黑名�?|
-| `network_policy_mode` | enum_int32 | �?| none、allowlist、denylist、mixed |
-| `ip_rule_count` | int32 | �?| Console/API Key 页面展示�?IP 规则数量 |
-| `ip_allowlist` | json | �?| IP 白名�?|
-| `ip_denylist` | json | �?| IP 黑名�?|
-| `region_allowlist` | json | �?| 区域白名�?|
-| `max_context_tokens` | int64 | �?| 最大上下文 |
-| `data_retention_mode` | enum_int32 | �?| none、standard、enterprise、custom |
-| `effective_from` | instant | �?| 生效时间 |
-| `effective_to` | instant | �?| 失效时间 |
+| `name` | string(128) | 锟?| 绛栫暐鍚嶇О |
+| `policy_type` | enum_int32 | 锟?| api_key銆乬roup銆乼enant銆乷rganization |
+| `subject_type` | enum_int32 | 锟?| 缁戝畾涓讳綋绫诲瀷 |
+| `subject_id` | int64 | 锟?| 缁戝畾涓讳綋 ID |
+| `subject_ref_hash` | string(128) | 锟?| IP銆佸锟?Key銆佸尶鍚嶄富浣撶瓑锟?int64 涓讳綋锟?hash |
+| `subject_ref_masked` | string(128) | 锟?| 锟?int64 涓讳綋鐨勮劚鏁忓睍锟?|
+| `allowed_capabilities` | json | 锟?| 鍏佽鑳藉姏锛屽 chat銆乺esponses銆乪mbedding銆乮mage銆乤udio銆乿ideo |
+| `denied_capabilities` | json | 锟?| 绂佹鑳藉姏 |
+| `allowed_models` | json | 锟?| 妯″瀷鐧藉悕锟?|
+| `denied_models` | json | 锟?| 妯″瀷榛戝悕锟?|
+| `network_policy_mode` | enum_int32 | 锟?| none銆乤llowlist銆乨enylist銆乵ixed |
+| `ip_rule_count` | int32 | 锟?| Console/API Key 椤甸潰灞曠ず锟?IP 瑙勫垯鏁伴噺 |
+| `ip_allowlist` | json | 锟?| IP 鐧藉悕锟?|
+| `ip_denylist` | json | 锟?| IP 榛戝悕锟?|
+| `region_allowlist` | json | 锟?| 鍖哄煙鐧藉悕锟?|
+| `max_context_tokens` | int64 | 锟?| 鏈€澶т笂涓嬫枃 |
+| `data_retention_mode` | enum_int32 | 锟?| none銆乻tandard銆乪nterprise銆乧ustom |
+| `effective_from` | instant | 锟?| 鐢熸晥鏃堕棿 |
+| `effective_to` | instant | 锟?| 澶辨晥鏃堕棿 |
 
-索引�?
+绱㈠紩锟?
 - `uk_iam_gateway_access_policy_uuid`
 - `idx_iam_gateway_access_policy_tenant_subject_status`
 - `idx_iam_gateway_access_policy_subject_ref`
@@ -289,118 +289,118 @@
 
 ### 6.3.1 `iam_gateway_risk_rule`
 
-用途：承载 Admin RateLimit �?IP、Token、Model、Firewall 规则，以及网关运行期可命中的网络安全规则。该表是 L3 安全配置表，不保存完�?IP 明文；需要前缀�?CIDR 匹配时，通过安全服务解析 `target_value_cipher_ref`�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細鎵胯浇 Admin RateLimit 锟?IP銆乀oken銆丮odel銆丗irewall 瑙勫垯锛屼互鍙婄綉鍏宠繍琛屾湡鍙懡涓殑缃戠粶瀹夊叏瑙勫垯銆傝琛ㄦ槸 L3 瀹夊叏閰嶇疆琛紝涓嶄繚瀛樺畬锟?IP 鏄庢枃锛涢渶瑕佸墠缂€锟?CIDR 鍖归厤鏃讹紝閫氳繃瀹夊叏鏈嶅姟瑙ｆ瀽 `target_value_cipher_ref`锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `rule_name` | string(128) | �?| 规则名称 |
-| `rule_category` | enum_int32 | �?| ip_limit、token_limit、model_limit、firewall、risk_control |
-| `rule_type` | enum_int32 | �?| allow、deny、limit、challenge、observe |
-| `scope_type` | enum_int32 | �?| tenant、organization、group、api_key、user、model |
-| `scope_id` | int64 | �?| 作用�?ID |
-| `target_type` | enum_int32 | �?| ip、cidr、api_key、model、country、asn、user_agent |
-| `target_value_hash` | string(128) | �?| 命中对象 hash |
-| `target_value_masked` | string(128) | �?| 后台列表脱敏展示�?|
-| `target_value_cipher_ref` | string(256) | �?| 需要匹配原值时的密文引�?|
-| `match_mode` | enum_int32 | �?| exact、prefix、cidr、regex、contains |
-| `requests_per_second` | int64 | �?| RPS 限制 |
-| `requests_per_minute` | int64 | �?| RPM 限制 |
-| `requests_per_day` | int64 | �?| RPD 限制 |
-| `tokens_per_minute` | int64 | �?| TPM 限制 |
-| `burst_limit` | decimal_string | �?| 突发额度 |
-| `block_duration_seconds` | int64 | �?| 阻断时长 |
-| `priority` | int32 | �?| 同一作用域规则优先级 |
-| `hit_count` | int64 | �?| 命中次数投影 |
-| `last_hit_at` | instant | �?| 最近命中时�?|
+| `rule_name` | string(128) | 锟?| 瑙勫垯鍚嶇О |
+| `rule_category` | enum_int32 | 锟?| ip_limit銆乼oken_limit銆乵odel_limit銆乫irewall銆乺isk_control |
+| `rule_type` | enum_int32 | 锟?| allow銆乨eny銆乴imit銆乧hallenge銆乷bserve |
+| `scope_type` | enum_int32 | 锟?| tenant銆乷rganization銆乬roup銆乤pi_key銆乽ser銆乵odel |
+| `scope_id` | int64 | 锟?| 浣滅敤锟?ID |
+| `target_type` | enum_int32 | 锟?| ip銆乧idr銆乤pi_key銆乵odel銆乧ountry銆乤sn銆乽ser_agent |
+| `target_value_hash` | string(128) | 锟?| 鍛戒腑瀵硅薄 hash |
+| `target_value_masked` | string(128) | 锟?| 鍚庡彴鍒楄〃鑴辨晱灞曠ず锟?|
+| `target_value_cipher_ref` | string(256) | 锟?| 闇€瑕佸尮閰嶅師鍊兼椂鐨勫瘑鏂囧紩锟?|
+| `match_mode` | enum_int32 | 锟?| exact銆乸refix銆乧idr銆乺egex銆乧ontains |
+| `requests_per_second` | int64 | 锟?| RPS 闄愬埗 |
+| `requests_per_minute` | int64 | 锟?| RPM 闄愬埗 |
+| `requests_per_day` | int64 | 锟?| RPD 闄愬埗 |
+| `tokens_per_minute` | int64 | 锟?| TPM 闄愬埗 |
+| `burst_limit` | decimal_string | 锟?| 绐佸彂棰濆害 |
+| `block_duration_seconds` | int64 | 锟?| 闃绘柇鏃堕暱 |
+| `priority` | int32 | 锟?| 鍚屼竴浣滅敤鍩熻鍒欎紭鍏堢骇 |
+| `hit_count` | int64 | 锟?| 鍛戒腑娆℃暟鎶曞奖 |
+| `last_hit_at` | instant | 锟?| 鏈€杩戝懡涓椂锟?|
 
-索引�?
+绱㈠紩锟?
 - `uk_iam_gateway_risk_rule_tenant_target(tenant_id, organization_id, rule_type, target_type, target_value)`
 - `idx_iam_gateway_risk_rule_scope_priority(tenant_id, organization_id, rule_category, scope_type, scope_id, priority, status)`
 - `idx_iam_gateway_risk_rule_target_hash(tenant_id, organization_id, target_type, target_value_hash, status)`
 
 ### 6.4 `iam_user_preference` / `iam_user_security_setting` / `iam_user_login_event`
 
-用途：承载 Console Settings、Console User、Console Account 的用户偏好、安全状态和登录明细。用户主档、手机号、邮箱、OAuth 绑定仍以 `plus_user`、`plus_oauth_account` 为事实来源�?
-| �?| 画像 | 关键字段 | 说明 |
+鐢ㄩ€旓細鎵胯浇 Console Settings銆丆onsole User銆丆onsole Account 鐨勭敤鎴峰亸濂姐€佸畨鍏ㄧ姸鎬佸拰鐧诲綍鏄庣粏銆傜敤鎴蜂富妗ｃ€佹墜鏈哄彿銆侀偖绠便€丱Auth 缁戝畾浠嶄互 `plus_user`銆乣plus_oauth_account` 涓轰簨瀹炴潵婧愶拷?
+| 锟?| 鐢诲儚 | 鍏抽敭瀛楁 | 璇存槑 |
 | --- | --- | --- | --- |
-| `iam_user_preference` | user_entity | `language`、`timezone`、`theme_mode`、`notification_preferences`、`default_console_path` | 用户偏好和通知开�?|
-| `iam_user_security_setting` | user_entity, L3 | `mfa_enabled`、`mfa_method`、`password_last_changed_at`、`trusted_device_count`、`last_login_at`、`last_login_ip_hash`、`third_party_bound_snapshot` | 安全状态投影，不保存密码明�?|
-| `iam_user_login_event` | event_log, L3 | `auth_method`、`auth_provider`、`login_result`、`risk_level`、`client_ip_hash`、`client_ip_masked`、`client_ip_region`、`device_label`、`mfa_verified`、`session_id_hash`、`occurred_at` | 登录事件事实，和 `ops_audit_log` 的后台操作审计分�?|
+| `iam_user_preference` | user_entity | `language`銆乣timezone`銆乣theme_mode`銆乣notification_preferences`銆乣default_console_path` | 鐢ㄦ埛鍋忓ソ鍜岄€氱煡寮€锟?|
+| `iam_user_security_setting` | user_entity, L3 | `mfa_enabled`銆乣mfa_method`銆乣password_last_changed_at`銆乣trusted_device_count`銆乣last_login_at`銆乣last_login_ip_hash`銆乣third_party_bound_snapshot` | 瀹夊叏鐘舵€佹姇褰憋紝涓嶄繚瀛樺瘑鐮佹槑锟?|
+| `iam_user_login_event` | event_log, L3 | `auth_method`銆乣auth_provider`銆乣login_result`銆乣risk_level`銆乣client_ip_hash`銆乣client_ip_masked`銆乣client_ip_region`銆乣device_label`銆乣mfa_verified`銆乣session_id_hash`銆乣occurred_at` | 鐧诲綍浜嬩欢浜嬪疄锛屽拰 `ops_audit_log` 鐨勫悗鍙版搷浣滃璁″垎锟?|
 
-安全要求�?
-- 登录事件�?`occurred_at` 分区，在线保�?180 天，归档保留 3 年�?- IP、设备指纹、session ID 只保�?hash 或脱敏标签�?- OAuth refresh token、MFA secret 不进入这些表，只保存安全服务或密钥托管系统中的引用状态�?
-### 6.5 统一数据领域名称：`ModelVendor`
+瀹夊叏瑕佹眰锟?
+- 鐧诲綍浜嬩欢锟?`occurred_at` 鍒嗗尯锛屽湪绾夸繚锟?180 澶╋紝褰掓。淇濈暀 3 骞达拷?- IP銆佽澶囨寚绾广€乻ession ID 鍙繚锟?hash 鎴栬劚鏁忔爣绛撅拷?- OAuth refresh token銆丮FA secret 涓嶈繘鍏ヨ繖浜涜〃锛屽彧淇濆瓨瀹夊叏鏈嶅姟鎴栧瘑閽ユ墭绠＄郴缁熶腑鐨勫紩鐢ㄧ姸鎬侊拷?
+### 6.5 缁熶竴鏁版嵁棰嗗煙鍚嶇О锛歚ModelVendor`
 
-`ModelVendor` 是模型厂�?模型原厂的统一领域名称，表示模型的原始研发、发布或维护方。它解决前端、Java、Rust、TypeScript、OpenAPI 和数据库之间对“厂家、供应商、渠道、平台”混用的问题�?
-标准职责边界�?
-| 名称 | 事实来源 | 含义 | 示例 |
+`ModelVendor` 鏄ā鍨嬪巶锟?妯″瀷鍘熷巶鐨勭粺涓€棰嗗煙鍚嶇О锛岃〃绀烘ā鍨嬬殑鍘熷鐮斿彂銆佸彂甯冩垨缁存姢鏂广€傚畠瑙ｅ喅鍓嶇銆丣ava銆丷ust銆乀ypeScript銆丱penAPI 鍜屾暟鎹簱涔嬮棿瀵光€滃巶瀹躲€佷緵搴斿晢銆佹笭閬撱€佸钩鍙扳€濇贩鐢ㄧ殑闂锟?
+鏍囧噯鑱岃矗杈圭晫锟?
+| 鍚嶇О | 浜嬪疄鏉ユ簮 | 鍚箟 | 绀轰緥 |
 | --- | --- | --- | --- |
-| `ModelVendor` | `ai_model_vendor.vendor_code` | 模型原始厂家/发布�?| `openai`、`anthropic`、`google`、`deepseek`、`alibaba`、`moonshot` |
-| `Provider` | `integration_provider.provider_code` | API 接入供应商、协议适配方或聚合网关 | `openai_api`、`azure_openai`、`openrouter`、`ollama`、`aws_bedrock` |
-| `Channel` | `ai_channel.channel_code` | 租户/组织可路由的具体接入实例 | 某个 Azure region、某�?OpenRouter 账号、某个本�?Ollama 节点 |
-| `AiModel` | `ai_model.model` | `/v1/*` 对外暴露的标准模型名 | `gpt-4.1`、`claude-3-5-sonnet`、`deepseek-chat` |
+| `ModelVendor` | `ai_model_vendor.vendor_code` | 妯″瀷鍘熷鍘傚/鍙戝竷锟?| `openai`銆乣anthropic`銆乣google`銆乣deepseek`銆乣alibaba`銆乣moonshot` |
+| `Provider` | `integration_provider.provider_code` | API 鎺ュ叆渚涘簲鍟嗐€佸崗璁€傞厤鏂规垨鑱氬悎缃戝叧 | `openai_api`銆乣azure_openai`銆乣openrouter`銆乣ollama`銆乣aws_bedrock` |
+| `Channel` | `ai_channel.channel_code` | 绉熸埛/缁勭粐鍙矾鐢辩殑鍏蜂綋鎺ュ叆瀹炰緥 | 鏌愪釜 Azure region銆佹煇锟?OpenRouter 璐﹀彿銆佹煇涓湰锟?Ollama 鑺傜偣 |
+| `AiModel` | `ai_model.model` | `/v1/*` 瀵瑰鏆撮湶鐨勬爣鍑嗘ā鍨嬪悕 | `gpt-4.1`銆乣claude-3-5-sonnet`銆乣deepseek-chat` |
 
-跨语言类型规则�?
-- 数据库存�?`vendor_code` 稳定字符串，严禁保存 enum ordinal�?- Java 使用 `ModelVendor` 枚举，建议常量形态为 `OPENAI`、`ANTHROPIC`、`ALIBABA_QWEN`，每个枚举持有稳�?code�?- Rust 使用 `enum ModelVendor`，建议变体形态为 `OpenAi`、`Anthropic`、`AlibabaQwen`，序列化为同一套稳�?code�?- TypeScript/OpenAPI 使用生成�?`ModelVendor` enum 或字符串字面量联合类型�?- 未识别的新厂家必须保留原�?`vendor_code`，SDK 可映射到 `UNKNOWN`，不得拒绝读取历史数据�?
-## 7. Integration 核心契约
+璺ㄨ瑷€绫诲瀷瑙勫垯锟?
+- 鏁版嵁搴撳瓨锟?`vendor_code` 绋冲畾瀛楃涓诧紝涓ョ淇濆瓨 enum ordinal锟?- Java 浣跨敤 `ModelVendor` 鏋氫妇锛屽缓璁父閲忓舰鎬佷负 `OPENAI`銆乣ANTHROPIC`銆乣ALIBABA_QWEN`锛屾瘡涓灇涓炬寔鏈夌ǔ锟?code锟?- Rust 浣跨敤 `enum ModelVendor`锛屽缓璁彉浣撳舰鎬佷负 `OpenAi`銆乣Anthropic`銆乣AlibabaQwen`锛屽簭鍒楀寲涓哄悓涓€濂楃ǔ锟?code锟?- TypeScript/OpenAPI 浣跨敤鐢熸垚锟?`ModelVendor` enum 鎴栧瓧绗︿覆瀛楅潰閲忚仈鍚堢被鍨嬶拷?- 鏈瘑鍒殑鏂板巶瀹跺繀椤讳繚鐣欏師锟?`vendor_code`锛孲DK 鍙槧灏勫埌 `UNKNOWN`锛屼笉寰楁嫆缁濊鍙栧巻鍙叉暟鎹拷?
+## 7. Integration 鏍稿績濂戠害
 
 ### 7.1 `integration_provider`
 
-用途：API 接入供应商注册表，例�?OpenAI API、Azure OpenAI、Anthropic API、Gemini API、OpenRouter、Ollama、本地模型网关等。该表不作为模型厂家事实来源；模型厂家统一进入 `ai_model_vendor`�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細API 鎺ュ叆渚涘簲鍟嗘敞鍐岃〃锛屼緥锟?OpenAI API銆丄zure OpenAI銆丄nthropic API銆丟emini API銆丱penRouter銆丱llama銆佹湰鍦版ā鍨嬬綉鍏崇瓑銆傝琛ㄤ笉浣滀负妯″瀷鍘傚浜嬪疄鏉ユ簮锛涙ā鍨嬪巶瀹剁粺涓€杩涘叆 `ai_model_vendor`锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `provider_code` | string(64) | �?| 全局唯一编码 |
-| `display_name` | string(128) | �?| 展示名称 |
-| `description` | string(512) | �?| Provider 说明，用于模型页�?Admin Model |
-| `icon_media_resource_id` | string(128) | �?| Provider 图标媒体资源稳定 ID |
-| `icon_object_blob_id` | int64 | �?| Provider 图标对象存储 Blob |
-| `icon_resource_snapshot` | json | �?| Provider 图标 `MediaResource` 快照 |
-| `color_token` | string(64) | �?| 前端稳定色�?token，不�?CSS class |
-| `docs_url` | string(512) | �?| 官方文档地址 |
-| `website_url` | string(512) | �?| Provider 官网 |
-| `default_vendor_code` | string(64) | �?| 默认模型厂家编码；聚�?Provider 可为空或通过模型映射确定 |
-| `integration_type` | enum_int32 | �?| model_vendor_direct、cloud_platform、relay_aggregator、self_hosted_gateway、local_runtime、custom、unknown |
-| `protocol` | enum_int32 | �?| openai_compatible、anthropic、gemini、azure_openai、custom |
-| `base_url` | string(512) | �?| 默认 base URL，不�?secret |
-| `auth_type` | enum_int32 | �?| api_key、oauth2、bearer、none、custom |
-| `capabilities` | json | �?| 支持能力集合 |
-| `metadata_schema_version` | string(32) | �?| metadata schema 版本 |
-| `sort_order` | int32 | �?| 门户和后台默认排�?|
-| `metadata` | json | �?| 扩展元数�?|
+| `provider_code` | string(64) | 锟?| 鍏ㄥ眬鍞竴缂栫爜 |
+| `display_name` | string(128) | 锟?| 灞曠ず鍚嶇О |
+| `description` | string(512) | 锟?| Provider 璇存槑锛岀敤浜庢ā鍨嬮〉锟?Admin Model |
+| `icon_media_resource_id` | string(128) | 锟?| Provider 鍥炬爣濯掍綋璧勬簮绋冲畾 ID |
+| `icon_object_blob_id` | int64 | 锟?| Provider 鍥炬爣瀵硅薄瀛樺偍 Blob |
+| `icon_resource_snapshot` | json | 锟?| Provider 鍥炬爣 `MediaResource` 蹇収 |
+| `color_token` | string(64) | 锟?| 鍓嶇绋冲畾鑹诧拷?token锛屼笉锟?CSS class |
+| `docs_url` | string(512) | 锟?| 瀹樻柟鏂囨。鍦板潃 |
+| `website_url` | string(512) | 锟?| Provider 瀹樼綉 |
+| `default_vendor_code` | string(64) | 锟?| 榛樿妯″瀷鍘傚缂栫爜锛涜仛锟?Provider 鍙负绌烘垨閫氳繃妯″瀷鏄犲皠纭畾 |
+| `integration_type` | enum_int32 | 锟?| model_vendor_direct銆乧loud_platform銆乺elay_aggregator銆乻elf_hosted_gateway銆乴ocal_runtime銆乧ustom銆乽nknown |
+| `protocol` | enum_int32 | 锟?| openai_compatible銆乤nthropic銆乬emini銆乤zure_openai銆乧ustom |
+| `base_url` | string(512) | 锟?| 榛樿 base URL锛屼笉锟?secret |
+| `auth_type` | enum_int32 | 锟?| api_key銆乷auth2銆乥earer銆乶one銆乧ustom |
+| `capabilities` | json | 锟?| 鏀寔鑳藉姏闆嗗悎 |
+| `metadata_schema_version` | string(32) | 锟?| metadata schema 鐗堟湰 |
+| `sort_order` | int32 | 锟?| 闂ㄦ埛鍜屽悗鍙伴粯璁ゆ帓锟?|
+| `metadata` | json | 锟?| 鎵╁睍鍏冩暟锟?|
 
-约束�?
+绾︽潫锟?
 - `uk_integration_provider_code(provider_code)`
 - `idx_integration_provider_status_updated(status, updated_at, id)`
 
-说明：`provider_code` 解决“怎么接入”的问题，`vendor_code` 解决“模型是谁发布的”的问题。OpenRouter、Azure、AWS Bedrock、GCP Vertex AI 这类平台通常�?`Provider`，不�?`ModelVendor`；它们托管的模型通过资源目录、Vendor 关系和模型映射规则标明原厂，不能把账号直接绑定到模型�?
+璇存槑锛歚provider_code` 瑙ｅ喅鈥滄€庝箞鎺ュ叆鈥濈殑闂锛宍vendor_code` 瑙ｅ喅鈥滄ā鍨嬫槸璋佸彂甯冪殑鈥濈殑闂銆侽penRouter銆丄zure銆丄WS Bedrock銆丟CP Vertex AI 杩欑被骞冲彴閫氬父锟?`Provider`锛屼笉锟?`ModelVendor`锛涘畠浠墭绠＄殑妯″瀷閫氳繃璧勬簮鐩綍銆乂endor 鍏崇郴鍜屾ā鍨嬫槧灏勮鍒欐爣鏄庡師鍘傦紝涓嶈兘鎶婅处鍙风洿鎺ョ粦瀹氬埌妯″瀷锟?
 ### 7.2 `ai_channel`
 
-用途：可被路由策略选择的渠道实例。渠道是租户/组织可见�?Provider 接入配置，不保存具体 secret�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細鍙璺敱绛栫暐閫夋嫨鐨勬笭閬撳疄渚嬨€傛笭閬撴槸绉熸埛/缁勭粐鍙锟?Provider 鎺ュ叆閰嶇疆锛屼笉淇濆瓨鍏蜂綋 secret锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `provider_id` | int64 | �?| `integration_provider.id` |
-| `provider_code` | string(64) | �?| Provider code 快照 |
-| `channel_code` | string(64) | �?| 租户内唯一渠道编码 |
-| `name` | string(128) | �?| 渠道名称 |
-| `protocol` | enum_int32 | �?| OpenAI、Anthropic、Gemini、Ollama、Custom 等协�?|
-| `access_type` | enum_int32 | �?| api_key、oauth-gcp、aws-bedrock、azure-ad、claude-code 等接入类�?|
-| `base_url` | string(512) | �?| 渠道�?base URL，不保存密钥 |
-| `model_mode` | enum_int32 | �?| whitelist、mapping、pass_through、mixed |
-| `environment` | enum_int32 | �?| prod、staging、dev |
-| `region` | string(64) | �?| 区域 |
-| `capabilities` | json | �?| text、image、audio、video、music 等能力快�?|
-| `priority` | int32 | �?| 默认优先�?|
-| `weight` | int32 | �?| 默认权重 |
-| `account_id` | int64 | �?| 默认 Provider 账号 |
-| `proxy_id` | int64 | �?| 默认代理 |
-| `rpm_limit` | int64 | �?| 渠道级每分钟请求上限 |
-| `timeout_ms` | int32 | �?| 请求超时 |
-| `retry_policy` | json | �?| 重试策略 |
-| `circuit_breaker_policy` | json | �?| 熔断策略 |
-| `health_status` | enum_int32 | �?| 最近健康状态快�?|
-| `last_latency_ms` | int32 | �?| 最近延迟快�?|
-| `consecutive_error_count` | int64 | �?| 连续错误次数 |
+| `provider_id` | int64 | 锟?| `integration_provider.id` |
+| `provider_code` | string(64) | 锟?| Provider code 蹇収 |
+| `channel_code` | string(64) | 锟?| 绉熸埛鍐呭敮涓€娓犻亾缂栫爜 |
+| `name` | string(128) | 锟?| 娓犻亾鍚嶇О |
+| `protocol` | enum_int32 | 锟?| OpenAI銆丄nthropic銆丟emini銆丱llama銆丆ustom 绛夊崗锟?|
+| `access_type` | enum_int32 | 锟?| api_key銆乷auth-gcp銆乤ws-bedrock銆乤zure-ad銆乧laude-code 绛夋帴鍏ョ被锟?|
+| `base_url` | string(512) | 锟?| 娓犻亾锟?base URL锛屼笉淇濆瓨瀵嗛挜 |
+| `model_mode` | enum_int32 | 锟?| whitelist銆乵apping銆乸ass_through銆乵ixed |
+| `environment` | enum_int32 | 锟?| prod銆乻taging銆乨ev |
+| `region` | string(64) | 锟?| 鍖哄煙 |
+| `capabilities` | json | 锟?| text銆乮mage銆乤udio銆乿ideo銆乵usic 绛夎兘鍔涘揩锟?|
+| `priority` | int32 | 锟?| 榛樿浼樺厛锟?|
+| `weight` | int32 | 锟?| 榛樿鏉冮噸 |
+| `account_id` | int64 | 锟?| 榛樿 Provider 璐﹀彿 |
+| `proxy_id` | int64 | 锟?| 榛樿浠ｇ悊 |
+| `rpm_limit` | int64 | 锟?| 娓犻亾绾ф瘡鍒嗛挓璇锋眰涓婇檺 |
+| `timeout_ms` | int32 | 锟?| 璇锋眰瓒呮椂 |
+| `retry_policy` | json | 锟?| 閲嶈瘯绛栫暐 |
+| `circuit_breaker_policy` | json | 锟?| 鐔旀柇绛栫暐 |
+| `health_status` | enum_int32 | 锟?| 鏈€杩戝仴搴风姸鎬佸揩锟?|
+| `last_latency_ms` | int32 | 锟?| 鏈€杩戝欢杩熷揩锟?|
+| `consecutive_error_count` | int64 | 锟?| 杩炵画閿欒娆℃暟 |
 
-约束和索引：
+绾︽潫鍜岀储寮曪細
 
 - `uk_ai_channel_uuid(uuid)`
 - `uk_ai_channel_tenant_code(tenant_id, organization_id, channel_code)`
@@ -408,36 +408,36 @@
 
 ### 7.3 `integration_provider_account`
 
-用途：上游 Provider 账号和密钥引用，L3 高敏表。它替代在渠�?JSON 中直接保存密钥的做法�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細涓婃父 Provider 璐﹀彿鍜屽瘑閽ュ紩鐢紝L3 楂樻晱琛ㄣ€傚畠鏇夸唬鍦ㄦ笭锟?JSON 涓洿鎺ヤ繚瀛樺瘑閽ョ殑鍋氭硶锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `provider_id` | int64 | �?| Provider ID |
-| `provider_code` | string(64) | �?| Provider code 快照 |
-| `account_code` | string(64) | �?| 租户内账号编�?|
-| `account_name` | string(128) | �?| 账号显示�?|
-| `auth_type` | enum_int32 | �?| api_key、oauth2、bearer、custom |
-| `credential_profile` | enum_int32 | �?| standard_api_key、gcp_service_account、aws_sigv4、azure_ad、setup_token |
-| `external_account_id` | string(128) | �?| 上游账号、项目或订阅 ID |
-| `auth_config` | json | �?| 非密钥认证配置，�?Azure deployment、GCP project/location |
-| `secret_ref` | string(256) | �?| Vault/Keychain/KMS 引用 |
-| `secret_hash` | string(128) | �?| 密钥摘要，用于去重和轮换校验 |
-| `secret_version` | int64 | �?| 当前密钥版本 |
-| `secret_rotation_policy` | json | �?| 轮换周期、审批、灰度策�?|
-| `masked_label` | string(128) | �?| 脱敏展示标签 |
-| `quota_unit` | enum_int32 | �?| 上游额度单位 |
-| `quota_limit` | decimal_string | �?| 上游额度上限，API 字符�?|
-| `quota_used` | decimal_string | �?| 上游额度使用快照，不作为账务事实 |
-| `upstream_balance_amount` | decimal_string | �?| 上游账号余额快照，不作为本系统资金事�?|
-| `upstream_balance_currency` | string(10) | �?| 上游余额币种 |
-| `last_balance_checked_at` | instant | �?| 最近余额同步时�?|
-| `last_rotated_at` | instant | �?| 最近轮�?|
-| `next_rotate_at` | instant | �?| 建议下次轮换 |
-| `last_verified_at` | instant | �?| 最近校�?|
-| `last_used_at` | instant | �?| 最近被渠道调用时间 |
-| `consecutive_error_count` | int64 | �?| 连续验证或调用错误次�?|
-| `risk_level` | enum_int32 | �?| 风险等级 |
+| `provider_id` | int64 | 锟?| Provider ID |
+| `provider_code` | string(64) | 锟?| Provider code 蹇収 |
+| `account_code` | string(64) | 锟?| 绉熸埛鍐呰处鍙风紪锟?|
+| `account_name` | string(128) | 锟?| 璐﹀彿鏄剧ず锟?|
+| `auth_type` | enum_int32 | 锟?| api_key銆乷auth2銆乥earer銆乧ustom |
+| `credential_profile` | enum_int32 | 锟?| standard_api_key銆乬cp_service_account銆乤ws_sigv4銆乤zure_ad銆乻etup_token |
+| `external_account_id` | string(128) | 锟?| 涓婃父璐﹀彿銆侀」鐩垨璁㈤槄 ID |
+| `auth_config` | json | 锟?| 闈炲瘑閽ヨ璇侀厤缃紝锟?Azure deployment銆丟CP project/location |
+| `secret_ref` | string(256) | 锟?| Vault/Keychain/KMS 寮曠敤 |
+| `secret_hash` | string(128) | 锟?| 瀵嗛挜鎽樿锛岀敤浜庡幓閲嶅拰杞崲鏍￠獙 |
+| `secret_version` | int64 | 锟?| 褰撳墠瀵嗛挜鐗堟湰 |
+| `secret_rotation_policy` | json | 锟?| 杞崲鍛ㄦ湡銆佸鎵广€佺伆搴︾瓥锟?|
+| `masked_label` | string(128) | 锟?| 鑴辨晱灞曠ず鏍囩 |
+| `quota_unit` | enum_int32 | 锟?| 涓婃父棰濆害鍗曚綅 |
+| `quota_limit` | decimal_string | 锟?| 涓婃父棰濆害涓婇檺锛孉PI 瀛楃锟?|
+| `quota_used` | decimal_string | 锟?| 涓婃父棰濆害浣跨敤蹇収锛屼笉浣滀负璐﹀姟浜嬪疄 |
+| `upstream_balance_amount` | decimal_string | 锟?| 涓婃父璐﹀彿浣欓蹇収锛屼笉浣滀负鏈郴缁熻祫閲戜簨锟?|
+| `upstream_balance_currency` | string(10) | 锟?| 涓婃父浣欓甯佺 |
+| `last_balance_checked_at` | instant | 锟?| 鏈€杩戜綑棰濆悓姝ユ椂锟?|
+| `last_rotated_at` | instant | 锟?| 鏈€杩戣疆锟?|
+| `next_rotate_at` | instant | 锟?| 寤鸿涓嬫杞崲 |
+| `last_verified_at` | instant | 锟?| 鏈€杩戞牎锟?|
+| `last_used_at` | instant | 锟?| 鏈€杩戣娓犻亾璋冪敤鏃堕棿 |
+| `consecutive_error_count` | int64 | 锟?| 杩炵画楠岃瘉鎴栬皟鐢ㄩ敊璇锟?|
+| `risk_level` | enum_int32 | 锟?| 椋庨櫓绛夌骇 |
 
-约束和索引：
+绾︽潫鍜岀储寮曪細
 
 - `uk_integration_provider_account_uuid(uuid)`
 - `uk_integration_provider_account_tenant_code(tenant_id, organization_id, provider_code, account_code)`
@@ -445,172 +445,172 @@
 - `idx_integration_provider_account_tenant_provider_status(tenant_id, organization_id, provider_code, status)`
 - `idx_integration_provider_account_rotation(tenant_id, organization_id, next_rotate_at, status)`
 
-安全要求�?
-- 不保�?API key、OAuth refresh token、私钥明文�?- `secret_ref` 对用户面 API 不返回；后台默认也只返回脱敏路径�?- 轮换操作必须�?`ops_audit_log`�?
+瀹夊叏瑕佹眰锟?
+- 涓嶄繚锟?API key銆丱Auth refresh token銆佺閽ユ槑鏂囷拷?- `secret_ref` 瀵圭敤鎴烽潰 API 涓嶈繑鍥烇紱鍚庡彴榛樿涔熷彧杩斿洖鑴辨晱璺緞锟?- 杞崲鎿嶄綔蹇呴』锟?`ops_audit_log`锟?
 ### 7.4 `ai_channel_credential`
 
-用途：渠道可用的认证入口，保存 base URL、认证方式配置和 secret 引用。它是路由热路径读取上游认证信息的事实来源，不承载模型白名单�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細娓犻亾鍙敤鐨勮璇佸叆鍙ｏ紝淇濆瓨 base URL銆佽璇佹柟寮忛厤缃拰 secret 寮曠敤銆傚畠鏄矾鐢辩儹璺緞璇诲彇涓婃父璁よ瘉淇℃伅鐨勪簨瀹炴潵婧愶紝涓嶆壙杞芥ā鍨嬬櫧鍚嶅崟锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `channel_id` | int64 | �?| 渠道 |
-| `provider_code` | string(64) | �?| Provider code 快照 |
-| `channel_code` | string(64) | �?| 渠道编码快照 |
-| `credential_name` | string(128) | �?| 凭证显示�?|
-| `base_url` | string(512) | �?| 上游 base URL |
-| `auth_config` | json | �?| API Key、OAuth、云账号等非明文认证配置 |
-| `credential_ref` | string(256) | �?| Vault/Keychain/KMS 引用 |
-| `credential_hash` | string(128) | �?| 凭证摘要，用于去重和轮换校验 |
-| `masked_label` | string(128) | �?| 脱敏展示标签 |
-| `priority` | int32 | �?| 凭证级优先级 |
-| `weight` | int32 | �?| 凭证级权�?|
-| `health_status` | enum_int32 | �?| 最近健康状�?|
-| `last_latency_ms` | int32 | �?| 最近延�?|
-| `consecutive_error_count` | int64 | �?| 连续错误次数 |
-| `last_verified_at` | instant | �?| 最近验证时�?|
-| `last_used_at` | instant | �?| 最近使用时�?|
+| `channel_id` | int64 | 锟?| 娓犻亾 |
+| `provider_code` | string(64) | 锟?| Provider code 蹇収 |
+| `channel_code` | string(64) | 锟?| 娓犻亾缂栫爜蹇収 |
+| `credential_name` | string(128) | 锟?| 鍑瘉鏄剧ず锟?|
+| `base_url` | string(512) | 锟?| 涓婃父 base URL |
+| `auth_config` | json | 锟?| API Key銆丱Auth銆佷簯璐﹀彿绛夐潪鏄庢枃璁よ瘉閰嶇疆 |
+| `credential_ref` | string(256) | 锟?| Vault/Keychain/KMS 寮曠敤 |
+| `credential_hash` | string(128) | 锟?| 鍑瘉鎽樿锛岀敤浜庡幓閲嶅拰杞崲鏍￠獙 |
+| `masked_label` | string(128) | 锟?| 鑴辨晱灞曠ず鏍囩 |
+| `priority` | int32 | 锟?| 鍑瘉绾т紭鍏堢骇 |
+| `weight` | int32 | 锟?| 鍑瘉绾ф潈锟?|
+| `health_status` | enum_int32 | 锟?| 鏈€杩戝仴搴风姸锟?|
+| `last_latency_ms` | int32 | 锟?| 鏈€杩戝欢锟?|
+| `consecutive_error_count` | int64 | 锟?| 杩炵画閿欒娆℃暟 |
+| `last_verified_at` | instant | 锟?| 鏈€杩戦獙璇佹椂锟?|
+| `last_used_at` | instant | 锟?| 鏈€杩戜娇鐢ㄦ椂锟?|
 
-约束�?
+绾︽潫锟?
 - `uk_ai_channel_credential_uuid(uuid)`
 - `idx_ai_channel_credential_channel(tenant_id, organization_id, channel_id, status, priority, weight, id)`
 - `idx_ai_channel_credential_ref(tenant_id, organization_id, credential_ref)`
 
 ### 7.5 `ai_channel_resource`
 
-用途：渠道支持哪些资源、资源分组和能力范围。路由按 API 路径、模型参数、资源分组和 Vendor 能力筛选账号时读取该表；账号不直接绑定模型�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細娓犻亾鏀寔鍝簺璧勬簮銆佽祫婧愬垎缁勫拰鑳藉姏鑼冨洿銆傝矾鐢辨寜 API 璺緞銆佹ā鍨嬪弬鏁般€佽祫婧愬垎缁勫拰 Vendor 鑳藉姏绛涢€夎处鍙锋椂璇诲彇璇ヨ〃锛涜处鍙蜂笉鐩存帴缁戝畾妯″瀷锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `channel_id` | int64 | �?| 渠道 |
-| `provider_code` | string(64) | �?| Provider code 快照 |
-| `channel_code` | string(64) | �?| 渠道编码快照 |
-| `resource_id` | int64 | �?| `ai_resource.id` |
-| `resource_code` | string(192) | �?| 资源编码，如模型、API、图片、视频、音频、音乐、音效资�?|
-| `resource_group_id` | int64 | �?| `ai_resource_group.id` |
-| `resource_group_code` | string(128) | �?| 资源分组编码，如 OpenAI Chat API、Kling 视频 API |
-| `grant_type` | string(32) | �?| allow/deny |
-| `priority` | int32 | �?| 资源授权优先�?|
-| `weight` | int32 | �?| 资源授权权重 |
-| `effective_from` | instant | �?| 生效时间 |
-| `effective_to` | instant | �?| 失效时间 |
+| `channel_id` | int64 | 锟?| 娓犻亾 |
+| `provider_code` | string(64) | 锟?| Provider code 蹇収 |
+| `channel_code` | string(64) | 锟?| 娓犻亾缂栫爜蹇収 |
+| `resource_id` | int64 | 锟?| `ai_resource.id` |
+| `resource_code` | string(192) | 锟?| 璧勬簮缂栫爜锛屽妯″瀷銆丄PI銆佸浘鐗囥€佽棰戙€侀煶棰戙€侀煶涔愩€侀煶鏁堣祫锟?|
+| `resource_group_id` | int64 | 锟?| `ai_resource_group.id` |
+| `resource_group_code` | string(128) | 锟?| 璧勬簮鍒嗙粍缂栫爜锛屽 OpenAI Chat API銆並ling 瑙嗛 API |
+| `grant_type` | string(32) | 锟?| allow/deny |
+| `priority` | int32 | 锟?| 璧勬簮鎺堟潈浼樺厛锟?|
+| `weight` | int32 | 锟?| 璧勬簮鎺堟潈鏉冮噸 |
+| `effective_from` | instant | 锟?| 鐢熸晥鏃堕棿 |
+| `effective_to` | instant | 锟?| 澶辨晥鏃堕棿 |
 
-约束�?
+绾︽潫锟?
 - `uk_ai_channel_resource_uuid(uuid)`
 - `uk_ai_channel_resource(tenant_id, organization_id, channel_id, resource_code, resource_group_code)`
 - `idx_ai_channel_resource_lookup(tenant_id, organization_id, status, channel_id, grant_type, priority, id)`
 
 ### 7.6 `ai_model_mapping_rule*`
 
-用途：模型映射规则分为全局、Vendor、账�?渠道自定义三层，解决请求模型名到上游目标模型名的转换。优先级从高到低为自定义绑定、Vendor 绑定、全局绑定；没有命中时使用资源目录中的原生模型名�?
-- `ai_model_mapping_rule` 保存规则头，包括 source/target vendor、匹配方式、映射模式和启用状态�?- `ai_model_mapping_rule_item` 保存源模型、目标模型、目�?catalog key、目�?provider native model 等具体映射项�?- `ai_model_mapping_rule_binding` 保存规则绑定范围，包�?global、vendor、channel、channel_group、account 等，后台自定义映射通过绑定覆盖默认规则�?
+鐢ㄩ€旓細妯″瀷鏄犲皠瑙勫垯鍒嗕负鍏ㄥ眬銆乂endor銆佽处锟?娓犻亾鑷畾涔変笁灞傦紝瑙ｅ喅璇锋眰妯″瀷鍚嶅埌涓婃父鐩爣妯″瀷鍚嶇殑杞崲銆備紭鍏堢骇浠庨珮鍒颁綆涓鸿嚜瀹氫箟缁戝畾銆乂endor 缁戝畾銆佸叏灞€缁戝畾锛涙病鏈夊懡涓椂浣跨敤璧勬簮鐩綍涓殑鍘熺敓妯″瀷鍚嶏拷?
+- `ai_model_mapping_rule` 淇濆瓨瑙勫垯澶达紝鍖呮嫭 source/target vendor銆佸尮閰嶆柟寮忋€佹槧灏勬ā寮忓拰鍚敤鐘舵€侊拷?- `ai_model_mapping_rule_item` 淇濆瓨婧愭ā鍨嬨€佺洰鏍囨ā鍨嬨€佺洰锟?catalog key銆佺洰锟?provider native model 绛夊叿浣撴槧灏勯」锟?- `ai_model_mapping_rule_binding` 淇濆瓨瑙勫垯缁戝畾鑼冨洿锛屽寘锟?global銆乿endor銆乧hannel銆乧hannel_group銆乤ccount 绛夛紝鍚庡彴鑷畾涔夋槧灏勯€氳繃缁戝畾瑕嗙洊榛樿瑙勫垯锟?
 ### 7.7 `integration_proxy`
 
-用途：代理配置。代理凭证不入库，只保存引用�?
-关键字段：`proxy_code`、`proxy_type`、`endpoint`、`secret_ref`、`secret_hash`、`region`、`health_status`、`last_checked_at`、`description`�?
-索引�?
+鐢ㄩ€旓細浠ｇ悊閰嶇疆銆備唬鐞嗗嚟璇佷笉鍏ュ簱锛屽彧淇濆瓨寮曠敤锟?
+鍏抽敭瀛楁锛歚proxy_code`銆乣proxy_type`銆乣endpoint`銆乣secret_ref`銆乣secret_hash`銆乣region`銆乣health_status`銆乣last_checked_at`銆乣description`锟?
+绱㈠紩锟?
 - `uk_integration_proxy_tenant_code(tenant_id, organization_id, proxy_code)`
 - `idx_integration_proxy_tenant_status_region(tenant_id, organization_id, status, region)`
 
-## 8. AI 核心契约
+## 8. AI 鏍稿績濂戠害
 
 ### 8.0 `ai_model_vendor`
 
-用途：模型厂家字典，是 `ModelVendor` 领域的数据库事实来源。它保存模型原厂/发布方的稳定编码、展示信息、官网文档、图标、能力族和排序，不保�?API 接入账号、base URL 或密钥�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細妯″瀷鍘傚瀛楀吀锛屾槸 `ModelVendor` 棰嗗煙鐨勬暟鎹簱浜嬪疄鏉ユ簮銆傚畠淇濆瓨妯″瀷鍘熷巶/鍙戝竷鏂圭殑绋冲畾缂栫爜銆佸睍绀轰俊鎭€佸畼缃戞枃妗ｃ€佸浘鏍囥€佽兘鍔涙棌鍜屾帓搴忥紝涓嶄繚锟?API 鎺ュ叆璐﹀彿銆乥ase URL 鎴栧瘑閽ワ拷?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `vendor_code` | string(64) | �?| `ModelVendor` 稳定编码，跨 Java/Rust/TypeScript/OpenAPI 统一 |
-| `display_name` | string(128) | �?| 展示名称 |
-| `legal_name` | string(256) | �?| 法务主体名称 |
-| `description` | string(512) | �?| 厂家说明 |
-| `website_url` | string(512) | �?| 官网 |
-| `docs_url` | string(512) | �?| 模型�?API 文档入口 |
-| `logo_media_resource_id` | string(128) | �?| 品牌 logo 媒体资源稳定 ID |
-| `logo_object_blob_id` | int64 | �?| 品牌 logo 对象存储 Blob |
-| `logo_resource_snapshot` | json | �?| 品牌 logo `MediaResource` 快照 |
-| `icon_media_resource_id` | string(128) | �?| 小图标媒体资源稳�?ID |
-| `icon_object_blob_id` | int64 | �?| 小图标对象存�?Blob |
-| `icon_resource_snapshot` | json | �?| 小图�?`MediaResource` 快照 |
-| `color_token` | string(64) | �?| 前端稳定色�?token |
-| `country_region` | string(64) | �?| 国家/地区 |
-| `vendor_type` | enum_int32 | �?| company、cloud、open_source、community、custom、unknown |
-| `model_families` | json | �?| 主要模型族，�?GPT、Claude、Gemini、Qwen |
-| `capabilities` | json | �?| 厂家级能力集�?|
-| `open_source` | bool | �?| 是否开�?社区主导 |
-| `sort_order` | int32 | �?| 展示排序 |
+| `vendor_code` | string(64) | 锟?| `ModelVendor` 绋冲畾缂栫爜锛岃法 Java/Rust/TypeScript/OpenAPI 缁熶竴 |
+| `display_name` | string(128) | 锟?| 灞曠ず鍚嶇О |
+| `legal_name` | string(256) | 锟?| 娉曞姟涓讳綋鍚嶇О |
+| `description` | string(512) | 锟?| 鍘傚璇存槑 |
+| `website_url` | string(512) | 锟?| 瀹樼綉 |
+| `docs_url` | string(512) | 锟?| 妯″瀷锟?API 鏂囨。鍏ュ彛 |
+| `logo_media_resource_id` | string(128) | 锟?| 鍝佺墝 logo 濯掍綋璧勬簮绋冲畾 ID |
+| `logo_object_blob_id` | int64 | 锟?| 鍝佺墝 logo 瀵硅薄瀛樺偍 Blob |
+| `logo_resource_snapshot` | json | 锟?| 鍝佺墝 logo `MediaResource` 蹇収 |
+| `icon_media_resource_id` | string(128) | 锟?| 灏忓浘鏍囧獟浣撹祫婧愮ǔ锟?ID |
+| `icon_object_blob_id` | int64 | 锟?| 灏忓浘鏍囧璞″瓨锟?Blob |
+| `icon_resource_snapshot` | json | 锟?| 灏忓浘锟?`MediaResource` 蹇収 |
+| `color_token` | string(64) | 锟?| 鍓嶇绋冲畾鑹诧拷?token |
+| `country_region` | string(64) | 锟?| 鍥藉/鍦板尯 |
+| `vendor_type` | enum_int32 | 锟?| company銆乧loud銆乷pen_source銆乧ommunity銆乧ustom銆乽nknown |
+| `model_families` | json | 锟?| 涓昏妯″瀷鏃忥紝锟?GPT銆丆laude銆丟emini銆丵wen |
+| `capabilities` | json | 锟?| 鍘傚绾ц兘鍔涢泦锟?|
+| `open_source` | bool | 锟?| 鏄惁寮€锟?绀惧尯涓诲 |
+| `sort_order` | int32 | 锟?| 灞曠ず鎺掑簭 |
 
-约束�?
+绾︽潫锟?
 - `uk_ai_model_vendor_code(vendor_code)`
 - `idx_ai_model_vendor_status_sort(status, sort_order, id)`
 
-枚举种子应来�?Schema Registry �?`domain_names.model_vendor.builtin_values`。Java/Rust/TypeScript 代码生成时只把内置值生成成枚举常量；数据库仍允许保留新增厂�?code，以支持前向兼容�?
+鏋氫妇绉嶅瓙搴旀潵锟?Schema Registry 锟?`domain_names.model_vendor.builtin_values`銆侸ava/Rust/TypeScript 浠ｇ爜鐢熸垚鏃跺彧鎶婂唴缃€肩敓鎴愭垚鏋氫妇甯搁噺锛涙暟鎹簱浠嶅厑璁镐繚鐣欐柊澧炲巶锟?code锛屼互鏀寔鍓嶅悜鍏煎锟?
 ### 8.1 `ai_model_family`
 
-用途：模型族字典，表示某个厂家下的一组模型系列，例如 GPT、Claude、Gemini、Qwen、Llama、DeepSeek、Suno。它�?`ai_model_vendor.model_families` 中的展示快照提升为可检索、可排序、可治理的一等主数据�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細妯″瀷鏃忓瓧鍏革紝琛ㄧず鏌愪釜鍘傚涓嬬殑涓€缁勬ā鍨嬬郴鍒楋紝渚嬪 GPT銆丆laude銆丟emini銆丵wen銆丩lama銆丏eepSeek銆丼uno銆傚畠锟?`ai_model_vendor.model_families` 涓殑灞曠ず蹇収鎻愬崌涓哄彲妫€绱€佸彲鎺掑簭銆佸彲娌荤悊鐨勪竴绛変富鏁版嵁锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `vendor_id` | int64 | �?| `ai_model_vendor.id` |
-| `vendor_code` | string(64) | �?| `ModelVendor` 稳定编码 |
-| `family_code` | string(64) | �?| 厂家内唯一模型族编�?|
-| `display_name` | string(128) | �?| 展示名称 |
-| `description` | string(512) | �?| 模型族说�?|
-| `docs_url` | string(512) | �?| 模型族文�?|
-| `icon_media_resource_id` | string(128) | �?| 图标媒体资源稳定 ID |
-| `icon_object_blob_id` | int64 | �?| 图标对象存储 Blob |
-| `icon_resource_snapshot` | json | �?| 图标 `MediaResource` 快照 |
-| `color_token` | string(64) | �?| 展示�?token |
-| `family_type` | enum_int32 | �?| foundation、reasoning、vision、image、video、audio、music、embedding、moderation |
-| `primary_modality` | enum_int32 | �?| 主模�?|
-| `model_count` | int64 | �?| 可重算模型数量投�?|
-| `default_model_id` | int64 | �?| 默认推荐模型 |
-| `default_model` | string(128) | �?| 默认推荐模型名快�?|
-| `sort_order` | int32 | �?| 展示排序 |
+| `vendor_id` | int64 | 锟?| `ai_model_vendor.id` |
+| `vendor_code` | string(64) | 锟?| `ModelVendor` 绋冲畾缂栫爜 |
+| `family_code` | string(64) | 锟?| 鍘傚鍐呭敮涓€妯″瀷鏃忕紪锟?|
+| `display_name` | string(128) | 锟?| 灞曠ず鍚嶇О |
+| `description` | string(512) | 锟?| 妯″瀷鏃忚锟?|
+| `docs_url` | string(512) | 锟?| 妯″瀷鏃忔枃锟?|
+| `icon_media_resource_id` | string(128) | 锟?| 鍥炬爣濯掍綋璧勬簮绋冲畾 ID |
+| `icon_object_blob_id` | int64 | 锟?| 鍥炬爣瀵硅薄瀛樺偍 Blob |
+| `icon_resource_snapshot` | json | 锟?| 鍥炬爣 `MediaResource` 蹇収 |
+| `color_token` | string(64) | 锟?| 灞曠ず锟?token |
+| `family_type` | enum_int32 | 锟?| foundation銆乺easoning銆乿ision銆乮mage銆乿ideo銆乤udio銆乵usic銆乪mbedding銆乵oderation |
+| `primary_modality` | enum_int32 | 锟?| 涓绘ā锟?|
+| `model_count` | int64 | 锟?| 鍙噸绠楁ā鍨嬫暟閲忔姇锟?|
+| `default_model_id` | int64 | 锟?| 榛樿鎺ㄨ崘妯″瀷 |
+| `default_model` | string(128) | 锟?| 榛樿鎺ㄨ崘妯″瀷鍚嶅揩锟?|
+| `sort_order` | int32 | 锟?| 灞曠ず鎺掑簭 |
 
-约束�?
+绾︽潫锟?
 - `uk_ai_model_family_vendor_code(vendor_code, family_code)`
 - `idx_ai_model_family_vendor_status_sort(vendor_code, status, sort_order, id)`
 
 ### 8.2 `ai_model`
 
-用途：网关对外模型目录。它�?Provider independent model，不等同于某个供应商的模�?ID�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細缃戝叧瀵瑰妯″瀷鐩綍銆傚畠锟?Provider independent model锛屼笉绛夊悓浜庢煇涓緵搴斿晢鐨勬ā锟?ID锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `model` | string(128) | �?| OpenAI 兼容 API 中的 `model` |
-| `display_name` | string(128) | �?| 展示名称 |
-| `vendor_id` | int64 | �?| `ai_model_vendor.id` |
-| `vendor_code` | string(64) | �?| `ModelVendor` 稳定编码 |
-| `vendor_name_snapshot` | string(128) | �?| 模型厂家展示名快�?|
-| `family_id` | int64 | �?| `ai_model_family.id` |
-| `family_code` | string(64) | �?| 模型族编�?|
-| `provider_hint` | string(64) | �?| 兼容字段，只作默认接入提示；不得替代 `vendor_code` |
-| `model_family` | string(128) | �?| 模型�?|
-| `model_version` | string(64) | �?| 厂家版本号或发布日期编码 |
-| `model_aliases` | json | �?| 别名和兼容模型名 |
-| `capability` | enum_int32 | �?| chat、responses、embedding、image、audio、video、moderation |
-| `modalities` | json | �?| input/output 模�?|
-| `icon_media_resource_id` | string(128) | �?| 展示图标媒体资源稳定 ID |
-| `icon_object_blob_id` | int64 | �?| 展示图标对象存储 Blob |
-| `icon_resource_snapshot` | json | �?| 展示图标 `MediaResource` 快照 |
-| `color_token` | string(64) | �?| 前端图表颜色 token |
-| `docs_url` | string(1024) | �?| 官方文档链接 |
-| `license_type` | enum_int32 | �?| open-source、proprietary、custom |
-| `api_format` | string(128) | �?| Chat Completions、Responses、Anthropic Messages 等展示格�?|
-| `capability_intro` | text | �?| 详情页能力介�?|
-| `limitations` | json | �?| 限制说明 |
-| `supported_languages` | json | �?| 支持语言 |
-| `use_cases` | json | �?| 使用场景 |
-| `training_data_cutoff` | string(128) | �?| 训练数据截止说明 |
-| `context_tokens` | int64 | �?| 上下文窗�?|
-| `max_input_tokens` | int64 | �?| 最大输�?|
-| `max_output_tokens` | int64 | �?| 最大输�?|
-| `max_duration_seconds` | int32 | �?| 视频、音频、音乐等时长上限 |
-| `supports_streaming` | bool | �?| 流式 |
-| `supports_tools` | bool | �?| 工具调用 |
-| `supports_json_schema` | bool | �?| 结构化输�?|
-| `performance_profile` | json | �?| latency、throughput、ttft 等展示和排序快照 |
-| `default_pricing_id` | int64 | �?| 默认价格 |
-| `rank_score` | decimal_string | �?| 排名/推荐得分 |
-| `release_stage` | enum_int32 | �?| beta、ga、deprecated |
-| `deprecated_at` | instant | �?| 下线时间 |
+| `model` | string(128) | 锟?| OpenAI 鍏煎 API 涓殑 `model` |
+| `display_name` | string(128) | 锟?| 灞曠ず鍚嶇О |
+| `vendor_id` | int64 | 锟?| `ai_model_vendor.id` |
+| `vendor_code` | string(64) | 锟?| `ModelVendor` 绋冲畾缂栫爜 |
+| `vendor_name_snapshot` | string(128) | 锟?| 妯″瀷鍘傚灞曠ず鍚嶅揩锟?|
+| `family_id` | int64 | 锟?| `ai_model_family.id` |
+| `family_code` | string(64) | 锟?| 妯″瀷鏃忕紪锟?|
+| `provider_hint` | string(64) | 锟?| 鍏煎瀛楁锛屽彧浣滈粯璁ゆ帴鍏ユ彁绀猴紱涓嶅緱鏇夸唬 `vendor_code` |
+| `model_family` | string(128) | 锟?| 妯″瀷锟?|
+| `model_version` | string(64) | 锟?| 鍘傚鐗堟湰鍙锋垨鍙戝竷鏃ユ湡缂栫爜 |
+| `model_aliases` | json | 锟?| 鍒悕鍜屽吋瀹规ā鍨嬪悕 |
+| `capability` | enum_int32 | 锟?| chat銆乺esponses銆乪mbedding銆乮mage銆乤udio銆乿ideo銆乵oderation |
+| `modalities` | json | 锟?| input/output 妯★拷?|
+| `icon_media_resource_id` | string(128) | 锟?| 灞曠ず鍥炬爣濯掍綋璧勬簮绋冲畾 ID |
+| `icon_object_blob_id` | int64 | 锟?| 灞曠ず鍥炬爣瀵硅薄瀛樺偍 Blob |
+| `icon_resource_snapshot` | json | 锟?| 灞曠ず鍥炬爣 `MediaResource` 蹇収 |
+| `color_token` | string(64) | 锟?| 鍓嶇鍥捐〃棰滆壊 token |
+| `docs_url` | string(1024) | 锟?| 瀹樻柟鏂囨。閾炬帴 |
+| `license_type` | enum_int32 | 锟?| open-source銆乸roprietary銆乧ustom |
+| `api_format` | string(128) | 锟?| Chat Completions銆丷esponses銆丄nthropic Messages 绛夊睍绀烘牸锟?|
+| `capability_intro` | text | 锟?| 璇︽儏椤佃兘鍔涗粙锟?|
+| `limitations` | json | 锟?| 闄愬埗璇存槑 |
+| `supported_languages` | json | 锟?| 鏀寔璇█ |
+| `use_cases` | json | 锟?| 浣跨敤鍦烘櫙 |
+| `training_data_cutoff` | string(128) | 锟?| 璁粌鏁版嵁鎴璇存槑 |
+| `context_tokens` | int64 | 锟?| 涓婁笅鏂囩獥锟?|
+| `max_input_tokens` | int64 | 锟?| 鏈€澶ц緭锟?|
+| `max_output_tokens` | int64 | 锟?| 鏈€澶ц緭锟?|
+| `max_duration_seconds` | int32 | 锟?| 瑙嗛銆侀煶棰戙€侀煶涔愮瓑鏃堕暱涓婇檺 |
+| `supports_streaming` | bool | 锟?| 娴佸紡 |
+| `supports_tools` | bool | 锟?| 宸ュ叿璋冪敤 |
+| `supports_json_schema` | bool | 锟?| 缁撴瀯鍖栬緭锟?|
+| `performance_profile` | json | 锟?| latency銆乼hroughput銆乼tft 绛夊睍绀哄拰鎺掑簭蹇収 |
+| `default_pricing_id` | int64 | 锟?| 榛樿浠锋牸 |
+| `rank_score` | decimal_string | 锟?| 鎺掑悕/鎺ㄨ崘寰楀垎 |
+| `release_stage` | enum_int32 | 锟?| beta銆乬a銆乨eprecated |
+| `deprecated_at` | instant | 锟?| 涓嬬嚎鏃堕棿 |
 
-约束�?
+绾︽潫锟?
 - `uk_ai_model_model(model)`
 - `idx_ai_model_vendor_status(vendor_code, status, updated_at, id)`
 - `idx_ai_model_family_status(vendor_code, family_code, status, updated_at, id)`
@@ -618,120 +618,120 @@
 
 ### 8.3 `ai_model_capability`
 
-用途：模型能力明细表。`ai_model` 保存列表和热路径需要的能力摘要，`ai_model_capability` 保存可扩展的能力、模态、端点格式、参�?schema 和限制值，用于模型详情、Playground 参数面板、SDK 文档和路由能力匹配�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細妯″瀷鑳藉姏鏄庣粏琛ㄣ€俙ai_model` 淇濆瓨鍒楄〃鍜岀儹璺緞闇€瑕佺殑鑳藉姏鎽樿锛宍ai_model_capability` 淇濆瓨鍙墿灞曠殑鑳藉姏銆佹ā鎬併€佺鐐规牸寮忋€佸弬锟?schema 鍜岄檺鍒跺€硷紝鐢ㄤ簬妯″瀷璇︽儏銆丳layground 鍙傛暟闈㈡澘銆丼DK 鏂囨。鍜岃矾鐢辫兘鍔涘尮閰嶏拷?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `model_id` | int64 | �?| `ai_model.id` |
-| `model` | string(128) | �?| 模型名快�?|
-| `vendor_code` | string(64) | �?| `ModelVendor` 稳定编码 |
-| `capability` | enum_int32 | �?| chat、responses、embedding、image、audio、video、music、moderation |
-| `capability_code` | string(64) | �?| 稳定能力编码，例�?`json_schema`、`tool_calling`、`vision_input` |
-| `modality` | enum_int32 | �?| 主模�?|
-| `input_modalities` | json | �?| 输入模态集�?|
-| `output_modalities` | json | �?| 输出模态集�?|
-| `endpoint_formats` | json | �?| openai_chat、openai_responses、anthropic_messages、gemini 等兼容端�?|
-| `parameter_name` | string(128) | �?| 参数名；能力行可为空，参数行必填 |
-| `parameter_schema` | json | �?| 参数 JSON Schema |
-| `supported` | bool | �?| 是否支持 |
-| `limit_unit` | string(64) | �?| token、second、image、request 等限制单�?|
-| `limit_value` | string(128) | �?| 限制值，保留字符串以兼容 `128k`、`2M`、`4min` |
-| `schema_version` | string(32) | �?| 参数 schema 版本 |
-| `sort_order` | int32 | �?| 参数和能力展示排�?|
-| `description` | string(512) | �?| 说明 |
+| `model_id` | int64 | 锟?| `ai_model.id` |
+| `model` | string(128) | 锟?| 妯″瀷鍚嶅揩锟?|
+| `vendor_code` | string(64) | 锟?| `ModelVendor` 绋冲畾缂栫爜 |
+| `capability` | enum_int32 | 锟?| chat銆乺esponses銆乪mbedding銆乮mage銆乤udio銆乿ideo銆乵usic銆乵oderation |
+| `capability_code` | string(64) | 锟?| 绋冲畾鑳藉姏缂栫爜锛屼緥锟?`json_schema`銆乣tool_calling`銆乣vision_input` |
+| `modality` | enum_int32 | 锟?| 涓绘ā锟?|
+| `input_modalities` | json | 锟?| 杈撳叆妯℃€侀泦锟?|
+| `output_modalities` | json | 锟?| 杈撳嚭妯℃€侀泦锟?|
+| `endpoint_formats` | json | 锟?| openai_chat銆乷penai_responses銆乤nthropic_messages銆乬emini 绛夊吋瀹圭锟?|
+| `parameter_name` | string(128) | 锟?| 鍙傛暟鍚嶏紱鑳藉姏琛屽彲涓虹┖锛屽弬鏁拌蹇呭～ |
+| `parameter_schema` | json | 锟?| 鍙傛暟 JSON Schema |
+| `supported` | bool | 锟?| 鏄惁鏀寔 |
+| `limit_unit` | string(64) | 锟?| token銆乻econd銆乮mage銆乺equest 绛夐檺鍒跺崟锟?|
+| `limit_value` | string(128) | 锟?| 闄愬埗鍊硷紝淇濈暀瀛楃涓蹭互鍏煎 `128k`銆乣2M`銆乣4min` |
+| `schema_version` | string(32) | 锟?| 鍙傛暟 schema 鐗堟湰 |
+| `sort_order` | int32 | 锟?| 鍙傛暟鍜岃兘鍔涘睍绀烘帓锟?|
+| `description` | string(512) | 锟?| 璇存槑 |
 
-约束�?
+绾︽潫锟?
 - `uk_ai_model_capability_model_code(model_id, capability_code, modality, parameter_name)`
 - `idx_ai_model_capability_vendor_capability(tenant_id, organization_id, vendor_code, capability, supported, id)`
 
 #### 8.3.1 `ai_billing_meter`
 
-用途：统一计费计量表，定义“什么东西可以被计费”。模型价格、定价规则、阶梯和用量事实都引�?`meter_code`，避免把计费方式写死�?token、image �?request。新增语音、视频、图片、音乐、音效、API 结果、API 条目、工具调用、存储、流量等计费形态时，只需要新�?meter 和规则，不需要改 `ai_usage_fact` 主结构�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細缁熶竴璁¤垂璁￠噺琛紝瀹氫箟鈥滀粈涔堜笢瑗垮彲浠ヨ璁¤垂鈥濄€傛ā鍨嬩环鏍笺€佸畾浠疯鍒欍€侀樁姊拰鐢ㄩ噺浜嬪疄閮藉紩锟?`meter_code`锛岄伩鍏嶆妸璁¤垂鏂瑰紡鍐欐锟?token銆乮mage 锟?request銆傛柊澧炶闊炽€佽棰戙€佸浘鐗囥€侀煶涔愩€侀煶鏁堛€丄PI 缁撴灉銆丄PI 鏉＄洰銆佸伐鍏疯皟鐢ㄣ€佸瓨鍌ㄣ€佹祦閲忕瓑璁¤垂褰㈡€佹椂锛屽彧闇€瑕佹柊锟?meter 鍜岃鍒欙紝涓嶉渶瑕佹敼 `ai_usage` 涓荤粨鏋勶拷?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `meter_code` | string(64) | �?| 稳定编码，例�?`llm_input_token`、`image_result`、`audio_output_second`、`api_result` |
-| `display_name` | string(128) | �?| 展示名称 |
-| `description` | string(512) | �?| 说明 |
-| `modality` | enum_int32 | �?| text、image、video、audio、music、sfx、api、storage、network |
-| `usage_type` | enum_int32 | �?| chat、embedding、image、audio、video、music、sfx、tool、api |
-| `billing_mode` | enum_int32 | �?| token、per_request、per_result、per_item、duration、character、storage、bandwidth |
-| `default_unit` | enum_int32 | �?| token�?k_token�?m_token、request、result、item、second、character、gb_day、gb |
-| `default_unit_size` | decimal_string | �?| 默认单位大小 |
-| `quantity_precision` | int32 | �?| 数量精度 |
-| `quantity_source` | enum_int32 | �?| usage_field、response_field、request_field、provider_usage、expression、manual |
-| `aggregation_mode` | enum_int32 | �?| sum、max、min、last、distinct_count |
-| `result_selector` | string(256) | �?| 从响应或 usage payload 取结果数的选择�?|
-| `supports_tier` | bool | �?| 是否支持阶梯 |
-| `supports_expression` | bool | �?| 是否支持表达�?|
-| `allow_negative_quantity` | bool | �?| 是否允许抵扣类负数量 |
-| `canonical_price_item_type` | enum_int32 | �?| 默认价格�?|
-| `sort_order` | int32 | �?| 展示排序 |
+| `meter_code` | string(64) | 锟?| 绋冲畾缂栫爜锛屼緥锟?`llm_input_token`銆乣image_result`銆乣audio_output_second`銆乣api_result` |
+| `display_name` | string(128) | 锟?| 灞曠ず鍚嶇О |
+| `description` | string(512) | 锟?| 璇存槑 |
+| `modality` | enum_int32 | 锟?| text銆乮mage銆乿ideo銆乤udio銆乵usic銆乻fx銆乤pi銆乻torage銆乶etwork |
+| `usage_type` | enum_int32 | 锟?| chat銆乪mbedding銆乮mage銆乤udio銆乿ideo銆乵usic銆乻fx銆乼ool銆乤pi |
+| `billing_mode` | enum_int32 | 锟?| token銆乸er_request銆乸er_result銆乸er_item銆乨uration銆乧haracter銆乻torage銆乥andwidth |
+| `default_unit` | enum_int32 | 锟?| token锟?k_token锟?m_token銆乺equest銆乺esult銆乮tem銆乻econd銆乧haracter銆乬b_day銆乬b |
+| `default_unit_size` | decimal_string | 锟?| 榛樿鍗曚綅澶у皬 |
+| `quantity_precision` | int32 | 锟?| 鏁伴噺绮惧害 |
+| `quantity_source` | enum_int32 | 锟?| usage_field銆乺esponse_field銆乺equest_field銆乸rovider_usage銆乪xpression銆乵anual |
+| `aggregation_mode` | enum_int32 | 锟?| sum銆乵ax銆乵in銆乴ast銆乨istinct_count |
+| `result_selector` | string(256) | 锟?| 浠庡搷搴旀垨 usage payload 鍙栫粨鏋滄暟鐨勯€夋嫨锟?|
+| `supports_tier` | bool | 锟?| 鏄惁鏀寔闃舵 |
+| `supports_expression` | bool | 锟?| 鏄惁鏀寔琛ㄨ揪锟?|
+| `allow_negative_quantity` | bool | 锟?| 鏄惁鍏佽鎶垫墸绫昏礋鏁伴噺 |
+| `canonical_price_item_type` | enum_int32 | 锟?| 榛樿浠锋牸锟?|
+| `sort_order` | int32 | 锟?| 灞曠ず鎺掑簭 |
 
-内置 meter 至少包括�?
-| 领域 | meter 示例 |
+鍐呯疆 meter 鑷冲皯鍖呮嫭锟?
+| 棰嗗煙 | meter 绀轰緥 |
 | --- | --- |
-| LLM | `llm_input_token`、`llm_output_token`、`llm_cache_read_token`、`llm_cache_write_token`、`tool_call` |
+| LLM | `llm_input_token`銆乣llm_output_token`銆乣llm_cache_read_token`銆乣llm_cache_write_token`銆乣tool_call` |
 | Embedding | `embedding_input_token` |
-| 图片 | `image_input_token`、`image_result`、`image_pixel` |
-| 语音/音频 | `audio_input_second`、`audio_output_second`、`speech_character` |
-| 视频/音乐/音效 | `video_input_second`、`video_output_second`、`music_output_second`、`sfx_result` |
-| 通用 API | `api_request`、`api_result`、`api_item` |
-| 资源�?| `storage_gb_day`、`bandwidth_gb` |
+| 鍥剧墖 | `image_input_token`銆乣image_result`銆乣image_pixel` |
+| 璇煶/闊抽 | `audio_input_second`銆乣audio_output_second`銆乣speech_character` |
+| 瑙嗛/闊充箰/闊虫晥 | `video_input_second`銆乣video_output_second`銆乣music_output_second`銆乣sfx_result` |
+| 閫氱敤 API | `api_request`銆乣api_result`銆乣api_item` |
+| 璧勬簮锟?| `storage_gb_day`銆乣bandwidth_gb` |
 
 ### 8.4 `ai_model_pricing`
 
-用途：模型价格簿。新表必须使�?decimal，不允许 float/double。它�?`price_side` 区分官方参考价、供应商上游成本价、客户销售价和内部结算价，用 `pricing_scope` 表示 global、tenant、organization、sku、channel_group、provider、channel 等生效范围。一�?`ai_model` 可以有多�?`upstream_cost` 价格，对应不�?`provider_code/channel_id/provider_model`；也可以有多�?`customer_charge` 价格，对应不同定价方案、租户或 SKU�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細妯″瀷浠锋牸绨裤€傛柊琛ㄥ繀椤讳娇锟?decimal锛屼笉鍏佽 float/double銆傚畠锟?`price_side` 鍖哄垎瀹樻柟鍙傝€冧环銆佷緵搴斿晢涓婃父鎴愭湰浠枫€佸鎴烽攢鍞环鍜屽唴閮ㄧ粨绠椾环锛岀敤 `pricing_scope` 琛ㄧず global銆乼enant銆乷rganization銆乻ku銆乧hannel_group銆乸rovider銆乧hannel 绛夌敓鏁堣寖鍥淬€備竴锟?`ai_model` 鍙互鏈夊锟?`upstream_cost` 浠锋牸锛屽搴斾笉锟?`provider_code/channel_id/provider_model`锛涗篃鍙互鏈夊锟?`customer_charge` 浠锋牸锛屽搴斾笉鍚屽畾浠锋柟妗堛€佺鎴锋垨 SKU锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `model_id` | int64 | �?| `ai_model.id` |
-| `model` | string(128) | �?| 模型快照 |
-| `vendor_code` | string(64) | �?| `ModelVendor` 稳定编码 |
-| `provider_code` | string(64) | �?| 上游 Provider 或销售渠道编�?|
-| `channel_id` | int64 | �?| 渠道级价格时关联 `ai_channel.id` |
-| `provider_model` | string(128) | �?| 上游模型名快�?|
-| `platform_code` | string(64) | �?| sub2api 式平台维度，例如 anthropic、openai、gemini |
-| `service_tier` | string(64) | �?| default、priority、flex 等服务层�?|
-| `price_side` | enum_int32 | �?| official_reference、upstream_cost、customer_charge、internal_transfer |
-| `pricing_scope` | enum_int32 | �?| global、tenant、organization、sku、channel_group、provider、channel |
-| `pricing_scope_id` | int64 | �?| scope 对象 ID |
-| `pricing_plan_id` | int64 | �?| `customer_charge` 价格所属定价方�?|
-| `pricing_plan_code` | string(64) | �?| 定价方案编码快照 |
-| `billing_type` | enum_int32 | �?| token、request、duration、image、video、audio、result、item、storage、bandwidth |
-| `billing_mode` | enum_int32 | �?| token、fixed_price、per_request、per_result、per_item、duration、character、storage、bandwidth、tiered、expression、image、audio、video |
-| `billing_meter_id` | int64 | �?| `ai_billing_meter.id` |
-| `billing_meter_code` | string(64) | �?| 计量编码，例�?`llm_input_token`、`api_result` |
-| `price_item_type` | enum_int32 | �?| input、cached_input、output、request、duration �?|
-| `unit` | enum_int32 | �?| token�?k_token�?m_token、request、second、minute、image |
-| `unit_size` | decimal_string | �?| 单位大小 |
-| `metering_mode` | enum_int32 | �?| direct、computed、provider_reported、estimated、manual_adjustment |
-| `quantity_source` | enum_int32 | �?| usage_field、response_field、request_field、provider_usage、expression |
-| `quantity_formula` | text | �?| 计量数量表达式，必须受白名单限制 |
-| `result_selector` | string(256) | �?| 按结�?个数计费时从响应中取数量的选择�?|
-| `minimum_quantity` | decimal_string | �?| 最小计费数�?|
-| `quantity_step` | decimal_string | �?| 数量进位步长 |
-| `included_quantity` | decimal_string | �?| 免费包含数量 |
-| `unit_price` | decimal_string | �?| 单价 |
-| `currency` | string(10) | �?| 币种 |
-| `rounding_mode` | enum_int32 | �?| half_up、half_even、ceil、floor |
-| `min_charge_amount` | decimal_string | �?| 最小计费金�?|
-| `reference_price_id` | int64 | �?| 派生价引用的 `ai_model_pricing.id` |
-| `reference_price_side` | enum_int32 | �?| official_reference、upstream_cost 等参考价�?|
-| `reference_multiplier` | decimal_string | �?| 参考价倍率 |
-| `markup_amount` | decimal_string | �?| 参考价基础上的固定加价 |
-| `pricing_formula_mode` | enum_int32 | �?| fixed、multiplier、multiplier_plus_offset、tiered、expression |
-| `price_origin` | enum_int32 | �?| official_import、provider_sync、manual、derived、fallback |
-| `import_snapshot_id` | int64 | �?| `ai_pricing_import_snapshot.id` |
-| `priority` | int32 | �?| 多条价格命中时的优先�?|
-| `region` | string(64) | �?| 价格区域 |
-| `price_version` | string(64) | �?| 价格版本 |
-| `source_url` | string(512) | �?| 官方或供应商价格来源 |
-| `source_hash` | string(128) | �?| 来源内容 hash |
-| `published_at` | instant | �?| 厂家/供应商发布时�?|
-| `observed_at` | instant | �?| 本系统采集时�?|
-| `effective_from` | instant | �?| 生效时间 |
-| `effective_to` | instant | �?| 失效时间 |
-| `source_price_id` | int64 | �?| 可关�?`legacy_model_price.id` |
+| `model_id` | int64 | 锟?| `ai_model.id` |
+| `model` | string(128) | 锟?| 妯″瀷蹇収 |
+| `vendor_code` | string(64) | 锟?| `ModelVendor` 绋冲畾缂栫爜 |
+| `provider_code` | string(64) | 锟?| 涓婃父 Provider 鎴栭攢鍞笭閬撶紪锟?|
+| `channel_id` | int64 | 锟?| 娓犻亾绾т环鏍兼椂鍏宠仈 `ai_channel.id` |
+| `provider_model` | string(128) | 锟?| 涓婃父妯″瀷鍚嶅揩锟?|
+| `platform_code` | string(64) | 锟?| sub2api 寮忓钩鍙扮淮搴︼紝渚嬪 anthropic銆乷penai銆乬emini |
+| `service_tier` | string(64) | 锟?| default銆乸riority銆乫lex 绛夋湇鍔″眰锟?|
+| `price_side` | enum_int32 | 锟?| official_reference銆乽pstream_cost銆乧ustomer_charge銆乮nternal_transfer |
+| `pricing_scope` | enum_int32 | 锟?| global銆乼enant銆乷rganization銆乻ku銆乧hannel_group銆乸rovider銆乧hannel |
+| `pricing_scope_id` | int64 | 锟?| scope 瀵硅薄 ID |
+| `pricing_plan_id` | int64 | 锟?| `customer_charge` 浠锋牸鎵€灞炲畾浠锋柟锟?|
+| `pricing_plan_code` | string(64) | 锟?| 瀹氫环鏂规缂栫爜蹇収 |
+| `billing_type` | enum_int32 | 锟?| token銆乺equest銆乨uration銆乮mage銆乿ideo銆乤udio銆乺esult銆乮tem銆乻torage銆乥andwidth |
+| `billing_mode` | enum_int32 | 锟?| token銆乫ixed_price銆乸er_request銆乸er_result銆乸er_item銆乨uration銆乧haracter銆乻torage銆乥andwidth銆乼iered銆乪xpression銆乮mage銆乤udio銆乿ideo |
+| `billing_meter_id` | int64 | 锟?| `ai_billing_meter.id` |
+| `billing_meter_code` | string(64) | 锟?| 璁￠噺缂栫爜锛屼緥锟?`llm_input_token`銆乣api_result` |
+| `price_item_type` | enum_int32 | 锟?| input銆乧ached_input銆乷utput銆乺equest銆乨uration 锟?|
+| `unit` | enum_int32 | 锟?| token锟?k_token锟?m_token銆乺equest銆乻econd銆乵inute銆乮mage |
+| `unit_size` | decimal_string | 锟?| 鍗曚綅澶у皬 |
+| `metering_mode` | enum_int32 | 锟?| direct銆乧omputed銆乸rovider_reported銆乪stimated銆乵anual_adjustment |
+| `quantity_source` | enum_int32 | 锟?| usage_field銆乺esponse_field銆乺equest_field銆乸rovider_usage銆乪xpression |
+| `quantity_formula` | text | 锟?| 璁￠噺鏁伴噺琛ㄨ揪寮忥紝蹇呴』鍙楃櫧鍚嶅崟闄愬埗 |
+| `result_selector` | string(256) | 锟?| 鎸夌粨锟?涓暟璁¤垂鏃朵粠鍝嶅簲涓彇鏁伴噺鐨勯€夋嫨锟?|
+| `minimum_quantity` | decimal_string | 锟?| 鏈€灏忚璐规暟锟?|
+| `quantity_step` | decimal_string | 锟?| 鏁伴噺杩涗綅姝ラ暱 |
+| `included_quantity` | decimal_string | 锟?| 鍏嶈垂鍖呭惈鏁伴噺 |
+| `unit_price` | decimal_string | 锟?| 鍗曚环 |
+| `currency` | string(10) | 锟?| 甯佺 |
+| `rounding_mode` | enum_int32 | 锟?| half_up銆乭alf_even銆乧eil銆乫loor |
+| `min_charge_amount` | decimal_string | 锟?| 鏈€灏忚璐归噾锟?|
+| `reference_price_id` | int64 | 锟?| 娲剧敓浠峰紩鐢ㄧ殑 `ai_model_pricing.id` |
+| `reference_price_side` | enum_int32 | 锟?| official_reference銆乽pstream_cost 绛夊弬鑰冧环锟?|
+| `reference_multiplier` | decimal_string | 锟?| 鍙傝€冧环鍊嶇巼 |
+| `markup_amount` | decimal_string | 锟?| 鍙傝€冧环鍩虹涓婄殑鍥哄畾鍔犱环 |
+| `pricing_formula_mode` | enum_int32 | 锟?| fixed銆乵ultiplier銆乵ultiplier_plus_offset銆乼iered銆乪xpression |
+| `price_origin` | enum_int32 | 锟?| official_import銆乸rovider_sync銆乵anual銆乨erived銆乫allback |
+| `import_snapshot_id` | int64 | 锟?| `ai_pricing_import_snapshot.id` |
+| `priority` | int32 | 锟?| 澶氭潯浠锋牸鍛戒腑鏃剁殑浼樺厛锟?|
+| `region` | string(64) | 锟?| 浠锋牸鍖哄煙 |
+| `price_version` | string(64) | 锟?| 浠锋牸鐗堟湰 |
+| `source_url` | string(512) | 锟?| 瀹樻柟鎴栦緵搴斿晢浠锋牸鏉ユ簮 |
+| `source_hash` | string(128) | 锟?| 鏉ユ簮鍐呭 hash |
+| `published_at` | instant | 锟?| 鍘傚/渚涘簲鍟嗗彂甯冩椂锟?|
+| `observed_at` | instant | 锟?| 鏈郴缁熼噰闆嗘椂锟?|
+| `effective_from` | instant | 锟?| 鐢熸晥鏃堕棿 |
+| `effective_to` | instant | 锟?| 澶辨晥鏃堕棿 |
+| `source_price_id` | int64 | 锟?| 鍙叧锟?`legacy_model_price.id` |
 
-约束�?
+绾︽潫锟?
 - `uk_ai_model_pricing_uuid(uuid)`
 - `idx_ai_model_pricing_lookup(tenant_id, organization_id, model, price_side, pricing_scope, pricing_scope_id, billing_mode, billing_meter_code, status, effective_from, effective_to)`
 - `idx_ai_model_pricing_vendor_model(tenant_id, organization_id, vendor_code, model, price_side, status, effective_from, id)`
@@ -740,300 +740,300 @@
 - `idx_ai_model_pricing_meter_effective(tenant_id, organization_id, billing_meter_code, price_side, status, effective_from, id)`
 - `idx_ai_model_pricing_model_status(tenant_id, organization_id, model_id, status)`
 
-模型目录保存链路�?
-| 问题 | 主表 | 查询/约束 |
+妯″瀷鐩綍淇濆瓨閾捐矾锟?
+| 闂 | 涓昏〃 | 鏌ヨ/绾︽潫 |
 | --- | --- | --- |
-| 每个厂家有哪些模型族 | `ai_model_family` | `vendor_code + status + sort_order` |
-| 每个厂家有哪些模�?| `ai_model` | `vendor_code + status`，需要按系列筛选时�?`family_code` |
-| 某模型有哪些能力 | `ai_model_capability` | `model_id` �?`vendor_code + capability + supported` |
-| 某模型面向用户如何计�?| `ai_model_pricing` | `model + price_side=customer_charge + pricing_scope` |
-| �?Provider/Channel 的上游成�?| `ai_model_pricing` | `model + price_side=upstream_cost + provider_code/channel_id` |
-| 某模型可通过哪些渠道调用 | `ai_channel_resource` + `ai_resource` | `resource_code/resource_group_code + vendor_code` |
+| 姣忎釜鍘傚鏈夊摢浜涙ā鍨嬫棌 | `ai_model_family` | `vendor_code + status + sort_order` |
+| 姣忎釜鍘傚鏈夊摢浜涙ā锟?| `ai_model` | `vendor_code + status`锛岄渶瑕佹寜绯诲垪绛涢€夋椂锟?`family_code` |
+| 鏌愭ā鍨嬫湁鍝簺鑳藉姏 | `ai_model_capability` | `model_id` 锟?`vendor_code + capability + supported` |
+| 鏌愭ā鍨嬮潰鍚戠敤鎴峰浣曡锟?| `ai_model_pricing` | `model + price_side=customer_charge + pricing_scope` |
+| 锟?Provider/Channel 鐨勪笂娓告垚锟?| `ai_model_pricing` | `model + price_side=upstream_cost + provider_code/channel_id` |
+| 鏌愭ā鍨嬪彲閫氳繃鍝簺娓犻亾璋冪敤 | `ai_channel_resource` + `ai_resource` | `resource_code/resource_group_code + vendor_code` |
 
-价格使用规则�?
-- 门户模型页展示默认读 `price_side=customer_charge`，没有销售价时可回退�?`official_reference`，但必须�?DTO 中标记来源�?- 路由成本优化只读 `price_side=upstream_cost`，不能直接使用客户销售价�?- 账务结算以请求完成时写入 `ai_usage_fact.pricing_snapshot` 的价格快照为准，不回查当前价格表重算历史账单�?
+浠锋牸浣跨敤瑙勫垯锟?
+- 闂ㄦ埛妯″瀷椤靛睍绀洪粯璁よ `price_side=customer_charge`锛屾病鏈夐攢鍞环鏃跺彲鍥為€€锟?`official_reference`锛屼絾蹇呴』锟?DTO 涓爣璁版潵婧愶拷?- 璺敱鎴愭湰浼樺寲鍙 `price_side=upstream_cost`锛屼笉鑳界洿鎺ヤ娇鐢ㄥ鎴烽攢鍞环锟?- 璐﹀姟缁撶畻浠ヨ姹傚畬鎴愭椂鍐欏叆 `ai_usage.pricing_snapshot` 鐨勪环鏍煎揩鐓т负鍑嗭紝涓嶅洖鏌ュ綋鍓嶄环鏍艰〃閲嶇畻鍘嗗彶璐﹀崟锟?
 #### 8.4.1 `ai_pricing_plan`
 
-用途：定价方案主表。它不是用户组，也不�?API Key 分组本身，而是“如何从参考价计算销售价”的策略集合。`ai_channel_group` 是创�?API Key 时选择的业务分组事实来源，可以直接挂默�?`pricing_plan_id`；更复杂场景通过 `ai_pricing_plan_binding` 把定价方案绑定到用户、VIP、SKU、租户或单个 API Key�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細瀹氫环鏂规涓昏〃銆傚畠涓嶆槸鐢ㄦ埛缁勶紝涔熶笉锟?API Key 鍒嗙粍鏈韩锛岃€屾槸鈥滃浣曚粠鍙傝€冧环璁＄畻閿€鍞环鈥濈殑绛栫暐闆嗗悎銆俙ai_channel_group` 鏄垱锟?API Key 鏃堕€夋嫨鐨勪笟鍔″垎缁勪簨瀹炴潵婧愶紝鍙互鐩存帴鎸傞粯锟?`pricing_plan_id`锛涙洿澶嶆潅鍦烘櫙閫氳繃 `ai_pricing_plan_binding` 鎶婂畾浠锋柟妗堢粦瀹氬埌鐢ㄦ埛銆乂IP銆丼KU銆佺鎴锋垨鍗曚釜 API Key锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `plan_code` | string(64) | �?| 租户内稳定编码，例如 default、vip、enterprise |
-| `plan_name` | string(128) | �?| 展示名称 |
-| `description` | string(512) | �?| 说明 |
-| `plan_scope` | enum_int32 | �?| global、tenant、organization、channel_group、api_key、vip、sku、user |
-| `base_price_side` | enum_int32 | �?| 默认参考价侧，通常�?official_reference |
-| `base_pricing_scope` | enum_int32 | �?| 默认参考价 scope |
-| `default_reference_price_id` | int64 | �?| 可指定默认参考价�?|
-| `default_multiplier` | decimal_string | �?| 默认参考价倍率，吸�?new-api `GroupRatio` �?sub2api `groups.rate_multiplier` |
-| `default_markup_amount` | decimal_string | �?| 默认固定加价 |
-| `currency` | string(10) | �?| 默认币种 |
-| `billing_mode` | enum_int32 | �?| token、fixed_price、per_request、tiered、expression �?|
-| `rounding_mode` | enum_int32 | �?| 金额取整模式 |
-| `min_charge_amount` | decimal_string | �?| 最小计费金�?|
-| `fallback_mode` | enum_int32 | �?| missing_as_official、missing_as_cost、deny、free、manual_review |
-| `priority` | int32 | �?| 多分组命中时优先�?|
-| `price_version` | string(64) | �?| 分组价格版本 |
-| `effective_from` | instant | �?| 生效时间 |
-| `effective_to` | instant | �?| 失效时间 |
+| `plan_code` | string(64) | 锟?| 绉熸埛鍐呯ǔ瀹氱紪鐮侊紝渚嬪 default銆乿ip銆乪nterprise |
+| `plan_name` | string(128) | 锟?| 灞曠ず鍚嶇О |
+| `description` | string(512) | 锟?| 璇存槑 |
+| `plan_scope` | enum_int32 | 锟?| global銆乼enant銆乷rganization銆乧hannel_group銆乤pi_key銆乿ip銆乻ku銆乽ser |
+| `base_price_side` | enum_int32 | 锟?| 榛樿鍙傝€冧环渚э紝閫氬父锟?official_reference |
+| `base_pricing_scope` | enum_int32 | 锟?| 榛樿鍙傝€冧环 scope |
+| `default_reference_price_id` | int64 | 锟?| 鍙寚瀹氶粯璁ゅ弬鑰冧环锟?|
+| `default_multiplier` | decimal_string | 锟?| 榛樿鍙傝€冧环鍊嶇巼锛屽惛锟?new-api `GroupRatio` 锟?sub2api `groups.rate_multiplier` |
+| `default_markup_amount` | decimal_string | 锟?| 榛樿鍥哄畾鍔犱环 |
+| `currency` | string(10) | 锟?| 榛樿甯佺 |
+| `billing_mode` | enum_int32 | 锟?| token銆乫ixed_price銆乸er_request銆乼iered銆乪xpression 锟?|
+| `rounding_mode` | enum_int32 | 锟?| 閲戦鍙栨暣妯″紡 |
+| `min_charge_amount` | decimal_string | 锟?| 鏈€灏忚璐归噾锟?|
+| `fallback_mode` | enum_int32 | 锟?| missing_as_official銆乵issing_as_cost銆乨eny銆乫ree銆乵anual_review |
+| `priority` | int32 | 锟?| 澶氬垎缁勫懡涓椂浼樺厛锟?|
+| `price_version` | string(64) | 锟?| 鍒嗙粍浠锋牸鐗堟湰 |
+| `effective_from` | instant | 锟?| 鐢熸晥鏃堕棿 |
+| `effective_to` | instant | 锟?| 澶辨晥鏃堕棿 |
 
-约束�?
+绾︽潫锟?
 - `uk_ai_pricing_plan_tenant_code(tenant_id, organization_id, plan_code)`
 - `idx_ai_pricing_plan_scope_status(tenant_id, organization_id, plan_scope, status, priority, id)`
 - `idx_ai_pricing_plan_effective(tenant_id, organization_id, status, effective_from, effective_to, id)`
 
 #### 8.4.2 `ai_pricing_plan_binding`
 
-用途：定价方案绑定表，解决 sub2api �?API Key 绑定 group、account 绑定 group、用户专�?group rate 的需求，同时避免修改 `plus_user`、`plus_vip_user`、`plus_account` 等存量事实表。业务分组关系仍�?`iam_gateway_api_key.channel_group_id` �?`ai_channel_group` 表达；该表只处理“某个主体临时或专属使用哪套定价方案”�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細瀹氫环鏂规缁戝畾琛紝瑙ｅ喅 sub2api 锟?API Key 缁戝畾 group銆乤ccount 缁戝畾 group銆佺敤鎴蜂笓锟?group rate 鐨勯渶姹傦紝鍚屾椂閬垮厤淇敼 `plus_user`銆乣plus_vip_user`銆乣plus_account` 绛夊瓨閲忎簨瀹炶〃銆備笟鍔″垎缁勫叧绯讳粛锟?`iam_gateway_api_key.channel_group_id` 锟?`ai_channel_group` 琛ㄨ揪锛涜琛ㄥ彧澶勭悊鈥滄煇涓富浣撲复鏃舵垨涓撳睘浣跨敤鍝瀹氫环鏂规鈥濓拷?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `pricing_plan_id` | int64 | �?| `ai_pricing_plan.id` |
-| `pricing_plan_code` | string(64) | �?| 定价方案编码快照 |
-| `subject_type` | enum_int32 | �?| tenant、organization、channel_group、api_key、user、vip_level、sku、account |
-| `subject_id` | int64 | �?| 主体 ID；用户、VIP、账户等引用既有 `plus_*` �?|
-| `subject_code` | string(128) | �?| 主体编码或快�?|
-| `binding_source` | enum_int32 | �?| manual、vip、package、promotion、migration、api |
-| `multiplier_override` | decimal_string | �?| 主体专属倍率，吸�?sub2api `user_group_rate_multipliers.rate_multiplier` |
-| `rpm_override` | int64 | �?| 主体专属 RPM 覆盖 |
-| `tpm_override` | int64 | �?| 主体专属 TPM 覆盖 |
-| `quota_policy_id` | int64 | �?| 可绑�?`ai_quota_policy.id` |
-| `priority` | int32 | �?| 多绑定命中时优先�?|
-| `effective_from` | instant | �?| 生效时间 |
-| `effective_to` | instant | �?| 失效时间 |
+| `pricing_plan_id` | int64 | 锟?| `ai_pricing_plan.id` |
+| `pricing_plan_code` | string(64) | 锟?| 瀹氫环鏂规缂栫爜蹇収 |
+| `subject_type` | enum_int32 | 锟?| tenant銆乷rganization銆乧hannel_group銆乤pi_key銆乽ser銆乿ip_level銆乻ku銆乤ccount |
+| `subject_id` | int64 | 锟?| 涓讳綋 ID锛涚敤鎴枫€乂IP銆佽处鎴风瓑寮曠敤鏃㈡湁 `plus_*` 锟?|
+| `subject_code` | string(128) | 锟?| 涓讳綋缂栫爜鎴栧揩锟?|
+| `binding_source` | enum_int32 | 锟?| manual銆乿ip銆乸ackage銆乸romotion銆乵igration銆乤pi |
+| `multiplier_override` | decimal_string | 锟?| 涓讳綋涓撳睘鍊嶇巼锛屽惛锟?sub2api `user_group_rate_multipliers.rate_multiplier` |
+| `rpm_override` | int64 | 锟?| 涓讳綋涓撳睘 RPM 瑕嗙洊 |
+| `tpm_override` | int64 | 锟?| 涓讳綋涓撳睘 TPM 瑕嗙洊 |
+| `quota_policy_id` | int64 | 锟?| 鍙粦锟?`ai_quota_policy.id` |
+| `priority` | int32 | 锟?| 澶氱粦瀹氬懡涓椂浼樺厛锟?|
+| `effective_from` | instant | 锟?| 鐢熸晥鏃堕棿 |
+| `effective_to` | instant | 锟?| 澶辨晥鏃堕棿 |
 
-约束�?
+绾︽潫锟?
 - `uk_ai_pricing_plan_binding_subject(tenant_id, organization_id, subject_type, subject_id, pricing_plan_id)`
 - `idx_ai_pricing_plan_binding_subject_effective(tenant_id, organization_id, subject_type, subject_id, status, effective_from, id)`
 - `idx_ai_pricing_plan_binding_plan(tenant_id, organization_id, pricing_plan_id, status, priority, id)`
 
 #### 8.4.3 `ai_pricing_rule`
 
-用途：定价方案下的规则表。它�?new-api �?`ModelRatio`、`ModelPrice`、`CompletionRatio`、`CacheRatio`、`GroupGroupRatio` �?sub2api �?channel model pricing 统一成可审计、可索引、可版本化的行模型�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細瀹氫环鏂规涓嬬殑瑙勫垯琛ㄣ€傚畠锟?new-api 锟?`ModelRatio`銆乣ModelPrice`銆乣CompletionRatio`銆乣CacheRatio`銆乣GroupGroupRatio` 锟?sub2api 锟?channel model pricing 缁熶竴鎴愬彲瀹¤銆佸彲绱㈠紩銆佸彲鐗堟湰鍖栫殑琛屾ā鍨嬶拷?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `pricing_plan_id` | int64 | �?| 所属定价方�?|
-| `pricing_plan_code` | string(64) | �?| 定价方案编码快照 |
-| `rule_code` | string(64) | �?| 租户内规则编�?|
-| `rule_name` | string(128) | �?| 规则名称 |
-| `match_type` | enum_int32 | �?| wildcard、vendor、family、model、provider、channel、capability、meter、price_item |
-| `vendor_code`、`family_code`、`model_id`、`model` | mixed | �?| 模型厂家、模型族和模型匹配条�?|
-| `provider_code`、`channel_id`、`provider_model` | mixed | �?| 供应商、渠道和上游模型匹配条件 |
-| `capability_code`、`platform_code`、`service_tier`、`region` | mixed | �?| 能力、平台、服务层级和区域条件 |
-| `price_side` | enum_int32 | �?| 规则生成的价格侧，通常�?customer_charge |
-| `reference_price_side` | enum_int32 | �?| 参考价侧，通常�?official_reference �?upstream_cost |
-| `reference_pricing_id` | int64 | �?| 指定参考价格行 |
-| `reference_pricing_scope` | enum_int32 | �?| 参考价�?scope |
-| `price_item_type` | enum_int32 | �?| input、output、cache_read、cache_write、request、result、item、image、audio、video、storage |
-| `billing_type` | enum_int32 | �?| token、request、duration、count、result、item、character、storage、bandwidth |
-| `billing_mode` | enum_int32 | �?| token、fixed_price、per_request、per_result、per_item、duration、character、storage、bandwidth、tiered、expression |
-| `billing_meter_id` | int64 | �?| `ai_billing_meter.id` |
-| `billing_meter_code` | string(64) | �?| 规则命中的计量表编码 |
-| `unit`、`unit_size` | mixed | �?| 计费单位 |
-| `metering_mode` | enum_int32 | �?| direct、computed、provider_reported、estimated、manual_adjustment |
-| `quantity_source` | enum_int32 | �?| usage_field、response_field、request_field、provider_usage、expression |
-| `quantity_formula` | text | �?| 计量数量表达�?|
-| `result_selector` | string(256) | �?| 结果/个数计费数量选择�?|
-| `minimum_quantity` | decimal_string | �?| 最小计费数�?|
-| `quantity_step` | decimal_string | �?| 进位步长 |
-| `included_quantity` | decimal_string | �?| 免费包含数量 |
-| `formula_mode` | enum_int32 | �?| fixed、multiplier、multiplier_plus_offset、tiered、expression |
-| `multiplier` | decimal_string | �?| 参考价倍率 |
-| `markup_amount` | decimal_string | �?| 固定加价 |
-| `unit_price_override` | decimal_string | �?| 固定单价覆盖 |
-| `expression` | text | �?| 表达式计费，必须受白名单函数�?sandbox 限制 |
-| `expression_hash` | string(128) | �?| 表达�?hash |
-| `fallback_mode` | enum_int32 | �?| 缺价处理策略 |
-| `priority` | int32 | �?| 命中优先�?|
-| `effective_from` | instant | �?| 生效时间 |
-| `effective_to` | instant | �?| 失效时间 |
+| `pricing_plan_id` | int64 | 锟?| 鎵€灞炲畾浠锋柟锟?|
+| `pricing_plan_code` | string(64) | 锟?| 瀹氫环鏂规缂栫爜蹇収 |
+| `rule_code` | string(64) | 锟?| 绉熸埛鍐呰鍒欑紪锟?|
+| `rule_name` | string(128) | 锟?| 瑙勫垯鍚嶇О |
+| `match_type` | enum_int32 | 锟?| wildcard銆乿endor銆乫amily銆乵odel銆乸rovider銆乧hannel銆乧apability銆乵eter銆乸rice_item |
+| `vendor_code`銆乣family_code`銆乣model_id`銆乣model` | mixed | 锟?| 妯″瀷鍘傚銆佹ā鍨嬫棌鍜屾ā鍨嬪尮閰嶆潯锟?|
+| `provider_code`銆乣channel_id`銆乣provider_model` | mixed | 锟?| 渚涘簲鍟嗐€佹笭閬撳拰涓婃父妯″瀷鍖归厤鏉′欢 |
+| `capability_code`銆乣platform_code`銆乣service_tier`銆乣region` | mixed | 锟?| 鑳藉姏銆佸钩鍙般€佹湇鍔″眰绾у拰鍖哄煙鏉′欢 |
+| `price_side` | enum_int32 | 锟?| 瑙勫垯鐢熸垚鐨勪环鏍间晶锛岄€氬父锟?customer_charge |
+| `reference_price_side` | enum_int32 | 锟?| 鍙傝€冧环渚э紝閫氬父锟?official_reference 锟?upstream_cost |
+| `reference_pricing_id` | int64 | 锟?| 鎸囧畾鍙傝€冧环鏍艰 |
+| `reference_pricing_scope` | enum_int32 | 锟?| 鍙傝€冧环锟?scope |
+| `price_item_type` | enum_int32 | 锟?| input銆乷utput銆乧ache_read銆乧ache_write銆乺equest銆乺esult銆乮tem銆乮mage銆乤udio銆乿ideo銆乻torage |
+| `billing_type` | enum_int32 | 锟?| token銆乺equest銆乨uration銆乧ount銆乺esult銆乮tem銆乧haracter銆乻torage銆乥andwidth |
+| `billing_mode` | enum_int32 | 锟?| token銆乫ixed_price銆乸er_request銆乸er_result銆乸er_item銆乨uration銆乧haracter銆乻torage銆乥andwidth銆乼iered銆乪xpression |
+| `billing_meter_id` | int64 | 锟?| `ai_billing_meter.id` |
+| `billing_meter_code` | string(64) | 锟?| 瑙勫垯鍛戒腑鐨勮閲忚〃缂栫爜 |
+| `unit`銆乣unit_size` | mixed | 锟?| 璁¤垂鍗曚綅 |
+| `metering_mode` | enum_int32 | 锟?| direct銆乧omputed銆乸rovider_reported銆乪stimated銆乵anual_adjustment |
+| `quantity_source` | enum_int32 | 锟?| usage_field銆乺esponse_field銆乺equest_field銆乸rovider_usage銆乪xpression |
+| `quantity_formula` | text | 锟?| 璁￠噺鏁伴噺琛ㄨ揪锟?|
+| `result_selector` | string(256) | 锟?| 缁撴灉/涓暟璁¤垂鏁伴噺閫夋嫨锟?|
+| `minimum_quantity` | decimal_string | 锟?| 鏈€灏忚璐规暟锟?|
+| `quantity_step` | decimal_string | 锟?| 杩涗綅姝ラ暱 |
+| `included_quantity` | decimal_string | 锟?| 鍏嶈垂鍖呭惈鏁伴噺 |
+| `formula_mode` | enum_int32 | 锟?| fixed銆乵ultiplier銆乵ultiplier_plus_offset銆乼iered銆乪xpression |
+| `multiplier` | decimal_string | 锟?| 鍙傝€冧环鍊嶇巼 |
+| `markup_amount` | decimal_string | 锟?| 鍥哄畾鍔犱环 |
+| `unit_price_override` | decimal_string | 锟?| 鍥哄畾鍗曚环瑕嗙洊 |
+| `expression` | text | 锟?| 琛ㄨ揪寮忚璐癸紝蹇呴』鍙楃櫧鍚嶅崟鍑芥暟锟?sandbox 闄愬埗 |
+| `expression_hash` | string(128) | 锟?| 琛ㄨ揪锟?hash |
+| `fallback_mode` | enum_int32 | 锟?| 缂轰环澶勭悊绛栫暐 |
+| `priority` | int32 | 锟?| 鍛戒腑浼樺厛锟?|
+| `effective_from` | instant | 锟?| 鐢熸晥鏃堕棿 |
+| `effective_to` | instant | 锟?| 澶辨晥鏃堕棿 |
 
 #### 8.4.4 `ai_pricing_tier`
 
-用途：价格阶梯和区间表。它吸收 sub2api `channel_pricing_intervals` 的优点，同时支持 token 上下文长度、按次、按结果、按个数、图片尺寸、音频时长、视频时长、字符数、存储量、流量和表达�?tier label�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細浠锋牸闃舵鍜屽尯闂磋〃銆傚畠鍚告敹 sub2api `channel_pricing_intervals` 鐨勪紭鐐癸紝鍚屾椂鏀寔 token 涓婁笅鏂囬暱搴︺€佹寜娆°€佹寜缁撴灉銆佹寜涓暟銆佸浘鐗囧昂瀵搞€侀煶棰戞椂闀裤€佽棰戞椂闀裤€佸瓧绗︽暟銆佸瓨鍌ㄩ噺銆佹祦閲忓拰琛ㄨ揪锟?tier label锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `pricing_rule_id` | int64 | �?| 所�?`ai_pricing_rule.id` |
-| `model_pricing_id` | int64 | �?| 直接挂在 `ai_model_pricing.id` 的区�?|
-| `tier_code` | string(64) | �?| 层级编码 |
-| `tier_label` | string(64) | �?| 展示标签，例�?128k、HD、priority |
-| `price_item_type` | enum_int32 | �?| 价格�?|
-| `billing_mode` | enum_int32 | �?| token、per_request、per_result、per_item、duration、character、storage、bandwidth、image、audio、video、tiered |
-| `billing_meter_id` | int64 | �?| `ai_billing_meter.id` |
-| `billing_meter_code` | string(64) | �?| 计量表编�?|
-| `min_quantity` | decimal_string | �?| 区间下界，含 |
-| `max_quantity` | decimal_string | �?| 区间上界，空表示无上�?|
-| `quantity_unit` | enum_int32 | �?| token、request、result、item、image、second、minute、character、pixel、byte、gb、gb_day |
-| `quantity_step` | decimal_string | �?| 进位步长 |
-| `included_quantity` | decimal_string | �?| 区间包含的免费数�?|
-| `result_selector` | string(256) | �?| 按结�?条目计费时的数量选择�?|
-| `input_unit_price`、`output_unit_price` | decimal_string | �?| 输入/输出单价 |
-| `cache_write_unit_price`、`cache_read_unit_price` | decimal_string | �?| 缓存写入/读取单价 |
-| `image_unit_price`、`audio_unit_price`、`video_unit_price` | decimal_string | �?| 模态单�?|
-| `per_request_price` | decimal_string | �?| 按次价格 |
-| `multiplier` | decimal_string | �?| 区间倍率 |
-| `currency` | string(10) | �?| 币种 |
-| `sort_order` | int32 | �?| 区间排序 |
-| `effective_from` | instant | �?| 生效时间 |
-| `effective_to` | instant | �?| 失效时间 |
+| `pricing_rule_id` | int64 | 锟?| 鎵€锟?`ai_pricing_rule.id` |
+| `model_pricing_id` | int64 | 锟?| 鐩存帴鎸傚湪 `ai_model_pricing.id` 鐨勫尯锟?|
+| `tier_code` | string(64) | 锟?| 灞傜骇缂栫爜 |
+| `tier_label` | string(64) | 锟?| 灞曠ず鏍囩锛屼緥锟?128k銆丠D銆乸riority |
+| `price_item_type` | enum_int32 | 锟?| 浠锋牸锟?|
+| `billing_mode` | enum_int32 | 锟?| token銆乸er_request銆乸er_result銆乸er_item銆乨uration銆乧haracter銆乻torage銆乥andwidth銆乮mage銆乤udio銆乿ideo銆乼iered |
+| `billing_meter_id` | int64 | 锟?| `ai_billing_meter.id` |
+| `billing_meter_code` | string(64) | 锟?| 璁￠噺琛ㄧ紪锟?|
+| `min_quantity` | decimal_string | 锟?| 鍖洪棿涓嬬晫锛屽惈 |
+| `max_quantity` | decimal_string | 锟?| 鍖洪棿涓婄晫锛岀┖琛ㄧず鏃犱笂锟?|
+| `quantity_unit` | enum_int32 | 锟?| token銆乺equest銆乺esult銆乮tem銆乮mage銆乻econd銆乵inute銆乧haracter銆乸ixel銆乥yte銆乬b銆乬b_day |
+| `quantity_step` | decimal_string | 锟?| 杩涗綅姝ラ暱 |
+| `included_quantity` | decimal_string | 锟?| 鍖洪棿鍖呭惈鐨勫厤璐规暟锟?|
+| `result_selector` | string(256) | 锟?| 鎸夌粨锟?鏉＄洰璁¤垂鏃剁殑鏁伴噺閫夋嫨锟?|
+| `input_unit_price`銆乣output_unit_price` | decimal_string | 锟?| 杈撳叆/杈撳嚭鍗曚环 |
+| `cache_write_unit_price`銆乣cache_read_unit_price` | decimal_string | 锟?| 缂撳瓨鍐欏叆/璇诲彇鍗曚环 |
+| `image_unit_price`銆乣audio_unit_price`銆乣video_unit_price` | decimal_string | 锟?| 妯℃€佸崟锟?|
+| `per_request_price` | decimal_string | 锟?| 鎸夋浠锋牸 |
+| `multiplier` | decimal_string | 锟?| 鍖洪棿鍊嶇巼 |
+| `currency` | string(10) | 锟?| 甯佺 |
+| `sort_order` | int32 | 锟?| 鍖洪棿鎺掑簭 |
+| `effective_from` | instant | 锟?| 鐢熸晥鏃堕棿 |
+| `effective_to` | instant | 锟?| 澶辨晥鏃堕棿 |
 
 #### 8.4.5 `ai_pricing_import_snapshot`
 
-用途：官方/供应商价格导入快照。它记录 LiteLLM、官方页面、new-api/sub2api 迁移数据、手工导入等来源�?URL、hash、版本、行数和错误信息。导入快照是价格证据，不直接参与热路径计费�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細瀹樻柟/渚涘簲鍟嗕环鏍煎鍏ュ揩鐓с€傚畠璁板綍 LiteLLM銆佸畼鏂归〉闈€乶ew-api/sub2api 杩佺Щ鏁版嵁銆佹墜宸ュ鍏ョ瓑鏉ユ簮锟?URL銆乭ash銆佺増鏈€佽鏁板拰閿欒淇℃伅銆傚鍏ュ揩鐓ф槸浠锋牸璇佹嵁锛屼笉鐩存帴鍙備笌鐑矾寰勮璐癸拷?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `import_source` | enum_int32 | �?| official_url、litellm、new_api、sub2api、manual、provider_api |
-| `source_name` | string(128) | �?| 来源名称 |
-| `source_url` | string(1024) | �?| 来源 URL |
-| `source_version` | string(128) | �?| 版本�?|
-| `source_hash` | string(128) | �?| 原始内容 hash |
-| `upstream_commit` | string(128) | �?| 外部仓库 commit |
-| `data_format` | string(64) | �?| json、yaml、csv、html、api |
-| `row_count`、`accepted_count`、`rejected_count` | int64 | �?| 导入统计 |
-| `currency` | string(10) | �?| 默认币种 |
-| `published_at`、`observed_at` | instant | �?| 来源发布时间和采集时�?|
-| `raw_payload_ref` | string(512) | �?| 原始文件引用 |
-| `normalized_payload_hash` | string(128) | �?| 规范化后 hash |
-| `schema_version` | string(32) | �?| 解析 schema 版本 |
-| `error_message_masked` | string(1024) | �?| 脱敏错误 |
+| `import_source` | enum_int32 | 锟?| official_url銆乴itellm銆乶ew_api銆乻ub2api銆乵anual銆乸rovider_api |
+| `source_name` | string(128) | 锟?| 鏉ユ簮鍚嶇О |
+| `source_url` | string(1024) | 锟?| 鏉ユ簮 URL |
+| `source_version` | string(128) | 锟?| 鐗堟湰锟?|
+| `source_hash` | string(128) | 锟?| 鍘熷鍐呭 hash |
+| `upstream_commit` | string(128) | 锟?| 澶栭儴浠撳簱 commit |
+| `data_format` | string(64) | 锟?| json銆亂aml銆乧sv銆乭tml銆乤pi |
+| `row_count`銆乣accepted_count`銆乣rejected_count` | int64 | 锟?| 瀵煎叆缁熻 |
+| `currency` | string(10) | 锟?| 榛樿甯佺 |
+| `published_at`銆乣observed_at` | instant | 锟?| 鏉ユ簮鍙戝竷鏃堕棿鍜岄噰闆嗘椂锟?|
+| `raw_payload_ref` | string(512) | 锟?| 鍘熷鏂囦欢寮曠敤 |
+| `normalized_payload_hash` | string(128) | 锟?| 瑙勮寖鍖栧悗 hash |
+| `schema_version` | string(32) | 锟?| 瑙ｆ瀽 schema 鐗堟湰 |
+| `error_message_masked` | string(1024) | 锟?| 鑴辨晱閿欒 |
 
 ### 8.5 `ai_routing_policy`
 
-用途：路由策略主表，定义策略所属主体、目标能力和默认行为�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細璺敱绛栫暐涓昏〃锛屽畾涔夌瓥鐣ユ墍灞炰富浣撱€佺洰鏍囪兘鍔涘拰榛樿琛屼负锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `policy_code` | string(64) | �?| 租户内唯一策略编码 |
-| `name` | string(128) | �?| 策略名称 |
-| `policy_scope` | enum_int32 | �?| global、tenant、organization、api_key、group |
-| `subject_id` | int64 | �?| 绑定主体 ID |
-| `capability` | enum_int32 | �?| chat、embedding、image、audio、video |
-| `default_profile_id` | int64 | �?| 默认 profile |
-| `fallback_mode` | enum_int32 | �?| none、next_provider、next_region、cheapest、fastest |
-| `slo_latency_ms` | int32 | �?| 延迟目标 |
-| `slo_success_rate` | decimal_string | �?| 成功率目�?|
-| `cost_ceiling` | decimal_string | �?| 成本上限 |
-| `currency` | string(10) | �?| 成本币种 |
+| `policy_code` | string(64) | 锟?| 绉熸埛鍐呭敮涓€绛栫暐缂栫爜 |
+| `name` | string(128) | 锟?| 绛栫暐鍚嶇О |
+| `policy_scope` | enum_int32 | 锟?| global銆乼enant銆乷rganization銆乤pi_key銆乬roup |
+| `subject_id` | int64 | 锟?| 缁戝畾涓讳綋 ID |
+| `capability` | enum_int32 | 锟?| chat銆乪mbedding銆乮mage銆乤udio銆乿ideo |
+| `default_profile_id` | int64 | 锟?| 榛樿 profile |
+| `fallback_mode` | enum_int32 | 锟?| none銆乶ext_provider銆乶ext_region銆乧heapest銆乫astest |
+| `slo_latency_ms` | int32 | 锟?| 寤惰繜鐩爣 |
+| `slo_success_rate` | decimal_string | 锟?| 鎴愬姛鐜囩洰锟?|
+| `cost_ceiling` | decimal_string | 锟?| 鎴愭湰涓婇檺 |
+| `currency` | string(10) | 锟?| 鎴愭湰甯佺 |
 
-约束�?
+绾︽潫锟?
 - `uk_ai_routing_policy_tenant_code(tenant_id, organization_id, policy_code)`
 - `idx_ai_routing_policy_tenant_scope_status(tenant_id, organization_id, policy_scope, subject_id, status)`
 
 ### 8.6 `ai_routing_profile`
 
-用途：策略版本和灰度发布单元。所有规则归属于 profile，支持发布、回滚和审计�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細绛栫暐鐗堟湰鍜岀伆搴﹀彂甯冨崟鍏冦€傛墍鏈夎鍒欏綊灞炰簬 profile锛屾敮鎸佸彂甯冦€佸洖婊氬拰瀹¤锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `policy_id` | int64 | �?| 策略 ID |
-| `profile_version` | int64 | �?| 策略版本 |
-| `profile_name` | string(128) | �?| 版本名称 |
-| `release_status` | enum_int32 | �?| draft、canary、active、rollback、archived |
-| `traffic_percent` | decimal_string | �?| 灰度流量百分�?|
-| `config_hash` | string(128) | �?| 规则集合 hash |
-| `published_at` | instant | �?| 发布时间 |
-| `published_by` | int64 | �?| 发布�?|
-| `rollback_from_profile_id` | int64 | �?| 回滚来源 |
+| `policy_id` | int64 | 锟?| 绛栫暐 ID |
+| `profile_version` | int64 | 锟?| 绛栫暐鐗堟湰 |
+| `profile_name` | string(128) | 锟?| 鐗堟湰鍚嶇О |
+| `release_status` | enum_int32 | 锟?| draft銆乧anary銆乤ctive銆乺ollback銆乤rchived |
+| `traffic_percent` | decimal_string | 锟?| 鐏板害娴侀噺鐧惧垎锟?|
+| `config_hash` | string(128) | 锟?| 瑙勫垯闆嗗悎 hash |
+| `published_at` | instant | 锟?| 鍙戝竷鏃堕棿 |
+| `published_by` | int64 | 锟?| 鍙戝竷锟?|
+| `rollback_from_profile_id` | int64 | 锟?| 鍥炴粴鏉ユ簮 |
 
-约束�?
+绾︽潫锟?
 - `uk_ai_routing_profile_policy_version(policy_id, profile_version)`
 - `idx_ai_routing_profile_tenant_policy_status(tenant_id, organization_id, policy_id, release_status)`
 
 ### 8.7 `ai_routing_rule`
 
-用途：具体匹配条件、候选渠道集、权重、约束和 fallback�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細鍏蜂綋鍖归厤鏉′欢銆佸€欓€夋笭閬撻泦銆佹潈閲嶃€佺害鏉熷拰 fallback锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `profile_id` | int64 | �?| profile |
-| `rule_code` | string(64) | �?| profile 内唯一 |
-| `priority` | int32 | �?| 优先级，越小越先匹配 |
-| `match_expression` | json | �?| 条件表达式，必须�?schema version |
-| `target_model` | string(128) | �?| 目标模型 |
-| `candidate_channels` | json | �?| 候选渠道和权重 |
-| `fallback_chain` | json | �?| fallback 顺序 |
-| `constraints` | json | �?| 成本、区域、延迟、能力约�?|
-| `rate_limit_policy_id` | int64 | �?| 限流策略 |
-| `effective_from` | instant | �?| 生效时间 |
-| `effective_to` | instant | �?| 失效时间 |
+| `profile_id` | int64 | 锟?| profile |
+| `rule_code` | string(64) | 锟?| profile 鍐呭敮涓€ |
+| `priority` | int32 | 锟?| 浼樺厛绾э紝瓒婂皬瓒婂厛鍖归厤 |
+| `match_expression` | json | 锟?| 鏉′欢琛ㄨ揪寮忥紝蹇呴』锟?schema version |
+| `target_model` | string(128) | 锟?| 鐩爣妯″瀷 |
+| `candidate_channels` | json | 锟?| 鍊欓€夋笭閬撳拰鏉冮噸 |
+| `fallback_chain` | json | 锟?| fallback 椤哄簭 |
+| `constraints` | json | 锟?| 鎴愭湰銆佸尯鍩熴€佸欢杩熴€佽兘鍔涚害锟?|
+| `rate_limit_policy_id` | int64 | 锟?| 闄愭祦绛栫暐 |
+| `effective_from` | instant | 锟?| 鐢熸晥鏃堕棿 |
+| `effective_to` | instant | 锟?| 澶辨晥鏃堕棿 |
 
-约束�?
+绾︽潫锟?
 - `uk_ai_routing_rule_profile_code(profile_id, rule_code)`
 - `idx_ai_routing_rule_tenant_profile_priority(tenant_id, organization_id, profile_id, priority, status)`
 
 ### 8.8 `ai_routing_decision_log`
 
-用途：每个请求的路由决策证据，可用于审计、成本解释、fallback 复盘和争议处理�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細姣忎釜璇锋眰鐨勮矾鐢卞喅绛栬瘉鎹紝鍙敤浜庡璁°€佹垚鏈В閲娿€乫allback 澶嶇洏鍜屼簤璁鐞嗭拷?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `request_id` | string(128) | �?| 请求 ID |
-| `trace_id` | string(128) | �?| trace |
-| `api_key_id` | int64 | �?| `iam_gateway_api_key.id` �?`plus_api_key.id` 映射 |
-| `legacy_api_key_id` | int64 | �?| 使用 `plus_api_key` 时记�?|
-| `policy_id` | int64 | �?| 命中策略 |
-| `profile_id` | int64 | �?| 命中 profile |
-| `rule_id` | int64 | �?| 命中规则 |
-| `requested_model` | string(128) | �?| 请求模型 |
-| `resolved_model` | string(128) | �?| 解析后模�?|
-| `capability` | enum_int32 | �?| 能力 |
-| `selected_provider_id` | int64 | �?| Provider |
-| `selected_channel_id` | int64 | �?| 渠道 |
-| `selected_account_id` | int64 | �?| Provider 账号 |
-| `decision_mode` | enum_int32 | �?| direct、weighted、fallback、canary、manual |
-| `decision_reason` | json | �?| 决策原因，含 schema version |
-| `candidate_snapshot` | json | �?| 候选集快照 |
-| `fallback_chain` | json | �?| fallback �?|
-| `decision_latency_ms` | int32 | �?| 决策耗时 |
-| `created_at` | instant | �?| 创建时间 |
+| `request_id` | string(128) | 锟?| 璇锋眰 ID |
+| `trace_id` | string(128) | 锟?| trace |
+| `api_key_id` | int64 | 锟?| `iam_gateway_api_key.id` 锟?`plus_api_key.id` 鏄犲皠 |
+| `legacy_api_key_id` | int64 | 锟?| 浣跨敤 `plus_api_key` 鏃惰锟?|
+| `policy_id` | int64 | 锟?| 鍛戒腑绛栫暐 |
+| `profile_id` | int64 | 锟?| 鍛戒腑 profile |
+| `rule_id` | int64 | 锟?| 鍛戒腑瑙勫垯 |
+| `requested_model` | string(128) | 锟?| 璇锋眰妯″瀷 |
+| `resolved_model` | string(128) | 锟?| 瑙ｆ瀽鍚庢ā锟?|
+| `capability` | enum_int32 | 锟?| 鑳藉姏 |
+| `selected_provider_id` | int64 | 锟?| Provider |
+| `selected_channel_id` | int64 | 锟?| 娓犻亾 |
+| `selected_account_id` | int64 | 锟?| Provider 璐﹀彿 |
+| `decision_mode` | enum_int32 | 锟?| direct銆亀eighted銆乫allback銆乧anary銆乵anual |
+| `decision_reason` | json | 锟?| 鍐崇瓥鍘熷洜锛屽惈 schema version |
+| `candidate_snapshot` | json | 锟?| 鍊欓€夐泦蹇収 |
+| `fallback_chain` | json | 锟?| fallback 锟?|
+| `decision_latency_ms` | int32 | 锟?| 鍐崇瓥鑰楁椂 |
+| `created_at` | instant | 锟?| 鍒涘缓鏃堕棿 |
 
-约束�?
+绾︽潫锟?
 - `uk_ai_routing_decision_log_uuid(uuid)`
 - `uk_ai_routing_decision_log_request(tenant_id, organization_id, request_id)`
 - `idx_ai_routing_decision_tenant_model_created(tenant_id, organization_id, requested_model, created_at, id)`
 - `idx_ai_routing_decision_tenant_channel_created(tenant_id, organization_id, selected_channel_id, created_at, id)`
 
-留存：默认在�?180 天；企业版可配置；涉及争议可设置 `legal_hold`�?
+鐣欏瓨锛氶粯璁ゅ湪锟?180 澶╋紱浼佷笟鐗堝彲閰嶇疆锛涙秹鍙婁簤璁彲璁剧疆 `legal_hold`锟?
 ### 8.9 `ai_request_trace`
 
-用途：Provider 调用 attempt �?trace，包括请求、响应、错误、延迟、fallback 过程。该表不是账务事实�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細Provider 璋冪敤 attempt 锟?trace锛屽寘鎷姹傘€佸搷搴斻€侀敊璇€佸欢杩熴€乫allback 杩囩▼銆傝琛ㄤ笉鏄处鍔′簨瀹烇拷?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `request_id` | string(128) | �?| 请求 ID |
-| `trace_id` | string(128) | �?| trace |
-| `attempt_no` | int32 | �?| 第几�?attempt |
-| `decision_log_id` | int64 | �?| 决策日志 |
-| `api_key_id` | int64 | �?| 标准 Key ID |
-| `legacy_api_key_id` | int64 | �?| 存量 `plus_api_key.id` |
-| `api_key_name_snapshot` | string(128) | �?| Key 名称快照 |
-| `channel_group_snapshot` | string(128) | �?| Key 分组快照 |
-| `owner_type` | enum_int32 | �?| 归属主体 |
-| `owner_id` | int64 | �?| 归属主体 ID |
-| `owner_name_snapshot` | string(128) | �?| 用户或主体展示名快照 |
-| `provider_id` | int64 | �?| Provider |
-| `channel_id` | int64 | �?| 渠道 |
-| `channel_name_snapshot` | string(128) | �?| 渠道名称快照 |
-| `channel_id` | int64 | �?| Provider 账号 |
-| `requested_model` | string(128) | �?| 请求模型 |
-| `provider_model` | string(128) | �?| 上游模型 |
-| `endpoint` | string(256) | �?| API endpoint |
-| `request_path` | string(256) | �?| 原始请求路径 |
-| `http_status` | int32 | �?| HTTP 状�?|
-| `provider_error_code` | string(128) | �?| 上游错误�?|
-| `error_type` | enum_int32 | �?| timeout、rate_limit、auth、server、client、network |
-| `started_at` | instant | �?| 开�?|
-| `ended_at` | instant | �?| 结束 |
-| `latency_ms` | int32 | �?| 延迟 |
-| `streaming` | bool | �?| 是否流式 |
-| `request_bytes` | int64 | �?| 请求大小 |
-| `response_bytes` | int64 | �?| 响应大小 |
-| `prompt_tokens` | int64 | �?| 输入 token |
-| `completion_tokens` | int64 | �?| 输出 token |
-| `total_tokens` | int64 | �?| �?token |
-| `request_payload_hash` | string(128) | �?| 请求 payload 摘要 |
-| `response_payload_hash` | string(128) | �?| 响应 payload 摘要 |
-| `error_message_masked` | string(1024) | �?| 脱敏错误 |
-| `reasoning_effort` | string(64) | �?| 推理强度或类似模型配�?|
-| `client_ip_hash` | string(128) | �?| 客户�?IP hash |
-| `client_ip_masked` | string(64) | �?| 客户�?IP 脱敏展示，支�?Usage/Admin Record 列表 |
-| `client_ip_region` | string(128) | �?| 客户�?IP 解析区域 |
-| `user_agent_hash` | string(128) | �?| User-Agent hash，不保存完整 UA |
+| `request_id` | string(128) | 锟?| 璇锋眰 ID |
+| `trace_id` | string(128) | 锟?| trace |
+| `attempt_no` | int32 | 锟?| 绗嚑锟?attempt |
+| `decision_log_id` | int64 | 锟?| 鍐崇瓥鏃ュ織 |
+| `api_key_id` | int64 | 锟?| 鏍囧噯 Key ID |
+| `legacy_api_key_id` | int64 | 锟?| 瀛橀噺 `plus_api_key.id` |
+| `api_key_name_snapshot` | string(128) | 锟?| Key 鍚嶇О蹇収 |
+| `channel_group_snapshot` | string(128) | 锟?| Key 鍒嗙粍蹇収 |
+| `owner_type` | enum_int32 | 锟?| 褰掑睘涓讳綋 |
+| `owner_id` | int64 | 锟?| 褰掑睘涓讳綋 ID |
+| `owner_name_snapshot` | string(128) | 锟?| 鐢ㄦ埛鎴栦富浣撳睍绀哄悕蹇収 |
+| `provider_id` | int64 | 锟?| Provider |
+| `channel_id` | int64 | 锟?| 娓犻亾 |
+| `channel_name_snapshot` | string(128) | 锟?| 娓犻亾鍚嶇О蹇収 |
+| `channel_id` | int64 | 锟?| Provider 璐﹀彿 |
+| `requested_model` | string(128) | 锟?| 璇锋眰妯″瀷 |
+| `provider_model` | string(128) | 锟?| 涓婃父妯″瀷 |
+| `endpoint` | string(256) | 锟?| API endpoint |
+| `request_path` | string(256) | 锟?| 鍘熷璇锋眰璺緞 |
+| `http_status` | int32 | 锟?| HTTP 鐘讹拷?|
+| `provider_error_code` | string(128) | 锟?| 涓婃父閿欒锟?|
+| `error_type` | enum_int32 | 锟?| timeout銆乺ate_limit銆乤uth銆乻erver銆乧lient銆乶etwork |
+| `started_at` | instant | 锟?| 寮€锟?|
+| `ended_at` | instant | 锟?| 缁撴潫 |
+| `latency_ms` | int32 | 锟?| 寤惰繜 |
+| `streaming` | bool | 锟?| 鏄惁娴佸紡 |
+| `request_bytes` | int64 | 锟?| 璇锋眰澶у皬 |
+| `response_bytes` | int64 | 锟?| 鍝嶅簲澶у皬 |
+| `prompt_tokens` | int64 | 锟?| 杈撳叆 token |
+| `completion_tokens` | int64 | 锟?| 杈撳嚭 token |
+| `total_tokens` | int64 | 锟?| 锟?token |
+| `request_payload_hash` | string(128) | 锟?| 璇锋眰 payload 鎽樿 |
+| `response_payload_hash` | string(128) | 锟?| 鍝嶅簲 payload 鎽樿 |
+| `error_message_masked` | string(1024) | 锟?| 鑴辨晱閿欒 |
+| `reasoning_effort` | string(64) | 锟?| 鎺ㄧ悊寮哄害鎴栫被浼兼ā鍨嬮厤锟?|
+| `client_ip_hash` | string(128) | 锟?| 瀹㈡埛锟?IP hash |
+| `client_ip_masked` | string(64) | 锟?| 瀹㈡埛锟?IP 鑴辨晱灞曠ず锛屾敮锟?Usage/Admin Record 鍒楄〃 |
+| `client_ip_region` | string(128) | 锟?| 瀹㈡埛锟?IP 瑙ｆ瀽鍖哄煙 |
+| `user_agent_hash` | string(128) | 锟?| User-Agent hash锛屼笉淇濆瓨瀹屾暣 UA |
 
-约束�?
+绾︽潫锟?
 - `uk_ai_request_trace_request_attempt(tenant_id, organization_id, request_id, attempt_no)`
 - `idx_ai_request_trace_tenant_trace(tenant_id, organization_id, trace_id)`
 - `idx_ai_request_trace_api_key_started(tenant_id, organization_id, api_key_id, started_at, id)`
@@ -1042,145 +1042,145 @@
 
 ### 8.9.1 `ai_quota_policy`
 
-用途：统一承载 API Key、用户、分组、模型、IP、临时主体的配额和限流策略，支撑 Console API Key 额度、Admin RateLimit �?Token/Model/IP 限流，不把非 int64 主体硬塞�?`subject_id`�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細缁熶竴鎵胯浇 API Key銆佺敤鎴枫€佸垎缁勩€佹ā鍨嬨€両P銆佷复鏃朵富浣撶殑閰嶉鍜岄檺娴佺瓥鐣ワ紝鏀拺 Console API Key 棰濆害銆丄dmin RateLimit 锟?Token/Model/IP 闄愭祦锛屼笉鎶婇潪 int64 涓讳綋纭锟?`subject_id`锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `policy_code` | string(64) | �?| 策略编码 |
-| `name` | string(128) | �?| 策略名称 |
-| `subject_type` | enum_int32 | �?| api_key、user、group、model、ip、tenant �?|
-| `subject_id` | int64 | �?| 可用 int64 表达的主�?ID |
-| `subject_ref_hash` | string(128) | �?| IP、外�?token、匿名主体等�?int64 主体 hash |
-| `subject_ref_masked` | string(128) | �?| �?int64 主体脱敏展示 |
-| `scope_type` | enum_int32 | �?| tenant、organization、group、api_key、model |
-| `scope_id` | int64 | �?| 作用�?ID |
-| `group_id` | int64 | �?| 模型分组�?Key 分组 |
-| `model` | string(128) | �?| 模型维度限流 |
-| `quota_period` | enum_int32 | �?| second、minute、day、month、lifetime |
-| `quota_unit` | enum_int32 | �?| request、token、cost、image、duration |
-| `quota_limit` | decimal_string | �?| 配额上限 |
-| `requests_per_second` | int64 | �?| RPS |
-| `requests_per_minute` | int64 | �?| RPM |
-| `requests_per_day` | int64 | �?| RPD |
-| `tokens_per_minute` | int64 | �?| TPM |
-| `burst_limit` | decimal_string | �?| 突发额度 |
-| `block_duration_seconds` | int64 | �?| 超限阻断时长 |
-| `reset_mode` | enum_int32 | �?| fixed_window、sliding_window、calendar、manual |
-| `exhausted_at` | instant | �?| 最近耗尽时间 |
+| `policy_code` | string(64) | 锟?| 绛栫暐缂栫爜 |
+| `name` | string(128) | 锟?| 绛栫暐鍚嶇О |
+| `subject_type` | enum_int32 | 锟?| api_key銆乽ser銆乬roup銆乵odel銆乮p銆乼enant 锟?|
+| `subject_id` | int64 | 锟?| 鍙敤 int64 琛ㄨ揪鐨勪富锟?ID |
+| `subject_ref_hash` | string(128) | 锟?| IP銆佸锟?token銆佸尶鍚嶄富浣撶瓑锟?int64 涓讳綋 hash |
+| `subject_ref_masked` | string(128) | 锟?| 锟?int64 涓讳綋鑴辨晱灞曠ず |
+| `scope_type` | enum_int32 | 锟?| tenant銆乷rganization銆乬roup銆乤pi_key銆乵odel |
+| `scope_id` | int64 | 锟?| 浣滅敤锟?ID |
+| `group_id` | int64 | 锟?| 妯″瀷鍒嗙粍锟?Key 鍒嗙粍 |
+| `model` | string(128) | 锟?| 妯″瀷缁村害闄愭祦 |
+| `quota_period` | enum_int32 | 锟?| second銆乵inute銆乨ay銆乵onth銆乴ifetime |
+| `quota_unit` | enum_int32 | 锟?| request銆乼oken銆乧ost銆乮mage銆乨uration |
+| `quota_limit` | decimal_string | 锟?| 閰嶉涓婇檺 |
+| `requests_per_second` | int64 | 锟?| RPS |
+| `requests_per_minute` | int64 | 锟?| RPM |
+| `requests_per_day` | int64 | 锟?| RPD |
+| `tokens_per_minute` | int64 | 锟?| TPM |
+| `burst_limit` | decimal_string | 锟?| 绐佸彂棰濆害 |
+| `block_duration_seconds` | int64 | 锟?| 瓒呴檺闃绘柇鏃堕暱 |
+| `reset_mode` | enum_int32 | 锟?| fixed_window銆乻liding_window銆乧alendar銆乵anual |
+| `exhausted_at` | instant | 锟?| 鏈€杩戣€楀敖鏃堕棿 |
 
-索引�?
+绱㈠紩锟?
 - `uk_ai_quota_policy_tenant_subject(tenant_id, organization_id, subject_type, subject_id, quota_period, quota_unit)`
 - `idx_ai_quota_policy_subject_ref(tenant_id, organization_id, subject_type, subject_ref_hash, status)`
 - `idx_ai_quota_policy_model_group(tenant_id, organization_id, model, group_id, status)`
 
-### 8.10 `ai_usage_fact`
+### 8.10 `ai_usage`
 
-用途：网关计费唯一用量事实。结算、报表、账务扣减都以该表为来源，而不是以 trace、access log 或前端统计为来源�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細缃戝叧璁¤垂鍞竴鐢ㄩ噺浜嬪疄銆傜粨绠椼€佹姤琛ㄣ€佽处鍔℃墸鍑忛兘浠ヨ琛ㄤ负鏉ユ簮锛岃€屼笉鏄互 trace銆乤ccess log 鎴栧墠绔粺璁′负鏉ユ簮锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `request_id` | string(128) | �?| 请求 ID |
-| `trace_id` | string(128) | �?| trace |
-| `decision_log_id` | int64 | �?| 决策日志 |
-| `api_key_id` | int64 | �?| 标准 Key ID |
-| `legacy_api_key_id` | int64 | �?| `plus_api_key.id` |
-| `api_key_name_snapshot` | string(128) | �?| Key 名称快照 |
-| `channel_group_id` | int64 | �?| Key 分组 ID 快照 |
-| `channel_group_snapshot` | string(128) | �?| Key 分组快照 |
-| `owner_type` | enum_int32 | �?| 归属主体 |
-| `owner_id` | int64 | �?| 归属主体 ID |
-| `owner_name_snapshot` | string(128) | �?| 用户或主体展示名快照 |
-| `model` | string(128) | �?| 网关模型 |
-| `provider_id` | int64 | �?| Provider |
-| `channel_id` | int64 | �?| 渠道 |
-| `channel_id` | int64 | �?| 账号 |
-| `modality` | enum_int32 | �?| text、image、video、audio、music、sfx |
-| `usage_type` | enum_int32 | �?| text、image、audio、video、embedding、moderation、music、sfx、api、storage |
-| `billing_type` | enum_int32 | �?| token、request、duration、count、result、item、character、storage、bandwidth |
-| `billing_mode` | enum_int32 | �?| token、per_request、per_result、per_item、duration、character、storage、bandwidth、tiered、expression |
-| `billing_meter_id` | int64 | �?| `ai_billing_meter.id` |
-| `billing_meter_code` | string(64) | �?| 计量表编�?|
-| `billing_tier` | string(64) | �?| 命中�?tier label |
-| `billable_quantity` | decimal_string | �?| 统一可计费数�?|
-| `billable_unit` | enum_int32 | �?| 统一计费单位 |
-| `prompt_tokens` | int64 | �?| 输入 token |
-| `completion_tokens` | int64 | �?| 输出 token |
-| `cached_tokens` | int64 | �?| 缓存 token |
-| `total_tokens` | int64 | �?| �?token |
-| `request_count` | int64 | �?| 次数 |
-| `result_count` | int64 | �?| 结果�?|
-| `item_count` | int64 | �?| 条目�?|
-| `character_count` | int64 | �?| 字符�?|
-| `image_count` | int64 | �?| 图片�?|
-| `audio_seconds` | decimal_string | �?| 音频秒数 |
-| `video_seconds` | decimal_string | �?| 视频秒数 |
-| `storage_byte_hours` | decimal_string | �?| 存储 byte-hour |
-| `bandwidth_bytes` | int64 | �?| 网络流量字节 |
-| `unit_price_snapshot` | decimal_string | �?| 单价快照 |
-| `base_input_unit_price` | decimal_string | �?| 输入基础单价 |
-| `base_output_unit_price` | decimal_string | �?| 输出基础单价 |
-| `cache_read_unit_price` | decimal_string | �?| 缓存命中单价 |
-| `rate_multiplier` | decimal_string | �?| 计费倍率 |
-| `reference_multiplier` | decimal_string | �?| 参考价倍率 |
-| `official_reference_amount` | decimal_string | �?| 官方参考金�?|
-| `upstream_cost_amount` | decimal_string | �?| 上游成本金额 |
-| `customer_charge_amount` | decimal_string | �?| 客户收费金额 |
-| `cost_amount` | decimal_string | �?| 成本或应扣金�?|
-| `currency` | string(10) | �?| 币种 |
-| `pricing_id` | int64 | �?| `ai_model_pricing.id` |
-| `pricing_plan_id` | int64 | �?| `ai_pricing_plan.id` |
-| `pricing_plan_code` | string(64) | �?| 定价方案编码快照 |
-| `pricing_rule_id` | int64 | �?| `ai_pricing_rule.id` |
-| `pricing_tier_id` | int64 | �?| `ai_pricing_tier.id` |
-| `pricing_snapshot` | json | �?| 价格快照 |
-| `reasoning_effort` | string(64) | �?| 推理强度或类似模型配�?|
-| `occurred_at` | instant | �?| 用量发生时间 |
-| `settlement_status` | enum_int32 | �?| pending、settling、settled、failed、ignored、compensated |
-| `settlement_id` | int64 | �?| 最近结算记�?|
+| `request_id` | string(128) | 锟?| 璇锋眰 ID |
+| `trace_id` | string(128) | 锟?| trace |
+| `decision_log_id` | int64 | 锟?| 鍐崇瓥鏃ュ織 |
+| `api_key_id` | int64 | 锟?| 鏍囧噯 Key ID |
+| `legacy_api_key_id` | int64 | 锟?| `plus_api_key.id` |
+| `api_key_name_snapshot` | string(128) | 锟?| Key 鍚嶇О蹇収 |
+| `channel_group_id` | int64 | 锟?| Key 鍒嗙粍 ID 蹇収 |
+| `channel_group_snapshot` | string(128) | 锟?| Key 鍒嗙粍蹇収 |
+| `owner_type` | enum_int32 | 锟?| 褰掑睘涓讳綋 |
+| `owner_id` | int64 | 锟?| 褰掑睘涓讳綋 ID |
+| `owner_name_snapshot` | string(128) | 锟?| 鐢ㄦ埛鎴栦富浣撳睍绀哄悕蹇収 |
+| `model` | string(128) | 锟?| 缃戝叧妯″瀷 |
+| `provider_id` | int64 | 锟?| Provider |
+| `channel_id` | int64 | 锟?| 娓犻亾 |
+| `channel_id` | int64 | 锟?| 璐﹀彿 |
+| `modality` | enum_int32 | 锟?| text銆乮mage銆乿ideo銆乤udio銆乵usic銆乻fx |
+| `usage_type` | enum_int32 | 锟?| text銆乮mage銆乤udio銆乿ideo銆乪mbedding銆乵oderation銆乵usic銆乻fx銆乤pi銆乻torage |
+| `billing_type` | enum_int32 | 锟?| token銆乺equest銆乨uration銆乧ount銆乺esult銆乮tem銆乧haracter銆乻torage銆乥andwidth |
+| `billing_mode` | enum_int32 | 锟?| token銆乸er_request銆乸er_result銆乸er_item銆乨uration銆乧haracter銆乻torage銆乥andwidth銆乼iered銆乪xpression |
+| `billing_meter_id` | int64 | 锟?| `ai_billing_meter.id` |
+| `billing_meter_code` | string(64) | 锟?| 璁￠噺琛ㄧ紪锟?|
+| `billing_tier` | string(64) | 锟?| 鍛戒腑锟?tier label |
+| `billable_quantity` | decimal_string | 锟?| 缁熶竴鍙璐规暟锟?|
+| `billable_unit` | enum_int32 | 锟?| 缁熶竴璁¤垂鍗曚綅 |
+| `prompt_tokens` | int64 | 锟?| 杈撳叆 token |
+| `completion_tokens` | int64 | 锟?| 杈撳嚭 token |
+| `cached_tokens` | int64 | 锟?| 缂撳瓨 token |
+| `total_tokens` | int64 | 锟?| 锟?token |
+| `request_count` | int64 | 锟?| 娆℃暟 |
+| `result_count` | int64 | 锟?| 缁撴灉锟?|
+| `item_count` | int64 | 锟?| 鏉＄洰锟?|
+| `character_count` | int64 | 锟?| 瀛楃锟?|
+| `image_count` | int64 | 锟?| 鍥剧墖锟?|
+| `audio_seconds` | decimal_string | 锟?| 闊抽绉掓暟 |
+| `video_seconds` | decimal_string | 锟?| 瑙嗛绉掓暟 |
+| `storage_byte_hours` | decimal_string | 锟?| 瀛樺偍 byte-hour |
+| `bandwidth_bytes` | int64 | 锟?| 缃戠粶娴侀噺瀛楄妭 |
+| `unit_price_snapshot` | decimal_string | 锟?| 鍗曚环蹇収 |
+| `base_input_unit_price` | decimal_string | 锟?| 杈撳叆鍩虹鍗曚环 |
+| `base_output_unit_price` | decimal_string | 锟?| 杈撳嚭鍩虹鍗曚环 |
+| `cache_read_unit_price` | decimal_string | 锟?| 缂撳瓨鍛戒腑鍗曚环 |
+| `rate_multiplier` | decimal_string | 锟?| 璁¤垂鍊嶇巼 |
+| `reference_multiplier` | decimal_string | 锟?| 鍙傝€冧环鍊嶇巼 |
+| `official_reference_amount` | decimal_string | 锟?| 瀹樻柟鍙傝€冮噾锟?|
+| `upstream_cost_amount` | decimal_string | 锟?| 涓婃父鎴愭湰閲戦 |
+| `customer_charge_amount` | decimal_string | 锟?| 瀹㈡埛鏀惰垂閲戦 |
+| `cost_amount` | decimal_string | 锟?| 鎴愭湰鎴栧簲鎵ｉ噾锟?|
+| `currency` | string(10) | 锟?| 甯佺 |
+| `pricing_id` | int64 | 锟?| `ai_model_pricing.id` |
+| `pricing_plan_id` | int64 | 锟?| `ai_pricing_plan.id` |
+| `pricing_plan_code` | string(64) | 锟?| 瀹氫环鏂规缂栫爜蹇収 |
+| `pricing_rule_id` | int64 | 锟?| `ai_pricing_rule.id` |
+| `pricing_tier_id` | int64 | 锟?| `ai_pricing_tier.id` |
+| `pricing_snapshot` | json | 锟?| 浠锋牸蹇収 |
+| `reasoning_effort` | string(64) | 锟?| 鎺ㄧ悊寮哄害鎴栫被浼兼ā鍨嬮厤锟?|
+| `occurred_at` | instant | 锟?| 鐢ㄩ噺鍙戠敓鏃堕棿 |
+| `settlement_status` | enum_int32 | 锟?| pending銆乻ettling銆乻ettled銆乫ailed銆乮gnored銆乧ompensated |
+| `settlement_id` | int64 | 锟?| 鏈€杩戠粨绠楄锟?|
 
-约束和索引：
+绾︽潫鍜岀储寮曪細
 
-- `uk_ai_usage_fact_uuid(uuid)`
-- `uk_ai_usage_fact_request(tenant_id, organization_id, request_id, usage_type)`
-- `idx_ai_usage_fact_tenant_owner_occurred(tenant_id, organization_id, owner_type, owner_id, occurred_at, id)`
-- `idx_ai_usage_fact_api_key_occurred(tenant_id, organization_id, api_key_id, occurred_at, id)`
-- `idx_ai_usage_fact_tenant_model_occurred(tenant_id, organization_id, model, occurred_at, id)`
-- `idx_ai_usage_fact_pricing_plan_occurred(tenant_id, organization_id, pricing_plan_id, occurred_at, id)`
-- `idx_ai_usage_fact_meter_occurred(tenant_id, organization_id, billing_meter_code, occurred_at, id)`
-- `idx_ai_usage_fact_settlement_status(tenant_id, organization_id, settlement_status, occurred_at, id)`
+- `uk_ai_usage_uuid(uuid)`
+- `uk_ai_usage_request(tenant_id, organization_id, request_id, usage_type)`
+- `idx_ai_usage_tenant_owner_occurred(tenant_id, organization_id, owner_type, owner_id, occurred_at, id)`
+- `idx_ai_usage_api_key_occurred(tenant_id, organization_id, api_key_id, occurred_at, id)`
+- `idx_ai_usage_tenant_model_occurred(tenant_id, organization_id, model, occurred_at, id)`
+- `idx_ai_usage_pricing_plan_occurred(tenant_id, organization_id, pricing_plan_id, occurred_at, id)`
+- `idx_ai_usage_meter_occurred(tenant_id, organization_id, billing_meter_code, occurred_at, id)`
+- `idx_ai_usage_settlement_status(tenant_id, organization_id, settlement_status, occurred_at, id)`
 
-结算要求�?
-- `cost_amount` 和所有金额字段必须是 decimal，不允许 float/double�?- 同一 `request_id + usage_type` 的用量事实必须幂等�?- 结算失败不能删除事实，只能更新状态或生成补偿记录�?- 结算�?`commerce_account_ledger_entry` 后，必须把账户流�?ID 记录�?`commerce_usage_settlement.account_ledger_entry_id`�?
-### 8.11 Playground 生成资产契约
+缁撶畻瑕佹眰锟?
+- `cost_amount` 鍜屾墍鏈夐噾棰濆瓧娈靛繀椤绘槸 decimal锛屼笉鍏佽 float/double锟?- 鍚屼竴 `request_id + usage_type` 鐨勭敤閲忎簨瀹炲繀椤诲箓绛夛拷?- 缁撶畻澶辫触涓嶈兘鍒犻櫎浜嬪疄锛屽彧鑳芥洿鏂扮姸鎬佹垨鐢熸垚琛ュ伩璁板綍锟?- 缁撶畻锟?`commerce_account_ledger_entry` 鍚庯紝蹇呴』鎶婅处鎴锋祦锟?ID 璁板綍锟?`commerce_usage_settlement.account_ledger_entry_id`锟?
+### 8.11 Playground 鐢熸垚璧勪骇濂戠害
 
-`ai_generation_session/job/asset/action` 支撑 Playground 的多模态历史、预览、收藏、下载和分享。`ai_generation_job` 保存生成任务和参数快照，`ai_generation_asset` 保存资产投影，`ai_generation_asset_action` 保存下载、分享、收藏、重绘、扩图、高清等行为事实�?
-细节要求�?
-- `ai_generation_asset` �?L3 处理，`prompt_snapshot`、媒�?URL、分享状态都属于用户生成内容；持久化字段不能保存长期有效的签�?URL�?- `visibility`、`favorite`、`shared`、`download_count` 是高频状态投影，可以�?`ai_generation_asset_action` 重建�?- `share_token_hash` 只保�?hash；公开分享访问需要短�?token 或网关签发�?- `ai_generation_asset_action` 记录 `client_ip_hash`、`client_ip_region`、`user_agent_hash`，用于分�?下载审计，不保存完整 IP �?UA 明文�?
-## 9. Commerce 投影契约
+`ai_generation_session/job/asset/action` 鏀拺 Playground 鐨勫妯℃€佸巻鍙层€侀瑙堛€佹敹钘忋€佷笅杞藉拰鍒嗕韩銆俙ai_generation_job` 淇濆瓨鐢熸垚浠诲姟鍜屽弬鏁板揩鐓э紝`ai_generation_asset` 淇濆瓨璧勪骇鎶曞奖锛宍ai_generation_asset_action` 淇濆瓨涓嬭浇銆佸垎浜€佹敹钘忋€侀噸缁樸€佹墿鍥俱€侀珮娓呯瓑琛屼负浜嬪疄锟?
+缁嗚妭瑕佹眰锟?
+- `ai_generation_asset` 锟?L3 澶勭悊锛宍prompt_snapshot`銆佸獟锟?URL銆佸垎浜姸鎬侀兘灞炰簬鐢ㄦ埛鐢熸垚鍐呭锛涙寔涔呭寲瀛楁涓嶈兘淇濆瓨闀挎湡鏈夋晥鐨勭锟?URL锟?- `visibility`銆乣favorite`銆乣shared`銆乣download_count` 鏄珮棰戠姸鎬佹姇褰憋紝鍙互锟?`ai_generation_asset_action` 閲嶅缓锟?- `share_token_hash` 鍙繚锟?hash锛涘叕寮€鍒嗕韩璁块棶闇€瑕佺煭锟?token 鎴栫綉鍏崇鍙戯拷?- `ai_generation_asset_action` 璁板綍 `client_ip_hash`銆乣client_ip_region`銆乣user_agent_hash`锛岀敤浜庡垎锟?涓嬭浇瀹¤锛屼笉淇濆瓨瀹屾暣 IP 锟?UA 鏄庢枃锟?
+## 9. Commerce 鎶曞奖濂戠害
 
 ### 9.1 `commerce_usage_settlement`
 
-用途：用量事实到既有账�?积分/订单/支付体系的结算桥接证据。它不是余额事实来源�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細鐢ㄩ噺浜嬪疄鍒版棦鏈夎处锟?绉垎/璁㈠崟/鏀粯浣撶郴鐨勭粨绠楁ˉ鎺ヨ瘉鎹€傚畠涓嶆槸浣欓浜嬪疄鏉ユ簮锟?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `settlement_no` | string(128) | �?| 结算单号 |
-| `usage_fact_id` | int64 | �?| `ai_usage_fact.id` |
-| `request_id` | string(128) | �?| 请求 ID |
-| `account_id` | string(64) | �?| `commerce_account.id` |
-| `account_ledger_entry_id` | string(64) | �?| `commerce_account_ledger_entry.id` |
-| `order_id` | int64 | �?| `plus_order.id` |
-| `payment_id` | int64 | �?| `plus_payment.id` |
-| `asset_type` | string(32) | �?| points、cash、token |
-| `direction` | string(16) | �?| debit、credit |
-| `amount` | decimal_string | �?| 金额 |
-| `points` | int64 | �?| 积分 |
-| `tokens` | int64 | �?| token �?|
-| `currency` | string(10) | �?| 币种 |
-| `price_snapshot` | json | �?| 价格快照 |
-| `settlement_status` | enum_int32 | �?| pending、processing、success、failed、compensated |
-| `settled_at` | instant | �?| 结算完成时间 |
-| `failure_code` | string(128) | �?| 失败�?|
-| `failure_message` | string(512) | �?| 脱敏失败信息 |
+| `settlement_no` | string(128) | 锟?| 缁撶畻鍗曞彿 |
+| `usage_fact_id` | int64 | 锟?| `ai_usage.id` |
+| `request_id` | string(128) | 锟?| 璇锋眰 ID |
+| `account_id` | string(64) | 锟?| `commerce_account.id` |
+| `account_ledger_entry_id` | string(64) | 锟?| `commerce_account_ledger_entry.id` |
+| `order_id` | int64 | 锟?| `plus_order.id` |
+| `payment_id` | int64 | 锟?| `plus_payment.id` |
+| `asset_type` | string(32) | 锟?| points銆乧ash銆乼oken |
+| `direction` | string(16) | 锟?| debit銆乧redit |
+| `amount` | decimal_string | 锟?| 閲戦 |
+| `points` | int64 | 锟?| 绉垎 |
+| `tokens` | int64 | 锟?| token 锟?|
+| `currency` | string(10) | 锟?| 甯佺 |
+| `price_snapshot` | json | 锟?| 浠锋牸蹇収 |
+| `settlement_status` | enum_int32 | 锟?| pending銆乸rocessing銆乻uccess銆乫ailed銆乧ompensated |
+| `settled_at` | instant | 锟?| 缁撶畻瀹屾垚鏃堕棿 |
+| `failure_code` | string(128) | 锟?| 澶辫触锟?|
+| `failure_message` | string(512) | 锟?| 鑴辨晱澶辫触淇℃伅 |
 
-约束�?
+绾︽潫锟?
 - `uk_commerce_usage_settlement_uuid(uuid)`
 - `uk_commerce_usage_settlement_no(settlement_no)`
 - `uk_commerce_usage_settlement_usage(tenant_id, organization_id, usage_fact_id)`
@@ -1189,96 +1189,96 @@
 
 ### 9.2 `commerce_usage_pricing_plan`
 
-用途：把网关模型价格、套餐、SKU、VIP 权益和租户策略关联起来。它不替�?`plus_product` �?`plus_sku`�?
-关键字段：`plan_code`、`plan_name`、`product_id`、`sku_id`、`vip_level_id`、`pricing_mode`、`included_quota`、`overage_pricing_id`、`effective_from`、`effective_to`�?
-约束�?
+鐢ㄩ€旓細鎶婄綉鍏虫ā鍨嬩环鏍笺€佸椁愩€丼KU銆乂IP 鏉冪泭鍜岀鎴风瓥鐣ュ叧鑱旇捣鏉ャ€傚畠涓嶆浛锟?`plus_product` 锟?`plus_sku`锟?
+鍏抽敭瀛楁锛歚plan_code`銆乣plan_name`銆乣product_id`銆乣sku_id`銆乣vip_level_id`銆乣pricing_mode`銆乣included_quota`銆乣overage_pricing_id`銆乣effective_from`銆乣effective_to`锟?
+绾︽潫锟?
 - `uk_commerce_usage_pricing_plan_tenant_code(tenant_id, organization_id, plan_code)`
 - `idx_commerce_usage_pricing_plan_product_status(tenant_id, organization_id, product_id, sku_id, status)`
 
 ### 9.3 `commerce_billing_export`
 
-用途：账单导出任务和审计。导出文件应在对象存储，表中只保�?manifest、过期时间和审计信息�?
-关键字段：`export_no`、`export_type`、`period_start`、`period_end`、`file_manifest`、`file_hash`、`expire_at`、`download_count`、`created_by`、`approved_by`�?
-安全要求：导出路径必须写 `ops_audit_log`，文件必须有过期策略�?
-## 10. Ops 契约
+鐢ㄩ€旓細璐﹀崟瀵煎嚭浠诲姟鍜屽璁°€傚鍑烘枃浠跺簲鍦ㄥ璞″瓨鍌紝琛ㄤ腑鍙繚锟?manifest銆佽繃鏈熸椂闂村拰瀹¤淇℃伅锟?
+鍏抽敭瀛楁锛歚export_no`銆乣export_type`銆乣period_start`銆乣period_end`銆乣file_manifest`銆乣file_hash`銆乣expire_at`銆乣download_count`銆乣created_by`銆乣approved_by`锟?
+瀹夊叏瑕佹眰锛氬鍑鸿矾寰勫繀椤诲啓 `ops_audit_log`锛屾枃浠跺繀椤绘湁杩囨湡绛栫暐锟?
+## 10. Ops 濂戠害
 
 ### 10.1 `ops_config_snapshot`
 
-用途：配置发布快照和回滚依据�?
-字段：`snapshot_no`、`config_scope`、`config_type`、`source_table`、`source_ids`、`config_payload`、`config_hash`、`published_at`、`published_by`、`rollback_from_snapshot_id`�?
-约束�?
+鐢ㄩ€旓細閰嶇疆鍙戝竷蹇収鍜屽洖婊氫緷鎹拷?
+瀛楁锛歚snapshot_no`銆乣config_scope`銆乣config_type`銆乣source_table`銆乣source_ids`銆乣config_payload`銆乣config_hash`銆乣published_at`銆乣published_by`銆乣rollback_from_snapshot_id`锟?
+绾︽潫锟?
 - `uk_ops_config_snapshot_no(snapshot_no)`
 - `idx_ops_config_snapshot_tenant_scope(tenant_id, organization_id, config_scope, config_type, created_at, id)`
 
 ### 10.2 `ops_audit_log`
 
-用途：后台、用户、系统高危操作审计�?
-| 字段 | 类型 | 必填 | 说明 |
+鐢ㄩ€旓細鍚庡彴銆佺敤鎴枫€佺郴缁熼珮鍗辨搷浣滃璁★拷?
+| 瀛楁 | 绫诲瀷 | 蹇呭～ | 璇存槑 |
 | --- | --- | --- | --- |
-| `operator_type` | enum_int32 | �?| user、admin、system、job |
-| `operator_id` | int64 | �?| 操作�?|
-| `operator_name_snapshot` | string(128) | �?| 操作人快照，脱敏 |
-| `action` | string(128) | �?| 操作 |
-| `target_type` | string(128) | �?| 目标类型 |
-| `target_id` | int64 | �?| 目标 ID |
-| `target_uuid` | string(64) | �?| 目标 UUID |
-| `request_id` | string(128) | �?| 请求 ID |
-| `trace_id` | string(128) | �?| trace |
-| `client_ip_hash` | string(128) | �?| IP 摘要 |
-| `user_agent_hash` | string(128) | �?| UA 摘要 |
-| `before_hash` | string(128) | �?| 操作前摘�?|
-| `after_hash` | string(128) | �?| 操作后摘�?|
-| `change_summary` | json | �?| 脱敏变更摘要 |
-| `risk_level` | enum_int32 | �?| low、medium、high、critical |
-| `approval_id` | int64 | �?| 审批记录 |
+| `operator_type` | enum_int32 | 锟?| user銆乤dmin銆乻ystem銆乯ob |
+| `operator_id` | int64 | 锟?| 鎿嶄綔锟?|
+| `operator_name_snapshot` | string(128) | 锟?| 鎿嶄綔浜哄揩鐓э紝鑴辨晱 |
+| `action` | string(128) | 锟?| 鎿嶄綔 |
+| `target_type` | string(128) | 锟?| 鐩爣绫诲瀷 |
+| `target_id` | int64 | 锟?| 鐩爣 ID |
+| `target_uuid` | string(64) | 锟?| 鐩爣 UUID |
+| `request_id` | string(128) | 锟?| 璇锋眰 ID |
+| `trace_id` | string(128) | 锟?| trace |
+| `client_ip_hash` | string(128) | 锟?| IP 鎽樿 |
+| `user_agent_hash` | string(128) | 锟?| UA 鎽樿 |
+| `before_hash` | string(128) | 锟?| 鎿嶄綔鍓嶆憳锟?|
+| `after_hash` | string(128) | 锟?| 鎿嶄綔鍚庢憳锟?|
+| `change_summary` | json | 锟?| 鑴辨晱鍙樻洿鎽樿 |
+| `risk_level` | enum_int32 | 锟?| low銆乵edium銆乭igh銆乧ritical |
+| `approval_id` | int64 | 锟?| 瀹℃壒璁板綍 |
 
-索引�?
+绱㈠紩锟?
 - `idx_ops_audit_log_tenant_operator_created(tenant_id, organization_id, operator_type, operator_id, created_at, id)`
 - `idx_ops_audit_log_tenant_target_created(tenant_id, organization_id, target_type, target_id, created_at, id)`
 - `idx_ops_audit_log_request(tenant_id, organization_id, request_id)`
 
 ### 10.3 `ops_outbox_event`
 
-用途：本地事务后可靠发布事件�?
-字段：`event_id`、`aggregate_type`、`aggregate_id`、`aggregate_uuid`、`event_type`、`event_version`、`event_payload`、`payload_hash`、`headers`、`publish_status`、`retry_count`、`next_retry_at`、`published_at`、`failure_reason`�?
-约束�?
+鐢ㄩ€旓細鏈湴浜嬪姟鍚庡彲闈犲彂甯冧簨浠讹拷?
+瀛楁锛歚event_id`銆乣aggregate_type`銆乣aggregate_id`銆乣aggregate_uuid`銆乣event_type`銆乣event_version`銆乣event_payload`銆乣payload_hash`銆乣headers`銆乣publish_status`銆乣retry_count`銆乣next_retry_at`銆乣published_at`銆乣failure_reason`锟?
+绾︽潫锟?
 - `uk_ops_outbox_event_id(event_id)`
 - `idx_ops_outbox_event_status_retry(publish_status, next_retry_at, created_at, id)`
 - `idx_ops_outbox_event_aggregate(aggregate_type, aggregate_id, created_at, id)`
 
 ### 10.4 `ops_inbox_event`
 
-用途：消费方消息去重和处理状态记录�?
-字段：`source_system`、`message_id`、`consumer_name`、`event_type`、`event_version`、`payload_hash`、`process_status`、`retry_count`、`processed_at`、`failure_reason`�?
-约束�?
+鐢ㄩ€旓細娑堣垂鏂规秷鎭幓閲嶅拰澶勭悊鐘舵€佽褰曪拷?
+瀛楁锛歚source_system`銆乣message_id`銆乣consumer_name`銆乣event_type`銆乣event_version`銆乣payload_hash`銆乣process_status`銆乣retry_count`銆乣processed_at`銆乣failure_reason`锟?
+绾︽潫锟?
 - `uk_ops_inbox_event_message(source_system, message_id, consumer_name)`
 - `idx_ops_inbox_event_status_retry(process_status, created_at, id)`
 
-## 11. Portal 内容契约
+## 11. Portal 鍐呭濂戠害
 
-门户内容不进入网关热路径，按 L2 设计即可�?
-| �?| 用�?| 关键字段 |
+闂ㄦ埛鍐呭涓嶈繘鍏ョ綉鍏崇儹璺緞锛屾寜 L2 璁捐鍗冲彲锟?
+| 锟?| 鐢拷?| 鍏抽敭瀛楁 |
 | --- | --- | --- |
-| `appstore_app` | AppCenter/platform_app 主数�?| `name`、`icon_resource_snapshot`、`resource_list`、`project_id`、`description`、`version`、`access_url`、`config`、`status`、`app_type`、`platforms`、`install_platforms`、`install_skill`、`install_config`、`release_notes`、`package_name`、`bundle_id`、`store_url`、`download_url`；API/view model 输出 `icon`、`cover`、`screenshots` �?`MediaResource` 对象 |
-| `plus_agent_skill` | SkillsHub/AgentSkill 主数�?| `skill_key`、`name`、`summary`、`description`、`icon_resource_snapshot`、`cover_resource_snapshot`、`category_id`、`package_id`、`provider`、`version`、`manifest_url`、`license_name`、`market_status`、`visibility`、`review_status`、`install_count`、`rating_avg`、`capabilities`、`default_config`、`latest_published_at` |
-| `plus_agent_skill_package` | 技能包/集合 | `package_key`、`name`、`summary`、`description`、`icon_resource_snapshot`、`cover_resource_snapshot`、`category_id`、`enabled`、`featured`、`sort_weight`、`tags`、`latest_published_at` |
-| `plus_user_agent_skill` | 用户技能安装与配置 | `user_id`、`skill_id`、`enabled`、`config`、`installed_at`、`last_enabled_at`、`last_used_at`、`used_count` |
-| `plus_category` | 技能分�?| `name`、`description`、`type`、`code`、`icon`、`sort_weight`、`parent_id`、`path`、`visible`、`status` |
-| `studio_catalog_action` | 应用/技能行为事�?| `target_type`、`target_id`、`release_id`、`action_type`、`rating_score`、`review_body` |
-| `content_announcement` | 公告 | `title`、`content`、`audience_scope`、`effective_from`、`effective_to`、`pinned` |
-| `content_openapi_snapshot` | API Reference 版本快照 | `api_system`、`version`、`source_ref`、`openapi_hash`、`endpoint_count`、`category_tree` |
-| `content_sdk_release` | SDK Reference 发布清单 | `api_system`、`language`、`language_icon`、`language_description`、`package_name`、`version`、`install_command`、`import_code`、`init_code`、`example_code`、`github_url`、`artifact_manifest` |
-| `content_forum_post` | 论坛帖子 | `title`、`body`、`category`、`author_id`、`view_count`、`reply_count`、`last_replied_at` |
-| `content_forum_comment` | 评论 | `target_type`、`target_id`、`post_id`、`course_id`、`parent_id`、`body`、`author_id` |
-| `content_reaction` | 内容互动事实 | `target_type`、`target_id`、`reaction_type`、`reaction_value`、`cancelled_at` |
-| `content_course` | 课程 | `course_code`、`title`、`summary`、`thumbnail_resource_snapshot`、`level`、`published_at`；API/view model 输出 `thumbnail` �?`MediaResource` 对象 |
-| `content_course_section` | 课程章节分组 | `course_id`、`section_no`、`title`、`sort_order`、`lesson_count`、`duration_seconds` |
-| `content_course_lesson` | 课程课时 | `course_id`、`section_id`、`lesson_no`、`title`、`video_resource_snapshot`、`external_bvid`、`duration_seconds`；API/view model 输出 `video` �?`MediaResource` 对象 |
+| `appstore_app` | AppCenter/platform_app 涓绘暟锟?| `name`銆乣icon_resource_snapshot`銆乣resource_list`銆乣project_id`銆乣description`銆乣version`銆乣access_url`銆乣config`銆乣status`銆乣app_type`銆乣platforms`銆乣install_platforms`銆乣install_skill`銆乣install_config`銆乣release_notes`銆乣package_name`銆乣bundle_id`銆乣store_url`銆乣download_url`锛汚PI/view model 杈撳嚭 `icon`銆乣cover`銆乣screenshots` 锟?`MediaResource` 瀵硅薄 |
+| `plus_agent_skill` | SkillsHub/AgentSkill 涓绘暟锟?| `skill_key`銆乣name`銆乣summary`銆乣description`銆乣icon_resource_snapshot`銆乣cover_resource_snapshot`銆乣category_id`銆乣package_id`銆乣provider`銆乣version`銆乣manifest_url`銆乣license_name`銆乣market_status`銆乣visibility`銆乣review_status`銆乣install_count`銆乣rating_avg`銆乣capabilities`銆乣default_config`銆乣latest_published_at` |
+| `plus_agent_skill_package` | 鎶€鑳藉寘/闆嗗悎 | `package_key`銆乣name`銆乣summary`銆乣description`銆乣icon_resource_snapshot`銆乣cover_resource_snapshot`銆乣category_id`銆乣enabled`銆乣featured`銆乣sort_weight`銆乣tags`銆乣latest_published_at` |
+| `plus_user_agent_skill` | 鐢ㄦ埛鎶€鑳藉畨瑁呬笌閰嶇疆 | `user_id`銆乣skill_id`銆乣enabled`銆乣config`銆乣installed_at`銆乣last_enabled_at`銆乣last_used_at`銆乣used_count` |
+| `plus_category` | 鎶€鑳藉垎锟?| `name`銆乣description`銆乣type`銆乣code`銆乣icon`銆乣sort_weight`銆乣parent_id`銆乣path`銆乣visible`銆乣status` |
+| `studio_catalog_action` | 搴旂敤/鎶€鑳借涓轰簨锟?| `target_type`銆乣target_id`銆乣release_id`銆乣action_type`銆乣rating_score`銆乣review_body` |
+| `content_announcement` | 鍏憡 | `title`銆乣content`銆乣audience_scope`銆乣effective_from`銆乣effective_to`銆乣pinned` |
+| `content_openapi_snapshot` | API Reference 鐗堟湰蹇収 | `api_system`銆乣version`銆乣source_ref`銆乣openapi_hash`銆乣endpoint_count`銆乣category_tree` |
+| `content_sdk_release` | SDK Reference 鍙戝竷娓呭崟 | `api_system`銆乣language`銆乣language_icon`銆乣language_description`銆乣package_name`銆乣version`銆乣install_command`銆乣import_code`銆乣init_code`銆乣example_code`銆乣github_url`銆乣artifact_manifest` |
+| `content_forum_post` | 璁哄潧甯栧瓙 | `title`銆乣body`銆乣category`銆乣author_id`銆乣view_count`銆乣reply_count`銆乣last_replied_at` |
+| `content_forum_comment` | 璇勮 | `target_type`銆乣target_id`銆乣post_id`銆乣course_id`銆乣parent_id`銆乣body`銆乣author_id` |
+| `content_reaction` | 鍐呭浜掑姩浜嬪疄 | `target_type`銆乣target_id`銆乣reaction_type`銆乣reaction_value`銆乣cancelled_at` |
+| `content_course` | 璇剧▼ | `course_code`銆乣title`銆乣summary`銆乣thumbnail_resource_snapshot`銆乣level`銆乣published_at`锛汚PI/view model 杈撳嚭 `thumbnail` 锟?`MediaResource` 瀵硅薄 |
+| `content_course_section` | 璇剧▼绔犺妭鍒嗙粍 | `course_id`銆乣section_no`銆乣title`銆乣sort_order`銆乣lesson_count`銆乣duration_seconds` |
+| `content_course_lesson` | 璇剧▼璇炬椂 | `course_id`銆乣section_id`銆乣lesson_no`銆乣title`銆乣video_resource_snapshot`銆乣external_bvid`銆乣duration_seconds`锛汚PI/view model 杈撳嚭 `video` 锟?`MediaResource` 瀵硅薄 |
 
-内容表同样要�?`tenant_id`、`organization_id`、`status`、`created_at`、`updated_at`、`version`，但不参与账�?结算事务�?
-## 12. 数据流和事务边界
+鍐呭琛ㄥ悓鏍疯锟?`tenant_id`銆乣organization_id`銆乣status`銆乣created_at`銆乣updated_at`銆乣version`锛屼絾涓嶅弬涓庤处锟?缁撶畻浜嬪姟锟?
+## 12. 鏁版嵁娴佸拰浜嬪姟杈圭晫
 
-### 12.1 配置发布事务
+### 12.1 閰嶇疆鍙戝竷浜嬪姟
 
 ```text
 admin/backend API
@@ -1290,9 +1290,9 @@ admin/backend API
   -> gateway hot cache refresh
 ```
 
-配置发布成功的判定不是“数据库写入成功”，而是�?
-- 配置主表事务提交成功�?- outbox 事件创建成功�?- 至少一个控制面消费者确认发布�?- Gateway 热路径缓存暴露新 `config_hash`�?
-### 12.2 请求计费事务
+閰嶇疆鍙戝竷鎴愬姛鐨勫垽瀹氫笉鏄€滄暟鎹簱鍐欏叆鎴愬姛鈥濓紝鑰屾槸锟?
+- 閰嶇疆涓昏〃浜嬪姟鎻愪氦鎴愬姛锟?- outbox 浜嬩欢鍒涘缓鎴愬姛锟?- 鑷冲皯涓€涓帶鍒堕潰娑堣垂鑰呯‘璁ゅ彂甯冿拷?- Gateway 鐑矾寰勭紦瀛樻毚闇叉柊 `config_hash`锟?
+### 12.2 璇锋眰璁¤垂浜嬪姟
 
 ```text
 /v1 request
@@ -1301,135 +1301,135 @@ admin/backend API
   -> provider attempts
   -> ai_routing_decision_log
   -> ai_request_trace
-  -> ai_usage_fact
+  -> ai_usage
   -> settlement worker
   -> commerce_usage_settlement
   -> commerce_account / commerce_account_ledger_entry by appbase commerce account service
 ```
 
-事务边界�?
-- Gateway 请求响应不能等待长期结算事务�?- `ai_usage_fact` 必须可在失败后重放结算�?- `commerce_usage_settlement` �?`usage_fact_id` 唯一，防止重复扣费�?- `commerce_account_ledger_entry` 是资�?积分最终流水事实，不能�?`commerce_usage_settlement` 替代�?
-### 12.3 失败补偿
+浜嬪姟杈圭晫锟?
+- Gateway 璇锋眰鍝嶅簲涓嶈兘绛夊緟闀挎湡缁撶畻浜嬪姟锟?- `ai_usage` 蹇呴』鍙湪澶辫触鍚庨噸鏀剧粨绠楋拷?- `commerce_usage_settlement` 锟?`usage_fact_id` 鍞竴锛岄槻姝㈤噸澶嶆墸璐癸拷?- `commerce_account_ledger_entry` 鏄祫锟?绉垎鏈€缁堟祦姘翠簨瀹烇紝涓嶈兘锟?`commerce_usage_settlement` 鏇夸唬锟?
+### 12.3 澶辫触琛ュ伩
 
-| 失败�?| 处理方式 |
+| 澶辫触锟?| 澶勭悊鏂瑰紡 |
 | --- | --- |
-| Provider 调用失败 | `ai_request_trace` 记录失败 attempt；若 fallback 成功，`ai_usage_fact` 只记录最终可计费用量 |
-| usage fact 写入失败 | 本地可靠队列�?outbox 补写；请求侧返回不应伪造用�?|
-| 结算失败 | `ai_usage_fact.settlement_status=failed`，`commerce_usage_settlement` 保存失败码，worker 重试 |
-| 重复结算 | `uk_commerce_usage_settlement_usage` 阻断；账户服�?idempotency key 阻断 |
-| 账户扣减成功但回�?settlement 失败 | 通过 `commerce_account_ledger_entry.transaction_no` �?`settlement_no` 对账修复 |
+| Provider 璋冪敤澶辫触 | `ai_request_trace` 璁板綍澶辫触 attempt锛涜嫢 fallback 鎴愬姛锛宍ai_usage` 鍙褰曟渶缁堝彲璁¤垂鐢ㄩ噺 |
+| usage fact 鍐欏叆澶辫触 | 鏈湴鍙潬闃熷垪锟?outbox 琛ュ啓锛涜姹備晶杩斿洖涓嶅簲浼€犵敤锟?|
+| 缁撶畻澶辫触 | `ai_usage.settlement_status=failed`锛宍commerce_usage_settlement` 淇濆瓨澶辫触鐮侊紝worker 閲嶈瘯 |
+| 閲嶅缁撶畻 | `uk_commerce_usage_settlement_usage` 闃绘柇锛涜处鎴锋湇锟?idempotency key 闃绘柇 |
+| 璐︽埛鎵ｅ噺鎴愬姛浣嗗洖锟?settlement 澶辫触 | 閫氳繃 `commerce_account_ledger_entry.transaction_no` 锟?`settlement_no` 瀵硅处淇 |
 
-## 13. 状态机
+## 13. 鐘舵€佹満
 
-### 13.1 通用配置状�?
-| �?| 名称 | 含义 |
+### 13.1 閫氱敤閰嶇疆鐘讹拷?
+| 锟?| 鍚嶇О | 鍚箟 |
 | ---: | --- | --- |
-| 0 | DRAFT | 草稿 |
-| 1 | ACTIVE | 生效 |
-| 2 | DISABLED | 禁用 |
-| 3 | ARCHIVED | 归档 |
-| 4 | DELETED | 软删�?|
+| 0 | DRAFT | 鑽夌 |
+| 1 | ACTIVE | 鐢熸晥 |
+| 2 | DISABLED | 绂佺敤 |
+| 3 | ARCHIVED | 褰掓。 |
+| 4 | DELETED | 杞垹锟?|
 
-### 13.2 结算状�?
-| �?| 名称 | 含义 |
+### 13.2 缁撶畻鐘讹拷?
+| 锟?| 鍚嶇О | 鍚箟 |
 | ---: | --- | --- |
-| 0 | PENDING | 待结�?|
-| 1 | PROCESSING | 处理�?|
-| 2 | SUCCESS | 成功 |
-| 3 | FAILED | 失败可重�?|
-| 4 | IGNORED | 不计费或被忽�?|
-| 5 | COMPENSATED | 已补�?|
+| 0 | PENDING | 寰呯粨锟?|
+| 1 | PROCESSING | 澶勭悊锟?|
+| 2 | SUCCESS | 鎴愬姛 |
+| 3 | FAILED | 澶辫触鍙噸锟?|
+| 4 | IGNORED | 涓嶈璐规垨琚拷锟?|
+| 5 | COMPENSATED | 宸茶ˉ锟?|
 
-### 13.3 Outbox/Inbox 状�?
-| �?| 名称 | 含义 |
+### 13.3 Outbox/Inbox 鐘讹拷?
+| 锟?| 鍚嶇О | 鍚箟 |
 | ---: | --- | --- |
-| 0 | PENDING | 待发�?待消�?|
-| 1 | PROCESSING | 处理�?|
-| 2 | SUCCESS | 成功 |
-| 3 | FAILED | 失败可重�?|
-| 4 | DEAD | 超过重试进入死信 |
+| 0 | PENDING | 寰呭彂锟?寰呮秷锟?|
+| 1 | PROCESSING | 澶勭悊锟?|
+| 2 | SUCCESS | 鎴愬姛 |
+| 3 | FAILED | 澶辫触鍙噸锟?|
+| 4 | DEAD | 瓒呰繃閲嶈瘯杩涘叆姝讳俊 |
 
-枚举在数据库可用 int32 存储，在 API/SDK 可暴露稳定字符串�?Java 标准 DTO 约定值，但必须支持未知值和向前兼容�?
-## 14. 分区、索引和留存
+鏋氫妇鍦ㄦ暟鎹簱鍙敤 int32 瀛樺偍锛屽湪 API/SDK 鍙毚闇茬ǔ瀹氬瓧绗︿覆锟?Java 鏍囧噯 DTO 绾﹀畾鍊硷紝浣嗗繀椤绘敮鎸佹湭鐭ュ€煎拰鍚戝墠鍏煎锟?
+## 14. 鍒嗗尯銆佺储寮曞拰鐣欏瓨
 
-| �?| 分区�?| 在线留存 | 冷归�?| 索引预算 |
+| 锟?| 鍒嗗尯锟?| 鍦ㄧ嚎鐣欏瓨 | 鍐峰綊锟?| 绱㈠紩棰勭畻 |
 | --- | --- | ---: | ---: | ---: |
-| `ai_usage_fact` | `occurred_at` 月分�?| 24 个月 | 5 �?| 6 |
-| `ai_request_trace` | `started_at` �?月分�?| 90-180 �?| 1 �?| 5 |
-| `ai_routing_decision_log` | `created_at` 月分�?| 180 �?| 2 �?| 5 |
-| `ops_audit_log` | `created_at` 月分�?| 24 个月 | 5 年或合规要求 | 6 |
-| `ops_outbox_event` | `created_at` 月分�?| 成功 30-90 天；失败保留 | 1 �?| 5 |
-| `ops_inbox_event` | `created_at` 月分�?| 180 天或大于消息重放窗口 | 1 �?| 4 |
-| `integration_provider_health_snapshot` | `created_at` �?月分�?| 30-90 �?| 1 �?| 4 |
+| `ai_usage` | `occurred_at` 鏈堝垎锟?| 24 涓湀 | 5 锟?| 6 |
+| `ai_request_trace` | `started_at` 锟?鏈堝垎锟?| 90-180 锟?| 1 锟?| 5 |
+| `ai_routing_decision_log` | `created_at` 鏈堝垎锟?| 180 锟?| 2 锟?| 5 |
+| `ops_audit_log` | `created_at` 鏈堝垎锟?| 24 涓湀 | 5 骞存垨鍚堣瑕佹眰 | 6 |
+| `ops_outbox_event` | `created_at` 鏈堝垎锟?| 鎴愬姛 30-90 澶╋紱澶辫触淇濈暀 | 1 锟?| 5 |
+| `ops_inbox_event` | `created_at` 鏈堝垎锟?| 180 澶╂垨澶т簬娑堟伅閲嶆斁绐楀彛 | 1 锟?| 4 |
+| `integration_provider_health_snapshot` | `created_at` 锟?鏈堝垎锟?| 30-90 锟?| 1 锟?| 4 |
 
-索引规则�?
-- 租户在线查询索引必须�?`tenant_id, organization_id` 开头�?- 列表页使�?`status, updated_at, id` �?`status, created_at, id`，支持游标翻页�?- 唯一键必须和业务边界一致，例如租户�?code 唯一、全局 provider code 唯一、消息消费三元组唯一�?- JSON 字段不承载金额、状态、租户、权限、幂等等核心字段�?- 日志事实表禁止为了临时查询无限加索引；低频分析进入数仓或搜索索引�?
-## 15. 多数据库方言映射
+绱㈠紩瑙勫垯锟?
+- 绉熸埛鍦ㄧ嚎鏌ヨ绱㈠紩蹇呴』锟?`tenant_id, organization_id` 寮€澶达拷?- 鍒楄〃椤典娇锟?`status, updated_at, id` 锟?`status, created_at, id`锛屾敮鎸佹父鏍囩炕椤碉拷?- 鍞竴閿繀椤诲拰涓氬姟杈圭晫涓€鑷达紝渚嬪绉熸埛锟?code 鍞竴銆佸叏灞€ provider code 鍞竴銆佹秷鎭秷璐逛笁鍏冪粍鍞竴锟?- JSON 瀛楁涓嶆壙杞介噾棰濄€佺姸鎬併€佺鎴枫€佹潈闄愩€佸箓绛夌瓑鏍稿績瀛楁锟?- 鏃ュ織浜嬪疄琛ㄧ姝负浜嗕复鏃舵煡璇㈡棤闄愬姞绱㈠紩锛涗綆棰戝垎鏋愯繘鍏ユ暟浠撴垨鎼滅储绱㈠紩锟?
+## 15. 澶氭暟鎹簱鏂硅█鏄犲皠
 
-| 逻辑类型 | PostgreSQL | MySQL/MariaDB | SQLite | API/SDK |
+| 閫昏緫绫诲瀷 | PostgreSQL | MySQL/MariaDB | SQLite | API/SDK |
 | --- | --- | --- | --- | --- |
 | int64 | BIGINT | BIGINT | INTEGER | string |
-| int32 enum | INTEGER | INT | INTEGER | string �?int，按 OpenAPI 标准声明 |
-| decimal | NUMERIC(18,6) 或更�?| DECIMAL(18,6) 或更�?| TEXT �?NUMERIC | string |
-| instant | TIMESTAMP WITH TIME ZONE �?TIMESTAMP UTC | DATETIME(3/6) UTC | TEXT ISO8601 UTC | ISO8601 UTC string |
-| json | JSONB | JSON | TEXT + JSON 校验 | object |
+| int32 enum | INTEGER | INT | INTEGER | string 锟?int锛屾寜 OpenAPI 鏍囧噯澹版槑 |
+| decimal | NUMERIC(18,6) 鎴栨洿锟?| DECIMAL(18,6) 鎴栨洿锟?| TEXT 锟?NUMERIC | string |
+| instant | TIMESTAMP WITH TIME ZONE 锟?TIMESTAMP UTC | DATETIME(3/6) UTC | TEXT ISO8601 UTC | ISO8601 UTC string |
+| json | JSONB | JSON | TEXT + JSON 鏍￠獙 | object |
 | bool | BOOLEAN | BOOLEAN/TINYINT | INTEGER | boolean |
 
-部署要求�?
-- 本地桌面可用 SQLite，但不能改变字段语义；decimal �?API 中仍�?string�?- Server/Docker/K8S 推荐 PostgreSQL�?- `ops_gateway_instance.deployment_mode/runtime_type/orchestrator` 记录 local_desktop、server、docker、k8s 等部署形态；桌面设备、容器、Pod、Node 只存 hash 或脱敏标签�?- `ops_gateway_heartbeat.uptime_seconds/disk_percent/open_file_count/thread_count` 支撑 Admin Monitor 节点页，不依赖各部署平台的专有指标字段�?- 分区、物化视图、部分索引属于物理优化，不能成为公共契约的唯一语义来源�?
-## 16. 安全和隐�?
-### 16.1 密钥
+閮ㄧ讲瑕佹眰锟?
+- 鏈湴妗岄潰鍙敤 SQLite锛屼絾涓嶈兘鏀瑰彉瀛楁璇箟锛沝ecimal 锟?API 涓粛锟?string锟?- Server/Docker/K8S 鎺ㄨ崘 PostgreSQL锟?- `ops_gateway_instance.deployment_mode/runtime_type/orchestrator` 璁板綍 local_desktop銆乻erver銆乨ocker銆乲8s 绛夐儴缃插舰鎬侊紱妗岄潰璁惧銆佸鍣ㄣ€丳od銆丯ode 鍙瓨 hash 鎴栬劚鏁忔爣绛撅拷?- `ops_gateway_heartbeat.uptime_seconds/disk_percent/open_file_count/thread_count` 鏀拺 Admin Monitor 鑺傜偣椤碉紝涓嶄緷璧栧悇閮ㄧ讲骞冲彴鐨勪笓鏈夋寚鏍囧瓧娈碉拷?- 鍒嗗尯銆佺墿鍖栬鍥俱€侀儴鍒嗙储寮曞睘浜庣墿鐞嗕紭鍖栵紝涓嶈兘鎴愪负鍏叡濂戠害鐨勫敮涓€璇箟鏉ユ簮锟?
+## 16. 瀹夊叏鍜岄殣锟?
+### 16.1 瀵嗛挜
 
-- Provider API key、OAuth refresh token、私钥不进入业务表�?- `integration_provider_account.secret_ref` 指向 Vault、KMS、系�?Keychain 或安全配置中心�?- `iam_gateway_api_key.key_hash` 使用 HMAC-SHA256 或组织批准算法，pepper 不入库�?- 创建 API Key 时明文只返回一次；后台不能再次读取明文�?
-### 16.2 审计
+- Provider API key銆丱Auth refresh token銆佺閽ヤ笉杩涘叆涓氬姟琛拷?- `integration_provider_account.secret_ref` 鎸囧悜 Vault銆並MS銆佺郴锟?Keychain 鎴栧畨鍏ㄩ厤缃腑蹇冿拷?- `iam_gateway_api_key.key_hash` 浣跨敤 HMAC-SHA256 鎴栫粍缁囨壒鍑嗙畻娉曪紝pepper 涓嶅叆搴擄拷?- 鍒涘缓 API Key 鏃舵槑鏂囧彧杩斿洖涓€娆★紱鍚庡彴涓嶈兘鍐嶆璇诲彇鏄庢枃锟?
+### 16.2 瀹¤
 
-以下操作必须�?`ops_audit_log`�?
-- 创建、禁用、删�?API Key�?- 新增、修改、轮�?Provider 账号�?- 修改路由策略、灰度、fallback、限流、计费价格�?- 用户余额、积分、VIP、充值、退款等后台操作�?- 导出账单、审计日志、用户数据�?- 修改部署级安全配置、代理配置、跨�?区域策略�?
-### 16.3 PII 和财务数�?
-- PII 仍以 `plus_user*` 既有加密/脱敏策略为准�?- 财务数据仍以 `plus_account*`、`plus_order*`、`plus_payment*`、`plus_refund`、`plus_invoice*` 为准�?- 新表中只保存必要�?user_id、owner_id、account_id、account_ledger_entry_id 引用，不复制手机号、邮箱、地址、支付明细�?
-## 17. API/SDK 序列化契�?
-| 数据类型 | API 表达 | 原因 |
+浠ヤ笅鎿嶄綔蹇呴』锟?`ops_audit_log`锟?
+- 鍒涘缓銆佺鐢ㄣ€佸垹锟?API Key锟?- 鏂板銆佷慨鏀广€佽疆锟?Provider 璐﹀彿锟?- 淇敼璺敱绛栫暐銆佺伆搴︺€乫allback銆侀檺娴併€佽璐逛环鏍硷拷?- 鐢ㄦ埛浣欓銆佺Н鍒嗐€乂IP銆佸厖鍊笺€侀€€娆剧瓑鍚庡彴鎿嶄綔锟?- 瀵煎嚭璐﹀崟銆佸璁℃棩蹇椼€佺敤鎴锋暟鎹拷?- 淇敼閮ㄧ讲绾у畨鍏ㄩ厤缃€佷唬鐞嗛厤缃€佽法锟?鍖哄煙绛栫暐锟?
+### 16.3 PII 鍜岃储鍔℃暟锟?
+- PII 浠嶄互 `plus_user*` 鏃㈡湁鍔犲瘑/鑴辨晱绛栫暐涓哄噯锟?- 璐㈠姟鏁版嵁浠嶄互 `plus_account*`銆乣plus_order*`銆乣plus_payment*`銆乣plus_refund`銆乣plus_invoice*` 涓哄噯锟?- 鏂拌〃涓彧淇濆瓨蹇呰锟?user_id銆乷wner_id銆乤ccount_id銆乤ccount_ledger_entry_id 寮曠敤锛屼笉澶嶅埗鎵嬫満鍙枫€侀偖绠便€佸湴鍧€銆佹敮浠樻槑缁嗭拷?
+## 17. API/SDK 搴忓垪鍖栧锟?
+| 鏁版嵁绫诲瀷 | API 琛ㄨ揪 | 鍘熷洜 |
 | --- | --- | --- |
-| `id`、`tenant_id`、`organization_id`、`user_id`、`owner_id`、`*_id` | string | 避免 JavaScript int64 精度丢失 |
-| decimal 金额/价格/比例 | string | 避免浮点误差 |
-| instant | ISO8601 UTC string | 避免时区歧义 |
-| enum | OpenAPI 明确定义；保�?unknown | 支持前后端和多语言 SDK 演进 |
-| JSON 快照 | object，包�?`schema_version` | 支持回放和兼�?|
+| `id`銆乣tenant_id`銆乣organization_id`銆乣user_id`銆乣owner_id`銆乣*_id` | string | 閬垮厤 JavaScript int64 绮惧害涓㈠け |
+| decimal 閲戦/浠锋牸/姣斾緥 | string | 閬垮厤娴偣璇樊 |
+| instant | ISO8601 UTC string | 閬垮厤鏃跺尯姝т箟 |
+| enum | OpenAPI 鏄庣‘瀹氫箟锛涗繚锟?unknown | 鏀寔鍓嶅悗绔拰澶氳瑷€ SDK 婕旇繘 |
+| JSON 蹇収 | object锛屽寘锟?`schema_version` | 鏀寔鍥炴斁鍜屽吋锟?|
 
-app/backend API 的路径和返回包装必须�?Java 标准一致：
+app/backend API 鐨勮矾寰勫拰杩斿洖鍖呰蹇呴』锟?Java 鏍囧噯涓€鑷达細
 
-- 用户面：`/app/v3/api/{resource-path}`，返�?`SdkWorkApiResponse`�?- 管理面：`/backend/v3/api/{resource-path}`，返�?`SdkWorkApiResponse`�?- OpenAI 兼容面：`/v1/*`，不包装 `SdkWorkApiResponse`（`x-sdkwork-wire-protocol: external`）�?
-## 18. CI 和评审门�?
-### 18.1 新表门禁
+- 鐢ㄦ埛闈細`/app/v3/api/{resource-path}`锛岃繑锟?`SdkWorkApiResponse`锟?- 绠＄悊闈細`/backend/v3/api/{resource-path}`锛岃繑锟?`SdkWorkApiResponse`锟?- OpenAI 鍏煎闈細`/v1/*`锛屼笉鍖呰 `SdkWorkApiResponse`锛坄x-sdkwork-wire-protocol: external`锛夛拷?
+## 18. CI 鍜岃瘎瀹￠棬锟?
+### 18.1 鏂拌〃闂ㄧ
 
-新表进入迁移前必须通过以下检查：
+鏂拌〃杩涘叆杩佺Щ鍓嶅繀椤婚€氳繃浠ヤ笅妫€鏌ワ細
 
-- 表名前缀在前缀注册表中�?- 表名第一段不是产品名、项目名、公司名或技术栈名�?- 已声�?profile、compliance_level、system_of_record、write_owner�?- L2/L3 表包�?`tenant_id`、`organization_id`、`created_at`、`updated_at`、`version`�?- L3 表声明留存、审计、安全分类、runbook�?- 金额/价格不使�?float/double�?- 高频查询字段不是只放�?JSON 中�?- 幂等字段有唯一约束�?- app/backend DTO �?int64/decimal 使用 string 或等价安全序列化�?
-### 18.2 禁用前缀门禁
+- 琛ㄥ悕鍓嶇紑鍦ㄥ墠缂€娉ㄥ唽琛ㄤ腑锟?- 琛ㄥ悕绗竴娈典笉鏄骇鍝佸悕銆侀」鐩悕銆佸叕鍙稿悕鎴栨妧鏈爤鍚嶏拷?- 宸插０锟?profile銆乧ompliance_level銆乻ystem_of_record銆亀rite_owner锟?- L2/L3 琛ㄥ寘锟?`tenant_id`銆乣organization_id`銆乣created_at`銆乣updated_at`銆乣version`锟?- L3 琛ㄥ０鏄庣暀瀛樸€佸璁°€佸畨鍏ㄥ垎绫汇€乺unbook锟?- 閲戦/浠锋牸涓嶄娇锟?float/double锟?- 楂橀鏌ヨ瀛楁涓嶆槸鍙斁锟?JSON 涓拷?- 骞傜瓑瀛楁鏈夊敮涓€绾︽潫锟?- app/backend DTO 锟?int64/decimal 浣跨敤 string 鎴栫瓑浠峰畨鍏ㄥ簭鍒楀寲锟?
+### 18.2 绂佺敤鍓嶇紑闂ㄧ
 
-DDL、契约、Entity 新增表不得使用以下业务前缀�?
+DDL銆佸绾︺€丒ntity 鏂板琛ㄤ笉寰椾娇鐢ㄤ互涓嬩笟鍔″墠缂€锟?
 - `claw_`
 - `router_`
 - `sdkwork_`
 
-这些词可以出现在产品文案、注释或“禁止清单”中，但不能作为新业务表第一段�?
-### 18.3 存量替代表门�?
-CI 应阻断以下同义替代表�?
-- 用户替代表：`iam_user`、`iam_user_oauth_account`�?- 账户替代表：`commerce_account`、`commerce_account_history`�?- VIP/积分替代表：`commerce_vip_user`、`commerce_vip_recharge`、`commerce_vip_point_change`�?- 卡券替代表：任何�?`promotion_` 命名的券定义、券实例、用户券和核销主表�?- 订单支付替代表：`commerce_order`、`commerce_payment`、`commerce_refund`、`commerce_invoice`�?
-### 18.4 文档到实现同步门�?
-任何字段变更必须同时更新�?
-1. 本数据契约�?2. DDL 迁移�?3. ORM/Entity�?4. app/backend OpenAPI�?5. 生成 SDK�?6. 数据同步、数仓、搜索或缓存映射�?7. 安全审计和留存策略�?
-## 19. 实施路线
+杩欎簺璇嶅彲浠ュ嚭鐜板湪浜у搧鏂囨銆佹敞閲婃垨鈥滅姝㈡竻鍗曗€濅腑锛屼絾涓嶈兘浣滀负鏂颁笟鍔¤〃绗竴娈碉拷?
+### 18.3 瀛橀噺鏇夸唬琛ㄩ棬锟?
+CI 搴旈樆鏂互涓嬪悓涔夋浛浠ｈ〃锟?
+- 鐢ㄦ埛鏇夸唬琛細`iam_user`銆乣iam_user_oauth_account`锟?- 璐︽埛鏇夸唬琛細`commerce_account`銆乣commerce_account_history`锟?- VIP/绉垎鏇夸唬琛細`commerce_vip_user`銆乣commerce_vip_recharge`銆乣commerce_vip_point_change`锟?- 鍗″埜鏇夸唬琛細浠讳綍锟?`promotion_` 鍛藉悕鐨勫埜瀹氫箟銆佸埜瀹炰緥銆佺敤鎴峰埜鍜屾牳閿€涓昏〃锟?- 璁㈠崟鏀粯鏇夸唬琛細`commerce_order`銆乣commerce_payment`銆乣commerce_refund`銆乣commerce_invoice`锟?
+### 18.4 鏂囨。鍒板疄鐜板悓姝ラ棬锟?
+浠讳綍瀛楁鍙樻洿蹇呴』鍚屾椂鏇存柊锟?
+1. 鏈暟鎹绾︼拷?2. DDL 杩佺Щ锟?3. ORM/Entity锟?4. app/backend OpenAPI锟?5. 鐢熸垚 SDK锟?6. 鏁版嵁鍚屾銆佹暟浠撱€佹悳绱㈡垨缂撳瓨鏄犲皠锟?7. 瀹夊叏瀹¤鍜岀暀瀛樼瓥鐣ワ拷?
+## 19. 瀹炴柦璺嚎
 
-### 19.1 P0 数据闭环
+### 19.1 P0 鏁版嵁闂幆
 
-1. 建立 schema registry 文件或等�?Markdown/YAML 契约�?2. 落地 Provider、Channel、Provider Account、Channel Model�?3. 落地 Model、Routing Policy/Profile/Rule�?4. 落地 Decision Log、Request Trace、Usage Fact�?5. 落地 Audit Log、Outbox、Inbox�?6. 接入 app/backend API SDK，保证路径和 DTO �?Java 标准一致�?
-### 19.2 P1 生产增强
+1. 寤虹珛 schema registry 鏂囦欢鎴栫瓑锟?Markdown/YAML 濂戠害锟?2. 钀藉湴 Provider銆丆hannel銆丳rovider Account銆丆hannel Model锟?3. 钀藉湴 Model銆丷outing Policy/Profile/Rule锟?4. 钀藉湴 Decision Log銆丷equest Trace銆乁sage Fact锟?5. 钀藉湴 Audit Log銆丱utbox銆両nbox锟?6. 鎺ュ叆 app/backend API SDK锛屼繚璇佽矾寰勫拰 DTO 锟?Java 鏍囧噯涓€鑷达拷?
+### 19.2 P1 鐢熶骇澧炲己
 
-1. 完成 `plus_api_key` �?`iam_gateway_api_key` 的最终路线评审�?2. 落地访问策略、配额策略、模型价格�?3. 落地 `commerce_usage_settlement`，串联既有账�?VIP/交易服务�?4. 落地配置快照和发布回滚�?5. 接入分区、归档、慢查询和数据质量巡检�?
-### 19.3 P2/P3 规模�?
-1. 门户内容、应用中心、技能中心内容表�?2. 账单导出、健康快照、告警、任务�?3. K8S Cell/Region 下的事件流、读模型、冷热分层和�?Region 数据治理�?
-## 20. 评审结论
+1. 瀹屾垚 `plus_api_key` 锟?`iam_gateway_api_key` 鐨勬渶缁堣矾绾胯瘎瀹★拷?2. 钀藉湴璁块棶绛栫暐銆侀厤棰濈瓥鐣ャ€佹ā鍨嬩环鏍硷拷?3. 钀藉湴 `commerce_usage_settlement`锛屼覆鑱旀棦鏈夎处锟?VIP/浜ゆ槗鏈嶅姟锟?4. 钀藉湴閰嶇疆蹇収鍜屽彂甯冨洖婊氾拷?5. 鎺ュ叆鍒嗗尯銆佸綊妗ｃ€佹參鏌ヨ鍜屾暟鎹川閲忓贰妫€锟?
+### 19.3 P2/P3 瑙勬ā锟?
+1. 闂ㄦ埛鍐呭銆佸簲鐢ㄤ腑蹇冦€佹妧鑳戒腑蹇冨唴瀹硅〃锟?2. 璐﹀崟瀵煎嚭銆佸仴搴峰揩鐓с€佸憡璀︺€佷换鍔★拷?3. K8S Cell/Region 涓嬬殑浜嬩欢娴併€佽妯″瀷銆佸喎鐑垎灞傚拰锟?Region 鏁版嵁娌荤悊锟?
+## 20. 璇勫缁撹
 
-本轮数据设计建议采用�?
-- 存量核心业务事实表：严格复用 `plus_*`，不改结构，不建替代表�?- 网关新增配置和事实：使用 `iam_`、`integration_`、`ai_`、`commerce_`、`studio_`、`content_`、`ops_` 标准前缀�?- 账务闭环：`ai_usage_fact` 是用量事实，`commerce_usage_settlement` 是结算桥接，`commerce_account_ledger_entry` 是最终账户流水事实�?- 密钥闭环：Key 明文不落库，Provider secret 只保存引用，所有高危操作写 `ops_audit_log`�?- 部署闭环：四种部署形态共享同一数据契约，差异只在数据库方言、分区能力、密钥存储和运维参数�?
+鏈疆鏁版嵁璁捐寤鸿閲囩敤锟?
+- 瀛橀噺鏍稿績涓氬姟浜嬪疄琛細涓ユ牸澶嶇敤 `plus_*`锛屼笉鏀圭粨鏋勶紝涓嶅缓鏇夸唬琛拷?- 缃戝叧鏂板閰嶇疆鍜屼簨瀹烇細浣跨敤 `iam_`銆乣integration_`銆乣ai_`銆乣commerce_`銆乣studio_`銆乣content_`銆乣ops_` 鏍囧噯鍓嶇紑锟?- 璐﹀姟闂幆锛歚ai_usage` 鏄敤閲忎簨瀹烇紝`commerce_usage_settlement` 鏄粨绠楁ˉ鎺ワ紝`commerce_account_ledger_entry` 鏄渶缁堣处鎴锋祦姘翠簨瀹烇拷?- 瀵嗛挜闂幆锛欿ey 鏄庢枃涓嶈惤搴擄紝Provider secret 鍙繚瀛樺紩鐢紝鎵€鏈夐珮鍗辨搷浣滃啓 `ops_audit_log`锟?- 閮ㄧ讲闂幆锛氬洓绉嶉儴缃插舰鎬佸叡浜悓涓€鏁版嵁濂戠害锛屽樊寮傚彧鍦ㄦ暟鎹簱鏂硅█銆佸垎鍖鸿兘鍔涖€佸瘑閽ュ瓨鍌ㄥ拰杩愮淮鍙傛暟锟?

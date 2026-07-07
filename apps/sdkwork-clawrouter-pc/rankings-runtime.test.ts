@@ -173,7 +173,7 @@ test("ranking service uses generated app SDK snapshot history instead of local s
       return {
         source: {
           sourceLabel: "Usage ranking snapshot",
-          sourceDescription: "Precomputed from ai_usage_fact and ai_model_rank_snapshot.",
+          sourceDescription: "Precomputed from ai_usage and ai_model_rank_snapshot.",
           observedAt: "2026-05-08T08:00:00.000Z",
           snapshotDate: "2026-05-08",
           snapshotPeriod: "daily",
@@ -183,7 +183,7 @@ test("ranking service uses generated app SDK snapshot history instead of local s
           refreshIntervalSeconds: 3600,
           nextRefreshAt: "2026-05-08T09:00:00.000Z",
           cacheMaxAgeSeconds: 60,
-          sourceTables: ["ai_usage_fact", "ai_model_rank_snapshot"],
+          sourceTables: ["ai_usage", "ai_model_rank_snapshot"],
           rankScope: "global",
         },
         items: [

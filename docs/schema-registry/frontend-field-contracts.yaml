@@ -6529,7 +6529,7 @@ frontend_models:
   - severity
   - detail
   data_sources:
-  - ai_usage_fact
+  - ai_usage
   - ai_request_trace
 - route: /admin/analytics
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts
@@ -6548,7 +6548,7 @@ frontend_models:
   - averageTokensPerRequest
   - errorRate
   data_sources:
-  - ai_usage_fact
+  - ai_usage
   - ai_request_trace
 - route: /admin/analytics
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts
@@ -6594,7 +6594,7 @@ frontend_models:
   - insights.severity
   - insights.detail
   data_sources:
-  - ai_usage_fact
+  - ai_usage
   - ai_request_trace
 - route: /admin/analytics
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts
@@ -6605,7 +6605,7 @@ frontend_models:
   - endTime
   - rankingSize
   data_sources:
-  - ai_usage_fact
+  - ai_usage
   - ai_request_trace
 - route: /admin/analytics
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts
@@ -6624,7 +6624,7 @@ frontend_models:
   - averagePointsPerRequest
   - errorRate
   data_sources:
-  - ai_usage_fact
+  - ai_usage
   - ai_request_trace
 - route: /admin/analytics
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts
@@ -6636,7 +6636,7 @@ frontend_models:
   - points
   - users
   data_sources:
-  - ai_usage_fact
+  - ai_usage
   - ai_request_trace
 - route: /admin/analytics
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts
@@ -6654,7 +6654,7 @@ frontend_models:
   - modelDistribution.value
   - modelDistribution.color
   data_sources:
-  - ai_usage_fact
+  - ai_usage
 - route: /admin/analytics
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts
   interface: PieChartData
@@ -6663,7 +6663,7 @@ frontend_models:
   - value
   - color
   data_sources:
-  - ai_usage_fact
+  - ai_usage
 - route: /admin/cache
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
   interface: CacheInstance
@@ -7194,7 +7194,7 @@ frontend_models:
   fields:
   - timeRange
   data_sources:
-  - ai_usage_fact
+  - ai_usage
   - ai_request_trace
 - route: /admin/dashboard
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
@@ -7242,7 +7242,7 @@ frontend_models:
   - recentUsage.status
   - recentUsage.cost
   data_sources:
-  - ai_usage_fact
+  - ai_usage
   - ai_request_trace
 - route: /admin/dashboard
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
@@ -7252,7 +7252,7 @@ frontend_models:
   - value
   - detail
   data_sources:
-  - ai_usage_fact
+  - ai_usage
   - ai_request_trace
 - route: /admin/dashboard
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
@@ -7263,7 +7263,7 @@ frontend_models:
   - chartValue
   - color
   data_sources:
-  - ai_usage_fact
+  - ai_usage
 - route: /admin/dashboard
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
   interface: RecentUsageTrace
@@ -7282,7 +7282,7 @@ frontend_models:
   - cost
   data_sources:
   - ai_request_trace
-  - ai_usage_fact
+  - ai_usage
 - route: /admin/dashboard
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
   interface: TrafficData
@@ -7296,7 +7296,7 @@ frontend_models:
   - chartCost
   data_sources:
   - ai_request_trace
-  - ai_usage_fact
+  - ai_usage
 - route: /admin/group
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
   interface: GroupAiResourceOption
@@ -7786,7 +7786,7 @@ frontend_models:
   - userAgent
   data_sources:
   - ai_request_trace
-  - ai_usage_fact
+  - ai_usage
   - ai_routing_decision_log
 - route: /admin/model/sites
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts
@@ -8088,7 +8088,7 @@ frontend_models:
   - audio (Whisper)
   - music (Suno)
   data_sources:
-  - ai_usage_fact
+  - ai_usage
 - route: /console/dashboard
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts
   interface: ModelUsage
@@ -8103,7 +8103,7 @@ frontend_models:
   - isUp
   data_sources:
   - ai_model_rank_snapshot
-  - ai_usage_fact
+  - ai_usage
 - route: /console/gateway
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-gateway/src/gatewayService.ts
   interface: GatewayTrace
@@ -8170,7 +8170,7 @@ frontend_models:
   - userAgent
   data_sources:
   - ai_request_trace
-  - ai_usage_fact
+  - ai_usage
   - ai_routing_decision_log
   - ai_channel_group
 - route: /console/user
@@ -8378,7 +8378,7 @@ frontend_models:
   - onDelta
   - onArtifact
   data_sources:
-  - ai_usage_fact
+  - ai_usage
   - ai_model
   - ai_model_capability
 - route: /playground
@@ -8403,7 +8403,7 @@ frontend_models:
   - createdAt
   - updatedAt
   data_sources:
-  - ai_usage_fact
+  - ai_usage
 - route: /playground
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundTypes.ts
   interface: PlaygroundReferenceAssetInput
@@ -9034,7 +9034,7 @@ routes:
 - route: /admin/analytics
   required_tables:
   - ai_request_trace
-  - ai_usage_fact
+  - ai_usage
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
 - route: /admin/cache
@@ -9066,7 +9066,7 @@ routes:
 - route: /admin/dashboard
   required_tables:
   - ai_request_trace
-  - ai_usage_fact
+  - ai_usage
   - ops_metric_snapshot
   - system_installation_state
   - system_schema_migration
@@ -9094,7 +9094,7 @@ routes:
   - ai_pricing_plan
   - ai_pricing_rule
   - ai_pricing_tier
-  - ai_usage_fact
+  - ai_usage
   - ops_audit_log
   - ops_job_execution
   dependency_owned: true
@@ -9143,7 +9143,7 @@ routes:
   required_tables:
   - ai_request_trace
   - ai_routing_decision_log
-  - ai_usage_fact
+  - ai_usage
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
 - route: /admin/runtime-region
@@ -9206,7 +9206,7 @@ routes:
   dependency_sdk_family: sdkwork-clawrouter-app-sdk
 - route: /console/account
   required_tables:
-  - ai_usage_fact
+  - ai_usage
   - iam_user_login_event
   - iam_user_security_setting
   dependency_owned: true
@@ -9231,7 +9231,7 @@ routes:
 - route: /console/dashboard
   required_tables:
   - ai_request_trace
-  - ai_usage_fact
+  - ai_usage
   - ops_gateway_instance
   - ops_metric_snapshot
   dependency_owned: true
@@ -9261,7 +9261,7 @@ routes:
   dependency_sdk_family: sdkwork-clawrouter-app-sdk
 - route: /console/settlements
   required_tables:
-  - ai_usage_fact
+  - ai_usage
   - commerce_usage_settlement
   - commerce_usage_statement
   - commerce_usage_statement_item
@@ -9273,7 +9273,7 @@ routes:
   - ai_channel_group
   - ai_request_trace
   - ai_routing_decision_log
-  - ai_usage_fact
+  - ai_usage
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-app-sdk
 - route: /console/user
@@ -9325,7 +9325,7 @@ routes:
   - ai_runtime_invocation
   - ai_runtime_invocation_event
   - ai_runtime_usage_link
-  - ai_usage_fact
+  - ai_usage
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-app-sdk
 - route: /product-docs

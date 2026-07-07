@@ -50,7 +50,7 @@ An isolation failure means one of these enforcement layers was bypassed.
 - Logs showing principal/row tenant mismatch:
 
   ```
-  ERROR tenant_isolation_violation principal_tenant=tenantA row_tenant=tenantB table=ai_usage_fact
+  ERROR tenant_isolation_violation principal_tenant=tenantA row_tenant=tenantB table=ai_usage
   WARN  sql_scoped_subject bypass detected actor=<user-id> scope=missing
   ```
 
@@ -106,7 +106,7 @@ through a `SqlScopedSubject` that injects the `tenant_id` predicate.
 
 ```bash
 # Find queries on tenant-scoped tables that bypass the scoped subject
-rg --type rust "FROM ai_usage_fact|FROM ai_routing|FROM ops_audit_log" \
+rg --type rust "FROM ai_usage|FROM ai_routing|FROM ops_audit_log" \
    --glob '!**/sql_scoped*' crates/
 ```
 
@@ -124,32 +124,32 @@ kubectl exec -it deploy/redis-primary -n clawrouter -- redis-cli --scan \
 
 ## Root Cause Analysis
 
-1. **Code change history** — diff the repository since the last known-good
+1. **Code change history** 鈥?diff the repository since the last known-good
    deploy. Look for:
    - New repository methods that bypass `SqlScopedSubject`.
    - Raw SQL strings lacking `WHERE tenant_id = $1`.
    - Redis key builders that dropped the tenant segment.
-2. **SQL query audit** — review the query plan / executed SQL captured in
+2. **SQL query audit** 鈥?review the query plan / executed SQL captured in
    tracing for the implicated `request_id`. Confirm whether the `tenant_id`
    predicate was present.
-3. **Principal resolution** — confirm the `WebRequestPrincipal` carried the
+3. **Principal resolution** 鈥?confirm the `WebRequestPrincipal` carried the
    correct `tenant_id` and that no client-supplied tenant header was trusted
    (SECURITY.md hardening: `[server].trust_forwarded_headers = off`).
-4. **Key compromise** — if the principal was correct but data still crossed
+4. **Key compromise** 鈥?if the principal was correct but data still crossed
    tenants, suspect the HMAC signing key (see
    [Token / API Key Rotation](token-api-key-rotation.md)).
 
 ## Fix and Recovery
 
-1. **Fix the code** — restore the `SqlScopedSubject` / tenant-segment guard;
+1. **Fix the code** 鈥?restore the `SqlScopedSubject` / tenant-segment guard;
    add a regression test that asserts cross-tenant reads return empty.
-2. **Migrate / repair data** — if tenant B's rows were modified by tenant A,
+2. **Migrate / repair data** 鈥?if tenant B's rows were modified by tenant A,
    restore affected rows from PITR (see
    [Database Migration Rollback](database-migration-rollback.md) and
    [Disaster Recovery Plan](../../deployments/runbooks/disaster-recovery-plan.md#scenario-4-data-corruption)).
-3. **Revoke and reissue credentials** — for the implicated principal, rotate
+3. **Revoke and reissue credentials** 鈥?for the implicated principal, rotate
    its API key and force re-authentication of affected sessions.
-4. **Restore tenant access** — once verified, unfreeze the tenant and
+4. **Restore tenant access** 鈥?once verified, unfreeze the tenant and
    re-enable the (reissued) API key.
 
 ## Compliance Reporting

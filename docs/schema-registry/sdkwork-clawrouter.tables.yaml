@@ -1,6 +1,119 @@
 schemaVersion: 2.0
 kind: sdkwork.database.schema-registry
 owner: claw-router-platform
+schema_registry:
+  name: sdkwork-clawrouter
+  version: 0.3.0
+  standard: ../../../sdkwork-specs/DATABASE_SPEC.md
+  common_column_groups:
+    tenant_entity:
+      - id
+      - uuid
+      - tenant_id
+      - organization_id
+      - status
+      - created_at
+      - updated_at
+      - version
+      - metadata
+    relation_entity:
+      - id
+      - uuid
+      - tenant_id
+      - organization_id
+      - status
+      - created_at
+      - updated_at
+      - version
+    event_log:
+      - id
+      - uuid
+      - tenant_id
+      - organization_id
+      - user_id
+      - request_id
+      - trace_id
+      - payload_hash
+      - status
+      - created_at
+      - retention_until
+      - legal_hold
+      - metadata
+    credential_ref:
+      - id
+      - uuid
+      - tenant_id
+      - organization_id
+      - status
+      - created_at
+      - updated_at
+      - version
+      - metadata
+    projection:
+      - id
+      - uuid
+      - tenant_id
+      - organization_id
+      - status
+      - created_at
+      - metadata
+    quota_policy:
+      - id
+      - uuid
+      - tenant_id
+      - organization_id
+      - status
+      - created_at
+      - updated_at
+      - version
+    runtime_binding:
+      - id
+      - uuid
+      - tenant_id
+      - organization_id
+      - status
+      - created_at
+      - updated_at
+      - version
+    runtime_coordination:
+      - id
+      - uuid
+      - tenant_id
+      - organization_id
+      - status
+      - created_at
+      - version
+    runtime_coordination_event:
+      - id
+      - uuid
+      - tenant_id
+      - organization_id
+      - status
+      - created_at
+    ledger_source_fact:
+      - id
+      - uuid
+      - tenant_id
+      - organization_id
+      - user_id
+      - request_id
+      - trace_id
+      - idempotency_key
+      - status
+      - created_at
+      - retention_until
+      - legal_hold
+      - metadata
+    pricing:
+      - id
+      - uuid
+      - tenant_id
+      - organization_id
+      - status
+      - created_at
+      - updated_at
+      - version
+      - metadata
 description: |
   Claw Router Schema Registry - 积木架构设计
   
@@ -27,6 +140,11 @@ description: |
   - integration_: 供应商集成（sdkwork-integration）
   - ops_: 监控审计（sdkwork-ops）
 
+table_fragments:
+  - tables/ai-routing.yaml
+  - tables/ai-metering.yaml
+  - tables/ai-pricing.yaml
+
 modules:
   
   # ============================================================
@@ -52,7 +170,6 @@ modules:
       - ai_config_version
       - ai_config_change
     ddl_location: database/migrations/ai-routing.sql
-    schema_file: docs/schema-registry/tables/ai-routing.yaml
   
   ai-metering:
     owner: claw-router-platform
@@ -61,9 +178,8 @@ modules:
     tables_count: 2
     tables:
       - ai_usage               # ⭐ 核心计费数据
-      - ai_usage_trace         # ⭐ 请求链路日志
+      - ai_request_trace       # ⭐ 请求链路日志
     ddl_location: database/migrations/ai-metering.sql
-    schema_file: docs/schema-registry/tables/ai-metering.yaml
   
   ai-pricing:
     owner: claw-router-platform
@@ -74,7 +190,6 @@ modules:
       - ai_pricing
       - ai_pricing_rule
     ddl_location: database/migrations/ai-pricing.sql
-    schema_file: docs/schema-registry/tables/ai-pricing.yaml
 
 # ============================================================
 # 组合模块引用（不重复定义，只引用）

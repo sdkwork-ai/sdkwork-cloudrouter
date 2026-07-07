@@ -3,7 +3,7 @@
 
 ## Goal
 
-Converge `sdkwork-clawrouter` to a **minimal relay/control-plane** product shell. Non-core domains are **owned only by sibling modules** — no legacy tables, proxies, adapters, or compatibility layers in Claw Router.
+Converge `sdkwork-clawrouter` to a **minimal relay/control-plane** product shell. Non-core domains are **owned only by sibling modules** 鈥?no legacy tables, proxies, adapters, or compatibility layers in Claw Router.
 
 - `sdkwork-kernel`: agent, chat, mcp, skills
 - `sdkwork-memory`: memory
@@ -16,8 +16,7 @@ Converge `sdkwork-clawrouter` to a **minimal relay/control-plane** product shell
 - Dual-write or mirror tables in Claw Router
 - Compat adapters, proxy handlers, or feature-flag cutover modes
 - One-time backfill / ETL from `ai_memory_*`, `ai_generation_*`, `ai_agent*` / `ai_chat_*`
-- Keeping deprecated OpenAPI paths “for transition”
-- Hand-editing generated SDK output
+- Keeping deprecated OpenAPI paths 鈥渇or transition鈥?- Hand-editing generated SDK output
 
 ## Scope
 
@@ -52,7 +51,7 @@ flowchart LR
 
 - Model and pricing: `ai_model*`, `ai_model_pricing*`, `ai_model_mapping_rule*`
 - Channel/provider/routing: `ai_channel*`, `ai_provider*`, `ai_site*`, `ai_routing*`
-- Usage/quotas: `ai_usage_fact`, `ai_request_trace`, `ai_quota_policy`, `ai_usage_service_provider_edge`
+- Usage/quotas: `ai_usage`, `ai_request_trace`, `ai_quota_policy`, `ai_usage_service_provider_edge`
 - Gateway IAM: `iam_gateway_*`
 - Integration / service-provider network: `integration_*`
 - Operations: `ops_*`
@@ -60,23 +59,21 @@ flowchart LR
 
 ## Domains to remove from Claw Router (same batch as sibling ownership)
 
-### Memory → sdkwork-memory only
+### Memory 鈫?sdkwork-memory only
 
 **Delete from Claw Router:** `ai_memory_space`, `ai_memory_space_binding`, `ai_memory_entry`, `ai_memory_embedding`, `ai_memory_event`, `ai_memory_link`
 
-**Canonical (sibling):** `mem_space`, `mem_event`, `mem_record`, `mem_record_source`, `mem_index`, …
-
-### Generation → sdkwork-generations only
+**Canonical (sibling):** `mem_space`, `mem_event`, `mem_record`, `mem_record_source`, `mem_index`, 鈥?
+### Generation 鈫?sdkwork-generations only
 
 **Delete from Claw Router:** `ai_generation_session`, `ai_generation_job`, `ai_generation_asset`, `ai_generation_asset_action`
 
-**Canonical (sibling):** `generation_record`, `generation_dispatch_job`, `generation_result`, `generation_timeline_event`, …
-
-### Agent / chat / mcp / skills → sdkwork-kernel only
+**Canonical (sibling):** `generation_record`, `generation_dispatch_job`, `generation_result`, `generation_timeline_event`, 鈥?
+### Agent / chat / mcp / skills 鈫?sdkwork-kernel only
 
 **Delete from Claw Router:** `ai_agent*`, `ai_chat_*`, `ai_mcp_*`, prompt/skill tables owned by kernel
 
-**Canonical (sibling):** `sdkwork-agent-*` APIs + kernel schema (extend kernel where gaps exist — chat/skills tables if missing)
+**Canonical (sibling):** `sdkwork-agent-*` APIs + kernel schema (extend kernel where gaps exist 鈥?chat/skills tables if missing)
 
 **Admin UI note:** `/admin/prompts`, `/admin/mcp`, playground chat are **kernel consumers** until moved to kernel-owned apps; they must call `@sdkwork/agent-*` SDK, not Claw Router backend tables.
 
@@ -84,7 +81,7 @@ flowchart LR
 
 | Batch | Domain | Claw Router deletes | Claw Router wires |
 |-------|--------|---------------------|-------------------|
-| **1** | Commerce/platform PC packages | 21 orphan packages (catalog, wallet, …) | — |
+| **1** | Commerce/platform PC packages | 21 orphan packages (catalog, wallet, 鈥? | 鈥?|
 | **2** | Memory | `ai_memory_*` schema, APIs, contracts, tests | `@sdkwork/memory-*` SDK |
 | **3** | Generation | `ai_generation_*` schema, APIs, sqlite stores, playground local paths | `@sdkwork/generations-*` SDK |
 | **4** | Kernel | `ai_agent*`, `ai_chat*`, `ai_mcp*`, skill/prompt schema in router | `@sdkwork/agent-*` SDK |
@@ -102,7 +99,7 @@ Implemented in the **owning sibling module**, verified at integration boundaries
 4. Permission boundaries and policy enforcement
 5. Retry/idempotency for async jobs and callbacks
 
-Claw Router verifies relay/control-plane concerns: routing, usage facts, quotas, provider edges — not domain SoR.
+Claw Router verifies relay/control-plane concerns: routing, usage facts, quotas, provider edges 鈥?not domain SoR.
 
 ## Verification per batch
 
@@ -114,7 +111,7 @@ Claw Router verifies relay/control-plane concerns: routing, usage facts, quotas,
 
 ## Reference docs (field semantics only)
 
-Use when aligning kernel/memory/generations contracts — **not** for legacy migration:
+Use when aligning kernel/memory/generations contracts 鈥?**not** for legacy migration:
 
 - `2026-06-21-memory-field-mapping-ai-to-mem.md`
 - `2026-06-21-generation-field-mapping-ai-to-generation.md`
@@ -122,7 +119,7 @@ Use when aligning kernel/memory/generations contracts — **not** for legacy mig
 
 ## Immediate next batch
 
-**Batch 2 — Memory (greenfield):**
+**Batch 2 鈥?Memory (greenfield):**
 
 1. Strip `ai_memory_*` from `docs/schema-registry/tables/018-ai.yaml` and registry index
 2. Remove memory operations from `apis/app-api` / `apis/backend-api` Claw Router OpenAPI

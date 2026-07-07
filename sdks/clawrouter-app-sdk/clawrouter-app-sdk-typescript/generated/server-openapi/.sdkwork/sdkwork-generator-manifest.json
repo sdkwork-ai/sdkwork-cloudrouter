@@ -112,7 +112,7 @@
     },
     {
       "path": "src/types/field-error.ts",
-      "sha256": "7a4aa64ddd3c31e1595dbf2e4bbd79dc8f58f1ff91ba5142a7cf26e2ca557ebe"
+      "sha256": "fba9bdce0aa56c5d984ff8b2134909da389641b40a3bfd56236eca1791441a0a"
     },
     {
       "path": "src/types/index.ts",
@@ -144,7 +144,7 @@
     },
     {
       "path": "src/types/problem-detail.ts",
-      "sha256": "9aadb37b266fabf157d645041bfdd1cb8793cbb4a5e6439231a083a55ebaa2b8"
+      "sha256": "98f0722417f5d85aa7c9ea5b56ca06f0b59a81e6016cfc116e7f4bd01ef9f275"
     },
     {
       "path": "src/types/sdk-work-api-response.ts",

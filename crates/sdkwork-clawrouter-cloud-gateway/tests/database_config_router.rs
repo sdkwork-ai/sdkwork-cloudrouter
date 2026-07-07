@@ -5,7 +5,7 @@ use axum::routing::post;
 use axum::{Json, Router};
 use sdkwork_claw_config::{ProviderRelayConfig, ProviderSecretMapConfig, StartupInstallMode};
 use sdkwork_claw_test_support::{
-    assert_server_generated_request_id, seeded_sqlite_catalog, SeededSqliteCatalog,
+    SeededSqliteCatalog, assert_server_generated_request_id, seeded_sqlite_catalog,
 };
 use sdkwork_clawrouter_router_service::application::UsageSettlementWorkerConfig;
 use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::SqlitePricingCatalogLoader;
@@ -13,7 +13,7 @@ use sdkwork_clawrouter_router_service::ports::PricingCatalog;
 use serde_json::json;
 use sqlx::{Row, SqlitePool};
 use std::sync::{Arc, Mutex};
-use tokio::time::{sleep, Duration};
+use tokio::time::{Duration, sleep};
 use tower::ServiceExt;
 
 async fn set_openrouter_test_base_url(pool: &SqlitePool, base_url: &str) {
@@ -308,7 +308,7 @@ async fn database_config_router_records_non_stream_chat_usage_when_provider_succ
         SELECT request_id, api_key_id, model, channel_id, usage_type, billing_meter_code,
                billable_quantity, prompt_tokens, completion_tokens, total_tokens,
                customer_charge_amount, cost_amount, currency, pricing_plan_code, settlement_status
-        FROM ai_usage_fact
+        FROM ai_usage
         WHERE request_id = ?
         "#,
     )
@@ -318,7 +318,7 @@ async fn database_config_router_records_non_stream_chat_usage_when_provider_succ
     .unwrap();
     assert!(
         usage.is_some(),
-        "database-configured provider relay must write ai_usage_fact"
+        "database-configured provider relay must write ai_usage"
     );
     let usage = usage.unwrap();
     assert_eq!(request_id, usage.get::<String, _>("request_id"));
@@ -427,9 +427,11 @@ async fn database_config_router_applies_database_retry_policy_without_duplicate_
     assert!(captured.iter().all(|request| {
         request.authorization.as_deref() == Some("Bearer sk-provider-token-from-secret-map")
     }));
-    assert!(captured
-        .iter()
-        .all(|request| request.body["model"] == "gpt-4o-mini"));
+    assert!(
+        captured
+            .iter()
+            .all(|request| request.body["model"] == "gpt-4o-mini")
+    );
     drop(captured);
 
     let read_pool = catalog.open_pool().await.unwrap();
@@ -465,7 +467,7 @@ async fn database_config_router_applies_database_retry_policy_without_duplicate_
         SELECT request_id, channel_id, billing_meter_code, billable_quantity, prompt_tokens,
                completion_tokens, total_tokens, customer_charge_amount, cost_amount,
                settlement_status
-        FROM ai_usage_fact
+        FROM ai_usage
         WHERE request_id = ?
         "#,
     )
@@ -496,12 +498,11 @@ async fn database_config_router_applies_database_retry_policy_without_duplicate_
             .fetch_one(&read_pool)
             .await
             .unwrap();
-    let usage_count: i64 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM ai_usage_fact WHERE request_id = ?")
-            .bind(&request_id)
-            .fetch_one(&read_pool)
-            .await
-            .unwrap();
+    let usage_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM ai_usage WHERE request_id = ?")
+        .bind(&request_id)
+        .fetch_one(&read_pool)
+        .await
+        .unwrap();
     assert_eq!(
         1, trace_count,
         "provider retries must not duplicate request trace"
@@ -581,7 +582,7 @@ async fn database_config_router_background_settlement_worker_settles_recorded_ch
     assert_eq!(StatusCode::OK, response_status, "{response_body}");
     let read_pool = catalog.open_pool().await.unwrap();
     let request_id: String =
-        sqlx::query_scalar("SELECT request_id FROM ai_usage_fact WHERE trace_id = ? LIMIT 1")
+        sqlx::query_scalar("SELECT request_id FROM ai_usage WHERE trace_id = ? LIMIT 1")
             .bind("trace-gateway-usage-settlement-1")
             .fetch_one(&read_pool)
             .await
@@ -611,20 +612,18 @@ async fn database_config_router_background_settlement_worker_settles_recorded_ch
     );
     assert_eq!(
         2,
-        sqlx::query_scalar::<_, i64>(
-            "SELECT settlement_status FROM ai_usage_fact WHERE request_id = ?"
-        )
-        .bind(&request_id)
-        .fetch_one(&read_pool)
-        .await
-        .unwrap()
+        sqlx::query_scalar::<_, i64>("SELECT settlement_status FROM ai_usage WHERE request_id = ?")
+            .bind(&request_id)
+            .fetch_one(&read_pool)
+            .await
+            .unwrap()
     );
     read_pool.close().await;
 }
 
 #[tokio::test]
-async fn database_config_router_background_settlement_worker_wakes_on_new_usage_without_waiting_full_interval(
-) {
+async fn database_config_router_background_settlement_worker_wakes_on_new_usage_without_waiting_full_interval()
+ {
     let catalog = seeded_sqlite_catalog().await.unwrap();
     let pool = catalog.open_pool().await.unwrap();
     catalog
@@ -686,7 +685,7 @@ async fn database_config_router_background_settlement_worker_wakes_on_new_usage_
     assert_eq!(StatusCode::OK, response.status());
     let read_pool = catalog.open_pool().await.unwrap();
     let request_id: String =
-        sqlx::query_scalar("SELECT request_id FROM ai_usage_fact WHERE trace_id = ? LIMIT 1")
+        sqlx::query_scalar("SELECT request_id FROM ai_usage WHERE trace_id = ? LIMIT 1")
             .bind("trace-gateway-usage-wakeup-1")
             .fetch_one(&read_pool)
             .await
@@ -815,7 +814,7 @@ async fn database_config_router_uses_provider_relay_config_for_streaming_chat_co
         r#"
         SELECT request_id, prompt_tokens, completion_tokens, total_tokens,
                customer_charge_amount, cost_amount, settlement_status
-        FROM ai_usage_fact
+        FROM ai_usage
         WHERE request_id = ?
         "#,
     )
@@ -825,7 +824,7 @@ async fn database_config_router_uses_provider_relay_config_for_streaming_chat_co
     .unwrap();
     assert!(
         usage.is_some(),
-        "database-configured streaming relay must persist ai_usage_fact instead of returning an unbillable stream"
+        "database-configured streaming relay must persist ai_usage instead of returning an unbillable stream"
     );
     let usage = usage.unwrap();
     assert_eq!(1_i64, usage.get::<i64, _>("prompt_tokens"));
@@ -1315,7 +1314,7 @@ async fn database_config_router_uses_provider_secret_map_for_route_scoped_embedd
 async fn wait_for_usage_settlement_success(pool: &SqlitePool, request_id: &str) {
     for _ in 0..40 {
         let status =
-            sqlx::query("SELECT settlement_status FROM ai_usage_fact WHERE request_id = ? LIMIT 1")
+            sqlx::query("SELECT settlement_status FROM ai_usage WHERE request_id = ? LIMIT 1")
                 .bind(request_id)
                 .fetch_optional(pool)
                 .await
@@ -1327,7 +1326,7 @@ async fn wait_for_usage_settlement_success(pool: &SqlitePool, request_id: &str) 
         sleep(Duration::from_millis(100)).await;
     }
     let usage = sqlx::query(
-        "SELECT settlement_status, customer_charge_amount, total_tokens FROM ai_usage_fact WHERE request_id = ? LIMIT 1",
+        "SELECT settlement_status, customer_charge_amount, total_tokens FROM ai_usage WHERE request_id = ? LIMIT 1",
     )
     .bind(request_id)
     .fetch_optional(pool)

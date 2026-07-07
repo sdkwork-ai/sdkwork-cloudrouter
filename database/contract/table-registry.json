@@ -165,7 +165,7 @@
       "lifecycle_status": "active"
     },
     {
-      "table_name": "ai_usage_fact",
+      "table_name": "ai_usage",
       "owner": "claw-router-platform",
       "compliance_level": "L2",
       "lifecycle_status": "active"

@@ -240,10 +240,10 @@ tables:
       instant: iso8601_utc
   
   # ============================================================
-  # ai_usage_trace - 用量追踪表（请求链路日志）
+  # ai_request_trace - gateway request attempt trace
   # ============================================================
   
-  - table: ai_usage_trace
+  - table: ai_request_trace
     domain: ai
     profile: event_log
     compliance_level: L2
@@ -264,7 +264,7 @@ tables:
       - 提供可观测性数据
       
       数据流向:
-      1. router-service写入ai_usage_trace
+      1. router-service写入ai_request_trace
       2. 关联ai_usage.request_id
       3. 支持trace_id链路追踪
       
@@ -280,100 +280,105 @@ tables:
       - /admin/usage/traces
     
     api_surfaces:
+      - app
       - backend
       - worker
     
     columns:
-      # 标识字段
       id: int64
       uuid: string(64)
-      
-      # 租户隔离
       tenant_id: int64
       organization_id: int64
       user_id: int64
-      
-      # 关联信息
-      usage_id: int64
       request_id: string(128)
       trace_id: string(128)
-      
-      # 渠道信息
-      group_id: int64
-      channel_id: int64
-      provider_id: int64
-      
-      # 模型信息
-      model_code: string(128)
-      
-      # 追踪信息
-      span_id: string(64)
-      parent_span_id: string(64)
-      span_name: string(128)
-      span_kind: enum_int32
-      
-      # 时间信息
-      start_time: instant
-      end_time: instant
-      duration_ms: int64
-      
-      # HTTP信息
-      http_method: string(16)
-      http_url: string(512)
-      http_status_code: int32
-      
-      # 错误信息
-      error: bool
-      error_code: string(64)
-      error_message: string(512)
-      
-      # 性能指标
-      ttft_ms: int32
-      tokens_per_second: decimal
-      first_token_latency_ms: int32
-      
-      # 标签
-      tags: json
-      
-      # 事件
-      events: json
-      
-      # 审计字段
-      created_at: instant
-      
-      # 生命周期
+      payload_hash: string(128)
       status: enum_int32
+      created_at: instant
+      retention_until: instant
+      legal_hold: bool
+      metadata: json
+      attempt_no: int32
+      decision_log_id: int64
+      api_key_id: int64
+      legacy_api_key_id: int64
+      api_key_name_snapshot: string(128)
+      channel_group_id: int64
+      channel_group_snapshot: string(128)
+      owner_type: enum_int32
+      owner_id: int64
+      owner_name_snapshot: string(128)
+      provider_id: int64
+      channel_id: int64
+      channel_name_snapshot: string(128)
+      requested_model: string(256)
+      requested_model_catalog_key: string(256)
+      provider_model: string(256)
+      provider_native_model: string(256)
+      region_code: string(64)
+      endpoint: string(256)
+      request_path: string(256)
+      http_method: string(16)
+      http_status: int32
+      provider_error_code: string(128)
+      error_type: enum_int32
+      started_at: instant
+      ended_at: instant
+      latency_ms: int32
+      ttft_ms: int32
+      streaming: bool
+      request_bytes: int64
+      response_bytes: int64
+      prompt_tokens: int64
+      completion_tokens: int64
+      cached_tokens: int64
+      total_tokens: int64
+      request_payload_hash: string(128)
+      response_payload_hash: string(128)
+      error_message_masked: string(1024)
+      reasoning_effort: string(64)
+      client_ip_hash: string(128)
+      client_ip_masked: string(64)
+      client_ip_region: string(128)
+      user_agent_hash: string(128)
     
     unique_constraints:
-      - name: uk_ai_usage_trace_request
+      - name: uk_ai_request_trace_request_attempt
         columns:
           - tenant_id
           - organization_id
           - request_id
-          - span_id
+          - attempt_no
     
     indexes:
-      - name: idx_ai_usage_trace_trace
+      - name: idx_ai_request_trace_tenant_trace
         columns:
           - tenant_id
           - organization_id
           - trace_id
-          - created_at
-          - id
       
-      - name: idx_ai_usage_trace_usage
+      - name: idx_ai_request_trace_api_key_started
         columns:
           - tenant_id
           - organization_id
-          - usage_id
-          - created_at
+          - api_key_id
+          - started_at
           - id
       
-      - name: idx_ai_usage_trace_time
+      - name: idx_ai_request_trace_model_started
         columns:
           - tenant_id
           - organization_id
-          - created_at
+          - requested_model
+          - started_at
+          - id
+      
+      - name: idx_ai_request_trace_tenant_status_started
+        columns:
+          - tenant_id
+          - organization_id
+          - status
+          - started_at
           - id
     
     lifecycle:

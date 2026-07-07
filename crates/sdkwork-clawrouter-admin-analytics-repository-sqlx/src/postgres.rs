@@ -1,10 +1,10 @@
 use sqlx::{PgPool, Row};
 
-use crate::error::{store_error, RepositoryError, RepositoryResult};
+use crate::error::{RepositoryError, RepositoryResult, store_error};
 use crate::modality;
 use crate::snapshot::{
-    build_snapshot, vendor_from_catalog_key, AnalyticsModelRankRow, AnalyticsPieRow,
-    AnalyticsSummaryRow, AnalyticsTrendRow, AnalyticsUserRankRow, PI_LIMIT, USER_MODEL_LIMIT,
+    AnalyticsModelRankRow, AnalyticsPieRow, AnalyticsSummaryRow, AnalyticsTrendRow,
+    AnalyticsUserRankRow, PI_LIMIT, USER_MODEL_LIMIT, build_snapshot, vendor_from_catalog_key,
 };
 use crate::types::{
     AdminAnalyticsQuery, AdminAnalyticsReadFuture, AdminAnalyticsReadStore, AdminAnalyticsSnapshot,
@@ -21,7 +21,7 @@ SELECT
     CAST(COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS TEXT) AS total_tokens,
     CAST(COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS TEXT) AS total_points,
     CAST(COALESCE(SUM(COALESCE(upstream_cost_amount, cost_amount, 0)), 0) AS TEXT) AS upstream_cost
-FROM ai_usage_fact usage
+FROM ai_usage usage
 LEFT JOIN (
     SELECT DISTINCT tenant_id, organization_id, request_id
     FROM ai_request_trace
@@ -64,7 +64,7 @@ WITH agg AS (
         COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown') AS user_id,
         COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), 'unknown') AS name,
         COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS value
-    FROM ai_usage_fact
+    FROM ai_usage
     WHERE status = 1
       AND tenant_id = $1
       AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
@@ -113,7 +113,7 @@ WITH agg AS (
     SELECT
         COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), 'unknown') AS name,
         COALESCE(SUM(COALESCE(request_count, 1)), 0) AS value
-    FROM ai_usage_fact
+    FROM ai_usage
     WHERE status = 1
       AND tenant_id = $1
       AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
@@ -157,7 +157,7 @@ WITH agg AS (
     SELECT
         COALESCE(modality, 0) AS modality,
         COALESCE(SUM(COALESCE(request_count, 1)), 0) AS value
-    FROM ai_usage_fact
+    FROM ai_usage
     WHERE status = 1
       AND tenant_id = $1
       AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
@@ -373,7 +373,7 @@ async fn load_trend(
             CAST(COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS TEXT) AS tokens,
             CAST(COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS TEXT) AS points,
             COUNT(DISTINCT COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown')) AS users
-        FROM ai_usage_fact
+        FROM ai_usage
         WHERE status = 1
           AND tenant_id = $1
           AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
@@ -437,7 +437,7 @@ async fn load_user_rankings(
             CAST(COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS TEXT) AS total_tokens,
             COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS points_sort,
             CAST(COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS TEXT) AS points
-        FROM ai_usage_fact
+        FROM ai_usage
         WHERE status = 1
           AND tenant_id = $1
           AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
@@ -494,7 +494,7 @@ async fn load_model_rankings(
             CAST(COALESCE(SUM(COALESCE(upstream_cost_amount, cost_amount, 0)), 0) AS TEXT) AS upstream_cost,
             COUNT(DISTINCT COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown')) AS user_count,
             COUNT(DISTINCT CASE WHEN failed_request.request_id IS NULL THEN NULL ELSE usage.request_id END) AS failed_requests
-        FROM ai_usage_fact usage
+        FROM ai_usage usage
         LEFT JOIN (
             SELECT DISTINCT tenant_id, organization_id, request_id
             FROM ai_request_trace

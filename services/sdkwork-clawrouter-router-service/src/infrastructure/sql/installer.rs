@@ -3,8 +3,8 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::OnceLock;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::infrastructure::sql::commerce_bootstrap::{
@@ -12,14 +12,14 @@ use crate::infrastructure::sql::commerce_bootstrap::{
     commerce_initial_migration_sql, commerce_initial_migration_sqlite,
     commerce_recharge_package_seeds, commerce_recharge_settings_seeds,
 };
-use sdkwork_claw_config::deployment::{resolve_deployment_runtime, DeploymentProfile};
+use sdkwork_claw_config::deployment::{DeploymentProfile, resolve_deployment_runtime};
 use sdkwork_contract_service::CommerceServiceError;
 use sdkwork_iam_bootstrap::{
-    iam_baseline_postgres_sql, iam_rbac_federation_postgres_sql, import_postgres_default_iam_seed,
-    import_sqlite_default_iam_seed, postgres_default_iam_seed_complete,
-    sqlite_default_iam_seed_complete, DEFAULT_BOOTSTRAP_ADMIN_DISPLAY_NAME,
-    DEFAULT_BOOTSTRAP_ADMIN_EMAIL, DEFAULT_BOOTSTRAP_ADMIN_USERNAME,
-    DEFAULT_BOOTSTRAP_ADMIN_USER_ID, DEFAULT_IAM_ORGANIZATION_ID, DEFAULT_IAM_TENANT_ID,
+    DEFAULT_BOOTSTRAP_ADMIN_DISPLAY_NAME, DEFAULT_BOOTSTRAP_ADMIN_EMAIL,
+    DEFAULT_BOOTSTRAP_ADMIN_USER_ID, DEFAULT_BOOTSTRAP_ADMIN_USERNAME, DEFAULT_IAM_ORGANIZATION_ID,
+    DEFAULT_IAM_TENANT_ID, iam_baseline_postgres_sql, iam_rbac_federation_postgres_sql,
+    import_postgres_default_iam_seed, import_sqlite_default_iam_seed,
+    postgres_default_iam_seed_complete, sqlite_default_iam_seed_complete,
 };
 use sdkwork_iam_directory_repository_sqlx::iam_database_tables;
 use sdkwork_models::ModelCatalog;
@@ -38,13 +38,13 @@ use crate::infrastructure::sql::ai_routing_seed::{
     sqlite_ai_routing_seed_complete,
 };
 use crate::infrastructure::sql::model_catalog_import::{
-    catalog_ai_resource_projections, catalog_api_endpoint_projections,
-    catalog_modality_api_endpoint_projections, catalog_modality_projections,
-    catalog_model_api_endpoint_projections, catalog_model_modality_projections,
-    catalog_scope_counts, catalog_scope_vendor_codes, catalog_vendor_api_endpoint_projections,
-    catalog_vendor_modality_projections, catalog_vendor_records, catalog_with_selected_vendors,
-    load_catalog_root_with_pin, model_catalog_key, pricing_catalog_key, CatalogScopeCounts,
-    DEFAULT_CATALOG_REFRESH_SOURCE,
+    CatalogScopeCounts, DEFAULT_CATALOG_REFRESH_SOURCE, catalog_ai_resource_projections,
+    catalog_api_endpoint_projections, catalog_modality_api_endpoint_projections,
+    catalog_modality_projections, catalog_model_api_endpoint_projections,
+    catalog_model_modality_projections, catalog_scope_counts, catalog_scope_vendor_codes,
+    catalog_vendor_api_endpoint_projections, catalog_vendor_modality_projections,
+    catalog_vendor_records, catalog_with_selected_vendors, load_catalog_root_with_pin,
+    model_catalog_key, pricing_catalog_key,
 };
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::sql_admin_product_center::{
@@ -66,47 +66,6 @@ const CLAWROUTER_RUNTIME_SCHEMA_REPAIRS_POSTGRES_SQL: &str = include_str!(
 const CLAWROUTER_RUNTIME_SCHEMA_REPAIRS_SQLITE_SQL: &str = include_str!(
     "../../../../../database/ddl/baseline/sqlite/0005_clawrouter_runtime_schema_repairs.sql"
 );
-const RENAME_AI_USAGE_FACT_TO_AI_USAGE_POSTGRES_SQL: &str = r#"
-DO $$
-BEGIN
-    IF to_regclass('ai_usage') IS NULL
-       AND to_regclass('ai_usage_fact') IS NOT NULL THEN
-        ALTER TABLE ai_usage_fact RENAME TO ai_usage;
-
-        IF to_regclass('ai_usage_fact_default') IS NOT NULL THEN
-            ALTER TABLE ai_usage_fact_default RENAME TO ai_usage_default;
-        END IF;
-
-        IF to_regclass('uk_ai_usage_fact_request') IS NOT NULL THEN
-            ALTER INDEX uk_ai_usage_fact_request RENAME TO uk_ai_usage_request;
-        END IF;
-        IF to_regclass('idx_ai_usage_fact_tenant_owner_occurred') IS NOT NULL THEN
-            ALTER INDEX idx_ai_usage_fact_tenant_owner_occurred
-                RENAME TO idx_ai_usage_tenant_owner_occurred;
-        END IF;
-        IF to_regclass('idx_ai_usage_fact_api_key_occurred') IS NOT NULL THEN
-            ALTER INDEX idx_ai_usage_fact_api_key_occurred
-                RENAME TO idx_ai_usage_api_key_occurred;
-        END IF;
-        IF to_regclass('idx_ai_usage_fact_model_occurred') IS NOT NULL THEN
-            ALTER INDEX idx_ai_usage_fact_model_occurred
-                RENAME TO idx_ai_usage_model_occurred;
-        END IF;
-        IF to_regclass('idx_ai_usage_fact_pricing_plan_occurred') IS NOT NULL THEN
-            ALTER INDEX idx_ai_usage_fact_pricing_plan_occurred
-                RENAME TO idx_ai_usage_pricing_plan_occurred;
-        END IF;
-        IF to_regclass('idx_ai_usage_fact_meter_occurred') IS NOT NULL THEN
-            ALTER INDEX idx_ai_usage_fact_meter_occurred
-                RENAME TO idx_ai_usage_meter_occurred;
-        END IF;
-        IF to_regclass('idx_ai_usage_fact_settlement_status') IS NOT NULL THEN
-            ALTER INDEX idx_ai_usage_fact_settlement_status
-                RENAME TO idx_ai_usage_settlement_status;
-        END IF;
-    END IF;
-END $$;
-"#;
 const BUNDLED_MODELS_CATALOG_MANIFEST: &str =
     include_str!("../../../../../data/sdkwork-models/sdkwork-models.json");
 pub const CURRENT_SCHEMA_VERSION: &str = "2026.06.22.1";
@@ -7154,48 +7113,18 @@ fn clawrouter_runtime_schema_repairs_sqlite_statements() -> Vec<String> {
         .collect()
 }
 
-async fn ensure_postgres_canonical_ai_usage_table_name(
-    pool: &PgPool,
-) -> Result<bool, DatabaseInstallError> {
-    let usage_exists = postgres_table_exists(pool, "ai_usage").await?;
-    let fact_exists = postgres_table_exists(pool, "ai_usage_fact").await?;
-    if usage_exists || !fact_exists {
-        return Ok(false);
-    }
-    execute_postgres_statement(pool, RENAME_AI_USAGE_FACT_TO_AI_USAGE_POSTGRES_SQL).await?;
-    Ok(true)
-}
-
-async fn ensure_sqlite_canonical_ai_usage_table_name(
-    pool: &SqlitePool,
-) -> Result<bool, DatabaseInstallError> {
-    let usage_exists = sqlite_table_exists(pool, "ai_usage").await?;
-    let fact_exists = sqlite_table_exists(pool, "ai_usage_fact").await?;
-    if usage_exists || !fact_exists {
-        return Ok(false);
-    }
-    sqlx::query("ALTER TABLE ai_usage_fact RENAME TO ai_usage")
-        .execute(pool)
-        .await?;
-    Ok(true)
-}
-
 async fn postgres_clawrouter_runtime_schema_repairs_needed(
     pool: &PgPool,
 ) -> Result<bool, DatabaseInstallError> {
-    let usage_ready = postgres_table_exists(pool, "ai_usage").await?
-        || !postgres_table_exists(pool, "ai_usage_fact").await?;
     let notifications_ready = postgres_table_exists(pool, "ops_notification_message").await?;
-    Ok(!usage_ready || !notifications_ready)
+    Ok(!notifications_ready)
 }
 
 async fn sqlite_clawrouter_runtime_schema_repairs_needed(
     pool: &SqlitePool,
 ) -> Result<bool, DatabaseInstallError> {
-    let usage_ready = sqlite_table_exists(pool, "ai_usage").await?
-        || !sqlite_table_exists(pool, "ai_usage_fact").await?;
     let notifications_ready = sqlite_table_exists(pool, "ops_notification_message").await?;
-    Ok(!usage_ready || !notifications_ready)
+    Ok(!notifications_ready)
 }
 
 async fn apply_postgres_clawrouter_runtime_schema_repairs(
@@ -7205,7 +7134,7 @@ async fn apply_postgres_clawrouter_runtime_schema_repairs(
         return Ok(false);
     }
 
-    let mut changed = ensure_postgres_canonical_ai_usage_table_name(pool).await?;
+    let mut changed = false;
     if !postgres_table_exists(pool, "ops_notification_message").await? {
         record_postgres_migration_started(
             pool,
@@ -7236,7 +7165,7 @@ async fn apply_sqlite_clawrouter_runtime_schema_repairs(
         return Ok(false);
     }
 
-    let mut changed = ensure_sqlite_canonical_ai_usage_table_name(pool).await?;
+    let mut changed = false;
     if !sqlite_table_exists(pool, "ops_notification_message").await? {
         record_sqlite_migration_started(
             pool,

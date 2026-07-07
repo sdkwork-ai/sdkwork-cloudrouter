@@ -1135,7 +1135,7 @@ test("admin model service reads model ranking refresh status through generated b
           cacheMaxAgeSeconds: "60",
           generatedCount: "2",
           sourceCount: "10",
-          sourceTables: ["ai_usage_fact", "ai_model", "ai_model_rank_snapshot"],
+          sourceTables: ["ai_usage", "ai_model", "ai_model_rank_snapshot"],
           latestJob: {
             id: "job-failed",
             jobName: "model_ranking_refresh",
@@ -1171,7 +1171,7 @@ test("admin model service reads model ranking refresh status through generated b
       assert.equal(status.snapshotDate, "2026-05-08");
       assert.equal(status.generatedCount, 2);
       assert.equal(status.sourceCount, 10);
-      assert.deepEqual(status.sourceTables, ["ai_usage_fact", "ai_model", "ai_model_rank_snapshot"]);
+      assert.deepEqual(status.sourceTables, ["ai_usage", "ai_model", "ai_model_rank_snapshot"]);
       assert.equal(status.latestJob?.id, "job-failed");
       assert.equal(status.latestJob?.status, "failed");
       assert.equal(status.latestJob?.failureReason, "usage aggregate failed");
@@ -1202,7 +1202,7 @@ test("admin model ranking refresh status rejects fractional counters", async () 
           cacheMaxAgeSeconds: "60",
           generatedCount: "2.5",
           sourceCount: "10",
-          sourceTables: ["ai_usage_fact", "ai_model_rank_snapshot"],
+          sourceTables: ["ai_usage", "ai_model_rank_snapshot"],
           latestJob: null,
         };
       }
@@ -1333,7 +1333,7 @@ test("admin model ranking refresh diagnostics surface latest failed execution ev
       cacheMaxAgeSeconds: 60,
       generatedCount: 2,
       sourceCount: 10,
-      sourceTables: ["ai_usage_fact", "ai_model", "ai_model_rank_snapshot"],
+      sourceTables: ["ai_usage", "ai_model", "ai_model_rank_snapshot"],
       latestJob: {
         id: "job-failed",
         jobName: "model_ranking_refresh",
@@ -1384,7 +1384,7 @@ test("admin model ranking refresh diagnostics remain useful without job history"
       cacheMaxAgeSeconds: 60,
       generatedCount: 0,
       sourceCount: 0,
-      sourceTables: ["ai_usage_fact"],
+      sourceTables: ["ai_usage"],
       latestJob: null,
     },
   );

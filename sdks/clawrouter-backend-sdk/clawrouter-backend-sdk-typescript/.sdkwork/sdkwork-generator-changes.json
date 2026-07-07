@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "@sdkwork/clawrouter-backend-sdk"
   },
-  "changeFingerprint": "9f9d79a73eb71361b033e27dd65a3acc4a392113e63f197b66f37576d97a7f14",
+  "changeFingerprint": "af91ba62f2b712f44f3a65db7689351c290aa4b782d745dabeffb9283b1d7a1f",
   "changes": {
     "createdGeneratedFiles": [
       "bin/publish-core.mjs",

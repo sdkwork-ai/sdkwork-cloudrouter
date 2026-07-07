@@ -1,6 +1,6 @@
 use sqlx::{Row, SqlitePool};
 
-use crate::error::{store_error, RepositoryError, RepositoryResult};
+use crate::error::{RepositoryError, RepositoryResult, store_error};
 use crate::modality;
 use crate::types::{
     AdminDashboardQuery, AdminDashboardReadFuture, AdminDashboardReadStore,
@@ -17,7 +17,7 @@ const LOAD_USER_CONSUMPTION: &str = r#"
 SELECT
     COALESCE(NULLIF(owner_name_snapshot, ''), NULLIF(CAST(user_id AS TEXT), ''), '-') AS name,
     CAST(COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS TEXT) AS value
-FROM ai_usage_fact
+FROM ai_usage
 WHERE status = 1
   AND tenant_id = ?1
   AND organization_id = ?2
@@ -31,7 +31,7 @@ const LOAD_MULTIMODAL: &str = r#"
 SELECT
     modality,
     CAST(COALESCE(SUM(COALESCE(request_count, 1)), 0) AS TEXT) AS value
-FROM ai_usage_fact
+FROM ai_usage
 WHERE status = 1
   AND tenant_id = ?1
   AND organization_id = ?2
@@ -47,7 +47,7 @@ SELECT
     CAST(COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS TEXT) AS tokens,
     CAST(COALESCE(SUM(COALESCE(request_count, 1)), 0) AS TEXT) AS requests,
     CAST(COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS TEXT) AS cost
-FROM ai_usage_fact
+FROM ai_usage
 WHERE status = 1
   AND tenant_id = ?1
   AND organization_id = ?2
@@ -61,7 +61,7 @@ const LOAD_MODEL_DISTRIBUTION: &str = r#"
 SELECT
     COALESCE(NULLIF(model, ''), '-') AS name,
     CAST(COALESCE(SUM(COALESCE(request_count, 1)), 0) AS TEXT) AS value
-FROM ai_usage_fact
+FROM ai_usage
 WHERE status = 1
   AND tenant_id = ?1
   AND organization_id = ?2
@@ -102,7 +102,7 @@ usage_by_request AS (
         CAST(COALESCE(SUM(COALESCE(completion_tokens, 0)), 0) AS TEXT) AS completion_tokens,
         CAST(COALESCE(SUM(COALESCE(request_count, 1)), 0) AS TEXT) AS request_count,
         CAST(COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS TEXT) AS cost_amount
-    FROM ai_usage_fact
+    FROM ai_usage
     WHERE status = 1
       AND tenant_id = ?1
       AND organization_id = ?2

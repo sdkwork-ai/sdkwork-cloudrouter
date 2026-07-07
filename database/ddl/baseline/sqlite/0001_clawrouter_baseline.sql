@@ -1015,7 +1015,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_site_service_site_status ON ai_site_service (t
 CREATE INDEX IF NOT EXISTS idx_ai_site_service_type_status ON ai_site_service (tenant_id, organization_id, service_type, status, id);
 CREATE INDEX IF NOT EXISTS idx_ai_site_service_health_status ON ai_site_service (tenant_id, organization_id, status, health_status, id);
 
-CREATE TABLE IF NOT EXISTS ai_usage_fact (
+CREATE TABLE IF NOT EXISTS ai_usage (
     id BIGINT NOT NULL PRIMARY KEY,
     uuid VARCHAR(64) NOT NULL,
     tenant_id BIGINT NOT NULL DEFAULT 0,
@@ -1090,13 +1090,13 @@ CREATE TABLE IF NOT EXISTS ai_usage_fact (
     settlement_id BIGINT
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_usage_fact_request ON ai_usage_fact (tenant_id, organization_id, request_id, usage_type);
-CREATE INDEX IF NOT EXISTS idx_ai_usage_fact_tenant_owner_occurred ON ai_usage_fact (tenant_id, organization_id, owner_type, owner_id, occurred_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_usage_fact_api_key_occurred ON ai_usage_fact (tenant_id, organization_id, api_key_id, occurred_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_usage_fact_model_occurred ON ai_usage_fact (tenant_id, organization_id, catalog_key, occurred_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_usage_fact_pricing_plan_occurred ON ai_usage_fact (tenant_id, organization_id, pricing_plan_id, occurred_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_usage_fact_meter_occurred ON ai_usage_fact (tenant_id, organization_id, billing_meter_code, occurred_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_usage_fact_settlement_status ON ai_usage_fact (tenant_id, organization_id, settlement_status, occurred_at, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_usage_request ON ai_usage (tenant_id, organization_id, request_id, usage_type);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_tenant_owner_occurred ON ai_usage (tenant_id, organization_id, owner_type, owner_id, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_api_key_occurred ON ai_usage (tenant_id, organization_id, api_key_id, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_model_occurred ON ai_usage (tenant_id, organization_id, catalog_key, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_pricing_plan_occurred ON ai_usage (tenant_id, organization_id, pricing_plan_id, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_meter_occurred ON ai_usage (tenant_id, organization_id, billing_meter_code, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_settlement_status ON ai_usage (tenant_id, organization_id, settlement_status, occurred_at, id);
 
 CREATE TABLE IF NOT EXISTS ai_usage_service_provider_edge (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -2392,7 +2392,7 @@ CREATE INDEX IF NOT EXISTS idx_system_schema_migration_status_started ON system_
 -- In migrations-only mode, this migration installs the complete schema.
 --
 -- Note: SQLite does not support native range partitioning. The high-traffic
--- tables (ai_request_trace, ai_routing_decision_log, ai_usage_fact) are
+-- tables (ai_request_trace, ai_routing_decision_log, ai_usage) are
 -- created as regular tables in SQLite mode. Partitioning and retention are
 -- enforced at the application layer for desktop/development deployments.
 -- Production deployments MUST use PostgreSQL where range partitioning is
@@ -3410,7 +3410,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_site_service_site_status ON ai_site_service (t
 CREATE INDEX IF NOT EXISTS idx_ai_site_service_type_status ON ai_site_service (tenant_id, organization_id, service_type, status, id);
 CREATE INDEX IF NOT EXISTS idx_ai_site_service_health_status ON ai_site_service (tenant_id, organization_id, status, health_status, id);
 
-CREATE TABLE IF NOT EXISTS ai_usage_fact (
+CREATE TABLE IF NOT EXISTS ai_usage (
     id BIGINT NOT NULL PRIMARY KEY,
     uuid VARCHAR(64) NOT NULL,
     tenant_id BIGINT NOT NULL DEFAULT 0,
@@ -3485,13 +3485,13 @@ CREATE TABLE IF NOT EXISTS ai_usage_fact (
     settlement_id BIGINT
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_usage_fact_request ON ai_usage_fact (tenant_id, organization_id, request_id, usage_type);
-CREATE INDEX IF NOT EXISTS idx_ai_usage_fact_tenant_owner_occurred ON ai_usage_fact (tenant_id, organization_id, owner_type, owner_id, occurred_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_usage_fact_api_key_occurred ON ai_usage_fact (tenant_id, organization_id, api_key_id, occurred_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_usage_fact_model_occurred ON ai_usage_fact (tenant_id, organization_id, catalog_key, occurred_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_usage_fact_pricing_plan_occurred ON ai_usage_fact (tenant_id, organization_id, pricing_plan_id, occurred_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_usage_fact_meter_occurred ON ai_usage_fact (tenant_id, organization_id, billing_meter_code, occurred_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_usage_fact_settlement_status ON ai_usage_fact (tenant_id, organization_id, settlement_status, occurred_at, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_usage_request ON ai_usage (tenant_id, organization_id, request_id, usage_type);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_tenant_owner_occurred ON ai_usage (tenant_id, organization_id, owner_type, owner_id, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_api_key_occurred ON ai_usage (tenant_id, organization_id, api_key_id, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_model_occurred ON ai_usage (tenant_id, organization_id, catalog_key, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_pricing_plan_occurred ON ai_usage (tenant_id, organization_id, pricing_plan_id, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_meter_occurred ON ai_usage (tenant_id, organization_id, billing_meter_code, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_settlement_status ON ai_usage (tenant_id, organization_id, settlement_status, occurred_at, id);
 
 CREATE TABLE IF NOT EXISTS ai_usage_service_provider_edge (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -4766,14 +4766,7 @@ CREATE INDEX IF NOT EXISTS idx_system_schema_migration_status_started ON system_
 
 -- Retired: messaging SoR is owned by sdkwork-appbase-messaging and consumed via messaging SDK only.
 
--- folded migration: migrations/sqlite/0002_rename_ai_usage_fact_to_ai_usage.up.sql
--- Migration: 0002_rename_ai_usage_fact_to_ai_usage
--- Description: Align runtime SQL with canonical ai_usage table name.
-
--- SQLite has no to_regclass; rename only when the legacy table still exists.
--- The migration runner applies each file once, so a plain rename is sufficient.
-
-ALTER TABLE ai_usage_fact RENAME TO ai_usage;
+-- Retired: ai_usage is canonical in this baseline; no legacy rename step is needed.
 
 -- Notification projection tables (merged from 0005_clawrouter_runtime_schema_repairs.sql)
 

@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "5306f06da5ab904ba7d9f47648d292b34bf3f949c5c9eb0462118762dc64fa25",
+  "changeFingerprint": "af91ba62f2b712f44f3a65db7689351c290aa4b782d745dabeffb9283b1d7a1f",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -44,12 +44,20 @@
         "area": "models",
         "paths": [
           "src/types/admin-analytics-overview.ts",
+          "src/types/ai-resource-group-resources-page.ts",
+          "src/types/ai-resources-page.ts",
           "src/types/cache-namespace-key-page.ts",
           "src/types/cache-operation-outcome.ts",
           "src/types/cache-overview.ts",
           "src/types/common.ts",
           "src/types/field-error.ts",
           "src/types/index.ts",
+          "src/types/json-null.ts",
+          "src/types/json-object.ts",
+          "src/types/json-value.ts",
+          "src/types/model-catalog-page.ts",
+          "src/types/model-ranking-refresh-job-history-page.ts",
+          "src/types/model-rankings-page.ts",
           "src/types/page-info.ts",
           "src/types/problem-detail.ts",
           "src/types/sdk-work-api-response.ts",
@@ -221,12 +229,16 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 154,
-    "models": 127,
+    "totalFiles": 162,
+    "models": 135,
     "apis": 4,
-    "types": 129
+    "types": 137
   },
   "warnings": [
+    {
+      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/json-object.ts"
+    },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/index.ts"
@@ -271,12 +283,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 36,
+    "writtenFiles": 44,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "5306f06da5ab904ba7d9f47648d292b34bf3f949c5c9eb0462118762dc64fa25",
+    "changeFingerprint": "af91ba62f2b712f44f3a65db7689351c290aa4b782d745dabeffb9283b1d7a1f",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -302,12 +314,20 @@
         "src/index.ts",
         "src/sdk.ts",
         "src/types/admin-analytics-overview.ts",
+        "src/types/ai-resource-group-resources-page.ts",
+        "src/types/ai-resources-page.ts",
         "src/types/cache-namespace-key-page.ts",
         "src/types/cache-operation-outcome.ts",
         "src/types/cache-overview.ts",
         "src/types/common.ts",
         "src/types/field-error.ts",
         "src/types/index.ts",
+        "src/types/json-null.ts",
+        "src/types/json-object.ts",
+        "src/types/json-value.ts",
+        "src/types/model-catalog-page.ts",
+        "src/types/model-ranking-refresh-job-history-page.ts",
+        "src/types/model-rankings-page.ts",
         "src/types/page-info.ts",
         "src/types/problem-detail.ts",
         "src/types/sdk-work-api-response.ts",
@@ -355,12 +375,20 @@
           "area": "models",
           "paths": [
             "src/types/admin-analytics-overview.ts",
+            "src/types/ai-resource-group-resources-page.ts",
+            "src/types/ai-resources-page.ts",
             "src/types/cache-namespace-key-page.ts",
             "src/types/cache-operation-outcome.ts",
             "src/types/cache-overview.ts",
             "src/types/common.ts",
             "src/types/field-error.ts",
             "src/types/index.ts",
+            "src/types/json-null.ts",
+            "src/types/json-object.ts",
+            "src/types/json-value.ts",
+            "src/types/model-catalog-page.ts",
+            "src/types/model-ranking-refresh-job-history-page.ts",
+            "src/types/model-rankings-page.ts",
             "src/types/page-info.ts",
             "src/types/problem-detail.ts",
             "src/types/sdk-work-api-response.ts",

@@ -1,188 +1,188 @@
-> Migrated from `docs/05-数据库设�?md` on 2026-06-24.
+> Migrated from `docs/05-鏁版嵁搴撹锟?md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
-## 1. 设计依据
+## 1. 璁捐渚濇嵁
 
-数据库设计以本项目根目录�?[../DATABASE_SPEC.md](../DATABASE_SPEC.md) 为强约束。该规范要求�?
-- 新表先写数据契约，再生成或校�?DDL、ORM、DTO、SDK�?- 新业务表第一段必须是受控业务模块前缀，不能使用产品名、项目名或技术栈名�?- 多租户、账户、权限、消息、Webhook、跨服务写入表至�?L2�?- 资金、凭证、隐私、法务留存、关键审计表�?L3 设计�?- `id` 为内�?int64，API 序列化为 string�?- 金额使用 decimal，API 序列化为 string�?- 新表高频租户索引必须�?`tenant_id` 开始�?
-前端页面级覆盖和可校验表契约�?[13-页面级数据结构覆盖与SchemaRegistry落地设计.md](./13-页面级数据结构覆盖与SchemaRegistry落地设计.md)、[14-数据结构细节复核与补强记�?md](./14-数据结构细节复核与补强记�?md) �?[schema-registry/sdkwork-clawrouter.tables.yaml](./schema-registry/sdkwork-clawrouter.tables.yaml) 为准。本文定义总体数据库策略，Registry 定义后续 DDL、Entity、DTO、OpenAPI、SDK 的上游契约�?
-## 2. 表结构总体策略
+鏁版嵁搴撹璁′互鏈」鐩牴鐩綍锟?[../DATABASE_SPEC.md](../DATABASE_SPEC.md) 涓哄己绾︽潫銆傝瑙勮寖瑕佹眰锟?
+- 鏂拌〃鍏堝啓鏁版嵁濂戠害锛屽啀鐢熸垚鎴栨牎锟?DDL銆丱RM銆丏TO銆丼DK锟?- 鏂颁笟鍔¤〃绗竴娈靛繀椤绘槸鍙楁帶涓氬姟妯″潡鍓嶇紑锛屼笉鑳戒娇鐢ㄤ骇鍝佸悕銆侀」鐩悕鎴栨妧鏈爤鍚嶏拷?- 澶氱鎴枫€佽处鎴枫€佹潈闄愩€佹秷鎭€乄ebhook銆佽法鏈嶅姟鍐欏叆琛ㄨ嚦锟?L2锟?- 璧勯噾銆佸嚟璇併€侀殣绉併€佹硶鍔＄暀瀛樸€佸叧閿璁¤〃锟?L3 璁捐锟?- `id` 涓哄唴锟?int64锛孉PI 搴忓垪鍖栦负 string锟?- 閲戦浣跨敤 decimal锛孉PI 搴忓垪鍖栦负 string锟?- 鏂拌〃楂橀绉熸埛绱㈠紩蹇呴』锟?`tenant_id` 寮€濮嬶拷?
+鍓嶇椤甸潰绾ц鐩栧拰鍙牎楠岃〃濂戠害锟?[13-椤甸潰绾ф暟鎹粨鏋勮鐩栦笌SchemaRegistry钀藉湴璁捐.md](./13-椤甸潰绾ф暟鎹粨鏋勮鐩栦笌SchemaRegistry钀藉湴璁捐.md)銆乕14-鏁版嵁缁撴瀯缁嗚妭澶嶆牳涓庤ˉ寮鸿锟?md](./14-鏁版嵁缁撴瀯缁嗚妭澶嶆牳涓庤ˉ寮鸿锟?md) 锟?[schema-registry/sdkwork-clawrouter.tables.yaml](./schema-registry/sdkwork-clawrouter.tables.yaml) 涓哄噯銆傛湰鏂囧畾涔夋€讳綋鏁版嵁搴撶瓥鐣ワ紝Registry 瀹氫箟鍚庣画 DDL銆丒ntity銆丏TO銆丱penAPI銆丼DK 鐨勪笂娓稿绾︼拷?
+## 2. 琛ㄧ粨鏋勬€讳綋绛栫暐
 
-`sdkwork-clawrouter` 数据库分两类�?
-| 类型 | 表名 | 策略 |
+`sdkwork-clawrouter` 鏁版嵁搴撳垎涓ょ被锟?
+| 绫诲瀷 | 琛ㄥ悕 | 绛栫暐 |
 | --- | --- | --- |
-| 存量兼容�?| `legacy-java-plus-entity` 中的 `plus_*` �?| 保持物理表名、字段、索引、实体结构完全一致，不在 claw-router 中创建替代表 |
-| 新标准表 | claw-router 新增能力�?| �?`DATABASE_SPEC.md` 使用 `ai_`、`integration_`、`iam_`、`commerce_`、`studio_`、`content_`、`ops_` 前缀 |
+| 瀛橀噺鍏煎锟?| `legacy-java-plus-entity` 涓殑 `plus_*` 锟?| 淇濇寔鐗╃悊琛ㄥ悕銆佸瓧娈点€佺储寮曘€佸疄浣撶粨鏋勫畬鍏ㄤ竴鑷达紝涓嶅湪 claw-router 涓垱寤烘浛浠ｈ〃 |
+| 鏂版爣鍑嗚〃 | claw-router 鏂板鑳藉姏锟?| 锟?`DATABASE_SPEC.md` 浣跨敤 `ai_`銆乣integration_`銆乣iam_`銆乣commerce_`銆乣studio_`銆乣content_`銆乣ops_` 鍓嶇紑 |
 
-重要裁决�?
-- 用户、VIP、account、优惠券、积分充值、订单、支付、退款、发票等必须使用既有 `plus_*` 表�?- 数据库设计模型采�?Java Entity first：任何新表进入设计前，必须先�?`legacy-java-plus-entity` 检索是否已�?`Plus*` Entity；若存在，则登记既有 `plus_*` 表为 L0 legacy compatible，物理结构保持完全一致，不得新建同义替代表�?- 新增网关路由、Provider、usage fact、decision log、ops event、secret reference 等使用标准前缀表�?- 存量 `plus_*` 表在本系统中视为 L0 legacy compatible，但不得因为本轮设计自动改名�?- 如果未来要把 `plus_*` 迁移�?`iam_`、`commerce_` 等标准名，必须另起迁移项目，设计兼容视图、双写、回填、校验、回滚和前滚方案�?
-## 3. 必须保持一致的存量�?
-以下表来�?`legacy-java-plus-entity`，claw-router 只能引用或调用对�?service/repository，不得创建同义替代表�?
-### 3.1 用户与身份相�?
-| 领域 | 现有�?| 说明 |
+閲嶈瑁佸喅锟?
+- 鐢ㄦ埛銆乂IP銆乤ccount銆佷紭鎯犲埜銆佺Н鍒嗗厖鍊笺€佽鍗曘€佹敮浠樸€侀€€娆俱€佸彂绁ㄧ瓑蹇呴』浣跨敤鏃㈡湁 `plus_*` 琛拷?- 鏁版嵁搴撹璁℃ā鍨嬮噰锟?Java Entity first锛氫换浣曟柊琛ㄨ繘鍏ヨ璁″墠锛屽繀椤诲厛锟?`legacy-java-plus-entity` 妫€绱㈡槸鍚﹀凡锟?`Plus*` Entity锛涜嫢瀛樺湪锛屽垯鐧昏鏃㈡湁 `plus_*` 琛ㄤ负 L0 legacy compatible锛岀墿鐞嗙粨鏋勪繚鎸佸畬鍏ㄤ竴鑷达紝涓嶅緱鏂板缓鍚屼箟鏇夸唬琛拷?- 鏂板缃戝叧璺敱銆丳rovider銆乽sage fact銆乨ecision log銆乷ps event銆乻ecret reference 绛変娇鐢ㄦ爣鍑嗗墠缂€琛拷?- 瀛橀噺 `plus_*` 琛ㄥ湪鏈郴缁熶腑瑙嗕负 L0 legacy compatible锛屼絾涓嶅緱鍥犱负鏈疆璁捐鑷姩鏀瑰悕锟?- 濡傛灉鏈潵瑕佹妸 `plus_*` 杩佺Щ锟?`iam_`銆乣commerce_` 绛夋爣鍑嗗悕锛屽繀椤诲彟璧疯縼绉婚」鐩紝璁捐鍏煎瑙嗗浘銆佸弻鍐欍€佸洖濉€佹牎楠屻€佸洖婊氬拰鍓嶆粴鏂规锟?
+## 3. 蹇呴』淇濇寔涓€鑷寸殑瀛橀噺锟?
+浠ヤ笅琛ㄦ潵锟?`legacy-java-plus-entity`锛宑law-router 鍙兘寮曠敤鎴栬皟鐢ㄥ锟?service/repository锛屼笉寰楀垱寤哄悓涔夋浛浠ｈ〃锟?
+### 3.1 鐢ㄦ埛涓庤韩浠界浉锟?
+| 棰嗗煙 | 鐜版湁锟?| 璇存槑 |
 | --- | --- | --- |
-| 用户 | `plus_user` | 用户主表 |
-| 用户地址 | `plus_user_address` | 用户地址 |
-| OAuth | `plus_oauth_account` | 第三方账号绑定，物理表名�?`legacy-java-plus-entity` 保持一�?|
-| 租户 | `plus_tenant` | 租户 |
-| 组织 | `plus_organization`、`plus_organization_member`、`plus_department`、`plus_position` | 组织架构 |
-| RBAC | `plus_role`、`plus_permission`、`plus_role_permission`、`plus_user_role` | 角色权限 |
+| 鐢ㄦ埛 | `plus_user` | 鐢ㄦ埛涓昏〃 |
+| 鐢ㄦ埛鍦板潃 | `plus_user_address` | 鐢ㄦ埛鍦板潃 |
+| OAuth | `plus_oauth_account` | 绗笁鏂硅处鍙风粦瀹氾紝鐗╃悊琛ㄥ悕锟?`legacy-java-plus-entity` 淇濇寔涓€锟?|
+| 绉熸埛 | `plus_tenant` | 绉熸埛 |
+| 缁勭粐 | `plus_organization`銆乣plus_organization_member`銆乣plus_department`銆乣plus_position` | 缁勭粐鏋舵瀯 |
+| RBAC | `plus_role`銆乣plus_permission`銆乣plus_role_permission`銆乣plus_user_role` | 瑙掕壊鏉冮檺 |
 
-### 3.2 VIP、积分和充�?
-| 领域 | 现有�?| 说明 |
+### 3.2 VIP銆佺Н鍒嗗拰鍏咃拷?
+| 棰嗗煙 | 鐜版湁锟?| 璇存槑 |
 | --- | --- | --- |
-| VIP 用户 | `plus_vip_user` | 用户 VIP 状�?|
-| VIP 等级 | `plus_vip_level` | 等级定义 |
-| VIP 权益 | `plus_vip_benefit`、`plus_vip_level_benefit`、`plus_vip_benefit_usage` | 权益和使用记�?|
-| VIP 充�?| `plus_vip_recharge`、`plus_vip_recharge_pack`、`plus_vip_recharge_method` | 充值记录、充值包、充值方�?|
-| VIP 套餐 | `plus_vip_pack`、`plus_vip_pack_group` | 套餐分组 |
-| 积分变动 | `plus_vip_point_change` | 积分流水 |
-| 会员�?| `plus_member_card`、`plus_member_level`、`plus_card`、`plus_card_template`、`plus_user_card` | 会员卡和卡券 |
+| VIP 鐢ㄦ埛 | `plus_vip_user` | 鐢ㄦ埛 VIP 鐘讹拷?|
+| VIP 绛夌骇 | `plus_vip_level` | 绛夌骇瀹氫箟 |
+| VIP 鏉冪泭 | `plus_vip_benefit`銆乣plus_vip_level_benefit`銆乣plus_vip_benefit_usage` | 鏉冪泭鍜屼娇鐢ㄨ锟?|
+| VIP 鍏咃拷?| `plus_vip_recharge`銆乣plus_vip_recharge_pack`銆乣plus_vip_recharge_method` | 鍏呭€艰褰曘€佸厖鍊煎寘銆佸厖鍊兼柟锟?|
+| VIP 濂楅 | `plus_vip_pack`銆乣plus_vip_pack_group` | 濂楅鍒嗙粍 |
+| 绉垎鍙樺姩 | `plus_vip_point_change` | 绉垎娴佹按 |
+| 浼氬憳锟?| `plus_member_card`銆乣plus_member_level`銆乣plus_card`銆乣plus_card_template`銆乣plus_user_card` | 浼氬憳鍗″拰鍗″埜 |
 
-### 3.3 账户、交易和支付
+### 3.3 璐︽埛銆佷氦鏄撳拰鏀粯
 
-| 领域 | 现有�?| 说明 |
+| 棰嗗煙 | 鐜版湁锟?| 璇存槑 |
 | --- | --- | --- |
-| 账户 | `plus_account` | 用户/主体账户 |
-| 账户流水 | `plus_account_history` | 余额变更流水 |
-| 账本桥接 | `plus_ledger_bridge` | 账本关联 |
-| 汇率/币种 | `plus_currency`、`plus_exchange_rate`、`plus_account_exchange_config` | 币种与兑换配�?|
-| 商品 | `plus_product`、`plus_sku` | 商品�?SKU |
-| 订单 | `plus_order`、`plus_order_item` | 订单主表和明�?|
-| 支付 | `plus_payment`、`plus_payment_webhook_event` | 支付与回调事�?|
-| 退�?| `plus_refund` | 退�?|
-| 购物�?| `plus_shopping_cart`、`plus_shopping_cart_item` | 购物�?|
-| 发票 | `plus_invoice`、`plus_invoice_item`、`plus_invoice_record` | 发票 |
+| 璐︽埛 | `plus_account` | 鐢ㄦ埛/涓讳綋璐︽埛 |
+| 璐︽埛娴佹按 | `plus_account_history` | 浣欓鍙樻洿娴佹按 |
+| 璐︽湰妗ユ帴 | `plus_ledger_bridge` | 璐︽湰鍏宠仈 |
+| 姹囩巼/甯佺 | `plus_currency`銆乣plus_exchange_rate`銆乣plus_account_exchange_config` | 甯佺涓庡厬鎹㈤厤锟?|
+| 鍟嗗搧 | `plus_product`銆乣plus_sku` | 鍟嗗搧锟?SKU |
+| 璁㈠崟 | `plus_order`銆乣plus_order_item` | 璁㈠崟涓昏〃鍜屾槑锟?|
+| 鏀粯 | `plus_payment`銆乣plus_payment_webhook_event` | 鏀粯涓庡洖璋冧簨锟?|
+| 閫€锟?| `plus_refund` | 閫€锟?|
+| 璐墿锟?| `plus_shopping_cart`銆乣plus_shopping_cart_item` | 璐墿锟?|
+| 鍙戠エ | `plus_invoice`銆乣plus_invoice_item`銆乣plus_invoice_record` | 鍙戠エ |
 
-### 3.4 优惠券和营销
+### 3.4 浼樻儬鍒稿拰钀ラ攢
 
-| 领域 | 现有�?| 说明 |
+| 棰嗗煙 | 鐜版湁锟?| 璇存槑 |
 | --- | --- | --- |
-| 卡券营销 | `promotion_offer`、`promotion_offer_version`、`promotion_coupon_stock`、`promotion_code`、`promotion_user_coupon`、`promotion_discount_application` | 标准卡券、库存、兑换码、用户券和优惠核销事实 |
-| 邀�?| `plus_invitation_code`、`plus_invitation_relation` | 邀请码和邀请关�?|
-| 伙伴 | `plus_partner` | 分销或伙伴关�?|
+| 鍗″埜钀ラ攢 | `promotion_offer`銆乣promotion_offer_version`銆乣promotion_coupon_stock`銆乣promotion_code`銆乣promotion_user_coupon`銆乣promotion_discount_application` | 鏍囧噯鍗″埜銆佸簱瀛樸€佸厬鎹㈢爜銆佺敤鎴峰埜鍜屼紭鎯犳牳閿€浜嬪疄 |
+| 閭€锟?| `plus_invitation_code`銆乣plus_invitation_relation` | 閭€璇风爜鍜岄個璇峰叧锟?|
+| 浼欎即 | `plus_partner` | 鍒嗛攢鎴栦紮浼村叧锟?|
 
-## 4. 新表业务前缀注册
+## 4. 鏂拌〃涓氬姟鍓嶇紑娉ㄥ唽
 
-| 前缀 | bounded context | owner | 示例 |
+| 鍓嶇紑 | bounded context | owner | 绀轰緥 |
 | --- | --- | --- | --- |
-| `iam_` | identity-access | 身份与访问团�?| `iam_gateway_api_key`、`ai_channel_group` |
-| `ai_` | ai-routing-metering | AI 网关团队 | `ai_routing_policy`、`ai_usage_fact` |
-| `integration_` | provider-integration | Provider 集成团队 | `integration_provider_account` |
-| `commerce_` | router-commerce-projection | 交易账户团队 | `commerce_usage_settlement` |
-| `studio_` | portal-studio-assets | 产品生态团�?| `studio_catalog_action` |
-| `content_` | portal-content | 内容运营团队 | `content_announcement` |
-| `ops_` | operations-observability | 平台运维团队 | `ops_gateway_instance`、`ops_audit_log` |
+| `iam_` | identity-access | 韬唤涓庤闂洟锟?| `iam_gateway_api_key`銆乣ai_channel_group` |
+| `ai_` | ai-routing-metering | AI 缃戝叧鍥㈤槦 | `ai_routing_policy`銆乣ai_usage` |
+| `integration_` | provider-integration | Provider 闆嗘垚鍥㈤槦 | `integration_provider_account` |
+| `commerce_` | router-commerce-projection | 浜ゆ槗璐︽埛鍥㈤槦 | `commerce_usage_settlement` |
+| `studio_` | portal-studio-assets | 浜у搧鐢熸€佸洟锟?| `studio_catalog_action` |
+| `content_` | portal-content | 鍐呭杩愯惀鍥㈤槦 | `content_announcement` |
+| `ops_` | operations-observability | 骞冲彴杩愮淮鍥㈤槦 | `ops_gateway_instance`銆乣ops_audit_log` |
 
-### 4.1 统一数据领域名称
+### 4.1 缁熶竴鏁版嵁棰嗗煙鍚嶇О
 
-`ModelVendor` 是模型厂�?模型原厂的统一领域名称，表示模型的原始研发、发布或维护方，例如 OpenAI、Anthropic、Google、DeepSeek、Alibaba Qwen、Moonshot。数据库持久化使用稳定字符串编码 `vendor_code`，Java、Rust、TypeScript �?OpenAPI 均从 Schema Registry 生成枚举或等价类型，严禁保存 enum ordinal�?
-`ModelVendor` 不等同于 `Provider`。`ai_model_vendor` 保存模型厂家主数据；`ai_model_family` 保存厂家下的模型族；`ai_model` 保存可被 `/v1/*` 暴露和路由的标准模型；`integration_provider` 保存 API 接入供应商或协议适配方，例如 OpenAI API、Azure OpenAI、OpenRouter、Ollama、本地模型网关；`ai_channel` 保存某个租户/组织可用的具体接入通道；`ai_channel_resource` 保存通道支持的资源、资源分组和能力范围；模型名转换�?`ai_model_mapping_rule`、`ai_model_mapping_rule_binding` �?`ai_model_mapping_rule_item` 分层描述。OpenRouter、Azure、AWS、GCP、HuggingFace 这类聚合或云接入方通常属于 `integration_provider`，只有在它们本身发布模型时才作为 `ModelVendor`�?
-价格体系统一使用 `PriceSide`、`BillingMeter`、`PricingPlan`、`BillingMode` �?`PricingFormulaMode` 五个领域名。`ai_channel_group` 是创�?API Key 时选择的业务分组事实来源；`ai_pricing_plan` 是挂载在业务分组、API Key、VIP、SKU、租户或用户上的定价方案，不再把“分组”建模为价格专用概念。`ai_billing_meter` 是统一计量表，覆盖 LLM token、embedding token、图片张�?像素、语音秒�?字符、视频秒数、音乐秒数、音效结果、API 请求、API 结果、API 条目、工具调用、存储和流量；每条用量最终都必须归一�?`ai_usage_fact.billing_meter_code + billable_quantity + billable_unit`。`ai_model_pricing.price_side=official_reference` 保存模型原厂或可信价格源的官方参考价；`price_side=upstream_cost` 保存不同 Provider/Channel 的供应商成本价；`price_side=customer_charge` 保存面向用户的销售价。`ai_pricing_plan` 默认可以设置 `base_price_side=official_reference + default_multiplier`，从官方价派生用户销售价；`ai_pricing_rule` 用于按模型、厂家、供应商、渠道、能力、计量表和价格项覆盖；`ai_pricing_tier` 承载 sub2api 式上下文区间、按次、图片、音频、视频、结果数和条目数分层；`pricing_formula_mode=expression` 承载 new-api `tiered_expr` 类公式，但表达式必须�?hash 和版本，并在 `ai_usage_fact.pricing_snapshot` 固化�?
-## 5. 新表清单
+`ModelVendor` 鏄ā鍨嬪巶锟?妯″瀷鍘熷巶鐨勭粺涓€棰嗗煙鍚嶇О锛岃〃绀烘ā鍨嬬殑鍘熷鐮斿彂銆佸彂甯冩垨缁存姢鏂癸紝渚嬪 OpenAI銆丄nthropic銆丟oogle銆丏eepSeek銆丄libaba Qwen銆丮oonshot銆傛暟鎹簱鎸佷箙鍖栦娇鐢ㄧǔ瀹氬瓧绗︿覆缂栫爜 `vendor_code`锛孞ava銆丷ust銆乀ypeScript 锟?OpenAPI 鍧囦粠 Schema Registry 鐢熸垚鏋氫妇鎴栫瓑浠风被鍨嬶紝涓ョ淇濆瓨 enum ordinal锟?
+`ModelVendor` 涓嶇瓑鍚屼簬 `Provider`銆俙ai_model_vendor` 淇濆瓨妯″瀷鍘傚涓绘暟鎹紱`ai_model_family` 淇濆瓨鍘傚涓嬬殑妯″瀷鏃忥紱`ai_model` 淇濆瓨鍙 `/v1/*` 鏆撮湶鍜岃矾鐢辩殑鏍囧噯妯″瀷锛沗integration_provider` 淇濆瓨 API 鎺ュ叆渚涘簲鍟嗘垨鍗忚閫傞厤鏂癸紝渚嬪 OpenAI API銆丄zure OpenAI銆丱penRouter銆丱llama銆佹湰鍦版ā鍨嬬綉鍏筹紱`ai_channel` 淇濆瓨鏌愪釜绉熸埛/缁勭粐鍙敤鐨勫叿浣撴帴鍏ラ€氶亾锛沗ai_channel_resource` 淇濆瓨閫氶亾鏀寔鐨勮祫婧愩€佽祫婧愬垎缁勫拰鑳藉姏鑼冨洿锛涙ā鍨嬪悕杞崲锟?`ai_model_mapping_rule`銆乣ai_model_mapping_rule_binding` 锟?`ai_model_mapping_rule_item` 鍒嗗眰鎻忚堪銆侽penRouter銆丄zure銆丄WS銆丟CP銆丠uggingFace 杩欑被鑱氬悎鎴栦簯鎺ュ叆鏂归€氬父灞炰簬 `integration_provider`锛屽彧鏈夊湪瀹冧滑鏈韩鍙戝竷妯″瀷鏃舵墠浣滀负 `ModelVendor`锟?
+浠锋牸浣撶郴缁熶竴浣跨敤 `PriceSide`銆乣BillingMeter`銆乣PricingPlan`銆乣BillingMode` 锟?`PricingFormulaMode` 浜斾釜棰嗗煙鍚嶃€俙ai_channel_group` 鏄垱锟?API Key 鏃堕€夋嫨鐨勪笟鍔″垎缁勪簨瀹炴潵婧愶紱`ai_pricing_plan` 鏄寕杞藉湪涓氬姟鍒嗙粍銆丄PI Key銆乂IP銆丼KU銆佺鎴锋垨鐢ㄦ埛涓婄殑瀹氫环鏂规锛屼笉鍐嶆妸鈥滃垎缁勨€濆缓妯′负浠锋牸涓撶敤姒傚康銆俙ai_billing_meter` 鏄粺涓€璁￠噺琛紝瑕嗙洊 LLM token銆乪mbedding token銆佸浘鐗囧紶锟?鍍忕礌銆佽闊崇锟?瀛楃銆佽棰戠鏁般€侀煶涔愮鏁般€侀煶鏁堢粨鏋溿€丄PI 璇锋眰銆丄PI 缁撴灉銆丄PI 鏉＄洰銆佸伐鍏疯皟鐢ㄣ€佸瓨鍌ㄥ拰娴侀噺锛涙瘡鏉＄敤閲忔渶缁堥兘蹇呴』褰掍竴锟?`ai_usage.billing_meter_code + billable_quantity + billable_unit`銆俙ai_model_pricing.price_side=official_reference` 淇濆瓨妯″瀷鍘熷巶鎴栧彲淇′环鏍兼簮鐨勫畼鏂瑰弬鑰冧环锛沗price_side=upstream_cost` 淇濆瓨涓嶅悓 Provider/Channel 鐨勪緵搴斿晢鎴愭湰浠凤紱`price_side=customer_charge` 淇濆瓨闈㈠悜鐢ㄦ埛鐨勯攢鍞环銆俙ai_pricing_plan` 榛樿鍙互璁剧疆 `base_price_side=official_reference + default_multiplier`锛屼粠瀹樻柟浠锋淳鐢熺敤鎴烽攢鍞环锛沗ai_pricing_rule` 鐢ㄤ簬鎸夋ā鍨嬨€佸巶瀹躲€佷緵搴斿晢銆佹笭閬撱€佽兘鍔涖€佽閲忚〃鍜屼环鏍奸」瑕嗙洊锛沗ai_pricing_tier` 鎵胯浇 sub2api 寮忎笂涓嬫枃鍖洪棿銆佹寜娆°€佸浘鐗囥€侀煶棰戙€佽棰戙€佺粨鏋滄暟鍜屾潯鐩暟鍒嗗眰锛沗pricing_formula_mode=expression` 鎵胯浇 new-api `tiered_expr` 绫诲叕寮忥紝浣嗚〃杈惧紡蹇呴』锟?hash 鍜岀増鏈紝骞跺湪 `ai_usage.pricing_snapshot` 鍥哄寲锟?
+## 5. 鏂拌〃娓呭崟
 
-### 5.1 IAM �?
-| �?| 画像 | 等级 | 说明 |
+### 5.1 IAM 锟?
+| 锟?| 鐢诲儚 | 绛夌骇 | 璇存槑 |
 | --- | --- | --- | --- |
-| `iam_gateway_api_key` | user_entity + credential_index | L3 | Gateway API Key 摘要、状态、范围、过期、限流引�?|
-| `ai_channel_group` | tenant_entity | L2 | API Key 分组、项目、策略绑�?|
-| `ai_channel_group_metric_snapshot` | projection | L2 | 分组账号容量、可用账号数、今�?累计用量和健康状态投�?|
-| `iam_gateway_access_policy` | tenant_entity | L3 | Key 级模型范围、能力范围、IP、区域、数据策略；�?int64 主体使用 hash/脱敏引用 |
-| `iam_gateway_risk_rule` | tenant_entity | L3 | IP/Token/Model/Firewall 风控规则，支�?hash、脱敏和密文引用 |
-| `iam_user_preference` | user_entity | L2 | 语言、时区、主题、通知偏好等用户配置扩展，不替�?`plus_user` |
-| `iam_user_security_setting` | user_entity | L3 | MFA、密码更新时间、安全策略扩展，不保存密码明文，不替�?`plus_user` |
-| `iam_user_login_event` | event_log | L3 | 用户登录、安全风险、设备和 MFA 验证事件 |
+| `iam_gateway_api_key` | user_entity + credential_index | L3 | Gateway API Key 鎽樿銆佺姸鎬併€佽寖鍥淬€佽繃鏈熴€侀檺娴佸紩锟?|
+| `ai_channel_group` | tenant_entity | L2 | API Key 鍒嗙粍銆侀」鐩€佺瓥鐣ョ粦锟?|
+| `ai_channel_group_metric_snapshot` | projection | L2 | 鍒嗙粍璐﹀彿瀹归噺銆佸彲鐢ㄨ处鍙锋暟銆佷粖锟?绱鐢ㄩ噺鍜屽仴搴风姸鎬佹姇锟?|
+| `iam_gateway_access_policy` | tenant_entity | L3 | Key 绾фā鍨嬭寖鍥淬€佽兘鍔涜寖鍥淬€両P銆佸尯鍩熴€佹暟鎹瓥鐣ワ紱锟?int64 涓讳綋浣跨敤 hash/鑴辨晱寮曠敤 |
+| `iam_gateway_risk_rule` | tenant_entity | L3 | IP/Token/Model/Firewall 椋庢帶瑙勫垯锛屾敮锟?hash銆佽劚鏁忓拰瀵嗘枃寮曠敤 |
+| `iam_user_preference` | user_entity | L2 | 璇█銆佹椂鍖恒€佷富棰樸€侀€氱煡鍋忓ソ绛夌敤鎴烽厤缃墿灞曪紝涓嶆浛锟?`plus_user` |
+| `iam_user_security_setting` | user_entity | L3 | MFA銆佸瘑鐮佹洿鏂版椂闂淬€佸畨鍏ㄧ瓥鐣ユ墿灞曪紝涓嶄繚瀛樺瘑鐮佹槑鏂囷紝涓嶆浛锟?`plus_user` |
+| `iam_user_login_event` | event_log | L3 | 鐢ㄦ埛鐧诲綍銆佸畨鍏ㄩ闄┿€佽澶囧拰 MFA 楠岃瘉浜嬩欢 |
 
-说明：如第一阶段决定复用现有 `plus_api_key`，则 `iam_gateway_api_key` 暂缓建表，文档中记录为目标标准表，P1 通过兼容映射接入�?
-### 5.2 AI �?
-| �?| 画像 | 等级 | 说明 |
+璇存槑锛氬绗竴闃舵鍐冲畾澶嶇敤鐜版湁 `plus_api_key`锛屽垯 `iam_gateway_api_key` 鏆傜紦寤鸿〃锛屾枃妗ｄ腑璁板綍涓虹洰鏍囨爣鍑嗚〃锛孭1 閫氳繃鍏煎鏄犲皠鎺ュ叆锟?
+### 5.2 AI 锟?
+| 锟?| 鐢诲儚 | 绛夌骇 | 璇存槑 |
 | --- | --- | --- | --- |
-| `ai_model_vendor` | dictionary_entity | L2 | 模型厂家字典，`ModelVendor` 领域事实来源，保存原厂展示、官网、文档、能力族和枚举编�?|
-| `ai_model_family` | dictionary_entity | L2 | 模型族字典，保存厂家�?GPT、Claude、Gemini、Qwen、Llama 等系列和默认模型 |
-| `ai_model` | dictionary_entity | L2 | 网关模型目录、模型别名、Provider independent model |
-| `ai_model_capability` | relation_entity | L2 | 模型能力族、上下文、输入输出模�?|
-| `ai_billing_meter` | dictionary_entity | L2 | 统一计量表，定义 token、请求、结果、个数、秒数、字符、存储、流量等可计费维�?|
-| `ai_model_pricing` | tenant_entity | L3 | 模型价格簿，区分官方参考价、供应商上游成本价、客户销售价，保存计费单位、币种、范围和有效�?|
-| `ai_pricing_plan` | tenant_entity | L3 | 定价方案，支持按官方参考价倍率、固定价、阶梯价和表达式派生销售价 |
-| `ai_pricing_plan_binding` | relation_entity | L3 | 定价方案绑定，支�?API Key 分组、API Key、VIP、SKU、用户、租户等主体挂载价格策略 |
-| `ai_pricing_rule` | tenant_entity | L3 | 价格规则，按模型、厂家、供应商、渠道、能力和价格项覆盖默认分组倍率 |
-| `ai_pricing_tier` | tenant_entity | L3 | 阶梯/区间价格，支�?token 上下文区间、按次、图片、音频、视频等分层 |
-| `ai_pricing_import_snapshot` | event_log | L3 | 官方/供应商价格导入快照，记录来源 URL、hash、版本和验收结果 |
-| `ai_routing_policy` | tenant_entity | L2 | 策略主表：优先级、权重、SLO、区域、fallback |
-| `ai_routing_profile` | tenant_entity | L2 | 策略版本、灰度、发布状�?|
-| `ai_routing_rule` | tenant_entity | L2 | 具体规则、条件、候选集、约�?|
-| `ai_routing_decision_log` | event_log | L3 | 请求路由决策证据，可回放 |
-| `ai_request_trace` | event_log | L3 | 请求跟踪、错误、Provider attempt |
-| `ai_usage_fact` | ledger_source_fact | L3 | 用量事实，账务结转来�?|
-| `ai_model_rank_snapshot` | projection | L2 | 模型排行榜、趋势、周�?月榜快照 |
-| `ai_generation_session` | user_entity | L2 | Playground 会话和工作台上下�?|
-| `ai_generation_job` | event_log/user_entity | L3 | 图片、视频、音乐、语音、音效、Agent 生成任务 |
-| `ai_generation_asset` | user_entity | L3 | 生成资产、媒�?URL、缩略图、参数快照；签名 URL 不持久化 |
-| `ai_generation_asset_action` | event_log | L3 | 收藏、下载、分享、高清、重绘、扩图、擦除、对口型等资产操作审�?|
-| `ai_quota_policy` | tenant_entity | L3 | 配额和限流策略，支持 API Key、用户、分组、模型和 IP 主体 |
+| `ai_model_vendor` | dictionary_entity | L2 | 妯″瀷鍘傚瀛楀吀锛宍ModelVendor` 棰嗗煙浜嬪疄鏉ユ簮锛屼繚瀛樺師鍘傚睍绀恒€佸畼缃戙€佹枃妗ｃ€佽兘鍔涙棌鍜屾灇涓剧紪锟?|
+| `ai_model_family` | dictionary_entity | L2 | 妯″瀷鏃忓瓧鍏革紝淇濆瓨鍘傚锟?GPT銆丆laude銆丟emini銆丵wen銆丩lama 绛夌郴鍒楀拰榛樿妯″瀷 |
+| `ai_model` | dictionary_entity | L2 | 缃戝叧妯″瀷鐩綍銆佹ā鍨嬪埆鍚嶃€丳rovider independent model |
+| `ai_model_capability` | relation_entity | L2 | 妯″瀷鑳藉姏鏃忋€佷笂涓嬫枃銆佽緭鍏ヨ緭鍑烘ā锟?|
+| `ai_billing_meter` | dictionary_entity | L2 | 缁熶竴璁￠噺琛紝瀹氫箟 token銆佽姹傘€佺粨鏋溿€佷釜鏁般€佺鏁般€佸瓧绗︺€佸瓨鍌ㄣ€佹祦閲忕瓑鍙璐圭淮锟?|
+| `ai_model_pricing` | tenant_entity | L3 | 妯″瀷浠锋牸绨匡紝鍖哄垎瀹樻柟鍙傝€冧环銆佷緵搴斿晢涓婃父鎴愭湰浠枫€佸鎴烽攢鍞环锛屼繚瀛樿璐瑰崟浣嶃€佸竵绉嶃€佽寖鍥村拰鏈夋晥锟?|
+| `ai_pricing_plan` | tenant_entity | L3 | 瀹氫环鏂规锛屾敮鎸佹寜瀹樻柟鍙傝€冧环鍊嶇巼銆佸浐瀹氫环銆侀樁姊环鍜岃〃杈惧紡娲剧敓閿€鍞环 |
+| `ai_pricing_plan_binding` | relation_entity | L3 | 瀹氫环鏂规缁戝畾锛屾敮锟?API Key 鍒嗙粍銆丄PI Key銆乂IP銆丼KU銆佺敤鎴枫€佺鎴风瓑涓讳綋鎸傝浇浠锋牸绛栫暐 |
+| `ai_pricing_rule` | tenant_entity | L3 | 浠锋牸瑙勫垯锛屾寜妯″瀷銆佸巶瀹躲€佷緵搴斿晢銆佹笭閬撱€佽兘鍔涘拰浠锋牸椤硅鐩栭粯璁ゅ垎缁勫€嶇巼 |
+| `ai_pricing_tier` | tenant_entity | L3 | 闃舵/鍖洪棿浠锋牸锛屾敮锟?token 涓婁笅鏂囧尯闂淬€佹寜娆°€佸浘鐗囥€侀煶棰戙€佽棰戠瓑鍒嗗眰 |
+| `ai_pricing_import_snapshot` | event_log | L3 | 瀹樻柟/渚涘簲鍟嗕环鏍煎鍏ュ揩鐓э紝璁板綍鏉ユ簮 URL銆乭ash銆佺増鏈拰楠屾敹缁撴灉 |
+| `ai_routing_policy` | tenant_entity | L2 | 绛栫暐涓昏〃锛氫紭鍏堢骇銆佹潈閲嶃€丼LO銆佸尯鍩熴€乫allback |
+| `ai_routing_profile` | tenant_entity | L2 | 绛栫暐鐗堟湰銆佺伆搴︺€佸彂甯冪姸锟?|
+| `ai_routing_rule` | tenant_entity | L2 | 鍏蜂綋瑙勫垯銆佹潯浠躲€佸€欓€夐泦銆佺害锟?|
+| `ai_routing_decision_log` | event_log | L3 | 璇锋眰璺敱鍐崇瓥璇佹嵁锛屽彲鍥炴斁 |
+| `ai_request_trace` | event_log | L3 | 璇锋眰璺熻釜銆侀敊璇€丳rovider attempt |
+| `ai_usage` | ledger_source_fact | L3 | 鐢ㄩ噺浜嬪疄锛岃处鍔＄粨杞潵锟?|
+| `ai_model_rank_snapshot` | projection | L2 | 妯″瀷鎺掕姒溿€佽秼鍔裤€佸懆锟?鏈堟蹇収 |
+| `ai_generation_session` | user_entity | L2 | Playground 浼氳瘽鍜屽伐浣滃彴涓婁笅锟?|
+| `ai_generation_job` | event_log/user_entity | L3 | 鍥剧墖銆佽棰戙€侀煶涔愩€佽闊炽€侀煶鏁堛€丄gent 鐢熸垚浠诲姟 |
+| `ai_generation_asset` | user_entity | L3 | 鐢熸垚璧勪骇銆佸獟锟?URL銆佺缉鐣ュ浘銆佸弬鏁板揩鐓э紱绛惧悕 URL 涓嶆寔涔呭寲 |
+| `ai_generation_asset_action` | event_log | L3 | 鏀惰棌銆佷笅杞姐€佸垎浜€侀珮娓呫€侀噸缁樸€佹墿鍥俱€佹摝闄ゃ€佸鍙ｅ瀷绛夎祫浜ф搷浣滃锟?|
+| `ai_quota_policy` | tenant_entity | L3 | 閰嶉鍜岄檺娴佺瓥鐣ワ紝鏀寔 API Key銆佺敤鎴枫€佸垎缁勩€佹ā鍨嬪拰 IP 涓讳綋 |
 
-### 5.3 Integration �?
-| �?| 画像 | 等级 | 说明 |
+### 5.3 Integration 锟?
+| 锟?| 鐢诲儚 | 绛夌骇 | 璇存槑 |
 | --- | --- | --- | --- |
-| `integration_provider` | dictionary_entity | L2 | API 接入供应商注册、图标、文档链接、展示色和默认协议，�?OpenAI API、OpenRouter、Ollama；可�?`default_vendor_code` 关联默认模型厂家 |
-| `ai_channel` | tenant_entity | L2 | 渠道实例、协议、接入类型、模型模式、区域、权重、健康状�?|
-| `integration_provider_account` | tenant_entity + credential_ref | L3 | 上游账号、认证配置、secret reference、状态、轮换和余额快照 |
-| `ai_channel_resource` | relation_entity | L2 | 渠道支持的资源、资源分组和能力授权 |
-| `integration_proxy` | tenant_entity | L3 | 代理配置，不保存敏感明文 |
-| `integration_webhook_endpoint` | tenant_entity + webhook | L3 | 用户或组织的 Webhook 回调配置和签名引�?|
-| `integration_provider_health_snapshot` | event_log/projection | L2 | 健康快照和恢复探测证�?|
+| `integration_provider` | dictionary_entity | L2 | API 鎺ュ叆渚涘簲鍟嗘敞鍐屻€佸浘鏍囥€佹枃妗ｉ摼鎺ャ€佸睍绀鸿壊鍜岄粯璁ゅ崗璁紝锟?OpenAI API銆丱penRouter銆丱llama锛涘彲锟?`default_vendor_code` 鍏宠仈榛樿妯″瀷鍘傚 |
+| `ai_channel` | tenant_entity | L2 | 娓犻亾瀹炰緥銆佸崗璁€佹帴鍏ョ被鍨嬨€佹ā鍨嬫ā寮忋€佸尯鍩熴€佹潈閲嶃€佸仴搴风姸锟?|
+| `integration_provider_account` | tenant_entity + credential_ref | L3 | 涓婃父璐﹀彿銆佽璇侀厤缃€乻ecret reference銆佺姸鎬併€佽疆鎹㈠拰浣欓蹇収 |
+| `ai_channel_resource` | relation_entity | L2 | 娓犻亾鏀寔鐨勮祫婧愩€佽祫婧愬垎缁勫拰鑳藉姏鎺堟潈 |
+| `integration_proxy` | tenant_entity | L3 | 浠ｇ悊閰嶇疆锛屼笉淇濆瓨鏁忔劅鏄庢枃 |
+| `integration_webhook_endpoint` | tenant_entity + webhook | L3 | 鐢ㄦ埛鎴栫粍缁囩殑 Webhook 鍥炶皟閰嶇疆鍜岀鍚嶅紩锟?|
+| `integration_provider_health_snapshot` | event_log/projection | L2 | 鍋ュ悍蹇収鍜屾仮澶嶆帰娴嬭瘉锟?|
 
-### 5.4 Commerce 投影�?
-资金事实仍在 `plus_account`、`plus_account_history`、`plus_order`、`plus_payment` 等既有表。新表只用于 router 用量结算投影和对账证据�?
-| �?| 画像 | 等级 | 说明 |
+### 5.4 Commerce 鎶曞奖锟?
+璧勯噾浜嬪疄浠嶅湪 `plus_account`銆乣plus_account_history`銆乣plus_order`銆乣plus_payment` 绛夋棦鏈夎〃銆傛柊琛ㄥ彧鐢ㄤ簬 router 鐢ㄩ噺缁撶畻鎶曞奖鍜屽璐﹁瘉鎹拷?
+| 锟?| 鐢诲儚 | 绛夌骇 | 璇存槑 |
 | --- | --- | --- | --- |
-| `commerce_usage_settlement` | ledger_entry/projection | L3 | 用量结算批次、来�?usage fact、金额快�?|
-| `commerce_usage_pricing_plan` | dictionary_entity | L2 | AI 用量套餐和价格计划映射，可关联既�?product/sku |
-| `commerce_usage_statement` | projection | L3 | 账期账单投影，不替代 `plus_invoice` |
-| `commerce_usage_statement_item` | projection | L3 | 账单分项，按模型、能力、资产类型聚�?|
-| `commerce_billing_export` | audit/export | L3 | 账单导出任务、过期和审计 |
+| `commerce_usage_settlement` | ledger_entry/projection | L3 | 鐢ㄩ噺缁撶畻鎵规銆佹潵锟?usage fact銆侀噾棰濆揩锟?|
+| `commerce_usage_pricing_plan` | dictionary_entity | L2 | AI 鐢ㄩ噺濂楅鍜屼环鏍艰鍒掓槧灏勶紝鍙叧鑱旀棦锟?product/sku |
+| `commerce_usage_statement` | projection | L3 | 璐︽湡璐﹀崟鎶曞奖锛屼笉鏇夸唬 `plus_invoice` |
+| `commerce_usage_statement_item` | projection | L3 | 璐﹀崟鍒嗛」锛屾寜妯″瀷銆佽兘鍔涖€佽祫浜х被鍨嬭仛锟?|
+| `commerce_billing_export` | audit/export | L3 | 璐﹀崟瀵煎嚭浠诲姟銆佽繃鏈熷拰瀹¤ |
 
-### 5.5 Portal 内容和生态表
+### 5.5 Portal 鍐呭鍜岀敓鎬佽〃
 
-| �?| 前缀 | 等级 | 说明 |
+| 锟?| 鍓嶇紑 | 绛夌骇 | 璇存槑 |
 | --- | --- | --- | --- |
-| `appstore_app` | `plus_` | L0 | AppCenter 主数据；沿用 Java `platform_app`，物理结构保持一�?|
-| `appstore_app.release_notes` + `appstore_app.install_config` | `plus_` JSON | L0 | 应用版本、发布说明、安装包、平台下载地址；不单独�?App release �?|
-| `appstore_app.resource_list` | `plus_` JSON | L0 | 应用截图、封面、图标等媒体资源；不单独�?App media �?|
-| `plus_agent_skill` | `plus_` | L0 | SkillsHub 主数据；沿用 Java `PlusAgentSkill`，物理结构保持一�?|
-| `plus_agent_skill_package` | `plus_` | L0 | 技能包/集合、分类、聚合统计上下文；沿�?Java `PlusAgentSkillPackage` |
-| `plus_user_agent_skill` | `plus_` | L0 | 用户技能安装、启用、配置状态；沿用 Java `PlusUserAgentSkill` |
-| `plus_category` | `plus_` | L0 | 技能分类；沿用 Java `PlusCategory`，技能分类限�?`CategoryType.SKILLS`/`SKILLS_COLLECTION` |
-| `studio_catalog_action` | `studio_` | L2 | 应用/技能下载、安装、评分、评论、收藏等行为事实 |
-| `content_announcement` | `content_` | L2 | 公告 |
-| `content_doc_page` | `content_` | L2 | 产品文档、API 文档、SDK 文档页面索引 |
-| `content_openapi_snapshot` | `content_` | L2 | OpenAPI 版本、hash、分类树和示�?manifest |
-| `content_sdk_release` | `content_` | L2 | SDK 语言、包版本、安装命令和发布 artifact manifest |
-| `content_forum_post` | `content_` | L2 | 论坛帖子 |
-| `content_forum_comment` | `content_` | L2 | 评论 |
-| `content_reaction` | `content_` | L2 | 论坛、课程等内容互动事实 |
-| `content_course` | `content_` | L2 | 课程 |
-| `content_course_section` | `content_` | L2 | 课程章节分组 |
-| `content_course_lesson` | `content_` | L2 | 课程课时 |
-| `content_course_relation` | `content_` | L2 | 相关课程、合集、推荐关�?|
+| `appstore_app` | `plus_` | L0 | AppCenter 涓绘暟鎹紱娌跨敤 Java `platform_app`锛岀墿鐞嗙粨鏋勪繚鎸佷竴锟?|
+| `appstore_app.release_notes` + `appstore_app.install_config` | `plus_` JSON | L0 | 搴旂敤鐗堟湰銆佸彂甯冭鏄庛€佸畨瑁呭寘銆佸钩鍙颁笅杞藉湴鍧€锛涗笉鍗曠嫭锟?App release 锟?|
+| `appstore_app.resource_list` | `plus_` JSON | L0 | 搴旂敤鎴浘銆佸皝闈€佸浘鏍囩瓑濯掍綋璧勬簮锛涗笉鍗曠嫭锟?App media 锟?|
+| `plus_agent_skill` | `plus_` | L0 | SkillsHub 涓绘暟鎹紱娌跨敤 Java `PlusAgentSkill`锛岀墿鐞嗙粨鏋勪繚鎸佷竴锟?|
+| `plus_agent_skill_package` | `plus_` | L0 | 鎶€鑳藉寘/闆嗗悎銆佸垎绫汇€佽仛鍚堢粺璁′笂涓嬫枃锛涙部锟?Java `PlusAgentSkillPackage` |
+| `plus_user_agent_skill` | `plus_` | L0 | 鐢ㄦ埛鎶€鑳藉畨瑁呫€佸惎鐢ㄣ€侀厤缃姸鎬侊紱娌跨敤 Java `PlusUserAgentSkill` |
+| `plus_category` | `plus_` | L0 | 鎶€鑳藉垎绫伙紱娌跨敤 Java `PlusCategory`锛屾妧鑳藉垎绫婚檺锟?`CategoryType.SKILLS`/`SKILLS_COLLECTION` |
+| `studio_catalog_action` | `studio_` | L2 | 搴旂敤/鎶€鑳戒笅杞姐€佸畨瑁呫€佽瘎鍒嗐€佽瘎璁恒€佹敹钘忕瓑琛屼负浜嬪疄 |
+| `content_announcement` | `content_` | L2 | 鍏憡 |
+| `content_doc_page` | `content_` | L2 | 浜у搧鏂囨。銆丄PI 鏂囨。銆丼DK 鏂囨。椤甸潰绱㈠紩 |
+| `content_openapi_snapshot` | `content_` | L2 | OpenAPI 鐗堟湰銆乭ash銆佸垎绫绘爲鍜岀ず锟?manifest |
+| `content_sdk_release` | `content_` | L2 | SDK 璇█銆佸寘鐗堟湰銆佸畨瑁呭懡浠ゅ拰鍙戝竷 artifact manifest |
+| `content_forum_post` | `content_` | L2 | 璁哄潧甯栧瓙 |
+| `content_forum_comment` | `content_` | L2 | 璇勮 |
+| `content_reaction` | `content_` | L2 | 璁哄潧銆佽绋嬬瓑鍐呭浜掑姩浜嬪疄 |
+| `content_course` | `content_` | L2 | 璇剧▼ |
+| `content_course_section` | `content_` | L2 | 璇剧▼绔犺妭鍒嗙粍 |
+| `content_course_lesson` | `content_` | L2 | 璇剧▼璇炬椂 |
+| `content_course_relation` | `content_` | L2 | 鐩稿叧璇剧▼銆佸悎闆嗐€佹帹鑽愬叧锟?|
 
-### 5.6 Ops �?
-| �?| 画像 | 等级 | 说明 |
+### 5.6 Ops 锟?
+| 锟?| 鐢诲儚 | 绛夌骇 | 璇存槑 |
 | --- | --- | --- | --- |
-| `ops_gateway_instance` | tenant_entity/core_entity | L2 | 网关实例、部署模式、runtime、orchestrator、版本、脱敏节点状�?|
-| `ops_gateway_heartbeat` | event_log | L2 | CPU、内存、磁盘、网络、连接、uptime 等心跳指�?|
-| `ops_config_snapshot` | snapshot | L3 | 配置快照、灰度发布、回�?|
-| `ops_audit_log` | audit_log | L3 | 后台、用户、系统操作审�?|
-| `ops_outbox_event` | outbox_event | L3 | 事务后事件发�?|
-| `ops_inbox_event` | inbox_event | L3 | 消费幂等 |
-| `ops_job_execution` | event_log | L2 | worker 任务执行 |
-| `ops_alert_event` | event_log | L2 | 告警事件 |
-| `ops_notification_message` | user_entity/event_log | L2 | 用户消息中心消息 |
-| `ops_notification_delivery` | event_log | L2 | 消息投递、已读、失败和渠道状�?|
-| `ops_metric_snapshot` | projection | L2 | Dashboard 和监控面板聚合指标快�?|
+| `ops_gateway_instance` | tenant_entity/core_entity | L2 | 缃戝叧瀹炰緥銆侀儴缃叉ā寮忋€乺untime銆乷rchestrator銆佺増鏈€佽劚鏁忚妭鐐圭姸锟?|
+| `ops_gateway_heartbeat` | event_log | L2 | CPU銆佸唴瀛樸€佺鐩樸€佺綉缁溿€佽繛鎺ャ€乽ptime 绛夊績璺虫寚锟?|
+| `ops_config_snapshot` | snapshot | L3 | 閰嶇疆蹇収銆佺伆搴﹀彂甯冦€佸洖锟?|
+| `ops_audit_log` | audit_log | L3 | 鍚庡彴銆佺敤鎴枫€佺郴缁熸搷浣滃锟?|
+| `ops_outbox_event` | outbox_event | L3 | 浜嬪姟鍚庝簨浠跺彂锟?|
+| `ops_inbox_event` | inbox_event | L3 | 娑堣垂骞傜瓑 |
+| `ops_job_execution` | event_log | L2 | worker 浠诲姟鎵ц |
+| `ops_alert_event` | event_log | L2 | 鍛婅浜嬩欢 |
+| `ops_notification_message` | user_entity/event_log | L2 | 鐢ㄦ埛娑堟伅涓績娑堟伅 |
+| `ops_notification_delivery` | event_log | L2 | 娑堟伅鎶曢€掋€佸凡璇汇€佸け璐ュ拰娓犻亾鐘讹拷?|
+| `ops_metric_snapshot` | projection | L2 | Dashboard 鍜岀洃鎺ч潰鏉胯仛鍚堟寚鏍囧揩锟?|
 
-## 6. 标准字段�?
-�?L2/L3 表默认包含：
+## 6. 鏍囧噯瀛楁锟?
+锟?L2/L3 琛ㄩ粯璁ゅ寘鍚細
 
 ```sql
 id BIGINT NOT NULL,
@@ -208,13 +208,13 @@ payload_hash VARCHAR(128),
 metadata JSON
 ```
 
-具体表按画像裁剪，但裁剪必须在表契约说明原因�?
-## 7. 示例表契�?
+鍏蜂綋琛ㄦ寜鐢诲儚瑁佸壀锛屼絾瑁佸壀蹇呴』鍦ㄨ〃濂戠害璇存槑鍘熷洜锟?
+## 7. 绀轰緥琛ㄥ锟?
 ### 7.1 `integration_provider_account`
 
 ```yaml
 table: integration_provider_account
-title: Provider账号
+title: Provider璐﹀彿
 domain: integration
 bounded_context: provider-integration
 profile: tenant_entity
@@ -250,7 +250,7 @@ security:
 
 ```yaml
 table: ai_routing_decision_log
-title: 路由决策日志
+title: 璺敱鍐崇瓥鏃ュ織
 domain: ai
 bounded_context: ai-routing-metering
 profile: event_log
@@ -282,98 +282,98 @@ retention:
   enterprise: configurable
 ```
 
-## 8. 索引设计
+## 8. 绱㈠紩璁捐
 
-1. L2/L3 多租户表查询索引必须�?`tenant_id, organization_id` 起始�?2. 列表页索引统一追加 `status, updated_at, id` �?`status, created_at, id`�?3. 请求明细、用量事实、审计日志必须按时间范围设计分区或归档策略�?4. 幂等键必须有唯一约束，例�?`(tenant_id, idempotency_key)` �?`(provider_code, external_event_id)`�?5. 金额、状态、租户、权限、幂等字段不得只放在 JSON�?
-## 9. 结构演进
+1. L2/L3 澶氱鎴疯〃鏌ヨ绱㈠紩蹇呴』锟?`tenant_id, organization_id` 璧峰锟?2. 鍒楄〃椤电储寮曠粺涓€杩藉姞 `status, updated_at, id` 锟?`status, created_at, id`锟?3. 璇锋眰鏄庣粏銆佺敤閲忎簨瀹炪€佸璁℃棩蹇楀繀椤绘寜鏃堕棿鑼冨洿璁捐鍒嗗尯鎴栧綊妗ｇ瓥鐣ワ拷?4. 骞傜瓑閿繀椤绘湁鍞竴绾︽潫锛屼緥锟?`(tenant_id, idempotency_key)` 锟?`(provider_code, external_event_id)`锟?5. 閲戦銆佺姸鎬併€佺鎴枫€佹潈闄愩€佸箓绛夊瓧娈典笉寰楀彧鏀惧湪 JSON锟?
+## 9. 缁撴瀯婕旇繘
 
-所有新表变更按以下流程�?
-1. 更新表契约�?2. 更新 DDL 迁移�?3. 更新 ORM/Entity�?4. 更新 DTO/OpenAPI/SDK�?5. 更新读模型或 CDC 映射�?6. 添加兼容期校验�?7. 回填和双�?双写�?8. 灰度切换�?9. 删除旧字段或旧路径�?
-破坏性变更必须走 expand/backfill/contract，不允许一次性删除生产字段�?
-## 10. 数据库验收清�?
-- [ ] 新表前缀已登�?owner �?bounded context�?- [ ] 新表已声明画像和 L1/L2/L3 等级�?- [ ] 高频查询已绑定索引�?- [ ] 多租户表索引�?`tenant_id` 起始�?- [ ] 资金、凭证、审计表达到 L3�?- [ ] API int64 �?decimal 序列化为 string�?- [ ] Provider secret 只存 secret reference�?- [ ] 用户、VIP、账户、优惠券、积分充值、交易账户域未创建替代表�?- [ ] 结构变更、ORM、OpenAPI、SDK 保持同步�?
-## 11. 数据事实来源分层
+鎵€鏈夋柊琛ㄥ彉鏇存寜浠ヤ笅娴佺▼锟?
+1. 鏇存柊琛ㄥ绾︼拷?2. 鏇存柊 DDL 杩佺Щ锟?3. 鏇存柊 ORM/Entity锟?4. 鏇存柊 DTO/OpenAPI/SDK锟?5. 鏇存柊璇绘ā鍨嬫垨 CDC 鏄犲皠锟?6. 娣诲姞鍏煎鏈熸牎楠岋拷?7. 鍥炲～鍜屽弻锟?鍙屽啓锟?8. 鐏板害鍒囨崲锟?9. 鍒犻櫎鏃у瓧娈垫垨鏃ц矾寰勶拷?
+鐮村潖鎬у彉鏇村繀椤昏蛋 expand/backfill/contract锛屼笉鍏佽涓€娆℃€у垹闄ょ敓浜у瓧娈碉拷?
+## 10. 鏁版嵁搴撻獙鏀舵竻锟?
+- [ ] 鏂拌〃鍓嶇紑宸茬櫥锟?owner 锟?bounded context锟?- [ ] 鏂拌〃宸插０鏄庣敾鍍忓拰 L1/L2/L3 绛夌骇锟?- [ ] 楂橀鏌ヨ宸茬粦瀹氱储寮曪拷?- [ ] 澶氱鎴疯〃绱㈠紩锟?`tenant_id` 璧峰锟?- [ ] 璧勯噾銆佸嚟璇併€佸璁¤〃杈惧埌 L3锟?- [ ] API int64 锟?decimal 搴忓垪鍖栦负 string锟?- [ ] Provider secret 鍙瓨 secret reference锟?- [ ] 鐢ㄦ埛銆乂IP銆佽处鎴枫€佷紭鎯犲埜銆佺Н鍒嗗厖鍊笺€佷氦鏄撹处鎴峰煙鏈垱寤烘浛浠ｈ〃锟?- [ ] 缁撴瀯鍙樻洿銆丱RM銆丱penAPI銆丼DK 淇濇寔鍚屾锟?
+## 11. 鏁版嵁浜嬪疄鏉ユ簮鍒嗗眰
 
-数据库不是按页面或部署形态拆分，而是按事实来源和写入 owner 分层。`sdkwork-clawrouter` 在本地桌面、Server、Docker、K8S 下都使用同一套数据契约，只允许物理数据库方言、分区能力和部署参数不同�?
-| 层级 | 事实来源 | �?| 写入 owner | 说明 |
+鏁版嵁搴撲笉鏄寜椤甸潰鎴栭儴缃插舰鎬佹媶鍒嗭紝鑰屾槸鎸変簨瀹炴潵婧愬拰鍐欏叆 owner 鍒嗗眰銆俙sdkwork-clawrouter` 鍦ㄦ湰鍦版闈€丼erver銆丏ocker銆並8S 涓嬮兘浣跨敤鍚屼竴濂楁暟鎹绾︼紝鍙厑璁哥墿鐞嗘暟鎹簱鏂硅█銆佸垎鍖鸿兘鍔涘拰閮ㄧ讲鍙傛暟涓嶅悓锟?
+| 灞傜骇 | 浜嬪疄鏉ユ簮 | 锟?| 鍐欏叆 owner | 璇存槑 |
 | --- | --- | --- | --- | --- |
-| L0 存量主数据层 | `legacy-java-plus-entity` | `plus_user`、`plus_account`、`plus_vip_*`、`plus_order`、`plus_payment` �?| 既有 Java service/repository | 表结构完全保持一致；claw-router 只通过标准 service/API/SDK 接入 |
-| L1/L2 控制面主数据�?| claw-router 控制�?| `iam_`、`integration_`、`ai_`、`promotion_` 配置主表 | control-plane service | API Key 扩展、Provider、渠道、模型、策略、卡券营销等标准事实来�?|
-| L3 事件事实�?| gateway/worker | `ai_routing_decision_log`、`ai_request_trace`、`ai_usage_fact`、`ops_audit_log` | gateway、worker、admin | append-only 或准 append-only，用于审计、计费、回放和故障定位 |
-| L2/L3 投影与对账层 | worker/ops | `commerce_usage_settlement`、`commerce_billing_export`、`integration_provider_health_snapshot` | settlement worker、ops worker | 不替代资金账本，只保存用量结算、导出和健康快照证据 |
-| 事件一致性层 | outbox/inbox | `ops_outbox_event`、`ops_inbox_event` | 各写入服�?| 保障跨服务、跨部署、异步投影的可靠发布和幂等消�?|
+| L0 瀛橀噺涓绘暟鎹眰 | `legacy-java-plus-entity` | `plus_user`銆乣plus_account`銆乣plus_vip_*`銆乣plus_order`銆乣plus_payment` 锟?| 鏃㈡湁 Java service/repository | 琛ㄧ粨鏋勫畬鍏ㄤ繚鎸佷竴鑷达紱claw-router 鍙€氳繃鏍囧噯 service/API/SDK 鎺ュ叆 |
+| L1/L2 鎺у埗闈富鏁版嵁锟?| claw-router 鎺у埗锟?| `iam_`銆乣integration_`銆乣ai_`銆乣promotion_` 閰嶇疆涓昏〃 | control-plane service | API Key 鎵╁睍銆丳rovider銆佹笭閬撱€佹ā鍨嬨€佺瓥鐣ャ€佸崱鍒歌惀閿€绛夋爣鍑嗕簨瀹炴潵锟?|
+| L3 浜嬩欢浜嬪疄锟?| gateway/worker | `ai_routing_decision_log`銆乣ai_request_trace`銆乣ai_usage`銆乣ops_audit_log` | gateway銆亀orker銆乤dmin | append-only 鎴栧噯 append-only锛岀敤浜庡璁°€佽璐广€佸洖鏀惧拰鏁呴殰瀹氫綅 |
+| L2/L3 鎶曞奖涓庡璐﹀眰 | worker/ops | `commerce_usage_settlement`銆乣commerce_billing_export`銆乣integration_provider_health_snapshot` | settlement worker銆乷ps worker | 涓嶆浛浠ｈ祫閲戣处鏈紝鍙繚瀛樼敤閲忕粨绠椼€佸鍑哄拰鍋ュ悍蹇収璇佹嵁 |
+| 浜嬩欢涓€鑷存€у眰 | outbox/inbox | `ops_outbox_event`銆乣ops_inbox_event` | 鍚勫啓鍏ユ湇锟?| 淇濋殰璺ㄦ湇鍔°€佽法閮ㄧ讲銆佸紓姝ユ姇褰辩殑鍙潬鍙戝竷鍜屽箓绛夋秷锟?|
 
-关键约束�?
-- `plus_*` 表是既有业务域的事实来源，不因为 claw-router 引入而改名、改字段或建同义表�?- 新表只承载网关域新增能力，不承载用户、VIP、账户、优惠券、充值、订单、支付、退款、发票等既有交易事实�?- 任何页面需要聚合信息时，优先通过 API composition、读模型或投影实现，不把多个事实来源揉成一个不可治理的大宽表�?- 所有跨服务写入必须�?`request_id`、`idempotency_key` �?outbox/inbox 去重键�?
-## 12. 存量表复用契�?
-用户要求用户、VIP、account、优惠券、积分充值等设计�?`legacy-java-plus-entity` 完全一致，本项目落地时按以下契约执行�?
-| 业务�?| 事实来源�?| claw-router 可做 | claw-router 禁止�?|
+鍏抽敭绾︽潫锟?
+- `plus_*` 琛ㄦ槸鏃㈡湁涓氬姟鍩熺殑浜嬪疄鏉ユ簮锛屼笉鍥犱负 claw-router 寮曞叆鑰屾敼鍚嶃€佹敼瀛楁鎴栧缓鍚屼箟琛拷?- 鏂拌〃鍙壙杞界綉鍏冲煙鏂板鑳藉姏锛屼笉鎵胯浇鐢ㄦ埛銆乂IP銆佽处鎴枫€佷紭鎯犲埜銆佸厖鍊笺€佽鍗曘€佹敮浠樸€侀€€娆俱€佸彂绁ㄧ瓑鏃㈡湁浜ゆ槗浜嬪疄锟?- 浠讳綍椤甸潰闇€瑕佽仛鍚堜俊鎭椂锛屼紭鍏堥€氳繃 API composition銆佽妯″瀷鎴栨姇褰卞疄鐜帮紝涓嶆妸澶氫釜浜嬪疄鏉ユ簮鎻夋垚涓€涓笉鍙不鐞嗙殑澶у琛拷?- 鎵€鏈夎法鏈嶅姟鍐欏叆蹇呴』锟?`request_id`銆乣idempotency_key` 锟?outbox/inbox 鍘婚噸閿拷?
+## 12. 瀛橀噺琛ㄥ鐢ㄥ锟?
+鐢ㄦ埛瑕佹眰鐢ㄦ埛銆乂IP銆乤ccount銆佷紭鎯犲埜銆佺Н鍒嗗厖鍊肩瓑璁捐锟?`legacy-java-plus-entity` 瀹屽叏涓€鑷达紝鏈」鐩惤鍦版椂鎸変互涓嬪绾︽墽琛岋拷?
+| 涓氬姟锟?| 浜嬪疄鏉ユ簮锟?| claw-router 鍙仛 | claw-router 绂佹锟?|
 | --- | --- | --- | --- |
-| 用户与身�?| `plus_user`、`plus_user_address`、`plus_oauth_account`、`plus_tenant`、`plus_organization*`、`plus_role*` | 读取用户、租户、组织、角色权限上下文；通过 app/backend 标准 API 调用用户能力 | 新建 `iam_user`、`iam_account_user` 等替代表；复制密码、手机号、OAuth 明细到新�?|
-| VIP 与积�?| `plus_vip_user`、`plus_vip_level`、`plus_vip_recharge*`、`plus_vip_point_change` | 展示 VIP 状态、充值包、积分变动；将网关用量结算结果交给既有账�?VIP服务 | 新建 `commerce_vip_user`、`commerce_point_change`、`router_recharge` 等替代表 |
-| 账户与账�?| `plus_account`、`plus_account_history`、`plus_ledger_bridge`、`plus_currency`、`plus_exchange_rate` | 通过账户服务扣减、冻结、充值、退款；�?`commerce_usage_settlement` 保留用量结算证据 | 直接绕过服务改余额；只改余额不写流水；新�?`commerce_account` 作为余额事实来源 |
-| 商品、订单、支付、退款、发�?| `plus_product`、`plus_sku`、`plus_order*`、`plus_payment*`、`plus_refund`、`plus_invoice*` | 关联价格计划、创建订�?支付/退款请求、展示交易结�?| 新建 claw-router 私有订单、支付、退款、发票主�?|
+| 鐢ㄦ埛涓庤韩锟?| `plus_user`銆乣plus_user_address`銆乣plus_oauth_account`銆乣plus_tenant`銆乣plus_organization*`銆乣plus_role*` | 璇诲彇鐢ㄦ埛銆佺鎴枫€佺粍缁囥€佽鑹叉潈闄愪笂涓嬫枃锛涢€氳繃 app/backend 鏍囧噯 API 璋冪敤鐢ㄦ埛鑳藉姏 | 鏂板缓 `iam_user`銆乣iam_account_user` 绛夋浛浠ｈ〃锛涘鍒跺瘑鐮併€佹墜鏈哄彿銆丱Auth 鏄庣粏鍒版柊锟?|
+| VIP 涓庣Н锟?| `plus_vip_user`銆乣plus_vip_level`銆乣plus_vip_recharge*`銆乣plus_vip_point_change` | 灞曠ず VIP 鐘舵€併€佸厖鍊煎寘銆佺Н鍒嗗彉鍔紱灏嗙綉鍏崇敤閲忕粨绠楃粨鏋滀氦缁欐棦鏈夎处锟?VIP鏈嶅姟 | 鏂板缓 `commerce_vip_user`銆乣commerce_point_change`銆乣router_recharge` 绛夋浛浠ｈ〃 |
+| 璐︽埛涓庤处锟?| `plus_account`銆乣plus_account_history`銆乣plus_ledger_bridge`銆乣plus_currency`銆乣plus_exchange_rate` | 閫氳繃璐︽埛鏈嶅姟鎵ｅ噺銆佸喕缁撱€佸厖鍊笺€侀€€娆撅紱锟?`commerce_usage_settlement` 淇濈暀鐢ㄩ噺缁撶畻璇佹嵁 | 鐩存帴缁曡繃鏈嶅姟鏀逛綑棰濓紱鍙敼浣欓涓嶅啓娴佹按锛涙柊锟?`commerce_account` 浣滀负浣欓浜嬪疄鏉ユ簮 |
+| 鍟嗗搧銆佽鍗曘€佹敮浠樸€侀€€娆俱€佸彂锟?| `plus_product`銆乣plus_sku`銆乣plus_order*`銆乣plus_payment*`銆乣plus_refund`銆乣plus_invoice*` | 鍏宠仈浠锋牸璁″垝銆佸垱寤鸿锟?鏀粯/閫€娆捐姹傘€佸睍绀轰氦鏄撶粨锟?| 鏂板缓 claw-router 绉佹湁璁㈠崟銆佹敮浠樸€侀€€娆俱€佸彂绁ㄤ富锟?|
 
-订单派发和服务订单能力也�?Java 实体为准：`plus_order_dispatch_rule`、`plus_order_worker_dispatch_profile` 已存在于 `legacy-java-plus-entity`，因�?claw-router 只能登记和调用，不再新建 `commerce_order_dispatch_*` �?`router_worker_profile`�?| 卡券营销 | `promotion_offer`、`promotion_offer_version`、`promotion_offer_scope`、`promotion_offer_audience_rule`、`promotion_offer_time_window`、`promotion_budget_account`、`promotion_coupon_stock`、`promotion_code`、`promotion_user_coupon`、`promotion_discount_application`、`promotion_discount_allocation`、`promotion_coupon_ledger_entry`、`promotion_external_binding`、`promotion_event_outbox` | �?promotion bounded context 统一管理券定义、版本、范围、人群、预算、库存、兑换码、用户券、核销、分摊、流水、外部平台绑定和事件 | 新建�?`promotion_` 的卡券同义表 |
+璁㈠崟娲惧彂鍜屾湇鍔¤鍗曡兘鍔涗篃锟?Java 瀹炰綋涓哄噯锛歚plus_order_dispatch_rule`銆乣plus_order_worker_dispatch_profile` 宸插瓨鍦ㄤ簬 `legacy-java-plus-entity`锛屽洜锟?claw-router 鍙兘鐧昏鍜岃皟鐢紝涓嶅啀鏂板缓 `commerce_order_dispatch_*` 锟?`router_worker_profile`锟?| 鍗″埜钀ラ攢 | `promotion_offer`銆乣promotion_offer_version`銆乣promotion_offer_scope`銆乣promotion_offer_audience_rule`銆乣promotion_offer_time_window`銆乣promotion_budget_account`銆乣promotion_coupon_stock`銆乣promotion_code`銆乣promotion_user_coupon`銆乣promotion_discount_application`銆乣promotion_discount_allocation`銆乣promotion_coupon_ledger_entry`銆乣promotion_external_binding`銆乣promotion_event_outbox` | 锟?promotion bounded context 缁熶竴绠＄悊鍒稿畾涔夈€佺増鏈€佽寖鍥淬€佷汉缇ゃ€侀绠椼€佸簱瀛樸€佸厬鎹㈢爜銆佺敤鎴峰埜銆佹牳閿€銆佸垎鎽娿€佹祦姘淬€佸閮ㄥ钩鍙扮粦瀹氬拰浜嬩欢 | 鏂板缓锟?`promotion_` 鐨勫崱鍒稿悓涔夎〃 |
 
-存量表在本项目中的兼容等级是 L0 legacy compatible。L0 的含义是“被兼容和映射”，不是“允许继续复制不标准设计”。新功能若必须扩展这些业务域，应先评审是否能通过既有 Java 服务扩展；只有在用户明确批准独立迁移项目时，才设�?`plus_*` 到标准前缀表的物理迁移�?
-## 13. 新表落地优先�?
-新表不一次性全部落地，按业务闭环和风险优先级分批�?
-| 优先�?| 目标 | �?|
+瀛橀噺琛ㄥ湪鏈」鐩腑鐨勫吋瀹圭瓑绾ф槸 L0 legacy compatible銆侺0 鐨勫惈涔夋槸鈥滆鍏煎鍜屾槧灏勨€濓紝涓嶆槸鈥滃厑璁哥户缁鍒朵笉鏍囧噯璁捐鈥濄€傛柊鍔熻兘鑻ュ繀椤绘墿灞曡繖浜涗笟鍔″煙锛屽簲鍏堣瘎瀹℃槸鍚﹁兘閫氳繃鏃㈡湁 Java 鏈嶅姟鎵╁睍锛涘彧鏈夊湪鐢ㄦ埛鏄庣‘鎵瑰噯鐙珛杩佺Щ椤圭洰鏃讹紝鎵嶈锟?`plus_*` 鍒版爣鍑嗗墠缂€琛ㄧ殑鐗╃悊杩佺Щ锟?
+## 13. 鏂拌〃钀藉湴浼樺厛锟?
+鏂拌〃涓嶄竴娆℃€у叏閮ㄨ惤鍦帮紝鎸変笟鍔￠棴鐜拰椋庨櫓浼樺厛绾у垎鎵癸拷?
+| 浼樺厛锟?| 鐩爣 | 锟?|
 | --- | --- | --- |
-| P0 | 标准�?MVP 必需，支�?Provider、路由、Key、用量、价格和审计闭环 | `ai_model_vendor`、`ai_model_family`、`integration_provider`、`ai_channel`、`ai_channel_credential`、`ai_channel_resource`、`ai_model`、`ai_model_capability`、`ai_billing_meter`、`ai_model_pricing`、`ai_pricing_plan`、`ai_pricing_plan_binding`、`ai_pricing_rule`、`ai_pricing_tier`、`ai_routing_policy`、`ai_routing_profile`、`ai_routing_rule`、`ai_model_mapping_rule`、`ai_model_mapping_rule_binding`、`ai_model_mapping_rule_item`、`ai_routing_decision_log`、`ai_request_trace`、`ai_usage_fact`、`ops_audit_log`、`ops_outbox_event`、`ops_inbox_event` |
-| P1 | 生产化运营、Playground、安全明细和结算增强 | `ai_channel_group`、`ai_channel_group_metric_snapshot`、`iam_gateway_api_key` �?`plus_api_key` 兼容索引、`iam_gateway_access_policy`、`iam_user_login_event`、`ai_pricing_import_snapshot`、`ai_quota_policy`、`ai_generation_session`、`ai_generation_job`、`ai_generation_asset`、`ai_generation_asset_action`、`commerce_usage_settlement`、`commerce_usage_statement`、`commerce_usage_statement_item`、`ops_config_snapshot`、`ops_gateway_instance`、`ops_gateway_heartbeat`、`ops_notification_message`、`ops_notification_delivery` |
-| P2 | 门户生态、内容运营、导出、健康治�?| `appstore_app`、`plus_agent_skill`、`plus_agent_skill_package`、`plus_user_agent_skill`、`plus_category`、`content_announcement`、`content_doc_page`、`content_forum_post`、`content_forum_comment`、`content_course`、`content_course_lesson`、`content_course_relation`、`commerce_billing_export`、`integration_webhook_endpoint`、`integration_provider_health_snapshot`、`ai_model_rank_snapshot` |
-| P3 | 大规�?SaaS �?K8S �?Cell 增强 | `ops_job_execution`、`ops_alert_event`、`ops_metric_snapshot` 以及�?Cell/Region 拆分的投影表 |
+| P0 | 鏍囧噯锟?MVP 蹇呴渶锛屾敮锟?Provider銆佽矾鐢便€並ey銆佺敤閲忋€佷环鏍煎拰瀹¤闂幆 | `ai_model_vendor`銆乣ai_model_family`銆乣integration_provider`銆乣ai_channel`銆乣ai_channel_credential`銆乣ai_channel_resource`銆乣ai_model`銆乣ai_model_capability`銆乣ai_billing_meter`銆乣ai_model_pricing`銆乣ai_pricing_plan`銆乣ai_pricing_plan_binding`銆乣ai_pricing_rule`銆乣ai_pricing_tier`銆乣ai_routing_policy`銆乣ai_routing_profile`銆乣ai_routing_rule`銆乣ai_model_mapping_rule`銆乣ai_model_mapping_rule_binding`銆乣ai_model_mapping_rule_item`銆乣ai_routing_decision_log`銆乣ai_request_trace`銆乣ai_usage`銆乣ops_audit_log`銆乣ops_outbox_event`銆乣ops_inbox_event` |
+| P1 | 鐢熶骇鍖栬繍钀ャ€丳layground銆佸畨鍏ㄦ槑缁嗗拰缁撶畻澧炲己 | `ai_channel_group`銆乣ai_channel_group_metric_snapshot`銆乣iam_gateway_api_key` 锟?`plus_api_key` 鍏煎绱㈠紩銆乣iam_gateway_access_policy`銆乣iam_user_login_event`銆乣ai_pricing_import_snapshot`銆乣ai_quota_policy`銆乣ai_generation_session`銆乣ai_generation_job`銆乣ai_generation_asset`銆乣ai_generation_asset_action`銆乣commerce_usage_settlement`銆乣commerce_usage_statement`銆乣commerce_usage_statement_item`銆乣ops_config_snapshot`銆乣ops_gateway_instance`銆乣ops_gateway_heartbeat`銆乣ops_notification_message`銆乣ops_notification_delivery` |
+| P2 | 闂ㄦ埛鐢熸€併€佸唴瀹硅繍钀ャ€佸鍑恒€佸仴搴锋不锟?| `appstore_app`銆乣plus_agent_skill`銆乣plus_agent_skill_package`銆乣plus_user_agent_skill`銆乣plus_category`銆乣content_announcement`銆乣content_doc_page`銆乣content_forum_post`銆乣content_forum_comment`銆乣content_course`銆乣content_course_lesson`銆乣content_course_relation`銆乣commerce_billing_export`銆乣integration_webhook_endpoint`銆乣integration_provider_health_snapshot`銆乣ai_model_rank_snapshot` |
+| P3 | 澶ц锟?SaaS 锟?K8S 锟?Cell 澧炲己 | `ops_job_execution`銆乣ops_alert_event`銆乣ops_metric_snapshot` 浠ュ強锟?Cell/Region 鎷嗗垎鐨勬姇褰辫〃 |
 
-API Key 的第一阶段有两种合法路线：
+API Key 鐨勭涓€闃舵鏈変袱绉嶅悎娉曡矾绾匡細
 
-- 如果 Java `plus_api_key` 已经作为 app/backend API 的标准事实来源，�?P0/P1 先复�?`plus_api_key`，新�?`ai_channel_group`、`iam_gateway_access_policy` 等扩展表通过 `legacy_api_key_id` 关联，不�?`plus_api_key` 字段�?- 如果 claw-router 需要独立的高安全网�?Key 索引，才新增 `iam_gateway_api_key`。该表只保存 `key_prefix`、`key_hash`、策略引用、状态和审计信息，不保存 API Key 明文；与 `plus_api_key` 的关系必须在契约中声明�?
-## 14. 核心数据链路
+- 濡傛灉 Java `plus_api_key` 宸茬粡浣滀负 app/backend API 鐨勬爣鍑嗕簨瀹炴潵婧愶紝锟?P0/P1 鍏堝锟?`plus_api_key`锛屾柊锟?`ai_channel_group`銆乣iam_gateway_access_policy` 绛夋墿灞曡〃閫氳繃 `legacy_api_key_id` 鍏宠仈锛屼笉锟?`plus_api_key` 瀛楁锟?- 濡傛灉 claw-router 闇€瑕佺嫭绔嬬殑楂樺畨鍏ㄧ綉锟?Key 绱㈠紩锛屾墠鏂板 `iam_gateway_api_key`銆傝琛ㄥ彧淇濆瓨 `key_prefix`銆乣key_hash`銆佺瓥鐣ュ紩鐢ㄣ€佺姸鎬佸拰瀹¤淇℃伅锛屼笉淇濆瓨 API Key 鏄庢枃锛涗笌 `plus_api_key` 鐨勫叧绯诲繀椤诲湪濂戠害涓０鏄庯拷?
+## 14. 鏍稿績鏁版嵁閾捐矾
 
-### 14.1 Provider 和路由配置链�?
-1. Admin/Console 通过 `/backend/v3/api` �?`/app/v3/api` 调用配置 API�?2. 控制面写�?`integration_provider`、`ai_channel`、`ai_channel_credential`、`ai_channel_resource` �?`ai_model_mapping_rule*`，其�?`integration_provider` 表示 API 接入方，`ai_channel_credential` 承载认证配置，`ai_channel_resource` 承载资源授权，模型转换规则按全局、Vendor、账�?渠道绑定分层覆盖�?3. 模型目录写入 `ai_model_vendor`、`ai_model_family`、`ai_model` �?`ai_model_pricing`，其�?`ai_model_vendor` �?`ModelVendor` 的事实来源，`ai_model_pricing.price_side` 区分官方参考价、供应商上游成本价和客户销售价�?4. 价格策略写入 `ai_billing_meter`、`ai_pricing_plan`、`ai_pricing_plan_binding`、`ai_pricing_rule` �?`ai_pricing_tier`；API Key 创建选择 `ai_channel_group`，该分组通过 `pricing_plan_id` 挂默认定价方案；默认销售价可以�?`official_reference * default_multiplier` 派生，供应商成本价按 `provider_code/channel_id/provider_model` 独立维护�?5. 路由策略写入 `ai_routing_policy`、`ai_routing_profile`、`ai_routing_rule`�?6. 写事务同时产�?`ops_outbox_event`，热路径订阅并刷新本地缓存�?7. 网关热路径只读缓存和只读副本，不能直接修改配置主表�?
-### 14.2 请求、用量和结算链路
+### 14.1 Provider 鍜岃矾鐢遍厤缃摼锟?
+1. Admin/Console 閫氳繃 `/backend/v3/api` 锟?`/app/v3/api` 璋冪敤閰嶇疆 API锟?2. 鎺у埗闈㈠啓锟?`integration_provider`銆乣ai_channel`銆乣ai_channel_credential`銆乣ai_channel_resource` 锟?`ai_model_mapping_rule*`锛屽叾锟?`integration_provider` 琛ㄧず API 鎺ュ叆鏂癸紝`ai_channel_credential` 鎵胯浇璁よ瘉閰嶇疆锛宍ai_channel_resource` 鎵胯浇璧勬簮鎺堟潈锛屾ā鍨嬭浆鎹㈣鍒欐寜鍏ㄥ眬銆乂endor銆佽处锟?娓犻亾缁戝畾鍒嗗眰瑕嗙洊锟?3. 妯″瀷鐩綍鍐欏叆 `ai_model_vendor`銆乣ai_model_family`銆乣ai_model` 锟?`ai_model_pricing`锛屽叾锟?`ai_model_vendor` 锟?`ModelVendor` 鐨勪簨瀹炴潵婧愶紝`ai_model_pricing.price_side` 鍖哄垎瀹樻柟鍙傝€冧环銆佷緵搴斿晢涓婃父鎴愭湰浠峰拰瀹㈡埛閿€鍞环锟?4. 浠锋牸绛栫暐鍐欏叆 `ai_billing_meter`銆乣ai_pricing_plan`銆乣ai_pricing_plan_binding`銆乣ai_pricing_rule` 锟?`ai_pricing_tier`锛汚PI Key 鍒涘缓閫夋嫨 `ai_channel_group`锛岃鍒嗙粍閫氳繃 `pricing_plan_id` 鎸傞粯璁ゅ畾浠锋柟妗堬紱榛樿閿€鍞环鍙互锟?`official_reference * default_multiplier` 娲剧敓锛屼緵搴斿晢鎴愭湰浠锋寜 `provider_code/channel_id/provider_model` 鐙珛缁存姢锟?5. 璺敱绛栫暐鍐欏叆 `ai_routing_policy`銆乣ai_routing_profile`銆乣ai_routing_rule`锟?6. 鍐欎簨鍔″悓鏃朵骇锟?`ops_outbox_event`锛岀儹璺緞璁㈤槄骞跺埛鏂版湰鍦扮紦瀛橈拷?7. 缃戝叧鐑矾寰勫彧璇荤紦瀛樺拰鍙鍓湰锛屼笉鑳界洿鎺ヤ慨鏀归厤缃富琛拷?
+### 14.2 璇锋眰銆佺敤閲忓拰缁撶畻閾捐矾
 
-1. Gateway 收到 `/v1/*` 请求，解�?API Key、租户、组织、用户和 owner�?2. Gateway 执行策略匹配，写入或异步落地 `ai_routing_decision_log`�?3. Provider 调用过程写入 `ai_request_trace`，记录每�?attempt、错误、延迟、状态码�?fallback�?4. 响应完成后生�?`ai_usage_fact`，作为计费唯一用量事实�?5. Settlement worker 消费 `ai_usage_fact`，生�?`commerce_usage_settlement`�?6. 资金扣减、积分扣减、充值入账仍调用既有账户/VIP/交易服务，最终事实写�?`plus_account`、`plus_account_history`、`plus_order`、`plus_payment` 等既有表�?7. 结算成功、失败、补偿都通过 `ops_outbox_event` 发布，消费端�?`ops_inbox_event` 去重�?
-### 14.3 管理审计链路
+1. Gateway 鏀跺埌 `/v1/*` 璇锋眰锛岃В锟?API Key銆佺鎴枫€佺粍缁囥€佺敤鎴峰拰 owner锟?2. Gateway 鎵ц绛栫暐鍖归厤锛屽啓鍏ユ垨寮傛钀藉湴 `ai_routing_decision_log`锟?3. Provider 璋冪敤杩囩▼鍐欏叆 `ai_request_trace`锛岃褰曟瘡锟?attempt銆侀敊璇€佸欢杩熴€佺姸鎬佺爜锟?fallback锟?4. 鍝嶅簲瀹屾垚鍚庣敓锟?`ai_usage`锛屼綔涓鸿璐瑰敮涓€鐢ㄩ噺浜嬪疄锟?5. Settlement worker 娑堣垂 `ai_usage`锛岀敓锟?`commerce_usage_settlement`锟?6. 璧勯噾鎵ｅ噺銆佺Н鍒嗘墸鍑忋€佸厖鍊煎叆璐︿粛璋冪敤鏃㈡湁璐︽埛/VIP/浜ゆ槗鏈嶅姟锛屾渶缁堜簨瀹炲啓锟?`plus_account`銆乣plus_account_history`銆乣plus_order`銆乣plus_payment` 绛夋棦鏈夎〃锟?7. 缁撶畻鎴愬姛銆佸け璐ャ€佽ˉ鍋块兘閫氳繃 `ops_outbox_event` 鍙戝竷锛屾秷璐圭锟?`ops_inbox_event` 鍘婚噸锟?
+### 14.3 绠＄悊瀹¤閾捐矾
 
-1. Admin 对渠道、密钥、计费、用户余额、权限的操作必须�?`ops_audit_log`�?2. `ops_audit_log` 不保存敏感明文，只保存脱敏对象、目�?ID、操作前后摘�?hash、request_id、operator_id�?3. 高危操作需�?`approval_id` �?`risk_ticket_id`，用于后续接入审批流�?
-## 15. 部署形态下的数据库映射
+1. Admin 瀵规笭閬撱€佸瘑閽ャ€佽璐广€佺敤鎴蜂綑棰濄€佹潈闄愮殑鎿嶄綔蹇呴』锟?`ops_audit_log`锟?2. `ops_audit_log` 涓嶄繚瀛樻晱鎰熸槑鏂囷紝鍙繚瀛樿劚鏁忓璞°€佺洰锟?ID銆佹搷浣滃墠鍚庢憳锟?hash銆乺equest_id銆乷perator_id锟?3. 楂樺嵄鎿嶄綔闇€锟?`approval_id` 锟?`risk_ticket_id`锛岀敤浜庡悗缁帴鍏ュ鎵规祦锟?
+## 15. 閮ㄧ讲褰㈡€佷笅鐨勬暟鎹簱鏄犲皠
 
-| 部署形�?| 推荐数据�?| 设计要求 |
+| 閮ㄧ讲褰拷?| 鎺ㄨ崘鏁版嵁锟?| 璁捐瑕佹眰 |
 | --- | --- | --- |
-| 本地桌面 | SQLite WAL 或嵌入式 PostgreSQL | 结构契约不变；JSON 映射�?TEXT/JSON；decimal 按字符串�?NUMERIC 兼容；密钥优先放系统 Keychain，只在库中保�?`secret_ref` |
-| Server 单机 | PostgreSQL | 推荐所有新表按标准 DDL 落地；L3 表支持备份、审计和定期归档 |
-| Docker Compose | PostgreSQL + Redis | 初始化脚本幂等；迁移版本随镜像发布；本地卷必须隔�?secrets �?data |
-| K8S | PostgreSQL HA/云数据库 + Redis/消息队列 | `ai_usage_fact`、`ai_request_trace`、`ai_routing_decision_log`、`ops_audit_log` 按时间分区；outbox/inbox 可接 Kafka/NATS/RabbitMQ |
+| 鏈湴妗岄潰 | SQLite WAL 鎴栧祵鍏ュ紡 PostgreSQL | 缁撴瀯濂戠害涓嶅彉锛汮SON 鏄犲皠锟?TEXT/JSON锛沝ecimal 鎸夊瓧绗︿覆锟?NUMERIC 鍏煎锛涘瘑閽ヤ紭鍏堟斁绯荤粺 Keychain锛屽彧鍦ㄥ簱涓繚锟?`secret_ref` |
+| Server 鍗曟満 | PostgreSQL | 鎺ㄨ崘鎵€鏈夋柊琛ㄦ寜鏍囧噯 DDL 钀藉湴锛汱3 琛ㄦ敮鎸佸浠姐€佸璁″拰瀹氭湡褰掓。 |
+| Docker Compose | PostgreSQL + Redis | 鍒濆鍖栬剼鏈箓绛夛紱杩佺Щ鐗堟湰闅忛暅鍍忓彂甯冿紱鏈湴鍗峰繀椤婚殧锟?secrets 锟?data |
+| K8S | PostgreSQL HA/浜戞暟鎹簱 + Redis/娑堟伅闃熷垪 | `ai_usage`銆乣ai_request_trace`銆乣ai_routing_decision_log`銆乣ops_audit_log` 鎸夋椂闂村垎鍖猴紱outbox/inbox 鍙帴 Kafka/NATS/RabbitMQ |
 
-方言映射原则�?
-- `BIGINT` 对应逻辑 `int64`，API/SDK 统一 string�?- `NUMERIC(18,6)` 或更高精度对�?decimal，API/SDK 统一 string�?- PostgreSQL `jsonb` �?SQLite 中映射为 TEXT + JSON 校验，在 MySQL 中映射为 JSON�?- 分区是物理优化，不改变表契约；SQLite 和轻量部署可以只做归档清理�?
-## 16. 性能、分区和留存
+鏂硅█鏄犲皠鍘熷垯锟?
+- `BIGINT` 瀵瑰簲閫昏緫 `int64`锛孉PI/SDK 缁熶竴 string锟?- `NUMERIC(18,6)` 鎴栨洿楂樼簿搴﹀锟?decimal锛孉PI/SDK 缁熶竴 string锟?- PostgreSQL `jsonb` 锟?SQLite 涓槧灏勪负 TEXT + JSON 鏍￠獙锛屽湪 MySQL 涓槧灏勪负 JSON锟?- 鍒嗗尯鏄墿鐞嗕紭鍖栵紝涓嶆敼鍙樿〃濂戠害锛汼QLite 鍜岃交閲忛儴缃插彲浠ュ彧鍋氬綊妗ｆ竻鐞嗭拷?
+## 16. 鎬ц兘銆佸垎鍖哄拰鐣欏瓨
 
-| �?| 分区建议 | 默认留存 | 热索引预�?| 说明 |
+| 锟?| 鍒嗗尯寤鸿 | 榛樿鐣欏瓨 | 鐑储寮曢锟?| 璇存槑 |
 | --- | --- | ---: | ---: | --- |
-| `ai_usage_fact` | �?`occurred_at` 月分区；大规模租户可�?tenant hash 子分�?| 在线 24 个月，冷归档 5 �?| 6 | 账务来源事实，不能随意删�?|
-| `ai_request_trace` | �?`started_at` �?月分�?| 在线 90-180 天，错误 trace 可延�?| 5 | 高写入日志，payload 需裁剪 |
-| `ai_routing_decision_log` | �?`created_at` 月分�?| 在线 180 天，企业可配�?| 5 | 路由回放证据 |
-| `ops_audit_log` | �?`created_at` 月分�?| 在线 24 个月，冷归档 5 年或按合�?| 6 | 高敏审计，支�?legal hold |
-| `ops_outbox_event` | �?`created_at` 月分区或状态归�?| 成功发布 30-90 天，失败保留至处�?| 5 | 成功事件可归档，失败事件不可提前清理 |
-| `ops_inbox_event` | �?`created_at` 月分�?| 大于最大重放窗口，默认 180 �?| 4 | 消费去重窗口必须覆盖消息重放周期 |
+| `ai_usage` | 锟?`occurred_at` 鏈堝垎鍖猴紱澶ц妯＄鎴峰彲锟?tenant hash 瀛愬垎锟?| 鍦ㄧ嚎 24 涓湀锛屽喎褰掓。 5 锟?| 6 | 璐﹀姟鏉ユ簮浜嬪疄锛屼笉鑳介殢鎰忓垹锟?|
+| `ai_request_trace` | 锟?`started_at` 锟?鏈堝垎锟?| 鍦ㄧ嚎 90-180 澶╋紝閿欒 trace 鍙欢锟?| 5 | 楂樺啓鍏ユ棩蹇楋紝payload 闇€瑁佸壀 |
+| `ai_routing_decision_log` | 锟?`created_at` 鏈堝垎锟?| 鍦ㄧ嚎 180 澶╋紝浼佷笟鍙厤锟?| 5 | 璺敱鍥炴斁璇佹嵁 |
+| `ops_audit_log` | 锟?`created_at` 鏈堝垎锟?| 鍦ㄧ嚎 24 涓湀锛屽喎褰掓。 5 骞存垨鎸夊悎锟?| 6 | 楂樻晱瀹¤锛屾敮锟?legal hold |
+| `ops_outbox_event` | 锟?`created_at` 鏈堝垎鍖烘垨鐘舵€佸綊锟?| 鎴愬姛鍙戝竷 30-90 澶╋紝澶辫触淇濈暀鑷冲锟?| 5 | 鎴愬姛浜嬩欢鍙綊妗ｏ紝澶辫触浜嬩欢涓嶅彲鎻愬墠娓呯悊 |
+| `ops_inbox_event` | 锟?`created_at` 鏈堝垎锟?| 澶т簬鏈€澶ч噸鏀剧獥鍙ｏ紝榛樿 180 锟?| 4 | 娑堣垂鍘婚噸绐楀彛蹇呴』瑕嗙洊娑堟伅閲嶆斁鍛ㄦ湡 |
 
-索引预算规则�?
-- 配置主表最�?6 个核心索引；日志事实表最�?8 个在线索引�?- 多租户在线查询索引必须以 `tenant_id, organization_id` 开头�?- `request_id`、`trace_id`、`idempotency_key`、`external_event_id` 必须有明确唯一或普通索引用途�?- JSON 字段只能保存扩展或快照，不能作为租户、金额、状态、权限、幂等、核心过滤条件的唯一来源�?
-## 17. 安全分级
+绱㈠紩棰勭畻瑙勫垯锟?
+- 閰嶇疆涓昏〃鏈€锟?6 涓牳蹇冪储寮曪紱鏃ュ織浜嬪疄琛ㄦ渶锟?8 涓湪绾跨储寮曪拷?- 澶氱鎴峰湪绾挎煡璇㈢储寮曞繀椤讳互 `tenant_id, organization_id` 寮€澶达拷?- `request_id`銆乣trace_id`銆乣idempotency_key`銆乣external_event_id` 蹇呴』鏈夋槑纭敮涓€鎴栨櫘閫氱储寮曠敤閫旓拷?- JSON 瀛楁鍙兘淇濆瓨鎵╁睍鎴栧揩鐓э紝涓嶈兘浣滀负绉熸埛銆侀噾棰濄€佺姸鎬併€佹潈闄愩€佸箓绛夈€佹牳蹇冭繃婊ゆ潯浠剁殑鍞竴鏉ユ簮锟?
+## 17. 瀹夊叏鍒嗙骇
 
-| 数据类型 | 示例字段 | 存储要求 | API 返回要求 |
+| 鏁版嵁绫诲瀷 | 绀轰緥瀛楁 | 瀛樺偍瑕佹眰 | API 杩斿洖瑕佹眰 |
 | --- | --- | --- | --- |
-| SECRET | API Key 明文、Provider token、私�?| 不入业务库；进入 Vault/Keychain/KMS | 只创建时展示一次，后续不可�?|
-| SECRET_REF | `secret_ref` | 可入库，指向密钥系统路径或句�?| admin 也默认脱�?|
-| SECRET_HASH | `key_hash`、`payload_hash` | HMAC-SHA256 或等价算法，pepper 不入�?| 可用于比对，不用于展�?|
-| PII | 手机、邮箱、OAuth openid、地址 | 复用 `plus_user*` 既有加密/脱敏策略 | �?Java app/backend API 权限返回 |
-| FINANCIAL | 余额、流水、支付、退款、发�?| 复用 `plus_account*`、`plus_payment*` 等既有事实表 | 只通过账户/交易服务暴露 |
-| AUDIT | `ops_audit_log`、决策日志、trace | append-only、留存、legal hold | �?admin/审计角色可查，敏感字段脱�?|
+| SECRET | API Key 鏄庢枃銆丳rovider token銆佺锟?| 涓嶅叆涓氬姟搴擄紱杩涘叆 Vault/Keychain/KMS | 鍙垱寤烘椂灞曠ず涓€娆★紝鍚庣画涓嶅彲锟?|
+| SECRET_REF | `secret_ref` | 鍙叆搴擄紝鎸囧悜瀵嗛挜绯荤粺璺緞鎴栧彞锟?| admin 涔熼粯璁よ劚锟?|
+| SECRET_HASH | `key_hash`銆乣payload_hash` | HMAC-SHA256 鎴栫瓑浠风畻娉曪紝pepper 涓嶅叆锟?| 鍙敤浜庢瘮瀵癸紝涓嶇敤浜庡睍锟?|
+| PII | 鎵嬫満銆侀偖绠便€丱Auth openid銆佸湴鍧€ | 澶嶇敤 `plus_user*` 鏃㈡湁鍔犲瘑/鑴辨晱绛栫暐 | 锟?Java app/backend API 鏉冮檺杩斿洖 |
+| FINANCIAL | 浣欓銆佹祦姘淬€佹敮浠樸€侀€€娆俱€佸彂锟?| 澶嶇敤 `plus_account*`銆乣plus_payment*` 绛夋棦鏈変簨瀹炶〃 | 鍙€氳繃璐︽埛/浜ゆ槗鏈嶅姟鏆撮湶 |
+| AUDIT | `ops_audit_log`銆佸喅绛栨棩蹇椼€乼race | append-only銆佺暀瀛樸€乴egal hold | 锟?admin/瀹¤瑙掕壊鍙煡锛屾晱鎰熷瓧娈佃劚锟?|
 
-## 18. 详细数据契约
+## 18. 璇︾粏鏁版嵁濂戠害
 
-核心表字段、唯一键、索引、状态机、生命周期、结算一致性和 CI 校验规则�?[11-数据契约与核心表设计.md](./11-数据契约与核心表设计.md)。前端功能模块到数据库表、字段和 API 面的完整映射�?[12-前端功能模块与数据库表结构映�?md](./12-前端功能模块与数据库表结构映�?md)。后续生�?DDL、Entity、DTO、OpenAPI �?SDK 时，以这些数据契约为评审入口�?
+鏍稿績琛ㄥ瓧娈点€佸敮涓€閿€佺储寮曘€佺姸鎬佹満銆佺敓鍛藉懆鏈熴€佺粨绠椾竴鑷存€у拰 CI 鏍￠獙瑙勫垯锟?[11-鏁版嵁濂戠害涓庢牳蹇冭〃璁捐.md](./11-鏁版嵁濂戠害涓庢牳蹇冭〃璁捐.md)銆傚墠绔姛鑳芥ā鍧楀埌鏁版嵁搴撹〃銆佸瓧娈靛拰 API 闈㈢殑瀹屾暣鏄犲皠锟?[12-鍓嶇鍔熻兘妯″潡涓庢暟鎹簱琛ㄧ粨鏋勬槧锟?md](./12-鍓嶇鍔熻兘妯″潡涓庢暟鎹簱琛ㄧ粨鏋勬槧锟?md)銆傚悗缁敓锟?DDL銆丒ntity銆丏TO銆丱penAPI 锟?SDK 鏃讹紝浠ヨ繖浜涙暟鎹绾︿负璇勫鍏ュ彛锟?

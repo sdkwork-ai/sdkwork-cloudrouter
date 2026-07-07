@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "3052b3ecdb0d7ceaa7c346b7bf78da2a8ee2c201ba65e2faabcdb55562a41355",
+  "changeFingerprint": "cf2f927a99d8ab13ba0c44c633254bb4f270fc2e87f0638b54f2729593cc8076",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -48,6 +48,12 @@
           "src/types/common.ts",
           "src/types/field-error.ts",
           "src/types/index.ts",
+          "src/types/json-null.ts",
+          "src/types/json-object.ts",
+          "src/types/json-value.ts",
+          "src/types/model-catalog-page.ts",
+          "src/types/model-rankings-page.ts",
+          "src/types/page-info.ts",
           "src/types/problem-detail.ts",
           "src/types/sdk-work-api-response.ts",
           "src/types/sdk-work-platform-error-code.ts"
@@ -218,12 +224,16 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 124,
-    "models": 95,
+    "totalFiles": 130,
+    "models": 101,
     "apis": 6,
-    "types": 97
+    "types": 103
   },
   "warnings": [
+    {
+      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/json-object.ts"
+    },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/index.ts"
@@ -276,12 +286,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 33,
+    "writtenFiles": 39,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "3052b3ecdb0d7ceaa7c346b7bf78da2a8ee2c201ba65e2faabcdb55562a41355",
+    "changeFingerprint": "cf2f927a99d8ab13ba0c44c633254bb4f270fc2e87f0638b54f2729593cc8076",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -311,6 +321,12 @@
         "src/types/common.ts",
         "src/types/field-error.ts",
         "src/types/index.ts",
+        "src/types/json-null.ts",
+        "src/types/json-object.ts",
+        "src/types/json-value.ts",
+        "src/types/model-catalog-page.ts",
+        "src/types/model-rankings-page.ts",
+        "src/types/page-info.ts",
         "src/types/problem-detail.ts",
         "src/types/sdk-work-api-response.ts",
         "src/types/sdk-work-platform-error-code.ts",
@@ -361,6 +377,12 @@
             "src/types/common.ts",
             "src/types/field-error.ts",
             "src/types/index.ts",
+            "src/types/json-null.ts",
+            "src/types/json-object.ts",
+            "src/types/json-value.ts",
+            "src/types/model-catalog-page.ts",
+            "src/types/model-rankings-page.ts",
+            "src/types/page-info.ts",
             "src/types/problem-detail.ts",
             "src/types/sdk-work-api-response.ts",
             "src/types/sdk-work-platform-error-code.ts"

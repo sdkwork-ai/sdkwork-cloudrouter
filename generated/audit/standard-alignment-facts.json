@@ -42,16 +42,12 @@
     "migrations": {
       "postgresMigrationFiles": [
         "0001_initial_schema.down.sql",
-        "0001_initial_schema.up.sql",
-        "0002_rename_ai_usage_fact_to_ai_usage.down.sql",
-        "0002_rename_ai_usage_fact_to_ai_usage.up.sql"
+        "0001_initial_schema.up.sql"
       ],
       "postgresHasInitialSchema": true,
       "sqliteMigrationFiles": [
         "0001_initial_schema.down.sql",
-        "0001_initial_schema.up.sql",
-        "0002_rename_ai_usage_fact_to_ai_usage.down.sql",
-        "0002_rename_ai_usage_fact_to_ai_usage.up.sql"
+        "0001_initial_schema.up.sql"
       ],
       "sqliteHasInitialSchema": true
     },
@@ -197,7 +193,7 @@
           "partitioned": true
         },
         {
-          "name": "ai_usage_fact",
+          "name": "ai_usage",
           "hasPartitionBy": true,
           "hasDefaultPartition": true,
           "partitioned": true
@@ -256,9 +252,7 @@
       "evidence": {
         "sqliteFiles": [
           "0001_initial_schema.down.sql",
-          "0001_initial_schema.up.sql",
-          "0002_rename_ai_usage_fact_to_ai_usage.down.sql",
-          "0002_rename_ai_usage_fact_to_ai_usage.up.sql"
+          "0001_initial_schema.up.sql"
         ]
       }
     },
@@ -339,7 +333,7 @@
     },
     {
       "id": "p0-high-traffic-table-partition",
-      "title": "High-traffic table partitioning (ai_request_trace / ai_routing_decision_log / ai_usage_fact / ai_usage_service_provider_edge)",
+      "title": "High-traffic table partitioning (ai_request_trace / ai_routing_decision_log / ai_usage / ai_usage_service_provider_edge)",
       "status": "done",
       "evidence": {
         "exists": true,
@@ -357,7 +351,7 @@
             "partitioned": true
           },
           {
-            "name": "ai_usage_fact",
+            "name": "ai_usage",
             "hasPartitionBy": true,
             "hasDefaultPartition": true,
             "partitioned": true

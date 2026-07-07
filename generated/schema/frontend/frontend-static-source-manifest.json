@@ -59,7 +59,7 @@
       "route": "/rankings",
       "schema_tables": [
         "ai_model_rank_snapshot",
-        "ai_usage_fact"
+        "ai_usage"
       ],
       "source_hash": "sha256:1a39f7aca1804c49586d590c26c8799e5bc49b4eb475123b8480944007ceb270",
       "source_ref": "docs/schema-registry/sdkwork-clawrouter.tables.yaml"

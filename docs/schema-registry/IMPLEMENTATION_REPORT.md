@@ -73,6 +73,11 @@
 文件: docs/schema-registry/sdkwork-clawrouter.tables.yaml
 
 内容结构:
+  table_fragments:
+    - tables/ai-routing.yaml
+    - tables/ai-metering.yaml
+    - tables/ai-pricing.yaml
+
   modules:
     ai-routing:      # 12张表
       - ai_channel
@@ -88,19 +93,16 @@
       - ai_config_version
       - ai_config_change
       ddl_location: database/migrations/ai-routing.sql
-      schema_file: docs/schema-registry/tables/ai-routing.yaml
     
     ai-metering:     # 2张表
       - ai_usage               # ⭐ 核心计费数据
-      - ai_usage_trace         # ⭐ 请求链路日志
+      - ai_request_trace       # ⭐ 请求链路日志
       ddl_location: database/migrations/ai-metering.sql
-      schema_file: docs/schema-registry/tables/ai-metering.yaml
     
     ai-pricing:      # 2张表
       - ai_pricing
       - ai_pricing_rule
       ddl_location: database/migrations/ai-pricing.sql
-      schema_file: docs/schema-registry/tables/ai-pricing.yaml
   
   registry_dependencies:  # 仅引用，不定义
     - sdkwork-iam: 5张表
@@ -127,16 +129,15 @@
 文件: ../sdkwork-iam/docs/schema-registry/sdkwork-iam.tables.yaml
 
 内容结构:
-  modules:
-    iam:
-      tables:
-        - iam_api_key
-        - iam_api_key_binding
-        - iam_api_key_policy
-        - iam_access_policy
-        - iam_risk_rule
-      ddl_location: database/migrations/iam.sql
-      schema_file: docs/schema-registry/tables/iam.yaml
+  table_fragments:
+    - tables/iam.yaml
+
+  tables:
+    - iam_api_key
+    - iam_api_key_binding
+    - iam_api_key_policy
+    - iam_access_policy
+    - iam_risk_rule
   
   模块职责:
     - 定义iam_*表的完整结构
@@ -309,7 +310,7 @@ Claw Router架构（对齐）:
 - sdkwork-clawrouter.tables.yaml（仅16张本地表）
 
 ✅ **核心表定义文件**
-- ai-metering.yaml（ai_usage + ai_usage_trace）
+- ai-metering.yaml（ai_usage + ai_request_trace）
 
 ✅ **DDL脚本**
 - ai-metering.sql（PostgreSQL建表脚本）

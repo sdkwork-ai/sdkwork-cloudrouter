@@ -20,7 +20,7 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
         self.assertIn("operation: fetchLogs", contract)
         self.assertIn("api_path: /app/v3/api/ai/usage/logs", contract)
         self.assertIn(
-            "read_sources: [ai_request_trace, ai_usage_fact, ai_routing_decision_log]",
+            "read_sources: [ai_request_trace, ai_usage, ai_routing_decision_log]",
             contract,
         )
 
@@ -79,7 +79,7 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
         ]:
             store = (ROOT / relative).read_text(encoding="utf-8")
             self.assertIn("FROM ai_request_trace", store)
-            self.assertIn("ai_usage_fact", store)
+            self.assertIn("ai_usage", store)
             self.assertIn("ai_routing_decision_log", store)
             self.assertIn("u.modality AS modality", store)
             self.assertNotIn("t.owner_type) AS modality", store)

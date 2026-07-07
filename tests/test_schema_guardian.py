@@ -932,12 +932,12 @@ class SchemaGuardianTest(unittest.TestCase):
                   legacy_compatibility_guardrails:
                     forbidden_synonym_tables: []
                 tables:
-                  - table: ai_usage_fact
+                  - table: ai_usage
                     domain: ai
                   - table: ops_metric_snapshot
                     domain: ops
                     profile: projection
-                    source_tables: [ai_usage_fact, missing_fact]
+                    source_tables: [ai_usage, missing_fact]
                   - table: ops_referral_stat_snapshot
                     domain: ops
                     common_columns: projection

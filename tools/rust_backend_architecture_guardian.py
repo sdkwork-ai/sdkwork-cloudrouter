@@ -185,7 +185,7 @@ class RustBackendArchitectureGuardian:
         "SqliteGatewayUsageRecorder",
         "PostgresGatewayUsageRecorder",
         "ai_request_trace",
-        "ai_usage_fact",
+        "ai_usage",
         "provider_usage_record_failed",
         "stream_options",
         "include_usage",

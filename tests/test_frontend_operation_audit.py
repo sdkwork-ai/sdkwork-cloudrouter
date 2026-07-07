@@ -1443,7 +1443,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                 """
                 routes:
                   - route: /demo
-                    required_tables: [ai_request_trace, ai_usage_fact]
+                    required_tables: [ai_request_trace, ai_usage]
                 frontend_operations:
                   - route: /demo
                     source: apps/sdkwork-clawrouter-pc/packages/demo/src/chatService.ts
@@ -1453,7 +1453,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     api_method: POST
                     api_path: /v1/chat/completions
                     read_sources: [ai_request_trace]
-                    write_tables: [ai_request_trace, ai_usage_fact]
+                    write_tables: [ai_request_trace, ai_usage]
                 """,
             )
 
@@ -1480,7 +1480,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                 """
                 routes:
                   - route: /demo
-                    required_tables: [ai_request_trace, ai_usage_fact]
+                    required_tables: [ai_request_trace, ai_usage]
                 frontend_operations:
                   - route: /demo
                     source: apps/sdkwork-clawrouter-pc/packages/demo/src/chatService.ts
@@ -1490,7 +1490,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     api_method: POST
                     api_path: /v1/chat/completions
                     read_sources: [ai_request_trace]
-                    write_tables: [ai_request_trace, ai_usage_fact]
+                    write_tables: [ai_request_trace, ai_usage]
                 """,
             )
 

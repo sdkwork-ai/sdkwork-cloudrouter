@@ -243,7 +243,7 @@ class SchemaManifestGeneratorTest(unittest.TestCase):
                   - table: ops_metric_snapshot
                     domain: ops
                     profile: projection
-                    source_tables: [ai_usage_fact]
+                    source_tables: [ai_usage]
                     source_refs: [external-metrics]
                     projection_policy:
                       does_not_replace: [plus_account_history]
@@ -256,7 +256,7 @@ class SchemaManifestGeneratorTest(unittest.TestCase):
             manifest = SchemaManifestGenerator(root=root, registry_path=registry).generate()
             table = manifest["tables"][0]
 
-            self.assertEqual(["ai_usage_fact"], table["source_tables"])
+            self.assertEqual(["ai_usage"], table["source_tables"])
             self.assertEqual(["external-metrics"], table["source_refs"])
             self.assertEqual(["plus_account_history"], table["projection_policy"]["does_not_replace"])
             self.assertEqual("dashboard_read_model", table["projection_policy"]["purpose"])
@@ -414,7 +414,7 @@ class SchemaManifestGeneratorTest(unittest.TestCase):
                           manual: 2
                         payload_contract:
                           required_fields: [rankScope, snapshotDate]
-                          source_tables: [ai_usage_fact, ai_model, ai_model_rank_snapshot]
+                          source_tables: [ai_usage, ai_model, ai_model_rank_snapshot]
                 """,
             )
 
@@ -429,7 +429,7 @@ class SchemaManifestGeneratorTest(unittest.TestCase):
                         "payload_contract": {
                             "required_fields": ["rankScope", "snapshotDate"],
                             "source_tables": [
-                                "ai_usage_fact",
+                                "ai_usage",
                                 "ai_model",
                                 "ai_model_rank_snapshot",
                             ],

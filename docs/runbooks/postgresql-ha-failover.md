@@ -35,19 +35,19 @@ promoted or the primary is restored.
   MUST use `sslmode=require` with certificate validation.
 - **Pool budget**: per
   [Production Operations](../../deployments/runbooks/production-operations.md),
-  budget `(gateway + admin-api + app-api) × max_connections ≤ PostgreSQL
-  max_connections − headroom`. pgBouncer default pool size is 16 connections
+  budget `(gateway + admin-api + app-api) 脳 max_connections 鈮?PostgreSQL
+  max_connections 鈭?headroom`. pgBouncer default pool size is 16 connections
   per service process.
 
 ## Automatic Failover (Patroni)
 
 When Patroni manages the cluster, failover is automatic:
 
-1. **Detect** — Patroni cannot reach the primary (DCS lease expires).
-2. **Promote** — the replica with the highest LSN is promoted to primary.
-3. **Re-point** — the DNS / Service endpoint (`postgres-primary`) is updated to
+1. **Detect** 鈥?Patroni cannot reach the primary (DCS lease expires).
+2. **Promote** 鈥?the replica with the highest LSN is promoted to primary.
+3. **Re-point** 鈥?the DNS / Service endpoint (`postgres-primary`) is updated to
    the new primary.
-4. **Reconnect** — pgBouncer and the gateway services reconnect through the
+4. **Reconnect** 鈥?pgBouncer and the gateway services reconnect through the
    Service; pending transactions retry against the new primary.
 
 Verify automatic failover:
@@ -161,7 +161,7 @@ After restore, validate integrity:
 ```bash
 kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
   psql -h postgres -U clawrouter -c \
-  "SELECT COUNT(*) FROM ai_usage_fact;
+  "SELECT COUNT(*) FROM ai_usage;
    SELECT COUNT(*) FROM ops_audit_log;
    SELECT COUNT(*) FROM ai_routing;"
 ```

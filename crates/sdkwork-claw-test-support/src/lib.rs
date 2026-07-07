@@ -12,11 +12,11 @@ use sdkwork_claw_config::{
     TrustedSubjectConfig,
 };
 use sdkwork_claw_http::{
-    sign_app_session_token, sign_trusted_request_subject, TrustedRequestSubject,
+    TrustedRequestSubject, sign_app_session_token, sign_trusted_request_subject,
 };
 use sha2::Sha256;
-use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::SqlitePool;
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -1829,7 +1829,7 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             user_agent_hash TEXT,
             UNIQUE (tenant_id, organization_id, request_id, attempt_no)
         )"#,
-        r#"CREATE TABLE ai_usage_fact (
+        r#"CREATE TABLE ai_usage (
             id INTEGER PRIMARY KEY,
             uuid TEXT NOT NULL,
             tenant_id INTEGER NOT NULL,

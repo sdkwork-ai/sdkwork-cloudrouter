@@ -89,7 +89,7 @@ tables:
 - name: ai_site_service
   lifecycle_status: active
   owner: claw-router-platform
-- name: ai_usage_fact
+- name: ai_usage
   lifecycle_status: active
   owner: claw-router-platform
 - name: ai_usage_service_provider_edge

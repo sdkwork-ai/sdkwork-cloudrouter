@@ -59,6 +59,7 @@ COMMON_COLUMN_DEFINITIONS: dict[str, ColumnDefinition] = {
     "deleted_at": ColumnDefinition("deleted_at", "TIMESTAMPTZ"),
     "deleted_by": ColumnDefinition("deleted_by", "BIGINT"),
     "metadata": ColumnDefinition("metadata", "JSONB", "NOT NULL DEFAULT '{}'::jsonb"),
+    "idempotency_key": ColumnDefinition("idempotency_key", "VARCHAR(128)"),
     "request_id": ColumnDefinition("request_id", "VARCHAR(128)"),
     "trace_id": ColumnDefinition("trace_id", "VARCHAR(128)"),
     "payload_hash": ColumnDefinition("payload_hash", "VARCHAR(128)"),
@@ -113,6 +114,7 @@ class SchemaCompiler:
             "-- Do not edit by hand; update Schema Registry and regenerate."
         ]
 
+        generated_table_count = 0
         for table in tables:
             if not isinstance(table, dict):
                 continue
@@ -120,9 +122,16 @@ class SchemaCompiler:
                 continue
 
             statements.append(self._compile_table(table, common_column_groups))
+            generated_table_count += 1
             index_sql = self._compile_indexes(table)
             if index_sql:
                 statements.append(index_sql)
+
+        if generated_table_count == 0:
+            raise SchemaCompileError(
+                "schema registry does not contain any project-generated tables; "
+                "check table_fragments and generated_by_this_project flags"
+            )
 
         return "\n\n".join(statement for statement in statements if statement).rstrip() + "\n"
 

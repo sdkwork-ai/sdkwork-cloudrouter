@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SDKWork Claw Router 全面架构审计与商业化就绪度评估报告</title>
+<title>SDKWork Claw Router 鍏ㄩ潰鏋舵瀯瀹¤涓庡晢涓氬寲灏辩华搴﹁瘎浼版姤鍛?/title>
 <style>
 @font-face {
   font-family: 'InstrumentSans';
@@ -391,124 +391,123 @@ footer .sources .src-url {
 
 <!-- Cover -->
 <div class="cover">
-  <div class="badge">技术审计报告</div>
-  <h1>SDKWork Claw Router 全面架构审计与商业化就绪度评估</h1>
-  <p class="subtitle">对齐行业最专业 AI 网关产品，覆盖功能、性能、安全、高可用、设计、文档六大维度的深度分析</p>
+  <div class="badge">鎶€鏈璁℃姤鍛?/div>
+  <h1>SDKWork Claw Router 鍏ㄩ潰鏋舵瀯瀹¤涓庡晢涓氬寲灏辩华搴﹁瘎浼?/h1>
+  <p class="subtitle">瀵归綈琛屼笟鏈€涓撲笟 AI 缃戝叧浜у搧锛岃鐩栧姛鑳姐€佹€ц兘銆佸畨鍏ㄣ€侀珮鍙敤銆佽璁°€佹枃妗ｅ叚澶х淮搴︾殑娣卞害鍒嗘瀽</p>
   <div class="score-badge">
     <span class="num">60</span>
-    <span class="label">/ 100 商业化就绪度评分<br>（商业 Beta 阶段）</span>
+    <span class="label">/ 100 鍟嗕笟鍖栧氨缁害璇勫垎<br>锛堝晢涓?Beta 闃舵锛?/span>
   </div>
   <div class="meta" style="margin-top: 1.5rem;">
-    <span>版本: <strong>v0.3.0</strong></span>
-    <span>审计日期: <strong>2026-06-27</strong></span>
-    <span>规范标准: <strong>sdkwork-specs</strong></span>
-    <span>代码仓库: <strong>sdkwork-clawrouter</strong></span>
+    <span>鐗堟湰: <strong>v0.3.0</strong></span>
+    <span>瀹¤鏃ユ湡: <strong>2026-06-27</strong></span>
+    <span>瑙勮寖鏍囧噯: <strong>sdkwork-specs</strong></span>
+    <span>浠ｇ爜浠撳簱: <strong>sdkwork-clawrouter</strong></span>
   </div>
 </div>
 
 <!-- TOC -->
 <div class="toc">
-  <h3>目录</h3>
+  <h3>鐩綍</h3>
   <ol>
-    <li><a href="#exec-summary">执行摘要</a></li>
-    <li><a href="#overview">项目概览与技术架构</a></li>
-    <li><a href="#strengths">架构优势分析</a></li>
-    <li><a href="#issues">关键问题与 Bug 清单</a></li>
-    <li><a href="#industry-gap">行业对标差距分析</a></li>
-    <li><a href="#commercial">商业化落地能力评估</a></li>
-    <li><a href="#roadmap">改进方案与路线图</a></li>
-    <li><a href="#conclusion">结论</a></li>
+    <li><a href="#exec-summary">鎵ц鎽樿</a></li>
+    <li><a href="#overview">椤圭洰姒傝涓庢妧鏈灦鏋?/a></li>
+    <li><a href="#strengths">鏋舵瀯浼樺娍鍒嗘瀽</a></li>
+    <li><a href="#issues">鍏抽敭闂涓?Bug 娓呭崟</a></li>
+    <li><a href="#industry-gap">琛屼笟瀵规爣宸窛鍒嗘瀽</a></li>
+    <li><a href="#commercial">鍟嗕笟鍖栬惤鍦拌兘鍔涜瘎浼?/a></li>
+    <li><a href="#roadmap">鏀硅繘鏂规涓庤矾绾垮浘</a></li>
+    <li><a href="#conclusion">缁撹</a></li>
   </ol>
 </div>
 
 <!-- 1. Executive Summary -->
-<h2 id="exec-summary">执行摘要</h2>
+<h2 id="exec-summary">鎵ц鎽樿</h2>
 
-<p>SDKWork Claw Router 是一款面向企业级多租户场景的商业 AI 网关产品，提供 OpenAI 兼容的 <code>/v1/*</code> 接口、多 Provider 路由、模型目录管理、用量计费和运营后台。经过对 Rust 后端（52 个 crate）、React 前端门户（40+ 领域包）、API 契约、数据库设计、部署方案和文档体系的全面审计，本报告得出以下核心结论。</p>
+<p>SDKWork Claw Router 鏄竴娆鹃潰鍚戜紒涓氱骇澶氱鎴峰満鏅殑鍟嗕笟 AI 缃戝叧浜у搧锛屾彁渚?OpenAI 鍏煎鐨?<code>/v1/*</code> 鎺ュ彛銆佸 Provider 璺敱銆佹ā鍨嬬洰褰曠鐞嗐€佺敤閲忚璐瑰拰杩愯惀鍚庡彴銆傜粡杩囧 Rust 鍚庣锛?2 涓?crate锛夈€丷eact 鍓嶇闂ㄦ埛锛?0+ 棰嗗煙鍖咃級銆丄PI 濂戠害銆佹暟鎹簱璁捐銆侀儴缃叉柟妗堝拰鏂囨。浣撶郴鐨勫叏闈㈠璁★紝鏈姤鍛婂緱鍑轰互涓嬫牳蹇冪粨璁恒€?/p>
 
 <div class="callout success">
-  <div class="title">架构成熟度高</div>
-  <p>网关调用管道（18 个拦截器链式编排）、DDD 分层架构、契约驱动开发（OpenAPI → 生成 SDK → Rust handler → 前端消费）、多租户数据隔离（tenant_id + organization_id + data_scope 三字段）等核心设计达到行业生产级水准。熔断器、限流器、幂等性拦截器、双令牌认证、SSE 流式透传均已实现。</p>
+  <div class="title">鏋舵瀯鎴愮啛搴﹂珮</div>
+  <p>缃戝叧璋冪敤绠￠亾锛?8 涓嫤鎴櫒閾惧紡缂栨帓锛夈€丏DD 鍒嗗眰鏋舵瀯銆佸绾﹂┍鍔ㄥ紑鍙戯紙OpenAPI 鈫?鐢熸垚 SDK 鈫?Rust handler 鈫?鍓嶇娑堣垂锛夈€佸绉熸埛鏁版嵁闅旂锛坱enant_id + organization_id + data_scope 涓夊瓧娈碉級绛夋牳蹇冭璁¤揪鍒拌涓氱敓浜х骇姘村噯銆傜啍鏂櫒銆侀檺娴佸櫒銆佸箓绛夋€ф嫤鎴櫒銆佸弻浠ょ墝璁よ瘉銆丼SE 娴佸紡閫忎紶鍧囧凡瀹炵幇銆?/p>
 </div>
 
 <div class="callout danger">
-  <div class="title">阻断商业 GA 的关键缺口</div>
-  <p>可观测性严重不足（仅 5 个无标签计数器，无延迟分桶）、密码哈希低于 OWASP 标准（210K 迭代 vs 推荐 600K，确定性盐 vs 随机盐）、多租户共享签名密钥、文档与代码状态严重脱节（审计文档 14 项 P0 中约 8 项已修复但未更新）、前端工程治理缺口（无 ESLint、i18n 607KB 未分包、测试组织混乱）。这些问题距商业 GA 需完成约 6-8 项 P0 改进。</p>
+  <div class="title">闃绘柇鍟嗕笟 GA 鐨勫叧閿己鍙?/div>
+  <p>鍙娴嬫€т弗閲嶄笉瓒筹紙浠?5 涓棤鏍囩璁℃暟鍣紝鏃犲欢杩熷垎妗讹級銆佸瘑鐮佸搱甯屼綆浜?OWASP 鏍囧噯锛?10K 杩唬 vs 鎺ㄨ崘 600K锛岀‘瀹氭€х洂 vs 闅忔満鐩愶級銆佸绉熸埛鍏变韩绛惧悕瀵嗛挜銆佹枃妗ｄ笌浠ｇ爜鐘舵€佷弗閲嶈劚鑺傦紙瀹¤鏂囨。 14 椤?P0 涓害 8 椤瑰凡淇浣嗘湭鏇存柊锛夈€佸墠绔伐绋嬫不鐞嗙己鍙ｏ紙鏃?ESLint銆乮18n 607KB 鏈垎鍖呫€佹祴璇曠粍缁囨贩涔憋級銆傝繖浜涢棶棰樿窛鍟嗕笟 GA 闇€瀹屾垚绾?6-8 椤?P0 鏀硅繘銆?/p>
 </div>
 
 <div class="grid-3">
   <div class="card">
-    <div class="card-title">已对齐项</div>
+    <div class="card-title">宸插榻愰」</div>
     <div class="card-value">11</div>
-    <div class="card-desc">sdkwork-specs 标准对齐维度</div>
+    <div class="card-desc">sdkwork-specs 鏍囧噯瀵归綈缁村害</div>
   </div>
   <div class="card">
-    <div class="card-title">待修复 P0</div>
+    <div class="card-title">寰呬慨澶?P0</div>
     <div class="card-value" style="color: var(--danger);">6</div>
-    <div class="card-desc">阻断商业化的关键问题</div>
+    <div class="card-desc">闃绘柇鍟嗕笟鍖栫殑鍏抽敭闂</div>
   </div>
   <div class="card">
-    <div class="card-title">待改进 P1/P2</div>
+    <div class="card-title">寰呮敼杩?P1/P2</div>
     <div class="card-value" style="color: var(--warn);">18</div>
-    <div class="card-desc">影响质量的改进项</div>
+    <div class="card-desc">褰卞搷璐ㄩ噺鐨勬敼杩涢」</div>
   </div>
 </div>
 
 <!-- 2. Overview -->
-<h2 id="overview">项目概览与技术架构</h2>
+<h2 id="overview">椤圭洰姒傝涓庢妧鏈灦鏋?/h2>
 
-<h3>产品定位</h3>
-<p>Claw Router 定位为企业级多租户 AI API 聚合网关，核心产品面包括：</p>
+<h3>浜у搧瀹氫綅</h3>
+<p>Claw Router 瀹氫綅涓轰紒涓氱骇澶氱鎴?AI API 鑱氬悎缃戝叧锛屾牳蹇冧骇鍝侀潰鍖呮嫭锛?/p>
 <ul>
-  <li><strong>OpenAI 兼容网关</strong>：暴露 <code>/v1/*</code> API，通过可配置的 Provider 路由策略转发流量</li>
-  <li><strong>用户门户与控制台</strong>：浏览器工作台，管理 API Key、计费、用量、路由、模型发现和 Playground</li>
-  <li><strong>管理后台</strong>：用户、Provider、渠道、公告、分析、限流、缓存和商业运营管理</li>
-  <li><strong>模型目录与定价</strong>：模型事实数据、厂商区域、定价和安装时目录刷新</li>
-  <li><strong>生成 SDK</strong>：从 OpenAPI 契约生成 9 语言 SDK（TypeScript、Rust、Java、Go、Python、C#、Swift、Kotlin、Flutter）</li>
+  <li><strong>OpenAI 鍏煎缃戝叧</strong>锛氭毚闇?<code>/v1/*</code> API锛岄€氳繃鍙厤缃殑 Provider 璺敱绛栫暐杞彂娴侀噺</li>
+  <li><strong>鐢ㄦ埛闂ㄦ埛涓庢帶鍒跺彴</strong>锛氭祻瑙堝櫒宸ヤ綔鍙帮紝绠＄悊 API Key銆佽璐广€佺敤閲忋€佽矾鐢便€佹ā鍨嬪彂鐜板拰 Playground</li>
+  <li><strong>绠＄悊鍚庡彴</strong>锛氱敤鎴枫€丳rovider銆佹笭閬撱€佸叕鍛娿€佸垎鏋愩€侀檺娴併€佺紦瀛樺拰鍟嗕笟杩愯惀绠＄悊</li>
+  <li><strong>妯″瀷鐩綍涓庡畾浠?/strong>锛氭ā鍨嬩簨瀹炴暟鎹€佸巶鍟嗗尯鍩熴€佸畾浠峰拰瀹夎鏃剁洰褰曞埛鏂?/li>
+  <li><strong>鐢熸垚 SDK</strong>锛氫粠 OpenAPI 濂戠害鐢熸垚 9 璇█ SDK锛圱ypeScript銆丷ust銆丣ava銆丟o銆丳ython銆丆#銆丼wift銆並otlin銆丗lutter锛?/li>
 </ul>
 
-<h3>技术栈</h3>
+<h3>鎶€鏈爤</h3>
 <div class="grid-2">
   <div class="card">
-    <div class="card-title">后端</div>
+    <div class="card-title">鍚庣</div>
     <p style="font-size: 0.85rem; color: var(--muted);">
       Rust 1.79 + axum + sqlx<br>
-      52 个 workspace crate<br>
-      PostgreSQL + SQLite 双数据库<br>
-      Redis 分布式限流/缓存<br>
-      Prometheus 指标<br>
-      18 拦截器调用管道<br>
-      DDD + Port/Adapter 分层
+      52 涓?workspace crate<br>
+      PostgreSQL + SQLite 鍙屾暟鎹簱<br>
+      Redis 鍒嗗竷寮忛檺娴?缂撳瓨<br>
+      Prometheus 鎸囨爣<br>
+      18 鎷︽埅鍣ㄨ皟鐢ㄧ閬?br>
+      DDD + Port/Adapter 鍒嗗眰
     </p>
   </div>
   <div class="card">
-    <div class="card-title">前端</div>
+    <div class="card-title">鍓嶇</div>
     <p style="font-size: 0.85rem; color: var(--muted);">
       React 19 + Vite 6 + TypeScript 5.8<br>
       Tailwind CSS 4<br>
       TanStack React Query 5<br>
       React Router 7<br>
-      40+ 领域包<br>
-      7 语言 i18n<br>
-      生成 SDK 客户端集成
-    </p>
+      40+ 棰嗗煙鍖?br>
+      7 璇█ i18n<br>
+      鐢熸垚 SDK 瀹㈡埛绔泦鎴?    </p>
   </div>
 </div>
 
-<h3>架构图</h3>
+<h3>鏋舵瀯鍥?/h3>
 <figure class="diagram">
   <pre class="mermaid">
 graph TB
     subgraph Edge["Edge Layer"]
-        NGINX["Nginx 反向代理"]
+        NGINX["Nginx 鍙嶅悜浠ｇ悊"]
         EDGE["Edge Server (Rust)"]
     end
 
     subgraph Gateway["Gateway Layer"]
-        GW["Cloud Gateway<br/>18 拦截器管道"]
-        PASS["Provider Passthrough<br/>SSE 流式透传"]
-        CB["Circuit Breaker<br/>熔断器"]
-        RL["Rate Limiter<br/>限流器"]
+        GW["Cloud Gateway<br/>18 鎷︽埅鍣ㄧ閬?]
+        PASS["Provider Passthrough<br/>SSE 娴佸紡閫忎紶"]
+        CB["Circuit Breaker<br/>鐔旀柇鍣?]
+        RL["Rate Limiter<br/>闄愭祦鍣?]
     end
 
     subgraph API["API Layer"]
@@ -518,17 +517,17 @@ graph TB
     end
 
     subgraph Data["Data Layer"]
-        PG[("PostgreSQL<br/>多租户隔离")]
+        PG[("PostgreSQL<br/>澶氱鎴烽殧绂?)]
         REDIS[("Redis<br/>Sentinel HA")]
-        SQLITE["SQLite<br/>桌面模式"]
+        SQLITE["SQLite<br/>妗岄潰妯″紡"]
     end
 
     subgraph Frontend["Frontend"]
-        PORTAL["React Portal<br/>40+ 领域包"]
-        SDK["生成 SDK 客户端<br/>9 语言"]
+        PORTAL["React Portal<br/>40+ 棰嗗煙鍖?]
+        SDK["鐢熸垚 SDK 瀹㈡埛绔?br/>9 璇█"]
     end
 
-    CLIENT["OpenAI 兼容客户端"] --> NGINX
+    CLIENT["OpenAI 鍏煎瀹㈡埛绔?] --> NGINX
     NGINX --> EDGE
     EDGE --> GW
     EDGE --> APP
@@ -546,603 +545,599 @@ graph TB
     SDK --> BACK
     PORTAL --> SQLITE
   </pre>
-  <figcaption>图 1: Claw Router 系统架构概览</figcaption>
+  <figcaption>鍥?1: Claw Router 绯荤粺鏋舵瀯姒傝</figcaption>
 </figure>
 
 <!-- 3. Strengths -->
-<h2 id="strengths">架构优势分析</h2>
+<h2 id="strengths">鏋舵瀯浼樺娍鍒嗘瀽</h2>
 
-<h3>网关调用管道设计（行业领先）</h3>
-<p>Cloud Gateway 的 <code>invocation_router.rs</code> 实现了 18 个拦截器按序编排的调用管道，职责单一、可插拔，达到生产级 AI 网关的设计水准：</p>
+<h3>缃戝叧璋冪敤绠￠亾璁捐锛堣涓氶鍏堬級</h3>
+<p>Cloud Gateway 鐨?<code>invocation_router.rs</code> 瀹炵幇浜?18 涓嫤鎴櫒鎸夊簭缂栨帓鐨勮皟鐢ㄧ閬擄紝鑱岃矗鍗曚竴銆佸彲鎻掓嫈锛岃揪鍒扮敓浜х骇 AI 缃戝叧鐨勮璁℃按鍑嗭細</p>
 
-<pre><code>Metrics → Idempotency → PayloadExtraction → BillingPolicy
-→ StickyResolution → RoutePlanning → CircuitBreaker → AccountResolution
-→ ProviderAdapterDispatch → PricingPreflight → ResponseNormalization
-→ DispatchExecutor → StickyCommit → UsageRecording
-→ PricingSettlement → PricingFinalization → TraceTelemetry → UsageExtraction</code></pre>
+<pre><code>Metrics 鈫?Idempotency 鈫?PayloadExtraction 鈫?BillingPolicy
+鈫?StickyResolution 鈫?RoutePlanning 鈫?CircuitBreaker 鈫?AccountResolution
+鈫?ProviderAdapterDispatch 鈫?PricingPreflight 鈫?ResponseNormalization
+鈫?DispatchExecutor 鈫?StickyCommit 鈫?UsageRecording
+鈫?PricingSettlement 鈫?PricingFinalization 鈫?TraceTelemetry 鈫?UsageExtraction</code></pre>
 
-<p>这一设计与 Kong 的插件链、LiteLLM 的 callback 链理念一致，但拦截器粒度更细，计费/定价/用量记录被拆分为独立阶段，便于商业场景的精确计量。</p>
+<p>杩欎竴璁捐涓?Kong 鐨勬彃浠堕摼銆丩iteLLM 鐨?callback 閾剧悊蹇典竴鑷达紝浣嗘嫤鎴櫒绮掑害鏇寸粏锛岃璐?瀹氫环/鐢ㄩ噺璁板綍琚媶鍒嗕负鐙珛闃舵锛屼究浜庡晢涓氬満鏅殑绮剧‘璁￠噺銆?/p>
 
-<h3>安全设计扎实</h3>
+<h3>瀹夊叏璁捐鎵庡疄</h3>
 <ul>
-  <li><strong>双令牌会话认证</strong>：Authorization(auth token) + Access-Token 主体一致性校验，签名头验证后主动移除防下游伪造</li>
-  <li><strong>HMAC-SHA256 常量时间比较</strong>：<code>mac.verify_slice()</code> 防时序攻击</li>
-  <li><strong>IP 防伪造</strong>：默认不信任 <code>x-forwarded-for</code>/<code>x-real-ip</code>，仅从 <code>ConnectInfo&lt;SocketAddr&gt;</code> 取真实 IP</li>
-  <li><strong>上游转发头剥离</strong>：移除 <code>authorization</code>/<code>x-api-key</code>/<code>x-forwarded-*</code>，防凭据泄露与头注入</li>
-  <li><strong>TLS 加密</strong>：<code>hyper_rustls</code> + <code>with_webpki_roots()</code></li>
-  <li><strong>错误响应脱敏</strong>：自动遮蔽 <code>sk-</code> 前缀令牌与 Bearer 令牌</li>
-  <li><strong>15 个 crate 声明 <code>#![forbid(unsafe_code)]</code></strong></li>
+  <li><strong>鍙屼护鐗屼細璇濊璇?/strong>锛欰uthorization(auth token) + Access-Token 涓讳綋涓€鑷存€ф牎楠岋紝绛惧悕澶撮獙璇佸悗涓诲姩绉婚櫎闃蹭笅娓镐吉閫?/li>
+  <li><strong>HMAC-SHA256 甯搁噺鏃堕棿姣旇緝</strong>锛?code>mac.verify_slice()</code> 闃叉椂搴忔敾鍑?/li>
+  <li><strong>IP 闃蹭吉閫?/strong>锛氶粯璁や笉淇′换 <code>x-forwarded-for</code>/<code>x-real-ip</code>锛屼粎浠?<code>ConnectInfo&lt;SocketAddr&gt;</code> 鍙栫湡瀹?IP</li>
+  <li><strong>涓婃父杞彂澶村墺绂?/strong>锛氱Щ闄?<code>authorization</code>/<code>x-api-key</code>/<code>x-forwarded-*</code>锛岄槻鍑嵁娉勯湶涓庡ご娉ㄥ叆</li>
+  <li><strong>TLS 鍔犲瘑</strong>锛?code>hyper_rustls</code> + <code>with_webpki_roots()</code></li>
+  <li><strong>閿欒鍝嶅簲鑴辨晱</strong>锛氳嚜鍔ㄩ伄钄?<code>sk-</code> 鍓嶇紑浠ょ墝涓?Bearer 浠ょ墝</li>
+  <li><strong>15 涓?crate 澹版槑 <code>#![forbid(unsafe_code)]</code></strong></li>
 </ul>
 
-<h3>契约驱动开发体系</h3>
-<p>项目建立了完整的契约治理闭环：<mark class="key">Schema Registry → OpenAPI 3.1.2 契约 → 生成 SDK（9 语言）→ Rust handler → 前端 SDK 客户端消费</mark>。前端零裸 <code>fetch</code>/<code>axios</code> 调用，全部通过生成的 SDK 客户端发起请求，强类型链式资源路径。这一治理水平在同类 AI 网关产品中属于领先实践。</p>
+<h3>濂戠害椹卞姩寮€鍙戜綋绯?/h3>
+<p>椤圭洰寤虹珛浜嗗畬鏁寸殑濂戠害娌荤悊闂幆锛?mark class="key">Schema Registry 鈫?OpenAPI 3.1.2 濂戠害 鈫?鐢熸垚 SDK锛? 璇█锛夆啋 Rust handler 鈫?鍓嶇 SDK 瀹㈡埛绔秷璐?/mark>銆傚墠绔浂瑁?<code>fetch</code>/<code>axios</code> 璋冪敤锛屽叏閮ㄩ€氳繃鐢熸垚鐨?SDK 瀹㈡埛绔彂璧疯姹傦紝寮虹被鍨嬮摼寮忚祫婧愯矾寰勩€傝繖涓€娌荤悊姘村钩鍦ㄥ悓绫?AI 缃戝叧浜у搧涓睘浜庨鍏堝疄璺点€?/p>
 
-<h3>多租户数据隔离</h3>
-<p>所有业务表强制 <code>tenant_id</code> + <code>organization_id</code> + <code>data_scope</code> 三字段，高频索引以 <code>tenant_id</code> 起始。SQL 边界通过 <code>SqlScopedSubject</code>/<code>SqlScopedAdminSubject</code> 强制隔离，IAM <code>WebRequestPrincipal</code> 不信任客户端租户头。凭证表只存 <code>credential_ref</code>/<code>credential_hash</code>/<code>masked_label</code>，不存明文。</p>
+<h3>澶氱鎴锋暟鎹殧绂?/h3>
+<p>鎵€鏈変笟鍔¤〃寮哄埗 <code>tenant_id</code> + <code>organization_id</code> + <code>data_scope</code> 涓夊瓧娈碉紝楂橀绱㈠紩浠?<code>tenant_id</code> 璧峰銆係QL 杈圭晫閫氳繃 <code>SqlScopedSubject</code>/<code>SqlScopedAdminSubject</code> 寮哄埗闅旂锛孖AM <code>WebRequestPrincipal</code> 涓嶄俊浠诲鎴风绉熸埛澶淬€傚嚟璇佽〃鍙瓨 <code>credential_ref</code>/<code>credential_hash</code>/<code>masked_label</code>锛屼笉瀛樻槑鏂囥€?/p>
 
-<h3>K8s 生产级部署清单</h3>
-<p>Gateway/Admin-API/App-API 三服务 Deployment + Service + HPA + PDB；Redis 采用 3 副本 StatefulSet + Sentinel 自动故障转移（AOF+RDB 持久化）。安全加固全面：<code>runAsNonRoot</code> + <code>readOnlyRootFilesystem</code> + <code>drop: [ALL]</code> capabilities + <code>allowPrivilegeEscalation: false</code>。NetworkPolicy 零信任分段，Ingress 配置 HSTS preload + 安全头。</p>
+<h3>K8s 鐢熶骇绾ч儴缃叉竻鍗?/h3>
+<p>Gateway/Admin-API/App-API 涓夋湇鍔?Deployment + Service + HPA + PDB锛汻edis 閲囩敤 3 鍓湰 StatefulSet + Sentinel 鑷姩鏁呴殰杞Щ锛圓OF+RDB 鎸佷箙鍖栵級銆傚畨鍏ㄥ姞鍥哄叏闈細<code>runAsNonRoot</code> + <code>readOnlyRootFilesystem</code> + <code>drop: [ALL]</code> capabilities + <code>allowPrivilegeEscalation: false</code>銆侼etworkPolicy 闆朵俊浠诲垎娈碉紝Ingress 閰嶇疆 HSTS preload + 瀹夊叏澶淬€?/p>
 
-<h3>SSE 流式透传</h3>
-<p>经验证，<code>invocation_dispatcher.rs</code> 正确检测 <code>text/event-stream</code> 响应类型，SSE 流式响应不缓冲直接透传，<code>ChatStreamRelay</code> 和 <code>AdapterAwareChatCompletionStreamRelay</code> 支持流式 Chat Completions。审计文档中"流式被全缓冲"的描述与实际代码不符。</p>
+<h3>SSE 娴佸紡閫忎紶</h3>
+<p>缁忛獙璇侊紝<code>invocation_dispatcher.rs</code> 姝ｇ‘妫€娴?<code>text/event-stream</code> 鍝嶅簲绫诲瀷锛孲SE 娴佸紡鍝嶅簲涓嶇紦鍐茬洿鎺ラ€忎紶锛?code>ChatStreamRelay</code> 鍜?<code>AdapterAwareChatCompletionStreamRelay</code> 鏀寔娴佸紡 Chat Completions銆傚璁℃枃妗ｄ腑"娴佸紡琚叏缂撳啿"鐨勬弿杩颁笌瀹為檯浠ｇ爜涓嶇銆?/p>
 
 <!-- 4. Issues -->
-<h2 id="issues">关键问题与 Bug 清单</h2>
+<h2 id="issues">鍏抽敭闂涓?Bug 娓呭崟</h2>
 
-<h3>安全问题</h3>
+<h3>瀹夊叏闂</h3>
 <div class="table-wrap">
 <table>
 <thead>
-<tr><th>编号</th><th>问题</th><th>位置</th><th>严重度</th><th>详情</th></tr>
+<tr><th>缂栧彿</th><th>闂</th><th>浣嶇疆</th><th>涓ラ噸搴?/th><th>璇︽儏</th></tr>
 </thead>
 <tbody>
 <tr>
   <td>S-01</td>
-  <td>密码哈希迭代次数低于 OWASP 标准</td>
+  <td>瀵嗙爜鍝堝笇杩唬娆℃暟浣庝簬 OWASP 鏍囧噯</td>
   <td><code>password_hash.rs:11</code></td>
   <td><span class="sev sev-p0">P0</span></td>
-  <td><code>DEFAULT_ITERATIONS = 210,000</code>，OWASP 2024 推荐 PBKDF2-HMAC-SHA256 为 <strong>600,000</strong> 次<sup><a href="#cite-1">[1]</a></sup>。当前低于推荐值约 2.8 倍。更推荐迁移到 Argon2id（OWASP 首选算法）。</td>
+  <td><code>DEFAULT_ITERATIONS = 210,000</code>锛孫WASP 2024 鎺ㄨ崘 PBKDF2-HMAC-SHA256 涓?<strong>600,000</strong> 娆?sup><a href="#cite-1">[1]</a></sup>銆傚綋鍓嶄綆浜庢帹鑽愬€肩害 2.8 鍊嶃€傛洿鎺ㄨ崘杩佺Щ鍒?Argon2id锛圤WASP 棣栭€夌畻娉曪級銆?/td>
 </tr>
 <tr>
   <td>S-02</td>
-  <td>密码盐非随机生成</td>
+  <td>瀵嗙爜鐩愰潪闅忔満鐢熸垚</td>
   <td><code>password_hash.rs:53-56</code></td>
   <td><span class="sev sev-p0">P0</span></td>
-  <td>盐 = <code>"sdkwork-clawrouter:" + salt_hint</code>（通常为 user_id），是确定性盐而非每哈希随机盐。同用户改密码复用相同盐。OWASP 要求每个密码使用唯一随机盐<sup><a href="#cite-1">[1]</a></sup>。</td>
+  <td>鐩?= <code>"sdkwork-clawrouter:" + salt_hint</code>锛堥€氬父涓?user_id锛夛紝鏄‘瀹氭€х洂鑰岄潪姣忓搱甯岄殢鏈虹洂銆傚悓鐢ㄦ埛鏀瑰瘑鐮佸鐢ㄧ浉鍚岀洂銆侽WASP 瑕佹眰姣忎釜瀵嗙爜浣跨敤鍞竴闅忔満鐩?sup><a href="#cite-1">[1]</a></sup>銆?/td>
 </tr>
 <tr>
   <td>S-03</td>
-  <td>多租户共享签名密钥</td>
+  <td>澶氱鎴峰叡浜鍚嶅瘑閽?/td>
   <td><code>auth.rs:1105-1106</code><br><code>app_session.rs:107</code></td>
   <td><span class="sev sev-p0">P0</span></td>
-  <td>App session token 使用单一共享 HMAC 密钥（<code>config.signing_secret()</code>），非 per-tenant 密钥。虽然 <code>sign_app_session_token_with_claims_and_secret</code> 支持自定义密钥参数，但运行时未启用 per-tenant 密钥。单密钥泄露影响全租户。</td>
+  <td>App session token 浣跨敤鍗曚竴鍏变韩 HMAC 瀵嗛挜锛?code>config.signing_secret()</code>锛夛紝闈?per-tenant 瀵嗛挜銆傝櫧鐒?<code>sign_app_session_token_with_claims_and_secret</code> 鏀寔鑷畾涔夊瘑閽ュ弬鏁帮紝浣嗚繍琛屾椂鏈惎鐢?per-tenant 瀵嗛挜銆傚崟瀵嗛挜娉勯湶褰卞搷鍏ㄧ鎴枫€?/td>
 </tr>
 <tr>
   <td>S-04</td>
-  <td>手写 unsafe FFI 调用 BCryptGenRandom</td>
+  <td>鎵嬪啓 unsafe FFI 璋冪敤 BCryptGenRandom</td>
   <td><code>api_key_secret_generator.rs:40</code></td>
   <td><span class="sev sev-p1">P1</span></td>
-  <td>手写 unsafe FFI 调用 Windows BCryptGenRandom，而工作区已依赖 <code>getrandom = "0.3"</code>（<code>request_identity.rs</code> 已正确使用）。应统一使用 <code>getrandom::fill</code>。该 crate 也未声明 <code>#![forbid(unsafe_code)]</code>（其余 15 个 crate 均已声明）。</td>
+  <td>鎵嬪啓 unsafe FFI 璋冪敤 Windows BCryptGenRandom锛岃€屽伐浣滃尯宸蹭緷璧?<code>getrandom = "0.3"</code>锛?code>request_identity.rs</code> 宸叉纭娇鐢級銆傚簲缁熶竴浣跨敤 <code>getrandom::fill</code>銆傝 crate 涔熸湭澹版槑 <code>#![forbid(unsafe_code)]</code>锛堝叾浣?15 涓?crate 鍧囧凡澹版槑锛夈€?/td>
 </tr>
 <tr>
   <td>S-05</td>
-  <td>生产代码 <code>.expect()</code> 可能 panic</td>
+  <td>鐢熶骇浠ｇ爜 <code>.expect()</code> 鍙兘 panic</td>
   <td><code>passthrough.rs:398</code></td>
   <td><span class="sev sev-p1">P1</span></td>
-  <td><code>.expect("OpenAI relay bearer token is validated by config parser")</code> 在生产路径可能 panic，应改为 <code>?</code> 错误传播。</td>
+  <td><code>.expect("OpenAI relay bearer token is validated by config parser")</code> 鍦ㄧ敓浜ц矾寰勫彲鑳?panic锛屽簲鏀逛负 <code>?</code> 閿欒浼犳挱銆?/td>
 </tr>
 <tr>
   <td>S-06</td>
-  <td>桌面模式 API Key 查询参数允许</td>
+  <td>妗岄潰妯″紡 API Key 鏌ヨ鍙傛暟鍏佽</td>
   <td><code>auth.rs:1341-1346</code></td>
   <td><span class="sev sev-p2">P2</span></td>
-  <td>Desktop 部署模式允许 <code>?key=</code> 查询参数传 API Key，查询参数易进日志/Referer。仅限桌面模式可接受但需确保不误用于服务端。</td>
+  <td>Desktop 閮ㄧ讲妯″紡鍏佽 <code>?key=</code> 鏌ヨ鍙傛暟浼?API Key锛屾煡璇㈠弬鏁版槗杩涙棩蹇?Referer銆備粎闄愭闈㈡ā寮忓彲鎺ュ彈浣嗛渶纭繚涓嶈鐢ㄤ簬鏈嶅姟绔€?/td>
 </tr>
 <tr>
   <td>S-07</td>
-  <td>SDK 许可证冲突风险</td>
+  <td>SDK 璁稿彲璇佸啿绐侀闄?/td>
   <td><code>sdks/.../README.md</code></td>
   <td><span class="sev sev-p1">P1</span></td>
-  <td>生成的 SDK 声明 MIT 许可证，而主项目为 AGPL-3.0 + 商业限制。MIT SDK 与 AGPL 主体的授权边界需在商业授权协议中明确。</td>
+  <td>鐢熸垚鐨?SDK 澹版槑 MIT 璁稿彲璇侊紝鑰屼富椤圭洰涓?AGPL-3.0 + 鍟嗕笟闄愬埗銆侻IT SDK 涓?AGPL 涓讳綋鐨勬巿鏉冭竟鐣岄渶鍦ㄥ晢涓氭巿鏉冨崗璁腑鏄庣‘銆?/td>
 </tr>
 </tbody>
 </table>
 </div>
 
-<h3>可观测性问题</h3>
+<h3>鍙娴嬫€ч棶棰?/h3>
 <div class="table-wrap">
 <table>
 <thead>
-<tr><th>编号</th><th>问题</th><th>位置</th><th>严重度</th><th>详情</th></tr>
+<tr><th>缂栧彿</th><th>闂</th><th>浣嶇疆</th><th>涓ラ噸搴?/th><th>璇︽儏</th></tr>
 </thead>
 <tbody>
 <tr>
   <td>O-01</td>
-  <td>仅 5 个无标签计数器，无 Histogram</td>
+  <td>浠?5 涓棤鏍囩璁℃暟鍣紝鏃?Histogram</td>
   <td><code>metrics.rs</code></td>
   <td><span class="sev sev-p0">P0</span></td>
-  <td>仅 <code>requests_total</code>/<code>requests_client_error_total</code>/<code>requests_server_error_total</code>/<code>readiness_checks_total</code>/<code>readiness_checks_failed_total</code> 五个 <code>IntCounter</code>。无 <code>Histogram</code>（缺 p50/p95/p99 延迟分桶），无 route/method/status/operation_id 标签。PRD 明确要求 Prometheus RED/USE + OTel + SLO/SLI 仪表盘。</td>
+  <td>浠?<code>requests_total</code>/<code>requests_client_error_total</code>/<code>requests_server_error_total</code>/<code>readiness_checks_total</code>/<code>readiness_checks_failed_total</code> 浜斾釜 <code>IntCounter</code>銆傛棤 <code>Histogram</code>锛堢己 p50/p95/p99 寤惰繜鍒嗘《锛夛紝鏃?route/method/status/operation_id 鏍囩銆侾RD 鏄庣‘瑕佹眰 Prometheus RED/USE + OTel + SLO/SLI 浠〃鐩樸€?/td>
 </tr>
 <tr>
   <td>O-02</td>
-  <td>无 OpenTelemetry tracing 导出器配置</td>
-  <td>—</td>
+  <td>鏃?OpenTelemetry tracing 瀵煎嚭鍣ㄩ厤缃?/td>
+  <td>鈥?/td>
   <td><span class="sev sev-p0">P0</span></td>
-  <td><code>sdkwork-claw-observability</code> crate 存在但无 OTel exporter 配置，无分布式追踪链路。对于多 Provider 转发场景，无法定位慢调用根因。</td>
+  <td><code>sdkwork-claw-observability</code> crate 瀛樺湪浣嗘棤 OTel exporter 閰嶇疆锛屾棤鍒嗗竷寮忚拷韪摼璺€傚浜庡 Provider 杞彂鍦烘櫙锛屾棤娉曞畾浣嶆參璋冪敤鏍瑰洜銆?/td>
 </tr>
 <tr>
   <td>O-03</td>
-  <td>无告警规则</td>
-  <td>—</td>
+  <td>鏃犲憡璀﹁鍒?/td>
+  <td>鈥?/td>
   <td><span class="sev sev-p1">P1</span></td>
-  <td>无 PrometheusRule 定义，无 Alertmanager 集成。生产环境无法自动检测异常（错误率飙升、延迟劣化、熔断器开启等）。</td>
+  <td>鏃?PrometheusRule 瀹氫箟锛屾棤 Alertmanager 闆嗘垚銆傜敓浜х幆澧冩棤娉曡嚜鍔ㄦ娴嬪紓甯革紙閿欒鐜囬鍗囥€佸欢杩熷姡鍖栥€佺啍鏂櫒寮€鍚瓑锛夈€?/td>
 </tr>
 </tbody>
 </table>
 </div>
 
-<h3>性能问题</h3>
+<h3>鎬ц兘闂</h3>
 <div class="table-wrap">
 <table>
 <thead>
-<tr><th>编号</th><th>问题</th><th>位置</th><th>严重度</th><th>详情</th></tr>
+<tr><th>缂栧彿</th><th>闂</th><th>浣嶇疆</th><th>涓ラ噸搴?/th><th>璇︽儏</th></tr>
 </thead>
 <tbody>
 <tr>
   <td>P-01</td>
-  <td>Provider HTTP 客户端无连接复用</td>
+  <td>Provider HTTP 瀹㈡埛绔棤杩炴帴澶嶇敤</td>
   <td><code>provider_passthrough_transport.rs:108</code></td>
   <td><span class="sev sev-p1">P1</span></td>
-  <td>每次调用 <code>build_provider_passthrough_client()</code> 新建 HTTPS 连接池，无 keepalive 配置。高频转发场景产生连接建立开销，应改为懒加载单例。</td>
+  <td>姣忔璋冪敤 <code>build_provider_passthrough_client()</code> 鏂板缓 HTTPS 杩炴帴姹狅紝鏃?keepalive 閰嶇疆銆傞珮棰戣浆鍙戝満鏅骇鐢熻繛鎺ュ缓绔嬪紑閿€锛屽簲鏀逛负鎳掑姞杞藉崟渚嬨€?/td>
 </tr>
 <tr>
   <td>P-02</td>
-  <td>高流量表分区未落地</td>
+  <td>楂樻祦閲忚〃鍒嗗尯鏈惤鍦?/td>
   <td><code>database/ddl/</code></td>
   <td><span class="sev sev-p0">P0</span></td>
-  <td><code>ai_request_trace</code>、<code>ai_routing_decision_log</code>、<code>ai_usage_fact</code>、<code>ops_audit_log</code> 等高流量表无 <code>PARTITION BY RANGE</code> 定义。生产数据量增长后单表膨胀，查询性能崩溃。</td>
+  <td><code>ai_request_trace</code>銆?code>ai_routing_decision_log</code>銆?code>ai_usage</code>銆?code>ops_audit_log</code> 绛夐珮娴侀噺琛ㄦ棤 <code>PARTITION BY RANGE</code> 瀹氫箟銆傜敓浜ф暟鎹噺澧為暱鍚庡崟琛ㄨ啫鑳€锛屾煡璇㈡€ц兘宕╂簝銆?/td>
 </tr>
 <tr>
   <td>P-03</td>
-  <td>SQL <code>format!</code> 拼接表名标识符</td>
+  <td>SQL <code>format!</code> 鎷兼帴琛ㄥ悕鏍囪瘑绗?/td>
   <td><code>app_chat_store.rs:1558</code><br><code>postgres/app_chat_store.rs:1691</code></td>
   <td><span class="sev sev-p2">P2</span></td>
-  <td>使用 <code>format!("SELECT ... FROM {table} ...")</code> 拼接表名。当前 table 为内部常量（安全），但用 <code>format!</code> 拼 SQL 标识符是反模式。</td>
+  <td>浣跨敤 <code>format!("SELECT ... FROM {table} ...")</code> 鎷兼帴琛ㄥ悕銆傚綋鍓?table 涓哄唴閮ㄥ父閲忥紙瀹夊叏锛夛紝浣嗙敤 <code>format!</code> 鎷?SQL 鏍囪瘑绗︽槸鍙嶆ā寮忋€?/td>
 </tr>
 <tr>
   <td>P-04</td>
-  <td>前端 i18n chunk 607KB</td>
+  <td>鍓嶇 i18n chunk 607KB</td>
   <td><code>dist/assets/i18n-*.js</code></td>
   <td><span class="sev sev-p0">P0</span></td>
-  <td>7 语言全部 inline 打包为单一 chunk，是全站最大 chunk。应改为按语言动态 import 或按命名空间分包。</td>
+  <td>7 璇█鍏ㄩ儴 inline 鎵撳寘涓哄崟涓€ chunk锛屾槸鍏ㄧ珯鏈€澶?chunk銆傚簲鏀逛负鎸夎瑷€鍔ㄦ€?import 鎴栨寜鍛藉悕绌洪棿鍒嗗寘銆?/td>
 </tr>
 <tr>
   <td>P-05</td>
-  <td>前端首屏 JS 总量超 1.5MB</td>
+  <td>鍓嶇棣栧睆 JS 鎬婚噺瓒?1.5MB</td>
   <td><code>dist/</code></td>
   <td><span class="sev sev-p1">P1</span></td>
-  <td>入口 <code>index-*.js</code> 318.7KB + commons 261.9KB + i18n 607.3KB + vendor 多个，gzip 前总量超 1.5MB。</td>
+  <td>鍏ュ彛 <code>index-*.js</code> 318.7KB + commons 261.9KB + i18n 607.3KB + vendor 澶氫釜锛実zip 鍓嶆€婚噺瓒?1.5MB銆?/td>
 </tr>
 </tbody>
 </table>
 </div>
 
-<h3>功能与设计问题</h3>
+<h3>鍔熻兘涓庤璁￠棶棰?/h3>
 <div class="table-wrap">
 <table>
 <thead>
-<tr><th>编号</th><th>问题</th><th>位置</th><th>严重度</th><th>详情</th></tr>
+<tr><th>缂栧彿</th><th>闂</th><th>浣嶇疆</th><th>涓ラ噸搴?/th><th>璇︽儏</th></tr>
 </thead>
 <tbody>
 <tr>
   <td>F-01</td>
-  <td>前端无 ESLint 配置</td>
+  <td>鍓嶇鏃?ESLint 閰嶇疆</td>
   <td><code>package.json:84-85</code></td>
   <td><span class="sev sev-p0">P0</span></td>
-  <td>全仓库无 <code>.eslintrc*</code> 或 <code>eslint.config.*</code>，<code>lint</code> 脚本仅做 <code>tsc --noEmit</code> 类型检查。无代码风格、React hooks 规则、import 排序检查。商业产品显著治理缺口。</td>
+  <td>鍏ㄤ粨搴撴棤 <code>.eslintrc*</code> 鎴?<code>eslint.config.*</code>锛?code>lint</code> 鑴氭湰浠呭仛 <code>tsc --noEmit</code> 绫诲瀷妫€鏌ャ€傛棤浠ｇ爜椋庢牸銆丷eact hooks 瑙勫垯銆乮mport 鎺掑簭妫€鏌ャ€傚晢涓氫骇鍝佹樉钁楁不鐞嗙己鍙ｃ€?/td>
 </tr>
 <tr>
   <td>F-02</td>
-  <td>测试文件堆在应用根目录</td>
+  <td>娴嬭瘯鏂囦欢鍫嗗湪搴旂敤鏍圭洰褰?/td>
   <td><code>apps/sdkwork-clawrouter-pc/*.test.ts</code></td>
   <td><span class="sev sev-p0">P0</span></td>
-  <td>32 个 <code>*.test.ts</code> 直接放在应用根目录，严重污染根目录。无 <code>pnpm test</code> 脚本（turbo.json 声明了 test task 但实际无法执行）。测试运行器不一致（node:test + vitest 并存）。</td>
+  <td>32 涓?<code>*.test.ts</code> 鐩存帴鏀惧湪搴旂敤鏍圭洰褰曪紝涓ラ噸姹℃煋鏍圭洰褰曘€傛棤 <code>pnpm test</code> 鑴氭湰锛坱urbo.json 澹版槑浜?test task 浣嗗疄闄呮棤娉曟墽琛岋級銆傛祴璇曡繍琛屽櫒涓嶄竴鑷达紙node:test + vitest 骞跺瓨锛夈€?/td>
 </tr>
 <tr>
   <td>F-03</td>
-  <td>vite.config.ts 过度膨胀</td>
+  <td>vite.config.ts 杩囧害鑶ㄨ儉</td>
   <td><code>vite.config.ts</code></td>
   <td><span class="sev sev-p1">P1</span></td>
-  <td>单文件含自定义 Vite 插件与 <code>clawrouter-portal-pnpm-workspace-resolver</code>（经 consuming app <code>node_modules</code> + <code>package.json#exports</code> 解析 workspace 包；已移除全部 <code>@sdkwork/*</code> <code>resolve.alias</code>）。<code>esbuild: false</code> + 自写 <code>ts.transpileModule</code> 转译用于 TypeScript 源码直编。</td>
+  <td>鍗曟枃浠跺惈鑷畾涔?Vite 鎻掍欢涓?<code>clawrouter-portal-pnpm-workspace-resolver</code>锛堢粡 consuming app <code>node_modules</code> + <code>package.json#exports</code> 瑙ｆ瀽 workspace 鍖咃紱宸茬Щ闄ゅ叏閮?<code>@sdkwork/*</code> <code>resolve.alias</code>锛夈€?code>esbuild: false</code> + 鑷啓 <code>ts.transpileModule</code> 杞瘧鐢ㄤ簬 TypeScript 婧愮爜鐩寸紪銆?/td>
 </tr>
 <tr>
   <td>F-04</td>
-  <td>路由表 140 条全平铺</td>
+  <td>璺敱琛?140 鏉″叏骞抽摵</td>
   <td><code>src/App.tsx:196-341</code></td>
   <td><span class="sev sev-p1">P1</span></td>
-  <td>admin 路由全部平铺在单文件，未按模块拆分路由表。可读性差，新增模块需改根文件。</td>
+  <td>admin 璺敱鍏ㄩ儴骞抽摵鍦ㄥ崟鏂囦欢锛屾湭鎸夋ā鍧楁媶鍒嗚矾鐢辫〃銆傚彲璇绘€у樊锛屾柊澧炴ā鍧楅渶鏀规牴鏂囦欢銆?/td>
 </tr>
 <tr>
   <td>F-05</td>
-  <td><code>build.target: 'esnext'</code> 无浏览器降级</td>
+  <td><code>build.target: 'esnext'</code> 鏃犳祻瑙堝櫒闄嶇骇</td>
   <td><code>vite.config.ts:716</code></td>
   <td><span class="sev sev-p1">P1</span></td>
-  <td>产物使用最新 ES 语法，未做 browserslist 降级，对非 Chromium 内核浏览器兼容性无保障。</td>
+  <td>浜х墿浣跨敤鏈€鏂?ES 璇硶锛屾湭鍋?browserslist 闄嶇骇锛屽闈?Chromium 鍐呮牳娴忚鍣ㄥ吋瀹规€ф棤淇濋殰銆?/td>
 </tr>
 <tr>
   <td>F-06</td>
-  <td>API 版本号不一致</td>
+  <td>API 鐗堟湰鍙蜂笉涓€鑷?/td>
   <td><code>clawrouter-backend-openapi.json</code></td>
   <td><span class="sev sev-p1">P1</span></td>
-  <td>OpenAPI <code>info.version</code> 为 <code>0.1.0</code>，而应用版本为 <code>0.3.0</code>。契约版本未随发布同步。</td>
+  <td>OpenAPI <code>info.version</code> 涓?<code>0.1.0</code>锛岃€屽簲鐢ㄧ増鏈负 <code>0.3.0</code>銆傚绾︾増鏈湭闅忓彂甯冨悓姝ャ€?/td>
 </tr>
 <tr>
   <td>F-07</td>
-  <td>Token 无客户端主动续期</td>
+  <td>Token 鏃犲鎴风涓诲姩缁湡</td>
   <td><code>app-session-token.ts:173-178</code></td>
   <td><span class="sev sev-p2">P2</span></td>
-  <td>Token 过期仅前端判定，若后端未返回 <code>expiresAt</code> 则永不过期直至 401。无主动续期定时器。</td>
+  <td>Token 杩囨湡浠呭墠绔垽瀹氾紝鑻ュ悗绔湭杩斿洖 <code>expiresAt</code> 鍒欐案涓嶈繃鏈熺洿鑷?401銆傛棤涓诲姩缁湡瀹氭椂鍣ㄣ€?/td>
 </tr>
 </tbody>
 </table>
 </div>
 
-<h3>高可用与运维问题</h3>
+<h3>楂樺彲鐢ㄤ笌杩愮淮闂</h3>
 <div class="table-wrap">
 <table>
 <thead>
-<tr><th>编号</th><th>问题</th><th>位置</th><th>严重度</th><th>详情</th></tr>
+<tr><th>缂栧彿</th><th>闂</th><th>浣嶇疆</th><th>涓ラ噸搴?/th><th>璇︽儏</th></tr>
 </thead>
 <tbody>
 <tr>
   <td>H-01</td>
-  <td>无备份/恢复自动化</td>
-  <td>—</td>
+  <td>鏃犲浠?鎭㈠鑷姩鍖?/td>
+  <td>鈥?/td>
   <td><span class="sev sev-p0">P0</span></td>
-  <td>无备份脚本、无恢复演练自动化、无 RTO/RPO 定义。TECH-09 文档提及备份策略但无实现。无法支撑 SLA 承诺。</td>
+  <td>鏃犲浠借剼鏈€佹棤鎭㈠婕旂粌鑷姩鍖栥€佹棤 RTO/RPO 瀹氫箟銆俆ECH-09 鏂囨。鎻愬強澶囦唤绛栫暐浣嗘棤瀹炵幇銆傛棤娉曟敮鎾?SLA 鎵胯銆?/td>
 </tr>
 <tr>
   <td>H-02</td>
-  <td>admin-api/app-api 无 PDB</td>
+  <td>admin-api/app-api 鏃?PDB</td>
   <td><code>deployments/kubernetes/</code></td>
   <td><span class="sev sev-p1">P1</span></td>
-  <td>仅 gateway 和 redis 有 PodDisruptionBudget，admin/app API 滚动升级期间可能全部不可用。</td>
+  <td>浠?gateway 鍜?redis 鏈?PodDisruptionBudget锛宎dmin/app API 婊氬姩鍗囩骇鏈熼棿鍙兘鍏ㄩ儴涓嶅彲鐢ㄣ€?/td>
 </tr>
 <tr>
   <td>H-03</td>
-  <td>systemd 服务加固不足</td>
+  <td>systemd 鏈嶅姟鍔犲浐涓嶈冻</td>
   <td><code>sdkwork-clawrouter-edge.service</code></td>
   <td><span class="sev sev-p1">P1</span></td>
-  <td>缺少 <code>NoNewPrivileges</code>、<code>ProtectSystem=strict</code>、<code>ProtectHome=true</code>、<code>LimitNOFILE=65535</code> 等加固项，文档与实现不一致。</td>
+  <td>缂哄皯 <code>NoNewPrivileges</code>銆?code>ProtectSystem=strict</code>銆?code>ProtectHome=true</code>銆?code>LimitNOFILE=65535</code> 绛夊姞鍥洪」锛屾枃妗ｄ笌瀹炵幇涓嶄竴鑷淬€?/td>
 </tr>
 <tr>
   <td>H-04</td>
-  <td>无负载/性能测试</td>
-  <td>—</td>
+  <td>鏃犺礋杞?鎬ц兘娴嬭瘯</td>
+  <td>鈥?/td>
   <td><span class="sev sev-p1">P1</span></td>
-  <td>PRD 要求"p95 延迟开销 &lt; 50ms""故障转移 &lt; 1s"，但无 k6/Locust/wr 压测脚本或基准报告。</td>
+  <td>PRD 瑕佹眰"p95 寤惰繜寮€閿€ &lt; 50ms""鏁呴殰杞Щ &lt; 1s"锛屼絾鏃?k6/Locust/wr 鍘嬫祴鑴氭湰鎴栧熀鍑嗘姤鍛娿€?/td>
 </tr>
 <tr>
   <td>H-05</td>
-  <td>无 staging/canary 部署流水线</td>
+  <td>鏃?staging/canary 閮ㄧ讲娴佹按绾?/td>
   <td><code>.github/workflows/package.yml</code></td>
   <td><span class="sev sev-p1">P1</span></td>
-  <td>package.yml 有 deploy 输入但无实际 deploy 阶段定义，灰度/金丝雀发布需手动。</td>
+  <td>package.yml 鏈?deploy 杈撳叆浣嗘棤瀹為檯 deploy 闃舵瀹氫箟锛岀伆搴?閲戜笣闆€鍙戝竷闇€鎵嬪姩銆?/td>
 </tr>
 </tbody>
 </table>
 </div>
 
-<h3>文档问题</h3>
+<h3>鏂囨。闂</h3>
 <div class="table-wrap">
 <table>
 <thead>
-<tr><th>编号</th><th>问题</th><th>位置</th><th>严重度</th><th>详情</th></tr>
+<tr><th>缂栧彿</th><th>闂</th><th>浣嶇疆</th><th>涓ラ噸搴?/th><th>璇︽儏</th></tr>
 </thead>
 <tbody>
 <tr>
   <td>D-01</td>
-  <td>标准对齐审计文档与代码严重脱节</td>
+  <td>鏍囧噯瀵归綈瀹¤鏂囨。涓庝唬鐮佷弗閲嶈劚鑺?/td>
   <td><code>docs/standard-alignment-audit.md</code></td>
   <td><span class="sev sev-p0">P0</span></td>
-  <td>审计文档（2026-06-26）列出 14 项 P0，但约 8 项已修复：CI 安全扫描已就位、K8s HA 清单已就位、制品签名已设 true、SBOM 已含 npm 树、熔断器/幂等已实现、流式透传已实现、i18n 已支持 7 语言、TS strict 已开启。审计文档误导决策。</td>
+  <td>瀹¤鏂囨。锛?026-06-26锛夊垪鍑?14 椤?P0锛屼絾绾?8 椤瑰凡淇锛欳I 瀹夊叏鎵弿宸插氨浣嶃€並8s HA 娓呭崟宸插氨浣嶃€佸埗鍝佺鍚嶅凡璁?true銆丼BOM 宸插惈 npm 鏍戙€佺啍鏂櫒/骞傜瓑宸插疄鐜般€佹祦寮忛€忎紶宸插疄鐜般€乮18n 宸叉敮鎸?7 璇█銆乀S strict 宸插紑鍚€傚璁℃枃妗ｈ瀵煎喅绛栥€?/td>
 </tr>
 <tr>
   <td>D-02</td>
-  <td>核心架构文档为空壳</td>
+  <td>鏍稿績鏋舵瀯鏂囨。涓虹┖澹?/td>
   <td><code>TECH_ARCHITECTURE.md</code></td>
   <td><span class="sev sev-p0">P0</span></td>
-  <td>第 2-9 节（技术选型、系统边界、目录布局、API/SDK 所有权、安全、部署、决策索引、验证）均为空标题，仅是文档链接索引。</td>
+  <td>绗?2-9 鑺傦紙鎶€鏈€夊瀷銆佺郴缁熻竟鐣屻€佺洰褰曞竷灞€銆丄PI/SDK 鎵€鏈夋潈銆佸畨鍏ㄣ€侀儴缃层€佸喅绛栫储寮曘€侀獙璇侊級鍧囦负绌烘爣棰橈紝浠呮槸鏂囨。閾炬帴绱㈠紩銆?/td>
 </tr>
 <tr>
   <td>D-03</td>
-  <td>运维 Runbook 过于简略</td>
+  <td>杩愮淮 Runbook 杩囦簬绠€鐣?/td>
   <td><code>production-operations.md</code></td>
   <td><span class="sev sev-p2">P2</span></td>
-  <td>仅 30 行，缺故障排查、扩缩容、回滚、备份恢复具体步骤。</td>
+  <td>浠?30 琛岋紝缂烘晠闅滄帓鏌ャ€佹墿缂╁銆佸洖婊氥€佸浠芥仮澶嶅叿浣撴楠ゃ€?/td>
 </tr>
 </tbody>
 </table>
 </div>
 
 <!-- 5. Industry Gap -->
-<h2 id="industry-gap">行业对标差距分析</h2>
+<h2 id="industry-gap">琛屼笟瀵规爣宸窛鍒嗘瀽</h2>
 
-<p>将 Claw Router 与行业主流 AI 网关产品（Kong AI Gateway、LiteLLM、Portkey、Cloudflare AI Gateway）进行对标，识别关键差距。</p>
+<p>灏?Claw Router 涓庤涓氫富娴?AI 缃戝叧浜у搧锛圞ong AI Gateway銆丩iteLLM銆丳ortkey銆丆loudflare AI Gateway锛夎繘琛屽鏍囷紝璇嗗埆鍏抽敭宸窛銆?/p>
 
 <div class="table-wrap">
 <table>
 <thead>
-<tr><th>维度</th><th>Claw Router</th><th>行业标杆</th><th>差距评估</th></tr>
+<tr><th>缁村害</th><th>Claw Router</th><th>琛屼笟鏍囨潌</th><th>宸窛璇勪及</th></tr>
 </thead>
 <tbody>
 <tr>
-  <td>调用管道</td>
-  <td>18 拦截器链式编排</td>
-  <td>Kong 插件链 / LiteLLM callback 链</td>
-  <td><span class="sev sev-ok">领先</span> 拦截器粒度更细</td>
+  <td>璋冪敤绠￠亾</td>
+  <td>18 鎷︽埅鍣ㄩ摼寮忕紪鎺?/td>
+  <td>Kong 鎻掍欢閾?/ LiteLLM callback 閾?/td>
+  <td><span class="sev sev-ok">棰嗗厛</span> 鎷︽埅鍣ㄧ矑搴︽洿缁?/td>
 </tr>
 <tr>
-  <td>可观测性</td>
-  <td>5 个无标签计数器</td>
-  <td>RED 指标 + Histogram + OTel + Grafana 仪表盘</td>
-  <td><span class="sev sev-p0">严重差距</span></td>
+  <td>鍙娴嬫€?/td>
+  <td>5 涓棤鏍囩璁℃暟鍣?/td>
+  <td>RED 鎸囨爣 + Histogram + OTel + Grafana 浠〃鐩?/td>
+  <td><span class="sev sev-p0">涓ラ噸宸窛</span></td>
 </tr>
 <tr>
-  <td>流式响应</td>
-  <td>SSE 透传已实现</td>
-  <td>SSE + WebSocket + 分块传输</td>
-  <td><span class="sev sev-ok">基本对齐</span></td>
+  <td>娴佸紡鍝嶅簲</td>
+  <td>SSE 閫忎紶宸插疄鐜?/td>
+  <td>SSE + WebSocket + 鍒嗗潡浼犺緭</td>
+  <td><span class="sev sev-ok">鍩烘湰瀵归綈</span></td>
 </tr>
 <tr>
-  <td>多租户</td>
-  <td>DB + SQL + IAM 三层隔离</td>
-  <td>租户隔离 + per-tenant 密钥 + 资源配额</td>
-  <td><span class="sev sev-p0">密钥隔离差距</span></td>
+  <td>澶氱鎴?/td>
+  <td>DB + SQL + IAM 涓夊眰闅旂</td>
+  <td>绉熸埛闅旂 + per-tenant 瀵嗛挜 + 璧勬簮閰嶉</td>
+  <td><span class="sev sev-p0">瀵嗛挜闅旂宸窛</span></td>
 </tr>
 <tr>
-  <td>计费计量</td>
-  <td>完整定价模型 + 调用管线计费</td>
-  <td>Token 级计量 + 实时扣费 + 账单导出</td>
-  <td><span class="sev sev-ok">基本对齐</span></td>
+  <td>璁¤垂璁￠噺</td>
+  <td>瀹屾暣瀹氫环妯″瀷 + 璋冪敤绠＄嚎璁¤垂</td>
+  <td>Token 绾ц閲?+ 瀹炴椂鎵ｈ垂 + 璐﹀崟瀵煎嚭</td>
+  <td><span class="sev sev-ok">鍩烘湰瀵归綈</span></td>
 </tr>
 <tr>
-  <td>Provider 适配</td>
-  <td>OpenAI + 腾讯云 + 阿里云</td>
-  <td>20+ Provider 统一适配</td>
-  <td><span class="sev sev-p1">覆盖差距</span></td>
+  <td>Provider 閫傞厤</td>
+  <td>OpenAI + 鑵捐浜?+ 闃块噷浜?/td>
+  <td>20+ Provider 缁熶竴閫傞厤</td>
+  <td><span class="sev sev-p1">瑕嗙洊宸窛</span></td>
 </tr>
 <tr>
-  <td>SDK 生成</td>
-  <td>9 语言从 OpenAPI 生成</td>
-  <td>通常 3-5 语言</td>
-  <td><span class="sev sev-ok">领先</span></td>
+  <td>SDK 鐢熸垚</td>
+  <td>9 璇█浠?OpenAPI 鐢熸垚</td>
+  <td>閫氬父 3-5 璇█</td>
+  <td><span class="sev sev-ok">棰嗗厛</span></td>
 </tr>
 <tr>
-  <td>高可用</td>
-  <td>K8s 多副本 + Redis Sentinel</td>
-  <td>多可用区 + 自动故障转移 + PG 流复制</td>
-  <td><span class="sev sev-p1">PG HA 差距</span></td>
+  <td>楂樺彲鐢?/td>
+  <td>K8s 澶氬壇鏈?+ Redis Sentinel</td>
+  <td>澶氬彲鐢ㄥ尯 + 鑷姩鏁呴殰杞Щ + PG 娴佸鍒?/td>
+  <td><span class="sev sev-p1">PG HA 宸窛</span></td>
 </tr>
 <tr>
-  <td>灾备恢复</td>
-  <td>文档提及，无实现</td>
-  <td>自动备份 + PITR + 恢复演练</td>
-  <td><span class="sev sev-p0">严重差距</span></td>
+  <td>鐏惧鎭㈠</td>
+  <td>鏂囨。鎻愬強锛屾棤瀹炵幇</td>
+  <td>鑷姩澶囦唤 + PITR + 鎭㈠婕旂粌</td>
+  <td><span class="sev sev-p0">涓ラ噸宸窛</span></td>
 </tr>
 <tr>
-  <td>合规</td>
-  <td>审计日志完备</td>
-  <td>GDPR 工具 + 数据保留 + SOC2</td>
-  <td><span class="sev sev-p0">合规工具差距</span></td>
+  <td>鍚堣</td>
+  <td>瀹¤鏃ュ織瀹屽</td>
+  <td>GDPR 宸ュ叿 + 鏁版嵁淇濈暀 + SOC2</td>
+  <td><span class="sev sev-p0">鍚堣宸ュ叿宸窛</span></td>
 </tr>
 </tbody>
 </table>
 </div>
 
 <figure class="chart-figure">
-  <figcaption>图 2: Claw Router 与行业标杆能力对标雷达图</figcaption>
+  <figcaption>鍥?2: Claw Router 涓庤涓氭爣鏉嗚兘鍔涘鏍囬浄杈惧浘</figcaption>
   <div id="chart-radar" style="width:100%;min-height:450px"></div>
 </figure>
 
 <!-- 6. Commercial Readiness -->
-<h2 id="commercial">商业化落地能力评估</h2>
+<h2 id="commercial">鍟嗕笟鍖栬惤鍦拌兘鍔涜瘎浼?/h2>
 
-<h3>能力矩阵</h3>
+<h3>鑳藉姏鐭╅樀</h3>
 <div class="table-wrap">
 <table>
 <thead>
-<tr><th>能力维度</th><th>就绪度</th><th>证据与缺口</th></tr>
+<tr><th>鑳藉姏缁村害</th><th>灏辩华搴?/th><th>璇佹嵁涓庣己鍙?/th></tr>
 </thead>
 <tbody>
 <tr>
-  <td>多租户支持</td>
-  <td><span class="sev sev-ok">强</span></td>
-  <td>tenant_id/organization_id/data_scope 全表覆盖；SQL 边界强制隔离。缺口：per-tenant 签名密钥未实现（P0）。</td>
+  <td>澶氱鎴锋敮鎸?/td>
+  <td><span class="sev sev-ok">寮?/span></td>
+  <td>tenant_id/organization_id/data_scope 鍏ㄨ〃瑕嗙洊锛汼QL 杈圭晫寮哄埗闅旂銆傜己鍙ｏ細per-tenant 绛惧悕瀵嗛挜鏈疄鐜帮紙P0锛夈€?/td>
 </tr>
 <tr>
-  <td>计费/计量系统</td>
-  <td><span class="sev sev-ok">强</span></td>
-  <td>ai_usage_fact、commerce_usage_settlement、ai_pricing_plan/rule/tier 完整定价模型；BillingPolicyInterceptor 在调用管线中计费。测试覆盖 billing/settlements。</td>
+  <td>璁¤垂/璁￠噺绯荤粺</td>
+  <td><span class="sev sev-ok">寮?/span></td>
+  <td>ai_usage銆乧ommerce_usage_settlement銆乤i_pricing_plan/rule/tier 瀹屾暣瀹氫环妯″瀷锛汢illingPolicyInterceptor 鍦ㄨ皟鐢ㄧ绾夸腑璁¤垂銆傛祴璇曡鐩?billing/settlements銆?/td>
 </tr>
 <tr>
-  <td>支付集成</td>
-  <td><span class="sev sev-ok">中</span></td>
-  <td>payment-open-api 路由 crate；支付回调幂等约束设计。缺口：无具体支付渠道集成代码可见。</td>
+  <td>鏀粯闆嗘垚</td>
+  <td><span class="sev sev-ok">涓?/span></td>
+  <td>payment-open-api 璺敱 crate锛涙敮浠樺洖璋冨箓绛夌害鏉熻璁°€傜己鍙ｏ細鏃犲叿浣撴敮浠樻笭閬撻泦鎴愪唬鐮佸彲瑙併€?/td>
 </tr>
 <tr>
-  <td>用户管理与权限</td>
-  <td><span class="sev sev-ok">强</span></td>
-  <td>RBAC（admin/manager/finance/operator/auditor）+ ABAC；IAM JWT + Access-Token 双令牌；Gateway API Key hash 校验 + scope 控制。</td>
+  <td>鐢ㄦ埛绠＄悊涓庢潈闄?/td>
+  <td><span class="sev sev-ok">寮?/span></td>
+  <td>RBAC锛坅dmin/manager/finance/operator/auditor锛? ABAC锛汭AM JWT + Access-Token 鍙屼护鐗岋紱Gateway API Key hash 鏍￠獙 + scope 鎺у埗銆?/td>
 </tr>
 <tr>
-  <td>运营后台完整性</td>
-  <td><span class="sev sev-ok">强</span></td>
-  <td>40+ 前端 admin 测试覆盖 channel/model/marketing/finance/messaging/ratelimit/firewall/mcp/service-provider 等模块。</td>
+  <td>杩愯惀鍚庡彴瀹屾暣鎬?/td>
+  <td><span class="sev sev-ok">寮?/span></td>
+  <td>40+ 鍓嶇 admin 娴嬭瘯瑕嗙洊 channel/model/marketing/finance/messaging/ratelimit/firewall/mcp/service-provider 绛夋ā鍧椼€?/td>
 </tr>
 <tr>
-  <td>监控告警</td>
-  <td><span class="sev sev-p0">弱</span></td>
-  <td>仅 5 个无标签计数器，无 Histogram、无标签、无告警规则、无 OTel tracing 导出器。与 PRD 承诺差距大。</td>
+  <td>鐩戞帶鍛婅</td>
+  <td><span class="sev sev-p0">寮?/span></td>
+  <td>浠?5 涓棤鏍囩璁℃暟鍣紝鏃?Histogram銆佹棤鏍囩銆佹棤鍛婅瑙勫垯銆佹棤 OTel tracing 瀵煎嚭鍣ㄣ€備笌 PRD 鎵胯宸窛澶с€?/td>
 </tr>
 <tr>
-  <td>高可用方案</td>
-  <td><span class="sev sev-ok">中</span></td>
-  <td>K8s 多副本 + PDB + HPA + Redis Sentinel + topologySpread。缺口：PostgreSQL 流复制无 operator/示例；admin-api/app-api 无 PDB。</td>
+  <td>楂樺彲鐢ㄦ柟妗?/td>
+  <td><span class="sev sev-ok">涓?/span></td>
+  <td>K8s 澶氬壇鏈?+ PDB + HPA + Redis Sentinel + topologySpread銆傜己鍙ｏ細PostgreSQL 娴佸鍒舵棤 operator/绀轰緥锛沘dmin-api/app-api 鏃?PDB銆?/td>
 </tr>
 <tr>
-  <td>灾备恢复</td>
-  <td><span class="sev sev-p0">弱</span></td>
-  <td>文档提及备份策略，但无备份脚本、无恢复演练自动化、无 RTO/RPO 定义。</td>
+  <td>鐏惧鎭㈠</td>
+  <td><span class="sev sev-p0">寮?/span></td>
+  <td>鏂囨。鎻愬強澶囦唤绛栫暐锛屼絾鏃犲浠借剼鏈€佹棤鎭㈠婕旂粌鑷姩鍖栥€佹棤 RTO/RPO 瀹氫箟銆?/td>
 </tr>
 <tr>
-  <td>SLA 支持</td>
-  <td><span class="sev sev-p0">未就绪</span></td>
-  <td>当前 0.3.x 为 commercial beta，无 SLA 文档、无 SLO 仪表盘、无错误预算。</td>
+  <td>SLA 鏀寔</td>
+  <td><span class="sev sev-p0">鏈氨缁?/span></td>
+  <td>褰撳墠 0.3.x 涓?commercial beta锛屾棤 SLA 鏂囨。銆佹棤 SLO 浠〃鐩樸€佹棤閿欒棰勭畻銆?/td>
 </tr>
 <tr>
-  <td>合规性</td>
-  <td><span class="sev sev-p0">弱</span></td>
-  <td>审计日志完备。缺口：无数据驻留配置、无被遗忘权 API、无数据保留期策略、无 DPA 模板。</td>
+  <td>鍚堣鎬?/td>
+  <td><span class="sev sev-p0">寮?/span></td>
+  <td>瀹¤鏃ュ織瀹屽銆傜己鍙ｏ細鏃犳暟鎹┗鐣欓厤缃€佹棤琚仐蹇樻潈 API銆佹棤鏁版嵁淇濈暀鏈熺瓥鐣ャ€佹棤 DPA 妯℃澘銆?/td>
 </tr>
 </tbody>
 </table>
 </div>
 
 <figure class="chart-figure">
-  <figcaption>图 3: 商业化能力就绪度评分（10 分制）</figcaption>
+  <figcaption>鍥?3: 鍟嗕笟鍖栬兘鍔涘氨缁害璇勫垎锛?0 鍒嗗埗锛?/figcaption>
   <div id="chart-commercial" style="width:100%;min-height:400px"></div>
 </figure>
 
-<h3>商业化就绪度评分</h3>
+<h3>鍟嗕笟鍖栧氨缁害璇勫垎</h3>
 <div class="callout warn">
-  <div class="title">综合评分: 60/100（商业 Beta 阶段）</div>
-  <p>项目已具备私有化交付基础（多租户、计费、K8s 部署、SDK、双许可证），但距 SaaS 商业 GA 仍需完成 6 项 P0 改进。当前可进入受限商业预览，完成全部 P0 后可达 0.5.x GA。</p>
+  <div class="title">缁煎悎璇勫垎: 60/100锛堝晢涓?Beta 闃舵锛?/div>
+  <p>椤圭洰宸插叿澶囩鏈夊寲浜や粯鍩虹锛堝绉熸埛銆佽璐广€並8s 閮ㄧ讲銆丼DK銆佸弻璁稿彲璇侊級锛屼絾璺?SaaS 鍟嗕笟 GA 浠嶉渶瀹屾垚 6 椤?P0 鏀硅繘銆傚綋鍓嶅彲杩涘叆鍙楅檺鍟嗕笟棰勮锛屽畬鎴愬叏閮?P0 鍚庡彲杈?0.5.x GA銆?/p>
 </div>
 
 <!-- 7. Roadmap -->
-<h2 id="roadmap">改进方案与路线图</h2>
+<h2 id="roadmap">鏀硅繘鏂规涓庤矾绾垮浘</h2>
 
-<h3>P0 改进项（阻断商业 GA）</h3>
+<h3>P0 鏀硅繘椤癸紙闃绘柇鍟嗕笟 GA锛?/h3>
 <div class="table-wrap">
 <table>
 <thead>
-<tr><th>优先级</th><th>改进项</th><th>具体方案</th><th>预估工时</th></tr>
+<tr><th>浼樺厛绾?/th><th>鏀硅繘椤?/th><th>鍏蜂綋鏂规</th><th>棰勪及宸ユ椂</th></tr>
 </thead>
 <tbody>
 <tr>
   <td><span class="sev sev-p0">P0-1</span></td>
-  <td>可观测性全面补齐</td>
-  <td>引入 <code>Histogram</code>（http_request_duration_seconds）+ 标签（route/method/status/operation_id/model/provider）+ OpenTelemetry tracing 导出器（OTLP gRPC）+ PrometheusRule 告警规则 + Grafana 仪表盘。参考 PRD 的 RED/USE 指标要求。</td>
-  <td>5-8 人日</td>
+  <td>鍙娴嬫€у叏闈㈣ˉ榻?/td>
+  <td>寮曞叆 <code>Histogram</code>锛坔ttp_request_duration_seconds锛? 鏍囩锛坮oute/method/status/operation_id/model/provider锛? OpenTelemetry tracing 瀵煎嚭鍣紙OTLP gRPC锛? PrometheusRule 鍛婅瑙勫垯 + Grafana 浠〃鐩樸€傚弬鑰?PRD 鐨?RED/USE 鎸囨爣瑕佹眰銆?/td>
+  <td>5-8 浜烘棩</td>
 </tr>
 <tr>
   <td><span class="sev sev-p0">P0-2</span></td>
-  <td>密码哈希升级</td>
-  <td>迁移到 Argon2id（OWASP 首选），配置 m=19MiB, t=2, p=1。或至少将 PBKDF2 迭代次数提升至 600,000，盐改为 <code>OsRng</code> 随机生成。旧哈希在用户下次登录时自动升级<sup><a href="#cite-1">[1]</a></sup>。</td>
-  <td>2-3 人日</td>
+  <td>瀵嗙爜鍝堝笇鍗囩骇</td>
+  <td>杩佺Щ鍒?Argon2id锛圤WASP 棣栭€夛級锛岄厤缃?m=19MiB, t=2, p=1銆傛垨鑷冲皯灏?PBKDF2 杩唬娆℃暟鎻愬崌鑷?600,000锛岀洂鏀逛负 <code>OsRng</code> 闅忔満鐢熸垚銆傛棫鍝堝笇鍦ㄧ敤鎴蜂笅娆＄櫥褰曟椂鑷姩鍗囩骇<sup><a href="#cite-1">[1]</a></sup>銆?/td>
+  <td>2-3 浜烘棩</td>
 </tr>
 <tr>
   <td><span class="sev sev-p0">P0-3</span></td>
-  <td>多租户签名密钥</td>
-  <td>实现 per-tenant HMAC 密钥或迁移到非对称签名（Ed25519）。利用已有的 <code>sign_app_session_token_with_claims_and_secret</code> 接口，从数据库加载 tenant-specific 密钥。</td>
-  <td>3-5 人日</td>
+  <td>澶氱鎴风鍚嶅瘑閽?/td>
+  <td>瀹炵幇 per-tenant HMAC 瀵嗛挜鎴栬縼绉诲埌闈炲绉扮鍚嶏紙Ed25519锛夈€傚埄鐢ㄥ凡鏈夌殑 <code>sign_app_session_token_with_claims_and_secret</code> 鎺ュ彛锛屼粠鏁版嵁搴撳姞杞?tenant-specific 瀵嗛挜銆?/td>
+  <td>3-5 浜烘棩</td>
 </tr>
 <tr>
   <td><span class="sev sev-p0">P0-4</span></td>
-  <td>高流量表分区</td>
-  <td>为 <code>ai_request_trace</code>、<code>ai_usage_fact</code>、<code>ops_audit_log</code> 等表添加 <code>PARTITION BY RANGE (created_at)</code> + DEFAULT 分区。编写分区管理 Cron Job（pg_partman 或自定义）。</td>
-  <td>3-5 人日</td>
+  <td>楂樻祦閲忚〃鍒嗗尯</td>
+  <td>涓?<code>ai_request_trace</code>銆?code>ai_usage</code>銆?code>ops_audit_log</code> 绛夎〃娣诲姞 <code>PARTITION BY RANGE (created_at)</code> + DEFAULT 鍒嗗尯銆傜紪鍐欏垎鍖虹鐞?Cron Job锛坧g_partman 鎴栬嚜瀹氫箟锛夈€?/td>
+  <td>3-5 浜烘棩</td>
 </tr>
 <tr>
   <td><span class="sev sev-p0">P0-5</span></td>
-  <td>备份恢复自动化</td>
-  <td>实现 PostgreSQL 定时备份脚本（pg_dump + WAL 归档 → S3）+ PITR 恢复脚本 + 恢复演练自动化。定义 RTO=4h、RPO=15min。</td>
-  <td>5-8 人日</td>
+  <td>澶囦唤鎭㈠鑷姩鍖?/td>
+  <td>瀹炵幇 PostgreSQL 瀹氭椂澶囦唤鑴氭湰锛坧g_dump + WAL 褰掓。 鈫?S3锛? PITR 鎭㈠鑴氭湰 + 鎭㈠婕旂粌鑷姩鍖栥€傚畾涔?RTO=4h銆丷PO=15min銆?/td>
+  <td>5-8 浜烘棩</td>
 </tr>
 <tr>
   <td><span class="sev sev-p0">P0-6</span></td>
-  <td>文档与代码状态同步</td>
-  <td>更新 <code>standard-alignment-audit.md</code>（移除已修复的 8 项 P0）；填充 <code>TECH_ARCHITECTURE.md</code> 第 2-9 节实质内容；补充运维 Runbook。</td>
-  <td>3-5 人日</td>
+  <td>鏂囨。涓庝唬鐮佺姸鎬佸悓姝?/td>
+  <td>鏇存柊 <code>standard-alignment-audit.md</code>锛堢Щ闄ゅ凡淇鐨?8 椤?P0锛夛紱濉厖 <code>TECH_ARCHITECTURE.md</code> 绗?2-9 鑺傚疄璐ㄥ唴瀹癸紱琛ュ厖杩愮淮 Runbook銆?/td>
+  <td>3-5 浜烘棩</td>
 </tr>
 </tbody>
 </table>
 </div>
 
-<h3>P1 改进项（影响质量与体验）</h3>
+<h3>P1 鏀硅繘椤癸紙褰卞搷璐ㄩ噺涓庝綋楠岋級</h3>
 <div class="table-wrap">
 <table>
 <thead>
-<tr><th>改进项</th><th>具体方案</th></tr>
+<tr><th>鏀硅繘椤?/th><th>鍏蜂綋鏂规</th></tr>
 </thead>
 <tbody>
-<tr><td>前端 ESLint 接入</td><td>引入 <code>eslint</code> + <code>@typescript-eslint</code> + <code>eslint-plugin-react-hooks</code> + <code>eslint-plugin-import</code>，配置 <code>pnpm lint</code> 脚本</td></tr>
-<tr><td>i18n 分包优化</td><td>按语言动态 <code>import()</code> 或按命名空间拆分，目标将 i18n chunk 从 607KB 降至 &lt;100KB</td></tr>
-<tr><td>测试组织整改</td><td>将 32 个根目录测试移入 <code>tests/</code>，统一测试运行器（vitest），添加 <code>pnpm test</code> 脚本</td></tr>
-<tr><td>unsafe FFI 替换</td><td>移除 <code>api_key_secret_generator.rs</code> 手写 BCryptGenRandom FFI，改用 <code>getrandom::fill</code></td></tr>
-<tr><td>Provider 连接复用</td><td><code>build_provider_passthrough_client()</code> 改为 <code>Arc&lt;OnceLock&gt;</code> 懒加载单例</td></tr>
-<tr><td>API 版本同步</td><td>OpenAPI <code>info.version</code> 与应用版本同步，引入语义化版本策略</td></tr>
-<tr><td>admin/app PDB</td><td>为 admin-api 和 app-api 添加 PodDisruptionBudget</td></tr>
-<tr><td>负载性能测试</td><td>引入 k6 压测脚本，验证 PRD 的 p95 &lt; 50ms 和故障转移 &lt; 1s 目标</td></tr>
-<tr><td>GDPR 合规工具</td><td>实现数据导出 API、被遗忘权 API、数据保留期配置</td></tr>
-<tr><td>SDK 许可证明确</td><td>在商业授权协议中明确 MIT SDK 与 AGPL 主体的授权边界</td></tr>
+<tr><td>鍓嶇 ESLint 鎺ュ叆</td><td>寮曞叆 <code>eslint</code> + <code>@typescript-eslint</code> + <code>eslint-plugin-react-hooks</code> + <code>eslint-plugin-import</code>锛岄厤缃?<code>pnpm lint</code> 鑴氭湰</td></tr>
+<tr><td>i18n 鍒嗗寘浼樺寲</td><td>鎸夎瑷€鍔ㄦ€?<code>import()</code> 鎴栨寜鍛藉悕绌洪棿鎷嗗垎锛岀洰鏍囧皢 i18n chunk 浠?607KB 闄嶈嚦 &lt;100KB</td></tr>
+<tr><td>娴嬭瘯缁勭粐鏁存敼</td><td>灏?32 涓牴鐩綍娴嬭瘯绉诲叆 <code>tests/</code>锛岀粺涓€娴嬭瘯杩愯鍣紙vitest锛夛紝娣诲姞 <code>pnpm test</code> 鑴氭湰</td></tr>
+<tr><td>unsafe FFI 鏇挎崲</td><td>绉婚櫎 <code>api_key_secret_generator.rs</code> 鎵嬪啓 BCryptGenRandom FFI锛屾敼鐢?<code>getrandom::fill</code></td></tr>
+<tr><td>Provider 杩炴帴澶嶇敤</td><td><code>build_provider_passthrough_client()</code> 鏀逛负 <code>Arc&lt;OnceLock&gt;</code> 鎳掑姞杞藉崟渚?/td></tr>
+<tr><td>API 鐗堟湰鍚屾</td><td>OpenAPI <code>info.version</code> 涓庡簲鐢ㄧ増鏈悓姝ワ紝寮曞叆璇箟鍖栫増鏈瓥鐣?/td></tr>
+<tr><td>admin/app PDB</td><td>涓?admin-api 鍜?app-api 娣诲姞 PodDisruptionBudget</td></tr>
+<tr><td>璐熻浇鎬ц兘娴嬭瘯</td><td>寮曞叆 k6 鍘嬫祴鑴氭湰锛岄獙璇?PRD 鐨?p95 &lt; 50ms 鍜屾晠闅滆浆绉?&lt; 1s 鐩爣</td></tr>
+<tr><td>GDPR 鍚堣宸ュ叿</td><td>瀹炵幇鏁版嵁瀵煎嚭 API銆佽閬楀繕鏉?API銆佹暟鎹繚鐣欐湡閰嶇疆</td></tr>
+<tr><td>SDK 璁稿彲璇佹槑纭?/td><td>鍦ㄥ晢涓氭巿鏉冨崗璁腑鏄庣‘ MIT SDK 涓?AGPL 涓讳綋鐨勬巿鏉冭竟鐣?/td></tr>
 </tbody>
 </table>
 </div>
 
-<h3>改进路线图</h3>
+<h3>鏀硅繘璺嚎鍥?/h3>
 <figure class="diagram">
   <pre class="mermaid">
 gantt
-    title 商业化 GA 改进路线图
-    dateFormat YYYY-MM-DD
+    title 鍟嗕笟鍖?GA 鏀硅繘璺嚎鍥?    dateFormat YYYY-MM-DD
     axisFormat %m/%d
 
-    section P0 阻断项
-    可观测性补齐           :p0-1, 2026-06-28, 8d
-    密码哈希升级           :p0-2, 2026-06-28, 3d
-    多租户签名密钥         :p0-3, 2026-07-01, 5d
-    高流量表分区           :p0-4, 2026-07-03, 5d
-    备份恢复自动化         :p0-5, 2026-07-06, 8d
-    文档状态同步           :p0-6, 2026-07-08, 5d
+    section P0 闃绘柇椤?    鍙娴嬫€цˉ榻?          :p0-1, 2026-06-28, 8d
+    瀵嗙爜鍝堝笇鍗囩骇           :p0-2, 2026-06-28, 3d
+    澶氱鎴风鍚嶅瘑閽?        :p0-3, 2026-07-01, 5d
+    楂樻祦閲忚〃鍒嗗尯           :p0-4, 2026-07-03, 5d
+    澶囦唤鎭㈠鑷姩鍖?        :p0-5, 2026-07-06, 8d
+    鏂囨。鐘舵€佸悓姝?          :p0-6, 2026-07-08, 5d
 
-    section P1 改进项
-    前端 ESLint + 测试整改 :p1-1, 2026-07-11, 5d
-    i18n 分包优化          :p1-2, 2026-07-11, 3d
-    unsafe FFI 替换        :p1-3, 2026-07-11, 1d
-    Provider 连接复用      :p1-4, 2026-07-12, 2d
-    负载性能测试           :p1-5, 2026-07-15, 5d
-    GDPR 合规工具          :p1-6, 2026-07-18, 8d
+    section P1 鏀硅繘椤?    鍓嶇 ESLint + 娴嬭瘯鏁存敼 :p1-1, 2026-07-11, 5d
+    i18n 鍒嗗寘浼樺寲          :p1-2, 2026-07-11, 3d
+    unsafe FFI 鏇挎崲        :p1-3, 2026-07-11, 1d
+    Provider 杩炴帴澶嶇敤      :p1-4, 2026-07-12, 2d
+    璐熻浇鎬ц兘娴嬭瘯           :p1-5, 2026-07-15, 5d
+    GDPR 鍚堣宸ュ叿          :p1-6, 2026-07-18, 8d
 
-    section 里程碑
-    受限商业预览就绪       :milestone, m1, 2026-07-10, 0d
-    商业 GA 就绪           :milestone, m2, 2026-07-28, 0d
+    section 閲岀▼纰?    鍙楅檺鍟嗕笟棰勮灏辩华       :milestone, m1, 2026-07-10, 0d
+    鍟嗕笟 GA 灏辩华           :milestone, m2, 2026-07-28, 0d
   </pre>
-  <figcaption>图 4: 商业化改进路线图（预计 4-5 周）</figcaption>
+  <figcaption>鍥?4: 鍟嗕笟鍖栨敼杩涜矾绾垮浘锛堥璁?4-5 鍛級</figcaption>
 </figure>
 
 <!-- 8. Conclusion -->
-<h2 id="conclusion">结论</h2>
+<h2 id="conclusion">缁撹</h2>
 
-<p>SDKWork Claw Router 在架构设计上展现了<strong>生产级 AI 网关的成熟度</strong>：18 拦截器调用管道、DDD 分层、契约驱动开发、多租户隔离、熔断限流、SSE 流式透传等核心能力均已实现，工程框架与契约治理体系在同类产品中属于领先水平。</p>
+<p>SDKWork Claw Router 鍦ㄦ灦鏋勮璁′笂灞曠幇浜?strong>鐢熶骇绾?AI 缃戝叧鐨勬垚鐔熷害</strong>锛?8 鎷︽埅鍣ㄨ皟鐢ㄧ閬撱€丏DD 鍒嗗眰銆佸绾﹂┍鍔ㄥ紑鍙戙€佸绉熸埛闅旂銆佺啍鏂檺娴併€丼SE 娴佸紡閫忎紶绛夋牳蹇冭兘鍔涘潎宸插疄鐜帮紝宸ョ▼妗嗘灦涓庡绾︽不鐞嗕綋绯诲湪鍚岀被浜у搧涓睘浜庨鍏堟按骞炽€?/p>
 
-<p>然而，要达到商业 GA 标准，仍需解决 6 项 P0 关键缺口：<mark class="key">可观测性补齐</mark>（当前仅 5 个无标签计数器）、<mark class="key">密码哈希升级</mark>（迭代次数和盐策略低于 OWASP 标准<sup><a href="#cite-1">[1]</a></sup>）、<mark class="key">多租户签名密钥</mark>（共享密钥风险）、<mark class="key">高流量表分区</mark>（防止生产数据膨胀）、<mark class="key">备份恢复自动化</mark>（支撑 SLA）、<mark class="key">文档状态同步</mark>（审计文档与代码严重脱节）。</p>
+<p>鐒惰€岋紝瑕佽揪鍒板晢涓?GA 鏍囧噯锛屼粛闇€瑙ｅ喅 6 椤?P0 鍏抽敭缂哄彛锛?mark class="key">鍙娴嬫€цˉ榻?/mark>锛堝綋鍓嶄粎 5 涓棤鏍囩璁℃暟鍣級銆?mark class="key">瀵嗙爜鍝堝笇鍗囩骇</mark>锛堣凯浠ｆ鏁板拰鐩愮瓥鐣ヤ綆浜?OWASP 鏍囧噯<sup><a href="#cite-1">[1]</a></sup>锛夈€?mark class="key">澶氱鎴风鍚嶅瘑閽?/mark>锛堝叡浜瘑閽ラ闄╋級銆?mark class="key">楂樻祦閲忚〃鍒嗗尯</mark>锛堥槻姝㈢敓浜ф暟鎹啫鑳€锛夈€?mark class="key">澶囦唤鎭㈠鑷姩鍖?/mark>锛堟敮鎾?SLA锛夈€?mark class="key">鏂囨。鐘舵€佸悓姝?/mark>锛堝璁℃枃妗ｄ笌浠ｇ爜涓ラ噸鑴辫妭锛夈€?/p>
 
-<p>当前项目已具备<strong>私有化交付能力</strong>，可进入受限商业预览。按建议路线图执行，预计 4-5 周可完成全部 P0 改进，达到 0.5.x 商业 GA 就绪状态。前端工程治理（ESLint、测试组织、i18n 分包）和合规工具（GDPR）建议在 GA 后持续推进。</p>
+<p>褰撳墠椤圭洰宸插叿澶?strong>绉佹湁鍖栦氦浠樿兘鍔?/strong>锛屽彲杩涘叆鍙楅檺鍟嗕笟棰勮銆傛寜寤鸿璺嚎鍥炬墽琛岋紝棰勮 4-5 鍛ㄥ彲瀹屾垚鍏ㄩ儴 P0 鏀硅繘锛岃揪鍒?0.5.x 鍟嗕笟 GA 灏辩华鐘舵€併€傚墠绔伐绋嬫不鐞嗭紙ESLint銆佹祴璇曠粍缁囥€乮18n 鍒嗗寘锛夊拰鍚堣宸ュ叿锛圙DPR锛夊缓璁湪 GA 鍚庢寔缁帹杩涖€?/p>
 
 <div class="callout success">
-  <div class="title">最终建议</div>
-  <p>优先完成可观测性（P0-1）和密码哈希升级（P0-2）两项，即可显著提升产品安全可信度并进入受限商业 SaaS 预览。这两项改进的 ROI 最高：可观测性是 SLA 承诺的前提，密码哈希是安全合规的基线。</p>
+  <div class="title">鏈€缁堝缓璁?/div>
+  <p>浼樺厛瀹屾垚鍙娴嬫€э紙P0-1锛夊拰瀵嗙爜鍝堝笇鍗囩骇锛圥0-2锛変袱椤癸紝鍗冲彲鏄捐憲鎻愬崌浜у搧瀹夊叏鍙俊搴﹀苟杩涘叆鍙楅檺鍟嗕笟 SaaS 棰勮銆傝繖涓ら」鏀硅繘鐨?ROI 鏈€楂橈細鍙娴嬫€ф槸 SLA 鎵胯鐨勫墠鎻愶紝瀵嗙爜鍝堝笇鏄畨鍏ㄥ悎瑙勭殑鍩虹嚎銆?/p>
 </div>
 
 <!-- Sources -->
 <footer>
   <div class="sources">
-    <h2>参考资料</h2>
+    <h2>鍙傝€冭祫鏂?/h2>
     <ol>
       <li id="cite-1">
-        <span class="src-title">OWASP, Password Storage Cheat Sheet. 密码存储安全指南，推荐 Argon2id 为首选算法，PBKDF2 需 600,000 次迭代。</span>
+        <span class="src-title">OWASP, Password Storage Cheat Sheet. 瀵嗙爜瀛樺偍瀹夊叏鎸囧崡锛屾帹鑽?Argon2id 涓洪閫夌畻娉曪紝PBKDF2 闇€ 600,000 娆¤凯浠ｃ€?/span>
         <a class="src-url" href="https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html" target="_blank" rel="noopener">https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html</a>
       </li>
     </ol>

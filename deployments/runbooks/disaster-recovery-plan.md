@@ -220,7 +220,7 @@ FATAL: password authentication failed
    ```bash
    # Verify data integrity
    kubectl exec -it deploy/claw-router-gateway -- \
-     psql -h postgres -U clawrouter -c "SELECT COUNT(*) FROM ai_usage_fact"
+     psql -h postgres -U clawrouter -c "SELECT COUNT(*) FROM ai_usage"
 
    # Check gateway health
    curl https://gateway.example.com/healthz
@@ -298,7 +298,7 @@ WARN Circuit breaker state lost, resetting to CLOSED
    # Check for NULL values in critical columns
    kubectl exec -it deploy/claw-router-gateway -- \
      psql -h postgres -U clawrouter -c \
-     "SELECT COUNT(*) FROM ai_usage_fact WHERE tenant_id IS NULL"
+     "SELECT COUNT(*) FROM ai_usage WHERE tenant_id IS NULL"
    ```
 
 2. **PITR to Pre-Corruption Point**
@@ -465,7 +465,7 @@ kubectl get pods -n clawrouter
 
 # 2. Verify database data
 kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
-  psql -h postgres -U clawrouter -c "SELECT COUNT(*) FROM ai_usage_fact;"
+  psql -h postgres -U clawrouter -c "SELECT COUNT(*) FROM ai_usage;"
 
 # 3. Test gateway endpoints
 curl -I https://gateway.example.com/healthz

@@ -120,7 +120,7 @@ class ConsoleRoutingBackendRuntimeStandardTest(unittest.TestCase):
                 "iam_gateway_api_key",
                 "ai_request_trace",
                 "ai_routing_decision_log",
-                "ai_usage_fact",
+                "ai_usage",
             ]:
                 self.assertIn(table, store)
 

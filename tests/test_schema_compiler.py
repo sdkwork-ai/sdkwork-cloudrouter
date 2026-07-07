@@ -26,7 +26,6 @@ class SchemaCompilerTest(unittest.TestCase):
             if isinstance(table, dict) and table.get("imported")
         }
         self.assertIn("ai_model_vendor", imported)
-        self.assertIn("iam_verification_scene_policy", imported)
 
         for table in sorted(imported):
             self.assertNotIn(f"CREATE TABLE IF NOT EXISTS {table} (", sql)
@@ -34,9 +33,33 @@ class SchemaCompilerTest(unittest.TestCase):
         for table in [
             "ai_channel",
             "ai_routing_policy",
-            "iam_gateway_api_key",
+            "ai_usage",
+            "ai_request_trace",
+            "ai_pricing",
         ]:
             self.assertIn(f"CREATE TABLE IF NOT EXISTS {table} (", sql)
+        self.assertNotIn("CREATE TABLE IF NOT EXISTS ai_usage_trace (", sql)
+
+    def test_rejects_registry_without_project_generated_tables(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                """
+                tables:
+                  - table: ai_model_vendor
+                    domain: ai
+                    generated_by_this_project: false
+                    columns:
+                      vendor_code: string(64)
+                """,
+            )
+
+            with self.assertRaisesRegex(
+                SchemaCompileError,
+                "schema registry does not contain any project-generated tables",
+            ):
+                SchemaCompiler(root=root, registry_path=registry).compile_postgres()
 
     def test_compiles_common_columns_and_standard_types_to_postgres(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -284,7 +307,7 @@ class SchemaCompilerTest(unittest.TestCase):
                     generated_by_this_project: false
                     columns:
                       order_no: string(64)
-                  - table: ai_usage_fact
+                  - table: ai_usage
                     domain: ai
                     common_columns: tenant_entity
                     columns:
@@ -295,7 +318,7 @@ class SchemaCompilerTest(unittest.TestCase):
             sql = SchemaCompiler(root=root, registry_path=registry).compile_postgres()
 
             self.assertNotIn("CREATE TABLE IF NOT EXISTS plus_order", sql)
-            self.assertIn("CREATE TABLE IF NOT EXISTS ai_usage_fact", sql)
+            self.assertIn("CREATE TABLE IF NOT EXISTS ai_usage", sql)
 
     def test_rejects_unsupported_column_types(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

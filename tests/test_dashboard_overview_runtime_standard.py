@@ -291,7 +291,7 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         self.assertNotIn("lg:p-6", view)
         self.assertNotIn("<h1", view)
         self.assertNotIn("console.dashboard.dashboardview.text.gga6x6", view)
-        self.assertNotIn("控制台概览", view)
+        self.assertNotIn("鎺у埗鍙版瑙?, view)
         self.assertIn("snapshot.summary.totalUsedCredits", view)
         self.assertIn("snapshot.summary.totalRequestCount", view)
         self.assertIn("console.dashboard.dashboardview.text.totalUsedCredits", view)
@@ -460,7 +460,7 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         next_operation_start = contract.index("\n  - route:", dashboard_operation_start + 1)
         dashboard_section = contract[dashboard_operation_start:next_operation_start]
         for table in [
-            "ai_usage_fact",
+            "ai_usage",
             "ai_request_trace",
             "ai_model_rank_snapshot",
             "ops_notification_message",

@@ -301,8 +301,30 @@
           "field": {
             "type": "string"
           },
+          "i18nKey": {
+            "type": "string"
+          },
           "message": {
             "type": "string"
+          },
+          "params": {
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "type": "object"
           }
         },
         "required": [
@@ -1064,7 +1086,15 @@
             },
             "type": "array"
           },
+          "i18nKey": {
+            "description": "Optional stable localization key such as errors.result.40001.",
+            "type": "string"
+          },
           "instance": {
+            "type": "string"
+          },
+          "locale": {
+            "description": "Optional effective BCP 47 locale used by framework message mapping.",
             "type": "string"
           },
           "status": {

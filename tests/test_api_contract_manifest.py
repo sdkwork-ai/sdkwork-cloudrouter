@@ -53,7 +53,7 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
                     api_method: POST
                     api_path: /v1/chat/completions
                     read_sources: [ai_model]
-                    write_tables: [ai_request_trace, ai_usage_fact]
+                    write_tables: [ai_request_trace, ai_usage]
                 """,
             )
 

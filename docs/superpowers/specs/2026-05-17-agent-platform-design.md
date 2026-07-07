@@ -27,5 +27,5 @@ Console users create and test agents, bind model/skill/MCP/memory settings, view
 
 ## Usage And Billing
 
-Agent runtime emits normalized metering events. Claw Router maps them into `ai_usage_fact` rather than creating a parallel ledger. Usage metadata must link `agentId`, `agentVersionId`, `runId`, `stepId`, `skillId`, `mcpServerId`, `toolName`, and `meteringSource`.
+Agent runtime emits normalized metering events. Claw Router maps them into `ai_usage` rather than creating a parallel ledger. Usage metadata must link `agentId`, `agentVersionId`, `runId`, `stepId`, `skillId`, `mcpServerId`, `toolName`, and `meteringSource`.
 

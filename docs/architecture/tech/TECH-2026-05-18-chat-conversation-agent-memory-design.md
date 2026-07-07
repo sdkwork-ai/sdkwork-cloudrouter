@@ -13,7 +13,7 @@ Build the standard product model for first-party Chat and Agent experiences. The
 - Keep `ChatTurn` as one user-intent interaction inside a chat conversation.
 - Make Memory a shared AI domain, not a chat-only or agent-only table.
 - Make runtime invocations a shared AI runtime domain, not chat-only records.
-- Keep `ai_usage_fact` as the billing source of truth.
+- Keep `ai_usage` as the billing source of truth.
 - Keep `ai_request_trace` as the gateway trace source of truth.
 - Keep `ai_generation_*` as generation history and assets; do not overload it as chat.
 - Expose product APIs under `/app/v3/api/chat/...` and `/app/v3/api/agents/...`, never under `/playground`.
@@ -67,7 +67,7 @@ Build the standard product model for first-party Chat and Agent experiences. The
 
 `ai_runtime_invocation_event` records SSE/JSONL/webhook/runtime events such as content deltas, tool calls, approvals, usage, results, errors, and done events.
 
-`ai_runtime_usage_link` links usage records to chat, agent, runtime invocation, and `ai_usage_fact`. It is not the billing source of truth.
+`ai_runtime_usage_link` links usage records to chat, agent, runtime invocation, and `ai_usage`. It is not the billing source of truth.
 
 `ai_runtime_artifact` stores generated files, attachments, patches, diffs, command output, images, citations, reports, tool results, and logs.
 
@@ -157,7 +157,7 @@ Chat turn:
 5. Create `ai_chat_context_snapshot`.
 6. Create `ai_runtime_invocation` and event rows while executing LLM/tool/agent runtime.
 7. Write output items/messages/parts.
-8. Link usage through `ai_runtime_usage_link` to `ai_usage_fact`.
+8. Link usage through `ai_runtime_usage_link` to `ai_usage`.
 9. Extract candidate memory entries and audit with `ai_memory_event`.
 
 Agent session run:

@@ -109,10 +109,10 @@ class SchemaQualityGateTest(unittest.TestCase):
 
     def write_architecture_docs(self, root: Path) -> None:
         docs = {
-            "02-技术架构设计.md": "Rust-first sdkwork-clawrouter-cloud-gateway sdkwork-clawrouter-app-api-server sdkwork-clawrouter-admin-api-server /app/v3/api /backend/v3/api /v1",
-            "03-技术选型.md": "Rust-first axum tokio sqlx tower hyper utoipa tracing moka rust_decimal",
-            "07-性能设计.md": "Rust-first Tokio Axum moka Redis streaming batch writer connection pool",
-            "09-部署架构设计.md": "Rust-first Rust services desktop server docker kubernetes SDKWORK_CLAW_DEPLOYMENT_MODE SDKWORK_CLAW_GATEWAY_BIND SDKWORK_CLAW_APP_API_BIND SDKWORK_CLAW_ADMIN_API_BIND",
+            "02-鎶€鏈灦鏋勮璁?md": "Rust-first sdkwork-clawrouter-cloud-gateway sdkwork-clawrouter-app-api-server sdkwork-clawrouter-admin-api-server /app/v3/api /backend/v3/api /v1",
+            "03-鎶€鏈€夊瀷.md": "Rust-first axum tokio sqlx tower hyper utoipa tracing moka rust_decimal",
+            "07-鎬ц兘璁捐.md": "Rust-first Tokio Axum moka Redis streaming batch writer connection pool",
+            "09-閮ㄧ讲鏋舵瀯璁捐.md": "Rust-first Rust services desktop server docker kubernetes SDKWORK_CLAW_DEPLOYMENT_MODE SDKWORK_CLAW_GATEWAY_BIND SDKWORK_CLAW_APP_API_BIND SDKWORK_CLAW_ADMIN_API_BIND",
         }
         docs_root = root / "docs"
         docs_root.mkdir(parents=True, exist_ok=True)
@@ -301,7 +301,7 @@ class SchemaQualityGateTest(unittest.TestCase):
         product_sqlite.mkdir(parents=True, exist_ok=True)
         product_sqlite.joinpath("mod.rs").write_text("mod error;\nmod gateway_usage_recorder;\nmod loader;\nmod queries;\nmod row_mapping;\nmod usage_settlement_store;\n", encoding="utf-8")
         product_sqlite.joinpath("error.rs").write_text("// sqlite load errors\n", encoding="utf-8")
-        product_sqlite.joinpath("gateway_usage_recorder.rs").write_text("// SqliteGatewayUsageRecorder ai_request_trace ai_usage_fact\n", encoding="utf-8")
+        product_sqlite.joinpath("gateway_usage_recorder.rs").write_text("// SqliteGatewayUsageRecorder ai_request_trace ai_usage\n", encoding="utf-8")
         product_sqlite.joinpath("loader.rs").write_text("// sqlite catalog loader\n", encoding="utf-8")
         product_sqlite.joinpath("queries.rs").write_text("// sqlite catalog load queries\n", encoding="utf-8")
         product_sqlite.joinpath("row_mapping.rs").write_text("// sqlite row mapping\n", encoding="utf-8")
@@ -310,7 +310,7 @@ class SchemaQualityGateTest(unittest.TestCase):
         product_postgres.mkdir(parents=True, exist_ok=True)
         product_postgres.joinpath("mod.rs").write_text("mod error;\nmod gateway_usage_recorder;\nmod loader;\nmod row_mapping;\nmod usage_settlement_store;\n", encoding="utf-8")
         product_postgres.joinpath("error.rs").write_text("// postgres load errors\n", encoding="utf-8")
-        product_postgres.joinpath("gateway_usage_recorder.rs").write_text("// PostgresGatewayUsageRecorder ai_request_trace ai_usage_fact\n", encoding="utf-8")
+        product_postgres.joinpath("gateway_usage_recorder.rs").write_text("// PostgresGatewayUsageRecorder ai_request_trace ai_usage\n", encoding="utf-8")
         product_postgres.joinpath("loader.rs").write_text("// postgres catalog loader\n", encoding="utf-8")
         product_postgres.joinpath("row_mapping.rs").write_text("// postgres row mapping\n", encoding="utf-8")
         product_postgres.joinpath("usage_settlement_store.rs").write_text("// PostgresUsageSettlementStore commerce_usage_settlement plus_account_history settlement_status INSUFFICIENT_POINTS\n", encoding="utf-8")
@@ -366,8 +366,8 @@ class SchemaQualityGateTest(unittest.TestCase):
                 AdminModelRoute calls ModelCatalogQueryService and must not rebuild pricing logic in HTTP handlers.
                 OpenAIModelsRoute serves /v1/models through the gateway runtime module, uses PricingCatalog snapshots, and returns OpenAI-compatible model list envelopes only after API key authentication.
                 OpenAIChatCompletionsRoute serves /v1/chat/completions through the gateway runtime module, authenticates the API key, validates model routing and pricing, uses ChatCompletionRelay for non-stream execution, uses ChatCompletionStreamRelay with ChatCompletionStreamRelayResponse for SSE text/event-stream pass-through, and returns provider_relay_not_configured or streaming_relay_not_configured only when the matching relay is absent.
-                Non-stream OpenAIChatCompletionsRoute provider success must build GatewayUsageRecordCommand from provider usage and persist through GatewayUsageRecorder, with SqliteGatewayUsageRecorder and PostgresGatewayUsageRecorder writing ai_request_trace and ai_usage_fact; missing usage returns provider_usage_record_failed. The streaming usage boundary must force upstream stream_options.include_usage through OpenAiCompatibleChatCompletionStreamRelay and SecretRefOpenAiCompatibleChatCompletionStreamRelay, then StreamingUsageRecordingBody must persist the provider SSE usage event before stream completion.
-                UsageSettlementWorker owns the background worker boundary and UsageSettlementWorkerConfig controls schema readiness gated settlement activation. SDKWORK_CLAW_USAGE_SETTLEMENT_WORKER_ENABLED, SDKWORK_CLAW_USAGE_SETTLEMENT_BATCH_SIZE, and SDKWORK_CLAW_USAGE_SETTLEMENT_INTERVAL_MILLIS configure the worker. UsageSettlementStore consumes UsageSettlementCommand and returns UsageSettlementOutcome from a worker boundary after ai_usage_fact is written. SqliteUsageSettlementStore and PostgresUsageSettlementStore must settle pending or failed settlement_status rows into commerce_usage_settlement and plus_account_history idempotently, update settlement_id, use FOR UPDATE SKIP LOCKED on Postgres, and insufficient balances must use INSUFFICIENT_POINTS without double-debiting.
+                Non-stream OpenAIChatCompletionsRoute provider success must build GatewayUsageRecordCommand from provider usage and persist through GatewayUsageRecorder, with SqliteGatewayUsageRecorder and PostgresGatewayUsageRecorder writing ai_request_trace and ai_usage; missing usage returns provider_usage_record_failed. The streaming usage boundary must force upstream stream_options.include_usage through OpenAiCompatibleChatCompletionStreamRelay and SecretRefOpenAiCompatibleChatCompletionStreamRelay, then StreamingUsageRecordingBody must persist the provider SSE usage event before stream completion.
+                UsageSettlementWorker owns the background worker boundary and UsageSettlementWorkerConfig controls schema readiness gated settlement activation. SDKWORK_CLAW_USAGE_SETTLEMENT_WORKER_ENABLED, SDKWORK_CLAW_USAGE_SETTLEMENT_BATCH_SIZE, and SDKWORK_CLAW_USAGE_SETTLEMENT_INTERVAL_MILLIS configure the worker. UsageSettlementStore consumes UsageSettlementCommand and returns UsageSettlementOutcome from a worker boundary after ai_usage is written. SqliteUsageSettlementStore and PostgresUsageSettlementStore must settle pending or failed settlement_status rows into commerce_usage_settlement and plus_account_history idempotently, update settlement_id, use FOR UPDATE SKIP LOCKED on Postgres, and insufficient balances must use INSUFFICIENT_POINTS without double-debiting.
                 OpenAIResponsesRoute serves /v1/responses through the gateway runtime module, authenticates the API key, validates responses capability, provider route, and LlmInputToken pricing, returns responses_relay_not_configured when relay is absent, and uses ResponsesRelay with ResponsesRelayRequest for non-stream provider execution.
                 OpenAiCompatibleResponsesRelay and SecretRefOpenAiCompatibleResponsesRelay use UpstreamProviderEndpoint, provider_base_url, provider_secret_ref, ai_channel.timeout_ms, ai_channel.retry_policy, request-context provider timeout, request-context provider retry policy, ProviderRetryPolicy, strict JSON, non-stream JSON relay, transient provider retry, and retryable upstream status for native OpenAI-compatible /v1/responses relay without plaintext provider secret storage.
                 OpenAIEmbeddingsRoute serves /v1/embeddings through the gateway runtime module, authenticates the API key, validates embedding capability, provider route, and EmbeddingInputToken pricing, returns embedding_relay_not_configured when relay is absent, and uses EmbeddingsRelay with EmbeddingsRelayRequest for provider execution.
@@ -1146,7 +1146,7 @@ class SchemaQualityGateTest(unittest.TestCase):
             root = Path(tmp)
             registry = self.write_registry(root, self.valid_registry())
             self.write_generated_artifacts(root, registry)
-            drift = root / "docs" / "02-技术架构设计.md"
+            drift = root / "docs" / "02-鎶€鏈灦鏋勮璁?md"
             drift.write_text("Spring-first with Rust/Pingora Sidecar\n", encoding="utf-8")
             self.write_app(root)
             self.write_frontend_contract(root)
@@ -1155,7 +1155,7 @@ class SchemaQualityGateTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "architecture doc docs/02-技术架构设计.md contains forbidden Spring-first drift term: Spring-first",
+                "architecture doc docs/02-鎶€鏈灦鏋勮璁?md contains forbidden Spring-first drift term: Spring-first",
                 result.messages,
             )
 

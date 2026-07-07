@@ -9,7 +9,7 @@
       "operation": "fetchOverview",
       "operation_scope": null,
       "read_sources": [
-        "ai_usage_fact",
+        "ai_usage",
         "ai_request_trace"
       ],
       "route": "/admin/analytics",
@@ -475,7 +475,7 @@
       "operation": "fetchDashboardData",
       "operation_scope": null,
       "read_sources": [
-        "ai_usage_fact",
+        "ai_usage",
         "ai_request_trace",
         "ops_metric_snapshot",
         "iam_user",
@@ -917,7 +917,7 @@
       "operation_scope": null,
       "read_sources": [
         "ai_request_trace",
-        "ai_usage_fact",
+        "ai_usage",
         "ai_routing_decision_log"
       ],
       "route": "/admin/record",
@@ -1423,7 +1423,7 @@
       "operation": "fetchDashboardOverview",
       "operation_scope": null,
       "read_sources": [
-        "ai_usage_fact",
+        "ai_usage",
         "ai_request_trace",
         "ops_metric_snapshot",
         "ops_gateway_instance"
@@ -1543,7 +1543,7 @@
       "operation_scope": null,
       "read_sources": [
         "ai_request_trace",
-        "ai_usage_fact",
+        "ai_usage",
         "ai_routing_decision_log"
       ],
       "route": "/console/usage",
@@ -1594,7 +1594,7 @@
         "ai_chat_turn",
         "ai_chat_item",
         "ai_runtime_invocation",
-        "ai_usage_fact"
+        "ai_usage"
       ],
       "route": "/playground",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
@@ -1989,7 +1989,7 @@
       "operation_scope": "app_shell",
       "read_sources": [
         "ai_request_trace",
-        "ai_usage_fact"
+        "ai_usage"
       ],
       "route": "/playground",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/components/chat/chatService.ts",
@@ -2005,7 +2005,7 @@
       "operation_scope": "app_shell",
       "read_sources": [
         "ai_request_trace",
-        "ai_usage_fact"
+        "ai_usage"
       ],
       "route": "/playground",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/components/chat/chatService.ts",
@@ -2046,13 +2046,13 @@
       "operation_scope": "app_shell",
       "read_sources": [
         "ai_request_trace",
-        "ai_usage_fact"
+        "ai_usage"
       ],
       "route": "/playground",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/components/chat/chatService.ts",
       "write_tables": [
         "ai_request_trace",
-        "ai_usage_fact"
+        "ai_usage"
       ]
     },
     {
@@ -2069,7 +2069,7 @@
       "route": "/playground",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationService.ts",
       "write_tables": [
-        "ai_usage_fact"
+        "ai_usage"
       ]
     },
     {
@@ -2101,7 +2101,7 @@
       "route": "/playground",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationsService.ts",
       "write_tables": [
-        "ai_usage_fact"
+        "ai_usage"
       ]
     },
     {
@@ -2148,7 +2148,7 @@
       "route": "/playground",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundService.ts",
       "write_tables": [
-        "ai_usage_fact"
+        "ai_usage"
       ]
     },
     {
@@ -2165,7 +2165,7 @@
       "route": "/playground",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundService.ts",
       "write_tables": [
-        "ai_usage_fact"
+        "ai_usage"
       ]
     },
     {
@@ -2452,7 +2452,7 @@
       "operation_scope": "app_shell",
       "read_sources": [
         "ai_request_trace",
-        "ai_usage_fact",
+        "ai_usage",
         "ai_routing_decision_log"
       ],
       "route": "/console/usage",
@@ -3122,7 +3122,7 @@
       "operation": "triggerModelRankingRefresh",
       "operation_scope": null,
       "read_sources": [
-        "ai_usage_fact"
+        "ai_usage"
       ],
       "route": "/admin/model",
       "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",

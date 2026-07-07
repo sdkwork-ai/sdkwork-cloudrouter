@@ -95,7 +95,7 @@ Notes:
 - Included tokens are shared across all tenants on the licensed instance and
   cover the sum of input and output tokens metered by Claw Router.
 - Overage tokens are billed at the end of each billing cycle based on actual
-  metered usage recorded in `ai_usage_fact`.
+  metered usage recorded in `ai_usage`.
 - Enterprise annual prepay applies the 15% discount to the base subscription
   fee only; overage tokens are billed at the published overage rate.
 - OEM royalty is calculated as 5% of gross revenue attributable to the
@@ -120,7 +120,7 @@ Notes:
 Different models carry different resource and provider cost. Claw Router
 applies a model multiplier to the raw token count before billing so that
 pricing reflects actual cost of goods sold. The multiplied value is the
-billable token count recorded in `ai_usage_fact`.
+billable token count recorded in `ai_usage`.
 
 | Model family | Multiplier | Rationale |
 | --- | --- | --- |
