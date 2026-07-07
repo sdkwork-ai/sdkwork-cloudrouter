@@ -209,6 +209,11 @@ class SchemaCompiler:
 
         for column_name, registry_type in explicit_columns.items():
             column = self._compile_column(table_name, column_name, registry_type)
+            if column.name in collected:
+                raise SchemaCompileError(
+                    f"{table_name}.{column.name} duplicates common column from {group_name}; "
+                    "remove it from explicit columns"
+                )
             collected[column.name] = column
 
         for column_name in self._required_columns(table_name, table):

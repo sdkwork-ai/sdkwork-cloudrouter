@@ -4,6 +4,7 @@ use sha2::{Digest, Sha256};
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
 use crate::domain::{DomainError, DomainResult};
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::ports::{
     AppRoutingChannelCommandFuture, AppRoutingChannelCommandStore, AppRoutingChannelDeleteOutcome,
     AppRoutingChannelItem, AppRoutingChannelMutationOutcome, AppRoutingChannelTestOutcome,
@@ -510,15 +511,16 @@ async fn insert_or_load_provider_for_code(
         return Ok(provider_id);
     }
 
-    sqlx::query_scalar(
+    let provider_id = next_claw_runtime_id("routing channel provider creation")?;
+    sqlx::query(
         r#"
         INSERT INTO ai_provider
-            (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, provider_code, default_vendor_code, display_name, base_url, sort_order)
+            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, provider_code, default_vendor_code, display_name, base_url, sort_order)
         VALUES
-            ($1, $2, $3, 1, 1, $4::timestamptz, $5::timestamptz, 0, $6, $7, $8, $9, 100)
-        RETURNING id
+            ($1, $2, $3, $4, 1, 1, $5::timestamptz, $6::timestamptz, 0, $7, $8, $9, $10, 100)
         "#,
     )
+    .bind(provider_id)
     .bind(provider_uuid)
     .bind(tenant_id)
     .bind(organization_id)
@@ -528,9 +530,11 @@ async fn insert_or_load_provider_for_code(
     .bind(provider_code)
     .bind(vendor)
     .bind(base_url)
-    .fetch_one(&mut **tx)
+    .execute(&mut **tx)
     .await
-    .map_err(|error| store_error("failed to create routing channel provider", error))
+    .map_err(|error| store_error("failed to create routing channel provider", error))?;
+
+    Ok(provider_id)
 }
 
 async fn insert_channel(
@@ -543,15 +547,16 @@ async fn insert_channel(
         "protocol": &command.protocol
     })
     .to_string();
-    sqlx::query_scalar(
+    let channel_id = next_claw_runtime_id("routing channel creation")?;
+    sqlx::query(
         r#"
         INSERT INTO ai_channel
-            (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, provider_id, provider_code, channel_code, channel_name, channel_type, protocol_code, auth_type, base_url, auth_config, credential_ref, credential_hash, masked_label, timeout_ms, retry_policy, circuit_breaker_policy, environment, priority, weight, health_status, last_latency_ms, rpm_limit, consecutive_error_count)
+            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, provider_id, provider_code, channel_code, channel_name, channel_type, protocol_code, auth_type, base_url, auth_config, credential_ref, credential_hash, masked_label, timeout_ms, retry_policy, circuit_breaker_policy, environment, priority, weight, health_status, last_latency_ms, rpm_limit, consecutive_error_count)
         VALUES
-            ($1, $2, $3, 1, $4, $5::timestamptz, $6::timestamptz, 0, $7, $8, $9, $10, 'official', $11, $12, $13, $14::jsonb, $15, $16, $17, $18, $19::jsonb, $20::jsonb, 1, 100, $21, $22, 0, 0, 0)
-        RETURNING id
+            ($1, $2, $3, $4, 1, $5, $6::timestamptz, $7::timestamptz, 0, $8, $9, $10, $11, 'official', $12, $13, $14, $15::jsonb, $16, $17, $18, $19, $20::jsonb, $21::jsonb, 1, 100, $22, $23, 0, 0, 0)
         "#,
     )
+    .bind(channel_id)
     .bind(&command.channel_uuid)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
@@ -574,9 +579,11 @@ async fn insert_channel(
     .bind(command.circuit_breaker_policy_json.as_deref())
     .bind(command.weight)
     .bind(health_status_code(&command.status))
-    .fetch_one(&mut **tx)
+    .execute(&mut **tx)
     .await
-    .map_err(|error| store_error("failed to create routing channel", error))
+    .map_err(|error| store_error("failed to create routing channel", error))?;
+
+    Ok(channel_id)
 }
 
 async fn update_channel(

@@ -1,397 +1,282 @@
 tables:
-  
-  # ============================================================
-  # ai_usage - AI用量事实表（核心计费数据）
-  # ============================================================
-  
-  - table: ai_usage
-    domain: ai
-    profile: ledger_source_fact
-    compliance_level: L3
-    system_of_record: true
-    write_owner: router-service
-    
-    description: |
-      AI用量事实表 - Claw Router的核心价值表
-      
-      行业对标:
-      - Stripe Usage Records (用量记录)
-      - AWS CloudWatch Metrics (监控指标)
-      - OpenAI API Usage (API用量)
-      
-      职责:
-      - 记录所有AI调用的用量事实
-      - 作为结算、计费、对账的事实来源
-      - 支持金融级别的合规要求（L3）
-      
-      数据流向:
-      1. router-service写入ai_usage（Claw Router本地）
-      2. 发布UsageRecorded事件
-      3. sdkwork-account订阅事件 → commerce_account_ledger_entry
-      
-      关键特性:
-      - 不可变性: append-only，只能追加不能修改
-      - 幂等性: 通过request_id保证幂等
-      - 完整性: 包含完整的请求、响应、计费信息
-      - 可追溯性: 包含trace_id支持链路追踪
-    
-    common_columns: ledger_source_fact
-    
-    frontend_routes:
-      - /console/usage
-      - /admin/usage
-      - /admin/analytics
-    
-    api_surfaces:
-      - app
-      - backend
-      - worker
-    
+- table: ai_usage
+  domain: ai
+  profile: ledger_source_fact
+  compliance_level: L3
+  system_of_record: true
+  write_owner: router-service
+  common_columns: ledger_source_fact
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    decision_log_id: int64
+    api_key_id: int64
+    legacy_api_key_id: int64
+    api_key_name_snapshot: string(128)
+    channel_group_id: int64
+    channel_group_snapshot: string(128)
+    owner_type: int32
+    owner_id: int64
+    owner_name_snapshot: string(128)
+    catalog_key:
+      type: string(256)
+      constraints: NOT NULL
+    requested_model_catalog_key: string(256)
+    model: string(256)
+    provider_native_model: string(256)
+    region_code: string(64)
+    provider_id: int64
+    channel_id: int64
+    modality: int32
+    usage_type: int32
+    billing_type: int32
+    billing_mode: int32
+    billing_meter_id: int64
+    billing_meter_code: string(64)
+    billing_tier: string(64)
+    billable_quantity: decimal
+    billable_unit: int32
+    prompt_tokens: int64
+    completion_tokens: int64
+    cached_tokens: int64
+    total_tokens: int64
+    request_count: int64
+    result_count: int64
+    item_count: int64
+    character_count: int64
+    image_count: int64
+    audio_seconds: decimal
+    video_seconds: decimal
+    storage_byte_hours: decimal
+    bandwidth_bytes: int64
+    unit_price_snapshot: decimal
+    base_input_unit_price: decimal
+    base_output_unit_price: decimal
+    cache_read_unit_price: decimal
+    rate_multiplier: decimal
+    reference_multiplier: decimal
+    official_reference_amount: decimal
+    upstream_cost_amount: decimal
+    customer_charge_amount: decimal
+    cost_amount: decimal
+    currency: string(10)
+    pricing_id: int64
+    pricing_plan_id: int64
+    pricing_plan_code: string(64)
+    pricing_rule_id: int64
+    pricing_tier_id: int64
+    pricing_snapshot: json
+    reasoning_effort: string(64)
+    occurred_at: instant
+    settlement_status: int32
+    settlement_id: int64
+  unique_constraints:
+  - name: uk_ai_usage_request
     columns:
-      # 标识字段
-      id: int64
-      uuid: string(64)
-      
-      # 租户隔离
-      tenant_id: int64
-      organization_id: int64
-      user_id: int64
-      
-      # 幂等追踪
-      request_id: string(128)
-      trace_id: string(128)
-      idempotency_key: string(128)
-      
-      # 渠道信息
-      group_id: int64
-      group_code: string(64)
-      channel_id: int64
-      channel_code: string(64)
-      
-      # 供应商信息
-      provider_id: int64
-      provider_code: string(64)
-      
-      # 模型信息
-      model_vendor: string(64)
-      model_code: string(128)
-      model_family: string(64)
-      
-      # 能力类型
-      capability_type: enum_int32
-      operation_type: enum_int32
-      
-      # 计费计量（对标Stripe Metering）
-      billing_mode: enum_int32
-      billing_meter: string(64)
-      input_tokens: int64
-      output_tokens: int64
-      total_tokens: int64
-      reasoning_tokens: int64
-      cache_read_tokens: int64
-      cache_write_tokens: int64
-      
-      # 性能指标（对标CloudWatch Metrics）
-      duration_ms: int64
-      ttft_ms: int32
-      upstream_latency_ms: int32
-      gateway_latency_ms: int32
-      
-      # 金额字段（对标Stripe Billing）
-      upstream_cost: decimal
-      upstream_currency: string(10)
-      customer_charge: decimal
-      customer_currency: string(10)
-      settlement_amount: decimal
-      settlement_currency: string(10)
-      
-      # 结算状态
-      settlement_status: enum_int32
-      
-      # 定价信息
-      pricing_id: int64
-      pricing_code: string(64)
-      
-      # 流式/幂等/降级
-      is_streaming: bool
-      is_idempotent: bool
-      is_fallback: bool
-      
-      # 错误信息
-      error_code: string(64)
-      error_type: string(64)
-      error_message: string(512)
-      
-      # 快照（对标AWS Config Snapshots）
-      request_snapshot: json
-      response_snapshot: json
-      
-      # 路由决策
-      routing_log_id: int64
-      
-      # 粘性会话
-      sticky_key: string(128)
-      
-      # 熔断器
-      circuit_state: enum_int32
-      
-      # Region
-      upstream_region: string(64)
-      client_region: string(64)
-      
-      # 客户端信息（脱敏）
-      client_ip_hash: string(128)
-      user_agent_hash: string(128)
-      
-      # API Key
-      api_key_id: int64
-      api_key_prefix: string(32)
-      
-      # 审计字段
-      created_at: instant
-      processed_at: instant
-      settled_at: instant
-      reconciled_at: instant
-      
-      # 生命周期
-      status: enum_int32
-      retention_until: instant
-      legal_hold: bool
-      
-      # 元数据
-      metadata: json
-    
-    unique_constraints:
-      - name: uk_ai_usage_request
-        columns:
-          - tenant_id
-          - organization_id
-          - request_id
-    
-    indexes:
-      - name: idx_ai_usage_tenant_time
-        columns:
-          - tenant_id
-          - organization_id
-          - created_at
-          - id
-      
-      - name: idx_ai_usage_group_time
-        columns:
-          - tenant_id
-          - organization_id
-          - group_id
-          - created_at
-          - id
-      
-      - name: idx_ai_usage_provider_time
-        columns:
-          - tenant_id
-          - organization_id
-          - provider_code
-          - created_at
-          - id
-      
-      - name: idx_ai_usage_model_time
-        columns:
-          - tenant_id
-          - organization_id
-          - model_code
-          - created_at
-          - id
-      
-      - name: idx_ai_usage_api_key_time
-        columns:
-          - tenant_id
-          - organization_id
-          - api_key_id
-          - created_at
-          - id
-      
-      - name: idx_ai_usage_user_time
-        columns:
-          - tenant_id
-          - organization_id
-          - user_id
-          - created_at
-          - id
-      
-      - name: idx_ai_usage_settlement_status
-        columns:
-          - tenant_id
-          - organization_id
-          - settlement_status
-          - created_at
-          - id
-    
-    lifecycle:
-      partition_by: created_at_month
-      online_retention: 12mo
-      archive_retention: 5y
-    
-    security:
-      sensitivity: INTERNAL
-      stores_secret_plaintext: false
-      audit_required: true
-    
-    serialization:
-      int64: string
-      decimal: string
-      instant: iso8601_utc
-  
-  # ============================================================
-  # ai_request_trace - gateway request attempt trace
-  # ============================================================
-  
-  - table: ai_request_trace
-    domain: ai
-    profile: event_log
-    compliance_level: L2
-    system_of_record: true
-    write_owner: router-service
-    
-    description: |
-      用量追踪表 - 请求链路日志
-      
-      行业对标:
-      - AWS X-Ray (分布式追踪)
-      - Datadog APM (应用性能监控)
-      - Jaeger Tracing (链路追踪)
-      
-      职责:
-      - 记录请求的完整链路信息
-      - 支持问题排查和性能分析
-      - 提供可观测性数据
-      
-      数据流向:
-      1. router-service写入ai_request_trace
-      2. 关联ai_usage.request_id
-      3. 支持trace_id链路追踪
-      
-      关键特性:
-      - 可观测性: 支持链路追踪和性能分析
-      - 关联性: 通过trace_id关联完整链路
-      - 时效性: 短期存储（在线保留3个月）
-    
-    common_columns: event_log
-    
-    frontend_routes:
-      - /console/usage
-      - /admin/usage/traces
-    
-    api_surfaces:
-      - app
-      - backend
-      - worker
-    
+    - tenant_id
+    - organization_id
+    - request_id
+    - usage_type
+  indexes:
+  - name: idx_ai_usage_tenant_owner_occurred
     columns:
-      id: int64
-      uuid: string(64)
-      tenant_id: int64
-      organization_id: int64
-      user_id: int64
-      request_id: string(128)
-      trace_id: string(128)
-      payload_hash: string(128)
-      status: enum_int32
-      created_at: instant
-      retention_until: instant
-      legal_hold: bool
-      metadata: json
-      attempt_no: int32
-      decision_log_id: int64
-      api_key_id: int64
-      legacy_api_key_id: int64
-      api_key_name_snapshot: string(128)
-      channel_group_id: int64
-      channel_group_snapshot: string(128)
-      owner_type: enum_int32
-      owner_id: int64
-      owner_name_snapshot: string(128)
-      provider_id: int64
-      channel_id: int64
-      channel_name_snapshot: string(128)
-      requested_model: string(256)
-      requested_model_catalog_key: string(256)
-      provider_model: string(256)
-      provider_native_model: string(256)
-      region_code: string(64)
-      endpoint: string(256)
-      request_path: string(256)
-      http_method: string(16)
-      http_status: int32
-      provider_error_code: string(128)
-      error_type: enum_int32
-      started_at: instant
-      ended_at: instant
-      latency_ms: int32
-      ttft_ms: int32
-      streaming: bool
-      request_bytes: int64
-      response_bytes: int64
-      prompt_tokens: int64
-      completion_tokens: int64
-      cached_tokens: int64
-      total_tokens: int64
-      request_payload_hash: string(128)
-      response_payload_hash: string(128)
-      error_message_masked: string(1024)
-      reasoning_effort: string(64)
-      client_ip_hash: string(128)
-      client_ip_masked: string(64)
-      client_ip_region: string(128)
-      user_agent_hash: string(128)
-    
-    unique_constraints:
-      - name: uk_ai_request_trace_request_attempt
-        columns:
-          - tenant_id
-          - organization_id
-          - request_id
-          - attempt_no
-    
-    indexes:
-      - name: idx_ai_request_trace_tenant_trace
-        columns:
-          - tenant_id
-          - organization_id
-          - trace_id
-      
-      - name: idx_ai_request_trace_api_key_started
-        columns:
-          - tenant_id
-          - organization_id
-          - api_key_id
-          - started_at
-          - id
-      
-      - name: idx_ai_request_trace_model_started
-        columns:
-          - tenant_id
-          - organization_id
-          - requested_model
-          - started_at
-          - id
-      
-      - name: idx_ai_request_trace_tenant_status_started
-        columns:
-          - tenant_id
-          - organization_id
-          - status
-          - started_at
-          - id
-    
-    lifecycle:
-      partition_by: created_at_month
-      online_retention: 3mo
-      archive_retention: 1y
-    
-    security:
-      sensitivity: INTERNAL
-      stores_secret_plaintext: false
-      audit_required: true
-    
-    serialization:
-      int64: string
-      decimal: string
-      instant: iso8601_utc
+    - tenant_id
+    - organization_id
+    - owner_type
+    - owner_id
+    - occurred_at
+    - id
+  - name: idx_ai_usage_api_key_occurred
+    columns:
+    - tenant_id
+    - organization_id
+    - api_key_id
+    - occurred_at
+    - id
+  - name: idx_ai_usage_model_occurred
+    columns:
+    - tenant_id
+    - organization_id
+    - catalog_key
+    - occurred_at
+    - id
+  - name: idx_ai_usage_pricing_plan_occurred
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_plan_id
+    - occurred_at
+    - id
+  - name: idx_ai_usage_meter_occurred
+    columns:
+    - tenant_id
+    - organization_id
+    - billing_meter_code
+    - occurred_at
+    - id
+  - name: idx_ai_usage_settlement_status
+    columns:
+    - tenant_id
+    - organization_id
+    - settlement_status
+    - occurred_at
+    - id
+  lifecycle:
+    partition_by: created_at_month
+- table: ai_usage_service_provider_edge
+  domain: ai
+  profile: ledger_source_fact
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: ledger_source_fact
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    usage_fact_id:
+      type: int64
+      constraints: NOT NULL
+    edge_id:
+      type: int64
+      constraints: NOT NULL
+    edge_depth: int32
+    seller_provider_id: int64
+    buyer_provider_id: int64
+    amount_role: string(64)
+    pricing_plan_id: int64
+    pricing_rule_id: int64
+    billing_meter_code: string(64)
+    token_kind: string(64)
+    billable_quantity: decimal
+    unit_price: decimal
+    unit_size: decimal
+    charge_amount: decimal
+    currency: string(10)
+    fx_rate_snapshot: decimal
+    settlement_currency: string(10)
+    converted_charge_amount: decimal
+    seller_snapshot: json
+    buyer_snapshot: json
+    price_snapshot: json
+    occurred_at: instant
+    settlement_status: int32
+  unique_constraints:
+  - name: uk_ai_usage_service_provider_edge_usage_depth
+    columns:
+    - tenant_id
+    - organization_id
+    - usage_fact_id
+    - edge_depth
+    - amount_role
+  indexes:
+  - name: idx_ai_usage_service_provider_edge_seller_time
+    columns:
+    - tenant_id
+    - organization_id
+    - seller_provider_id
+    - occurred_at
+    - id
+  - name: idx_ai_usage_service_provider_edge_buyer_time
+    columns:
+    - tenant_id
+    - organization_id
+    - buyer_provider_id
+    - occurred_at
+    - id
+  lifecycle:
+    partition_by: created_at_month
+- table: ai_request_trace
+  domain: ai
+  profile: event_log
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: event_log
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    attempt_no: int32
+    decision_log_id: int64
+    api_key_id: int64
+    legacy_api_key_id: int64
+    api_key_name_snapshot: string(128)
+    channel_group_id: int64
+    channel_group_snapshot: string(128)
+    owner_type: int32
+    owner_id: int64
+    owner_name_snapshot: string(128)
+    provider_id: int64
+    channel_id: int64
+    channel_name_snapshot: string(128)
+    requested_model: string(256)
+    requested_model_catalog_key: string(256)
+    provider_model: string(256)
+    provider_native_model: string(256)
+    region_code: string(64)
+    endpoint: string(256)
+    request_path: string(256)
+    http_method: string(16)
+    http_status: int32
+    provider_error_code: string(128)
+    error_type: int32
+    started_at: instant
+    ended_at: instant
+    latency_ms: int32
+    ttft_ms: int32
+    streaming: bool
+    request_bytes: int64
+    response_bytes: int64
+    prompt_tokens: int64
+    completion_tokens: int64
+    cached_tokens: int64
+    total_tokens: int64
+    request_payload_hash: string(128)
+    response_payload_hash: string(128)
+    error_message_masked: string(1024)
+    reasoning_effort: string(64)
+    client_ip_hash: string(128)
+    client_ip_masked: string(64)
+    client_ip_region: string(128)
+    user_agent_hash: string(128)
+  unique_constraints:
+  - name: uk_ai_request_trace_request_attempt
+    columns:
+    - tenant_id
+    - organization_id
+    - request_id
+    - attempt_no
+  indexes:
+  - name: idx_ai_request_trace_tenant_trace
+    columns:
+    - tenant_id
+    - organization_id
+    - trace_id
+  - name: idx_ai_request_trace_api_key_started
+    columns:
+    - tenant_id
+    - organization_id
+    - api_key_id
+    - started_at
+    - id
+  - name: idx_ai_request_trace_model_started
+    columns:
+    - tenant_id
+    - organization_id
+    - requested_model
+    - started_at
+    - id
+  - name: idx_ai_request_trace_tenant_status_started
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - started_at
+    - id
+  lifecycle:
+    partition_by: created_at_month

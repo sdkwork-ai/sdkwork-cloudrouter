@@ -1,303 +1,394 @@
 tables:
-  
-  # ============================================================
-  # ai_pricing - 定价方案表（价格策略）
-  # ============================================================
-  
-  - table: ai_pricing
-    domain: ai
-    profile: pricing
-    compliance_level: L2
-    system_of_record: true
-    write_owner: pricing-service
-    
-    description: |
-      定价方案表 - 价格策略
-      
-      行业对标:
-      - Stripe Pricing Tables (定价表)
-      - AWS Pricing Plans (定价方案)
-      - OpenAI Model Pricing (模型定价)
-      
-      职责:
-      - 定义价格计划主表
-      - 定义默认倍率、加价和价格基准
-      - 支持多种定价模式（倍率、固定价格、阶梯价）
-      
-      关键特性:
-      - 多定价模式: 支持倍率、固定价格、阶梯价、表达式计费
-      - 灵活绑定: 支持绑定账号、分组、租户或SKU
-      - 价格基准: 支持官方参考价、接入成本价、销售价
-      
-      数据流向:
-      1. pricing-service定义定价方案
-      2. ai_usage通过pricing_code关联定价方案
-      3. ai_pricing_rule提供具体计费规则
-      4. 计算最终收费金额
-    
-    common_columns: pricing
-    
-    frontend_routes:
-      - /admin/pricing
-      - /console/pricing
-    
-    api_surfaces:
-      - app
-      - backend
-      - worker
-    
+- table: ai_pricing_import_snapshot
+  domain: ai
+  profile: event_log
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-pricing-service
+  common_columns: event_log
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    import_source:
+      type: int32
+      constraints: NOT NULL
+    source_name:
+      type: string(128)
+      constraints: NOT NULL
+    source_url: string(1024)
+    source_version: string(128)
+    source_hash:
+      type: string(128)
+      constraints: NOT NULL
+    upstream_commit: string(128)
+    data_format: string(64)
+    row_count: int64
+    accepted_count: int64
+    rejected_count: int64
+    currency: string(10)
+    published_at: instant
+    observed_at:
+      type: instant
+      constraints: NOT NULL
+    raw_payload_ref: string(512)
+    normalized_payload_hash: string(128)
+    schema_version: string(32)
+    error_message_masked: string(1024)
+  unique_constraints:
+  - name: uk_ai_pricing_import_snapshot_uuid
     columns:
-      # 标识字段
-      id: int64
-      uuid: string(64)
-      
-      # 租户隔离
-      tenant_id: int64
-      organization_id: int64
-      
-      # 幂等键
-      pricing_code: string(64)
-      idempotency_key: string(128)
-      
-      # 定价信息
-      pricing_name: string(128)
-      pricing_type: enum_int32
-      
-      # 价格基准
-      base_price_source: enum_int32
-      base_price_type: enum_int32
-      
-      # 定价模式
-      pricing_mode: enum_int32
-      
-      # 默认倍率
-      default_multiplier: decimal
-      
-      # 默认加价
-      default_markup_amount: decimal
-      default_markup_type: enum_int32
-      
-      # 货币
-      currency: string(10)
-      
-      # 最低收费
-      minimum_charge: decimal
-      
-      # 舍入模式
-      rounding_mode: enum_int32
-      
-      # 生效时间
-      effective_from: instant
-      effective_to: instant
-      
-      # 绑定对象（支持多维度绑定）
-      binding_scope_type: enum_int32
-      binding_scope_id: int64
-      
-      # 审计字段
-      created_at: instant
-      updated_at: instant
-      version: int64
-      
-      # 生命周期
-      status: enum_int32
-      
-      # 元数据
-      metadata: json
-    
-    unique_constraints:
-      - name: uk_ai_pricing_code
-        columns:
-          - tenant_id
-          - organization_id
-          - pricing_code
-    
-    indexes:
-      - name: idx_ai_pricing_tenant_status
-        columns:
-          - tenant_id
-          - organization_id
-          - pricing_type
-          - status
-          - effective_from
-          - id
-      
-      - name: idx_ai_pricing_binding
-        columns:
-          - tenant_id
-          - organization_id
-          - binding_scope_type
-          - binding_scope_id
-          - status
-          - id
-    
-    security:
-      sensitivity: INTERNAL
-      stores_secret_plaintext: false
-      audit_required: true
-  
-  # ============================================================
-  # ai_pricing_rule - 定价规则表（具体计费规则）
-  # ============================================================
-  
-  - table: ai_pricing_rule
-    domain: ai
-    profile: pricing
-    compliance_level: L2
-    system_of_record: true
-    write_owner: pricing-service
-    
-    description: |
-      定价规则表 - 具体计费规则
-      
-      行业对标:
-      - Stripe Pricing Rules (定价规则)
-      - AWS Pricing Dimensions (定价维度)
-      - OpenAI Token Pricing (Token定价)
-      
-      职责:
-      - 定义价格规则表
-      - 支持倍率、固定价格、阶梯价和表达式计费
-      - 支持按模型、能力、region等维度定价
-      
-      关键特性:
-      - 多维度定价: 支持模型、能力、meter、region等维度
-      - 规则优先级: 支持基于优先级的规则匹配
-      - 阶梯定价: 支持分段计费阈值和单价
-      
-      数据流向:
-      1. pricing-service定义定价规则
-      2. ai_usage匹配定价规则
-      3. 根据规则计算最终价格
-      4. 写入customer_charge到ai_usage
-    
-    common_columns: pricing
-    
-    frontend_routes:
-      - /admin/pricing/rules
-    
-    api_surfaces:
-      - backend
-      - worker
-    
+    - uuid
+  - name: uk_ai_pricing_import_snapshot_hash
     columns:
-      # 标识字段
-      id: int64
-      uuid: string(64)
-      
-      # 租户隔离
-      tenant_id: int64
-      organization_id: int64
-      
-      # 幂等键
-      rule_code: string(64)
-      idempotency_key: string(128)
-      
-      # 定价方案关联
-      pricing_id: int64
-      pricing_code: string(64)
-      
-      # 规则信息
-      rule_name: string(128)
-      rule_type: enum_int32
-      rule_priority: int32
-      
-      # 匹配条件（多维度匹配）
-      match_model_vendor: string(64)
-      match_model_code: string(128)
-      match_model_family: string(64)
-      match_capability_type: enum_int32
-      match_billing_meter: string(64)
-      match_token_kind: string(64)
-      match_upstream_region: string(64)
-      match_client_region: string(64)
-      
-      # 定价模式
-      pricing_mode: enum_int32
-      
-      # 倍率定价
-      multiplier: decimal
-      
-      # 固定价格
-      fixed_price: decimal
-      fixed_price_unit: string(64)
-      
-      # 阶梯定价配置
-      tier_enabled: bool
-      tier_config: json
-      
-      # 表达式定价
-      expression_enabled: bool
-      expression_formula: string(512)
-      
-      # 货币
-      currency: string(10)
-      
-      # 单价（用于计算）
-      unit_price: decimal
-      unit_size: decimal
-      
-      # 最低收费
-      minimum_charge: decimal
-      
-      # 舍入模式
-      rounding_mode: enum_int32
-      
-      # 生效时间
-      effective_from: instant
-      effective_to: instant
-      
-      # 审计字段
-      created_at: instant
-      updated_at: instant
-      version: int64
-      
-      # 生命周期
-      status: enum_int32
-      
-      # 元数据
-      metadata: json
-    
-    unique_constraints:
-      - name: uk_ai_pricing_rule_code
-        columns:
-          - tenant_id
-          - organization_id
-          - rule_code
-    
-    indexes:
-      - name: idx_ai_pricing_rule_pricing_priority
-        columns:
-          - tenant_id
-          - organization_id
-          - pricing_id
-          - rule_priority
-          - status
-          - id
-      
-      - name: idx_ai_pricing_rule_model_meter
-        columns:
-          - tenant_id
-          - organization_id
-          - match_model_code
-          - match_billing_meter
-          - match_token_kind
-          - status
-          - rule_priority
-          - id
-      
-      - name: idx_ai_pricing_rule_capability_meter
-        columns:
-          - tenant_id
-          - organization_id
-          - match_capability_type
-          - match_billing_meter
-          - match_token_kind
-          - status
-          - rule_priority
-          - id
-    
-    security:
-      sensitivity: INTERNAL
-      stores_secret_plaintext: false
-      audit_required: true
+    - tenant_id
+    - organization_id
+    - import_source
+    - source_hash
+  indexes:
+  - name: idx_ai_pricing_import_snapshot_tenant_latest
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - import_source
+    - observed_at
+    - id
+- table: ai_pricing_plan
+  domain: ai
+  profile: pricing
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-pricing-service
+  common_columns: pricing
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    plan_code:
+      type: string(64)
+      constraints: NOT NULL
+    plan_name:
+      type: string(128)
+      constraints: NOT NULL
+    description: string(512)
+    plan_scope: int32
+    base_price_side:
+      type: int32
+      constraints: NOT NULL
+    base_pricing_scope: int32
+    default_reference_price_id: int64
+    default_multiplier: decimal
+    default_markup_amount: decimal
+    currency:
+      type: string(10)
+      constraints: NOT NULL
+    billing_mode: int32
+    rounding_mode: int32
+    min_charge_amount: decimal
+    fallback_mode: int32
+    priority: int32
+    price_version: string(64)
+    effective_from:
+      type: instant
+      constraints: NOT NULL
+    effective_to: instant
+  unique_constraints:
+  - name: uk_ai_pricing_plan_uuid
+    columns:
+    - uuid
+  - name: uk_ai_pricing_plan_tenant_code
+    columns:
+    - tenant_id
+    - organization_id
+    - plan_code
+  indexes:
+  - name: idx_ai_pricing_plan_scope_status
+    columns:
+    - tenant_id
+    - organization_id
+    - plan_scope
+    - status
+    - priority
+    - id
+  - name: idx_ai_pricing_plan_effective
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - effective_from
+    - effective_to
+    - id
+- table: ai_pricing_plan_binding
+  domain: ai
+  profile: relation_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-pricing-service
+  common_columns: relation_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    pricing_plan_id:
+      type: int64
+      constraints: NOT NULL
+    pricing_plan_code: string(64)
+    subject_type:
+      type: int32
+      constraints: NOT NULL
+    subject_id: int64
+    subject_code: string(128)
+    binding_source: int32
+    multiplier_override: decimal
+    rpm_override: int64
+    tpm_override: int64
+    quota_policy_id: int64
+    priority:
+      type: int32
+      constraints: NOT NULL
+    effective_from:
+      type: instant
+      constraints: NOT NULL
+    effective_to: instant
+  unique_constraints:
+  - name: uk_ai_pricing_plan_binding_uuid
+    columns:
+    - uuid
+  - name: uk_ai_pricing_plan_binding_subject
+    columns:
+    - tenant_id
+    - organization_id
+    - subject_type
+    - subject_id
+    - pricing_plan_id
+  indexes:
+  - name: idx_ai_pricing_plan_binding_tenant_status_effective
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - effective_from
+    - priority
+    - id
+  - name: idx_ai_pricing_plan_binding_subject_effective
+    columns:
+    - tenant_id
+    - organization_id
+    - subject_type
+    - subject_id
+    - status
+    - effective_from
+    - id
+  - name: idx_ai_pricing_plan_binding_plan
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_plan_id
+    - status
+    - priority
+    - id
+- table: ai_pricing_rule
+  domain: ai
+  profile: pricing
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-pricing-service
+  common_columns: pricing
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    pricing_plan_id:
+      type: int64
+      constraints: NOT NULL
+    pricing_plan_code: string(64)
+    rule_code:
+      type: string(64)
+      constraints: NOT NULL
+    rule_name: string(128)
+    match_type: int32
+    vendor_code: string(64)
+    family_code: string(64)
+    model_id: int64
+    model: string(256)
+    provider_code: string(64)
+    channel_id: int64
+    provider_model: string(256)
+    capability_code: string(64)
+    platform_code: string(64)
+    service_tier: string(64)
+    region: string(64)
+    price_side: int32
+    reference_price_side: int32
+    reference_pricing_id: int64
+    reference_pricing_scope: int32
+    price_item_type: int32
+    billing_type: int32
+    billing_mode: int32
+    billing_meter_id: int64
+    billing_meter_code:
+      type: string(64)
+      constraints: NOT NULL
+    unit: int32
+    unit_size: decimal
+    metering_mode: int32
+    quantity_source: int32
+    quantity_formula: text
+    result_selector: string(256)
+    minimum_quantity: decimal
+    quantity_step: decimal
+    included_quantity: decimal
+    formula_mode:
+      type: int32
+      constraints: NOT NULL
+    multiplier: decimal
+    markup_amount: decimal
+    unit_price_override: decimal
+    expression: text
+    expression_hash: string(128)
+    fallback_mode: int32
+    priority:
+      type: int32
+      constraints: NOT NULL
+    effective_from:
+      type: instant
+      constraints: NOT NULL
+    effective_to: instant
+  unique_constraints:
+  - name: uk_ai_pricing_rule_uuid
+    columns:
+    - uuid
+  - name: uk_ai_pricing_rule_plan_code
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_plan_id
+    - rule_code
+  indexes:
+  - name: idx_ai_pricing_rule_tenant_status_priority
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - priority
+    - effective_from
+    - id
+  - name: idx_ai_pricing_rule_model_lookup
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_plan_id
+    - model
+    - provider_code
+    - channel_id
+    - billing_meter_code
+    - status
+    - priority
+    - id
+  - name: idx_ai_pricing_rule_meter_lookup
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_plan_id
+    - billing_meter_code
+    - match_type
+    - status
+    - priority
+    - id
+  - name: idx_ai_pricing_rule_reference
+    columns:
+    - tenant_id
+    - organization_id
+    - reference_price_side
+    - reference_pricing_id
+    - status
+    - id
+- table: ai_pricing_tier
+  domain: ai
+  profile: pricing
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-pricing-service
+  common_columns: pricing
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    pricing_rule_id: int64
+    model_pricing_id: int64
+    tier_code:
+      type: string(64)
+      constraints: NOT NULL
+    tier_label: string(64)
+    price_item_type: int32
+    billing_mode: int32
+    billing_meter_id: int64
+    billing_meter_code:
+      type: string(64)
+      constraints: NOT NULL
+    min_quantity: decimal
+    max_quantity: decimal
+    quantity_unit: int32
+    quantity_step: decimal
+    included_quantity: decimal
+    result_selector: string(256)
+    input_unit_price: decimal
+    output_unit_price: decimal
+    cache_write_unit_price: decimal
+    cache_read_unit_price: decimal
+    image_unit_price: decimal
+    audio_unit_price: decimal
+    video_unit_price: decimal
+    per_request_price: decimal
+    multiplier: decimal
+    currency: string(10)
+    sort_order:
+      type: int32
+      constraints: NOT NULL
+    effective_from:
+      type: instant
+      constraints: NOT NULL
+    effective_to: instant
+  unique_constraints:
+  - name: uk_ai_pricing_tier_uuid
+    columns:
+    - uuid
+  - name: uk_ai_pricing_tier_rule_code
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_rule_id
+    - tier_code
+  indexes:
+  - name: idx_ai_pricing_tier_tenant_status_effective
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - effective_from
+    - sort_order
+    - id
+  - name: idx_ai_pricing_tier_rule_range
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_rule_id
+    - billing_meter_code
+    - min_quantity
+    - max_quantity
+    - sort_order
+    - id
+  - name: idx_ai_pricing_tier_model_pricing
+    columns:
+    - tenant_id
+    - organization_id
+    - model_pricing_id
+    - price_item_type
+    - sort_order
+    - id

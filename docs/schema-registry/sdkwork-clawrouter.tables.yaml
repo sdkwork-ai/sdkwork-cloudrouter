@@ -7,596 +7,456 @@ schema_registry:
   standard: ../../../sdkwork-specs/DATABASE_SPEC.md
   common_column_groups:
     tenant_entity:
-      - id
-      - uuid
-      - tenant_id
-      - organization_id
-      - status
-      - created_at
-      - updated_at
-      - version
-      - metadata
+    - id
+    - uuid
+    - tenant_id
+    - organization_id
+    - data_scope
+    - status
+    - created_at
+    - updated_at
+    - version
+    - deleted_at
+    - deleted_by
+    - metadata
     relation_entity:
-      - id
-      - uuid
-      - tenant_id
-      - organization_id
-      - status
-      - created_at
-      - updated_at
-      - version
+    - id
+    - uuid
+    - tenant_id
+    - organization_id
+    - data_scope
+    - status
+    - created_at
+    - updated_at
+    - version
+    - deleted_at
+    - deleted_by
+    - metadata
     event_log:
-      - id
-      - uuid
-      - tenant_id
-      - organization_id
-      - user_id
-      - request_id
-      - trace_id
-      - payload_hash
-      - status
-      - created_at
-      - retention_until
-      - legal_hold
-      - metadata
+    - id
+    - uuid
+    - tenant_id
+    - organization_id
+    - user_id
+    - request_id
+    - trace_id
+    - payload_hash
+    - status
+    - created_at
+    - retention_until
+    - legal_hold
+    - metadata
     credential_ref:
-      - id
-      - uuid
-      - tenant_id
-      - organization_id
-      - status
-      - created_at
-      - updated_at
-      - version
-      - metadata
+    - id
+    - uuid
+    - tenant_id
+    - organization_id
+    - data_scope
+    - status
+    - created_at
+    - updated_at
+    - version
+    - deleted_at
+    - deleted_by
+    - metadata
     projection:
-      - id
-      - uuid
-      - tenant_id
-      - organization_id
-      - status
-      - created_at
-      - metadata
+    - id
+    - uuid
+    - tenant_id
+    - organization_id
+    - source_type
+    - source_id
+    - source_version
+    - status
+    - created_at
+    - updated_at
+    - rebuild_version
+    - metadata
     quota_policy:
-      - id
-      - uuid
-      - tenant_id
-      - organization_id
-      - status
-      - created_at
-      - updated_at
-      - version
+    - id
+    - uuid
+    - tenant_id
+    - organization_id
+    - data_scope
+    - status
+    - created_at
+    - updated_at
+    - version
+    - deleted_at
+    - deleted_by
+    - metadata
     runtime_binding:
-      - id
-      - uuid
-      - tenant_id
-      - organization_id
-      - status
-      - created_at
-      - updated_at
-      - version
+    - id
+    - uuid
+    - tenant_id
+    - organization_id
+    - data_scope
+    - status
+    - created_at
+    - updated_at
+    - version
+    - deleted_at
+    - deleted_by
+    - metadata
     runtime_coordination:
-      - id
-      - uuid
-      - tenant_id
-      - organization_id
-      - status
-      - created_at
-      - version
+    - id
+    - uuid
+    - tenant_id
+    - organization_id
+    - data_scope
+    - status
+    - created_at
+    - updated_at
+    - version
+    - deleted_at
+    - deleted_by
+    - metadata
     runtime_coordination_event:
-      - id
-      - uuid
-      - tenant_id
-      - organization_id
-      - status
-      - created_at
+    - id
+    - uuid
+    - tenant_id
+    - organization_id
+    - user_id
+    - request_id
+    - trace_id
+    - payload_hash
+    - status
+    - created_at
+    - retention_until
+    - legal_hold
+    - metadata
     ledger_source_fact:
-      - id
-      - uuid
-      - tenant_id
-      - organization_id
-      - user_id
-      - request_id
-      - trace_id
-      - idempotency_key
-      - status
-      - created_at
-      - retention_until
-      - legal_hold
-      - metadata
+    - id
+    - uuid
+    - tenant_id
+    - organization_id
+    - user_id
+    - request_id
+    - trace_id
+    - payload_hash
+    - idempotency_key
+    - status
+    - created_at
+    - retention_until
+    - legal_hold
+    - metadata
     pricing:
-      - id
-      - uuid
-      - tenant_id
-      - organization_id
-      - status
-      - created_at
-      - updated_at
-      - version
-      - metadata
-description: |
-  Claw Router Schema Registry - 积木架构设计
-  
-  设计原则:
-  1. 单一所有权 - Claw Router只定义自己的16张本地表
-  2. 高内聚低耦合 - 模块内部表聚合，模块间通过引用组合
-  3. 积木架构 - 各模块独立管理自己的schema
-  4. 解耦部署 - 各模块可独立部署、独立升级
-  
-  Claw Router本地表（16张）:
-  - ai-routing模块: 12张表（路由决策）
-  - ai-metering模块: 2张表（用量计量）⭐ 核心价值
-  - ai-pricing模块: 2张表（计费定价）
-  
-  组合模块表（45张）:
-  - 不在claw-router中定义，由各模块自己管理
-  - Claw Router通过registry_dependencies引用
-  - 各模块有自己的schema registry、DDL、migrations
-  
-  表前缀规范（符合DATABASE_SPEC.md）:
-  - ai_: AI路由、计量、定价（Claw Router本地）
-  - iam_: 身份密钥（sdkwork-iam）
-  - commerce_: 账户订单支付（sdkwork-account/order/payment/invoice）
-  - integration_: 供应商集成（sdkwork-integration）
-  - ops_: 监控审计（sdkwork-ops）
-
+    - id
+    - uuid
+    - tenant_id
+    - organization_id
+    - data_scope
+    - status
+    - created_at
+    - updated_at
+    - version
+    - deleted_at
+    - deleted_by
+    - metadata
+description: Claw Router Schema Registry. Machine-readable source of truth for Claw Router-owned runtime tables; generated
+  SQL, manifests, OpenAPI snapshots, SDKs, services, and frontends must align to this contract.
 table_fragments:
-  - tables/ai-routing.yaml
-  - tables/ai-metering.yaml
-  - tables/ai-pricing.yaml
-
+- tables/ai-routing.yaml
+- tables/ai-metering.yaml
+- tables/ai-pricing.yaml
 modules:
-  
-  # ============================================================
-  # Claw Router本地模块（仅16张表）
-  # ============================================================
-  
   ai-routing:
     owner: claw-router-platform
-    description: AI路由决策、渠道管理、供应商路由
+    description: AI routing, channel, provider, policy, site, quota, and runtime coordination tables.
     compliance_level: L2
-    tables_count: 12
+    tables_count: 21
     tables:
-      - ai_channel
-      - ai_channel_binding
-      - ai_channel_metric
-      - ai_channel_quota
-      - ai_group
-      - ai_group_resource
-      - ai_provider_route
-      - ai_routing_policy
-      - ai_routing_rule
-      - ai_routing_log
-      - ai_config_version
-      - ai_config_change
+    - ai_channel
+    - ai_channel_credential
+    - ai_channel_group
+    - ai_channel_group_member
+    - ai_channel_group_metric_snapshot
+    - ai_channel_group_resource
+    - ai_channel_resource
+    - ai_config_version
+    - ai_config_change_event
+    - ai_model_mapping_rule
+    - ai_model_mapping_rule_binding
+    - ai_model_mapping_rule_item
+    - ai_provider
+    - ai_provider_object_route
+    - ai_quota_policy
+    - ai_routing_decision_log
+    - ai_routing_policy
+    - ai_routing_profile
+    - ai_routing_rule
+    - ai_site
+    - ai_site_service
     ddl_location: database/migrations/ai-routing.sql
-  
   ai-metering:
     owner: claw-router-platform
-    description: AI用量计量、请求追踪（核心价值表）
+    description: AI usage facts, service-provider usage edges, and request traces.
     compliance_level: L3
-    tables_count: 2
+    tables_count: 3
     tables:
-      - ai_usage               # ⭐ 核心计费数据
-      - ai_request_trace       # ⭐ 请求链路日志
+    - ai_usage
+    - ai_usage_service_provider_edge
+    - ai_request_trace
     ddl_location: database/migrations/ai-metering.sql
-  
   ai-pricing:
     owner: claw-router-platform
-    description: AI计费定价、价格规则
+    description: AI pricing plans, bindings, rules, tiers, and import snapshots.
     compliance_level: L2
-    tables_count: 2
-    tables:
-      - ai_pricing
-      - ai_pricing_rule
-    ddl_location: database/migrations/ai-pricing.sql
-
-# ============================================================
-# 组合模块引用（不重复定义，只引用）
-# ============================================================
-
-registry_dependencies:
-  
-  # ------------------------------------------------------------
-  # sdkwork-iam模块（身份与密钥管理）
-  # ------------------------------------------------------------
-  - module_id: sdkwork-iam
-    locator: ../sdkwork-iam
-    registry_path: docs/schema-registry/sdkwork-iam.tables.yaml
-    description: |
-      身份认证、API密钥、访问控制、权限管理
-      
-      行业对标: Stripe API Keys + AWS IAM Access Keys
-      
-      模块职责:
-      - 定义iam_api_key等5张表
-      - 管理自己的DDL、migrations
-      - 独立部署、独立升级
-      
-      Claw Router交互方式:
-      - 通过sdkwork-iam-sdk验证API Key
-      - 不直接访问iam_api_key表
-      - 不重复定义iam_*表
-    
     tables_count: 5
     tables:
-      - iam_api_key
-      - iam_api_key_binding
-      - iam_api_key_policy
-      - iam_access_policy
-      - iam_risk_rule
-    ownership: independent
-    access: sdk
-  
-  # ------------------------------------------------------------
-  # sdkwork-account模块（账户管理）
-  # ------------------------------------------------------------
-  - module_id: sdkwork-account
-    locator: ../sdkwork-account
-    registry_path: docs/schema-registry/sdkwork-account.tables.yaml
-    description: |
-      账户管理、账户流水、余额管理
-      
-      行业对标: Stripe Customers + Stripe Balance Transactions
-      
-      实际验证: commerce_account表已在sdkwork-account中
-      
-      模块职责:
-      - 定义commerce_account等3张表
-      - 管理自己的DDL、migrations
-      - 独立部署、独立升级
-      
-      Claw Router交互方式:
-      - 通过事件推送用量到commerce_account_ledger_entry
-      - 不直接写入commerce_account表
-      - 不重复定义commerce_*表
-    
-    tables_count: 3
-    tables:
-      - commerce_account
-      - commerce_account_ledger_entry
-      - commerce_idempotency_key
-    ownership: independent
-    access: api_event
-  
-  # ------------------------------------------------------------
-  # sdkwork-order模块（订单管理）
-  # ------------------------------------------------------------
-  - module_id: sdkwork-order
-    locator: ../sdkwork-order
-    registry_path: docs/schema-registry/sdkwork-order.tables.yaml
-    description: |
-      订单管理、订单项管理
-      
-      行业对标: Stripe Orders
-      
-      模块职责:
-      - 定义commerce_order等2张表
-      - 独立管理schema
-    
-    tables_count: 2
-    tables:
-      - commerce_order
-      - commerce_order_item
-    ownership: independent
-    access: api_event
-  
-  # ------------------------------------------------------------
-  # sdkwork-payment模块（支付处理）
-  # ------------------------------------------------------------
-  - module_id: sdkwork-payment
-    locator: ../sdkwork-payment
-    registry_path: docs/schema-registry/sdkwork-payment.tables.yaml
-    description: |
-      支付处理、退款管理
-      
-      行业对标: Stripe Payments
-      
-      模块职责:
-      - 定义commerce_payment等3张表
-      - 独立管理schema
-    
-    tables_count: 3
-    tables:
-      - commerce_payment
-      - commerce_payment_intent
-      - commerce_refund
-    ownership: independent
-    access: api_event
-  
-  # ------------------------------------------------------------
-  # sdkwork-invoice模块（发票管理）
-  # ------------------------------------------------------------
-  - module_id: sdkwork-invoice
-    locator: ../sdkwork-invoice
-    registry_path: docs/schema-registry/sdkwork-invoice.tables.yaml
-    description: |
-      发票管理、发票项管理
-      
-      行业对标: Stripe Invoices
-    
-    tables_count: 2
-    tables:
-      - commerce_invoice
-      - commerce_invoice_item
-    ownership: independent
-    access: api_event
-  
-  # ------------------------------------------------------------
-  # sdkwork-membership模块（会员管理）
-  # ------------------------------------------------------------
-  - module_id: sdkwork-membership
-    locator: ../sdkwork-membership
-    registry_path: docs/schema-registry/sdkwork-membership.tables.yaml
-    description: |
-      会员管理、VIP管理、权益管理
-      
-      行业对标: Stripe Subscriptions
-    
-    tables_count: 3
-    tables:
-      - commerce_membership
-      - commerce_vip
-      - commerce_entitlement
-    ownership: independent
-    access: api_event
-  
-  # ------------------------------------------------------------
-  # sdkwork-promotion模块（促销管理）
-  # ------------------------------------------------------------
-  - module_id: sdkwork-promotion
-    locator: ../sdkwork-promotion
-    registry_path: docs/schema-registry/sdkwork-promotion.tables.yaml
-    description: |
-      促销管理、优惠券管理、折扣管理
-      
-      行业对标: Stripe Coupons
-    
-    tables_count: 3
-    tables:
-      - commerce_promotion
-      - commerce_coupon
-      - commerce_discount
-    ownership: independent
-    access: api_event
-  
-  # ------------------------------------------------------------
-  # sdkwork-ops模块（监控与审计）
-  # ------------------------------------------------------------
-  - module_id: sdkwork-ops
-    locator: ../sdkwork-ops
-    registry_path: docs/schema-registry/sdkwork-ops.tables.yaml
-    description: |
-      系统监控、审计日志、作业调度、告警管理
-      
-      行业对标: AWS CloudTrail + Datadog
-      
-      模块职责:
-      - 定义ops_audit_log等7张表
-      - 独立管理schema
-    
-    tables_count: 7
-    tables:
-      - ops_instance
-      - ops_heartbeat
-      - ops_audit_log
-      - ops_job
-      - ops_alert
-      - ops_config_snapshot
-      - ops_metric
-    ownership: independent
-    access: sdk
-  
-  # ------------------------------------------------------------
-  # sdkwork-integration模块（供应商集成+对账）
-  # ------------------------------------------------------------
-  - module_id: sdkwork-integration
-    locator: ../sdkwork-integration
-    registry_path: docs/schema-registry/sdkwork-integration.tables.yaml
-    description: |
-      外部供应商集成、账号管理、供应商对账
-      
-      行业对标: AWS IAM Roles + Stripe Connect
-      
-      模块职责:
-      - 定义integration_provider_*等17张表
-      - 独立管理schema
-    
-    tables_count: 17
-    tables:
-      - integration_provider_account
-      - integration_provider
-      - integration_provider_member
-      - integration_provider_binding
-      - integration_provider_contract
-      - integration_provider_wallet
-      - integration_provider_price
-      - integration_provider_rule
-      - integration_provider_edge
-      - integration_account_health
-      - integration_proxy
-      - integration_webhook
-      - integration_provider_reconciliation
-      - integration_provider_reconciliation_run
-      - integration_provider_reconciliation_item
-      - integration_provider_statement
-      - integration_provider_adjustment
-    ownership: independent
-    access: sdk
-  
-  # ------------------------------------------------------------
-  # sdkwork-kernel模块（AI内核）
-  # ------------------------------------------------------------
-  - module_id: sdkwork-kernel
-    locator: ../sdkwork-kernel
-    registry_path: docs/schema-registry/sdkwork-kernel.tables.yaml
-    description: |
-      AI内核、Agent管理、提示词、技能、插件
-      
-      行业对标: OpenAI Platform
-    
-    tables_count: 2
-    tables:
-      - ai_provider
-      - ai_provider_health
-    ownership: independent
-    access: sdk
-  
-  # ------------------------------------------------------------
-  # sdkwork-models模块（模型目录）
-  # ------------------------------------------------------------
-  - module_id: sdkwork-models
-    locator: ../sdkwork-models
-    registry_path: docs/schema-registry/sdkwork-models.tables.yaml
-    description: |
-      模型目录、模型信息、模型定价
-      
-      行业对标: OpenAI Models API
-    
-    tables_count: 2
-    tables:
-      - ai_model_catalog
-      - ai_model_mapping
-    ownership: independent
-    access: install_import
-  
-  # ------------------------------------------------------------
-  # sdkwork-analytics模块（统计分析）
-  # ------------------------------------------------------------
-  - module_id: sdkwork-analytics
-    locator: ../sdkwork-analytics
-    registry_path: docs/schema-registry/sdkwork-analytics.tables.yaml
-    description: |
-      统计分析、报表
-      
-      行业对标: AWS Cost Explorer
-    
-    tables_count: 2
-    tables:
-      - analytics_provider_daily
-      - analytics_provider_edge_daily
-    ownership: independent
-    access: read_model
-  
-  # ------------------------------------------------------------
-  # sdkwork-catalog模块（目录管理）
-  # ------------------------------------------------------------
-  - module_id: sdkwork-catalog
-    locator: ../sdkwork-catalog
-    registry_path: docs/schema-registry/sdkwork-catalog.tables.yaml
-    description: |
-      目录管理、分类管理、标签管理
-      
-      行业对标:
-      - Stripe Product Catalog (产品目录)
-      - AWS Service Catalog (服务目录)
-      - OpenAI Model Catalog (模型目录)
-      
-      模块职责:
-      - 定义catalog_*表的完整结构
-      - 管理分类、目录、标签等基础能力
-      - 独立部署、独立升级
-    
-    tables_count: 1
-    tables:
-      - classification_category  # 分类目录（归属catalog模块）
-    ownership: independent
-    access: sdk
-  
-  # ------------------------------------------------------------
-  # sdkwork-platform模块（系统配置）
-  # ------------------------------------------------------------
-  - module_id: sdkwork-platform
-    locator: ../sdkwork-platform
-    registry_path: docs/schema-registry/sdkwork-platform.tables.yaml
-    description: |
-      系统配置、安装状态
-    
-    tables_count: 2
-    tables:
-      - system_installation
-      - system_migration
-    ownership: independent
-    access: install_only
-
-# ============================================================
-# 数据流向（跨模块交互）
-# ============================================================
-
+    - ai_pricing_import_snapshot
+    - ai_pricing_plan
+    - ai_pricing_plan_binding
+    - ai_pricing_rule
+    - ai_pricing_tier
+    ddl_location: database/migrations/ai-pricing.sql
+registry_dependencies:
+- module_id: sdkwork-iam
+  locator: ../sdkwork-iam
+  registry_path: docs/schema-registry/sdkwork-iam.tables.yaml
+  description: "\u8EAB\u4EFD\u8BA4\u8BC1\u3001API\u5BC6\u94A5\u3001\u8BBF\u95EE\u63A7\u5236\u3001\u6743\u9650\u7BA1\u7406\n\
+    \n\u884C\u4E1A\u5BF9\u6807: Stripe API Keys + AWS IAM Access Keys\n\n\u6A21\u5757\u804C\u8D23:\n- \u5B9A\u4E49iam_api_key\u7B49\
+    5\u5F20\u8868\n- \u7BA1\u7406\u81EA\u5DF1\u7684DDL\u3001migrations\n- \u72EC\u7ACB\u90E8\u7F72\u3001\u72EC\u7ACB\u5347\
+    \u7EA7\n\nClaw Router\u4EA4\u4E92\u65B9\u5F0F:\n- \u901A\u8FC7sdkwork-iam-sdk\u9A8C\u8BC1API Key\n- \u4E0D\u76F4\u63A5\
+    \u8BBF\u95EEiam_api_key\u8868\n- \u4E0D\u91CD\u590D\u5B9A\u4E49iam_*\u8868\n"
+  tables_count: 5
+  tables:
+  - iam_api_key
+  - iam_api_key_binding
+  - iam_api_key_policy
+  - iam_access_policy
+  - iam_risk_rule
+  ownership: independent
+  access: sdk
+- module_id: sdkwork-account
+  locator: ../sdkwork-account
+  registry_path: docs/schema-registry/sdkwork-account.tables.yaml
+  description: "\u8D26\u6237\u7BA1\u7406\u3001\u8D26\u6237\u6D41\u6C34\u3001\u4F59\u989D\u7BA1\u7406\n\n\u884C\u4E1A\u5BF9\
+    \u6807: Stripe Customers + Stripe Balance Transactions\n\n\u5B9E\u9645\u9A8C\u8BC1: commerce_account\u8868\u5DF2\u5728\
+    sdkwork-account\u4E2D\n\n\u6A21\u5757\u804C\u8D23:\n- \u5B9A\u4E49commerce_account\u7B493\u5F20\u8868\n- \u7BA1\u7406\u81EA\
+    \u5DF1\u7684DDL\u3001migrations\n- \u72EC\u7ACB\u90E8\u7F72\u3001\u72EC\u7ACB\u5347\u7EA7\n\nClaw Router\u4EA4\u4E92\u65B9\
+    \u5F0F:\n- \u901A\u8FC7\u4E8B\u4EF6\u63A8\u9001\u7528\u91CF\u5230commerce_account_ledger_entry\n- \u4E0D\u76F4\u63A5\u5199\
+    \u5165commerce_account\u8868\n- \u4E0D\u91CD\u590D\u5B9A\u4E49commerce_*\u8868\n"
+  tables_count: 3
+  tables:
+  - commerce_account
+  - commerce_account_ledger_entry
+  - commerce_idempotency_key
+  ownership: independent
+  access: api_event
+- module_id: sdkwork-order
+  locator: ../sdkwork-order
+  registry_path: docs/schema-registry/sdkwork-order.tables.yaml
+  description: "\u8BA2\u5355\u7BA1\u7406\u3001\u8BA2\u5355\u9879\u7BA1\u7406\n\n\u884C\u4E1A\u5BF9\u6807: Stripe Orders\n\n\
+    \u6A21\u5757\u804C\u8D23:\n- \u5B9A\u4E49commerce_order\u7B492\u5F20\u8868\n- \u72EC\u7ACB\u7BA1\u7406schema\n"
+  tables_count: 2
+  tables:
+  - commerce_order
+  - commerce_order_item
+  ownership: independent
+  access: api_event
+- module_id: sdkwork-payment
+  locator: ../sdkwork-payment
+  registry_path: docs/schema-registry/sdkwork-payment.tables.yaml
+  description: "\u652F\u4ED8\u5904\u7406\u3001\u9000\u6B3E\u7BA1\u7406\n\n\u884C\u4E1A\u5BF9\u6807: Stripe Payments\n\n\u6A21\
+    \u5757\u804C\u8D23:\n- \u5B9A\u4E49commerce_payment\u7B493\u5F20\u8868\n- \u72EC\u7ACB\u7BA1\u7406schema\n"
+  tables_count: 3
+  tables:
+  - commerce_payment
+  - commerce_payment_intent
+  - commerce_refund
+  ownership: independent
+  access: api_event
+- module_id: sdkwork-invoice
+  locator: ../sdkwork-invoice
+  registry_path: docs/schema-registry/sdkwork-invoice.tables.yaml
+  description: "\u53D1\u7968\u7BA1\u7406\u3001\u53D1\u7968\u9879\u7BA1\u7406\n\n\u884C\u4E1A\u5BF9\u6807: Stripe Invoices\n"
+  tables_count: 2
+  tables:
+  - commerce_invoice
+  - commerce_invoice_item
+  ownership: independent
+  access: api_event
+- module_id: sdkwork-membership
+  locator: ../sdkwork-membership
+  registry_path: docs/schema-registry/sdkwork-membership.tables.yaml
+  description: "\u4F1A\u5458\u7BA1\u7406\u3001VIP\u7BA1\u7406\u3001\u6743\u76CA\u7BA1\u7406\n\n\u884C\u4E1A\u5BF9\u6807: Stripe\
+    \ Subscriptions\n"
+  tables_count: 3
+  tables:
+  - commerce_membership
+  - commerce_vip
+  - commerce_entitlement
+  ownership: independent
+  access: api_event
+- module_id: sdkwork-promotion
+  locator: ../sdkwork-promotion
+  registry_path: docs/schema-registry/sdkwork-promotion.tables.yaml
+  description: "\u4FC3\u9500\u7BA1\u7406\u3001\u4F18\u60E0\u5238\u7BA1\u7406\u3001\u6298\u6263\u7BA1\u7406\n\n\u884C\u4E1A\
+    \u5BF9\u6807: Stripe Coupons\n"
+  tables_count: 3
+  tables:
+  - commerce_promotion
+  - commerce_coupon
+  - commerce_discount
+  ownership: independent
+  access: api_event
+- module_id: sdkwork-ops
+  locator: ../sdkwork-ops
+  registry_path: docs/schema-registry/sdkwork-ops.tables.yaml
+  description: "\u7CFB\u7EDF\u76D1\u63A7\u3001\u5BA1\u8BA1\u65E5\u5FD7\u3001\u4F5C\u4E1A\u8C03\u5EA6\u3001\u544A\u8B66\u7BA1\
+    \u7406\n\n\u884C\u4E1A\u5BF9\u6807: AWS CloudTrail + Datadog\n\n\u6A21\u5757\u804C\u8D23:\n- \u5B9A\u4E49ops_audit_log\u7B49\
+    7\u5F20\u8868\n- \u72EC\u7ACB\u7BA1\u7406schema\n"
+  tables_count: 7
+  tables:
+  - ops_instance
+  - ops_heartbeat
+  - ops_audit_log
+  - ops_job
+  - ops_alert
+  - ops_config_snapshot
+  - ops_metric
+  ownership: independent
+  access: sdk
+- module_id: sdkwork-integration
+  locator: ../sdkwork-integration
+  registry_path: docs/schema-registry/sdkwork-integration.tables.yaml
+  description: "\u5916\u90E8\u4F9B\u5E94\u5546\u96C6\u6210\u3001\u8D26\u53F7\u7BA1\u7406\u3001\u4F9B\u5E94\u5546\u5BF9\u8D26\
+    \n\n\u884C\u4E1A\u5BF9\u6807: AWS IAM Roles + Stripe Connect\n\n\u6A21\u5757\u804C\u8D23:\n- \u5B9A\u4E49integration_provider_*\u7B49\
+    17\u5F20\u8868\n- \u72EC\u7ACB\u7BA1\u7406schema\n"
+  tables_count: 17
+  tables:
+  - integration_provider_account
+  - integration_provider
+  - integration_provider_member
+  - integration_provider_binding
+  - integration_provider_contract
+  - integration_provider_wallet
+  - integration_provider_price
+  - integration_provider_rule
+  - integration_provider_edge
+  - integration_account_health
+  - integration_proxy
+  - integration_webhook
+  - integration_provider_reconciliation
+  - integration_provider_reconciliation_run
+  - integration_provider_reconciliation_item
+  - integration_provider_statement
+  - integration_provider_adjustment
+  ownership: independent
+  access: sdk
+- module_id: sdkwork-kernel
+  locator: ../sdkwork-kernel
+  registry_path: docs/schema-registry/sdkwork-kernel.tables.yaml
+  description: "AI\u5185\u6838\u3001Agent\u7BA1\u7406\u3001\u63D0\u793A\u8BCD\u3001\u6280\u80FD\u3001\u63D2\u4EF6\n\n\u884C\
+    \u4E1A\u5BF9\u6807: OpenAI Platform\n"
+  tables_count: 2
+  tables:
+  - ai_provider
+  - ai_provider_health
+  ownership: independent
+  access: sdk
+- module_id: sdkwork-models
+  locator: ../sdkwork-models
+  registry_path: docs/schema-registry/sdkwork-models.tables.yaml
+  description: "\u6A21\u578B\u76EE\u5F55\u3001\u6A21\u578B\u4FE1\u606F\u3001\u6A21\u578B\u5B9A\u4EF7\n\n\u884C\u4E1A\u5BF9\
+    \u6807: OpenAI Models API\n"
+  tables_count: 2
+  tables:
+  - ai_model_catalog
+  - ai_model_mapping
+  ownership: independent
+  access: install_import
+- module_id: sdkwork-analytics
+  locator: ../sdkwork-analytics
+  registry_path: docs/schema-registry/sdkwork-analytics.tables.yaml
+  description: "\u7EDF\u8BA1\u5206\u6790\u3001\u62A5\u8868\n\n\u884C\u4E1A\u5BF9\u6807: AWS Cost Explorer\n"
+  tables_count: 2
+  tables:
+  - analytics_provider_daily
+  - analytics_provider_edge_daily
+  ownership: independent
+  access: read_model
+- module_id: sdkwork-catalog
+  locator: ../sdkwork-catalog
+  registry_path: docs/schema-registry/sdkwork-catalog.tables.yaml
+  description: "\u76EE\u5F55\u7BA1\u7406\u3001\u5206\u7C7B\u7BA1\u7406\u3001\u6807\u7B7E\u7BA1\u7406\n\n\u884C\u4E1A\u5BF9\
+    \u6807:\n- Stripe Product Catalog (\u4EA7\u54C1\u76EE\u5F55)\n- AWS Service Catalog (\u670D\u52A1\u76EE\u5F55)\n- OpenAI\
+    \ Model Catalog (\u6A21\u578B\u76EE\u5F55)\n\n\u6A21\u5757\u804C\u8D23:\n- \u5B9A\u4E49catalog_*\u8868\u7684\u5B8C\u6574\
+    \u7ED3\u6784\n- \u7BA1\u7406\u5206\u7C7B\u3001\u76EE\u5F55\u3001\u6807\u7B7E\u7B49\u57FA\u7840\u80FD\u529B\n- \u72EC\u7ACB\
+    \u90E8\u7F72\u3001\u72EC\u7ACB\u5347\u7EA7\n"
+  tables_count: 1
+  tables:
+  - classification_category
+  ownership: independent
+  access: sdk
+- module_id: sdkwork-platform
+  locator: ../sdkwork-platform
+  registry_path: docs/schema-registry/sdkwork-platform.tables.yaml
+  description: "\u7CFB\u7EDF\u914D\u7F6E\u3001\u5B89\u88C5\u72B6\u6001\n"
+  tables_count: 2
+  tables:
+  - system_installation
+  - system_migration
+  ownership: independent
+  access: install_only
 data_flow:
-  
   usage_to_account:
-    description: 用量推送到账户模块
+    description: "\u7528\u91CF\u63A8\u9001\u5230\u8D26\u6237\u6A21\u5757"
     steps:
-      - ai_usage写入（claw-router本地）
-      - 发布UsageRecorded事件
-      - sdkwork-account订阅事件
-      - commerce_account_ledger_entry写入（sdkwork-account本地）
-  
+    - "ai_usage\u5199\u5165\uFF08claw-router\u672C\u5730\uFF09"
+    - "\u53D1\u5E03UsageRecorded\u4E8B\u4EF6"
+    - "sdkwork-account\u8BA2\u9605\u4E8B\u4EF6"
+    - "commerce_account_ledger_entry\u5199\u5165\uFF08sdkwork-account\u672C\u5730\uFF09"
   authentication:
-    description: API Key验证
+    description: "API Key\u9A8C\u8BC1"
     steps:
-      - Client请求携带api_key
-      - router-service调用sdkwork-iam-sdk
-      - iam-service验证iam_api_key（sdkwork-iam本地）
-      - 返回验证结果
-  
+    - "Client\u8BF7\u6C42\u643A\u5E26api_key"
+    - "router-service\u8C03\u7528sdkwork-iam-sdk"
+    - "iam-service\u9A8C\u8BC1iam_api_key\uFF08sdkwork-iam\u672C\u5730\uFF09"
+    - "\u8FD4\u56DE\u9A8C\u8BC1\u7ED3\u679C"
   monitoring:
-    description: 监控数据推送
+    description: "\u76D1\u63A7\u6570\u636E\u63A8\u9001"
     steps:
-      - router-service推送监控指标
-      - sdkwork-ops-sdk调用
-      - ops_metric写入（sdkwork-ops本地）
-
-# ============================================================
-# 统计信息（修正后）
-# ============================================================
-
+    - "router-service\u63A8\u9001\u76D1\u63A7\u6307\u6807"
+    - "sdkwork-ops-sdk\u8C03\u7528"
+    - "ops_metric\u5199\u5165\uFF08sdkwork-ops\u672C\u5730\uFF09"
 statistics:
-  claw_router_local_tables: 16
+  claw_router_local_tables: 29
   combined_module_tables: 45
-  total_tables: 61
-  
+  total_tables: 74
   table_prefix_distribution:
-    ai_: 20                    # Claw Router + sdkwork-kernel + sdkwork-models
-    iam_: 5                    # sdkwork-iam
-    commerce_: 18              # sdkwork-account/order/payment/invoice/membership/promotion
-    integration_: 17           # sdkwork-integration
-    ops_: 7                    # sdkwork-ops
-    analytics_: 2              # sdkwork-analytics
-    catalog_: 1         # sdkwork-catalog
-    system_: 2                 # sdkwork-platform
-  
+    ai_: 33
+    iam_: 5
+    commerce_: 18
+    integration_: 17
+    ops_: 7
+    analytics_: 2
+    catalog_: 1
+    system_: 2
   module_distribution:
-    claw-router: 16            # ai-routing(12) + ai-metering(2) + ai-pricing(2)
-    sdkwork-iam: 5             # iam_*
-    sdkwork-account: 3         # commerce_account
-    sdkwork-order: 2           # commerce_order
-    sdkwork-payment: 3         # commerce_payment
-    sdkwork-invoice: 2         # commerce_invoice
-    sdkwork-membership: 3      # commerce_membership
-    sdkwork-promotion: 3       # commerce_promotion
-    sdkwork-ops: 7             # ops_*
-    sdkwork-integration: 17    # integration_*
-    sdkwork-kernel: 2          # ai_provider
-    sdkwork-models: 2          # ai_model_catalog
-    sdkwork-analytics: 2       # analytics_*
-    sdkwork-catalog: 1  # catalog_*
-    sdkwork-platform: 2        # system_*
-
-# ============================================================
-# 合规配置（仅Claw Router本地表）
-# ============================================================
-
+    claw-router: 29
+    sdkwork-iam: 5
+    sdkwork-account: 3
+    sdkwork-order: 2
+    sdkwork-payment: 3
+    sdkwork-invoice: 2
+    sdkwork-membership: 3
+    sdkwork-promotion: 3
+    sdkwork-ops: 7
+    sdkwork-integration: 17
+    sdkwork-kernel: 2
+    sdkwork-models: 2
+    sdkwork-analytics: 2
+    sdkwork-catalog: 1
+    sdkwork-platform: 2
 compliance:
   financial_tables:
-    - ai_usage               # L3 金融级别（claw-router本地）
-  
-  security_tables: []        # iam_*表由sdkwork-iam管理
-  
+  - ai_usage
+  security_tables: []
   audit_tables:
-    - ai_routing_log         # L2 路由日志（claw-router本地）
-  
+  - ai_request_trace
+  - ai_routing_decision_log
   retention_policy:
     financial_data:
       online_retention: 12mo

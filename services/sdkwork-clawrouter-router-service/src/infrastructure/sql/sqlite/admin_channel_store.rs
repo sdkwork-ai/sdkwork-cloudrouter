@@ -780,10 +780,7 @@ async fn insert_channel(
     .await
     .map_err(|error| store_error("failed to create channel", error))?;
 
-    sqlx::query_scalar("SELECT last_insert_rowid()")
-        .fetch_one(&mut **tx)
-        .await
-        .map_err(|error| store_error("failed to read channel id", error))
+    Ok(channel_id)
 }
 
 async fn update_channel(
