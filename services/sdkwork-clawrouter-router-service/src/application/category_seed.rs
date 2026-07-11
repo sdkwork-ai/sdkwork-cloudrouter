@@ -61,7 +61,7 @@ pub fn load_admin_category_seed_bundles(
             other => {
                 return Err(DomainError::new(format!(
                     "unsupported category seed dataset {other}"
-                )))
+                )));
             }
         };
         let bundle: AdminCategorySeedBundle = serde_json::from_str(source).map_err(|error| {

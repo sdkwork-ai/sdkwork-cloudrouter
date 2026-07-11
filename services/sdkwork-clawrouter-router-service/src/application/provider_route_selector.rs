@@ -451,10 +451,10 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
             Some(policy) => policy,
             None => {
                 let error = ProviderRouteSelectionError::provider_route_unavailable(format!(
-                        "provider route is not available for configured channel route: {} policy scope has no routing policy for capability {:?}",
-                        scope_label(policy_scope.scope),
-                        query.capability
-                    ));
+                    "provider route is not available for configured channel route: {} policy scope has no routing policy for capability {:?}",
+                    scope_label(policy_scope.scope),
+                    query.capability
+                ));
                 if group_bindings.unrestricted() {
                     return PolicyScopeRouteSelection::HardError(error);
                 }
@@ -525,7 +525,11 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
                     "provider route is not available for configured channel route: policy {} rule {} has no callable priced candidate channel{} for model {}",
                     policy.policy_code,
                     rule.rule_code,
-                    if used_rule_fallback_chain { " or fallback channel" } else { "" },
+                    if used_rule_fallback_chain {
+                        " or fallback channel"
+                    } else {
+                        ""
+                    },
                     query.catalog_key
                 )),
             );
@@ -551,10 +555,10 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
             Some(policy) => policy,
             None => {
                 let error = ProviderRouteSelectionError::provider_route_unavailable(format!(
-                        "provider route is not available for configured channel route: {} policy scope has no routing policy for capability {:?}",
-                        scope_label(policy_scope.scope),
-                        query.capability
-                    ));
+                    "provider route is not available for configured channel route: {} policy scope has no routing policy for capability {:?}",
+                    scope_label(policy_scope.scope),
+                    query.capability
+                ));
                 if group_bindings.unrestricted() {
                     return PolicyScopeChannelRouteSelection::HardError(error);
                 }
@@ -609,7 +613,11 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
                     "provider route is not available for configured channel route: policy {} rule {} has no callable channel route candidate{} for route {}",
                     policy.policy_code,
                     rule.rule_code,
-                    if used_rule_fallback_chain { " or fallback channel" } else { "" },
+                    if used_rule_fallback_chain {
+                        " or fallback channel"
+                    } else {
+                        ""
+                    },
                     query.route_key
                 )),
             );

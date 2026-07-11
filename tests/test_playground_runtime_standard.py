@@ -372,7 +372,7 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
             "listModelCatalog": "models.list",
             "listChatConversations": "conversations.list",
             "createRuntimeInvocation": "invocations.create",
-            "completeRuntimeInvocation": "invocations.submit",
+            "completeRuntimeInvocation": "invocations.complete",
             "listRuntimeArtifacts": "artifacts.list",
         }
         expected_domains = {

@@ -1,16 +1,16 @@
 import {
   ensureSdkworkApiSuccess,
-  getClawRouterAppSdkClient,
   isRecord,
   readApiRecord,
   readRequiredApiItem,
   readRequiredString,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
+import { getClawRouterAppSdkClient } from '@sdkwork/clawrouter-pc-console-core/sdk';
 import type {
   SettingsDataResponse as SdkSettingsDataResponse,
   UpdateSettingsRequest,
-} from '@sdkwork/clawrouter-app-sdk';
+} from '@sdkwork/clawrouter-pc-console-core/sdk';
 
 type SdkSettingsNotifications = SdkSettingsDataResponse['notifications'];
 

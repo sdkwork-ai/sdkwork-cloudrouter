@@ -22,7 +22,7 @@ export class ThreadsMessagesApi {
 /** List thread messages */
   async list(threadId: string, params?: ThreadsMessagesListParams): Promise<OpenAiThreadMessageList> {
     const query = buildQueryString([
-      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -69,7 +69,7 @@ export class ThreadsRunsStepsApi {
 /** List run steps */
   async list(threadId: string, runId: string, params?: ThreadsRunsStepsListParams): Promise<OpenAiRunStepList> {
     const query = buildQueryString([
-      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -108,7 +108,7 @@ export class ThreadsRunsApi {
 /** List thread runs */
   async list(threadId: string, params?: ThreadsRunsListParams): Promise<OpenAiRunList> {
     const query = buildQueryString([
-      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },

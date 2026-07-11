@@ -4,6 +4,7 @@ use serde_json::{Map, Value};
 use sqlx::{PgPool, Row};
 
 use crate::domain::{DomainError, DomainResult};
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     AdminServiceNodeCommandFuture, AdminServiceNodeDeleteOutcome, AdminServiceNodeItem,
@@ -128,16 +129,17 @@ async fn create_service_node(
     sqlx::query(
         r#"
         INSERT INTO ops_gateway_instance (
-            uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at,
+            id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at,
             version, deleted_at, deleted_by, metadata, instance_code, deployment_mode,
             ip_address_masked, node_name, health_status
         )
         VALUES (
-            $1, $2, $3, 1, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-            1, NULL, NULL, $5::jsonb, $6, 2, $7, $8, NULL
+            $1, $2, $3, $4, 1, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+            1, NULL, NULL, $6::jsonb, $7, 2, $8, $9, NULL
         )
         "#,
     )
+    .bind(next_claw_runtime_id("ops_gateway_instance")?)
     .bind(&code)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)

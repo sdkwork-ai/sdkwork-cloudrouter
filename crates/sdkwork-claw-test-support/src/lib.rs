@@ -1,3 +1,7 @@
+mod dialect_database;
+
+pub use dialect_database::{DialectTestContext, POSTGRES_TEST_DATABASE_URL};
+
 use std::fs::{self, File, OpenOptions};
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
@@ -12,11 +16,11 @@ use sdkwork_claw_config::{
     TrustedSubjectConfig,
 };
 use sdkwork_claw_http::{
-    TrustedRequestSubject, sign_app_session_token, sign_trusted_request_subject,
+    sign_app_session_token, sign_trusted_request_subject, TrustedRequestSubject,
 };
 use sha2::Sha256;
-use sqlx::SqlitePool;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
+use sqlx::SqlitePool;
 
 type HmacSha256 = Hmac<Sha256>;
 

@@ -1,7 +1,5 @@
 import {
   ensureSdkworkApiSuccess,
-  getClawRouterBackendSdkClient,
-  getModelsBackendSdkClient,
   isRecord,
   optionalBoundedPositiveInteger as optionalQueryPageSize,
   optionalPositiveInteger as optionalQueryPage,
@@ -20,6 +18,10 @@ import {
   readStringArray,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
+import {
+  getClawRouterBackendSdkClient,
+  getModelsBackendSdkClient,
+} from '@sdkwork/clawrouter-pc-admin-core/sdk';
 import {
   isCanonicalModelCatalogKey,
   isRegionalModelCatalogKey,
@@ -40,15 +42,15 @@ import type {
   IntegrationProviderSecretsListParams,
   ProviderCircuitBreakerPolicy,
   ProviderRetryPolicy,
-} from '@sdkwork/clawrouter-backend-sdk';
+} from '@sdkwork/clawrouter-pc-admin-core/sdk';
 import type {
   AdminModelMappingCreateRequest,
   AdminModelMappingRule,
   AdminModelMappingRuleBindingInput,
   AdminModelMappingRuleItemInput,
   AdminModelMappingUpdateRequest,
-} from '@sdkwork/models-backend-sdk';
-import type { AiModelMappingsListParams } from '@sdkwork/models-backend-sdk/api/ai';
+  AiModelMappingsListParams,
+} from '@sdkwork/clawrouter-pc-admin-core/sdk';
 
 type ChannelType = NonNullable<AdminChannelCreateRequest['channelType']>;
 export type CredentialRotationStrategy = NonNullable<AdminChannelCreateRequest['credentialRotation']>;

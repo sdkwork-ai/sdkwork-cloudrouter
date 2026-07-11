@@ -216,7 +216,7 @@ async fn strips_inbound_query_credentials_before_provider_query_auth() {
     let mut invocation = invocation_with_auth(ProviderAuthProfile::query("api_key"));
     invocation.request = InvocationRequest::new(Method::GET, "/v1/models")
         .with_request_id("req-query-auth")
-        .with_query("api_key=sk-client-gateway&model=gpt-4o-mini&limit=10&key=sk-google-client");
+        .with_query("api_key=sk-client-gateway&model=gpt-4o-mini&page_size=10&key=sk-google-client");
 
     SecretResolutionInterceptor::new(resolver())
         .before(&mut invocation)
@@ -229,7 +229,7 @@ async fn strips_inbound_query_credentials_before_provider_query_auth() {
 
     let request = invocation.dispatch.provider_request.expect("request");
     assert_eq!(
-        Some("model=gpt-4o-mini-provider&limit=10&api_key=sk-provider-secret"),
+        Some("model=gpt-4o-mini-provider&page_size=10&api_key=sk-provider-secret"),
         request.query.as_deref()
     );
 }
@@ -239,7 +239,7 @@ async fn strips_encoded_inbound_query_credentials_before_provider_query_auth() {
     let mut invocation = invocation_with_auth(ProviderAuthProfile::query("api_key"));
     invocation.request = InvocationRequest::new(Method::GET, "/v1/models")
         .with_request_id("req-query-auth-encoded-credential")
-        .with_query("%6Bey=sk-google-client&model=gpt-4o-mini&limit=10");
+        .with_query("%6Bey=sk-google-client&model=gpt-4o-mini&page_size=10");
 
     SecretResolutionInterceptor::new(resolver())
         .before(&mut invocation)
@@ -252,7 +252,7 @@ async fn strips_encoded_inbound_query_credentials_before_provider_query_auth() {
 
     let request = invocation.dispatch.provider_request.expect("request");
     assert_eq!(
-        Some("model=gpt-4o-mini-provider&limit=10&api_key=sk-provider-secret"),
+        Some("model=gpt-4o-mini-provider&page_size=10&api_key=sk-provider-secret"),
         request.query.as_deref()
     );
 }
@@ -304,7 +304,7 @@ async fn rewrites_query_model_to_provider_model() {
     let mut invocation = invocation_with_auth(ProviderAuthProfile::bearer());
     invocation.request = InvocationRequest::new(Method::GET, "/v1/models")
         .with_request_id("req-query")
-        .with_query("model=gpt-4o-mini&limit=10");
+        .with_query("model=gpt-4o-mini&page_size=10");
 
     SecretResolutionInterceptor::new(resolver())
         .before(&mut invocation)
@@ -317,7 +317,7 @@ async fn rewrites_query_model_to_provider_model() {
 
     let request = invocation.dispatch.provider_request.expect("request");
     assert_eq!(
-        Some("model=gpt-4o-mini-provider&limit=10"),
+        Some("model=gpt-4o-mini-provider&page_size=10"),
         request.query.as_deref()
     );
 }

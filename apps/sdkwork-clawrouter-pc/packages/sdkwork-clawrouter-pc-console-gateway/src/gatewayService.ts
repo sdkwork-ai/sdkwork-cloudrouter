@@ -1,12 +1,14 @@
 import {
   ensureSdkworkApiSuccess,
-  getClawRouterAppSdkClient,
   isRecord,
   readRequiredApiItems,
   readRequiredString,
   readRequiredNumber,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
-import type { GatewayTrace as SdkGatewayTrace } from '@sdkwork/clawrouter-app-sdk';
+import {
+  getClawRouterAppSdkClient,
+  type GatewayTrace as SdkGatewayTrace,
+} from '@sdkwork/clawrouter-pc-console-core/sdk';
 
 export interface GatewayTrace {
   id: SdkGatewayTrace['id'];

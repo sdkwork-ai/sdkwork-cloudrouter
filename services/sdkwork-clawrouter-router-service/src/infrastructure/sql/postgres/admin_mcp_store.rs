@@ -3,6 +3,7 @@ use sqlx::{PgPool, Row};
 
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::model_catalog_import::stable_uuid;
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::ports::{
     AdminMcpBindingItem, AdminMcpCommandFuture, AdminMcpDiscoveryResult, AdminMcpHealthCheckItem,
     AdminMcpListPage, AdminMcpServerItem, AdminMcpServerRevisionItem, AdminMcpStore,
@@ -195,6 +196,7 @@ async fn create_server(
     pool: &PgPool,
     command: CreateAdminMcpServerCommand,
 ) -> DomainResult<AdminMcpServerItem> {
+    let id = next_claw_runtime_id("ai_mcp_server")?;
     let (category_id, category_code) = category_filter(command.category_id.as_deref())?;
     let tags = json_text(&serde_json::Value::Array(
         command
@@ -204,14 +206,13 @@ async fn create_server(
             .map(serde_json::Value::String)
             .collect(),
     ));
-    let id: i64 = sqlx::query_scalar(
+    sqlx::query(
         r#"
         INSERT INTO ai_mcp_server
             (uuid, tenant_id, organization_id, status, server_key, name, description,
-             category_id, category_code, transport, visibility, owner_user_id, health_status, tags)
+             category_id, category_code, transport, visibility, owner_user_id, health_status, tags, id)
         VALUES
-            ($1, $2, $3, 1, $4, $5, $6, $7, $8, $9, $10, $11, 'unchecked', $12::jsonb)
-        RETURNING id
+            ($1, $2, $3, 1, $4, $5, $6, $7, $8, $9, $10, $11, 'unchecked', $12::jsonb, $13)
         "#,
     )
     .bind(stable_uuid(
@@ -233,7 +234,8 @@ async fn create_server(
     .bind(&command.visibility)
     .bind(command.subject.operator_id)
     .bind(&tags)
-    .fetch_one(pool)
+    .bind(id)
+    .execute(pool)
     .await
     .map_err(|error| write_error("failed to create mcp server", error))?;
 
@@ -401,6 +403,7 @@ async fn create_revision(
     command: CreateAdminMcpServerRevisionCommand,
 ) -> DomainResult<AdminMcpServerRevisionItem> {
     ensure_server_exists(pool, command.subject, command.server_id).await?;
+    let id = next_claw_runtime_id("ai_mcp_server_revision")?;
     let config_hash = checksum_hash(&[
         &command.transport,
         command.endpoint_url.as_deref().unwrap_or(""),
@@ -412,15 +415,14 @@ async fn create_revision(
         &command.timeout_ms.to_string(),
         &json_text(&command.retry_policy),
     ]);
-    let id: i64 = sqlx::query_scalar(
+    sqlx::query(
         r#"
         INSERT INTO ai_mcp_server_revision
             (uuid, tenant_id, organization_id, status, server_id, revision_no, transport,
              endpoint_url, command, args_json, env_schema, auth_type, secret_ref, timeout_ms,
-             retry_policy, config_hash, lifecycle_status, created_by)
+             retry_policy, config_hash, lifecycle_status, created_by, id)
         VALUES
-            ($1, $2, $3, 1, $4, $5, $6, $7, $8, $9::jsonb, $10::jsonb, $11, $12, $13, $14::jsonb, $15, 'draft', $16)
-        RETURNING id
+            ($1, $2, $3, 1, $4, $5, $6, $7, $8, $9::jsonb, $10::jsonb, $11, $12, $13, $14::jsonb, $15, 'draft', $16, $17)
         "#,
     )
     .bind(stable_uuid(
@@ -447,7 +449,8 @@ async fn create_revision(
     .bind(json_text(&command.retry_policy))
     .bind(&config_hash)
     .bind(command.subject.operator_id)
-    .fetch_one(pool)
+    .bind(id)
+    .execute(pool)
     .await
     .map_err(|error| write_error("failed to create mcp revision", error))?;
 
@@ -821,6 +824,7 @@ async fn create_binding(
         ensure_tool_belongs(pool, command.subject, command.server_id, tool_id).await?;
     }
     let status = required_status_code(&command.status)?;
+    let id = next_claw_runtime_id("ai_mcp_binding")?;
     let snapshot = mcp_binding_snapshot(
         command.server_id,
         command.server_revision_id,
@@ -834,15 +838,14 @@ async fn create_binding(
         command.enabled,
         &command.status,
     );
-    let id: i64 = sqlx::query_scalar(
+    sqlx::query(
         r#"
         INSERT INTO ai_mcp_binding
             (uuid, tenant_id, organization_id, status, server_id, server_revision_id,
              tool_id, owner_type, owner_id, allowed_tools, denied_tools, policy_json,
-             priority, enabled, snapshot_json)
+             priority, enabled, snapshot_json, id)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11::jsonb, $12::jsonb, $13, $14, $15::jsonb)
-        RETURNING id
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11::jsonb, $12::jsonb, $13, $14, $15::jsonb, $16)
         "#,
     )
     .bind(stable_uuid(
@@ -877,7 +880,8 @@ async fn create_binding(
     .bind(command.priority)
     .bind(command.enabled)
     .bind(json_text(&snapshot))
-    .fetch_one(pool)
+    .bind(id)
+    .execute(pool)
     .await
     .map_err(|error| write_error("failed to create mcp binding", error))?;
 

@@ -194,7 +194,7 @@ class ResponsesGoogleApi:
     def list_v1beta_cached_contents(self, page_size: Optional[int] = None, page_token: Optional[str] = None) -> GoogleCachedContentListResponse:
         """Google Gemini list cached contents"""
         query = build_query_string([
-            {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/v1/google/v1beta/cachedContents", query))

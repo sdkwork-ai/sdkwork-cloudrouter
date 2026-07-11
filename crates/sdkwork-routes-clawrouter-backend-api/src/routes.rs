@@ -174,6 +174,7 @@ struct AdminBoundaryErrorEnvelope {
 #[derive(Default)]
 struct AdminRouterRuntime<'a> {
     database_config: Option<&'a DatabaseConfig>,
+    deployment_mode: Option<DeploymentMode>,
     api_key_hasher: Option<ApiKeyHasher>,
     announcement_store: Option<AdminAnnouncementRuntimeStore>,
     auth_settings_store: Option<AdminAuthSettingsRuntimeStore>,
@@ -215,7 +216,7 @@ struct AdminRouterRuntime<'a> {
 }
 
 pub fn router() -> Router {
-    router_with_database_status(None, None)
+    router_with_database_status(None, None, None)
 }
 
 async fn finalize_admin_router_with_federated_capabilities(
@@ -229,14 +230,27 @@ async fn finalize_admin_router_with_federated_capabilities(
 fn router_with_database_status(
     config: Option<&DatabaseConfig>,
     readiness_check: Option<sdkwork_claw_http::ReadinessCheckFn>,
+    deployment_mode: Option<DeploymentMode>,
 ) -> Router {
-    sdkwork_claw_http::service_router_with_filtered_contract_routes_database_config_and_readiness_check(
-        SERVICE_NAME,
-        sdkwork_claw_http::ApiSurface::Backend,
-        config,
-        product_local_contract_operation,
-        readiness_check,
-    )
+    match deployment_mode {
+        Some(deployment_mode) => {
+            sdkwork_claw_http::service_router_with_filtered_contract_routes_database_config_readiness_check_and_deployment_mode(
+                SERVICE_NAME,
+                sdkwork_claw_http::ApiSurface::Backend,
+                config,
+                product_local_contract_operation,
+                readiness_check,
+                deployment_mode,
+            )
+        }
+        None => sdkwork_claw_http::service_router_with_filtered_contract_routes_database_config_and_readiness_check(
+            SERVICE_NAME,
+            sdkwork_claw_http::ApiSurface::Backend,
+            config,
+            product_local_contract_operation,
+            readiness_check,
+        ),
+    }
 }
 
 fn product_local_contract_operation(operation: &sdkwork_claw_http::ContractOperation) -> bool {
@@ -311,6 +325,7 @@ where
 {
     let AdminRouterRuntime {
         database_config,
+        deployment_mode,
         api_key_hasher,
         announcement_store,
         auth_settings_store,
@@ -360,7 +375,7 @@ where
         }
         None => admin_model_catalog_router(Arc::clone(&catalog)),
     };
-    let mut router = router_with_database_status(database_config, readiness_check);
+    let mut router = router_with_database_status(database_config, readiness_check, deployment_mode);
     let subject_boundary_config = match (trusted_subject_config.clone(), app_session_config.clone())
     {
         (Some(trusted_subject_config), Some(app_session_config)) => {
@@ -801,6 +816,7 @@ pub fn router_with_sqlite_shared_runtime(
     trusted_subject_config: TrustedSubjectConfig,
     app_session_config: AppSessionConfig,
     provider_health_probe: Arc<dyn ProviderHealthProbe + Send + Sync>,
+    deployment_mode: DeploymentMode,
     cache_manager: RuntimeCacheManager,
     database_installer: Arc<DatabaseInstaller>,
     request_limits_config: RequestLimitsConfig,
@@ -877,6 +893,7 @@ pub fn router_with_sqlite_shared_runtime(
         catalog,
         AdminRouterRuntime {
             database_config: Some(&config),
+            deployment_mode: Some(deployment_mode),
             api_key_hasher: Some(api_key_hasher),
             announcement_store: Some(announcement_store),
             auth_settings_store: Some(auth_settings_store),
@@ -927,6 +944,7 @@ pub fn router_with_postgres_shared_runtime(
     trusted_subject_config: TrustedSubjectConfig,
     app_session_config: AppSessionConfig,
     provider_health_probe: Arc<dyn ProviderHealthProbe + Send + Sync>,
+    deployment_mode: DeploymentMode,
     cache_manager: RuntimeCacheManager,
     database_installer: Arc<DatabaseInstaller>,
     request_limits_config: RequestLimitsConfig,
@@ -1004,6 +1022,7 @@ pub fn router_with_postgres_shared_runtime(
         catalog,
         AdminRouterRuntime {
             database_config: Some(&config),
+            deployment_mode: Some(deployment_mode),
             api_key_hasher: Some(api_key_hasher),
             announcement_store: Some(announcement_store),
             auth_settings_store: Some(auth_settings_store),
@@ -1173,6 +1192,8 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_optional_p
     sdkwork_claw_http::materialize_federated_database_env_from_claw_config(&config);
     let request_limits_config = RequestLimitsConfig::from_env_or_runtime_toml(runtime_toml)
         .map_err(ProductCatalogRouterError::Config)?;
+    let deployment_mode = deployment_mode_from_env_or_toml(runtime_toml)
+        .map_err(ProductCatalogRouterError::Config)?;
     let cache_manager = cache_manager_from_env_or_toml(runtime_toml)?;
     let api_key_security_config = require_api_key_security_config(api_key_config)?;
     let api_key_hasher = build_api_key_hasher(&api_key_security_config)?;
@@ -1274,6 +1295,7 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_optional_p
                 Arc::new(snapshot),
                 AdminRouterRuntime {
                     database_config: Some(&config),
+                    deployment_mode: Some(deployment_mode),
                     api_key_hasher: Some(Arc::clone(&api_key_hasher)),
                             announcement_store: Some(announcement_store),
                             auth_settings_store: Some(auth_settings_store),
@@ -1418,6 +1440,7 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_optional_p
                 Arc::new(snapshot),
                 AdminRouterRuntime {
                     database_config: Some(&config),
+                    deployment_mode: Some(deployment_mode),
                     api_key_hasher: Some(api_key_hasher),
                             announcement_store: Some(announcement_store),
                             auth_settings_store: Some(auth_settings_store),
@@ -1479,6 +1502,10 @@ pub async fn router_with_optional_database_config(
     }
 }
 
+fn router_without_database(deployment_mode: DeploymentMode) -> Router {
+    router_with_database_status(None, None, Some(deployment_mode))
+}
+
 pub async fn router_from_env() -> Result<Router, ProductCatalogRouterError> {
     let runtime_toml =
         RuntimeTomlConfig::from_env_config_file().map_err(ProductCatalogRouterError::Config)?;
@@ -1500,8 +1527,10 @@ pub async fn router_from_env() -> Result<Router, ProductCatalogRouterError> {
     let provider_secret_map_config =
         ProviderSecretMapConfig::from_env_or_runtime_toml(runtime_toml.as_ref())
             .map_err(ProductCatalogRouterError::Config)?;
+    let deployment_mode = DeploymentMode::from_env_or_runtime_toml(runtime_toml.as_ref())
+        .map_err(ProductCatalogRouterError::Config)?;
     sdkwork_claw_config::ensure_server_production_redis_config(
-        DeploymentMode::from_env(),
+        deployment_mode,
         runtime_toml.as_ref(),
     )
     .map_err(ProductCatalogRouterError::Config)?;
@@ -1525,7 +1554,7 @@ pub async fn router_from_env() -> Result<Router, ProductCatalogRouterError> {
                 .await,
             );
         }
-        None => router(),
+        None => router_without_database(deployment_mode),
     };
     Ok(crate::web_bootstrap::maybe_wrap_router_with_web_framework(router).await)
 }
@@ -1963,9 +1992,57 @@ pub async fn serve_with_runtime_config(
 
 #[cfg(test)]
 mod tests {
-    use super::router_from_env;
+    use super::{router_from_env, router_without_database};
+    use sdkwork_claw_config::DeploymentMode;
     use std::sync::{Mutex, OnceLock};
-    use std::time::{SystemTime, UNIX_EPOCH};
+    use std::time::{Duration, SystemTime, UNIX_EPOCH};
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    #[tokio::test]
+    async fn no_database_router_health_uses_explicit_deployment_mode() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            axum::serve(listener, router_without_database(DeploymentMode::Server))
+                .await
+                .unwrap();
+        });
+        let response = async {
+            let mut connection = tokio::time::timeout(
+                Duration::from_secs(2),
+                tokio::net::TcpStream::connect(address),
+            )
+            .await??;
+            tokio::time::timeout(
+                Duration::from_secs(2),
+                connection.write_all(
+                    b"GET /healthz HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n",
+                ),
+            )
+            .await??;
+            let mut response = String::new();
+            tokio::time::timeout(
+                Duration::from_secs(2),
+                connection.read_to_string(&mut response),
+            )
+            .await??;
+            Ok::<_, Box<dyn std::error::Error>>(response)
+        }
+        .await;
+        server.abort();
+        let _ = server.await;
+        let response = response.unwrap();
+
+        assert!(response.starts_with("HTTP/1.1 200 OK"), "{response}");
+        assert!(
+            response.contains("\"deployment_mode\":\"server\""),
+            "{response}"
+        );
+        assert!(
+            response.contains("\"database\":{\"configured\":false"),
+            "{response}"
+        );
+    }
 
     #[tokio::test(flavor = "current_thread")]
     async fn router_from_env_initializes_zero_config_desktop_sqlite() {

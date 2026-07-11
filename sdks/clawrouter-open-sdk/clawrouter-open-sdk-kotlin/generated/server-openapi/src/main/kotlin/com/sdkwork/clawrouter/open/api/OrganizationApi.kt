@@ -11,7 +11,7 @@ class OrganizationApi(private val client: HttpClient) {
     /** List organization admin API keys */
     suspend fun listAdminApiKeys(limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiOrganizationAdminApiKeyList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -42,7 +42,7 @@ class OrganizationApi(private val client: HttpClient) {
             QueryParameterSpec("actor_ids[]", actorIds, "form", true, false, null),
             QueryParameterSpec("actor_emails[]", actorEmails, "form", true, false, null),
             QueryParameterSpec("resource_ids[]", resourceIds, "form", true, false, null),
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
         ))
@@ -53,7 +53,7 @@ class OrganizationApi(private val client: HttpClient) {
     /** List organization certificates */
     suspend fun listCertificates(limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiCertificateList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -97,7 +97,7 @@ class OrganizationApi(private val client: HttpClient) {
             QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
             QueryParameterSpec("models", models, "form", true, false, null),
             QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("page", page, "form", true, false, null)
         ))
         val raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/costs"), query))
@@ -107,7 +107,7 @@ class OrganizationApi(private val client: HttpClient) {
     /** List organization groups */
     suspend fun listGroups(limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiOrganizationGroupList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -131,7 +131,7 @@ class OrganizationApi(private val client: HttpClient) {
     /** List organization group roles */
     suspend fun listGroupsRoles(groupId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiRoleAssignmentList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -155,7 +155,7 @@ class OrganizationApi(private val client: HttpClient) {
     /** List organization group users */
     suspend fun listGroupsUsers(groupId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiOrganizationUserList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -179,7 +179,7 @@ class OrganizationApi(private val client: HttpClient) {
     /** List organization invites */
     suspend fun listInvites(limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiOrganizationInviteList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -203,7 +203,7 @@ class OrganizationApi(private val client: HttpClient) {
     /** List organization projects */
     suspend fun listProjects(limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiProjectList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -221,7 +221,7 @@ class OrganizationApi(private val client: HttpClient) {
     /** List project API keys */
     suspend fun listProjectsApiKeys(projectId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiProjectApiKeyList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -245,7 +245,7 @@ class OrganizationApi(private val client: HttpClient) {
     /** List project certificates */
     suspend fun listProjectsCertificates(projectId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiCertificateList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -269,7 +269,7 @@ class OrganizationApi(private val client: HttpClient) {
     /** List project groups */
     suspend fun listProjectsGroups(projectId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiOrganizationGroupList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -293,7 +293,7 @@ class OrganizationApi(private val client: HttpClient) {
     /** List project rate limits */
     suspend fun listProjectsRateLimits(projectId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiProjectRateLimitList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -311,7 +311,7 @@ class OrganizationApi(private val client: HttpClient) {
     /** List project service accounts */
     suspend fun listProjectsServiceAccounts(projectId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiProjectServiceAccountList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -335,7 +335,7 @@ class OrganizationApi(private val client: HttpClient) {
     /** List project users */
     suspend fun listProjectsUsers(projectId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiProjectUserList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -359,7 +359,7 @@ class OrganizationApi(private val client: HttpClient) {
     /** List organization roles */
     suspend fun listRoles(limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiRoleList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -391,7 +391,7 @@ class OrganizationApi(private val client: HttpClient) {
             QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
             QueryParameterSpec("models", models, "form", true, false, null),
             QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("page", page, "form", true, false, null)
         ))
         val raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/audio_speeches"), query))
@@ -409,7 +409,7 @@ class OrganizationApi(private val client: HttpClient) {
             QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
             QueryParameterSpec("models", models, "form", true, false, null),
             QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("page", page, "form", true, false, null)
         ))
         val raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/audio_transcriptions"), query))
@@ -427,7 +427,7 @@ class OrganizationApi(private val client: HttpClient) {
             QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
             QueryParameterSpec("models", models, "form", true, false, null),
             QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("page", page, "form", true, false, null)
         ))
         val raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/code_interpreter_sessions"), query))
@@ -445,7 +445,7 @@ class OrganizationApi(private val client: HttpClient) {
             QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
             QueryParameterSpec("models", models, "form", true, false, null),
             QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("page", page, "form", true, false, null)
         ))
         val raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/completions"), query))
@@ -463,7 +463,7 @@ class OrganizationApi(private val client: HttpClient) {
             QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
             QueryParameterSpec("models", models, "form", true, false, null),
             QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("page", page, "form", true, false, null)
         ))
         val raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/embeddings"), query))
@@ -481,7 +481,7 @@ class OrganizationApi(private val client: HttpClient) {
             QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
             QueryParameterSpec("models", models, "form", true, false, null),
             QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("page", page, "form", true, false, null)
         ))
         val raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/images"), query))
@@ -499,7 +499,7 @@ class OrganizationApi(private val client: HttpClient) {
             QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
             QueryParameterSpec("models", models, "form", true, false, null),
             QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("page", page, "form", true, false, null)
         ))
         val raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/moderations"), query))
@@ -517,7 +517,7 @@ class OrganizationApi(private val client: HttpClient) {
             QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
             QueryParameterSpec("models", models, "form", true, false, null),
             QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("page", page, "form", true, false, null)
         ))
         val raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/vector_stores"), query))
@@ -527,7 +527,7 @@ class OrganizationApi(private val client: HttpClient) {
     /** List organization users */
     suspend fun listUsers(limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiOrganizationUserList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -551,7 +551,7 @@ class OrganizationApi(private val client: HttpClient) {
     /** List organization user roles */
     suspend fun listUsersRoles(userId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiRoleAssignmentList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)

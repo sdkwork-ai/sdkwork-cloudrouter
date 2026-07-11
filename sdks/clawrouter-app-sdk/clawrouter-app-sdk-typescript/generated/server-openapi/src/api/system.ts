@@ -68,7 +68,7 @@ export class SystemShopsCurrentShippingTemplatesApi {
   }
 
 /** Upsert */
-  async upsert(): Promise<Record<string, never>> {
+  async update(): Promise<Record<string, never>> {
     return this.client.put<Record<string, never>>(appApiPath(`/system/shops/current/shipping_templates`));
   }
 }
@@ -158,7 +158,7 @@ export class SystemShopsCurrentReturnAddressesApi {
   }
 
 /** Upsert */
-  async upsert(): Promise<Record<string, never>> {
+  async update(): Promise<Record<string, never>> {
     return this.client.put<Record<string, never>>(appApiPath(`/system/shops/current/return_addresses`));
   }
 }
@@ -191,7 +191,7 @@ export class SystemShopsCurrentQualificationsApi {
   }
 
 /** Upsert */
-  async upsert(): Promise<Record<string, never>> {
+  async update(): Promise<Record<string, never>> {
     return this.client.put<Record<string, never>>(appApiPath(`/system/shops/current/qualifications`));
   }
 }
@@ -386,7 +386,7 @@ export class SystemShopsCurrentCustomerServicesApi {
   }
 
 /** Upsert */
-  async upsert(): Promise<Record<string, never>> {
+  async update(): Promise<Record<string, never>> {
     return this.client.put<Record<string, never>>(appApiPath(`/system/shops/current/customer_services`));
   }
 }
@@ -424,7 +424,7 @@ export class SystemShopsCurrentCategoryBindingsApi {
   }
 
 /** Upsert */
-  async upsert(): Promise<Record<string, never>> {
+  async update(): Promise<Record<string, never>> {
     return this.client.put<Record<string, never>>(appApiPath(`/system/shops/current/category_bindings`));
   }
 }
@@ -462,7 +462,7 @@ export class SystemShopsCurrentBrandAuthorizationsApi {
   }
 
 /** Upsert */
-  async upsert(): Promise<Record<string, never>> {
+  async update(): Promise<Record<string, never>> {
     return this.client.put<Record<string, never>>(appApiPath(`/system/shops/current/brand_authorizations`));
   }
 }

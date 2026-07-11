@@ -68,8 +68,11 @@ function appendPath(origin, pathSuffix) {
 
 export function resolveDevProfileId(deploymentProfile, serviceLayout = 'unified-process') {
   runtime.assertDeploymentProfile(deploymentProfile);
-  runtime.assertServiceLayout(serviceLayout);
-  return buildProfileId(deploymentProfile, serviceLayout, 'development');
+  if (runtime.serviceLayoutValues.length > 0) {
+    runtime.assertServiceLayout(serviceLayout);
+    return buildProfileId(deploymentProfile, serviceLayout, 'development');
+  }
+  return buildProfileId(deploymentProfile, 'development');
 }
 
 export function resolveRuntimeModeFromServiceLayout(serviceLayout) {
@@ -184,11 +187,14 @@ export function applyTopologyProfileToWorkspaceSettings(settings, profileEnv = {
   if (serviceLayout && !settings.runtimeModeExplicit) {
     settings.runtimeMode = resolveRuntimeModeFromServiceLayout(serviceLayout);
   }
+  if (serviceLayout) {
+    settings.serviceLayout = serviceLayout;
+  }
 
   settings.profileId = readTrimmedValue(profileEnv.SDKWORK_CLAW_ROUTER_PROFILE_ID);
-  settings.deploymentProfile = readTrimmedValue(profileEnv.SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE)
-    ?? readTrimmedValue(profileEnv.SDKWORK_CLAW_DEPLOYMENT_PROFILE);
-  settings.serviceLayout = serviceLayout;
+  settings.deploymentProfile = readTrimmedValue(
+    profileEnv.SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE,
+  );
   return settings;
 }
 

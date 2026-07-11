@@ -364,9 +364,9 @@ the portal only and do not run installer or catalog refresh steps.
 Command intent:
 
 - `pnpm dev` (alias: `pnpm dev:server`) starts the default
-  integrated product server workspace (`standalone.unified-process.development`).
+  integrated product server workspace (`standalone.development`).
   See `docs/topology-standard.md` for the full command matrix and env keys.
-- `pnpm dev:browser:postgres:split-services:standalone` starts split-services internal validation layout.
+- `pnpm dev:browser:postgres:standalone:debug` starts distributed internal validation layout.
 - `pnpm dev:desktop` starts the gateway-backed client workspace only.
 - `pnpm test` runs the launcher/tooling contract tests.
 - `pnpm build` builds production portal assets, builds the generated app

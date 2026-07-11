@@ -1,6 +1,6 @@
 use std::collections::HashSet;
-use std::sync::Once;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Once;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use axum::body::Body;
@@ -69,21 +69,15 @@ async fn database_config_app_model_rankings_route_reads_installed_catalog_snapsh
     for item in items {
         assert!(item["rank"].as_u64().is_some_and(|rank| rank > 0));
         assert!(item["name"].as_str().is_some_and(|name| !name.is_empty()));
-        assert!(
-            item["vendor"]
-                .as_str()
-                .is_some_and(|vendor| !vendor.is_empty())
-        );
-        assert!(
-            item["vendorCode"]
-                .as_str()
-                .is_some_and(|vendor_code| !vendor_code.is_empty())
-        );
-        assert!(
-            item["modality"]
-                .as_str()
-                .is_some_and(|modality| !modality.is_empty())
-        );
+        assert!(item["vendor"]
+            .as_str()
+            .is_some_and(|vendor| !vendor.is_empty()));
+        assert!(item["vendorCode"]
+            .as_str()
+            .is_some_and(|vendor_code| !vendor_code.is_empty()));
+        assert!(item["modality"]
+            .as_str()
+            .is_some_and(|modality| !modality.is_empty()));
         let id = item["id"].as_str().unwrap();
         assert!(
             !id.starts_with(&format!("{expected_observed_at}:")),
@@ -176,15 +170,13 @@ async fn database_config_app_startup_worker_auto_refreshes_rankings_and_records_
     .await;
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("offset", payload["data"]["pageInfo"]["mode"]);
-    assert!(
-        payload["data"]["items"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .any(|item| item["id"]
-                .as_str()
-                .is_some_and(|id| id.ends_with(&catalog_key)))
-    );
+    assert!(payload["data"]["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|item| item["id"]
+            .as_str()
+            .is_some_and(|id| id.ends_with(&catalog_key))));
 
     let pool = connect_sqlite_for_test(&database_url).await;
     let audit = sqlx::query(
@@ -402,16 +394,12 @@ fn assert_model_catalog_has_reference_price(
                 region_code, item["catalogKey"]
             )
         });
-    assert!(
-        price["unitPrice"]
-            .as_str()
-            .is_some_and(|value| !value.is_empty())
-    );
-    assert!(
-        price["currency"]
-            .as_str()
-            .is_some_and(|value| !value.is_empty())
-    );
+    assert!(price["unitPrice"]
+        .as_str()
+        .is_some_and(|value| !value.is_empty()));
+    assert!(price["currency"]
+        .as_str()
+        .is_some_and(|value| !value.is_empty()));
 }
 
 async fn request_json(router: axum::Router, path: &str) -> serde_json::Value {

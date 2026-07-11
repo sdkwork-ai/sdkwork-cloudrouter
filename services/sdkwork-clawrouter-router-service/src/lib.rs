@@ -42,5 +42,5 @@ pub fn catalog_accepted_count(catalog: &sdkwork_models::ModelCatalog) -> i64 {
 
 #[doc(hidden)]
 pub use infrastructure::sql::commerce_bootstrap::{
-    commerce_recharge_package_seeds, CommerceRechargePackageSeed,
+    commerce_database_tables, commerce_recharge_package_seeds, CommerceRechargePackageSeed,
 };

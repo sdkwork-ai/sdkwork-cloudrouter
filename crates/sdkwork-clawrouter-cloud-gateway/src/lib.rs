@@ -53,19 +53,30 @@ pub use runtime::{
 pub const SERVICE_NAME: &str = "sdkwork-clawrouter-cloud-gateway";
 
 pub fn router() -> axum::Router {
-    router_with_database_status_and_passthrough_placeholder(None, true, None)
+    router_with_database_status_and_passthrough_placeholder(None, true, None, None)
 }
 
 pub(crate) fn router_with_database_status_and_passthrough_placeholder(
     config: Option<&sdkwork_claw_config::DatabaseConfig>,
     include_passthrough_placeholder: bool,
     readiness_check: Option<sdkwork_claw_http::ReadinessCheckFn>,
+    deployment_mode: Option<sdkwork_claw_config::DeploymentMode>,
 ) -> axum::Router {
-    let router = sdkwork_claw_http::service_router_with_database_config_and_readiness_check(
-        SERVICE_NAME,
-        config,
-        readiness_check,
-    );
+    let router = match deployment_mode {
+        Some(deployment_mode) => {
+            sdkwork_claw_http::service_router_with_database_config_readiness_check_and_deployment_mode(
+                SERVICE_NAME,
+                config,
+                readiness_check,
+                deployment_mode,
+            )
+        }
+        None => sdkwork_claw_http::service_router_with_database_config_and_readiness_check(
+            SERVICE_NAME,
+            config,
+            readiness_check,
+        ),
+    };
     if include_passthrough_placeholder {
         router.merge(passthrough::gateway_passthrough_router())
     } else {

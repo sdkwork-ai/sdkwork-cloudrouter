@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@sdkwork/clawrouter-pc-admin-core": "workspace:*",
     "@sdkwork/clawroutes-pc-commons": "workspace:*"
   },
   "exports": {

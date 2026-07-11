@@ -11,7 +11,7 @@ class EvalApi(private val client: HttpClient) {
     /** List evals */
     suspend fun list(limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiEvalList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -47,7 +47,7 @@ class EvalApi(private val client: HttpClient) {
     /** List eval runs */
     suspend fun listRuns(evalId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiEvalRunList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -71,7 +71,7 @@ class EvalApi(private val client: HttpClient) {
     /** List eval run output items */
     suspend fun listRunsOutputItems(evalId: String, runId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiEvalRunOutputItemList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)

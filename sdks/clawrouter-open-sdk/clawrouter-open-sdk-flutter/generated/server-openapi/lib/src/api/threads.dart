@@ -62,7 +62,7 @@ class ThreadsApi {
   /// List thread messages
   Future<OpenAiThreadMessageList?> listMessages(String threadId, [int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -96,7 +96,7 @@ class ThreadsApi {
   /// List thread runs
   Future<OpenAiRunList?> listRuns(String threadId, [int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -120,7 +120,7 @@ class ThreadsApi {
   /// List run steps
   Future<OpenAiRunStepList?> listRunsSteps(String threadId, String runId, [int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)

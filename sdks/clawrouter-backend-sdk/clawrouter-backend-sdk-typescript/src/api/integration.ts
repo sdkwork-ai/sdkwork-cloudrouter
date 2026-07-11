@@ -25,8 +25,8 @@ export class IntegrationProviderSecretsApi {
   }
 
 /** Delete */
-  async delete(secretId: string): Promise<Record<string, never>> {
-    return this.client.delete<Record<string, never>>(backendApiPath(`/integration/provider_secrets/${serializePathParameter(secretId, { name: 'secretId', style: 'simple', explode: false })}`));
+  async delete(secretId: string): Promise<void> {
+    return this.client.delete<void>(backendApiPath(`/integration/provider_secrets/${serializePathParameter(secretId, { name: 'secretId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -54,8 +54,8 @@ export class IntegrationChannelsApi {
   }
 
 /** Delete */
-  async delete(channelId: string): Promise<Record<string, never>> {
-    return this.client.delete<Record<string, never>>(backendApiPath(`/integration/channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}`));
+  async delete(channelId: string): Promise<void> {
+    return this.client.delete<void>(backendApiPath(`/integration/channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}`));
   }
 
 /** Verify */

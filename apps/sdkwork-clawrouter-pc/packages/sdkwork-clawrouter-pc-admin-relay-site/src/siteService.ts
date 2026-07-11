@@ -1,6 +1,5 @@
 import {
   ensureSdkworkApiSuccess,
-  getClawRouterBackendSdkClient,
   isRecord,
   readApiRecord,
   readBoolean,
@@ -14,11 +13,12 @@ import {
   readStringArray,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
+import { getClawRouterBackendSdkClient } from '@sdkwork/clawrouter-pc-admin-core/sdk';
 import type {
   AdminSiteCreateRequest,
   AdminSiteUpdateRequest,
   MediaResource,
-} from '@sdkwork/clawrouter-backend-sdk';
+} from '@sdkwork/clawrouter-pc-admin-core/sdk';
 
 export interface SiteItem {
   id: string;

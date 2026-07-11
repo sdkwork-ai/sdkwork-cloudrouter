@@ -14,3 +14,8 @@ sqlx = { workspace = true }
 sdkwork-database-sqlx.workspace = true
 sdkwork-utils-rust.workspace = true
 sdkwork_models_catalog_service.workspace = true
+
+[dev-dependencies]
+anyhow.workspace = true
+sdkwork-claw-test-support.workspace = true
+tokio.workspace = true

@@ -1,7 +1,7 @@
-import type { AdminAuthSettingsUpdateRequest } from '@sdkwork/clawrouter-backend-sdk';
+import type { AdminAuthSettingsUpdateRequest } from '@sdkwork/clawrouter-pc-admin-core/sdk';
+import { getClawRouterBackendSdkClient } from '@sdkwork/clawrouter-pc-admin-core/sdk';
 import {
   ensureSdkworkApiSuccess,
-  getClawRouterBackendSdkClient,
   readApiRecord,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';

@@ -41,7 +41,7 @@ class ThreadsApi(private val client: HttpClient) {
     /** List thread messages */
     suspend fun listMessages(threadId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiThreadMessageList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -65,7 +65,7 @@ class ThreadsApi(private val client: HttpClient) {
     /** List thread runs */
     suspend fun listRuns(threadId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiRunList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -83,7 +83,7 @@ class ThreadsApi(private val client: HttpClient) {
     /** List run steps */
     suspend fun listRunsSteps(threadId: String, runId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiRunStepList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)

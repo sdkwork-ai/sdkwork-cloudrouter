@@ -12,8 +12,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
-    json_success_list_response, normalize_list_search_query, offset_page_info,
-    parse_offset_list_query, problem_from_wire_code, success_envelope,
+    json_created_response, json_success_list_response, no_content_response,
+    normalize_list_search_query, offset_page_info, parse_offset_list_query, problem_from_wire_code,
+    success_envelope,
 };
 use crate::application::{ApiKeySecretGenerator, ApiKeySecretHasher};
 use crate::domain::{
@@ -324,7 +325,7 @@ async fn create_key(
     Json(request): Json<AppApiKeyCreateRequest>,
 ) -> Response {
     match create_key_inner(state, scope, headers, request).await {
-        Ok(response) => Json(success_envelope(response)).into_response(),
+        Ok(response) => json_created_response(None, response),
         Err(AppApiKeyCreateError::Unauthorized(message)) => {
             problem_from_wire_code("4010", message).into_response()
         }
@@ -371,7 +372,7 @@ async fn delete_key(
     Path(api_key_id): Path<i64>,
 ) -> Response {
     match delete_key_inner(state, scope, headers, api_key_id).await {
-        Ok(response) => Json(success_envelope(response)).into_response(),
+        Ok(_) => no_content_response(None),
         Err(AppApiKeyCreateError::Unauthorized(message)) => {
             problem_from_wire_code("4010", message).into_response()
         }

@@ -8,10 +8,11 @@ import {
   readRequiredNonNegativeNumber,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
+import { getClawRouterAppSdkClient } from '@sdkwork/clawrouter-pc-console-core/sdk';
 import type {
   DashboardConfigurationDomain as SdkDashboardConfigurationDomain,
   DashboardOverviewResponse as SdkDashboardOverviewResponse,
-} from '@sdkwork/clawrouter-app-sdk';
+} from '@sdkwork/clawrouter-pc-console-core/sdk';
 
 export type DashboardTimeRange = 'hourly' | 'daily' | 'monthly' | 'yearly';
 

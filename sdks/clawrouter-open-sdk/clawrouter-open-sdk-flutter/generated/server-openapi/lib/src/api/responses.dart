@@ -74,7 +74,7 @@ class ResponsesApi {
   /// List response input items
   Future<OpenAiResponseInputItemList?> listInputItems(String responseId, [int? limit, String? order, String? after, String? before, List<String>? include]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null),

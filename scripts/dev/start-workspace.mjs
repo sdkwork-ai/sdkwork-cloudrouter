@@ -514,6 +514,9 @@ export function parseWorkspaceArgs(argv = [], {
         settings.serviceLayout = requireValue(argv, index, arg);
         index += 1;
         break;
+      case '--distributed':
+        settings.serviceLayout = 'split-services';
+        break;
       case '--internal-distributed':
         throw new Error(
           '--internal-distributed is retired; use --service-layout split-services',
@@ -1086,6 +1089,7 @@ Options:
                          Deployment profile (default standalone)
   --service-layout <unified-process|split-services>
                          Topology service layout (default unified-process)
+  --distributed          Alias for --service-layout split-services
   --database-url <url>    Optional shared SDKWORK_CLAW_DATABASE_URL override (default ${defaultPostgresDatabaseUrl()})
   --gateway-bind <bind>   SDKWORK_CLAW_GATEWAY_BIND override (default ${DEFAULT_GATEWAY_BIND})
   --admin-api-bind <bind> SDKWORK_CLAW_ADMIN_API_BIND override (default ${DEFAULT_ADMIN_API_BIND})

@@ -22,7 +22,7 @@ export class VectorStoresFilesApi {
 /** List vector store files */
   async list(vectorStoreId: string, params?: VectorStoresFilesListParams): Promise<OpenAiVectorStoreFileList> {
     const query = buildQueryString([
-      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -84,7 +84,7 @@ export class VectorStoresFileBatchesApi {
 /** List vector store file batch files */
   async listFiles(vectorStoreId: string, batchId: string, params?: VectorStoresFileBatchesListFilesParams): Promise<OpenAiVectorStoreFileList> {
     const query = buildQueryString([
-      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -115,7 +115,7 @@ export class VectorStoresApi {
 /** List vector stores */
   async list(params?: VectorStoresListParams): Promise<OpenAiVectorStoreList> {
     const query = buildQueryString([
-      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },

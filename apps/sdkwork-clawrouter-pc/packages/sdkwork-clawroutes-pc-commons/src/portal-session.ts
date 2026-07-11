@@ -29,14 +29,7 @@ export async function fetchCurrentPortalSession(): Promise<PortalSessionResponse
   if (!currentSessionPromise) {
     currentSessionPromise = getSdkworkAppbaseAppSdkClient()
       .auth.sessions.current.retrieve()
-      .then((result) => {
-        const session = readCurrentPortalSession(result);
-        if (session) {
-          storeAppSessionFromResult(result);
-          resetClawRouterSdkClients();
-        }
-        return session;
-      })
+      .then(applyCurrentPortalSessionResult)
       .catch((error) => {
         if (isPortalSessionAuthError(error)) {
           clearPortalSessionState();
@@ -65,14 +58,7 @@ export async function refreshPortalSessionIfNeeded(): Promise<PortalSessionRespo
   }
   currentRefreshPromise = getSdkworkAppbaseAppSdkClient()
     .auth.sessions.current.retrieve()
-    .then((result) => {
-      const session = readCurrentPortalSession(result);
-      if (session) {
-        storeAppSessionFromResult(result);
-        resetClawRouterSdkClients();
-      }
-      return session;
-    })
+    .then(applyCurrentPortalSessionResult)
     .catch((error) => {
       if (isPortalSessionAuthError(error)) {
         clearPortalSessionState();
@@ -96,6 +82,18 @@ function readStoredPortalSession(): PortalSessionResponse | null {
     authToken: token.authToken,
     ...(token.refreshToken ? { refreshToken: token.refreshToken } : {}),
   };
+}
+
+function applyCurrentPortalSessionResult(result: unknown): PortalSessionResponse | null {
+  const session = readCurrentPortalSession(result);
+  if (session) {
+    storeAppSessionFromResult(result);
+    resetClawRouterSdkClients();
+    return session;
+  }
+
+  clearPortalSessionState();
+  return null;
 }
 
 export async function revokeCurrentPortalSession(): Promise<void> {

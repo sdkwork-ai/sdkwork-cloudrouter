@@ -20,7 +20,7 @@ BACKEND_OPERATIONS = [
     ("POST", "/backend/v3/api/ai/model_mappings", "modelMappings.create", "getModelsBackendSdkClient().ai.modelMappings.create", True),
     ("PATCH", "/backend/v3/api/ai/model_mappings/{mappingId}", "modelMappings.update", "getModelsBackendSdkClient().ai.modelMappings.update", True),
     ("DELETE", "/backend/v3/api/ai/model_mappings/{mappingId}", "modelMappings.delete", "getModelsBackendSdkClient().ai.modelMappings.delete", True),
-    ("POST", "/backend/v3/api/ai/model_mappings/resolve", "modelMappings.resolve.create", "getModelsBackendSdkClient().ai.modelMappings.resolve.create", True),
+    ("POST", "/backend/v3/api/ai/model_mappings/resolve", "modelMappings.resolve", "getModelsBackendSdkClient().ai.modelMappings.resolve", True),
     ("GET", "/backend/v3/api/ai/model_rankings", "modelRankings.list", "getModelsBackendSdkClient().ai.modelRankings.list", True),
     ("GET", "/backend/v3/api/ai/model_rankings/status", "modelRankings.status.retrieve", "getModelsBackendSdkClient().ai.modelRankings.status.retrieve", True),
     ("GET", "/backend/v3/api/ai/model_rankings/jobs", "modelRankings.jobs.list", "getModelsBackendSdkClient().ai.modelRankings.jobs.list", True),

@@ -10,23 +10,23 @@ use sdkwork_claw_config::{
 };
 use sdkwork_claw_http::AppSubjectBoundaryConfig;
 use sdkwork_clawrouter_router_service::application::{
-    ApiKeySecretCodec, ApiKeySecretHasher, EntityUuidGenerator, InMemoryRuntimeStreamBus,
-    ModelRankingRefreshWorker, ModelRankingRefreshWorkerConfig, ModelRankingsService,
-    PaymentAggregateRuntimeStore, PaymentProviderRegistry, RuntimeStreamBus,
-    bootstrap_payment_provider_registry, payment_runtime_environment,
+    bootstrap_payment_provider_registry, payment_runtime_environment, ApiKeySecretCodec,
+    ApiKeySecretHasher, EntityUuidGenerator, InMemoryRuntimeStreamBus, ModelRankingRefreshWorker,
+    ModelRankingRefreshWorkerConfig, ModelRankingsService, PaymentAggregateRuntimeStore,
+    PaymentProviderRegistry, RuntimeStreamBus,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::{
     HmacSha256ApiKeySecretHasher, RingAeadApiKeySecretCodec,
 };
 use sdkwork_clawrouter_router_service::infrastructure::provider::{
-    DEFAULT_HEALTH_PROBE_TIMEOUT_MILLIS, ProviderSecretMapResolver,
-    SecretRefOpenAiCompatibleProviderHealthProbe,
+    ProviderSecretMapResolver, SecretRefOpenAiCompatibleProviderHealthProbe,
+    DEFAULT_HEALTH_PROBE_TIMEOUT_MILLIS,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::{
     RefreshableSqlPricingCatalog, SqlPricingCatalogSnapshotSummary,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
-    DatabaseInstallError, DatabaseInstaller, log_bootstrap_admin_report,
+    log_bootstrap_admin_report, DatabaseInstallError, DatabaseInstaller,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::pool::{
     connect_claw_sqlite_runtime_pool, effective_sqlite_runtime_pool_max_connections,
@@ -167,8 +167,8 @@ pub fn build_sdkwork_claw_router_app_api_router() -> Router {
     router()
 }
 
-pub async fn build_sdkwork_claw_router_app_api_router_from_env()
--> Result<Router, ProductCatalogRouterError> {
+pub async fn build_sdkwork_claw_router_app_api_router_from_env(
+) -> Result<Router, ProductCatalogRouterError> {
     router_from_env().await
 }
 
@@ -177,7 +177,7 @@ fn merge_app_sdk_reference_router(router: Router) -> Router {
 }
 
 pub fn router() -> Router {
-    merge_app_sdk_reference_router(router_with_database_status(None, None))
+    merge_app_sdk_reference_router(router_with_database_status(None, None, None))
         .merge(sdkwork_clawrouter_router_service::api::app_site_settings_router())
         .merge(sdkwork_clawrouter_router_service::api::app_payment_callback_router())
         .merge(sdkwork_clawrouter_router_service::api::app_dashboard_overview_router())
@@ -198,14 +198,27 @@ pub fn router() -> Router {
 fn router_with_database_status(
     config: Option<&DatabaseConfig>,
     readiness_check: Option<sdkwork_claw_http::ReadinessCheckFn>,
+    deployment_mode: Option<DeploymentMode>,
 ) -> Router {
-    sdkwork_claw_http::service_router_with_filtered_contract_routes_database_config_and_readiness_check(
-        SERVICE_NAME,
-        sdkwork_claw_http::ApiSurface::App,
-        config,
-        product_local_contract_operation,
-        readiness_check,
-    )
+    match deployment_mode {
+        Some(deployment_mode) => {
+            sdkwork_claw_http::service_router_with_filtered_contract_routes_database_config_readiness_check_and_deployment_mode(
+                SERVICE_NAME,
+                sdkwork_claw_http::ApiSurface::App,
+                config,
+                product_local_contract_operation,
+                readiness_check,
+                deployment_mode,
+            )
+        }
+        None => sdkwork_claw_http::service_router_with_filtered_contract_routes_database_config_and_readiness_check(
+            SERVICE_NAME,
+            sdkwork_claw_http::ApiSurface::App,
+            config,
+            product_local_contract_operation,
+            readiness_check,
+        ),
+    }
 }
 
 fn product_local_contract_operation(operation: &sdkwork_claw_http::ContractOperation) -> bool {
@@ -278,7 +291,7 @@ fn router_with_product_catalog_and_database_status<C>(
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
-    merge_app_sdk_reference_router(router_with_database_status(config, None))
+    merge_app_sdk_reference_router(router_with_database_status(config, None, None))
         .merge(sdkwork_clawrouter_router_service::api::app_site_settings_router())
         .merge(sdkwork_clawrouter_router_service::api::app_payment_callback_router())
         .merge(sdkwork_clawrouter_router_service::api::app_dashboard_overview_router())
@@ -351,10 +364,11 @@ fn router_with_runtime_stores_and_database_status(
     request_limits_config: RequestLimitsConfig,
     readiness_check: Option<sdkwork_claw_http::ReadinessCheckFn>,
     api_key_runtime: Option<AppApiKeyRuntimeDeps>,
+    deployment_mode: DeploymentMode,
 ) -> Router {
     let subject_boundary_config =
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
-    let mut router = router_with_database_status(config, readiness_check);
+    let mut router = router_with_database_status(config, readiness_check, Some(deployment_mode));
     router = match app_site_settings_store {
         Some(store) => router.merge(
             sdkwork_clawrouter_router_service::api::app_site_settings_router_with_store(store),
@@ -446,7 +460,7 @@ fn router_with_runtime_stores_and_database_status(
         Some(store) => {
             let stream_bus = match app_runtime_stream_bus {
                 Some(bus) => bus,
-                None if DeploymentMode::from_env() == DeploymentMode::Desktop => {
+                None if allow_implicit_in_memory_runtime_stream_bus(deployment_mode) => {
                     Arc::new(InMemoryRuntimeStreamBus::default())
                 }
                 None => {
@@ -575,6 +589,7 @@ pub async fn router_with_sqlite_product_catalog(
     app_session_config: AppSessionConfig,
     payment_webhook_config: PaymentWebhookConfig,
 ) -> Result<Router, ProductCatalogRouterError> {
+    let deployment_mode = DeploymentMode::from_env().map_err(ProductCatalogRouterError::Config)?;
     let api_key_secret_codec = api_key_secret_codec_from_config(&api_key_security_config)?;
     let read_store = Arc::new(SqlitePricingCatalogLoader::with_api_key_secret_codec(
         pool.clone(),
@@ -651,6 +666,7 @@ pub async fn router_with_sqlite_product_catalog(
             RequestLimitsConfig::default(),
             None,
             api_key_runtime,
+            deployment_mode,
         ),
         subject_boundary_config,
         Some(&database_config),
@@ -666,6 +682,7 @@ pub async fn router_with_postgres_product_catalog(
     app_session_config: AppSessionConfig,
     payment_webhook_config: PaymentWebhookConfig,
 ) -> Result<Router, ProductCatalogRouterError> {
+    let deployment_mode = DeploymentMode::from_env().map_err(ProductCatalogRouterError::Config)?;
     let api_key_secret_codec = api_key_secret_codec_from_config(&api_key_security_config)?;
     let read_store = Arc::new(PostgresPricingCatalogLoader::with_api_key_secret_codec(
         pool.clone(),
@@ -743,6 +760,7 @@ pub async fn router_with_postgres_product_catalog(
             RequestLimitsConfig::default(),
             None,
             api_key_runtime,
+            deployment_mode,
         ),
         subject_boundary_config,
         Some(&database_config),
@@ -759,7 +777,7 @@ pub async fn router_with_sqlite_shared_runtime(
     app_session_config: AppSessionConfig,
     payment_webhook_config: PaymentWebhookConfig,
     provider_health_probe: Arc<dyn ProviderHealthProbe + Send + Sync>,
-    _deployment_mode: DeploymentMode,
+    deployment_mode: DeploymentMode,
     request_limits_config: RequestLimitsConfig,
     app_runtime_gateway_client: Arc<
         dyn sdkwork_clawrouter_router_service::ports::AppRuntimeGatewayClient + Send + Sync,
@@ -847,6 +865,7 @@ pub async fn router_with_sqlite_shared_runtime(
             request_limits_config,
             None,
             api_key_runtime,
+            deployment_mode,
         ),
         subject_boundary_config,
         Some(&config),
@@ -863,7 +882,7 @@ pub async fn router_with_postgres_shared_runtime(
     app_session_config: AppSessionConfig,
     payment_webhook_config: PaymentWebhookConfig,
     provider_health_probe: Arc<dyn ProviderHealthProbe + Send + Sync>,
-    _deployment_mode: DeploymentMode,
+    deployment_mode: DeploymentMode,
     request_limits_config: RequestLimitsConfig,
     app_runtime_gateway_client: Arc<
         dyn sdkwork_clawrouter_router_service::ports::AppRuntimeGatewayClient + Send + Sync,
@@ -952,6 +971,7 @@ pub async fn router_with_postgres_shared_runtime(
             request_limits_config,
             None,
             api_key_runtime,
+            deployment_mode,
         ),
         subject_boundary_config,
         Some(&config),
@@ -983,7 +1003,7 @@ pub async fn router_with_database_config(
         app_session_config,
         payment_webhook_config,
         provider_secret_map_config,
-        DeploymentMode::from_env(),
+        DeploymentMode::from_env().map_err(ProductCatalogRouterError::Config)?,
     )
     .await
 }
@@ -1002,7 +1022,7 @@ pub async fn router_with_database_config_api_key_trusted_subject_and_app_session
         app_session_config,
         payment_webhook_config,
         None,
-        DeploymentMode::from_env(),
+        DeploymentMode::from_env().map_err(ProductCatalogRouterError::Config)?,
     )
     .await
 }
@@ -1042,7 +1062,7 @@ pub async fn router_with_database_config_api_key_trusted_subject_app_session_and
         app_session_config,
         payment_webhook_config,
         Some(provider_secret_map_config),
-        DeploymentMode::from_env(),
+        DeploymentMode::from_env().map_err(ProductCatalogRouterError::Config)?,
     )
     .await
 }
@@ -1253,6 +1273,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
                     request_limits_config,
                     readiness_check,
                     api_key_runtime,
+                    deployment_mode,
                 ),
                 subject_boundary_config.clone(),
                 Some(&config),
@@ -1389,6 +1410,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
                     request_limits_config,
                     readiness_check,
                     api_key_runtime,
+                    deployment_mode,
                 ),
                 subject_boundary_config,
                 Some(&config),
@@ -1601,6 +1623,10 @@ pub async fn shared_runtime_stream_bus_from_runtime_toml(
     deployment_mode: DeploymentMode,
 ) -> Result<Arc<dyn RuntimeStreamBus + Send + Sync>, ProductCatalogRouterError> {
     build_app_runtime_stream_bus(runtime_toml, deployment_mode).await
+}
+
+fn allow_implicit_in_memory_runtime_stream_bus(deployment_mode: DeploymentMode) -> bool {
+    deployment_mode == DeploymentMode::Desktop
 }
 
 fn allow_in_memory_runtime_stream_bus_fallback(deployment_mode: DeploymentMode) -> bool {
@@ -2349,7 +2375,7 @@ pub async fn serve_with_runtime_config(
 #[cfg(test)]
 mod tests {
     use super::{
-        allow_in_memory_runtime_stream_bus_fallback,
+        allow_implicit_in_memory_runtime_stream_bus, allow_in_memory_runtime_stream_bus_fallback,
         app_runtime_catalog_refresh_interval_from_env_or_toml,
         model_ranking_refresh_worker_config_from_env, router_from_env,
         should_invalidate_model_ranking_cache, should_skip_sqlite_catalog_refresh,
@@ -2421,6 +2447,22 @@ mod tests {
             DeploymentMode::Docker
         ));
         assert!(!allow_in_memory_runtime_stream_bus_fallback(
+            DeploymentMode::Kubernetes
+        ));
+    }
+
+    #[test]
+    fn implicit_app_runtime_stream_bus_fallback_uses_explicit_mode_not_environment() {
+        assert!(allow_implicit_in_memory_runtime_stream_bus(
+            DeploymentMode::Desktop
+        ));
+        assert!(!allow_implicit_in_memory_runtime_stream_bus(
+            DeploymentMode::Server
+        ));
+        assert!(!allow_implicit_in_memory_runtime_stream_bus(
+            DeploymentMode::Docker
+        ));
+        assert!(!allow_implicit_in_memory_runtime_stream_bus(
             DeploymentMode::Kubernetes
         ));
     }

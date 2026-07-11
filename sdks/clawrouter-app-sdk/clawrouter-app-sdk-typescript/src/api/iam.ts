@@ -50,8 +50,8 @@ export class IamApiKeysApi {
   }
 
 /** Delete */
-  async delete(apiKeyId: string): Promise<Record<string, never>> {
-    return this.client.delete<Record<string, never>>(appApiPath(`/iam/api_keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}`));
+  async delete(apiKeyId: string): Promise<void> {
+    return this.client.delete<void>(appApiPath(`/iam/api_keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}`));
   }
 
 /** Update */

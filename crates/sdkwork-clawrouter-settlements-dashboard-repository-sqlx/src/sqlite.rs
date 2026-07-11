@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use sqlx::SqlitePool;
 
-use crate::error::{RepositoryResult, store_error};
+use crate::error::{store_error, RepositoryResult};
 use crate::mapping::{
-    RowMapping, chart_point_from_row, merge_item_into_breakdown, require_subject, row_to_bill,
-    year_filter,
+    chart_point_from_row, merge_item_into_breakdown, require_subject, row_to_bill, year_filter,
+    RowMapping,
 };
 use crate::types::{
     SettlementBill, SettlementChartPoint, SettlementsDashboardQuery,

@@ -10,7 +10,9 @@ use axum::Json;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use hmac::{Hmac, Mac};
 use sdkwork_claw_config::{
-    AppSessionConfig, DeploymentMode as RuntimeDeploymentMode, TrustedSubjectConfig,
+    AppSessionConfig, DeploymentProfile as RuntimeDeploymentProfile,
+    DeploymentRuntime as RuntimeDeploymentRuntime, RuntimeTarget as ConfiguredRuntimeTarget,
+    TrustedSubjectConfig,
 };
 use sdkwork_claw_security::redact_secret;
 use sdkwork_iam_context_service::{AuthLevel, DeploymentMode, Environment, IamAppContext};
@@ -62,7 +64,13 @@ pub enum ApiKeyIdentityError {
     InvalidHeaderValue(&'static str),
     InvalidAuthorizationScheme,
     EmptyCredential(ApiKeyCredentialSource),
+    AmbiguousCredentialSources,
     QueryKeyNotAllowed,
+}
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct QueryStringApiKeyPolicy {
+    allow_standalone_desktop: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -169,9 +177,17 @@ impl ApiKeyIdentity {
         headers: &HeaderMap,
         uri: &Uri,
     ) -> Result<Self, ApiKeyIdentityError> {
+        Self::from_headers_and_uri_with_query_key_policy(headers, uri, Default::default())
+    }
+
+    pub fn from_headers_and_uri_with_query_key_policy(
+        headers: &HeaderMap,
+        uri: &Uri,
+        query_string_api_key_policy: QueryStringApiKeyPolicy,
+    ) -> Result<Self, ApiKeyIdentityError> {
         Ok(Self {
             api_key_id: parse_api_key_id(headers)?,
-            credential: parse_credential(headers, uri)?,
+            credential: parse_credential(headers, uri, query_string_api_key_policy)?,
         })
     }
 
@@ -187,6 +203,25 @@ impl ApiKeyIdentity {
 
     pub fn credential_source(&self) -> Option<ApiKeyCredentialSource> {
         self.credential.as_ref().map(|credential| credential.source)
+    }
+}
+
+impl QueryStringApiKeyPolicy {
+    pub fn from_configured_runtime(runtime: Option<RuntimeDeploymentRuntime>) -> Self {
+        Self {
+            allow_standalone_desktop: matches!(
+                runtime,
+                Some(RuntimeDeploymentRuntime {
+                    profile: RuntimeDeploymentProfile::Standalone,
+                    target: ConfiguredRuntimeTarget::Desktop,
+                    ..
+                })
+            ),
+        }
+    }
+
+    fn allows_uri(self, uri: &Uri) -> bool {
+        self.allow_standalone_desktop && is_google_provider_compatible_path(uri.path())
     }
 }
 
@@ -219,6 +254,9 @@ impl fmt::Display for ApiKeyIdentityError {
                 write!(formatter, "authorization header must use Bearer scheme")
             }
             Self::EmptyCredential(_) => write!(formatter, "api key credential must not be empty"),
+            Self::AmbiguousCredentialSources => {
+                write!(formatter, "multiple API key credential sources are not allowed")
+            }
             Self::QueryKeyNotAllowed => {
                 write!(
                     formatter,
@@ -1479,30 +1517,47 @@ fn parse_api_key_id(headers: &HeaderMap) -> Result<Option<i64>, ApiKeyIdentityEr
 fn parse_credential(
     headers: &HeaderMap,
     uri: &Uri,
+    query_string_api_key_policy: QueryStringApiKeyPolicy,
 ) -> Result<Option<ApiKeyCredential>, ApiKeyIdentityError> {
-    if let Some(value) = header_value(headers, AUTHORIZATION)? {
-        return parse_authorization_bearer(value).map(Some);
+    let authorization_count = header_value_count(headers, AUTHORIZATION);
+    let api_key_header_count = header_value_count(headers, X_API_KEY);
+    let google_api_key_header_count = header_value_count(headers, X_GOOG_API_KEY);
+    let header_credential_count =
+        authorization_count + api_key_header_count + google_api_key_header_count;
+    let query_keys = crate::query_string::exact_query_parameter_values(uri.query(), "key");
+
+    if header_credential_count > 1 || query_keys.len() > 1 {
+        return Err(ApiKeyIdentityError::AmbiguousCredentialSources);
     }
-    if let Some(value) = header_value(headers, X_API_KEY)? {
-        return credential(value, ApiKeyCredentialSource::ApiKeyHeader).map(Some);
+    if header_credential_count == 1 && !query_keys.is_empty() {
+        return Err(ApiKeyIdentityError::AmbiguousCredentialSources);
     }
-    if let Some(value) = header_value(headers, X_GOOG_API_KEY)? {
-        return credential(value, ApiKeyCredentialSource::GoogleApiKeyHeader).map(Some);
+
+    if authorization_count == 1 {
+        return parse_authorization_bearer(required_header_value(headers, AUTHORIZATION)?).map(Some);
     }
-    if let Some(value) = query_key(uri) {
-        if !allows_query_string_api_key() {
+    if api_key_header_count == 1 {
+        return credential(
+            required_header_value(headers, X_API_KEY)?,
+            ApiKeyCredentialSource::ApiKeyHeader,
+        )
+        .map(Some);
+    }
+    if google_api_key_header_count == 1 {
+        return credential(
+            required_header_value(headers, X_GOOG_API_KEY)?,
+            ApiKeyCredentialSource::GoogleApiKeyHeader,
+        )
+        .map(Some);
+    }
+    if let Some(value) = query_keys.into_iter().next() {
+        let credential = credential(&value, ApiKeyCredentialSource::QueryKey)?;
+        if !query_string_api_key_policy.allows_uri(uri) {
             return Err(ApiKeyIdentityError::QueryKeyNotAllowed);
         }
-        return credential(value, ApiKeyCredentialSource::QueryKey).map(Some);
+        return Ok(Some(credential));
     }
     Ok(None)
-}
-
-fn allows_query_string_api_key() -> bool {
-    matches!(
-        RuntimeDeploymentMode::from_env(),
-        RuntimeDeploymentMode::Desktop
-    )
 }
 
 fn parse_authorization_bearer(value: &str) -> Result<ApiKeyCredential, ApiKeyIdentityError> {
@@ -1551,9 +1606,22 @@ fn header_value<'a>(
         .transpose()
 }
 
-fn query_key(uri: &Uri) -> Option<&str> {
-    uri.query()?.split('&').find_map(|pair| {
-        let (name, value) = pair.split_once('=')?;
-        (name == "key").then_some(value)
-    })
+fn header_value_count(headers: &HeaderMap, name: &'static str) -> usize {
+    headers.get_all(name).iter().count()
+}
+
+fn required_header_value<'a>(
+    headers: &'a HeaderMap,
+    name: &'static str,
+) -> Result<&'a str, ApiKeyIdentityError> {
+    header_value(headers, name)?.ok_or(ApiKeyIdentityError::InvalidHeaderValue(name))
+}
+
+fn is_google_provider_compatible_path(path: &str) -> bool {
+    let mut segments = path.split('/').filter(|segment| !segment.is_empty());
+    match segments.next() {
+        Some("google") => true,
+        Some("provider" | "providers") => matches!(segments.next(), Some("google")),
+        _ => false,
+    }
 }

@@ -12,6 +12,7 @@
     "typescript": "~5.8.2"
   },
   "dependencies": {
+    "@sdkwork/clawrouter-pc-console-core": "workspace:*",
     "@sdkwork/clawroutes-pc-commons": "workspace:*",
     "@sdkwork/utils": "workspace:*"
   },

@@ -11,7 +11,7 @@ class SkillApi(private val client: HttpClient) {
     /** List skills */
     suspend fun list(limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiSkillList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -53,7 +53,7 @@ class SkillApi(private val client: HttpClient) {
     /** List skill versions */
     suspend fun listVersions(skillId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiSkillVersionList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)

@@ -3,15 +3,15 @@ use std::net::IpAddr;
 use std::sync::Arc;
 
 use axum::extract::{Path, Query, State};
-use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, put};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
 use crate::api::response::{
-    json_success_list_response, normalize_list_search_query, offset_page_info,
-    parse_offset_list_query, problem_from_wire_code, success_envelope,
+    json_created_response, json_success_list_response, no_content_response,
+    normalize_list_search_query, offset_page_info, parse_offset_list_query, problem_from_wire_code,
+    success_envelope,
 };
 use crate::api::subject::admin_operator_fields;
 use crate::ports::{
@@ -121,9 +121,7 @@ async fn create_service_node(
         Err(response) => return response,
     };
     match state.store.create_service_node(command).await {
-        Ok(item) => {
-            Json(success_envelope(AdminServiceNodeMutationResponse { item })).into_response()
-        }
+        Ok(item) => json_created_response(None, AdminServiceNodeMutationResponse { item }),
         Err(error) => system_error("service node create failed", error),
     }
 }
@@ -181,7 +179,8 @@ async fn delete_service_node(
         .delete_service_node(DeleteAdminServiceNodeCommand { subject, node_id })
         .await
     {
-        Ok(outcome) => Json(success_envelope(outcome)).into_response(),
+        Ok(outcome) if outcome.deleted => no_content_response(None),
+        Ok(_) => problem_from_wire_code("4040", "service node was not found").into_response(),
         Err(error) => system_error("service node delete failed", error),
     }
 }

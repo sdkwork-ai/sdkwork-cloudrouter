@@ -2,7 +2,8 @@
 
 use sdkwork_clawrouter_router_service::commerce_recharge_package_seeds;
 use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
-    DatabaseInstallOptions, DatabaseInstaller, CURRENT_SCHEMA_VERSION,
+    sqlite_integration_iam_fixture_current, DatabaseInstallOptions, DatabaseInstaller,
+    CURRENT_SCHEMA_VERSION,
 };
 use sdkwork_iam_bootstrap::{DEFAULT_IAM_ORGANIZATION_ID, DEFAULT_IAM_TENANT_ID};
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
@@ -155,7 +156,12 @@ pub(crate) async fn sqlite_template_current(
     };
     let current = match kind {
         SqliteTemplateKind::Installed => installed_sqlite_template_state_current(&pool).await,
-        SqliteTemplateKind::RepairBaseline => installed_sqlite_template_state_current(&pool).await,
+        SqliteTemplateKind::RepairBaseline => {
+            installed_sqlite_template_state_current(&pool).await
+                && sqlite_integration_iam_fixture_current(&pool)
+                    .await
+                    .unwrap_or(false)
+        }
         SqliteTemplateKind::SchemaOnly => schema_sqlite_template_state_current(&pool).await,
     } && sqlite_template_objects_current(&pool).await;
     pool.close().await;

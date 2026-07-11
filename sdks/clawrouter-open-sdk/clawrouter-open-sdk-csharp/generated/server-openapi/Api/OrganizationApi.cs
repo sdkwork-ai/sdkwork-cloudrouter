@@ -22,7 +22,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("order", order, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),
@@ -60,7 +60,7 @@ namespace Sdkwork.ClawRouter.Open.Api
                 new QueryParameterSpec("actor_ids[]", actorIds, "form", true, false, null),
                 new QueryParameterSpec("actor_emails[]", actorEmails, "form", true, false, null),
                 new QueryParameterSpec("resource_ids[]", resourceIds, "form", true, false, null),
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),
             });
@@ -74,7 +74,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("order", order, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),
@@ -129,7 +129,7 @@ namespace Sdkwork.ClawRouter.Open.Api
                 new QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
                 new QueryParameterSpec("models", models, "form", true, false, null),
                 new QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("page", page, "form", true, false, null),
             });
             return await _client.GetAsync<Sdkwork.ClawRouter.Open.Models.OpenAiOrganizationCostList>(ApiPaths.AppendQueryString(ApiPaths.AiPath("/organization/costs"), queryString));
@@ -142,7 +142,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("order", order, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),
@@ -173,7 +173,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("order", order, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),
@@ -204,7 +204,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("order", order, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),
@@ -235,7 +235,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("order", order, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),
@@ -266,7 +266,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("order", order, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),
@@ -289,7 +289,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("order", order, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),
@@ -320,7 +320,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("order", order, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),
@@ -351,7 +351,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("order", order, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),
@@ -382,7 +382,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("order", order, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),
@@ -405,7 +405,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("order", order, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),
@@ -436,7 +436,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("order", order, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),
@@ -467,7 +467,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("order", order, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),
@@ -506,7 +506,7 @@ namespace Sdkwork.ClawRouter.Open.Api
                 new QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
                 new QueryParameterSpec("models", models, "form", true, false, null),
                 new QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("page", page, "form", true, false, null),
             });
             return await _client.GetAsync<Sdkwork.ClawRouter.Open.Models.OpenAiOrganizationUsageList>(ApiPaths.AppendQueryString(ApiPaths.AiPath("/organization/usage/audio_speeches"), queryString));
@@ -527,7 +527,7 @@ namespace Sdkwork.ClawRouter.Open.Api
                 new QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
                 new QueryParameterSpec("models", models, "form", true, false, null),
                 new QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("page", page, "form", true, false, null),
             });
             return await _client.GetAsync<Sdkwork.ClawRouter.Open.Models.OpenAiOrganizationUsageList>(ApiPaths.AppendQueryString(ApiPaths.AiPath("/organization/usage/audio_transcriptions"), queryString));
@@ -548,7 +548,7 @@ namespace Sdkwork.ClawRouter.Open.Api
                 new QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
                 new QueryParameterSpec("models", models, "form", true, false, null),
                 new QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("page", page, "form", true, false, null),
             });
             return await _client.GetAsync<Sdkwork.ClawRouter.Open.Models.OpenAiOrganizationUsageList>(ApiPaths.AppendQueryString(ApiPaths.AiPath("/organization/usage/code_interpreter_sessions"), queryString));
@@ -569,7 +569,7 @@ namespace Sdkwork.ClawRouter.Open.Api
                 new QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
                 new QueryParameterSpec("models", models, "form", true, false, null),
                 new QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("page", page, "form", true, false, null),
             });
             return await _client.GetAsync<Sdkwork.ClawRouter.Open.Models.OpenAiOrganizationUsageList>(ApiPaths.AppendQueryString(ApiPaths.AiPath("/organization/usage/completions"), queryString));
@@ -590,7 +590,7 @@ namespace Sdkwork.ClawRouter.Open.Api
                 new QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
                 new QueryParameterSpec("models", models, "form", true, false, null),
                 new QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("page", page, "form", true, false, null),
             });
             return await _client.GetAsync<Sdkwork.ClawRouter.Open.Models.OpenAiOrganizationUsageList>(ApiPaths.AppendQueryString(ApiPaths.AiPath("/organization/usage/embeddings"), queryString));
@@ -611,7 +611,7 @@ namespace Sdkwork.ClawRouter.Open.Api
                 new QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
                 new QueryParameterSpec("models", models, "form", true, false, null),
                 new QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("page", page, "form", true, false, null),
             });
             return await _client.GetAsync<Sdkwork.ClawRouter.Open.Models.OpenAiOrganizationUsageList>(ApiPaths.AppendQueryString(ApiPaths.AiPath("/organization/usage/images"), queryString));
@@ -632,7 +632,7 @@ namespace Sdkwork.ClawRouter.Open.Api
                 new QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
                 new QueryParameterSpec("models", models, "form", true, false, null),
                 new QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("page", page, "form", true, false, null),
             });
             return await _client.GetAsync<Sdkwork.ClawRouter.Open.Models.OpenAiOrganizationUsageList>(ApiPaths.AppendQueryString(ApiPaths.AiPath("/organization/usage/moderations"), queryString));
@@ -653,7 +653,7 @@ namespace Sdkwork.ClawRouter.Open.Api
                 new QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
                 new QueryParameterSpec("models", models, "form", true, false, null),
                 new QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("page", page, "form", true, false, null),
             });
             return await _client.GetAsync<Sdkwork.ClawRouter.Open.Models.OpenAiOrganizationUsageList>(ApiPaths.AppendQueryString(ApiPaths.AiPath("/organization/usage/vector_stores"), queryString));
@@ -666,7 +666,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("order", order, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),
@@ -697,7 +697,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("order", order, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),

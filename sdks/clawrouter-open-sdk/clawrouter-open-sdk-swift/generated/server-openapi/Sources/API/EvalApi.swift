@@ -10,7 +10,7 @@ public class EvalApi {
     /// List evals
     public func list(limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiEvalList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
@@ -41,7 +41,7 @@ public class EvalApi {
     /// List eval runs
     public func listRuns(evalId: String, limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiEvalRunList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
@@ -62,7 +62,7 @@ public class EvalApi {
     /// List eval run output items
     public func listRunsOutputItems(evalId: String, runId: String, limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiEvalRunOutputItemList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)

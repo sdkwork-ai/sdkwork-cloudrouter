@@ -1,10 +1,10 @@
 import type {
   AdminRuntimeRegionSettingsResponse,
   AdminRuntimeRegionSettingsUpdateRequest,
-} from '@sdkwork/clawrouter-backend-sdk';
+} from '@sdkwork/clawrouter-pc-admin-core/sdk';
+import { getClawRouterBackendSdkClient } from '@sdkwork/clawrouter-pc-admin-core/sdk';
 import {
   ensureSdkworkApiSuccess,
-  getClawRouterBackendSdkClient,
   readApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 

@@ -6,6 +6,7 @@ use axum::Router;
 use sdkwork_claw_config::{
     ProviderAdapterConfig, RedisConfig, RequestLimitsConfig, RuntimeTomlConfig,
 };
+use sdkwork_claw_http::QueryStringApiKeyPolicy;
 use sdkwork_clawrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_clawrouter_router_service::application::{
     AccountResolutionInterceptor, BillingPolicyInterceptor, CircuitBreakerConfig,
@@ -35,6 +36,7 @@ where
     pub(crate) invocation_policy_guard: Arc<GatewayInvocationPolicyGuard>,
     pub(crate) trust_forwarded_headers: bool,
     pub(crate) body_limit_bytes: usize,
+    pub(crate) query_string_api_key_policy: QueryStringApiKeyPolicy,
 }
 
 impl<C> Clone for InvocationRouterState<C>
@@ -49,6 +51,7 @@ where
             invocation_policy_guard: Arc::clone(&self.invocation_policy_guard),
             trust_forwarded_headers: self.trust_forwarded_headers,
             body_limit_bytes: self.body_limit_bytes,
+            query_string_api_key_policy: self.query_string_api_key_policy,
         }
     }
 }
@@ -96,6 +99,7 @@ fn invocation_router_state<C>(
     invocation_policy_guard: Arc<GatewayInvocationPolicyGuard>,
     trust_forwarded_headers: bool,
     body_limit_bytes: usize,
+    query_string_api_key_policy: QueryStringApiKeyPolicy,
 ) -> InvocationRouterState<C>
 where
     C: PricingCatalog + Send + Sync + 'static,
@@ -107,6 +111,7 @@ where
         invocation_policy_guard,
         trust_forwarded_headers,
         body_limit_bytes,
+        query_string_api_key_policy,
     }
 }
 
@@ -126,6 +131,7 @@ where
         default_invocation_policy_guard(),
         false,
         RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
+        QueryStringApiKeyPolicy::default(),
     ))
 }
 
@@ -144,6 +150,7 @@ where
         default_invocation_policy_guard(),
         false,
         RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
+        QueryStringApiKeyPolicy::default(),
     ))
 }
 
@@ -173,6 +180,7 @@ where
         default_invocation_policy_guard(),
         false,
         RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
+        QueryStringApiKeyPolicy::default(),
     ))
 }
 
@@ -183,6 +191,29 @@ pub fn invocation_router_with_full_pipeline<C>(
     secret_resolver: Option<Arc<dyn ProviderSecretResolver + Send + Sync>>,
     sticky_store: Option<Arc<dyn StickyRouteStore>>,
     usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
+) -> Router
+where
+    C: PricingCatalog + Send + Sync + 'static,
+{
+    invocation_router_with_full_pipeline_and_query_string_api_key_policy(
+        catalog,
+        api_key_hasher,
+        dispatcher,
+        secret_resolver,
+        sticky_store,
+        usage_recorder,
+        QueryStringApiKeyPolicy::default(),
+    )
+}
+
+pub fn invocation_router_with_full_pipeline_and_query_string_api_key_policy<C>(
+    catalog: Arc<C>,
+    api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
+    dispatcher: Arc<dyn InvocationDispatcher>,
+    secret_resolver: Option<Arc<dyn ProviderSecretResolver + Send + Sync>>,
+    sticky_store: Option<Arc<dyn StickyRouteStore>>,
+    usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
+    query_string_api_key_policy: QueryStringApiKeyPolicy,
 ) -> Router
 where
     C: PricingCatalog + Send + Sync + 'static,
@@ -201,6 +232,7 @@ where
         default_invocation_policy_guard(),
         false,
         RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
+        query_string_api_key_policy,
     ))
 }
 
@@ -256,6 +288,39 @@ pub fn invocation_router_with_full_pipeline_provider_adapter_and_tenant_inflight
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
+    invocation_router_with_full_pipeline_provider_adapter_tenant_inflight_and_query_string_api_key_policy(
+        catalog,
+        api_key_hasher,
+        dispatcher,
+        secret_resolver,
+        sticky_store,
+        usage_recorder,
+        provider_adapter_config,
+        invocation_policy_guard,
+        tenant_inflight_config,
+        redis_config,
+        body_limit_bytes,
+        QueryStringApiKeyPolicy::default(),
+    )
+}
+
+pub(crate) fn invocation_router_with_full_pipeline_provider_adapter_tenant_inflight_and_query_string_api_key_policy<C>(
+    catalog: Arc<C>,
+    api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
+    dispatcher: Arc<dyn InvocationDispatcher>,
+    secret_resolver: Option<Arc<dyn ProviderSecretResolver + Send + Sync>>,
+    sticky_store: Option<Arc<dyn StickyRouteStore>>,
+    usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
+    provider_adapter_config: Option<ProviderAdapterConfig>,
+    invocation_policy_guard: Option<Arc<GatewayInvocationPolicyGuard>>,
+    tenant_inflight_config: Option<TenantInflightConfig>,
+    redis_config: Option<&RedisConfig>,
+    body_limit_bytes: usize,
+    query_string_api_key_policy: QueryStringApiKeyPolicy,
+) -> Router
+where
+    C: PricingCatalog + Send + Sync + 'static,
+{
     let adapter_resolver = provider_adapter_config
         .and_then(InvocationProviderAdapterResolver::from_config)
         .map(|resolver| Arc::new(resolver) as Arc<dyn ProviderAdapterRouteResolver>);
@@ -275,6 +340,7 @@ where
         invocation_policy_guard.unwrap_or_else(default_invocation_policy_guard),
         false,
         body_limit_bytes,
+        query_string_api_key_policy,
     ))
 }
 
@@ -320,6 +386,7 @@ where
         invocation_policy_guard.unwrap_or_else(default_invocation_policy_guard),
         trust_forwarded_headers,
         body_limit_bytes,
+        QueryStringApiKeyPolicy::default(),
     ))
 }
 

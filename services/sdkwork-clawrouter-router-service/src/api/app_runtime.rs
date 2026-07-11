@@ -22,8 +22,8 @@ use tokio::time::sleep;
 
 use crate::api::openai_runtime::resolve_openai_provider_route_plan;
 use crate::api::response::{
-    json_success_list_response, offset_page_info, parse_offset_list_query, problem_from_wire_code,
-    success_envelope,
+    json_created_response, json_success_list_response, offset_page_info, parse_offset_list_query,
+    problem_from_wire_code, success_envelope,
 };
 use crate::application::{
     AuthenticatedApiKeyContext, EntityUuidGenerator, InMemoryRuntimeStreamBus,
@@ -666,7 +666,7 @@ async fn create_invocation(
         }
     };
     match state.store.create_invocation(command).await {
-        Ok(item) => Json(success_envelope(AppRuntimeInvocationEnvelope { item })).into_response(),
+        Ok(item) => json_created_response(None, AppRuntimeInvocationEnvelope { item }),
         Err(error) if error.is_conflict() => conflict(error.to_string()),
         Err(error) => app_runtime_system_response("app runtime invocation is unavailable", error),
     }
@@ -970,7 +970,7 @@ async fn create_event(
         }
     };
     match state.store.create_event(command).await {
-        Ok(item) => Json(success_envelope(AppRuntimeEventEnvelope { item })).into_response(),
+        Ok(item) => json_created_response(None, AppRuntimeEventEnvelope { item }),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) if error.is_conflict() => conflict(error.to_string()),
         Err(error) => app_runtime_system_response("app runtime event is unavailable", error),
@@ -1003,7 +1003,11 @@ async fn list_artifacts(
         )
         .await
     {
-        Ok(list) => Json(success_envelope(list)).into_response(),
+        Ok(list) => json_success_list_response(
+            None,
+            list.items,
+            offset_page_info(list.page_no, list.page_size, list.total),
+        ),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) => app_runtime_system_response("app runtime artifacts are unavailable", error),
     }
@@ -1025,7 +1029,7 @@ async fn create_artifact(
         }
     };
     match state.store.create_artifact(command).await {
-        Ok(item) => Json(success_envelope(AppRuntimeArtifactEnvelope { item })).into_response(),
+        Ok(item) => json_created_response(None, AppRuntimeArtifactEnvelope { item }),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) if error.is_conflict() => conflict(error.to_string()),
         Err(error) => app_runtime_system_response("app runtime artifact is unavailable", error),

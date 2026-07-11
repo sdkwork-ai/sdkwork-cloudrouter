@@ -34,7 +34,7 @@ class FineTuningApi {
   /// List fine-tuning checkpoint permissions
   Future<OpenAiFineTuningCheckpointPermissionList?> retrievePermission(String fineTunedModelCheckpoint, [int? limit, String? order, String? after, String? before, String? projectId]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null),
@@ -69,7 +69,7 @@ class FineTuningApi {
   /// List fine-tuning jobs
   Future<OpenAiFineTuningJobList?> listJob([int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -112,7 +112,7 @@ class FineTuningApi {
   /// List fine-tuning checkpoints
   Future<OpenAiFineTuningJobCheckpointList?> retrieveCheckpoint(String fineTuningJobId, [int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -127,7 +127,7 @@ class FineTuningApi {
   /// List fine-tuning events
   Future<OpenAiFineTuningJobEventList?> retrieveEvent(String fineTuningJobId, [int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)

@@ -25,7 +25,7 @@ impl ResponsesGoogleApi {
         page_token: Option<&str>,
     ) -> Result<GoogleCachedContentListResponse, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("pageSize", page_size, "form", true, false, None),
+            QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
             QueryParameterSpec::new("pageToken", page_token, "form", true, false, None),
         ]);
         let path = append_query_string(

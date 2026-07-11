@@ -137,7 +137,7 @@ fn parse_admin_analytics_query(query: Option<&str>) -> Result<AdminAnalyticsQuer
             _ => {
                 return Err(format!(
                     "unsupported admin analytics query parameter: {key}"
-                ))
+                ));
             }
         }
     }

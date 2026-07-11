@@ -4,6 +4,7 @@ use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::iam_scope_resolver::{
     resolve_sqlite_iam_scope_domain, IamScopeResolveOptions,
 };
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::sql_hash::digest_hex;
 use crate::infrastructure::sql::sql_runtime_region_settings::{
     settings_from_payload, settings_payload, settings_snapshot_payload,
@@ -144,11 +145,12 @@ async fn insert_config_snapshot(
     sqlx::query(
         r#"
         INSERT INTO ops_config_snapshot
-            (uuid, tenant_id, organization_id, user_id, request_id, status, snapshot_no, config_scope, config_type, source_table, source_ids, config_payload, config_hash, published_at, published_by)
+            (id, uuid, tenant_id, organization_id, user_id, request_id, status, snapshot_no, config_scope, config_type, source_table, source_ids, config_payload, config_hash, published_at, published_by)
         VALUES
-            (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         "#,
     )
+    .bind(next_claw_runtime_id("ops_config_snapshot")?)
     .bind(&command.config_snapshot_uuid)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
@@ -176,11 +178,12 @@ async fn insert_audit_log(
     sqlx::query(
         r#"
         INSERT INTO ops_audit_log
-            (uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
+            (id, uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
         VALUES
-            (?, ?, ?, 'update_runtime_region_settings', ?, 0, ?, ?, ?, ?)
+            (?, ?, ?, ?, 'update_runtime_region_settings', ?, 0, ?, ?, ?, ?)
         "#,
     )
+    .bind(next_claw_runtime_id("ops_audit_log")?)
     .bind(&command.audit_log_uuid)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)

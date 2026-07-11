@@ -2,6 +2,7 @@ use serde_json::{json, Value};
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
 use crate::domain::{DomainError, DomainResult};
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::ports::{
     AppChatConversationItem, AppChatConversationList, AppChatFuture, AppChatMessageItem,
     AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnItem, AppChatTurnOutcome,
@@ -105,6 +106,7 @@ impl AppChatStore for PostgresAppChatStore {
                 .unwrap_or_else(|| "New conversation".to_owned());
             let metadata = serde_json::to_string(&command.metadata)
                 .map_err(|error| DomainError::new(format!("invalid chat metadata: {error}")))?;
+            let conversation_id = next_claw_runtime_id("ai_chat_conversation")?;
             sqlx::query(
                 r#"
                 INSERT INTO ai_chat_conversation (
@@ -128,9 +130,10 @@ impl AppChatStore for PostgresAppChatStore {
                     memory_space_id,
                     message_count,
                     turn_count,
-                    item_count
+                    item_count,
+                    id
                 )
-                VALUES ($1, $2, $3, $4, 1, 'active', $5::timestamp AT TIME ZONE 'UTC', $5::timestamp AT TIME ZONE 'UTC', 0, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, $14, 0, 0, 0)
+                VALUES ($1, $2, $3, $4, 1, 'active', $5::timestamp AT TIME ZONE 'UTC', $5::timestamp AT TIME ZONE 'UTC', 0, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, $14, 0, 0, 0, $15)
                 "#,
             )
             .bind(&command.conversation_uuid)
@@ -147,6 +150,7 @@ impl AppChatStore for PostgresAppChatStore {
             .bind(&command.agent_id)
             .bind(&command.agent_session_id)
             .bind(&command.memory_space_id)
+            .bind(conversation_id)
             .execute(&self.pool)
             .await
             .map_err(sql_error)?;
@@ -277,7 +281,8 @@ async fn create_turn(
     let next_message_no =
         next_count(&mut tx, ChatCountTable::AiChatMessage, conversation_pk).await?;
 
-    let turn_id = sqlx::query_scalar::<_, i64>(
+    let turn_id = next_claw_runtime_id("ai_chat_turn")?;
+    sqlx::query(
         r#"
         INSERT INTO ai_chat_turn (
             uuid,
@@ -293,10 +298,10 @@ async fn create_turn(
             model,
             agent_id,
             agent_session_id,
-            metadata
+            metadata,
+            id
         )
-        VALUES ($1, $2, $3, $4, $5, $6, 'running', $7::timestamp AT TIME ZONE 'UTC', $7::timestamp AT TIME ZONE 'UTC', $8, $9, $10, $11, $12::jsonb)
-        RETURNING id
+        VALUES ($1, $2, $3, $4, $5, $6, 'running', $7::timestamp AT TIME ZONE 'UTC', $7::timestamp AT TIME ZONE 'UTC', $8, $9, $10, $11, $12::jsonb, $13)
         "#,
     )
     .bind(&command.turn_uuid)
@@ -311,7 +316,8 @@ async fn create_turn(
     .bind(&command.agent_id)
     .bind(&command.agent_session_id)
     .bind(&metadata)
-    .fetch_one(&mut *tx)
+    .bind(turn_id)
+    .execute(&mut *tx)
     .await
     .map_err(sql_error)?;
 
@@ -345,7 +351,8 @@ async fn create_turn(
     )
     .await?;
 
-    let message_id = sqlx::query_scalar::<_, i64>(
+    let message_id = next_claw_runtime_id("ai_chat_message")?;
+    sqlx::query(
         r#"
         INSERT INTO ai_chat_message (
             uuid,
@@ -365,10 +372,10 @@ async fn create_turn(
             provider,
             created_at,
             updated_at,
-            metadata
+            metadata,
+            id
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'user', 'prompt', 'input', 'completed', $9, NULL, NULL, $10::timestamp AT TIME ZONE 'UTC', $10::timestamp AT TIME ZONE 'UTC', $11::jsonb)
-        RETURNING id
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'user', 'prompt', 'input', 'completed', $9, NULL, NULL, $10::timestamp AT TIME ZONE 'UTC', $10::timestamp AT TIME ZONE 'UTC', $11::jsonb, $12)
         "#,
     )
     .bind(&command.input_message_uuid)
@@ -382,7 +389,8 @@ async fn create_turn(
     .bind(&command.message)
     .bind(&command.requested_at)
     .bind(&metadata)
-    .fetch_one(&mut *tx)
+    .bind(message_id)
+    .execute(&mut *tx)
     .await
     .map_err(sql_error)?;
 
@@ -400,9 +408,10 @@ async fn create_turn(
             text_content,
             json_content,
             created_at,
-            metadata
+            metadata,
+            id
         )
-        VALUES ($1, $2, $3, $4, $5, $6, 1, 'text', $7, NULL, $8::timestamp AT TIME ZONE 'UTC', $9::jsonb)
+        VALUES ($1, $2, $3, $4, $5, $6, 1, 'text', $7, NULL, $8::timestamp AT TIME ZONE 'UTC', $9::jsonb, $10)
         "#,
     )
     .bind(format!("{}-part-1", command.input_message_uuid))
@@ -414,6 +423,7 @@ async fn create_turn(
     .bind(&command.message)
     .bind(&command.requested_at)
     .bind(&metadata)
+    .bind(next_claw_runtime_id("ai_chat_message_part")?)
     .execute(&mut *tx)
     .await
     .map_err(sql_error)?;
@@ -589,7 +599,8 @@ async fn complete_turn_response(
     .await
     .map_err(sql_error)?;
 
-    let message_id = sqlx::query_scalar::<_, i64>(
+    let message_id = next_claw_runtime_id("ai_chat_message")?;
+    sqlx::query(
         r#"
         INSERT INTO ai_chat_message (
             uuid,
@@ -612,10 +623,10 @@ async fn complete_turn_response(
             usage_link_id,
             created_at,
             updated_at,
-            metadata
+            metadata,
+            id
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'assistant', 'response', 'output', $9, $10, $11, $12, $13, $14, $15, $16::timestamp AT TIME ZONE 'UTC', $16::timestamp AT TIME ZONE 'UTC', $17::jsonb)
-        RETURNING id
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'assistant', 'response', 'output', $9, $10, $11, $12, $13, $14, $15, $16::timestamp AT TIME ZONE 'UTC', $16::timestamp AT TIME ZONE 'UTC', $17::jsonb, $18)
         "#,
     )
     .bind(&command.output_message_uuid)
@@ -635,7 +646,8 @@ async fn complete_turn_response(
     .bind(&usage_link_id)
     .bind(&command.requested_at)
     .bind(&metadata)
-    .fetch_one(&mut *tx)
+    .bind(message_id)
+    .execute(&mut *tx)
     .await
     .map_err(sql_error)?;
 
@@ -653,9 +665,10 @@ async fn complete_turn_response(
             text_content,
             json_content,
             created_at,
-            metadata
+            metadata,
+            id
         )
-        VALUES ($1, $2, $3, $4, $5, $6, 1, 'text', $7, NULL, $8::timestamp AT TIME ZONE 'UTC', $9::jsonb)
+        VALUES ($1, $2, $3, $4, $5, $6, 1, 'text', $7, NULL, $8::timestamp AT TIME ZONE 'UTC', $9::jsonb, $10)
         "#,
     )
     .bind(&command.output_part_uuid)
@@ -667,9 +680,10 @@ async fn complete_turn_response(
     .bind(&command.message)
     .bind(&command.requested_at)
     .bind(&metadata)
-        .execute(&mut *tx)
-        .await
-        .map_err(sql_error)?;
+    .bind(next_claw_runtime_id("ai_chat_message_part")?)
+    .execute(&mut *tx)
+    .await
+    .map_err(sql_error)?;
 
     let context_snapshot_id = insert_context_snapshot(
         &mut tx,
@@ -1432,6 +1446,7 @@ async fn insert_context_snapshot(
         }),
         "chat context json",
     )?;
+    let context_snapshot_id = next_claw_runtime_id("ai_chat_context_snapshot")?;
     sqlx::query_scalar::<_, i64>(
         r#"
         INSERT INTO ai_chat_context_snapshot (
@@ -1457,9 +1472,10 @@ async fn insert_context_snapshot(
             previous_response_id,
             input_token_estimate,
             truncation_reason,
-            context_json
+            context_json,
+            id
         )
-        VALUES ($1, $2, $3, $4, 'active', $5::timestamp AT TIME ZONE 'UTC', $6::jsonb, $7, $8, $9, $10, 'full_turn_context', $11::jsonb, $12::jsonb, $12::jsonb, $12::jsonb, $13::jsonb, 0, $14, $15, $16, NULL, $17::jsonb)
+        VALUES ($1, $2, $3, $4, 'active', $5::timestamp AT TIME ZONE 'UTC', $6::jsonb, $7, $8, $9, $10, 'full_turn_context', $11::jsonb, $12::jsonb, $12::jsonb, $12::jsonb, $13::jsonb, 0, $14, $15, $16, NULL, $17::jsonb, $18)
         RETURNING id
         "#,
     )
@@ -1480,6 +1496,7 @@ async fn insert_context_snapshot(
     .bind(metadata_string_field(&command.metadata, "previousResponseId"))
     .bind(usage.input_tokens)
     .bind(&context_json)
+    .bind(context_snapshot_id)
     .fetch_one(&mut **tx)
     .await
     .map_err(sql_error)
@@ -1590,9 +1607,10 @@ async fn insert_usage_link_for_message(
             cost_amount,
             currency,
             occurred_at,
-            metadata
+            metadata,
+            id
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'chat_response', $10, $11, $12, $13, $14, $15, $16, $17::numeric, $18, $19::timestamp AT TIME ZONE 'UTC', $20::jsonb)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'chat_response', $10, $11, $12, $13, $14, $15, $16, $17::numeric, $18, $19::timestamp AT TIME ZONE 'UTC', $20::jsonb, $21)
         "#,
     )
     .bind(usage_link_uuid)
@@ -1615,6 +1633,7 @@ async fn insert_usage_link_for_message(
     .bind(&usage.currency)
     .bind(&command.requested_at)
     .bind(metadata)
+    .bind(next_claw_runtime_id("ai_runtime_usage_link")?)
     .execute(&mut **tx)
     .await
     .map_err(sql_error)?;
@@ -1792,9 +1811,10 @@ async fn insert_item(
             content_json,
             created_at,
             completed_at,
-            metadata
+            metadata,
+            id
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NULL, $13::timestamp AT TIME ZONE 'UTC', $13::timestamp AT TIME ZONE 'UTC', $14::jsonb)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NULL, $13::timestamp AT TIME ZONE 'UTC', $13::timestamp AT TIME ZONE 'UTC', $14::jsonb, $15)
         RETURNING id
         "#,
     )
@@ -1812,6 +1832,7 @@ async fn insert_item(
     .bind(content_text)
     .bind(&command.requested_at)
     .bind(&metadata)
+    .bind(next_claw_runtime_id("ai_chat_item")?)
     .fetch_one(&mut **tx)
     .await
     .map_err(sql_error)

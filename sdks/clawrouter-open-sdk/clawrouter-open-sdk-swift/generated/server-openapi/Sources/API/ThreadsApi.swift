@@ -35,7 +35,7 @@ public class ThreadsApi {
     /// List thread messages
     public func listMessages(threadId: String, limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiThreadMessageList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
@@ -56,7 +56,7 @@ public class ThreadsApi {
     /// List thread runs
     public func listRuns(threadId: String, limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiRunList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
@@ -72,7 +72,7 @@ public class ThreadsApi {
     /// List run steps
     public func listRunsSteps(threadId: String, runId: String, limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiRunStepList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)

@@ -4,7 +4,7 @@
   "applicationCode": "clawrouter",
   "packageName": "sdkwork-clawrouter-gateway-assembly",
   "crateDir": "crates/sdkwork-clawrouter-gateway-assembly",
-  "generatedAt": "2026-06-25T13:08:05.515Z",
+  "generatedAt": "2026-07-08T01:33:36.589Z",
   "routeCrates": [
     {
       "packageName": "sdkwork-routes-clawrouter-app-api",

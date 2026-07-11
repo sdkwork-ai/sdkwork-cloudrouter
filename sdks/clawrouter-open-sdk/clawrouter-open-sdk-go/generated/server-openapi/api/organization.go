@@ -20,7 +20,7 @@ func NewOrganizationApi(client *sdkhttp.Client) *OrganizationApi {
 // List organization admin API keys
 func (a *OrganizationApi) ListAdminApiKeys(limit *int, order *string, after *string, before *string) (sdktypes.OpenAiOrganizationAdminApiKeyList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -78,7 +78,7 @@ func (a *OrganizationApi) ListAuditLogs(effectiveAtGte *int, effectiveAtLte *int
 // List organization certificates
 func (a *OrganizationApi) ListCertificates(limit *int, order *string, after *string, before *string) (sdktypes.OpenAiCertificateList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -156,7 +156,7 @@ func (a *OrganizationApi) ListCosts(startTime *int, endTime *int, bucketWidth *s
 // List organization groups
 func (a *OrganizationApi) ListGroups(limit *int, order *string, after *string, before *string) (sdktypes.OpenAiOrganizationGroupList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -192,7 +192,7 @@ func (a *OrganizationApi) DeleteGroups(groupId string) (sdktypes.DeleteResult, e
 // List organization group roles
 func (a *OrganizationApi) ListGroupsRoles(groupId string, limit *int, order *string, after *string, before *string) (sdktypes.OpenAiRoleAssignmentList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -228,7 +228,7 @@ func (a *OrganizationApi) DeleteGroupsRoles(groupId string, roleId string) (sdkt
 // List organization group users
 func (a *OrganizationApi) ListGroupsUsers(groupId string, limit *int, order *string, after *string, before *string) (sdktypes.OpenAiOrganizationUserList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -264,7 +264,7 @@ func (a *OrganizationApi) DeleteGroupsUsers(groupId string, userId string) (sdkt
 // List organization invites
 func (a *OrganizationApi) ListInvites(limit *int, order *string, after *string, before *string) (sdktypes.OpenAiOrganizationInviteList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -300,7 +300,7 @@ func (a *OrganizationApi) DeleteInvites(inviteId string) (sdktypes.DeleteResult,
 // List organization projects
 func (a *OrganizationApi) ListProjects(limit *int, order *string, after *string, before *string) (sdktypes.OpenAiProjectList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -326,7 +326,7 @@ func (a *OrganizationApi) CreateProject(body sdktypes.OpenAiProjectCreateRequest
 // List project API keys
 func (a *OrganizationApi) ListProjectsApiKeys(projectId string, limit *int, order *string, after *string, before *string) (sdktypes.OpenAiProjectApiKeyList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -362,7 +362,7 @@ func (a *OrganizationApi) CreateProjectsArchive(projectId string) (sdktypes.Open
 // List project certificates
 func (a *OrganizationApi) ListProjectsCertificates(projectId string, limit *int, order *string, after *string, before *string) (sdktypes.OpenAiCertificateList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -398,7 +398,7 @@ func (a *OrganizationApi) CreateProjectsCertificatesDeactivate(projectId string,
 // List project groups
 func (a *OrganizationApi) ListProjectsGroups(projectId string, limit *int, order *string, after *string, before *string) (sdktypes.OpenAiOrganizationGroupList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -434,7 +434,7 @@ func (a *OrganizationApi) DeleteProjectsGroups(projectId string, groupId string)
 // List project rate limits
 func (a *OrganizationApi) ListProjectsRateLimits(projectId string, limit *int, order *string, after *string, before *string) (sdktypes.OpenAiProjectRateLimitList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -460,7 +460,7 @@ func (a *OrganizationApi) CreateProjectsRateLimit(projectId string, rateLimitId 
 // List project service accounts
 func (a *OrganizationApi) ListProjectsServiceAccounts(projectId string, limit *int, order *string, after *string, before *string) (sdktypes.OpenAiProjectServiceAccountList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -496,7 +496,7 @@ func (a *OrganizationApi) DeleteProjectsServiceAccounts(projectId string, servic
 // List project users
 func (a *OrganizationApi) ListProjectsUsers(projectId string, limit *int, order *string, after *string, before *string) (sdktypes.OpenAiProjectUserList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -532,7 +532,7 @@ func (a *OrganizationApi) DeleteProjectsUsers(projectId string, userId string) (
 // List organization roles
 func (a *OrganizationApi) ListRoles(limit *int, order *string, after *string, before *string) (sdktypes.OpenAiRoleList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -744,7 +744,7 @@ func (a *OrganizationApi) ListUsageVectorStores(startTime *int, endTime *int, bu
 // List organization users
 func (a *OrganizationApi) ListUsers(limit *int, order *string, after *string, before *string) (sdktypes.OpenAiOrganizationUserList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -780,7 +780,7 @@ func (a *OrganizationApi) CreateUser(userId string, body sdktypes.OpenAiOrganiza
 // List organization user roles
 func (a *OrganizationApi) ListUsersRoles(userId string, limit *int, order *string, after *string, before *string) (sdktypes.OpenAiRoleAssignmentList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},

@@ -1,58 +1,103 @@
 use axum::body::Body;
 use axum::http::{HeaderMap, HeaderValue, Request, Uri};
-use sdkwork_claw_config::{AppSessionConfig, TrustedSubjectConfig};
+use sdkwork_claw_config::{
+    AppSessionConfig, DeploymentProfile, DeploymentRuntime, RuntimeTarget, RuntimeTomlConfig,
+    TrustedSubjectConfig,
+};
 use sdkwork_claw_http::{
     optional_app_request_subject, sign_app_session_token, sign_trusted_request_subject,
+    sanitize_sensitive_query, sanitize_sensitive_query_in_uri, upsert_query_parameter,
     verified_app_request_subject, verified_signed_trusted_request_subject,
     verify_app_session_token, verify_app_session_token_claims, ApiKeyCredentialSource,
-    ApiKeyIdentity, AppSessionTokenClaims, AppSessionTokenKind, AppSubjectBoundaryConfig,
-    TrustedRequestSubject,
+    ApiKeyIdentity, ApiKeyIdentityError, AppSessionTokenClaims, AppSessionTokenKind,
+    AppSubjectBoundaryConfig, QueryStringApiKeyPolicy, TrustedRequestSubject,
 };
 use sdkwork_iam_context_service::IamAppContext;
 
 #[test]
-fn api_key_identity_prefers_authorization_bearer_without_leaking_debug() {
+fn api_key_identity_rejects_multiple_header_credential_sources() {
     let mut headers = HeaderMap::new();
     headers.insert(
         "authorization",
         HeaderValue::from_static("Bearer sk-live-secret"),
     );
     headers.insert("x-api-key", HeaderValue::from_static("sk-other"));
-    let uri: Uri = "/v1/chat/completions?key=sk-query".parse().unwrap();
+    let uri: Uri = "/v1/chat/completions".parse().unwrap();
 
-    let identity = ApiKeyIdentity::from_headers_and_uri(&headers, &uri).unwrap();
+    let error = ApiKeyIdentity::from_headers_and_uri(&headers, &uri).unwrap_err();
 
-    assert_eq!(Some("sk-live-secret"), identity.credential_secret());
-    assert_eq!(
-        Some(ApiKeyCredentialSource::AuthorizationBearer),
-        identity.credential_source()
-    );
-    assert!(!format!("{identity:?}").contains("sk-live-secret"));
+    assert_eq!(ApiKeyIdentityError::AmbiguousCredentialSources, error);
+    assert!(!error.to_string().contains("sk-live-secret"));
+    assert!(!format!("{error:?}").contains("sk-other"));
 }
 
 #[test]
-fn api_key_identity_supports_google_header_query_key_and_internal_id_context() {
+fn api_key_identity_supports_each_header_credential_form() {
+    for (name, value, expected_source) in [
+        (
+            "authorization",
+            "Bearer sk-bearer",
+            ApiKeyCredentialSource::AuthorizationBearer,
+        ),
+        (
+            "x-api-key",
+            "sk-api-key",
+            ApiKeyCredentialSource::ApiKeyHeader,
+        ),
+        (
+            "x-goog-api-key",
+            "sk-google",
+            ApiKeyCredentialSource::GoogleApiKeyHeader,
+        ),
+    ] {
+        let mut headers = HeaderMap::new();
+        headers.insert(name, HeaderValue::from_str(value).unwrap());
+        headers.insert("x-sdkwork-api-key-id", HeaderValue::from_static("100"));
+        let uri: Uri = "/v1/models".parse().unwrap();
+
+        let identity = ApiKeyIdentity::from_headers_and_uri(&headers, &uri).unwrap();
+
+        assert_eq!(Some(100), identity.api_key_id());
+        assert_eq!(Some(expected_source), identity.credential_source());
+        assert!(!format!("{identity:?}").contains(value));
+    }
+}
+
+#[test]
+fn api_key_identity_rejects_header_and_query_credentials_as_ambiguous() {
     let mut headers = HeaderMap::new();
     headers.insert("x-goog-api-key", HeaderValue::from_static("sk-google"));
-    headers.insert("x-sdkwork-api-key-id", HeaderValue::from_static("100"));
-    let uri: Uri = "/v1/models?key=sk-query".parse().unwrap();
+    let uri: Uri = "/google/v1beta/models?key=sk-query".parse().unwrap();
+    let policy = standalone_desktop_query_key_policy();
 
-    let identity = ApiKeyIdentity::from_headers_and_uri(&headers, &uri).unwrap();
+    let error =
+        ApiKeyIdentity::from_headers_and_uri_with_query_key_policy(&headers, &uri, policy)
+            .unwrap_err();
 
-    assert_eq!(Some(100), identity.api_key_id());
-    assert_eq!(Some("sk-google"), identity.credential_secret());
-    assert_eq!(
-        Some(ApiKeyCredentialSource::GoogleApiKeyHeader),
-        identity.credential_source()
-    );
+    assert_eq!(ApiKeyIdentityError::AmbiguousCredentialSources, error);
 }
 
 #[test]
-fn api_key_identity_uses_query_key_when_headers_are_absent() {
+fn default_api_key_identity_denies_query_keys_even_in_desktop_process_env() {
+    let _env = CanonicalRuntimeEnvGuard::standalone_desktop();
     let headers = HeaderMap::new();
-    let uri: Uri = "/v1/models?foo=bar&key=sk-query".parse().unwrap();
+    let uri: Uri = "/google/v1beta/models?foo=bar&key=sk-query".parse().unwrap();
 
-    let identity = ApiKeyIdentity::from_headers_and_uri(&headers, &uri).unwrap();
+    let error = ApiKeyIdentity::from_headers_and_uri(&headers, &uri).unwrap_err();
+
+    assert_eq!(ApiKeyIdentityError::QueryKeyNotAllowed, error);
+}
+
+#[test]
+fn typed_standalone_desktop_policy_accepts_decoded_google_query_key() {
+    let headers = HeaderMap::new();
+    let uri: Uri = "/google/v1beta/models?foo=bar&%6b%65%79=sk%2Dquery"
+        .parse()
+        .unwrap();
+    let policy = standalone_desktop_query_key_policy();
+
+    let identity =
+        ApiKeyIdentity::from_headers_and_uri_with_query_key_policy(&headers, &uri, policy).unwrap();
 
     assert_eq!(None, identity.api_key_id());
     assert_eq!(Some("sk-query"), identity.credential_secret());
@@ -60,6 +105,187 @@ fn api_key_identity_uses_query_key_when_headers_are_absent() {
         Some(ApiKeyCredentialSource::QueryKey),
         identity.credential_source()
     );
+}
+
+#[test]
+fn typed_policy_allows_query_keys_only_on_exact_google_route_segments() {
+    let headers = HeaderMap::new();
+
+    for path in [
+        "/google/v1beta/models",
+        "/provider/google/v1beta/models",
+        "/providers/google/v1beta/models",
+    ] {
+        let uri: Uri = format!("{path}?key=sk-query").parse().unwrap();
+        let identity = ApiKeyIdentity::from_headers_and_uri_with_query_key_policy(
+            &headers,
+            &uri,
+            standalone_desktop_query_key_policy(),
+        )
+        .unwrap();
+        assert_eq!(Some("sk-query"), identity.credential_secret());
+    }
+
+    for path in [
+        "/v1/models",
+        "/anthropic/v1/messages",
+        "/googleevil/v1beta/models",
+        "/provider/googleevil/v1beta/models",
+        "/providers/google-v2/v1beta/models",
+    ] {
+        let uri: Uri = format!("{path}?key=sk-query").parse().unwrap();
+        let error = ApiKeyIdentity::from_headers_and_uri_with_query_key_policy(
+            &headers,
+            &uri,
+            standalone_desktop_query_key_policy(),
+        )
+        .unwrap_err();
+        assert_eq!(ApiKeyIdentityError::QueryKeyNotAllowed, error, "{path}");
+    }
+}
+
+#[test]
+fn non_desktop_configured_runtime_policy_denies_query_keys() {
+    let config = RuntimeTomlConfig::from_toml_str(
+        r#"
+[runtime]
+deployment_profile = "cloud"
+runtime_target = "container"
+"#,
+    )
+    .unwrap();
+    let runtime = DeploymentRuntime::resolve_configured(Some(&config)).unwrap();
+    let policy = QueryStringApiKeyPolicy::from_configured_runtime(runtime);
+    let uri: Uri = "/google/v1beta/models?key=sk-query".parse().unwrap();
+
+    let error = ApiKeyIdentity::from_headers_and_uri_with_query_key_policy(
+        &HeaderMap::new(),
+        &uri,
+        policy,
+    )
+    .unwrap_err();
+
+    assert_eq!(ApiKeyIdentityError::QueryKeyNotAllowed, error);
+}
+
+#[test]
+fn duplicate_and_empty_query_keys_are_rejected() {
+    let policy = standalone_desktop_query_key_policy();
+    let duplicate: Uri = "/google/v1beta/models?key=one&%6b%65%79=two"
+        .parse()
+        .unwrap();
+    let empty: Uri = "/google/v1beta/models?key=".parse().unwrap();
+
+    let duplicate_error = ApiKeyIdentity::from_headers_and_uri_with_query_key_policy(
+        &HeaderMap::new(),
+        &duplicate,
+        policy,
+    )
+    .unwrap_err();
+    let empty_error = ApiKeyIdentity::from_headers_and_uri_with_query_key_policy(
+        &HeaderMap::new(),
+        &empty,
+        policy,
+    )
+    .unwrap_err();
+
+    assert_eq!(
+        ApiKeyIdentityError::AmbiguousCredentialSources,
+        duplicate_error
+    );
+    assert_eq!(
+        ApiKeyIdentityError::EmptyCredential(ApiKeyCredentialSource::QueryKey),
+        empty_error
+    );
+}
+
+#[test]
+fn sensitive_query_sanitizer_and_uri_rebuilder_preserve_non_sensitive_parameters() {
+    let query = "alt=sse&KEY=gateway&%20api_key%20=one&apikey=two&access_token=three&token=four&q=hello+world&x=a%2Fb";
+
+    assert_eq!(
+        Some("alt=sse&q=hello+world&x=a%2Fb".to_owned()),
+        sanitize_sensitive_query(Some(query))
+    );
+
+    let uri: Uri = format!("/google/v1beta/models?{query}").parse().unwrap();
+    let sanitized = sanitize_sensitive_query_in_uri(&uri).unwrap();
+    assert_eq!(
+        "/google/v1beta/models?alt=sse&q=hello+world&x=a%2Fb",
+        sanitized.to_string()
+    );
+}
+
+#[test]
+fn query_parameter_upsert_replaces_all_decoded_matches_once() {
+    assert_eq!(
+        "alt=sse&key=provider-owned",
+        upsert_query_parameter(
+            Some("key=gateway&alt=sse&%6b%65%79=duplicate"),
+            "key",
+            "provider-owned",
+        )
+    );
+    assert_eq!(
+        "purpose=assistants&api%2Bkey=provider%2Bsecret%2Fvalue",
+        upsert_query_parameter(
+            Some("purpose=assistants"),
+            "api+key",
+            "provider+secret/value",
+        )
+    );
+}
+
+fn standalone_desktop_query_key_policy() -> QueryStringApiKeyPolicy {
+    let config = RuntimeTomlConfig::from_toml_str(
+        r#"
+[runtime]
+deployment_profile = "standalone"
+runtime_target = "desktop"
+"#,
+    )
+    .unwrap();
+    let runtime = DeploymentRuntime::resolve_configured(Some(&config)).unwrap();
+    QueryStringApiKeyPolicy::from_configured_runtime(runtime)
+}
+
+struct CanonicalRuntimeEnvGuard {
+    previous_profile: Option<std::ffi::OsString>,
+    previous_target: Option<std::ffi::OsString>,
+}
+
+impl CanonicalRuntimeEnvGuard {
+    fn standalone_desktop() -> Self {
+        let guard = Self {
+            previous_profile: std::env::var_os(DeploymentProfile::ENV_DEPLOYMENT_PROFILE),
+            previous_target: std::env::var_os(RuntimeTarget::ENV_RUNTIME_TARGET),
+        };
+        unsafe {
+            std::env::set_var(
+                DeploymentProfile::ENV_DEPLOYMENT_PROFILE,
+                "standalone",
+            );
+            std::env::set_var(RuntimeTarget::ENV_RUNTIME_TARGET, "desktop");
+        }
+        guard
+    }
+}
+
+impl Drop for CanonicalRuntimeEnvGuard {
+    fn drop(&mut self) {
+        unsafe {
+            match self.previous_profile.take() {
+                Some(value) => {
+                    std::env::set_var(DeploymentProfile::ENV_DEPLOYMENT_PROFILE, value)
+                }
+                None => std::env::remove_var(DeploymentProfile::ENV_DEPLOYMENT_PROFILE),
+            }
+            match self.previous_target.take() {
+                Some(value) => std::env::set_var(RuntimeTarget::ENV_RUNTIME_TARGET, value),
+                None => std::env::remove_var(RuntimeTarget::ENV_RUNTIME_TARGET),
+            }
+        }
+    }
 }
 
 #[test]

@@ -821,18 +821,20 @@ async fn replace_channel_credential(
         "credentialSource": "externalSecretRef"
     })
     .to_string();
+    let credential_id = next_claw_runtime_id("routing channel credential creation")?;
     sqlx::query(
         r#"
         INSERT INTO ai_channel_credential
-            (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, channel_id, provider_code, channel_code, credential_name, base_url, auth_config, credential_ref, credential_hash, masked_label, priority, weight, health_status, consecutive_error_count)
+            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, channel_id, provider_code, channel_code, credential_name, base_url, auth_config, credential_ref, credential_hash, masked_label, priority, weight, health_status, consecutive_error_count)
         VALUES
-            ($1, $2, $3, 1, $4, $5::timestamptz, $6::timestamptz, 0, '{}'::jsonb, $7, $8, (
+            ($1, $2, $3, $4, 1, $5, $6::timestamptz, $7::timestamptz, 0, '{}'::jsonb, $8, $9, (
                 SELECT COALESCE(NULLIF(channel_code, ''), '')
                 FROM ai_channel
-                WHERE id = $9
-            ), 'primary', $10, $11::jsonb, $12, $13, $14, 1, 100, $15, 0)
+                WHERE id = $10
+            ), 'primary', $11, $12::jsonb, $13, $14, $15, 1, 100, $16, 0)
         "#,
     )
+    .bind(credential_id)
     .bind(&command.account_uuid)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
@@ -889,12 +891,13 @@ async fn replace_channel_resource_bindings(
             .take(32)
             .collect::<String>();
         let priority = i64::try_from(index + 1).unwrap_or(i64::MAX);
+        let channel_resource_id = next_claw_runtime_id("routing channel resource binding")?;
         sqlx::query(
             r#"
             INSERT INTO ai_channel_resource
-                (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, channel_id, provider_code, channel_code, resource_id, resource_code, resource_group_id, resource_group_code, grant_type, priority, weight)
+                (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, channel_id, provider_code, channel_code, resource_id, resource_code, resource_group_id, resource_group_code, grant_type, priority, weight)
             VALUES
-                ($1, $2, $3, 1, 1, $4::timestamptz, $5::timestamptz, 0, $6, $7, $8, $9, $10, NULL, '', 'allow', $11, 100)
+                ($1, $2, $3, $4, 1, 1, $5::timestamptz, $6::timestamptz, 0, $7, $8, $9, $10, $11, NULL, '', 'allow', $12, 100)
             ON CONFLICT(tenant_id, organization_id, channel_id, resource_code, resource_group_code) DO UPDATE SET
                 status = 1,
                 deleted_at = NULL,
@@ -909,6 +912,7 @@ async fn replace_channel_resource_bindings(
                 version = COALESCE(ai_channel_resource.version, 0) + 1
             "#,
         )
+        .bind(channel_resource_id)
         .bind(format!("app-chn-resource-{uuid_suffix}"))
         .bind(tenant_id)
         .bind(organization_id)
@@ -1291,11 +1295,12 @@ async fn insert_provider_health_snapshot(
     sqlx::query(
         r#"
         INSERT INTO integration_provider_health_snapshot
-            (uuid, tenant_id, organization_id, user_id, request_id, status, created_at, metadata, provider_id, channel_id, provider_account_id, check_type, health_status, latency_ms, http_status, error_code, error_message_masked, checked_at)
+            (id, uuid, tenant_id, organization_id, user_id, request_id, status, created_at, metadata, provider_id, channel_id, provider_account_id, check_type, health_status, latency_ms, http_status, error_code, error_message_masked, checked_at)
         VALUES
-            ($1, $2, $3, $4, $5, 1, $6::timestamptz, $7::jsonb, $8, $9, $10, 1, $11, $12, $13, $14, $15, $16::timestamptz)
+            ($1, $2, $3, $4, $5, $6, 1, $7::timestamptz, $8::jsonb, $9, $10, $11, 1, $12, $13, $14, $15, $16, $17::timestamptz)
         "#,
     )
+    .bind(next_claw_runtime_id("integration_provider_health_snapshot")?)
     .bind(format!("health-{}", command.config_snapshot_uuid))
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
@@ -1503,11 +1508,12 @@ async fn insert_config_snapshot(
     sqlx::query(
         r#"
         INSERT INTO ops_config_snapshot
-            (uuid, tenant_id, organization_id, user_id, request_id, status, created_at, snapshot_no, config_scope, config_type, source_table, source_ids, config_payload, config_hash, published_at, published_by)
+            (id, uuid, tenant_id, organization_id, user_id, request_id, status, created_at, snapshot_no, config_scope, config_type, source_table, source_ids, config_payload, config_hash, published_at, published_by)
         VALUES
-            ($1, $2, $3, $4, $5, 1, $6::timestamptz, $7, $8, $9, 'ai_channel', $10::jsonb, $11::jsonb, $12, $13::timestamptz, $14)
+            ($1, $2, $3, $4, $5, $6, 1, $7::timestamptz, $8, $9, $10, 'ai_channel', $11::jsonb, $12::jsonb, $13, $14::timestamptz, $15)
         "#,
     )
+    .bind(next_claw_runtime_id("ops_config_snapshot")?)
     .bind(snapshot_uuid)
     .bind(tenant_id)
     .bind(organization_id)
@@ -1542,11 +1548,12 @@ async fn insert_audit_log(
     sqlx::query(
         r#"
         INSERT INTO ops_audit_log
-            (uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
+            (id, uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, 1, $9::jsonb)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, 1, $10::jsonb)
         "#,
     )
+    .bind(next_claw_runtime_id("ops_audit_log")?)
     .bind(audit_log_uuid)
     .bind(tenant_id)
     .bind(organization_id)

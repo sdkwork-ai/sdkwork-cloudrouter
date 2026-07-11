@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Globe2, Loader2, MapPin, RefreshCw, Route, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BusinessStatePanel } from '@sdkwork/clawroutes-pc-commons';
-import type { AdminRuntimeRegionSettingsUpdateRequest } from '@sdkwork/clawrouter-backend-sdk';
+import type { AdminRuntimeRegionSettingsUpdateRequest } from '@sdkwork/clawrouter-pc-admin-core/sdk';
 import {
   DEFAULT_RUNTIME_REGION_SETTINGS,
   RuntimeRegionService,

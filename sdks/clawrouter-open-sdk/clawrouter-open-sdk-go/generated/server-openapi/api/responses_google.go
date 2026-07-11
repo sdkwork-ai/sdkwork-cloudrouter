@@ -20,7 +20,7 @@ func NewResponsesGoogleApi(client *sdkhttp.Client) *ResponsesGoogleApi {
 // Google Gemini list cached contents
 func (a *ResponsesGoogleApi) ListV1betaCachedContents(pageSize *int, pageToken *string) (sdktypes.GoogleCachedContentListResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "pageSize", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "pageToken", Value: func() interface{} { if pageToken == nil { return nil }; return *pageToken }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(AiApiPath("/google/v1beta/cachedContents"), query), nil, nil)

@@ -10,7 +10,7 @@ public class ResponsesGoogleApi {
     /// Google Gemini list cached contents
     public func listV1betaCachedContents(pageSize: Int? = nil, pageToken: String? = nil) async throws -> GoogleCachedContentListResponse? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "pageSize", value: pageSize, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: pageSize, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "pageToken", value: pageToken, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
         return try await client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/google/v1beta/cachedContents"), query), responseType: GoogleCachedContentListResponse.self)

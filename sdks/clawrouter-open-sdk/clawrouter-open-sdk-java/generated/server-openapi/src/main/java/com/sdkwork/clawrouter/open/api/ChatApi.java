@@ -16,7 +16,7 @@ public class ChatApi {
     /** List stored chat completions */
     public OpenAiChatCompletionList list(Integer limit, String order, String after, String before, String model, String metadata) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null),
@@ -54,7 +54,7 @@ public class ChatApi {
     /** List stored chat completion messages */
     public OpenAiChatCompletionMessageList listMessages(String completionId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)

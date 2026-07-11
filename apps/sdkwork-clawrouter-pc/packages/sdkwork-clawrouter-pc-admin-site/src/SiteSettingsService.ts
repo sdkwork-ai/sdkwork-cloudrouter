@@ -1,7 +1,10 @@
-import type { AdminSiteSettingsResponse, AdminSiteSettingsUpdateRequest } from '@sdkwork/clawrouter-backend-sdk';
+import type {
+  AdminSiteSettingsResponse,
+  AdminSiteSettingsUpdateRequest,
+} from '@sdkwork/clawrouter-pc-admin-core/sdk';
+import { getClawRouterBackendSdkClient } from '@sdkwork/clawrouter-pc-admin-core/sdk';
 import {
   ensureSdkworkApiSuccess,
-  getClawRouterBackendSdkClient,
   readApiRecord,
   readMediaResource,
   type ClawRouterMediaResource,

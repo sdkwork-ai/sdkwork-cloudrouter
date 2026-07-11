@@ -37,7 +37,9 @@ impl std::fmt::Debug for PasswordLoginRateLimiter {
 pub fn shared_password_login_rate_limiter(
     runtime_toml: Option<&sdkwork_claw_config::RuntimeTomlConfig>,
 ) -> Arc<PasswordLoginRateLimiter> {
-    let deployment_mode = sdkwork_claw_config::DeploymentMode::from_env();
+    let deployment_mode =
+        sdkwork_claw_config::DeploymentMode::from_env_or_runtime_toml(runtime_toml)
+            .unwrap_or_else(|error| panic!("invalid deployment lifecycle: {error}"));
     let redis_config = RedisConfig::from_env_or_runtime_toml(runtime_toml)
         .ok()
         .flatten();

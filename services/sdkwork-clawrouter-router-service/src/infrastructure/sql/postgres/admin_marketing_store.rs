@@ -14,6 +14,7 @@ use crate::infrastructure::sql::admin_marketing_recharge::{
     recharge_settings_to_item, recharge_sku_specs, serialize_recharge_settings_remark,
     RechargeSettingsModel, RECHARGE_RULE_NO,
 };
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     AdminExchangeRuleItem, AdminMarketingCommandFuture, AdminMarketingListPage,
@@ -1887,7 +1888,7 @@ async fn seed_recharge_packages(
             status,
         )
         .await?;
-        refresh_recharge_product_sales_status(tx, &product_id, &requested_at, &request_id).await?;
+        refresh_recharge_product_status(tx, &product_id, &requested_at, &request_id).await?;
         sqlx::query(
             r#"
             INSERT INTO commerce_recharge_package
@@ -2427,13 +2428,8 @@ async fn sync_recharge_package_product_for_create(
         command.status,
     )
     .await?;
-    refresh_recharge_product_sales_status(
-        tx,
-        &product_id,
-        &command.requested_at,
-        &command.request_id,
-    )
-    .await
+    refresh_recharge_product_status(tx, &product_id, &command.requested_at, &command.request_id)
+        .await
 }
 
 async fn sync_recharge_package_product_for_update(
@@ -2486,16 +2482,11 @@ async fn sync_recharge_package_product_for_update(
     if !updated {
         return Err(DomainError::new("recharge package sku was not found"));
     }
-    refresh_recharge_product_sales_status(
-        tx,
-        &product_id,
-        &command.requested_at,
-        &command.request_id,
-    )
-    .await?;
+    refresh_recharge_product_status(tx, &product_id, &command.requested_at, &command.request_id)
+        .await?;
     if let Some(previous_product_id) = previous_product_id {
         if previous_product_id != product_id {
-            refresh_recharge_product_sales_status(
+            refresh_recharge_product_status(
                 tx,
                 &previous_product_id,
                 &command.requested_at,
@@ -2510,7 +2501,7 @@ async fn sync_recharge_package_product_for_update(
             recharge_product_group_key(&binding.currency_code),
         );
         if previous_group_product_id != product_id {
-            refresh_recharge_product_sales_status(
+            refresh_recharge_product_status(
                 tx,
                 &previous_group_product_id,
                 &command.requested_at,
@@ -2546,7 +2537,7 @@ async fn disable_recharge_product_and_sku_for_amount(
         command.subject.organization_id,
     )
     .await?;
-    let updated = update_recharge_sku_sales_status_by_id(
+    let updated = update_recharge_sku_status_by_id(
         tx,
         &binding.sku_id,
         command.subject.tenant_id,
@@ -2559,7 +2550,7 @@ async fn disable_recharge_product_and_sku_for_amount(
         return Ok(());
     }
     if let Some(product_id) = product_id {
-        refresh_recharge_product_sales_status(
+        refresh_recharge_product_status(
             tx,
             &product_id,
             &command.requested_at,
@@ -2572,7 +2563,7 @@ async fn disable_recharge_product_and_sku_for_amount(
             command.subject.organization_id,
             recharge_product_group_key(&binding.currency_code),
         );
-        refresh_recharge_product_sales_status(
+        refresh_recharge_product_status(
             tx,
             &product_id,
             &command.requested_at,
@@ -2744,7 +2735,7 @@ async fn update_recharge_sku_row_by_id(
     Ok(result.rows_affected() > 0)
 }
 
-async fn update_recharge_sku_sales_status_by_id(
+async fn update_recharge_sku_status_by_id(
     tx: &mut Transaction<'_, Postgres>,
     sku_id: &str,
     tenant_id: i64,
@@ -2776,7 +2767,7 @@ async fn update_recharge_sku_sales_status_by_id(
     Ok(result.rows_affected() > 0)
 }
 
-async fn refresh_recharge_product_sales_status(
+async fn refresh_recharge_product_status(
     tx: &mut Transaction<'_, Postgres>,
     product_id: &str,
     requested_at: &str,
@@ -2979,11 +2970,12 @@ async fn insert_audit_log(
     sqlx::query(
         r#"
         INSERT INTO ops_audit_log
-            (uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
+            (id, uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb)
         "#,
     )
+    .bind(next_claw_runtime_id("ops_audit_log")?)
     .bind(audit_log_uuid)
     .bind(tenant_id)
     .bind(organization_id)
@@ -3016,11 +3008,12 @@ async fn insert_audit_log_for_target_uuid(
     sqlx::query(
         r#"
         INSERT INTO ops_audit_log
-            (uuid, tenant_id, organization_id, action, target_type, target_uuid, request_id, operator_id, operator_type, change_summary)
+            (id, uuid, tenant_id, organization_id, action, target_type, target_uuid, request_id, operator_id, operator_type, change_summary)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb)
         "#,
     )
+    .bind(next_claw_runtime_id("ops_audit_log")?)
     .bind(audit_log_uuid)
     .bind(tenant_id)
     .bind(organization_id)

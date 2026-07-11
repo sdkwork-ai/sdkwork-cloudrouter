@@ -6,9 +6,8 @@ import test from 'node:test';
 import {
   assertEntrypointMarkers,
   assertRuntimeEnvScriptDoesNotExposeAccessToken,
-  assertTemplateDocumentsAccessToken,
+  assertTemplateAccessTokenLifecycleBoundaries,
   assertViteDevelopmentOnlyBootstrapToken,
-  REQUIRED_TEMPLATE_FILES,
 } from '../check-claw-router-application-env.mjs';
 import { ensureClawRouterEnvForLifecycle } from './claw-router-application-env.mjs';
 
@@ -20,14 +19,26 @@ test('ensureClawRouterEnvForLifecycle start resolves release and production prof
 
   assert.ok(results.release);
   assert.ok(results.production);
-  assert.match(results.release.mergedEnv.SDKWORK_ACCESS_TOKEN ?? '', /^v2\./u);
-  assert.equal(results.production.mergedEnv.SDKWORK_ACCESS_TOKEN ?? '', '');
+  assert.equal(Object.hasOwn(results.release.mergedEnv, 'SDKWORK_ACCESS_TOKEN'), false);
+  assert.equal(Object.hasOwn(results.production.mergedEnv, 'SDKWORK_ACCESS_TOKEN'), false);
 });
 
-test('application env templates document SDKWORK_ACCESS_TOKEN without live values', () => {
-  for (const templatePath of REQUIRED_TEMPLATE_FILES) {
-    assert.doesNotThrow(() => assertTemplateDocumentsAccessToken(templatePath));
-  }
+test('ensureClawRouterEnvForLifecycle all never invokes development token signing', () => {
+  const results = ensureClawRouterEnvForLifecycle('all', {
+    workspaceRoot: path.resolve(import.meta.dirname, '..', '..'),
+    dryRun: true,
+    env: {
+      SDKWORK_CLAW_APP_SESSION_SECRET: 'too-short',
+    },
+  });
+
+  assert.equal(Object.hasOwn(results, 'development'), false);
+  assert.ok(results.release);
+  assert.ok(results.production);
+});
+
+test('application env templates limit SDKWORK_ACCESS_TOKEN to development', () => {
+  assert.doesNotThrow(assertTemplateAccessTokenLifecycleBoundaries);
 });
 
 test('vite config gates bootstrap access token to development mode only', () => {

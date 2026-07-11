@@ -46,7 +46,7 @@ public class ThreadsApi {
     /** List thread messages */
     public OpenAiThreadMessageList listMessages(String threadId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -70,7 +70,7 @@ public class ThreadsApi {
     /** List thread runs */
     public OpenAiRunList listRuns(String threadId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -88,7 +88,7 @@ public class ThreadsApi {
     /** List run steps */
     public OpenAiRunStepList listRunsSteps(String threadId, String runId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)

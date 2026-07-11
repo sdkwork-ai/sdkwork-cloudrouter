@@ -13,8 +13,8 @@ use serde_json::Value;
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
-    json_success_list_response, offset_page_info, parse_offset_list_query, problem_from_wire_code,
-    success_envelope,
+    json_created_response, json_success_list_response, no_content_response, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, success_envelope,
 };
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
@@ -254,10 +254,9 @@ async fn create_site(
         Err(error) => return command_build_error_response(error),
     };
     match state.store.create_site(command).await {
-        Ok(item) => Json(success_envelope(SiteEnvelope {
+        Ok(item) => json_created_response(None, SiteEnvelope {
             item: to_site_response(item),
-        }))
-        .into_response(),
+        }),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => system_response("Site command store is unavailable", error),
     }
@@ -310,7 +309,8 @@ async fn delete_site(
         Err(error) => return command_build_error_response(error),
     };
     match state.store.delete_site(command).await {
-        Ok(deleted) => Json(success_envelope(SiteDeleteResponse { deleted })).into_response(),
+        Ok(true) => no_content_response(None),
+        Ok(false) => not_found_response("Site was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => system_response("Site command store is unavailable", error),
     }

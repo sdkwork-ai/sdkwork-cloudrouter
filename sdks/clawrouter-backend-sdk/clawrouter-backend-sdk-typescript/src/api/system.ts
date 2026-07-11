@@ -54,7 +54,7 @@ export class SystemShopsShippingTemplatesApi {
 
 
 /** Upsert */
-  async upsert(shopId: string): Promise<Record<string, never>> {
+  async update(shopId: string): Promise<Record<string, never>> {
     return this.client.put<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/shipping_templates`));
   }
 }
@@ -130,7 +130,7 @@ export class SystemShopsReturnAddressesApi {
 
 
 /** Upsert */
-  async upsert(shopId: string): Promise<Record<string, never>> {
+  async update(shopId: string): Promise<Record<string, never>> {
     return this.client.put<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/return_addresses`));
   }
 }
@@ -144,7 +144,7 @@ export class SystemShopsQualificationsApi {
 
 
 /** Upsert */
-  async upsert(shopId: string): Promise<Record<string, never>> {
+  async update(shopId: string): Promise<Record<string, never>> {
     return this.client.put<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/qualifications`));
   }
 }
@@ -210,7 +210,7 @@ export class SystemShopsCustomerServicesApi {
 
 
 /** Upsert */
-  async upsert(shopId: string): Promise<Record<string, never>> {
+  async update(shopId: string): Promise<Record<string, never>> {
     return this.client.put<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/customer_services`));
   }
 }
@@ -243,7 +243,7 @@ export class SystemShopsCategoryBindingsApi {
 
 
 /** Upsert */
-  async upsert(shopId: string): Promise<Record<string, never>> {
+  async update(shopId: string): Promise<Record<string, never>> {
     return this.client.put<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/category_bindings`));
   }
 }
@@ -271,7 +271,7 @@ export class SystemShopsBrandAuthorizationsApi {
 
 
 /** Upsert */
-  async upsert(shopId: string): Promise<Record<string, never>> {
+  async update(shopId: string): Promise<Record<string, never>> {
     return this.client.put<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/brand_authorizations`));
   }
 }
@@ -390,8 +390,8 @@ export class SystemServiceNodesApi {
   }
 
 /** Delete */
-  async delete(nodeId: string): Promise<Record<string, never>> {
-    return this.client.delete<Record<string, never>>(backendApiPath(`/system/service_nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}`));
+  async delete(nodeId: string): Promise<void> {
+    return this.client.delete<void>(backendApiPath(`/system/service_nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}`));
   }
 
 /** Update */
@@ -642,8 +642,8 @@ export class SystemFirewallsRulesApi {
   }
 
 /** Delete */
-  async delete(ruleId: string): Promise<Record<string, never>> {
-    return this.client.delete<Record<string, never>>(backendApiPath(`/system/firewalls/rules/${serializePathParameter(ruleId, { name: 'ruleId', style: 'simple', explode: false })}`));
+  async delete(ruleId: string): Promise<void> {
+    return this.client.delete<void>(backendApiPath(`/system/firewalls/rules/${serializePathParameter(ruleId, { name: 'ruleId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -694,20 +694,6 @@ export class SystemDashboardApi {
 
 }
 
-export class SystemCacheRefreshApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Create */
-  async create(): Promise<CacheOperationOutcome> {
-    return this.client.post<CacheOperationOutcome>(backendApiPath(`/system/cache/refresh`));
-  }
-}
-
 export class SystemCacheOverviewApi {
   private client: HttpClient;
 
@@ -719,20 +705,6 @@ export class SystemCacheOverviewApi {
 /** Retrieve */
   async retrieve(): Promise<CacheOverview> {
     return this.client.get<CacheOverview>(backendApiPath(`/system/cache/overview`));
-  }
-}
-
-export class SystemCacheNamespacesRefreshApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Create */
-  async create(namespace_: string): Promise<CacheOperationOutcome> {
-    return this.client.post<CacheOperationOutcome>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/refresh`));
   }
 }
 
@@ -759,56 +731,48 @@ export class SystemCacheNamespacesKeysApi {
   }
 
 /** Delete */
-  async delete(namespace_: string, key: string): Promise<CacheOperationOutcome> {
-    return this.client.delete<CacheOperationOutcome>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/keys/${serializePathParameter(key, { name: 'key', style: 'simple', explode: false })}`));
+  async delete(namespace_: string, key: string): Promise<void> {
+    return this.client.delete<void>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/keys/${serializePathParameter(key, { name: 'key', style: 'simple', explode: false })}`));
   }
 }
 
 export class SystemCacheNamespacesApi {
   private client: HttpClient;
   public readonly keys: SystemCacheNamespacesKeysApi;
-  public readonly refresh: SystemCacheNamespacesRefreshApi;
 
   constructor(client: HttpClient) {
     this.client = client;
     this.keys = new SystemCacheNamespacesKeysApi(client);
-    this.refresh = new SystemCacheNamespacesRefreshApi(client);
   }
 
 
 /** Delete */
-  async delete(namespace_: string): Promise<CacheOperationOutcome> {
-    return this.client.delete<CacheOperationOutcome>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}`));
+  async delete(namespace_: string): Promise<void> {
+    return this.client.delete<void>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}`));
   }
-}
-
-export class SystemCacheInstancesRefreshApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
 
 /** Create */
-  async create(instanceName: string): Promise<CacheOperationOutcome> {
-    return this.client.post<CacheOperationOutcome>(backendApiPath(`/system/cache/instances/${serializePathParameter(instanceName, { name: 'instanceName', style: 'simple', explode: false })}/refresh`));
+  async refresh(namespace_: string): Promise<CacheOperationOutcome> {
+    return this.client.post<CacheOperationOutcome>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/refresh`));
   }
 }
 
 export class SystemCacheInstancesApi {
   private client: HttpClient;
-  public readonly refresh: SystemCacheInstancesRefreshApi;
 
   constructor(client: HttpClient) {
     this.client = client;
-    this.refresh = new SystemCacheInstancesRefreshApi(client);
   }
 
 
 /** Delete */
-  async delete(instanceName: string): Promise<CacheOperationOutcome> {
-    return this.client.delete<CacheOperationOutcome>(backendApiPath(`/system/cache/instances/${serializePathParameter(instanceName, { name: 'instanceName', style: 'simple', explode: false })}`));
+  async delete(instanceName: string): Promise<void> {
+    return this.client.delete<void>(backendApiPath(`/system/cache/instances/${serializePathParameter(instanceName, { name: 'instanceName', style: 'simple', explode: false })}`));
+  }
+
+/** Create */
+  async refresh(instanceName: string): Promise<CacheOperationOutcome> {
+    return this.client.post<CacheOperationOutcome>(backendApiPath(`/system/cache/instances/${serializePathParameter(instanceName, { name: 'instanceName', style: 'simple', explode: false })}/refresh`));
   }
 }
 
@@ -817,16 +781,19 @@ export class SystemCacheApi {
   public readonly instances: SystemCacheInstancesApi;
   public readonly namespaces: SystemCacheNamespacesApi;
   public readonly overview: SystemCacheOverviewApi;
-  public readonly refresh: SystemCacheRefreshApi;
 
   constructor(client: HttpClient) {
     this.client = client;
     this.instances = new SystemCacheInstancesApi(client);
     this.namespaces = new SystemCacheNamespacesApi(client);
     this.overview = new SystemCacheOverviewApi(client);
-    this.refresh = new SystemCacheRefreshApi(client);
   }
 
+
+/** Create */
+  async refresh(): Promise<CacheOperationOutcome> {
+    return this.client.post<CacheOperationOutcome>(backendApiPath(`/system/cache/refresh`));
+  }
 }
 
 export class SystemAuthSettingsApi {

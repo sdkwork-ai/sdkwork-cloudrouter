@@ -3,7 +3,7 @@
 Status: active
 Owner: SDKWork maintainers
 Application: sdkwork-clawrouter
-Updated: 2026-06-26
+Updated: 2026-07-10
 Specs: REQUIREMENTS_SPEC.md, DOCUMENTATION_SPEC.md
 
 ## Document Map
@@ -12,6 +12,8 @@ This file is the PRD index. Detailed requirements live in the linked shards:
 
 - [PRD-00-design.md](PRD-00-design.md) — design rationale and capability surface
 - [PRD-01-prd-sdkwork-clawrouter.md](PRD-01-prd-sdkwork-clawrouter.md) — detailed product requirements
+
+- [REQ-2026-0001 Commercial Production Readiness](../requirements/REQ-2026-0001-commercial-production-readiness.md) - active critical readiness requirement
 
 ## 1. Background And Problem
 
@@ -80,6 +82,10 @@ production-grade observability built in.
 | 0.3.x commercial beta | Private beta with circuit breaker + idempotency + signing + observability | In progress |
 | 0.4.x public preview | Public SaaS preview with 7-locale i18n + complete K8s HA | Planned |
 | 0.5.x GA | Commercial GA with SLA, SBOM, signed artifacts, SOC2 prep | Planned |
+
+No milestone may be promoted to public preview or GA until REQ-2026-0001 is
+accepted with the complete production evidence bundle. Current implementation
+claims in detailed shards are targets unless backed by the verification matrix.
 
 ## 7. Risks
 

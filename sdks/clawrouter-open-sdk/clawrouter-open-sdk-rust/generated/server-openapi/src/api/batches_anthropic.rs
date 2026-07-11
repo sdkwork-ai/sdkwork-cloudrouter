@@ -27,7 +27,7 @@ impl BatchesAnthropicApi {
         let query = build_query_string(&[
             QueryParameterSpec::new("before_id", before_id, "form", true, false, None),
             QueryParameterSpec::new("after_id", after_id, "form", true, false, None),
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
         ]);
         let path = append_query_string(
             ai_path(&"/anthropic/v1/messages/batches".to_string()),

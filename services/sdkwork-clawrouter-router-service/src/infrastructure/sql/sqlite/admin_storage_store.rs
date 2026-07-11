@@ -2,6 +2,7 @@ use sqlx::{Row, SqlitePool};
 
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::model_catalog_import::stable_uuid;
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::sql_admin_storage::{
     job_status_label_sql, resource_status_label_sql, STORAGE_AUDIT_TARGET_BUCKET,
     STORAGE_AUDIT_TARGET_DEFAULT_BUCKET, STORAGE_AUDIT_TARGET_GC_JOB,
@@ -216,14 +217,15 @@ async fn create_provider(
         return load_provider(pool, command.subject, id).await;
     }
 
-    let result = sqlx::query(
+    let id = next_claw_runtime_id("object_provider")?;
+    sqlx::query(
         r#"
         INSERT INTO object_provider
             (uuid, tenant_id, organization_id, provider_code, provider_type, endpoint_url, region,
              credential_ref, path_style_enabled, supports_multipart, supports_lifecycle,
-             supports_object_lock, health_status, idempotency_key, request_id)
+             supports_object_lock, health_status, idempotency_key, request_id, id)
         VALUES
-            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, 'unknown', ?13, ?14)
+            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, 'unknown', ?13, ?14, ?15)
         "#,
     )
     .bind(stable_uuid(
@@ -248,11 +250,11 @@ async fn create_provider(
     .bind(command.supports_object_lock.unwrap_or(false))
     .bind(&command.idempotency_key)
     .bind(command.request_id.as_deref())
+    .bind(id)
     .execute(pool)
     .await
     .map_err(|error| write_error("failed to create storage provider", error))?;
 
-    let id = result.last_insert_rowid();
     insert_audit_if_absent(
         pool,
         command.subject,
@@ -449,15 +451,16 @@ async fn create_bucket(
 
     let provider_id = parse_required_id(&command.provider_id, "providerId")?;
     ensure_provider_exists(pool, command.subject, provider_id).await?;
-    let result = sqlx::query(
+    let id = next_claw_runtime_id("object_bucket")?;
+    sqlx::query(
         r#"
         INSERT INTO object_bucket
             (uuid, tenant_id, organization_id, provider_id, bucket_name, bucket_region,
              logical_scope, data_residency_region, object_key_prefix, default_storage_class,
              default_encryption_mode, kms_key_ref, versioning_enabled, object_lock_enabled,
-             lifecycle_enabled, public_access_blocked, idempotency_key, request_id)
+             lifecycle_enabled, public_access_blocked, idempotency_key, request_id, id)
         VALUES
-            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)
+            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)
         "#,
     )
     .bind(stable_uuid(
@@ -497,11 +500,11 @@ async fn create_bucket(
     .bind(command.public_access_blocked.unwrap_or(true))
     .bind(&command.idempotency_key)
     .bind(command.request_id.as_deref())
+    .bind(id)
     .execute(pool)
     .await
     .map_err(|error| write_error("failed to create storage bucket", error))?;
 
-    let id = result.last_insert_rowid();
     insert_audit_if_absent(
         pool,
         command.subject,
@@ -622,9 +625,9 @@ async fn set_default_bucket(
         r#"
         INSERT INTO storage_default_bucket_policy
             (uuid, tenant_id, organization_id, logical_scope, bucket_id, bucket_logical_scope,
-             updated_by, reason, request_id)
+             updated_by, reason, request_id, id)
         VALUES
-            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
         ON CONFLICT(tenant_id, organization_id, logical_scope) DO UPDATE SET
             bucket_id = excluded.bucket_id,
             bucket_logical_scope = excluded.bucket_logical_scope,
@@ -651,6 +654,7 @@ async fn set_default_bucket(
     .bind(command.subject.operator_id)
     .bind(&command.reason)
     .bind(command.request_id.as_deref())
+    .bind(next_claw_runtime_id("storage_default_bucket_policy")?)
     .execute(pool)
     .await
     .map_err(|error| write_error("failed to set storage default bucket", error))?;
@@ -749,13 +753,14 @@ async fn create_quota_policy(
         return load_quota_policy(pool, command.subject, id).await;
     }
 
-    let result = sqlx::query(
+    let id = next_claw_runtime_id("storage_quota_policy")?;
+    sqlx::query(
         r#"
         INSERT INTO storage_quota_policy
             (uuid, tenant_id, organization_id, scope_type, scope_id, quota_limit_bytes,
-             single_file_limit_bytes, enforcement, idempotency_key, request_id)
+             single_file_limit_bytes, enforcement, idempotency_key, request_id, id)
         VALUES
-            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
         "#,
     )
     .bind(stable_uuid(
@@ -777,10 +782,10 @@ async fn create_quota_policy(
     .bind(command.enforcement.as_deref())
     .bind(&command.idempotency_key)
     .bind(command.request_id.as_deref())
+    .bind(id)
     .execute(pool)
     .await
     .map_err(|error| write_error("failed to create storage quota policy", error))?;
-    let id = result.last_insert_rowid();
     insert_audit_if_absent(
         pool,
         command.subject,
@@ -989,13 +994,14 @@ async fn create_reconciliation_run(
     if let Some(bucket_id) = bucket_id {
         ensure_bucket_exists(pool, command.subject, bucket_id).await?;
     }
-    let result = sqlx::query(
+    let id = next_claw_runtime_id("storage_reconciliation_run")?;
+    sqlx::query(
         r#"
         INSERT INTO storage_reconciliation_run
             (uuid, tenant_id, organization_id, provider_id, bucket_id, run_type, dry_run,
-             requested_by, idempotency_key, request_id, summary_json)
+             requested_by, idempotency_key, request_id, summary_json, id)
         VALUES
-            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
         "#,
     )
     .bind(stable_uuid(
@@ -1017,10 +1023,10 @@ async fn create_reconciliation_run(
     .bind(&command.idempotency_key)
     .bind(command.request_id.as_deref())
     .bind(json_text(&serde_json::json!({ "reason": command.reason })))
+    .bind(id)
     .execute(pool)
     .await
     .map_err(|error| write_error("failed to create storage reconciliation run", error))?;
-    let id = result.last_insert_rowid();
     insert_audit_if_absent(
         pool,
         command.subject,
@@ -1097,13 +1103,14 @@ async fn create_gc_job(
         "dryRunSample": command.dry_run_sample,
         "criteria": command.criteria,
     }));
-    let result = sqlx::query(
+    let id = next_claw_runtime_id("storage_gc_job")?;
+    sqlx::query(
         r#"
         INSERT INTO storage_gc_job
             (uuid, tenant_id, organization_id, job_type, dry_run, requested_by,
-             idempotency_key, request_id, criteria_json, result_json)
+             idempotency_key, request_id, criteria_json, result_json, id)
         VALUES
-            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
         "#,
     )
     .bind(stable_uuid(
@@ -1124,10 +1131,10 @@ async fn create_gc_job(
     .bind(command.request_id.as_deref())
     .bind(&criteria_json)
     .bind("{}")
+    .bind(id)
     .execute(pool)
     .await
     .map_err(|error| write_error("failed to create storage garbage collection job", error))?;
-    let id = result.last_insert_rowid();
     insert_audit_if_absent(
         pool,
         command.subject,
@@ -1350,16 +1357,16 @@ async fn insert_audit_if_absent(
         r#"
         INSERT INTO ops_audit_log
             (uuid, tenant_id, organization_id, request_id, operator_id, operator_type,
-             action, target_type, target_id, target_uuid, created_at)
+             action, target_type, target_id, target_uuid, created_at, id)
         SELECT
-            ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, CURRENT_TIMESTAMP
+            ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, CURRENT_TIMESTAMP, ?11
         WHERE NOT EXISTS (
             SELECT 1
             FROM ops_audit_log
-            WHERE tenant_id = ?11
-              AND organization_id = ?12
-              AND request_id = ?13
-              AND action = ?14
+            WHERE tenant_id = ?12
+              AND organization_id = ?13
+              AND request_id = ?14
+              AND action = ?15
         )
         "#,
     )
@@ -1381,6 +1388,7 @@ async fn insert_audit_if_absent(
     .bind(target_type)
     .bind(target_id)
     .bind(target_uuid)
+    .bind(next_claw_runtime_id("ops_audit_log")?)
     .bind(subject.tenant_id)
     .bind(subject.organization_id)
     .bind(request_id)

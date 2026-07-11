@@ -45,7 +45,7 @@ fn usage_settlement_upserts_bridge_and_returns_ids_without_double_debit() {
     for expected in [
         "INSERT INTO commerce_settlement",
         "ON CONFLICT (tenant_id, organization_id, usage_fact_id) DO UPDATE SET",
-        "WHERE commerce_settlement.settlement_status <> $19",
+        "WHERE commerce_settlement.settlement_status <> $20",
         ".bind(USAGE_SETTLEMENT_SUCCESS)",
         "RETURNING id",
         "INSERT INTO commerce_account_ledger_entry",

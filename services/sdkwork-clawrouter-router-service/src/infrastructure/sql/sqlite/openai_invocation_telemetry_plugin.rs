@@ -8,6 +8,7 @@ use crate::api::{
     OpenAiProviderRoute,
 };
 use crate::domain::{DomainError, DomainResult, ProviderCircuitBreakerPolicy};
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 
 const HEALTHY: i64 = 1;
@@ -284,9 +285,9 @@ async fn insert_snapshot(
     sqlx::query(
         r#"
         INSERT INTO integration_provider_health_snapshot
-            (uuid, tenant_id, organization_id, user_id, request_id, trace_id, status, created_at, metadata, provider_id, channel_id, provider_account_id, check_type, health_status, latency_ms, http_status, error_code, error_message_masked, checked_at)
+            (id, uuid, tenant_id, organization_id, user_id, request_id, trace_id, status, created_at, metadata, provider_id, channel_id, provider_account_id, check_type, health_status, latency_ms, http_status, error_code, error_message_masked, checked_at)
         SELECT
-            ?, c.tenant_id, c.organization_id, ?, ?, ?, 1, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'), ?, c.provider_id, c.id, c.id, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+            ?, ?, c.tenant_id, c.organization_id, ?, ?, ?, 1, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'), ?, c.provider_id, c.id, c.id, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
         FROM ai_channel c
         WHERE c.id = ?
           AND c.tenant_id = ?
@@ -294,6 +295,7 @@ async fn insert_snapshot(
           AND c.deleted_at IS NULL
         "#,
     )
+    .bind(next_claw_runtime_id("integration_provider_health_snapshot")?)
     .bind(snapshot_uuid(context, route, health_status))
     .bind(context.api_key_context.user_id)
     .bind(request_id(context))

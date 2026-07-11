@@ -194,7 +194,7 @@ class ConversationApi:
     def list(self, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiConversationList:
         """List conversations"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -220,7 +220,7 @@ class ConversationApi:
     def list_items(self, conversation_id: str, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiConversationItemList:
         """List conversation items"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},

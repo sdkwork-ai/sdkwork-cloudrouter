@@ -12,7 +12,7 @@ public class FilesAnthropicApi {
         let query = buildQueryString([
             QueryParameterSpec(name: "before_id", value: beforeId, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after_id", value: afterId, style: "form", explode: true, allowReserved: false, contentType: nil),
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil)
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
         return try await client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/anthropic/v1/files"), query), responseType: AnthropicFileListResponse.self)
     }

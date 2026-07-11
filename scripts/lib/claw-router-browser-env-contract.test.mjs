@@ -40,17 +40,25 @@ test('assertEnvTemplateFreeOfForbiddenBrowserProfileKeys rejects legacy keys', (
 test('sanitizeBrowserProductionEnvRecord strips all legacy PORTAL keys', () => {
   const sanitized = sanitizeBrowserProductionEnvRecord({
     SDKWORK_ACCESS_TOKEN: 'token',
+    SDKWORK_CLAW_CONFIG_PROFILE: 'prod',
+    SDKWORK_CLAW_ENVIRONMENT: 'production',
+    SDKWORK_CLAW_DEPLOYMENT_PROFILE: 'standalone',
+    SDKWORK_CLAW_RUNTIME_TARGET: 'browser',
     PORTAL_PUBLIC_API_BASE_URL: '/v1',
     PORTAL_DEV_PROXY_GATEWAY_TARGET: 'http://127.0.0.1:3900',
     PORTAL_FORWARD_APP_API_BASE_URL: 'http://127.0.0.1:3900',
     [CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.openApi]: 'http://127.0.0.1:3900',
   });
 
-  assert.equal(sanitized.SDKWORK_ACCESS_TOKEN, '');
+  assert.equal(Object.hasOwn(sanitized, 'SDKWORK_ACCESS_TOKEN'), false);
   assert.equal(sanitized.PORTAL_PUBLIC_API_BASE_URL, undefined);
   assert.equal(sanitized.PORTAL_DEV_PROXY_GATEWAY_TARGET, undefined);
   assert.equal(sanitized.PORTAL_FORWARD_APP_API_BASE_URL, undefined);
   assert.equal(sanitized[CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.openApi], 'http://127.0.0.1:3900');
+  assert.equal(sanitized.SDKWORK_CLAW_CONFIG_PROFILE, undefined);
+  assert.equal(sanitized.SDKWORK_CLAW_ENVIRONMENT, undefined);
+  assert.equal(sanitized.SDKWORK_CLAW_DEPLOYMENT_PROFILE, undefined);
+  assert.equal(sanitized.SDKWORK_CLAW_RUNTIME_TARGET, undefined);
 });
 
 test('migrateLegacyBrowserDevelopmentEnvRecord maps legacy proxy and public keys', () => {

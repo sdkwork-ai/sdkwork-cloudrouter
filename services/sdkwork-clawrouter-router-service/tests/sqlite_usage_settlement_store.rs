@@ -109,8 +109,8 @@ async fn sqlite_usage_settlement_debits_appbase_points_once_and_links_usage_to_l
     .fetch_one(&pool)
     .await
     .unwrap();
-    assert_eq!("10", ledger.get::<String, _>("tenant_id"));
-    assert_eq!("20", ledger.get::<String, _>("organization_id"));
+    assert_eq!("100001", ledger.get::<String, _>("tenant_id"));
+    assert_eq!("0", ledger.get::<String, _>("organization_id"));
     assert_eq!("account-701", ledger.get::<String, _>("account_id"));
     assert_eq!("30", ledger.get::<String, _>("owner_user_id"));
     assert_eq!("points", ledger.get::<String, _>("asset_type"));

@@ -914,6 +914,134 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
             self.assertEqual("/app/v3/api/content/feeds", operations["searchForumFeeds"]["api_path"])
             self.assertEqual("feeds.list", operations["searchForumFeeds"]["operation_id"])
 
+    def test_standard_operation_id_action_overrides_stale_explicit_suffixes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            contract = self.write_contract(
+                root,
+                """
+                frontend_operations:
+                  - route: /console/orders/{orderId}/payments
+                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/paymentService.ts
+                    operation: pay
+                    operation_id: orders.pay
+                    kind: create
+                    api_surface: app
+                    api_method: POST
+                    api_path: /app/v3/api/orders/{orderId}/payments
+                    read_sources: [commerce_order, commerce_payment_attempt]
+                    write_tables: [commerce_payment_attempt]
+                    request_body_required: false
+                    response_schema:
+                      name: NoData
+                      properties: {}
+                  - route: /console/payments/status
+                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/paymentService.ts
+                    operation: retrieveByOutTradeNo
+                    operation_id: payments.status.retrieveByOutTradeNo
+                    kind: read
+                    api_surface: app
+                    api_method: GET
+                    api_path: /app/v3/api/payments/status/out_trade_no/{outTradeNo}
+                    read_sources: [commerce_payment_attempt]
+                    query_parameters: []
+                    response_schema:
+                      name: NoData
+                      properties: {}
+                  - route: /admin/ai/model_mappings
+                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/modelMappingService.ts
+                    operation: replace
+                    operation_id: modelMappings.replace
+                    kind: update
+                    api_surface: backend
+                    api_method: PUT
+                    api_path: /backend/v3/api/ai/model_mappings
+                    read_sources: [ai_model_mapping]
+                    write_tables: [ai_model_mapping]
+                    request_body_required: false
+                    response_schema:
+                      name: NoData
+                      properties: {}
+                  - route: /admin/system/cache/instances/{instanceName}/refresh
+                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/cacheService.ts
+                    operation: create
+                    operation_id: cache.instances.refresh.create
+                    kind: create
+                    api_surface: backend
+                    api_method: POST
+                    api_path: /backend/v3/api/system/cache/instances/{instanceName}/refresh
+                    read_sources: [ops_cache]
+                    write_tables: [ops_audit_log]
+                    request_body_required: false
+                    response_schema:
+                      name: NoData
+                      properties: {}
+                  - route: /admin/ai/route_explain
+                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/routeExplainService.ts
+                    operation: explain
+                    operation_id: routeExplain.create
+                    kind: action
+                    api_surface: backend
+                    api_method: POST
+                    api_path: /backend/v3/api/ai/route_explain
+                    read_sources: [ai]
+                    write_tables: [ops_audit_log]
+                    request_body_required: false
+                    response_schema:
+                      name: NoData
+                      properties: {}
+                  - route: /admin/sites/{siteId}/health_check
+                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/siteService.ts
+                    operation: create
+                    operation_id: healthCheck.create
+                    kind: create
+                    api_surface: backend
+                    api_method: POST
+                    api_path: /backend/v3/api/sites/{siteId}/health_check
+                    read_sources: [ai_site]
+                    write_tables: [ops_audit_log]
+                    request_body_required: false
+                    response_schema:
+                      name: NoData
+                      properties: {}
+                  - route: /admin/sites/{siteId}/test_connection
+                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/siteService.ts
+                    operation: create
+                    operation_id: testConnection.create
+                    kind: create
+                    api_surface: backend
+                    api_method: POST
+                    api_path: /backend/v3/api/sites/{siteId}/test_connection
+                    read_sources: [ai_site]
+                    write_tables: [ops_audit_log]
+                    request_body_required: false
+                    response_schema:
+                      name: NoData
+                      properties: {}
+                """,
+            )
+
+            manifest = ApiContractManifestGenerator(root=root, contract_path=contract).generate()
+            operations = {operation["operation"]: operation for operation in manifest["operations"]}
+            operations_by_route = {operation["route"]: operation for operation in manifest["operations"]}
+
+            self.assertEqual("orders.payments.create", operations["pay"]["operation_id"])
+            self.assertEqual("payments.status.outTradeNo.retrieve", operations["retrieveByOutTradeNo"]["operation_id"])
+            self.assertEqual("modelMappings.update", operations["replace"]["operation_id"])
+            self.assertEqual(
+                "cache.instances.refresh",
+                operations_by_route["/admin/system/cache/instances/{instanceName}/refresh"]["operation_id"],
+            )
+            self.assertEqual(
+                "routeExplain.explain",
+                operations_by_route["/admin/ai/route_explain"]["operation_id"],
+            )
+            self.assertEqual("sites.healthCheck", operations_by_route["/admin/sites/{siteId}/health_check"]["operation_id"])
+            self.assertEqual(
+                "sites.testConnection",
+                operations_by_route["/admin/sites/{siteId}/test_connection"]["operation_id"],
+            )
+
     def test_project_backend_read_operations_use_get_collection_paths(self) -> None:
         root = Path(__file__).resolve().parents[1]
         manifest = ApiContractManifestGenerator(root=root).generate()
@@ -1020,55 +1148,152 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
             self.assertEqual("comments.likes.current.delete", operations["unlikeForumComment"]["operation_id"])
             self.assertEqual("/app/v3/api/content/comments/{commentId}/likes/current", operations["unlikeForumComment"]["api_path"])
 
-    def test_project_contract_declares_console_api_key_create_operation(self) -> None:
-        root = Path(__file__).resolve().parents[1]
-        manifest = ApiContractManifestGenerator(root=root).generate()
-        operations = {operation["key"]: operation for operation in manifest["operations"]}
-        operation = operations.get(
-            operation_key(
-                "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts",
-                "createKey",
-                "/console/api-keys",
-            )
-        )
-
-        self.assertIsNotNone(operation)
-        self.assertEqual("app", operation["api_surface"])
-        self.assertEqual("POST", operation["api_method"])
-        self.assertEqual("/app/v3/api/iam/api_keys", operation["api_path"])
-        self.assertEqual("create", operation["kind"])
-        self.assertEqual("SdkworkAppClient", operation["sdk_client"])
-        self.assertEqual("iam", operation["tag"])
-        self.assertEqual("iam", operation["sdk_domain"])
-        self.assertEqual("apiKeys.create", operation["operation_id"])
-        self.assertIn("iam_gateway_api_key", operation["write_tables"])
-        self.assertIn("ops_audit_log", operation["write_tables"])
-        self.assertEqual("CreateApiKeyRequest", operation["request_schema"]["name"])
-        self.assertEqual(["name", "channelGroup"], operation["request_schema"]["schema"]["required"])
-        self.assertEqual("CreateApiKeyResponse", operation["response_schema"]["name"])
-        self.assertEqual(["item", "rawKey"], operation["response_schema"]["schema"]["required"])
-
-    def test_project_contract_declares_precise_console_write_payloads(self) -> None:
+    def test_project_contract_declares_console_api_key_write_payloads(self) -> None:
         root = Path(__file__).resolve().parents[1]
         manifest = ApiContractManifestGenerator(root=root).generate()
         operations = {operation["key"]: operation for operation in manifest["operations"]}
 
-        update_settings = operations.get(
+        create_operation = operations.get(
             operation_key(
-                "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-settings/src/settingsService.ts",
-                "updateSettings",
-                "/console/settings",
+                "tools/bootstrap_frontend_contract_from_route_manifest.py",
+                "create",
+                "/console/iam/api_keys",
+            )
+        )
+        update_operation = operations.get(
+            operation_key(
+                "tools/bootstrap_frontend_contract_from_route_manifest.py",
+                "update",
+                "/console/iam/api_keys/{apiKeyId}",
             )
         )
 
-        self.assertIsNotNone(update_settings)
-        self.assertEqual("UpdateSettingsRequest", update_settings["request_schema"]["name"])
+        self.assertIsNotNone(create_operation)
+        self.assertEqual("app", create_operation["api_surface"])
+        self.assertEqual("POST", create_operation["api_method"])
+        self.assertEqual("/app/v3/api/iam/api_keys", create_operation["api_path"])
+        self.assertEqual("create", create_operation["kind"])
+        self.assertEqual("SdkworkAppClient", create_operation["sdk_client"])
+        self.assertEqual("iam", create_operation["tag"])
+        self.assertEqual("iam", create_operation["sdk_domain"])
+        self.assertEqual("apiKeys.create", create_operation["operation_id"])
+        self.assertTrue(create_operation["idempotency_required"])
+        self.assertIn("ops_audit_log", create_operation["write_tables"])
+        self.assertEqual("CreateApiKeyRequest", create_operation["request_schema"]["name"])
         self.assertEqual(
-            ["language", "timezone", "webhookUrl", "notifications"],
-            update_settings["request_schema"]["schema"]["required"],
+            ["name", "channelGroup", "quota", "isUnlimitedQuota", "modalities", "ipLimit", "expires"],
+            create_operation["request_schema"]["schema"]["required"],
         )
-        self.assertEqual("UpdateSettingsResponse", update_settings["response_schema"]["name"])
-        self.assertEqual(["success"], update_settings["response_schema"]["schema"]["required"])
+        self.assertEqual("CreateApiKeyResponse", create_operation["response_schema"]["name"])
+        self.assertEqual(["item", "rawKey"], create_operation["response_schema"]["schema"]["required"])
+
+        self.assertIsNotNone(update_operation)
+        self.assertEqual("PATCH", update_operation["api_method"])
+        self.assertEqual("/app/v3/api/iam/api_keys/{apiKeyId}", update_operation["api_path"])
+        self.assertEqual("apiKeys.update", update_operation["operation_id"])
+        self.assertEqual("UpdateApiKeyRequest", update_operation["request_schema"]["name"])
+        self.assertEqual("UpdateApiKeyResponse", update_operation["response_schema"]["name"])
+        self.assertEqual(["item"], update_operation["response_schema"]["schema"]["required"])
+
+    def test_project_contract_declares_admin_write_payloads(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        manifest = ApiContractManifestGenerator(root=root).generate()
+        operations = {operation["key"]: operation for operation in manifest["operations"]}
+
+        expected = {
+            "/admin/integration/channels#create": (
+                "channels.create",
+                "AdminChannelCreateRequest",
+                "AdminChannelMutationResponse",
+                ["item"],
+            ),
+            "/admin/integration/channels#update": (
+                "channels.update",
+                "AdminChannelUpdateRequest",
+                "AdminChannelMutationResponse",
+                ["item"],
+            ),
+            "/admin/integration/provider_secrets#create": (
+                "providerSecrets.create",
+                "AdminProviderSecretCreateRequest",
+                "AdminProviderSecretMutationResponse",
+                ["item"],
+            ),
+            "/admin/integration/provider_secrets#update": (
+                "providerSecrets.update",
+                "AdminProviderSecretUpdateRequest",
+                "AdminProviderSecretMutationResponse",
+                ["item"],
+            ),
+            "/admin/ai/channel_groups#create": (
+                "channelGroups.create",
+                "AdminChannelGroupCreateRequest",
+                "AdminChannelGroupMutationResponse",
+                ["item"],
+            ),
+            "/admin/ai/channel_groups/{channelGroupId}#update": (
+                "channelGroups.update",
+                "AdminChannelGroupUpdateRequest",
+                "AdminChannelGroupMutationResponse",
+                ["item"],
+            ),
+            "/admin/ai/channel_groups/{channelGroupId}/channel_bindings#update": (
+                "channelGroups.channelBindings.update",
+                "ChannelGroupChannelBindingsUpdateRequest",
+                "ChannelGroupChannelBindingsUpdateResponse",
+                ["items"],
+            ),
+            "/admin/ai/resources#create": (
+                "aiResources.create",
+                "AdminAiResourceCreateRequest",
+                "AdminAiResourceMutationResponse",
+                ["item"],
+            ),
+            "/admin/ai/resources/{resourceId}#update": (
+                "aiResources.update",
+                "AdminAiResourceUpdateRequest",
+                "AdminAiResourceMutationResponse",
+                ["item"],
+            ),
+            "/admin/ai/route_explain#explain": (
+                "routeExplain.explain",
+                "AdminRuntimeRouteExplainRequest",
+                "AdminRuntimeRouteExplainResponse",
+                ["source", "ready", "candidateCount", "selectedCandidates", "blockedReasons", "warnings"],
+            ),
+            "/admin/sites#create": (
+                "site.create",
+                "AdminSiteCreateRequest",
+                "AdminSiteMutationResponse",
+                ["item"],
+            ),
+            "/admin/sites/{siteId}#update": (
+                "site.update",
+                "AdminSiteUpdateRequest",
+                "AdminSiteMutationResponse",
+                ["item"],
+            ),
+        }
+
+        for route_and_operation, (operation_id, request_schema, response_schema, response_required) in expected.items():
+            route, operation_name = route_and_operation.split("#", 1)
+            with self.subTest(route=route, operation=operation_name):
+                operation = operations.get(
+                    operation_key(
+                        "tools/bootstrap_frontend_contract_from_route_manifest.py",
+                        operation_name,
+                        route,
+                    )
+                )
+
+                self.assertIsNotNone(operation)
+                self.assertEqual("backend", operation["api_surface"])
+                self.assertEqual(operation_id, operation["operation_id"])
+                self.assertEqual("SdkworkBackendClient", operation["sdk_client"])
+                self.assertIn(operation["api_method"], {"POST", "PUT", "PATCH"})
+                self.assertEqual(request_schema, operation["request_schema"]["name"])
+                self.assertEqual(response_schema, operation["response_schema"]["name"])
+                self.assertEqual(response_required, operation["response_schema"]["schema"]["required"])
 
     def test_preserves_operation_payload_schemas(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

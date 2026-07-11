@@ -43,6 +43,7 @@ test('pickCanonicalEdgeEnv emits only defined canonical keys', () => {
 
 test('sanitizeReleaseHostEnvRecord migrates legacy edge keys to canonical names', () => {
   const sanitized = sanitizeReleaseHostEnvRecord({
+    SDKWORK_ACCESS_TOKEN: 'test-only-input-token',
     PORTAL_TOOL_API_RATE_LIMIT_REQUESTS: '240',
     PORTAL_CSP_CONNECT_SRC: 'https://legacy.example.com',
     PORTAL_PUBLIC_TOOL_API_ENABLED: 'false',
@@ -52,6 +53,7 @@ test('sanitizeReleaseHostEnvRecord migrates legacy edge keys to canonical names'
   assert.equal(sanitized.PORTAL_PUBLIC_TOOL_API_ENABLED, 'false');
   assert.equal(sanitized.PORTAL_TOOL_API_RATE_LIMIT_REQUESTS, undefined);
   assert.equal(sanitized.PORTAL_CSP_CONNECT_SRC, undefined);
+  assert.equal(Object.hasOwn(sanitized, 'SDKWORK_ACCESS_TOKEN'), false);
 });
 
 test('buildReleaseHostEdgeGeneratedEnv emits canonical defaults', () => {

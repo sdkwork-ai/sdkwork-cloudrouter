@@ -569,7 +569,7 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
             )
             self.assertNotIn("requestBody", post_query_operation)
 
-    def test_void_operation_uses_sdkwork_response_with_no_data_schema(self) -> None:
+    def test_delete_operation_uses_no_content_success_without_json_body(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_manifest(root)
@@ -578,20 +578,13 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
             delete_operation = app_spec["paths"]["/app/v3/api/content/comments/{commentId}"]["delete"]
             schemas = app_spec["components"]["schemas"]
 
-            self.assertEqual(
-                {"$ref": "#/components/schemas/CommentsDeleteResult"},
-                delete_operation["responses"]["200"]["content"]["application/json"]["schema"],
-            )
-            self.assertIn("CommentsDeleteResult", schemas)
+            self.assertEqual({"description": "No Content"}, delete_operation["responses"]["204"])
+            self.assertNotIn("200", delete_operation["responses"])
+            self.assertNotIn("201", delete_operation["responses"])
+            self.assertNotIn("202", delete_operation["responses"])
+            self.assertNotIn("CommentsDeleteResult", schemas)
             self.assertIn("NoData", schemas)
             self.assertNotIn("PlusApiResult", schemas)
-            self.assertSdkWorkResponseDataSchema(
-                schemas["CommentsDeleteResult"],
-                {
-                    "allOf": [{"$ref": "#/components/schemas/NoData"}],
-                    "description": "No business data returned by this operation.",
-                },
-            )
             for schema_name, schema in schemas.items():
                 properties = schema.get("properties") if isinstance(schema, dict) else None
                 if isinstance(properties, dict):
@@ -614,8 +607,9 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
             self.assertTrue(operation["requestBody"]["required"])
             self.assertEqual(
                 {"$ref": "#/components/schemas/ApiKeysCreateResult"},
-                operation["responses"]["200"]["content"]["application/json"]["schema"],
+                operation["responses"]["201"]["content"]["application/json"]["schema"],
             )
+            self.assertNotIn("200", operation["responses"])
             self.assertEqual(["name", "group"], schemas["CreateApiKeyRequest"]["required"])
             self.assertEqual(128, schemas["CreateApiKeyRequest"]["properties"]["name"]["maxLength"])
             self.assertSdkWorkResponseDataSchema(
@@ -1172,7 +1166,7 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
             )
             self.assertEqual(
                 {"$ref": "#/components/schemas/PromotionsCodesRedemptionsCreateResult"},
-                redeem_operation["responses"]["200"]["content"]["application/json"]["schema"],
+                redeem_operation["responses"]["201"]["content"]["application/json"]["schema"],
             )
             self.assertIn("PromotionsCodesRedemptionsCreateResult", schemas)
             self.assertSdkWorkResponseDataSchema(
@@ -1187,7 +1181,7 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
             create_key_operation = app_spec["paths"]["/app/v3/api/iam/api_keys"]["post"]
             self.assertEqual(
                 {"$ref": "#/components/schemas/ApiKeysCreateResult"},
-                create_key_operation["responses"]["200"]["content"]["application/json"]["schema"],
+                create_key_operation["responses"]["201"]["content"]["application/json"]["schema"],
             )
 
             path_operation = app_spec["paths"]["/app/v3/api/ai/model_vendors/{vendorCode}"]["get"]
@@ -1246,7 +1240,7 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
 
             self.assertEqual(
                 {"$ref": "#/components/schemas/ApiKeysCreateResult"},
-                app_spec["paths"]["/app/v3/api/iam/api_keys"]["post"]["responses"]["200"]["content"]["application/json"]["schema"],
+                app_spec["paths"]["/app/v3/api/iam/api_keys"]["post"]["responses"]["201"]["content"]["application/json"]["schema"],
             )
             self.assertEqual(
                 {"$ref": "#/components/schemas/FeedsCollectResult"},
@@ -1254,11 +1248,11 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
             )
             self.assertEqual(
                 {"$ref": "#/components/schemas/PromotionsCodesRedemptionsCreateResult"},
-                app_spec["paths"]["/app/v3/api/promotions/codes/redemptions"]["post"]["responses"]["200"]["content"]["application/json"]["schema"],
+                app_spec["paths"]["/app/v3/api/promotions/codes/redemptions"]["post"]["responses"]["201"]["content"]["application/json"]["schema"],
             )
             self.assertEqual(
-                {"$ref": "#/components/schemas/CommentsDeleteResult"},
-                app_spec["paths"]["/app/v3/api/content/comments/{commentId}"]["delete"]["responses"]["200"]["content"]["application/json"]["schema"],
+                {"description": "No Content"},
+                app_spec["paths"]["/app/v3/api/content/comments/{commentId}"]["delete"]["responses"]["204"],
             )
             self.assertEqual(
                 {"$ref": "#/components/schemas/AnnouncementsUpdateResult"},
@@ -1275,7 +1269,16 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
                 for path, path_item in spec["paths"].items():
                     for method, operation in path_item.items():
                         with self.subTest(surface=surface, method=method, path=path):
-                            schema = operation["responses"]["200"]["content"]["application/json"]["schema"]
+                            responses = operation["responses"]
+                            if "204" in responses:
+                                self.assertNotIn("content", responses["204"])
+                                self.assertNotIn("200", responses)
+                                self.assertNotIn("201", responses)
+                                self.assertNotIn("202", responses)
+                                continue
+                            success_statuses = [status for status in ("200", "201", "202") if status in responses]
+                            self.assertEqual(1, len(success_statuses))
+                            schema = responses[success_statuses[0]]["content"]["application/json"]["schema"]
                             self.assertNotEqual("#/components/schemas/OperationResponse", schema.get("$ref"))
                             self.assertTrue(schema.get("$ref", "").endswith("Result"))
                             component_name = schema["$ref"].rsplit("/", 1)[-1]
@@ -1385,6 +1388,8 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
                 {
                     "app": root / "generated" / "openapi" / "clawrouter-app-openapi.json",
                     "backend": root / "generated" / "openapi" / "clawrouter-backend-openapi.json",
+                    "api-authority-app": root / "apis" / "app-api" / "clawrouter" / "clawrouter-app-api.openapi.json",
+                    "api-authority-backend": root / "apis" / "backend-api" / "clawrouter" / "clawrouter-backend-api.openapi.json",
                     "models-catalog-app": root / "generated" / "openapi" / "clawrouter-models-catalog-app-openapi.json",
                     "models-catalog-backend": root / "generated" / "openapi" / "clawrouter-models-catalog-backend-openapi.json",
                     "domain-transport-app": root / "sdks" / "clawrouter-app-sdk" / "openapi" / "clawrouter-app-domain-transport.openapi.json",

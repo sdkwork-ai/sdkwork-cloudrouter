@@ -145,7 +145,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
@@ -167,7 +171,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "DELETE",
@@ -189,7 +197,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "PATCH",
@@ -211,7 +223,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -233,7 +249,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "PUT",
@@ -255,7 +275,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -277,7 +301,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -299,7 +327,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -317,11 +349,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
@@ -339,16 +375,20 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "PUT",
       "path": "/backend/v3/api/ai/model_mappings",
-      "operationId": "modelMappings.replace",
+      "operationId": "modelMappings.collection.update",
       "tags": [
         "ai"
       ],
@@ -361,16 +401,20 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
       "path": "/backend/v3/api/ai/model_mappings/resolve",
-      "operationId": "modelMappings.resolve.create",
+      "operationId": "modelMappings.resolve",
       "tags": [
         "ai"
       ],
@@ -383,11 +427,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "DELETE",
@@ -405,11 +453,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "PATCH",
@@ -427,11 +479,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -449,11 +505,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -471,11 +531,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
@@ -493,11 +557,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -515,11 +583,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -537,11 +609,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
@@ -559,11 +635,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -581,11 +661,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
@@ -603,11 +687,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
@@ -625,11 +713,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "DELETE",
@@ -647,11 +739,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "PATCH",
@@ -669,11 +765,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -691,11 +791,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
@@ -713,11 +817,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -735,11 +843,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "DELETE",
@@ -757,11 +869,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "PATCH",
@@ -779,11 +895,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -801,11 +921,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
@@ -823,11 +947,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "PUT",
@@ -845,11 +973,15 @@
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
+        "owner": "sdkwork-models",
+        "apiAuthority": "sdkwork-models-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-models-catalog-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
@@ -871,7 +1003,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -893,7 +1029,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -1883,7 +2023,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
@@ -1905,7 +2049,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "PUT",
@@ -1927,7 +2075,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "DELETE",
@@ -1949,7 +2101,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
@@ -1971,7 +2127,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -1993,7 +2153,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
@@ -2015,7 +2179,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "PUT",
@@ -2037,7 +2205,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "DELETE",
@@ -2059,7 +2231,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -6239,7 +6415,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
@@ -6261,7 +6441,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "DELETE",
@@ -6283,7 +6467,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "PATCH",
@@ -6305,7 +6493,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -6327,12 +6519,16 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
       "path": "/backend/v3/api/sites/{siteId}/health_check",
-      "operationId": "healthCheck.create",
+      "operationId": "sites.healthCheck",
       "tags": [
         "sites"
       ],
@@ -6349,12 +6545,16 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
       "path": "/backend/v3/api/sites/{siteId}/test_connection",
-      "operationId": "testConnection.create",
+      "operationId": "sites.testConnection",
       "tags": [
         "sites"
       ],
@@ -6371,7 +6571,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -6745,7 +6949,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -6767,7 +6975,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "PATCH",
@@ -6789,7 +7001,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "DELETE",
@@ -6811,12 +7027,16 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
       "path": "/backend/v3/api/system/cache/instances/{instanceName}/refresh",
-      "operationId": "cache.instances.refresh.create",
+      "operationId": "cache.instances.refresh",
       "tags": [
         "system"
       ],
@@ -6833,7 +7053,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "DELETE",
@@ -6855,7 +7079,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -6877,7 +7105,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "DELETE",
@@ -6899,12 +7131,16 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
       "path": "/backend/v3/api/system/cache/namespaces/{namespace}/refresh",
-      "operationId": "cache.namespaces.refresh.create",
+      "operationId": "cache.namespaces.refresh",
       "tags": [
         "system"
       ],
@@ -6921,7 +7157,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -6943,12 +7183,16 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
       "path": "/backend/v3/api/system/cache/refresh",
-      "operationId": "cache.refresh.create",
+      "operationId": "cache.refresh",
       "tags": [
         "system"
       ],
@@ -6965,7 +7209,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -6987,7 +7235,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -7009,7 +7261,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
@@ -7031,7 +7287,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "DELETE",
@@ -7053,7 +7313,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -7075,7 +7339,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -7097,7 +7365,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -7119,7 +7391,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -7141,7 +7417,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -7163,7 +7443,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -7185,7 +7469,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
@@ -7207,7 +7495,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -7229,7 +7521,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
@@ -7251,7 +7547,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -7273,7 +7573,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
@@ -7295,7 +7599,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -7317,7 +7625,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -7339,7 +7651,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "PATCH",
@@ -7361,7 +7677,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -7383,7 +7703,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "POST",
@@ -7405,7 +7729,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "DELETE",
@@ -7427,7 +7755,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "PUT",
@@ -7449,7 +7781,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "PUT",
@@ -7471,7 +7807,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -7493,7 +7833,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "PATCH",
@@ -7515,7 +7859,11 @@
         "apiAuthority": "sdkwork-clawrouter-backend-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
+      "apiSurface": "backend-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
+      }
     },
     {
       "method": "GET",

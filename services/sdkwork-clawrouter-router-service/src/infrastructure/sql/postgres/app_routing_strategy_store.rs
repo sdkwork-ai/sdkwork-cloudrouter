@@ -1,6 +1,7 @@
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
 use crate::domain::{DomainError, DomainResult};
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     AppRoutingMappingRule, AppRoutingStrategyFuture, AppRoutingStrategySnapshot,
@@ -48,9 +49,9 @@ ORDER BY priority ASC NULLS LAST, id ASC
 
 const ENSURE_ROUTING_POLICY: &str = r#"
 INSERT INTO ai_routing_policy
-    (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, policy_code, name, policy_scope, subject_id, capability, fallback_mode, currency)
+    (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, policy_code, name, policy_scope, subject_id, capability, fallback_mode, currency)
 VALUES
-    ($1, $2, $3, 1, 1, $4::timestamp AT TIME ZONE 'UTC', $4::timestamp AT TIME ZONE 'UTC', 0, '{}'::jsonb, $5, 'Console Routing Strategy', 1, $6, 1, $7, 'USD')
+    ($1, $2, $3, $4, 1, 1, $5::timestamp AT TIME ZONE 'UTC', $5::timestamp AT TIME ZONE 'UTC', 0, '{}'::jsonb, $6, 'Console Routing Strategy', 1, $7, 1, $8, 'USD')
 ON CONFLICT(tenant_id, organization_id, policy_code) DO UPDATE SET
     fallback_mode = excluded.fallback_mode,
     subject_id = excluded.subject_id,
@@ -73,9 +74,9 @@ LIMIT 1
 
 const ENSURE_ROUTING_PROFILE: &str = r#"
 INSERT INTO ai_routing_profile
-    (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, policy_id, profile_version, profile_name, release_status, traffic_percent, config_hash, published_at, published_by)
+    (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, policy_id, profile_version, profile_name, release_status, traffic_percent, config_hash, published_at, published_by)
 VALUES
-    ($1, $2, $3, 1, 1, $4::timestamp AT TIME ZONE 'UTC', $4::timestamp AT TIME ZONE 'UTC', 0, '{}'::jsonb, $5, $6, 'Console Routing Strategy', 2, 100, $7, $4::timestamp AT TIME ZONE 'UTC', $8)
+    ($1, $2, $3, $4, 1, 1, $5::timestamp AT TIME ZONE 'UTC', $5::timestamp AT TIME ZONE 'UTC', 0, '{}'::jsonb, $6, $7, 'Console Routing Strategy', 2, 100, $8, $5::timestamp AT TIME ZONE 'UTC', $9)
 "#;
 
 const LOAD_NEXT_PROFILE_VERSION: &str = r#"
@@ -107,9 +108,9 @@ WHERE id = $3
 
 const INSERT_ROUTING_RULE: &str = r#"
 INSERT INTO ai_routing_rule
-    (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, profile_id, rule_code, priority, match_expression, target_model)
+    (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, profile_id, rule_code, priority, match_expression, target_model)
 VALUES
-    ($1, $2, $3, 1, 1, $4::timestamp AT TIME ZONE 'UTC', $4::timestamp AT TIME ZONE 'UTC', 0, '{}'::jsonb, $5, $6, $7, $8::jsonb, $9)
+    ($1, $2, $3, $4, 1, 1, $5::timestamp AT TIME ZONE 'UTC', $5::timestamp AT TIME ZONE 'UTC', 0, '{}'::jsonb, $6, $7, $8, $9::jsonb, $10)
 "#;
 
 #[derive(Debug, Clone)]
@@ -217,6 +218,7 @@ async fn ensure_policy(
     command: &UpdateAppRoutingStrategyCommand,
 ) -> DomainResult<i64> {
     sqlx::query(ENSURE_ROUTING_POLICY)
+        .bind(next_claw_runtime_id("ai_routing_policy")?)
         .bind(&command.policy_uuid)
         .bind(command.subject.tenant_id)
         .bind(command.subject.organization_id)
@@ -245,6 +247,7 @@ async fn ensure_profile(
     let profile_version = next_profile_version(tx, policy_id, command).await?;
     let config_hash = routing_strategy_config_hash(&command.snapshot)?;
     sqlx::query(ENSURE_ROUTING_PROFILE)
+        .bind(next_claw_runtime_id("ai_routing_profile")?)
         .bind(&command.profile_uuid)
         .bind(command.subject.tenant_id)
         .bind(command.subject.organization_id)
@@ -288,6 +291,7 @@ async fn replace_rules(
 ) -> DomainResult<()> {
     for (index, rule) in command.snapshot.mapping_rules.iter().enumerate() {
         sqlx::query(INSERT_ROUTING_RULE)
+            .bind(next_claw_runtime_id("ai_routing_rule")?)
             .bind(&command.rule_uuids[index])
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)

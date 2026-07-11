@@ -80,7 +80,7 @@ fn normalize_environment(environment: Option<String>) -> Result<String, Response
             return Err(bad_request(format!(
                 "environment must be one of {}",
                 PAYMENT_RUNTIME_ENVIRONMENTS.join(", ")
-            )))
+            )));
         }
     };
     Ok(environment.to_owned())

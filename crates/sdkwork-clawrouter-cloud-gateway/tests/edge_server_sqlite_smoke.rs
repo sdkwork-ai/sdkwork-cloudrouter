@@ -37,10 +37,11 @@ use sdkwork_clawrouter_router_service::domain::{
 };
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use sdkwork_clawrouter_router_service::ports::{
-    AppRoutingApiKeyItem, AppRoutingChannelCommandFuture, AppRoutingChannelCommandStore,
-    AppRoutingChannelDeleteOutcome, AppRoutingChannelItem, AppRoutingChannelMutationOutcome,
-    AppRoutingChannelTestOutcome, AppRoutingMappingRule, AppRoutingModelStats,
-    AppRoutingReadFuture, AppRoutingReadStore, AppRoutingRequestTraceItem,
+    AppRoutingApiKeyItem, AppRoutingApiKeyListPage, AppRoutingChannelCommandFuture,
+    AppRoutingChannelCommandStore, AppRoutingChannelDeleteOutcome, AppRoutingChannelItem,
+    AppRoutingChannelListPage, AppRoutingChannelMutationOutcome, AppRoutingChannelTestOutcome,
+    AppRoutingListQuery, AppRoutingMappingRule, AppRoutingModelStats, AppRoutingReadFuture,
+    AppRoutingReadStore, AppRoutingRequestTraceItem, AppRoutingRequestTraceListPage,
     AppRoutingStrategyFuture, AppRoutingStrategySnapshot, AppRoutingStrategyStore,
     AppRoutingStrategySubject, AppRoutingStrategyType, AppRoutingSubject, AppRoutingUsageData,
     AppRoutingUsageSnapshot, CreateAppRoutingChannelCommand, DeleteAppRoutingChannelCommand,
@@ -360,6 +361,7 @@ fn seeded_admin_router(
         trusted_subject_config,
         app_session_config,
         Arc::new(sdkwork_clawrouter_router_service::ports::UnconfiguredProviderHealthProbe),
+        DeploymentMode::from_env().expect("test deployment lifecycle must be valid"),
         default_desktop_cache_manager(),
         Arc::clone(&runtime.database_installer),
         RequestLimitsConfig::default(),
@@ -416,7 +418,7 @@ async fn edge_server_proxies_real_sqlite_gateway_admin_and_app_services() {
         trusted_subject_config,
         app_session_config,
         payment_webhook_config,
-        DeploymentMode::from_env(),
+        DeploymentMode::from_env().expect("test deployment lifecycle must be valid"),
     )
     .await;
 
@@ -1281,16 +1283,26 @@ impl AppRoutingReadStore for InMemoryAppRoutingStore {
     fn load_routing_channels<'a>(
         &'a self,
         _subject: Option<AppRoutingSubject>,
-    ) -> AppRoutingReadFuture<'a, Vec<AppRoutingChannelItem>> {
-        Box::pin(async move { Ok(self.channels_snapshot()) })
+        query: AppRoutingListQuery,
+    ) -> AppRoutingReadFuture<'a, AppRoutingChannelListPage> {
+        Box::pin(async move {
+            let items = self.channels_snapshot();
+            Ok(AppRoutingChannelListPage {
+                total: items.len() as i64,
+                items,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
+        })
     }
 
     fn load_routing_api_keys<'a>(
         &'a self,
         _subject: Option<AppRoutingSubject>,
-    ) -> AppRoutingReadFuture<'a, Vec<AppRoutingApiKeyItem>> {
+        query: AppRoutingListQuery,
+    ) -> AppRoutingReadFuture<'a, AppRoutingApiKeyListPage> {
         Box::pin(async move {
-            Ok(vec![AppRoutingApiKeyItem {
+            let items = vec![AppRoutingApiKeyItem {
                 id: "100".to_owned(),
                 name: "Owner Key".to_owned(),
                 display_key: "sk-owner********ABCD".to_owned(),
@@ -1298,16 +1310,23 @@ impl AppRoutingReadStore for InMemoryAppRoutingStore {
                 status: "enabled".to_owned(),
                 total_usage: "5".to_owned(),
                 created_at: "2026-04-29 12:00:00".to_owned(),
-            }])
+            }];
+            Ok(AppRoutingApiKeyListPage {
+                total: items.len() as i64,
+                items,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
         })
     }
 
     fn load_routing_request_traces<'a>(
         &'a self,
         _subject: Option<AppRoutingSubject>,
-    ) -> AppRoutingReadFuture<'a, Vec<AppRoutingRequestTraceItem>> {
+        query: AppRoutingListQuery,
+    ) -> AppRoutingReadFuture<'a, AppRoutingRequestTraceListPage> {
         Box::pin(async move {
-            Ok(vec![AppRoutingRequestTraceItem {
+            let items = vec![AppRoutingRequestTraceItem {
                 id: "trace-1".to_owned(),
                 time: "2026-04-29 12:01:00".to_owned(),
                 model: "gpt-4o-mini".to_owned(),
@@ -1329,7 +1348,13 @@ impl AppRoutingReadStore for InMemoryAppRoutingStore {
                 started_at: "2026-04-29 12:01:00".to_owned(),
                 ended_at: "2026-04-29 12:01:00.345".to_owned(),
                 streaming: false,
-            }])
+            }];
+            Ok(AppRoutingRequestTraceListPage {
+                total: items.len() as i64,
+                items,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
         })
     }
 

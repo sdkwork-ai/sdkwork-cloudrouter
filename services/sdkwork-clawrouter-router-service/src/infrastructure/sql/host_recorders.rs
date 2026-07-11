@@ -5,11 +5,12 @@ use sdkwork_models_contract_service::{
 };
 use sqlx::{Postgres, Sqlite, Transaction};
 
-use sdkwork_models_contract_service::DomainError;
 use crate::infrastructure::sql::routing_config_change::{
-    record_postgres_ai_routing_config_change, record_sqlite_ai_routing_config_change,
-    AiRoutingConfigChange,
+    AiRoutingConfigChange, record_postgres_ai_routing_config_change,
+    record_sqlite_ai_routing_config_change,
 };
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
+use sdkwork_models_contract_service::DomainError;
 
 pub struct ClawRouterAiRoutingConfigChangeRecorder;
 
@@ -47,11 +48,12 @@ impl OpsAuditLogRecorder for ClawRouterOpsAuditLogRecorder {
             sqlx::query(
                 r#"
                 INSERT INTO ops_audit_log
-                    (uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
+                    (id, uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
                 VALUES
-                    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 "#,
             )
+            .bind(next_claw_runtime_id("ops_audit_log")?)
             .bind(entry.audit_log_uuid)
             .bind(entry.tenant_id)
             .bind(entry.organization_id)
@@ -80,11 +82,12 @@ impl OpsAuditLogRecorder for ClawRouterOpsAuditLogRecorder {
             sqlx::query(
                 r#"
                 INSERT INTO ops_audit_log
-                    (uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
+                    (id, uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
                 VALUES
-                    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
+                    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb)
                 "#,
             )
+            .bind(next_claw_runtime_id("ops_audit_log")?)
             .bind(entry.audit_log_uuid)
             .bind(entry.tenant_id)
             .bind(entry.organization_id)

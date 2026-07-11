@@ -217,33 +217,6 @@
         "description": "Api keys create result schema exposed by Claw Router.",
         "x-operation-id": "apiKeys.create"
       },
-      "ApiKeysDeleteResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by api keys delete result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Api keys delete result schema exposed by Claw Router.",
-        "x-operation-id": "apiKeys.delete"
-      },
       "ApiKeysListResult": {
         "allOf": [
           {
@@ -666,6 +639,33 @@
         "description": "Invocation events list result schema exposed by Claw Router.",
         "x-operation-id": "invocationEvents.list"
       },
+      "InvocationsCompleteResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by invocations complete result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Invocations complete result schema exposed by Claw Router.",
+        "x-operation-id": "invocations.complete"
+      },
       "InvocationsCreateResult": {
         "allOf": [
           {
@@ -746,33 +746,6 @@
         ],
         "description": "Invocations retrieve result schema exposed by Claw Router.",
         "x-operation-id": "invocations.retrieve"
-      },
-      "InvocationsSubmitResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by invocations submit result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Invocations submit result schema exposed by Claw Router.",
-        "x-operation-id": "invocations.submit"
       },
       "JsonNull": {
         "description": "JSON null value.",
@@ -1457,14 +1430,14 @@
         "description": "Shops current brand authorizations list result schema exposed by Claw Router.",
         "x-operation-id": "shops.current.brandAuthorizations.list"
       },
-      "ShopsCurrentBrandAuthorizationsUpsertResult": {
+      "ShopsCurrentBrandAuthorizationsUpdateResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by shops current brand authorizations upsert result.",
+            "description": "Object schema used by shops current brand authorizations update result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -1481,8 +1454,8 @@
             "type": "object"
           }
         ],
-        "description": "Shops current brand authorizations upsert result schema exposed by Claw Router.",
-        "x-operation-id": "shops.current.brandAuthorizations.upsert"
+        "description": "Shops current brand authorizations update result schema exposed by Claw Router.",
+        "x-operation-id": "shops.current.brandAuthorizations.update"
       },
       "ShopsCurrentBusinessHoursRetrieveResult": {
         "allOf": [
@@ -1565,14 +1538,14 @@
         "description": "Shops current category bindings list result schema exposed by Claw Router.",
         "x-operation-id": "shops.current.categoryBindings.list"
       },
-      "ShopsCurrentCategoryBindingsUpsertResult": {
+      "ShopsCurrentCategoryBindingsUpdateResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by shops current category bindings upsert result.",
+            "description": "Object schema used by shops current category bindings update result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -1589,8 +1562,8 @@
             "type": "object"
           }
         ],
-        "description": "Shops current category bindings upsert result schema exposed by Claw Router.",
-        "x-operation-id": "shops.current.categoryBindings.upsert"
+        "description": "Shops current category bindings update result schema exposed by Claw Router.",
+        "x-operation-id": "shops.current.categoryBindings.update"
       },
       "ShopsCurrentChannelsListResult": {
         "allOf": [
@@ -1673,14 +1646,14 @@
         "description": "Shops current customer services list result schema exposed by Claw Router.",
         "x-operation-id": "shops.current.customerServices.list"
       },
-      "ShopsCurrentCustomerServicesUpsertResult": {
+      "ShopsCurrentCustomerServicesUpdateResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by shops current customer services upsert result.",
+            "description": "Object schema used by shops current customer services update result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -1697,8 +1670,8 @@
             "type": "object"
           }
         ],
-        "description": "Shops current customer services upsert result schema exposed by Claw Router.",
-        "x-operation-id": "shops.current.customerServices.upsert"
+        "description": "Shops current customer services update result schema exposed by Claw Router.",
+        "x-operation-id": "shops.current.customerServices.update"
       },
       "ShopsCurrentDashboardRetrieveResult": {
         "allOf": [
@@ -2159,14 +2132,14 @@
         "description": "Shops current qualifications list result schema exposed by Claw Router.",
         "x-operation-id": "shops.current.qualifications.list"
       },
-      "ShopsCurrentQualificationsUpsertResult": {
+      "ShopsCurrentQualificationsUpdateResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by shops current qualifications upsert result.",
+            "description": "Object schema used by shops current qualifications update result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -2183,8 +2156,8 @@
             "type": "object"
           }
         ],
-        "description": "Shops current qualifications upsert result schema exposed by Claw Router.",
-        "x-operation-id": "shops.current.qualifications.upsert"
+        "description": "Shops current qualifications update result schema exposed by Claw Router.",
+        "x-operation-id": "shops.current.qualifications.update"
       },
       "ShopsCurrentReadinessRetrieveResult": {
         "allOf": [
@@ -2267,14 +2240,14 @@
         "description": "Shops current return addresses list result schema exposed by Claw Router.",
         "x-operation-id": "shops.current.returnAddresses.list"
       },
-      "ShopsCurrentReturnAddressesUpsertResult": {
+      "ShopsCurrentReturnAddressesUpdateResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by shops current return addresses upsert result.",
+            "description": "Object schema used by shops current return addresses update result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -2291,8 +2264,8 @@
             "type": "object"
           }
         ],
-        "description": "Shops current return addresses upsert result schema exposed by Claw Router.",
-        "x-operation-id": "shops.current.returnAddresses.upsert"
+        "description": "Shops current return addresses update result schema exposed by Claw Router.",
+        "x-operation-id": "shops.current.returnAddresses.update"
       },
       "ShopsCurrentRiskSignalsListResult": {
         "allOf": [
@@ -2510,14 +2483,14 @@
         "description": "Shops current shipping templates list result schema exposed by Claw Router.",
         "x-operation-id": "shops.current.shippingTemplates.list"
       },
-      "ShopsCurrentShippingTemplatesUpsertResult": {
+      "ShopsCurrentShippingTemplatesUpdateResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by shops current shipping templates upsert result.",
+            "description": "Object schema used by shops current shipping templates update result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -2534,8 +2507,8 @@
             "type": "object"
           }
         ],
-        "description": "Shops current shipping templates upsert result schema exposed by Claw Router.",
-        "x-operation-id": "shops.current.shippingTemplates.upsert"
+        "description": "Shops current shipping templates update result schema exposed by Claw Router.",
+        "x-operation-id": "shops.current.shippingTemplates.update"
       },
       "ShopsCurrentStatusEventsListResult": {
         "allOf": [
@@ -4327,7 +4300,7 @@
         "operationId": "conversations.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -4335,7 +4308,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -4605,7 +4578,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -4613,7 +4586,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -4708,7 +4681,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -4716,7 +4689,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -4872,7 +4845,7 @@
         "operationId": "apiKeys.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -4880,7 +4853,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -4966,15 +4939,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiKeysDeleteResult"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "content": {
@@ -5398,7 +5364,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -5406,7 +5372,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -5492,7 +5458,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -5500,7 +5466,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -5656,7 +5622,7 @@
         "operationId": "invocations.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -5664,7 +5630,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -5932,7 +5898,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -5940,7 +5906,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -6013,7 +5979,7 @@
     "/app/v3/api/runtime/invocations/{invocationId}/complete": {
       "post": {
         "description": "Create. Reads runtime. Writes ops_audit_log. File targets none.",
-        "operationId": "invocations.submit",
+        "operationId": "invocations.complete",
         "parameters": [
           {
             "description": "Invocation id path parameter.",
@@ -6030,7 +5996,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InvocationsSubmitResult"
+                  "$ref": "#/components/schemas/InvocationsCompleteResult"
                 }
               }
             },
@@ -6210,7 +6176,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -6218,7 +6184,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -8620,7 +8586,7 @@
         "operationId": "afterSales.requests.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -8628,7 +8594,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -8808,7 +8774,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -8816,7 +8782,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -8892,7 +8858,7 @@
         "operationId": "shops.current.applications.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -8900,7 +8866,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -8973,14 +8939,14 @@
     "/app/v3/api/system/shops/current/brand_authorizations": {
       "put": {
         "description": "Upsert. Reads system. Writes ops_audit_log. File targets none.",
-        "operationId": "shops.current.brandAuthorizations.upsert",
+        "operationId": "shops.current.brandAuthorizations.update",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ShopsCurrentBrandAuthorizationsUpsertResult"
+                  "$ref": "#/components/schemas/ShopsCurrentBrandAuthorizationsUpdateResult"
                 }
               }
             },
@@ -9141,14 +9107,14 @@
     "/app/v3/api/system/shops/current/category_bindings": {
       "put": {
         "description": "Upsert. Reads system. Writes ops_audit_log. File targets none.",
-        "operationId": "shops.current.categoryBindings.upsert",
+        "operationId": "shops.current.categoryBindings.update",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ShopsCurrentCategoryBindingsUpsertResult"
+                  "$ref": "#/components/schemas/ShopsCurrentCategoryBindingsUpdateResult"
                 }
               }
             },
@@ -9319,14 +9285,14 @@
     "/app/v3/api/system/shops/current/customer_services": {
       "put": {
         "description": "Upsert. Reads system. Writes ops_audit_log. File targets none.",
-        "operationId": "shops.current.customerServices.upsert",
+        "operationId": "shops.current.customerServices.update",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ShopsCurrentCustomerServicesUpsertResult"
+                  "$ref": "#/components/schemas/ShopsCurrentCustomerServicesUpdateResult"
                 }
               }
             },
@@ -9500,7 +9466,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -9508,7 +9474,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -9594,7 +9560,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -9602,7 +9568,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -9772,7 +9738,7 @@
         "operationId": "shops.current.products.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -9780,7 +9746,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -10135,14 +10101,14 @@
     "/app/v3/api/system/shops/current/qualifications": {
       "put": {
         "description": "Upsert. Reads system. Writes ops_audit_log. File targets none.",
-        "operationId": "shops.current.qualifications.upsert",
+        "operationId": "shops.current.qualifications.update",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ShopsCurrentQualificationsUpsertResult"
+                  "$ref": "#/components/schemas/ShopsCurrentQualificationsUpdateResult"
                 }
               }
             },
@@ -10219,14 +10185,14 @@
     "/app/v3/api/system/shops/current/return_addresses": {
       "put": {
         "description": "Upsert. Reads system. Writes ops_audit_log. File targets none.",
-        "operationId": "shops.current.returnAddresses.upsert",
+        "operationId": "shops.current.returnAddresses.update",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ShopsCurrentReturnAddressesUpsertResult"
+                  "$ref": "#/components/schemas/ShopsCurrentReturnAddressesUpdateResult"
                 }
               }
             },
@@ -10306,7 +10272,7 @@
         "operationId": "shops.current.serviceAreas.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -10314,7 +10280,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -10565,14 +10531,14 @@
     "/app/v3/api/system/shops/current/shipping_templates": {
       "put": {
         "description": "Upsert. Reads system. Writes ops_audit_log. File targets none.",
-        "operationId": "shops.current.shippingTemplates.upsert",
+        "operationId": "shops.current.shippingTemplates.update",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ShopsCurrentShippingTemplatesUpsertResult"
+                  "$ref": "#/components/schemas/ShopsCurrentShippingTemplatesUpdateResult"
                 }
               }
             },

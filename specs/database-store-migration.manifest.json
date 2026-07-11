@@ -1,207 +1,1287 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "kind": "sdkwork.database-store-migration",
   "application": "sdkwork-clawrouter",
   "authority": "../sdkwork-specs/DATABASE_SPEC.md",
-  "approvedAt": "2026-06-21",
-  "reviewBy": "2026-12-31",
+  "inventoriedAt": "2026-07-10",
+  "reviewRequired": true,
   "targetPattern": "crates/sdkwork-clawrouter-<capability>-repository-sqlx",
   "legacyInventory": {
     "path": "services/sdkwork-clawrouter-router-service/src/infrastructure/sql",
     "glob": "**/*_store.rs"
   },
-  "migratedStores": [
+  "capabilities": [
     {
       "capability": "admin-monitor",
       "crate": "crates/sdkwork-clawrouter-admin-monitor-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_monitor_read_store.rs"
+      ],
       "legacyPaths": [
         "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_monitor_read_store.rs",
         "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_monitor_read_store.rs"
       ],
-      "status": "MIGRATED"
+      "tables": [
+        "ops_alert_event",
+        "ops_gateway_heartbeat",
+        "ops_gateway_instance",
+        "ops_metric_snapshot"
+      ],
+      "status": "MIGRATED",
+      "verificationStatus": "INCOMPLETE",
+      "priority": "MEDIUM",
+      "migrationOrder": 1,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/admin_monitor_api.rs",
+        "crates/sdkwork-clawrouter-admin-monitor-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Revert the isolated extraction commit and restore both historical dialect stores from git; the database schema is unchanged.",
+      "notes": "Cargo composition is active, but the repository component spec and executable PostgreSQL/SQLite fixture parity evidence are incomplete."
     },
     {
       "capability": "app-gateway-traces",
       "crate": "crates/sdkwork-clawrouter-app-gateway-traces-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/app_gateway_traces_read_store.rs"
+      ],
       "legacyPaths": [
         "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_gateway_traces_read_store.rs",
         "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/app_gateway_traces_read_store.rs"
       ],
-      "status": "MIGRATED"
+      "tables": [
+        "ai_request_trace",
+        "ops_gateway_instance"
+      ],
+      "status": "MIGRATED",
+      "verificationStatus": "INCOMPLETE",
+      "priority": "HIGH",
+      "migrationOrder": 2,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_app_gateway_traces_read_store.rs",
+        "crates/sdkwork-clawrouter-app-gateway-traces-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Revert the isolated extraction commit and restore both historical dialect stores from git; the database schema is unchanged.",
+      "notes": "Cargo composition is active, but the repository component spec and executable PostgreSQL fixture parity evidence are incomplete."
     },
     {
+      "capability": "admin-dashboard",
+      "crate": "crates/sdkwork-clawrouter-admin-dashboard-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_dashboard_read_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_dashboard_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_dashboard_read_store.rs"
+      ],
+      "tables": [
+        "ai_request_trace",
+        "ai_routing_decision_log",
+        "ai_usage",
+        "iam_organization_membership",
+        "iam_user"
+      ],
+      "status": "MIGRATED",
+      "verificationStatus": "INCOMPLETE",
+      "priority": "MEDIUM",
+      "migrationOrder": 3,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_admin_dashboard_read_store.rs",
+        "crates/sdkwork-clawrouter-admin-dashboard-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Revert the isolated extraction commit and restore both historical dialect stores from git; the database schema is unchanged.",
+      "ownerReviewRequired": true,
+      "notes": "The read model spans Claw Router and IAM tables; ownership review and complete dialect parity remain required."
+    },
+    {
+      "capability": "admin-analytics",
+      "crate": "crates/sdkwork-clawrouter-admin-analytics-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_analytics_read_store.rs"
+      ],
+        "legacyPaths": [
+          "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_analytics_read_store.rs",
+          "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_analytics_read_store.rs"
+        ],
+        "historicalSupportPaths": [
+          "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sql_admin_analytics.rs"
+      ],
+      "tables": [
+        "ai_request_trace",
+        "ai_usage"
+      ],
+      "status": "MIGRATED",
+      "verificationStatus": "INCOMPLETE",
+      "priority": "MEDIUM",
+      "migrationOrder": 4,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_admin_analytics_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/postgres_admin_analytics_read_store_sql_contract.rs",
+        "crates/sdkwork-clawrouter-admin-analytics-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Revert the isolated extraction commit and restore the historical dialect stores and SQL helper from git; the database schema is unchanged.",
+      "notes": "Cargo composition is active, but the repository component spec and executable PostgreSQL/SQLite fixture parity evidence are incomplete."
+    },
+    {
+      "capability": "app-providers",
+      "crate": "crates/sdkwork-clawrouter-app-providers-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/app_providers_read_store.rs"
+      ],
+        "legacyPaths": [
+          "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_providers_read_store.rs",
+          "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/app_providers_read_store.rs"
+        ],
+        "historicalSupportPaths": [
+          "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/provider_classification.rs"
+      ],
+      "tables": [
+        "ai_channel",
+        "ai_channel_resource",
+        "ai_provider",
+        "ai_resource",
+        "integration_proxy",
+        "ops_config_snapshot"
+      ],
+      "status": "MIGRATED",
+      "verificationStatus": "INCOMPLETE",
+      "priority": "HIGH",
+      "migrationOrder": 5,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_app_providers_read_store.rs",
+        "crates/sdkwork-clawrouter-app-providers-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Revert the isolated extraction commit and restore the historical dialect stores and classification helper from git; the database schema is unchanged.",
+      "ownerReviewRequired": true,
+      "notes": "The read model spans AI, integration, and operations tables; repository component ownership and PostgreSQL parity remain incomplete."
+    },
+    {
+      "capability": "settlements-dashboard",
+      "crate": "crates/sdkwork-clawrouter-settlements-dashboard-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/settlements_dashboard_read_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/settlements_dashboard_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/settlements_dashboard_read_store.rs"
+      ],
+      "tables": [
+        "ai_usage",
+        "commerce_billing_export",
+        "commerce_invoice",
+        "commerce_usage_settlement",
+        "commerce_usage_statement",
+        "commerce_usage_statement_item"
+      ],
+      "status": "MIGRATED",
+      "verificationStatus": "INCOMPLETE",
+      "priority": "HIGH",
+      "migrationOrder": 6,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/settlements_dashboard_store_sql_contract.rs",
+        "services/sdkwork-clawrouter-router-service/tests/app_settlements_api.rs",
+        "crates/sdkwork-clawrouter-settlements-dashboard-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Revert the isolated extraction commit and restore both historical dialect stores from git; the database schema is unchanged.",
+      "ownerReviewRequired": true,
+      "notes": "The read model crosses AI and commerce ownership; the repository component spec and executable PostgreSQL/SQLite fixture parity evidence are incomplete."
+    },
+    {
+      "capability": "api-key",
+      "crate": "crates/sdkwork-clawrouter-api-key-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/api_key_command_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/ports/api_key_management_read_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/api_key_command_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/api_key_command_store.rs"
+      ],
+      "tables": [
+        "ai_channel_group",
+        "ai_pricing_plan",
+        "ai_quota_policy",
+        "iam_gateway_access_policy",
+        "iam_gateway_api_key",
+        "ops_audit_log"
+      ],
+      "status": "PENDING",
+      "priority": "CRITICAL",
+      "migrationOrder": 7,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/app_api_keys.rs",
+        "services/sdkwork-clawrouter-router-service/tests/api_key_authenticator.rs",
+        "crates/sdkwork-clawrouter-api-key-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until secret, isolation, idempotency, and dialect parity pass; switch composition back to the legacy adapters and revert the isolated extraction without changing schema.",
+      "ownerReviewRequired": true,
+      "notes": "Security-critical. The management read implementation also remains embedded in each dialect loader and must move through the same port boundary without exposing plaintext key material."
+    },
+    {
+      "capability": "admin-provider-secret",
+      "crate": "crates/sdkwork-clawrouter-admin-provider-secret-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_provider_secret_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_provider_secret_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_provider_secret_store.rs"
+      ],
+      "tables": [
+        "integration_provider_account",
+        "ops_audit_log",
+        "ops_config_snapshot"
+      ],
+      "status": "PENDING",
+      "priority": "CRITICAL",
+      "migrationOrder": 8,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_admin_provider_secret_store.rs",
+        "crates/sdkwork-clawrouter-admin-provider-secret-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until encryption, redaction, isolation, audit, and dialect parity pass; switch composition back to the legacy adapter and revert the isolated extraction without changing schema.",
+      "ownerReviewRequired": true,
+      "notes": "Security-critical integration credential storage; no plaintext secret may be persisted, logged, audited, or returned."
+    },
+    {
+      "capability": "admin-channel-group",
+      "crate": "crates/sdkwork-clawrouter-admin-channel-group-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_channel_group_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_channel_group_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_channel_group_store.rs"
+      ],
+      "tables": [
+        "ai_channel",
+        "ai_channel_group",
+        "ai_channel_group_member",
+        "ai_channel_group_metric_snapshot",
+        "ai_channel_group_resource",
+        "ai_pricing_plan",
+        "ai_pricing_plan_binding",
+        "ai_provider",
+        "ai_resource",
+        "ai_resource_group",
+        "ops_audit_log",
+        "ops_config_snapshot"
+      ],
+      "status": "PENDING",
+      "priority": "CRITICAL",
+      "migrationOrder": 9,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_admin_channel_group_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/admin_channel_group_api.rs",
+        "crates/sdkwork-clawrouter-admin-channel-group-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until transaction, isolation, pagination, conflict, and dialect parity pass; switch composition back to the legacy adapter and revert the isolated extraction without changing schema."
+    },
+    {
+      "capability": "admin-channel",
+      "crate": "crates/sdkwork-clawrouter-admin-channel-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_channel_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_channel_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_channel_store.rs"
+      ],
+      "tables": [
+        "ai_channel",
+        "ai_channel_credential",
+        "ai_channel_resource",
+        "ai_provider",
+        "ai_resource",
+        "ai_resource_group",
+        "integration_provider_health_snapshot",
+        "ops_audit_log",
+        "ops_config_snapshot"
+      ],
+      "status": "PENDING",
+      "priority": "CRITICAL",
+      "migrationOrder": 10,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_admin_channel_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/admin_channel_api.rs",
+        "crates/sdkwork-clawrouter-admin-channel-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until credential, transaction, isolation, conflict, and dialect parity pass; switch composition back to the legacy adapter and revert the isolated extraction without changing schema.",
+      "ownerReviewRequired": true,
+      "notes": "Provider credential and health data cross AI and integration ownership boundaries."
+    },
+    {
+      "capability": "app-routing",
+      "crate": "crates/sdkwork-clawrouter-app-routing-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/app_routing_channel_command_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/ports/app_routing_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/ports/app_routing_strategy_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_routing_channel_command_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/app_routing_channel_command_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_routing_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/app_routing_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_routing_strategy_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/app_routing_strategy_store.rs"
+      ],
+      "tables": [
+        "ai_channel",
+        "ai_channel_credential",
+        "ai_channel_resource",
+        "ai_provider",
+        "ai_request_trace",
+        "ai_resource",
+        "ai_resource_group",
+        "ai_routing_decision_log",
+        "ai_routing_policy",
+        "ai_routing_profile",
+        "ai_routing_rule",
+        "ai_usage",
+        "iam_gateway_api_key",
+        "integration_provider_health_snapshot",
+        "ops_audit_log",
+        "ops_config_snapshot"
+      ],
+      "status": "PENDING",
+      "priority": "CRITICAL",
+      "migrationOrder": 11,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_app_routing_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_app_routing_channel_command_store.rs",
+        "crates/sdkwork-clawrouter-app-routing-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Remove the undeclared App mutation surface first; keep remaining read and strategy stores until isolation, selection, policy, pagination, and dialect parity pass, then switch composition back if extraction fails.",
+      "ownerReviewRequired": true,
+      "notes": "The channel-command pair is a retirement candidate after App mutation routes are removed and must not be copied into the target crate unless a current non-App consumer is proven."
+    },
+    {
+      "capability": "admin-api-key-rate-limit",
+      "crate": "crates/sdkwork-clawrouter-admin-api-key-rate-limit-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_api_key_rate_limit_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_api_key_rate_limit_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_api_key_rate_limit_store.rs"
+      ],
+      "tables": [
+        "ai_quota_policy",
+        "iam_gateway_api_key",
+        "ops_audit_log",
+        "ops_config_snapshot"
+      ],
+      "status": "PENDING",
+      "priority": "HIGH",
+      "migrationOrder": 12,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/admin_api_key_rate_limit_api.rs",
+        "crates/sdkwork-clawrouter-admin-api-key-rate-limit-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until isolation, limits, conflict, audit, and dialect parity pass; switch composition back to the legacy adapter and revert the isolated extraction without changing schema.",
+      "ownerReviewRequired": true
+    },
+    {
+      "capability": "admin-model-rate-limit",
+      "crate": "crates/sdkwork-clawrouter-admin-model-rate-limit-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_model_rate_limit_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_model_rate_limit_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_model_rate_limit_store.rs"
+      ],
+      "tables": [
+        "ai_channel_group",
+        "ai_quota_policy",
+        "ops_audit_log",
+        "ops_config_snapshot"
+      ],
+      "status": "PENDING",
+      "priority": "HIGH",
+      "migrationOrder": 13,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/admin_model_rate_limit_api.rs",
+        "crates/sdkwork-clawrouter-admin-model-rate-limit-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until isolation, limits, conflict, audit, and dialect parity pass; switch composition back to the legacy adapter and revert the isolated extraction without changing schema."
+    },
+    {
+      "capability": "admin-firewall-rule",
+      "crate": "crates/sdkwork-clawrouter-admin-firewall-rule-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_firewall_rule_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_firewall_rule_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_firewall_rule_store.rs"
+      ],
+      "tables": [
+        "iam_gateway_risk_rule",
+        "ops_audit_log",
+        "ops_config_snapshot"
+      ],
+      "status": "PENDING",
+      "priority": "HIGH",
+      "migrationOrder": 14,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/admin_firewall_rule_api.rs",
+        "crates/sdkwork-clawrouter-admin-firewall-rule-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until isolation, rule validation, conflict, audit, and dialect parity pass; switch composition back to the legacy adapter and revert the isolated extraction without changing schema.",
+      "ownerReviewRequired": true
+    },
+    {
+      "capability": "admin-ip-rate-limit",
+      "crate": "crates/sdkwork-clawrouter-admin-ip-rate-limit-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_ip_rate_limit_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_ip_rate_limit_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_ip_rate_limit_store.rs"
+      ],
+      "tables": [
+        "iam_gateway_risk_rule",
+        "ops_audit_log",
+        "ops_config_snapshot"
+      ],
+      "status": "PENDING",
+      "priority": "HIGH",
+      "migrationOrder": 15,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/admin_ip_rate_limit_api.rs",
+        "crates/sdkwork-clawrouter-admin-ip-rate-limit-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until isolation, rule validation, conflict, audit, and dialect parity pass; switch composition back to the legacy adapter and revert the isolated extraction without changing schema.",
+      "ownerReviewRequired": true
+    },
+    {
+      "capability": "usage-settlement",
+      "crate": "crates/sdkwork-clawrouter-usage-settlement-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/usage_settlement_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/usage_settlement_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/usage_settlement_store.rs"
+      ],
+      "tables": [
+        "ai_usage",
+        "commerce_account",
+        "commerce_account_ledger_entry",
+        "commerce_settlement"
+      ],
+      "status": "PENDING",
+      "priority": "CRITICAL",
+      "migrationOrder": 16,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_usage_settlement_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/postgres_usage_settlement_store_sql_contract.rs",
+        "services/sdkwork-clawrouter-router-service/tests/usage_settlement_worker.rs",
+        "crates/sdkwork-clawrouter-usage-settlement-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until reservation, locking, idempotency, insufficient-balance, recovery, and dialect parity pass; switch composition back without rolling back schema or replaying settled ledger entries.",
+      "ownerReviewRequired": true,
+      "notes": "Financially critical and cross-owner. PostgreSQL locking and SQLite transaction behavior must produce the same terminal settlement outcome without double debit."
+    },
+    {
+      "capability": "payment-runtime",
+      "crate": "crates/sdkwork-clawrouter-payment-runtime-repository-sqlx",
+        "portPaths": [
+          "services/sdkwork-clawrouter-router-service/src/ports/payment_intent_runtime_store.rs",
+          "services/sdkwork-clawrouter-router-service/src/ports/payment_refund_runtime_store.rs",
+          "services/sdkwork-clawrouter-router-service/src/ports/payment_reconciliation_runtime_store.rs"
+        ],
+        "currentContractPaths": [
+          "services/sdkwork-clawrouter-router-service/src/application/payment_intent_runtime.rs",
+          "services/sdkwork-clawrouter-router-service/src/application/payment_refund_runtime.rs",
+          "services/sdkwork-clawrouter-router-service/src/application/payment_reconciliation_runtime.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/payment_intent_runtime_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/payment_intent_runtime_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/payment_reconciliation_runtime_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/payment_reconciliation_runtime_store.rs"
+      ],
+      "tables": [
+        "commerce_payment_attempt",
+        "commerce_payment_intent",
+        "commerce_payment_operation_attempt",
+        "commerce_payment_reconciliation_item",
+        "commerce_payment_route_decision",
+        "commerce_payment_statement",
+        "commerce_payment_statement_item",
+        "commerce_refund",
+        "commerce_refund_attempt",
+        "commerce_refund_event",
+        "commerce_refund_item"
+      ],
+      "status": "PENDING",
+      "priority": "CRITICAL",
+      "migrationOrder": 17,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_payment_intent_runtime_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_payment_reconciliation_runtime_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/postgres_payment_intent_runtime_sql_contract.rs",
+        "services/sdkwork-clawrouter-router-service/tests/postgres_payment_reconciliation_runtime_sql_contract.rs",
+        "crates/sdkwork-clawrouter-payment-runtime-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect implementations until payment, refund, reconciliation, idempotency, recovery, and dialect parity pass; switch composition back without reverting completed financial records or changing schema.",
+      "ownerReviewRequired": true,
+      "notes": "The persistence contracts currently live under application instead of ports, and all tables belong to the payment/commerce bounded context. Resolve canonical owner before extraction."
+    },
+    {
+      "capability": "payment-callback",
+      "crate": "crates/sdkwork-clawrouter-payment-callback-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/payment_callback_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/payment_callback_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/payment_callback_store.rs"
+      ],
+      "tables": [
+        "commerce_account",
+        "commerce_account_ledger_entry",
+        "commerce_order",
+        "commerce_payment_attempt",
+        "commerce_payment_intent",
+        "commerce_payment_webhook_delivery",
+        "commerce_payment_webhook_event"
+      ],
+      "status": "PENDING",
+      "priority": "CRITICAL",
+      "migrationOrder": 18,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_payment_callback_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/postgres_payment_callback_sql_contract.rs",
+        "services/sdkwork-clawrouter-router-service/tests/postgres_transaction_integration.rs",
+        "crates/sdkwork-clawrouter-payment-callback-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until signature-bound callback, deduplication, transaction rollback, ledger idempotency, and dialect parity pass; switch composition back without replaying accepted callbacks or changing schema.",
+      "ownerReviewRequired": true
+    },
+    {
+      "capability": "admin-transaction-center",
+      "crate": "crates/sdkwork-clawrouter-admin-transaction-center-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_transaction_center_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_transaction_center_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_transaction_center_store.rs"
+      ],
+      "tables": [
+        "commerce_fulfillment_order",
+        "commerce_order",
+        "commerce_order_amount_breakdown",
+        "commerce_order_event",
+        "commerce_payment_attempt",
+        "commerce_payment_channel",
+        "commerce_payment_intent",
+        "commerce_payment_method",
+        "commerce_payment_provider",
+        "commerce_payment_provider_account",
+        "commerce_payment_reconciliation_run",
+        "commerce_payment_route_rule",
+        "commerce_payment_webhook_event",
+        "commerce_refund",
+        "commerce_shipment",
+        "commerce_shipment_tracking_event",
+        "ops_audit_log"
+      ],
+      "status": "PENDING",
+      "priority": "CRITICAL",
+      "migrationOrder": 19,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/admin_transaction_center_api.rs",
+        "services/sdkwork-clawrouter-router-service/tests/admin_transaction_center_store_sql_contract.rs",
+        "crates/sdkwork-clawrouter-admin-transaction-center-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until isolation, pagination, financial state mapping, audit, and dialect parity pass; switch composition back without reverting business transactions or changing schema.",
+      "ownerReviewRequired": true,
+      "notes": "Cross-domain commerce/payment read and command model; canonical write owner must approve the repository boundary."
+    },
+    {
+      "capability": "admin-finance",
+      "crate": "crates/sdkwork-clawrouter-admin-finance-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_finance_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_finance_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_finance_store.rs"
+      ],
+      "tables": [
+        "commerce_account_ledger_entry",
+        "commerce_invoice",
+        "commerce_order",
+        "commerce_payment_attempt",
+        "commerce_refund",
+        "commerce_settlement",
+        "commerce_statement"
+      ],
+      "status": "PENDING",
+      "priority": "CRITICAL",
+      "migrationOrder": 20,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_admin_finance_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/admin_finance_store_sql_contract.rs",
+        "crates/sdkwork-clawrouter-admin-finance-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until isolation, pagination, decimal/status mapping, and dialect parity pass; switch composition back without changing financial rows or schema.",
+      "ownerReviewRequired": true
+    },
+    {
+      "capability": "usage-logs",
+      "crate": "crates/sdkwork-clawrouter-usage-logs-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/usage_logs_read_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/usage_logs_read_store.rs"
+      ],
+      "tables": [
+        "ai_channel_group",
+        "ai_request_trace",
+        "ai_routing_decision_log",
+        "ai_usage"
+      ],
+      "status": "PENDING",
+      "priority": "HIGH",
+      "migrationOrder": 21,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/app_dashboard_api.rs",
+        "tests/test_usage_logs_runtime_standard.py",
+        "crates/sdkwork-clawrouter-usage-logs-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until tenant isolation, SQL pagination, stable sorting, high-volume query plans, and dialect parity pass; switch composition back without changing schema.",
+      "notes": "High-volume read path; parity evidence must include bounded server-side pagination and representative index plans."
+    },
+    {
+      "capability": "admin-record",
+      "crate": "crates/sdkwork-clawrouter-admin-record-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_record_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_record_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_record_store.rs"
+      ],
+      "tables": [
+        "ai_request_trace",
+        "ai_routing_decision_log",
+        "ai_usage",
+        "iam_user"
+      ],
+      "status": "PENDING",
+      "priority": "HIGH",
+      "migrationOrder": 22,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_admin_record_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/admin_record_api.rs",
+        "crates/sdkwork-clawrouter-admin-record-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until isolation, SQL pagination, stable sorting, and dialect parity pass; switch composition back without changing schema.",
+      "ownerReviewRequired": true
+    },
+    {
+      "capability": "app-chat",
+      "crate": "crates/sdkwork-clawrouter-app-chat-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/app_chat_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_chat_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/app_chat_store.rs"
+      ],
+      "tables": [
+        "ai_chat_context_snapshot",
+        "ai_chat_conversation",
+        "ai_chat_item",
+        "ai_chat_message",
+        "ai_chat_message_part",
+        "ai_chat_turn",
+        "ai_runtime_invocation",
+        "ai_runtime_usage_link"
+      ],
+      "status": "PENDING",
+      "priority": "HIGH",
+      "migrationOrder": 23,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_app_chat_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/postgres_app_chat_sql_contract.rs",
+        "crates/sdkwork-clawrouter-app-chat-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until conversation transaction, ordering, idempotency, pagination, and dialect parity pass; switch composition back without changing schema.",
+      "notes": "Current table usage differs by dialect: PostgreSQL references ai_runtime_invocation while SQLite does not. Resolve behavior before extraction."
+    },
+    {
+      "capability": "app-runtime",
+      "crate": "crates/sdkwork-clawrouter-app-runtime-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/app_runtime_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_runtime_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/app_runtime_store.rs"
+      ],
+      "tables": [
+        "ai_agent_run",
+        "ai_agent_run_step",
+        "ai_agent_session",
+        "ai_chat_conversation",
+        "ai_chat_item",
+        "ai_chat_turn",
+        "ai_runtime_artifact",
+        "ai_runtime_invocation",
+        "ai_runtime_invocation_event"
+      ],
+      "status": "PENDING",
+      "priority": "HIGH",
+      "migrationOrder": 24,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_app_runtime_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/postgres_app_runtime_sql_contract.rs",
+        "crates/sdkwork-clawrouter-app-runtime-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until run/session lifecycle, event ordering, transaction, isolation, pagination, and dialect parity pass; switch composition back without changing schema."
+    },
+    {
+      "capability": "admin-user",
+      "crate": "crates/sdkwork-clawrouter-admin-user-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_user_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_user_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_user_store.rs"
+      ],
+      "tables": [
+        "ai_channel_group",
+        "ai_pricing_plan",
+        "commerce_account",
+        "commerce_account_ledger_entry",
+        "iam_gateway_api_key",
+        "iam_organization_membership",
+        "iam_user",
+        "iam_user_identity",
+        "ops_audit_log"
+      ],
+      "status": "PENDING",
+      "priority": "HIGH",
+      "migrationOrder": 25,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/admin_user_api.rs",
+        "services/sdkwork-clawrouter-router-service/tests/admin_user_store_sql_contract.rs",
+        "services/sdkwork-clawrouter-router-service/tests/database_installer.rs",
+        "crates/sdkwork-clawrouter-admin-user-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until IAM isolation, identity, API-key, account, audit, and dialect parity pass; switch composition back without changing identity or financial rows.",
+      "ownerReviewRequired": true,
+      "notes": "This store crosses IAM, AI, and commerce write ownership. Prefer canonical domain repositories or an approved read-model adapter rather than duplicating source-of-record writes."
+    },
+    {
+      "capability": "admin-service-provider",
+      "crate": "crates/sdkwork-clawrouter-admin-service-provider-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_service_provider_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_service_provider_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_service_provider_store.rs"
+      ],
+      "tables": [
+        "ai_usage_service_provider_edge",
+        "analytics_service_provider_daily",
+        "analytics_service_provider_edge_daily",
+        "integration_provider_adjustment",
+        "integration_provider_exposure_snapshot",
+        "integration_provider_reconciliation_item",
+        "integration_provider_reconciliation_run",
+        "integration_provider_statement",
+        "integration_service_provider",
+        "integration_service_provider_closure",
+        "integration_service_provider_contract",
+        "integration_service_provider_edge",
+        "integration_service_provider_finance_profile",
+        "integration_service_provider_member",
+        "integration_service_provider_price_plan",
+        "integration_service_provider_price_rule",
+        "ops_audit_log"
+      ],
+      "status": "PENDING",
+      "priority": "HIGH",
+      "migrationOrder": 26,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_admin_service_provider_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/postgres_admin_service_provider_store_sql_contract.rs",
+        "services/sdkwork-clawrouter-router-service/tests/admin_service_provider_api.rs",
+        "crates/sdkwork-clawrouter-admin-service-provider-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until hierarchy, finance, reconciliation, isolation, pagination, and dialect parity pass; switch composition back without changing schema or replaying reconciliation.",
+      "ownerReviewRequired": true
+    },
+    {
+      "capability": "admin-messaging",
+      "crate": "crates/sdkwork-clawrouter-admin-messaging-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_messaging_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_messaging_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_messaging_store.rs"
+      ],
+      "tables": [
+        "iam_verification_scene_policy",
+        "integration_provider",
+        "integration_provider_account",
+        "messaging_delivery_event",
+        "messaging_provider_capability",
+        "messaging_rate_limit_bucket",
+        "messaging_route_rule",
+        "messaging_route_rule_target",
+        "messaging_send_attempt",
+        "messaging_send_request",
+        "messaging_sender_identity",
+        "messaging_suppression",
+        "messaging_template",
+        "messaging_template_variant",
+        "messaging_template_version",
+        "ops_audit_log"
+      ],
+      "status": "PENDING",
+      "priority": "HIGH",
+      "migrationOrder": 27,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_admin_messaging_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/admin_messaging_api.rs",
+        "crates/sdkwork-clawrouter-admin-messaging-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until template versioning, routing, suppression, rate-limit, credential redaction, isolation, and dialect parity pass; switch composition back without changing schema.",
+      "ownerReviewRequired": true
+    },
+    {
+      "capability": "admin-marketing",
+      "crate": "crates/sdkwork-clawrouter-admin-marketing-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_marketing_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_marketing_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_marketing_store.rs"
+      ],
+      "tables": [
+        "commerce_exchange_rule",
+        "commerce_order",
+        "commerce_payment_attempt",
+        "commerce_payment_method",
+        "commerce_product_sku",
+        "commerce_product_spu",
+        "commerce_product_spu_category",
+        "commerce_recharge_package",
+        "iam_user",
+        "ops_audit_log",
+        "ops_referral_stat_snapshot",
+        "promotion_code",
+        "promotion_coupon_stock",
+        "promotion_offer",
+        "promotion_offer_version",
+        "promotion_user_coupon"
+      ],
+      "status": "PENDING",
+      "priority": "HIGH",
+      "migrationOrder": 28,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_admin_marketing_coupon_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_commerce_exchange_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/admin_marketing_api.rs",
+        "crates/sdkwork-clawrouter-admin-marketing-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until promotion, stock, exchange, transaction, isolation, and dialect parity pass; switch composition back without changing schema or reissuing codes.",
+      "ownerReviewRequired": true,
+      "notes": "Large cross-domain writer over promotion, commerce, IAM, and operations tables; canonical owners must approve the final repository split."
+    },
+    {
+      "capability": "admin-catalog",
+      "crate": "crates/sdkwork-clawrouter-admin-catalog-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_catalog_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_catalog_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_catalog_store.rs"
+      ],
+      "tables": [
+        "c_category",
+        "commerce_price_list",
+        "commerce_product_attribute",
+        "commerce_product_attribute_value",
+        "commerce_product_category",
+        "commerce_product_category_attribute",
+        "commerce_product_media",
+        "commerce_product_sku",
+        "commerce_product_sku_attribute",
+        "commerce_product_spu",
+        "commerce_product_spu_category"
+      ],
+      "status": "PENDING",
+      "priority": "HIGH",
+      "migrationOrder": 29,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/admin_catalog_api.rs",
+        "services/sdkwork-clawrouter-router-service/tests/database_installer.rs",
+        "crates/sdkwork-clawrouter-admin-catalog-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until catalog graph, uniqueness, import idempotency, pagination, isolation, and dialect parity pass; switch composition back without changing schema.",
+      "ownerReviewRequired": true,
+      "notes": "Commerce/catalog source-of-record tables should be delegated to their canonical domain repository where available."
+    },
+    {
+      "capability": "admin-inventory",
+      "crate": "crates/sdkwork-clawrouter-admin-inventory-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_inventory_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_inventory_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_inventory_store.rs"
+      ],
+      "tables": [
+        "commerce_inventory_movement",
+        "commerce_inventory_reservation",
+        "commerce_inventory_stock"
+      ],
+      "status": "PENDING",
+      "priority": "HIGH",
+      "migrationOrder": 30,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/admin_catalog_api.rs",
+        "crates/sdkwork-clawrouter-admin-inventory-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until reservation concurrency, movement idempotency, isolation, and dialect parity pass; switch composition back without changing inventory records or schema.",
+      "ownerReviewRequired": true,
+      "notes": "Inventory source-of-record writes should be delegated to the canonical inventory repository where available."
+    },
+    {
+      "capability": "admin-storage",
+      "crate": "crates/sdkwork-clawrouter-admin-storage-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_storage_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_storage_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_storage_store.rs"
+      ],
+      "tables": [
+        "object_bucket",
+        "object_provider",
+        "ops_audit_log",
+        "storage_default_bucket_policy",
+        "storage_gc_job",
+        "storage_quota_policy",
+        "storage_reconciliation_run",
+        "storage_usage_counter",
+        "storage_usage_ledger",
+        "storage_usage_snapshot"
+      ],
+      "status": "PENDING",
+      "priority": "HIGH",
+      "migrationOrder": 31,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_admin_storage_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/admin_storage_api.rs",
+        "crates/sdkwork-clawrouter-admin-storage-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until quota, ledger, reconciliation, GC lifecycle, isolation, and dialect parity pass; switch composition back without changing object or usage records.",
+      "ownerReviewRequired": true
+    },
+    {
+      "capability": "admin-mcp",
+      "crate": "crates/sdkwork-clawrouter-admin-mcp-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_mcp_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_mcp_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_mcp_store.rs"
+      ],
+      "tables": [
+        "ai_mcp_binding",
+        "ai_mcp_server",
+        "ai_mcp_server_revision",
+        "ai_mcp_tool"
+      ],
+      "status": "PENDING",
+      "priority": "MEDIUM",
+      "migrationOrder": 32,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/admin_mcp_api.rs",
+        "crates/sdkwork-clawrouter-admin-mcp-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until revision, binding, tool, isolation, pagination, and dialect parity pass; switch composition back without changing schema."
+    },
+    {
+      "capability": "admin-site",
+      "crate": "crates/sdkwork-clawrouter-admin-site-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_site_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_site_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_site_store.rs"
+      ],
+      "tables": [
+        "ai_channel",
+        "ai_site",
+        "ai_site_service",
+        "ops_audit_log"
+      ],
+      "status": "PENDING",
+      "priority": "MEDIUM",
+      "migrationOrder": 33,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/admin_site_api.rs",
+        "crates/sdkwork-clawrouter-admin-site-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until site/channel association, transaction, isolation, and dialect parity pass; switch composition back without changing schema."
+    },
+    {
+      "capability": "admin-announcement",
+      "crate": "crates/sdkwork-clawrouter-admin-announcement-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_announcement_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_announcement_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_announcement_store.rs"
+      ],
+      "tables": [
+        "ops_audit_log",
+        "ops_notification_message",
+        "ops_notification_recipient"
+      ],
+      "status": "PENDING",
+      "priority": "MEDIUM",
+      "migrationOrder": 34,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_admin_announcement_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/admin_announcement_api.rs",
+        "crates/sdkwork-clawrouter-admin-announcement-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until recipient fan-out, transaction, audit, isolation, pagination, and dialect parity pass; switch composition back without duplicating messages."
+    },
+    {
+      "capability": "app-notification",
+      "crate": "crates/sdkwork-clawrouter-app-notification-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/app_notification_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_notification_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/app_notification_store.rs"
+      ],
+      "tables": [
+        "iam_organization_membership",
+        "ops_notification_delivery",
+        "ops_notification_message",
+        "ops_notification_recipient"
+      ],
+      "status": "PENDING",
+      "priority": "MEDIUM",
+      "migrationOrder": 35,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_app_notification_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/app_notification_api.rs",
+        "crates/sdkwork-clawrouter-app-notification-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until subject isolation, read state, pagination, deletion, and dialect parity pass; switch composition back without changing notification state.",
+      "ownerReviewRequired": true,
+      "notes": "SQLite also queries sqlite_master as an engine catalog readiness probe; sqlite_master is not an owned business table and is intentionally absent from tables."
+    },
+    {
+      "capability": "dashboard-overview",
+      "crate": "crates/sdkwork-clawrouter-dashboard-overview-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/dashboard_overview_read_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/dashboard_overview_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/dashboard_overview_read_store.rs"
+      ],
+      "tables": [
+        "ai_model",
+        "ai_model_rank_snapshot",
+        "ai_request_trace",
+        "ai_usage",
+        "ops_gateway_instance",
+        "ops_metric_snapshot",
+        "ops_notification_message",
+        "ops_notification_recipient"
+      ],
+      "status": "PENDING",
+      "priority": "MEDIUM",
+      "migrationOrder": 36,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_dashboard_overview_read_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/app_dashboard_api.rs",
+        "crates/sdkwork-clawrouter-dashboard-overview-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until isolation, aggregate accuracy, bounded queries, and dialect parity pass; switch composition back without changing schema."
+    },
+    {
+      "capability": "admin-service-node",
+      "crate": "crates/sdkwork-clawrouter-admin-service-node-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_service_node_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_service_node_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_service_node_store.rs"
+      ],
+      "tables": [
+        "ops_gateway_instance"
+      ],
+      "status": "PENDING",
+      "priority": "MEDIUM",
+      "migrationOrder": 37,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/sqlite_admin_service_node_store.rs",
+        "services/sdkwork-clawrouter-router-service/tests/admin_service_node_api.rs",
+        "crates/sdkwork-clawrouter-admin-service-node-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until node state, health mapping, pagination, and dialect parity pass; switch composition back without changing schema."
+    },
+    {
+      "capability": "admin-auth-settings",
+      "crate": "crates/sdkwork-clawrouter-admin-auth-settings-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/admin_auth_settings_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_auth_settings_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_auth_settings_store.rs"
+      ],
+      "tables": [
+        "ops_audit_log",
+        "ops_config_snapshot"
+      ],
+      "status": "PENDING",
+      "priority": "MEDIUM",
+      "migrationOrder": 38,
+      "parityTests": [
+        "crates/sdkwork-clawrouter-admin-auth-settings-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until configuration validation, optimistic conflict, audit, and dialect parity pass; switch composition back without changing schema."
+    },
+    {
+      "capability": "runtime-region-settings",
+      "crate": "crates/sdkwork-clawrouter-runtime-region-settings-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/runtime_region_settings_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/runtime_region_settings_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/runtime_region_settings_store.rs"
+      ],
+      "tables": [
+        "ops_audit_log",
+        "ops_config_snapshot"
+      ],
+      "status": "PENDING",
+      "priority": "MEDIUM",
+      "migrationOrder": 39,
+      "parityTests": [
+        "services/sdkwork-clawrouter-router-service/tests/admin_runtime_region_api.rs",
+        "crates/sdkwork-clawrouter-runtime-region-settings-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until region validation, optimistic conflict, audit, and dialect parity pass; switch composition back without changing schema."
+    },
+    {
+      "capability": "site-settings",
+      "crate": "crates/sdkwork-clawrouter-site-settings-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/site_settings_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/site_settings_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/site_settings_store.rs"
+      ],
+      "tables": [
+        "ops_audit_log",
+        "ops_config_snapshot"
+      ],
+      "status": "PENDING",
+      "priority": "LOW",
+      "migrationOrder": 40,
+      "parityTests": [
+        "crates/sdkwork-clawrouter-site-settings-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until site validation, optimistic conflict, audit, and dialect parity pass; switch composition back without changing schema."
+    },
+    {
+      "capability": "settings",
+      "crate": "crates/sdkwork-clawrouter-settings-repository-sqlx",
+      "portPaths": [
+        "services/sdkwork-clawrouter-router-service/src/ports/settings_store.rs"
+      ],
+      "legacyPaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/settings_store.rs",
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/settings_store.rs"
+      ],
+      "tables": [
+        "iam_user_preference",
+        "integration_webhook_endpoint"
+      ],
+      "status": "PENDING",
+      "priority": "LOW",
+      "migrationOrder": 41,
+      "parityTests": [
+        "tests/test_settings_runtime_standard.py",
+        "crates/sdkwork-clawrouter-settings-repository-sqlx/tests/dialect_parity.rs"
+      ],
+      "rollback": "Keep both legacy dialect stores until subject isolation, preference/webhook validation, conflict, and dialect parity pass; switch composition back without changing schema.",
+      "ownerReviewRequired": true
+    }
+  ],
+  "retiredCapabilities": [
+    {
       "capability": "app-iam-directory",
+      "owner": "sdkwork-iam",
       "crate": "../sdkwork-iam/crates/sdkwork-iam-directory-repository-sqlx",
       "legacyPaths": [
         "services/sdkwork-clawrouter-router-service/src/api/app_iam_directory.rs",
         "crates/sdkwork-clawrouter-app-iam-directory-repository-sqlx"
       ],
-      "status": "RETIRED_TO_SDKWORK_IAM"
-    },
-    {
-      "capability": "admin-dashboard",
-      "crate": "crates/sdkwork-clawrouter-admin-dashboard-repository-sqlx",
-      "legacyPaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_dashboard_read_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_dashboard_read_store.rs"
-      ],
-      "status": "MIGRATED"
-    },
-    {
-      "capability": "admin-analytics",
-      "crate": "crates/sdkwork-clawrouter-admin-analytics-repository-sqlx",
-      "legacyPaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_analytics_read_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_analytics_read_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sql_admin_analytics.rs"
-      ],
-      "status": "MIGRATED"
+      "status": "RETIRED_TO_SDKWORK_IAM",
+      "notes": "IAM directory persistence and APIs are owned by sdkwork-iam and are excluded from current legacy store counts."
     },
     {
       "capability": "app-user-profile",
+      "owner": "sdkwork-iam",
       "crate": "../sdkwork-iam/crates/sdkwork-iam-directory-repository-sqlx",
       "legacyPaths": [
         "services/sdkwork-clawrouter-router-service/src/api/app_user_profile.rs",
         "services/sdkwork-clawrouter-router-service/src/ports/app_user_profile_read_store.rs",
         "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/app_user_profile_repository_adapter.rs"
       ],
-      "status": "RETIRED_TO_SDKWORK_IAM"
-    },
-    {
-      "capability": "app-providers",
-      "crate": "crates/sdkwork-clawrouter-app-providers-repository-sqlx",
-      "legacyPaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_providers_read_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/app_providers_read_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/provider_classification.rs"
-      ],
-      "status": "MIGRATED"
-    },
-    {
-      "capability": "settlements-dashboard",
-      "crate": "crates/sdkwork-clawrouter-settlements-dashboard-repository-sqlx",
-      "legacyPaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/settlements_dashboard_read_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/settlements_dashboard_read_store.rs"
-      ],
-      "status": "MIGRATED"
-    },
-    {
-      "capability": "usage-logs",
-      "crate": "crates/sdkwork-clawrouter-usage-logs-repository-sqlx",
-      "legacyPaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/usage_logs_read_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/ports/usage_logs_read_store.rs"
-      ],
-      "status": "PENDING",
-      "priority": "HIGH",
-      "notes": "High-volume table, consider partitioning strategy"
-    },
-    {
-      "capability": "app-routing",
-      "crate": "crates/sdkwork-clawrouter-app-routing-repository-sqlx",
-      "legacyPaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_routing_read_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/app_routing_read_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/ports/app_routing_read_store.rs"
-      ],
-      "status": "PENDING",
-      "priority": "HIGH",
-      "notes": "Core routing logic"
-    },
-    {
-      "capability": "admin-user",
-      "crate": "crates/sdkwork-clawrouter-admin-user-repository-sqlx",
-      "legacyPaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_user_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_user_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/ports/admin_user_store.rs"
-      ],
-      "status": "PENDING",
-      "priority": "HIGH",
-      "notes": "User management core"
-    },
-    {
-      "capability": "admin-model",
-      "crate": "crates/sdkwork-clawrouter-admin-model-repository-sqlx",
-      "legacyPaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_model_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_model_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/ports/admin_model_store.rs"
-      ],
-      "status": "PENDING",
-      "priority": "MEDIUM"
-    },
-    {
-      "capability": "api-key",
-      "crate": "crates/sdkwork-clawrouter-api-key-repository-sqlx",
-      "legacyPaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/api_key_command_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/api_key_command_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/ports/api_key_command_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/ports/api_key_management_read_store.rs"
-      ],
-      "status": "PENDING",
-      "priority": "HIGH",
-      "notes": "Security critical"
-    },
-    {
-      "capability": "app-chat",
-      "crate": "crates/sdkwork-clawrouter-app-chat-repository-sqlx",
-      "legacyPaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_chat_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/app_chat_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/ports/app_chat_store.rs"
-      ],
-      "status": "PENDING",
-      "priority": "MEDIUM"
-    },
-    {
-      "capability": "admin-channel",
-      "crate": "crates/sdkwork-clawrouter-admin-channel-repository-sqlx",
-      "legacyPaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_channel_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_channel_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/ports/admin_channel_store.rs"
-      ],
-      "status": "PENDING",
-      "priority": "MEDIUM"
-    },
-    {
-      "capability": "admin-catalog",
-      "crate": "crates/sdkwork-clawrouter-admin-catalog-repository-sqlx",
-      "legacyPaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_catalog_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_catalog_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/ports/admin_catalog_store.rs"
-      ],
-      "status": "PENDING",
-      "priority": "MEDIUM"
-    },
-    {
-      "capability": "settings",
-      "crate": "crates/sdkwork-clawrouter-settings-repository-sqlx",
-      "legacyPaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/settings_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/settings_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/ports/settings_store.rs"
-      ],
-      "status": "PENDING",
-      "priority": "LOW"
+      "status": "RETIRED_TO_SDKWORK_IAM",
+      "notes": "User profile persistence and APIs are owned by sdkwork-iam and are excluded from current legacy store counts."
     }
   ],
   "migrationStats": {
-    "totalStores": 45,
-    "migrated": 6,
-    "pending": 11,
-    "retired": 2,
-    "completionPercentage": 42
+    "legacyStoreFiles": 76,
+    "coveredLegacyStoreFiles": 76,
+    "currentDialectPairs": 38,
+    "migratedCapabilities": 6,
+    "pendingCapabilities": 35,
+    "pendingCapabilityGroups": 35,
+    "migratedLogicalStores": 6,
+    "pendingLogicalStores": 38,
+    "totalLogicalStores": 44,
+    "completionPercentage": 13.64
   },
-  "nextPriorities": [
-    "usage-logs",
-    "app-routing",
-    "api-key",
-    "admin-user"
-  ]
+  "rollbackPolicy": "Repository extraction and schema evolution are separate changes. Keep each legacy PostgreSQL/SQLite pair until identical fixture parity and composition checks pass; switch one capability at a time, then delete its legacy pair. Any schema change requires a separate expand, backfill, validate, cutover, and contract plan."
 }

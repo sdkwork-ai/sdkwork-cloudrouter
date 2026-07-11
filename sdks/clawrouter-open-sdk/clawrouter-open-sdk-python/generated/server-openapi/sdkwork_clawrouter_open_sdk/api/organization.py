@@ -194,7 +194,7 @@ class OrganizationApi:
     def list_admin_api_keys(self, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiOrganizationAdminApiKeyList:
         """List organization admin API keys"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -228,7 +228,7 @@ class OrganizationApi:
     def list_certificates(self, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiCertificateList:
         """List organization certificates"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -270,7 +270,7 @@ class OrganizationApi:
     def list_groups(self, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiOrganizationGroupList:
         """List organization groups"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -288,7 +288,7 @@ class OrganizationApi:
     def list_groups_roles(self, group_id: str, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiRoleAssignmentList:
         """List organization group roles"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -306,7 +306,7 @@ class OrganizationApi:
     def list_groups_users(self, group_id: str, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiOrganizationUserList:
         """List organization group users"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -324,7 +324,7 @@ class OrganizationApi:
     def list_invites(self, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiOrganizationInviteList:
         """List organization invites"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -342,7 +342,7 @@ class OrganizationApi:
     def list_projects(self, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiProjectList:
         """List organization projects"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -356,7 +356,7 @@ class OrganizationApi:
     def list_projects_api_keys(self, project_id: str, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiProjectApiKeyList:
         """List project API keys"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -374,7 +374,7 @@ class OrganizationApi:
     def list_projects_certificates(self, project_id: str, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiCertificateList:
         """List project certificates"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -392,7 +392,7 @@ class OrganizationApi:
     def list_projects_groups(self, project_id: str, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiOrganizationGroupList:
         """List project groups"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -410,7 +410,7 @@ class OrganizationApi:
     def list_projects_rate_limits(self, project_id: str, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiProjectRateLimitList:
         """List project rate limits"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -424,7 +424,7 @@ class OrganizationApi:
     def list_projects_service_accounts(self, project_id: str, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiProjectServiceAccountList:
         """List project service accounts"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -442,7 +442,7 @@ class OrganizationApi:
     def list_projects_users(self, project_id: str, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiProjectUserList:
         """List project users"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -460,7 +460,7 @@ class OrganizationApi:
     def list_roles(self, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiRoleList:
         """List organization roles"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -606,7 +606,7 @@ class OrganizationApi:
     def list_users(self, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiOrganizationUserList:
         """List organization users"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -624,7 +624,7 @@ class OrganizationApi:
     def list_users_roles(self, user_id: str, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiRoleAssignmentList:
         """List organization user roles"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},

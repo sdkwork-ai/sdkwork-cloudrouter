@@ -10,7 +10,7 @@ public class OrganizationApi {
     /// List organization admin API keys
     public func listAdminApiKeys(limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiOrganizationAdminApiKeyList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
@@ -38,7 +38,7 @@ public class OrganizationApi {
             QueryParameterSpec(name: "actor_ids[]", value: actorIds, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "actor_emails[]", value: actorEmails, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "resource_ids[]", value: resourceIds, style: "form", explode: true, allowReserved: false, contentType: nil),
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
@@ -48,7 +48,7 @@ public class OrganizationApi {
     /// List organization certificates
     public func listCertificates(limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiCertificateList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
@@ -87,7 +87,7 @@ public class OrganizationApi {
             QueryParameterSpec(name: "api_key_ids", value: apiKeyIds, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "models", value: models, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "group_by", value: groupBy, style: "form", explode: true, allowReserved: false, contentType: nil),
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "page", value: page, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
         return try await client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/costs"), query), responseType: OpenAiOrganizationCostList.self)
@@ -96,7 +96,7 @@ public class OrganizationApi {
     /// List organization groups
     public func listGroups(limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiOrganizationGroupList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
@@ -117,7 +117,7 @@ public class OrganizationApi {
     /// List organization group roles
     public func listGroupsRoles(groupId: String, limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiRoleAssignmentList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
@@ -138,7 +138,7 @@ public class OrganizationApi {
     /// List organization group users
     public func listGroupsUsers(groupId: String, limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiOrganizationUserList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
@@ -159,7 +159,7 @@ public class OrganizationApi {
     /// List organization invites
     public func listInvites(limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiOrganizationInviteList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
@@ -180,7 +180,7 @@ public class OrganizationApi {
     /// List organization projects
     public func listProjects(limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiProjectList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
@@ -196,7 +196,7 @@ public class OrganizationApi {
     /// List project API keys
     public func listProjectsApiKeys(projectId: String, limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiProjectApiKeyList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
@@ -217,7 +217,7 @@ public class OrganizationApi {
     /// List project certificates
     public func listProjectsCertificates(projectId: String, limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiCertificateList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
@@ -238,7 +238,7 @@ public class OrganizationApi {
     /// List project groups
     public func listProjectsGroups(projectId: String, limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiOrganizationGroupList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
@@ -259,7 +259,7 @@ public class OrganizationApi {
     /// List project rate limits
     public func listProjectsRateLimits(projectId: String, limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiProjectRateLimitList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
@@ -275,7 +275,7 @@ public class OrganizationApi {
     /// List project service accounts
     public func listProjectsServiceAccounts(projectId: String, limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiProjectServiceAccountList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
@@ -296,7 +296,7 @@ public class OrganizationApi {
     /// List project users
     public func listProjectsUsers(projectId: String, limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiProjectUserList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
@@ -317,7 +317,7 @@ public class OrganizationApi {
     /// List organization roles
     public func listRoles(limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiRoleList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
@@ -346,7 +346,7 @@ public class OrganizationApi {
             QueryParameterSpec(name: "api_key_ids", value: apiKeyIds, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "models", value: models, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "group_by", value: groupBy, style: "form", explode: true, allowReserved: false, contentType: nil),
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "page", value: page, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
         return try await client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/audio_speeches"), query), responseType: OpenAiOrganizationUsageList.self)
@@ -363,7 +363,7 @@ public class OrganizationApi {
             QueryParameterSpec(name: "api_key_ids", value: apiKeyIds, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "models", value: models, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "group_by", value: groupBy, style: "form", explode: true, allowReserved: false, contentType: nil),
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "page", value: page, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
         return try await client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/audio_transcriptions"), query), responseType: OpenAiOrganizationUsageList.self)
@@ -380,7 +380,7 @@ public class OrganizationApi {
             QueryParameterSpec(name: "api_key_ids", value: apiKeyIds, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "models", value: models, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "group_by", value: groupBy, style: "form", explode: true, allowReserved: false, contentType: nil),
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "page", value: page, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
         return try await client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/code_interpreter_sessions"), query), responseType: OpenAiOrganizationUsageList.self)
@@ -397,7 +397,7 @@ public class OrganizationApi {
             QueryParameterSpec(name: "api_key_ids", value: apiKeyIds, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "models", value: models, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "group_by", value: groupBy, style: "form", explode: true, allowReserved: false, contentType: nil),
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "page", value: page, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
         return try await client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/completions"), query), responseType: OpenAiOrganizationUsageList.self)
@@ -414,7 +414,7 @@ public class OrganizationApi {
             QueryParameterSpec(name: "api_key_ids", value: apiKeyIds, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "models", value: models, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "group_by", value: groupBy, style: "form", explode: true, allowReserved: false, contentType: nil),
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "page", value: page, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
         return try await client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/embeddings"), query), responseType: OpenAiOrganizationUsageList.self)
@@ -431,7 +431,7 @@ public class OrganizationApi {
             QueryParameterSpec(name: "api_key_ids", value: apiKeyIds, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "models", value: models, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "group_by", value: groupBy, style: "form", explode: true, allowReserved: false, contentType: nil),
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "page", value: page, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
         return try await client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/images"), query), responseType: OpenAiOrganizationUsageList.self)
@@ -448,7 +448,7 @@ public class OrganizationApi {
             QueryParameterSpec(name: "api_key_ids", value: apiKeyIds, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "models", value: models, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "group_by", value: groupBy, style: "form", explode: true, allowReserved: false, contentType: nil),
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "page", value: page, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
         return try await client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/moderations"), query), responseType: OpenAiOrganizationUsageList.self)
@@ -465,7 +465,7 @@ public class OrganizationApi {
             QueryParameterSpec(name: "api_key_ids", value: apiKeyIds, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "models", value: models, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "group_by", value: groupBy, style: "form", explode: true, allowReserved: false, contentType: nil),
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "page", value: page, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
         return try await client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/vector_stores"), query), responseType: OpenAiOrganizationUsageList.self)
@@ -474,7 +474,7 @@ public class OrganizationApi {
     /// List organization users
     public func listUsers(limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiOrganizationUserList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)
@@ -495,7 +495,7 @@ public class OrganizationApi {
     /// List organization user roles
     public func listUsersRoles(userId: String, limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil) async throws -> OpenAiRoleAssignmentList? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "order", value: order, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after", value: after, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "before", value: before, style: "form", explode: true, allowReserved: false, contentType: nil)

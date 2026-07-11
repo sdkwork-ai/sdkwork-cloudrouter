@@ -99,10 +99,6 @@ function buildReleaseEnvFilePlan({
       releaseEnvPartial[name] = value;
     }
   }
-  const explicitAccessToken = String(env.SDKWORK_ACCESS_TOKEN ?? '').trim();
-  if (explicitAccessToken) {
-    releaseEnvPartial.SDKWORK_ACCESS_TOKEN = explicitAccessToken;
-  }
   const releaseEnv = completeReleaseEnvKeyOrder(releaseEnvPartial, generatedEnv);
 
   const issues = releaseEnvironmentIssues(releaseEnv);

@@ -1,6 +1,5 @@
 import {
   ensureSdkworkApiSuccess,
-  getClawRouterBackendSdkClient,
   isRecord,
   optionalBoundedPositiveInteger as optionalQueryPageSize,
   optionalPositiveInteger as optionalQueryPage,
@@ -17,13 +16,16 @@ import {
   readString,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
-import { backendApiPath } from '@sdkwork/clawrouter-backend-sdk';
+import {
+  backendApiPath,
+  getClawRouterBackendSdkClient,
+} from '@sdkwork/clawrouter-pc-admin-core/sdk';
 import type {
   AdminFirewallRuleCreateRequest,
   AdminIpLimitCreateRequest,
   AdminModelLimitCreateRequest,
   AdminTokenLimitCreateRequest,
-} from '@sdkwork/clawrouter-backend-sdk';
+} from '@sdkwork/clawrouter-pc-admin-core/sdk';
 
 export interface IpLimitRule {
   id: string;

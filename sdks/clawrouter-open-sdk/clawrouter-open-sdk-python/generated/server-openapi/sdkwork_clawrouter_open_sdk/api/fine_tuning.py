@@ -202,7 +202,7 @@ class FineTuningApi:
     def retrieve_permissions(self, fine_tuned_model_checkpoint: str, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None, project_id: Optional[str] = None) -> OpenAiFineTuningCheckpointPermissionList:
         """List fine-tuning checkpoint permissions"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -221,7 +221,7 @@ class FineTuningApi:
     def list_jobs(self, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiFineTuningJobList:
         """List fine-tuning jobs"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -243,7 +243,7 @@ class FineTuningApi:
     def retrieve_checkpoints(self, fine_tuning_job_id: str, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiFineTuningJobCheckpointList:
         """List fine-tuning checkpoints"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -253,7 +253,7 @@ class FineTuningApi:
     def retrieve_events(self, fine_tuning_job_id: str, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiFineTuningJobEventList:
         """List fine-tuning events"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},

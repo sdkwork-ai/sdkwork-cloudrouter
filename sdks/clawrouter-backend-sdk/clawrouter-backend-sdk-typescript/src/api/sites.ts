@@ -79,8 +79,8 @@ export class SitesApi {
   }
 
 /** Delete */
-  async delete(siteId: string): Promise<Record<string, never>> {
-    return this.client.delete<Record<string, never>>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}`));
+  async delete(siteId: string): Promise<void> {
+    return this.client.delete<void>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}`));
   }
 
 /** Update */

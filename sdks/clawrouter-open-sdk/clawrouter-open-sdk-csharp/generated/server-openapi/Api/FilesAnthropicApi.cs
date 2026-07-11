@@ -24,7 +24,7 @@ namespace Sdkwork.ClawRouter.Open.Api
             {
                 new QueryParameterSpec("before_id", beforeId, "form", true, false, null),
                 new QueryParameterSpec("after_id", afterId, "form", true, false, null),
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
             });
             return await _client.GetAsync<Sdkwork.ClawRouter.Open.Models.AnthropicFileListResponse>(ApiPaths.AppendQueryString(ApiPaths.AiPath("/anthropic/v1/files"), queryString));
         }

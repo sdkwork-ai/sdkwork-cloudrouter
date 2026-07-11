@@ -20,7 +20,7 @@ func NewEvalApi(client *sdkhttp.Client) *EvalApi {
 // List evals
 func (a *EvalApi) List(limit *int, order *string, after *string, before *string) (sdktypes.OpenAiEvalList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -76,7 +76,7 @@ func (a *EvalApi) Update(evalId string, body sdktypes.OpenAiEvalUpdateRequest) (
 // List eval runs
 func (a *EvalApi) ListRuns(evalId string, limit *int, order *string, after *string, before *string) (sdktypes.OpenAiEvalRunList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -112,7 +112,7 @@ func (a *EvalApi) DeleteRuns(evalId string, runId string) (sdktypes.DeleteResult
 // List eval run output items
 func (a *EvalApi) ListRunsOutputItems(evalId string, runId string, limit *int, order *string, after *string, before *string) (sdktypes.OpenAiEvalRunOutputItemList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},

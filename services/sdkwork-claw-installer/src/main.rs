@@ -537,10 +537,9 @@ impl Error for InstallerCliError {}
 
 fn runtime_config_profile_from_deployment_mode() -> RuntimeConfigProfile {
     match DeploymentMode::from_env() {
-        DeploymentMode::Desktop => RuntimeConfigProfile::Desktop,
-        DeploymentMode::Server | DeploymentMode::Docker | DeploymentMode::Kubernetes => {
-            RuntimeConfigProfile::Server
-        }
+        Ok(DeploymentMode::Desktop) => RuntimeConfigProfile::Desktop,
+        Ok(DeploymentMode::Server | DeploymentMode::Docker | DeploymentMode::Kubernetes)
+        | Err(_) => RuntimeConfigProfile::Server,
     }
 }
 

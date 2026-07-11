@@ -11,7 +11,7 @@ class ChatApi(private val client: HttpClient) {
     /** List stored chat completions */
     suspend fun list(limit: Int? = null, order: String? = null, after: String? = null, before: String? = null, model: String? = null, metadata: String? = null): OpenAiChatCompletionList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null),
@@ -49,7 +49,7 @@ class ChatApi(private val client: HttpClient) {
     /** List stored chat completion messages */
     suspend fun listMessages(completionId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiChatCompletionMessageList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)

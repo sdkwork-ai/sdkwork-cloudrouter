@@ -115,9 +115,7 @@
     "runtimeEntrypoints": [
       "package.json#scripts.typecheck"
     ],
-    "sdkClients": [
-      "@sdkwork/clawrouter-backend-sdk"
-    ],
+    "sdkClients": [],
     "events": [],
     "configKeys": [],
     "routeManifest": null
@@ -125,7 +123,7 @@
   "integration": {
     "authority": "Root SDKWork specs remain authoritative. Local specs may extend but must not contradict them.",
     "dependencyPolicy": "Consumers integrate through public package exports, declared runtime entrypoints, generated SDK clients, or documented adapters only.",
-    "sdkPolicy": "Site administration calls gateway-owned /backend/v3/api/sites through @sdkwork/clawrouter-backend-sdk; catalog vendor picker reuse stays on @sdkwork/models-pc-admin-catalog.",
+    "sdkPolicy": "Site administration uses the backend-admin SDK boundary exposed by @sdkwork/clawrouter-pc-admin-core/sdk; catalog vendor picker reuse stays on @sdkwork/models-pc-admin-catalog.",
     "languagePolicy": "Language-specific packages follow their native manifest and build tools while preserving the same component contract."
   },
   "verification": {

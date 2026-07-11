@@ -1,4 +1,6 @@
-use crate::gateway_api_key_auth::authenticate_gateway_api_key;
+use crate::gateway_api_key_auth::{
+    authenticate_gateway_api_key, sanitize_authenticated_gateway_uri,
+};
 use crate::invocation_http::response_from_invocation_error;
 use crate::openai_passthrough_routes::{
     apply_openai_method_passthrough_routes, apply_openai_passthrough_routes,
@@ -23,6 +25,7 @@ use sdkwork_claw_config::{
     ProviderAdapterConfig, ProviderPassthroughAuth, ProviderPassthroughAuthType,
     ProviderRelayConfig, RequestLimitsConfig,
 };
+use sdkwork_claw_http::QueryStringApiKeyPolicy;
 use sdkwork_claw_provider_adapter_contract::{
     AdapterInvocationMetadata, AdapterInvocationRequest, AdapterInvocationResponse,
     AdapterInvocationShape, AdapterProviderContext, AdapterSecret, AdapterSubject,
@@ -154,6 +157,27 @@ pub fn authenticated_gateway_passthrough_router_with_adapter_config<C>(
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
+    authenticated_gateway_passthrough_router_with_adapter_config_and_query_string_api_key_policy(
+        config,
+        catalog,
+        api_key_hasher,
+        adapter_config,
+        usage_recorder,
+        QueryStringApiKeyPolicy::default(),
+    )
+}
+
+pub(crate) fn authenticated_gateway_passthrough_router_with_adapter_config_and_query_string_api_key_policy<C>(
+    config: ProviderRelayConfig,
+    catalog: Arc<C>,
+    api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
+    adapter_config: Option<ProviderAdapterConfig>,
+    usage_recorder: Option<UsageRecorder>,
+    query_string_api_key_policy: QueryStringApiKeyPolicy,
+) -> Router
+where
+    C: PricingCatalog + Send + Sync + 'static,
+{
     let runtime = ProviderPassthroughRuntime::from_config_with_adapter(config, adapter_config);
     let state = AuthenticatedProviderPassthroughState {
         runtime,
@@ -161,6 +185,7 @@ where
         api_key_hasher,
         secret_resolver: None,
         usage_recorder,
+        query_string_api_key_policy,
     };
     let openai_router = if state.runtime.has_openai_target() {
         authenticated_openai_passthrough_router::<C>(state.clone())
@@ -181,6 +206,29 @@ pub fn authenticated_provider_native_passthrough_router_with_adapter_config<C>(
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
+    authenticated_provider_native_passthrough_router_with_adapter_config_and_query_string_api_key_policy(
+        config,
+        catalog,
+        api_key_hasher,
+        adapter_config,
+        secret_resolver,
+        usage_recorder,
+        QueryStringApiKeyPolicy::default(),
+    )
+}
+
+pub(crate) fn authenticated_provider_native_passthrough_router_with_adapter_config_and_query_string_api_key_policy<C>(
+    config: Option<ProviderRelayConfig>,
+    catalog: Arc<C>,
+    api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
+    adapter_config: Option<ProviderAdapterConfig>,
+    secret_resolver: Option<Arc<dyn ProviderSecretResolver + Send + Sync>>,
+    usage_recorder: Option<UsageRecorder>,
+    query_string_api_key_policy: QueryStringApiKeyPolicy,
+) -> Router
+where
+    C: PricingCatalog + Send + Sync + 'static,
+{
     authenticated_provider_passthrough_router::<C>(AuthenticatedProviderPassthroughState {
         runtime: ProviderPassthroughRuntime::from_optional_config_with_adapter(
             config,
@@ -190,6 +238,7 @@ where
         api_key_hasher,
         secret_resolver,
         usage_recorder,
+        query_string_api_key_policy,
     })
 }
 
@@ -280,13 +329,17 @@ async fn authenticated_forward_provider_passthrough<C>(
     State(state): State<AuthenticatedProviderPassthroughState<C>>,
     headers: HeaderMap,
     uri: Uri,
-    request: Request,
+    mut request: Request,
 ) -> Response
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
     let context = match authenticate_passthrough_api_key(&state, &headers, &uri) {
         Ok(context) => context,
+        Err(response) => return response,
+    };
+    *request.uri_mut() = match sanitize_authenticated_gateway_uri(&uri) {
+        Ok(uri) => uri,
         Err(response) => return response,
     };
     let result = state
@@ -308,7 +361,7 @@ async fn authenticated_forward_openai_passthrough<C>(
     State(state): State<AuthenticatedProviderPassthroughState<C>>,
     headers: HeaderMap,
     uri: Uri,
-    request: Request,
+    mut request: Request,
 ) -> Response
 where
     C: PricingCatalog + Send + Sync + 'static,
@@ -316,6 +369,10 @@ where
     if let Err(response) = authenticate_passthrough_api_key(&state, &headers, &uri) {
         return response;
     }
+    *request.uri_mut() = match sanitize_authenticated_gateway_uri(&uri) {
+        Ok(uri) => uri,
+        Err(response) => return response,
+    };
     match state.runtime.forward_openai(request).await {
         Ok(response) => response,
         Err(message) => passthrough_relay_failed("openai_passthrough_relay_failed", message),
@@ -349,6 +406,7 @@ struct AuthenticatedProviderPassthroughState<C> {
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
     secret_resolver: Option<Arc<dyn ProviderSecretResolver + Send + Sync>>,
     usage_recorder: Option<UsageRecorder>,
+    query_string_api_key_policy: QueryStringApiKeyPolicy,
 }
 
 impl<C> Clone for AuthenticatedProviderPassthroughState<C> {
@@ -359,6 +417,7 @@ impl<C> Clone for AuthenticatedProviderPassthroughState<C> {
             api_key_hasher: Arc::clone(&self.api_key_hasher),
             secret_resolver: self.secret_resolver.clone(),
             usage_recorder: self.usage_recorder.clone(),
+            query_string_api_key_policy: self.query_string_api_key_policy,
         }
     }
 }
@@ -376,6 +435,7 @@ where
         state.api_key_hasher.as_ref(),
         headers,
         uri,
+        state.query_string_api_key_policy,
     )
 }
 

@@ -12,8 +12,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
-    json_success_list_response, normalize_list_search_query, offset_page_info,
-    parse_offset_list_query, problem_from_wire_code, success_envelope,
+    json_created_response, json_success_list_response, no_content_response,
+    normalize_list_search_query, offset_page_info, parse_offset_list_query, problem_from_wire_code,
+    success_envelope,
 };
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
@@ -84,12 +85,6 @@ enum AnnouncementCommandBuildError {
 #[serde(rename_all = "camelCase")]
 struct AdminAnnouncementItemEnvelope {
     item: AdminAnnouncementItemResponse,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct AdminAnnouncementDeleteResponse {
-    deleted: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -180,10 +175,9 @@ async fn create_announcement(
     };
 
     match state.store.create_announcement(command).await {
-        Ok(item) => Json(success_envelope(AdminAnnouncementItemEnvelope {
+        Ok(item) => json_created_response(None, AdminAnnouncementItemEnvelope {
             item: to_item_response(item),
-        }))
-        .into_response(),
+        }),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
             announcement_system_response("announcement command store is unavailable", error)
@@ -247,10 +241,7 @@ async fn delete_announcement(
     };
 
     match state.store.delete_announcement(command).await {
-        Ok(true) => Json(success_envelope(AdminAnnouncementDeleteResponse {
-            deleted: true,
-        }))
-        .into_response(),
+        Ok(true) => no_content_response(None),
         Ok(false) => not_found_response("announcement was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {

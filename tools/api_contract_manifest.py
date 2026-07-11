@@ -249,23 +249,65 @@ class ApiContractManifestGenerator:
     ROUTER_CONTENT_SEGMENTS = {"announcements"}
     ROUTER_SYSTEM_SEGMENTS = {"firewall", "monitor", "rate_limits", "rate-limits"}
     ACTION_SEGMENTS = {
+        "accept",
         "activate",
+        "add",
         "approve",
+        "archive",
         "cancel",
+        "change_role",
+        "close",
+        "complete",
         "deactivate",
         "disable",
         "enable",
+        "explain",
+        "health_check",
+        "heartbeat",
+        "leave",
+        "migrate",
+        "preview",
         "publish",
         "refresh",
         "reject",
+        "remove",
+        "resolve",
         "resend",
         "restore",
+        "rollback",
         "revoke",
         "submit",
+        "sync",
+        "test_connection",
+        "transfer_owner",
         "unpublish",
+        "unpin",
         "verify",
     }
     READ_ACTION_SEGMENTS = {"list"}
+    RESOURCE_OPERATION_ID_TOP_LEVEL_SEGMENTS = {
+        "accounts",
+        "addresses",
+        "after_sales",
+        "audit",
+        "billing",
+        "cart",
+        "catalog",
+        "checkout",
+        "coupons",
+        "fulfillments",
+        "inventory",
+        "invoices",
+        "memberships",
+        "orders",
+        "payments",
+        "promotions",
+        "recharges",
+        "refunds",
+        "shipments",
+        "sites",
+        "wallet",
+    }
     DETAIL_SEGMENTS = {"detail"}
     STATIC_SEGMENT_ALIASES = {
         "apikey": "api_keys",
@@ -817,10 +859,24 @@ class ApiContractManifestGenerator:
         if api_surface not in self.APP_BACKEND_SURFACES:
             return self._string(entry.get("operation_id")) or fallback_operation
         explicit = self._string(entry.get("operation_id"))
-        if self._valid_standard_operation_id(explicit):
+        expected_action = self._expected_operation_id_action(
+            api_method=api_method,
+            api_path=api_path,
+            fallback_operation=fallback_operation,
+            kind=self._string(entry.get("kind")),
+            explicit_operation_id=explicit,
+        )
+        if (
+            self._valid_standard_operation_id(explicit)
+            and self._operation_id_final_action(explicit) == expected_action
+        ):
             return explicit
         segments = self._relative_path_segments(api_surface, api_path)
-        if segments and segments[0] == self._path_segment_from_tag(tag):
+        if (
+            segments
+            and self._normalize_static_segment(segments[0]) == self._normalize_static_segment(self._path_segment_from_tag(tag))
+            and not self._keeps_top_level_resource_segment_for_operation_id(segments)
+        ):
             segments = segments[1:]
         kind = self._string(entry.get("kind"))
         last_segment_is_path_param = bool(segments) and self._is_path_param(segments[-1])
@@ -830,6 +886,8 @@ class ApiContractManifestGenerator:
             action = "retrieve"
         if api_method == "DELETE" and explicit_action in {"like", "pin"}:
             action = f"un{explicit_action}"
+        if expected_action and action != expected_action:
+            action = expected_action
         resource_segments = self._trim_action_like_resource_segments(resource_segments, action)
         if not resource_segments:
             resource_segments = [self._resource_from_operation(fallback_operation) or "operations"]
@@ -843,6 +901,62 @@ class ApiContractManifestGenerator:
             and re.match(r"^[a-z][A-Za-z0-9]*(?:\.[a-z][A-Za-z0-9]*)+$", value) is not None
             and "__" not in value
         )
+
+    def _operation_id_final_action(self, value: str) -> str:
+        if not value:
+            return ""
+        return value.rsplit(".", 1)[-1]
+
+    def _expected_operation_id_action(
+        self,
+        *,
+        api_method: str,
+        api_path: str,
+        fallback_operation: str = "",
+        kind: str = "",
+        explicit_operation_id: str = "",
+    ) -> str:
+        method = api_method.upper()
+        explicit_action = self._operation_id_final_action(explicit_operation_id)
+        path_segments = [segment for segment in api_path.split("/") if segment]
+        final_segment = path_segments[-1] if path_segments else ""
+        final_segment_is_param = self._is_path_param(final_segment)
+        if method == "GET":
+            if final_segment_is_param or explicit_action == "retrieve":
+                return "retrieve"
+            return "list"
+        if method == "POST":
+            if final_segment and not final_segment_is_param:
+                normalized = self._normalize_static_segment(final_segment)
+                path_action = self._lower_camel_segment(normalized)
+                if path_action == "search":
+                    return "search"
+                if path_action == explicit_action and explicit_action != "create":
+                    return explicit_action
+                if normalized in self.ACTION_SEGMENTS:
+                    return path_action
+            operation_action = self._operation_action(fallback_operation, kind, api_method)
+            if operation_action and operation_action != "create":
+                return operation_action
+            return "create"
+        if method in {"PUT", "PATCH"}:
+            return "update"
+        if method == "DELETE":
+            return "delete"
+        return "execute"
+
+    def _keeps_top_level_resource_segment_for_operation_id(self, segments: list[str]) -> bool:
+        if len(segments) < 3:
+            return False
+        first = self._normalize_static_segment(segments[0])
+        if first not in self.RESOURCE_OPERATION_ID_TOP_LEVEL_SEGMENTS:
+            return False
+        remaining_static_segments = [
+            self._normalize_static_segment(segment)
+            for segment in segments[1:]
+            if not self._is_path_param(segment)
+        ]
+        return len(remaining_static_segments) >= 1
 
     def _relative_path_segments(self, api_surface: str, api_path: str) -> list[str]:
         boundary = self.SDK_BOUNDARIES.get(api_surface)
@@ -1047,10 +1161,10 @@ class ApiContractManifestGenerator:
             if normalized == "my":
                 normalized = "mine"
             if normalized in self.ACTION_SEGMENTS:
-                explicit_action = normalized
+                explicit_action = self._lower_camel_segment(normalized)
                 continue
             if normalized in self.READ_ACTION_SEGMENTS:
-                explicit_action = normalized
+                explicit_action = self._lower_camel_segment(normalized)
                 continue
             resource_segments.append(self._lower_camel_segment(normalized))
         return resource_segments, explicit_action

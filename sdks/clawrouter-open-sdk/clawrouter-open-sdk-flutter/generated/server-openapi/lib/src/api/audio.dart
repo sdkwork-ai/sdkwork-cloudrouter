@@ -41,7 +41,7 @@ class AudioApi {
   /// List voice consents
   Future<OpenAiVoiceConsentList?> listVoiceConsents([int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -75,7 +75,7 @@ class AudioApi {
   /// List voices
   Future<OpenAiVoiceList?> listVoices([int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)

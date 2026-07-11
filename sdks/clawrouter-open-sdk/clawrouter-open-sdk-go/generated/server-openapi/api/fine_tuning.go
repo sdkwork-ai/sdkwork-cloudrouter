@@ -40,7 +40,7 @@ func (a *FineTuningApi) CreateValidate(body sdktypes.OpenAiFineTuningGraderValid
 // List fine-tuning checkpoint permissions
 func (a *FineTuningApi) RetrievePermission(fineTunedModelCheckpoint string, limit *int, order *string, after *string, before *string, projectId *string) (sdktypes.OpenAiFineTuningCheckpointPermissionList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -77,7 +77,7 @@ func (a *FineTuningApi) DeletePermission(fineTunedModelCheckpoint string, permis
 // List fine-tuning jobs
 func (a *FineTuningApi) ListJob(limit *int, order *string, after *string, before *string) (sdktypes.OpenAiFineTuningJobList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -123,7 +123,7 @@ func (a *FineTuningApi) CreateCancel(fineTuningJobId string) (sdktypes.OpenAiFin
 // List fine-tuning checkpoints
 func (a *FineTuningApi) RetrieveCheckpoint(fineTuningJobId string, limit *int, order *string, after *string, before *string) (sdktypes.OpenAiFineTuningJobCheckpointList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -139,7 +139,7 @@ func (a *FineTuningApi) RetrieveCheckpoint(fineTuningJobId string, limit *int, o
 // List fine-tuning events
 func (a *FineTuningApi) RetrieveEvent(fineTuningJobId string, limit *int, order *string, after *string, before *string) (sdktypes.OpenAiFineTuningJobEventList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},

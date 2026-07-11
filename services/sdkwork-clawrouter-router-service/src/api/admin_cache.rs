@@ -8,7 +8,9 @@ use axum::{Json, Router};
 use sdkwork_utils_rust::{PageInfo, PageMode, SdkWorkResultCode};
 use serde::Serialize;
 
-use crate::api::response::{platform_problem, problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    no_content_response, platform_problem, problem_from_wire_code, success_envelope,
+};
 use crate::application::{
     CacheKeyMetadata, CacheNamespaceKeyList, CacheOperationOutcome, CacheRuntimeSnapshot,
     RuntimeCacheManager,
@@ -105,7 +107,7 @@ async fn delete_instance(
     Path(instance_name): Path<String>,
 ) -> Response {
     match state.manager.delete_instance(&instance_name).await {
-        Ok(outcome) => cache_success(outcome),
+        Ok(_) => no_content_response(None),
         Err(error) => cache_system_response("cache instance delete failed", error),
     }
 }
@@ -127,7 +129,7 @@ async fn delete_namespace(
     Path(namespace): Path<String>,
 ) -> Response {
     match state.manager.delete_namespace(&namespace).await {
-        Ok(outcome) => cache_success(outcome),
+        Ok(_) => no_content_response(None),
         Err(error) => cache_system_response("cache namespace delete failed", error),
     }
 }
@@ -166,7 +168,7 @@ async fn delete_key(
     Path((namespace, key)): Path<(String, String)>,
 ) -> Response {
     match state.manager.delete_key(&namespace, &key).await {
-        Ok(outcome) => cache_success(outcome),
+        Ok(_) => no_content_response(None),
         Err(error) => cache_system_response("cache key delete failed", error),
     }
 }

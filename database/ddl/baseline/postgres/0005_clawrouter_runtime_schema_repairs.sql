@@ -1,2 +1,0 @@
--- Retired: notification projection tables merged into 0001_clawrouter_baseline.sql.
--- This migration version is intentionally retained as a no-op marker.

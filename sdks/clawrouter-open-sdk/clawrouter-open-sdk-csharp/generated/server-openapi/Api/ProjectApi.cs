@@ -22,7 +22,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("order", order, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),
@@ -53,7 +53,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("order", order, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),
@@ -84,7 +84,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("limit", limit, "form", true, false, null),
+                new QueryParameterSpec("page_size", limit, "form", true, false, null),
                 new QueryParameterSpec("order", order, "form", true, false, null),
                 new QueryParameterSpec("after", after, "form", true, false, null),
                 new QueryParameterSpec("before", before, "form", true, false, null),

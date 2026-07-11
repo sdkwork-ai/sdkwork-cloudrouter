@@ -15,6 +15,9 @@ import { createPortalOptimizeDepsEsbuildPlugin } from './scripts/lib/portal-opti
 import { readGenerationAssetConfigStubReplacement } from './scripts/lib/portal-generation-asset-config-stub.mjs';
 
 function readBootstrapLocalEnv(configDir: string, mode: string): Record<string, string> {
+  if (mode !== 'development') {
+    return {};
+  }
   const bootstrapPath = path.join(configDir, `.env.${mode}.bootstrap.local`);
   if (!fs.existsSync(bootstrapPath)) {
     return {};
@@ -539,7 +542,9 @@ export default defineConfig(({mode}) => {
     sdkworkOrderRoot,
   ];
 	  const env = loadEnv(mode, configDir, '');
-  Object.assign(env, readBootstrapLocalEnv(configDir, mode));
+  if (mode === 'development') {
+    Object.assign(env, readBootstrapLocalEnv(configDir, mode));
+  }
   const bootstrapAccessTokenDefine = mode === 'development'
     ? {
         'process.env.SDKWORK_ACCESS_TOKEN': JSON.stringify(

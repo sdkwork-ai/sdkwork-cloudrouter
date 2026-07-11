@@ -266,7 +266,7 @@ pub struct CacheNamespaceKeyList {
     pub instance_name: String,
     pub scanned_items: usize,
     pub returned_items: usize,
-    pub limit: Option<usize>,
+    pub page_size: Option<usize>,
     pub has_more: bool,
     pub scan_complete: bool,
     pub next_cursor: Option<String>,
@@ -334,7 +334,7 @@ pub trait CacheBackend: Send + Sync {
     fn list_prefix<'a>(
         &'a self,
         prefix: String,
-        limit: Option<usize>,
+        page_size: Option<usize>,
         cursor: Option<CacheBackendCursor>,
     ) -> CacheBackendFuture<'a, CacheBackendKeyList>;
 }
@@ -496,7 +496,7 @@ impl CacheBackend for LocalCacheBackend {
     fn list_prefix<'a>(
         &'a self,
         prefix: String,
-        limit: Option<usize>,
+        page_size: Option<usize>,
         cursor: Option<CacheBackendCursor>,
     ) -> CacheBackendFuture<'a, CacheBackendKeyList> {
         Box::pin(async move {
@@ -530,19 +530,19 @@ impl CacheBackend for LocalCacheBackend {
                 })
                 .skip(start_offset)
                 .take(
-                    limit
+                    page_size
                         .or(Some(DEFAULT_CACHE_KEY_LIST_LIMIT))
                         .map(|value| value.saturating_add(1))
                         .unwrap_or(DEFAULT_CACHE_KEY_LIST_LIMIT.saturating_add(1)),
                 )
                 .collect();
-            let has_more = limit
+            let has_more = page_size
                 .or(Some(DEFAULT_CACHE_KEY_LIST_LIMIT))
                 .map(|value| matched_items.len() > value)
                 .unwrap_or(false);
             let items: Vec<CacheBackendKeyMetadata> = matched_items
                 .into_iter()
-                .take(limit.unwrap_or(DEFAULT_CACHE_KEY_LIST_LIMIT))
+                .take(page_size.unwrap_or(DEFAULT_CACHE_KEY_LIST_LIMIT))
                 .collect();
             let next_cursor = if has_more {
                 Some(CacheBackendCursor::Local {
@@ -553,7 +553,7 @@ impl CacheBackend for LocalCacheBackend {
             };
             Ok(CacheBackendKeyList {
                 scanned_items: if has_more {
-                    limit.unwrap_or_default().saturating_add(1)
+                    page_size.unwrap_or_default().saturating_add(1)
                 } else {
                     items.len()
                 },
@@ -696,12 +696,12 @@ impl CacheBackend for RedisCacheBackend {
     fn list_prefix<'a>(
         &'a self,
         prefix: String,
-        limit: Option<usize>,
+        page_size: Option<usize>,
         cursor: Option<CacheBackendCursor>,
     ) -> CacheBackendFuture<'a, CacheBackendKeyList> {
         Box::pin(async move {
             let page = self
-                .scan_keys_page(format!("{prefix}*"), limit, cursor)
+                .scan_keys_page(format!("{prefix}*"), page_size, cursor)
                 .await?;
             let mut connection = self.connection().await?;
             let mut items = Vec::with_capacity(page.keys.len());
@@ -742,7 +742,7 @@ impl RedisCacheBackend {
     async fn scan_keys_limited(
         &self,
         pattern: String,
-        limit: Option<usize>,
+        page_size: Option<usize>,
     ) -> DomainResult<Vec<String>> {
         let mut connection = self.connection().await?;
         self.with_timeout(
@@ -759,11 +759,11 @@ impl RedisCacheBackend {
                         .query_async(&mut connection)
                         .await?;
                     keys.extend(batch);
-                    if limit
+                    if page_size
                         .map(|max_items| keys.len() >= max_items)
                         .unwrap_or(false)
                     {
-                        keys.truncate(limit.unwrap_or(keys.len()));
+                        keys.truncate(page_size.unwrap_or(keys.len()));
                         break;
                     }
                     if next_cursor == 0 {
@@ -781,7 +781,7 @@ impl RedisCacheBackend {
     async fn scan_keys_page(
         &self,
         pattern: String,
-        limit: Option<usize>,
+        page_size: Option<usize>,
         cursor: Option<CacheBackendCursor>,
     ) -> DomainResult<RedisScanKeyPage> {
         let (scan_cursor, offset) = match cursor {
@@ -801,8 +801,8 @@ impl RedisCacheBackend {
                 let mut offset = offset;
                 let mut keys = Vec::new();
                 let mut scanned_items = 0_usize;
-                let return_limit = limit.unwrap_or(usize::MAX);
-                let bounded = limit.is_some();
+                let return_limit = page_size.unwrap_or(usize::MAX);
+                let bounded = page_size.is_some();
 
                 loop {
                     let batch_cursor = cursor;
@@ -1563,10 +1563,10 @@ impl RuntimeCacheManager {
     pub async fn list_namespace_keys(
         &self,
         namespace: &str,
-        limit: Option<usize>,
+        page_size: Option<usize>,
         cursor: Option<&str>,
     ) -> DomainResult<CacheNamespaceKeyList> {
-        let limit = Some(limit.unwrap_or(DEFAULT_CACHE_KEY_LIST_LIMIT));
+        let limit = Some(page_size.unwrap_or(DEFAULT_CACHE_KEY_LIST_LIMIT));
         let (instance, policy) = match self.resolve_namespace(namespace) {
             Ok(resolved) => resolved,
             Err(error) => {
@@ -1588,7 +1588,7 @@ impl RuntimeCacheManager {
                 instance_name: instance.name.clone(),
                 scanned_items: 0,
                 returned_items: 0,
-                limit,
+                page_size: limit,
                 has_more: false,
                 scan_complete: true,
                 next_cursor: None,
@@ -1660,7 +1660,7 @@ impl RuntimeCacheManager {
             instance_name: instance.name.clone(),
             scanned_items: backend_list.scanned_items,
             returned_items,
-            limit,
+            page_size: limit,
             has_more: next_cursor.is_some()
                 || returned_items < backend_list.scanned_items
                 || !backend_list.scan_complete,

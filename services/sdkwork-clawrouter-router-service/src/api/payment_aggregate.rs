@@ -3,13 +3,13 @@ use std::sync::Arc;
 use crate::api::app_sql_subject::RequiredAppSqlScopedSubject;
 use axum::body::Bytes;
 use axum::extract::{Path, State};
-use axum::http::{HeaderMap, StatusCode};
+use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
 use axum::routing::post;
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{json_created_response, problem_from_wire_code, success_envelope};
 use crate::application::{
     resolve_payment_provider_registry_for_deployment, EntityUuidGenerator,
     InMemoryPaymentIntentRuntimeStore, PaymentAggregateRuntimeStore, PaymentIntentRuntimeRecord,
@@ -208,7 +208,7 @@ async fn cancel_refund(
     let request: RefundCancelRequest = match serde_json::from_slice(&body) {
         Ok(request) => request,
         Err(error) => {
-            return bad_request(format!("refund cancel request body is invalid: {error}"))
+            return bad_request(format!("refund cancel request body is invalid: {error}"));
         }
     };
     let service = PaymentRefundRuntimeService::new(
@@ -248,7 +248,7 @@ async fn create_refund(
     let request: PaymentRefundCreateRequest = match serde_json::from_slice(&body) {
         Ok(request) => request,
         Err(error) => {
-            return bad_request(format!("payment refund request body is invalid: {error}"))
+            return bad_request(format!("payment refund request body is invalid: {error}"));
         }
     };
     let service = PaymentRefundRuntimeService::new(
@@ -276,7 +276,7 @@ async fn create_refund(
         })
         .await
     {
-        Ok(refund) => Json(success_envelope(refund_response_data(refund))).into_response(),
+        Ok(refund) => json_created_response(None, refund_response_data(refund)),
         Err(error) if error.is_conflict() => conflict(error.to_string()),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) => unprocessable(error.to_string()),
@@ -297,7 +297,7 @@ async fn create_payment_intent(
     let request: PaymentIntentCreateRequest = match serde_json::from_slice(&body) {
         Ok(request) => request,
         Err(error) => {
-            return bad_request(format!("payment intent request body is invalid: {error}"))
+            return bad_request(format!("payment intent request body is invalid: {error}"));
         }
     };
     let service = PaymentIntentRuntimeService::new(
@@ -323,7 +323,7 @@ async fn create_payment_intent(
         })
         .await
     {
-        Ok(intent) => Json(success_envelope(intent_response_data(intent))).into_response(),
+        Ok(intent) => json_created_response(None, intent_response_data(intent)),
         Err(error) if error.is_conflict() => conflict(error.to_string()),
         Err(error) => unprocessable(error.to_string()),
     }
@@ -384,7 +384,7 @@ async fn capture_payment_intent(
         Err(error) => {
             return bad_request(format!(
                 "payment intent capture request body is invalid: {error}"
-            ))
+            ));
         }
     };
     let service = PaymentIntentRuntimeService::new(
@@ -427,7 +427,7 @@ async fn cancel_payment_intent(
         Err(error) => {
             return bad_request(format!(
                 "payment intent cancel request body is invalid: {error}"
-            ))
+            ));
         }
     };
     let service = PaymentIntentRuntimeService::new(

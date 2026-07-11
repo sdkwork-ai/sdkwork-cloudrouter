@@ -125,6 +125,14 @@ tables:
     - id
   lifecycle:
     partition_by: created_at_month
+  semantic_contracts:
+    ranking_refresh_source_fact:
+      time_field: occurred_at
+      window_predicate: half_open_utc
+      aggregation_grain:
+      - tenant_id
+      - organization_id
+      - catalog_key
 - table: ai_usage_service_provider_edge
   domain: ai
   profile: ledger_source_fact

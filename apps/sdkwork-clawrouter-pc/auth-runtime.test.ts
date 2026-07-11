@@ -29,9 +29,11 @@ async function loadAuthSettingsPageModule(): Promise<AuthSettingsPageModule> {
 
 type SdkClientsModule = typeof import("./packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts");
 type AuthIamRuntimeModule = typeof import("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-iam-runtime.ts");
+type PortalSessionModule = typeof import("./packages/sdkwork-clawroutes-pc-commons/src/portal-session.ts");
 
 let sdkClientsModulePromise: Promise<SdkClientsModule> | undefined;
 let authIamRuntimeModulePromise: Promise<AuthIamRuntimeModule> | undefined;
+let portalSessionModulePromise: Promise<PortalSessionModule> | undefined;
 
 async function loadSdkClientsModule(): Promise<SdkClientsModule> {
   sdkClientsModulePromise ??= import("./packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts");
@@ -41,6 +43,11 @@ async function loadSdkClientsModule(): Promise<SdkClientsModule> {
 async function loadAuthIamRuntimeModule(): Promise<AuthIamRuntimeModule> {
   authIamRuntimeModulePromise ??= import("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-iam-runtime.ts");
   return authIamRuntimeModulePromise;
+}
+
+async function loadPortalSessionModule(): Promise<PortalSessionModule> {
+  portalSessionModulePromise ??= import("./packages/sdkwork-clawroutes-pc-commons/src/portal-session.ts");
+  return portalSessionModulePromise;
 }
 
 async function loadSdkSessionAuthRuntime() {
@@ -1442,6 +1449,53 @@ test("claw router app session persists across browser tabs via shared localStora
   }
 });
 
+test("current portal session clears stale local tokens when IAM returns an unusable session payload", async () => {
+  const portalSession = await loadPortalSessionModule();
+  const host = globalThis as typeof globalThis & {
+    __SDKWORK_APPBASE_APP_SDK_CLIENT__?: unknown;
+  };
+  const previousAppbaseAppClient = host.__SDKWORK_APPBASE_APP_SDK_CLIENT__;
+
+  try {
+    storeAppSessionFromResult({
+      code: 0,
+      data: {
+        accessToken: "stale-access-token",
+        authToken: "stale-auth-token",
+        expiresAt: Math.floor(Date.now() / 1000) + 3600,
+        refreshToken: "stale-refresh-token",
+        sessionId: "stale-session-id",
+      },
+    });
+    host.__SDKWORK_APPBASE_APP_SDK_CLIENT__ = {
+      auth: {
+        sessions: {
+          current: {
+            retrieve: async () => ({
+              code: 0,
+              data: {
+                item: {
+                  sessionId: "current-session-without-tokens",
+                },
+              },
+            }),
+          },
+        },
+      },
+    };
+
+    await assert.doesNotReject(() => portalSession.fetchCurrentPortalSession());
+    assert.equal(loadStoredAppSessionToken(), null);
+  } finally {
+    if (previousAppbaseAppClient === undefined) {
+      delete host.__SDKWORK_APPBASE_APP_SDK_CLIENT__;
+    } else {
+      host.__SDKWORK_APPBASE_APP_SDK_CLIENT__ = previousAppbaseAppClient;
+    }
+    clearStoredAppSessionToken();
+  }
+});
+
 test("admin layout enforces route permission guard for protected admin pages", async () => {
   const adminLayoutSource = readAdminLayoutSource();
   const guardSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-shell/src/AdminRoutePermissionGuard.tsx");
@@ -1503,6 +1557,54 @@ test("generated SDK auth errors clear the app session and redirect protected pag
     assert.deepEqual(redirects, [
       "/auth/login?redirect=%2Fadmin%2Fchannel%3Fprovider_id%3D2%23risk",
     ]);
+  } finally {
+    clearStoredAppSessionToken();
+    resetClawRouterSdkSessionAuthRedirectState();
+    restoreWindow();
+  }
+});
+
+test("generated SDK ProblemDetail invalid-session errors clear the app session", async () => {
+  const {
+    handleClawRouterSdkSessionAuthError,
+    isClawRouterSdkSessionAuthError,
+    resetClawRouterSdkSessionAuthRedirectState,
+  } = await loadSdkSessionAuthRuntime();
+  const redirects: string[] = [];
+  const restoreWindow = installPortalAuthRedirectWindow({
+    hash: "",
+    pathname: "/console/dashboard",
+    replace: (to) => redirects.push(to),
+    search: "",
+  });
+  const invalidSessionProblem = {
+    code: 40103,
+    detail: "invalid or expired IAM session",
+    i18nKey: "errors.result.40103",
+    instance: "GET /app/v3/api/ai/dashboard/overview",
+    operationId: "dashboard.overview.retrieve",
+    status: 401,
+    title: "Invalid token",
+    traceId: "eb9cbae506d84c7a868ffbf53a43a553",
+    type: "https://docs.sdkwork.com/problems/40103",
+  };
+
+  try {
+    resetClawRouterSdkSessionAuthRedirectState();
+    storeAppSessionFromResult({
+      code: "200",
+      data: {
+        accessToken: "stale-access-token",
+        authToken: "stale-auth-token",
+        expiresAt: Math.floor(Date.now() / 1000) + 3600,
+      },
+    });
+
+    assert.equal(isClawRouterSdkSessionAuthError(invalidSessionProblem), true);
+    assert.equal(handleClawRouterSdkSessionAuthError(invalidSessionProblem), true);
+
+    assert.equal(loadStoredAppSessionToken(), null);
+    assert.deepEqual(redirects, ["/auth/login?redirect=%2Fconsole%2Fdashboard"]);
   } finally {
     clearStoredAppSessionToken();
     resetClawRouterSdkSessionAuthRedirectState();
@@ -1581,7 +1683,7 @@ test("generated SDK auth errors stay on local protected pages when dev redirect 
       msg: "app session token has expired",
     }), true);
 
-    assert.notEqual(loadStoredAppSessionToken(), null);
+    assert.equal(loadStoredAppSessionToken(), null);
     assert.deepEqual(redirects, []);
   } finally {
     clearStoredAppSessionToken();
@@ -1622,7 +1724,7 @@ test("generated SDK auth errors open modal details on local protected pages by d
       msg: "app session token has expired",
     }), true);
 
-    assert.notEqual(loadStoredAppSessionToken(), null);
+    assert.equal(loadStoredAppSessionToken(), null);
     assert.deepEqual(redirects, []);
     assert.equal(sessionAuthEvents.length, 1);
     assert.equal(sessionAuthEvents[0]?.code, "4010");
@@ -1779,6 +1881,66 @@ test("generated SDK request boundary redirects when API responses report an expi
     );
     assert.equal(loadStoredAppSessionToken(), null);
     assert.deepEqual(redirects, ["/auth/login?redirect=%2Fconsole%2Fapi-keys%3Ftab%3Dusage"]);
+  } finally {
+    globalThis.fetch = previousFetch;
+    clearStoredAppSessionToken();
+    resetClawRouterSdkSessionAuthRedirectState();
+    restoreWindow();
+  }
+});
+
+test("generated SDK request boundary clears sessions for invalid IAM session ProblemDetails", async () => {
+  const {
+    createClawRouterAppSdkClient,
+    resetClawRouterSdkSessionAuthRedirectState,
+  } = await loadSdkSessionAuthRuntime();
+  const redirects: string[] = [];
+  const restoreWindow = installPortalAuthRedirectWindow({
+    hash: "",
+    pathname: "/console/dashboard",
+    replace: (to) => redirects.push(to),
+    search: "",
+  });
+  const previousFetch = globalThis.fetch;
+
+  try {
+    resetClawRouterSdkSessionAuthRedirectState();
+    storeAppSessionFromResult({
+      code: "200",
+      data: {
+        accessToken: "stale-access-token",
+        authToken: "stale-auth-token",
+        expiresAt: Math.floor(Date.now() / 1000) + 3600,
+      },
+    });
+    globalThis.fetch = async () => new Response(
+      JSON.stringify({
+        code: 40103,
+        detail: "invalid or expired IAM session",
+        i18nKey: "errors.result.40103",
+        instance: "GET /app/v3/api/ai/dashboard/overview",
+        operationId: "dashboard.overview.retrieve",
+        status: 401,
+        title: "Invalid token",
+        traceId: "eb9cbae506d84c7a868ffbf53a43a553",
+        type: "https://docs.sdkwork.com/problems/40103",
+      }),
+      {
+        headers: { "content-type": "application/problem+json" },
+        status: 401,
+      },
+    );
+
+    const client = createClawRouterAppSdkClient({
+      appBaseUrl: "https://example.test/app/v3/api",
+    });
+
+    await assert.rejects(
+      () => client.http.get("/ai/dashboard/overview"),
+      /HTTP 401/,
+    );
+    assert.equal(loadStoredAppSessionToken(), null);
+    assert.deepEqual(redirects, ["/auth/login?redirect=%2Fconsole%2Fdashboard"]);
   } finally {
     globalThis.fetch = previousFetch;
     clearStoredAppSessionToken();
@@ -2165,6 +2327,54 @@ test("portal composes appbase auth and Tauri host packages through workspace ins
   assert.match(tauriBridgeSource, /from '@sdkwork\/host-tauri-pc-react'/);
   assert.match(tauriBridgeSource, /createTauriHostBridge/);
   assert.match(tauriBridgeSource, /evaluateTauriHostBridgeReadiness/);
+});
+
+test("portal imports auth runtime session helpers through exported workspace subpaths", () => {
+  const sdkClientsSource = readPortalFile("./packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts");
+  const iamRuntimeSource = readPortalFile("./packages/sdkwork-clawroutes-pc-commons/src/iam-runtime.ts");
+  const iamSessionProjectionSource = readPortalFile(
+    "./packages/sdkwork-clawroutes-pc-commons/src/iam-runtime-session-projection.ts",
+  );
+  const authRuntimePackageJson = JSON.parse(readRepoFile(
+    "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-runtime-pc-react/package.json",
+  )) as {
+    exports: Record<string, {
+      default?: string;
+      import?: string;
+      types?: string;
+    }>;
+  };
+
+  assert.match(
+    sdkClientsSource,
+    /from '@sdkwork\/auth-runtime-pc-react\/attachSdkworkSdkSessionAuthBoundary'/,
+  );
+  assert.doesNotMatch(
+    sdkClientsSource,
+    /from '@sdkwork\/auth-runtime-pc-react';/,
+  );
+  assert.match(
+    iamRuntimeSource,
+    /from '@sdkwork\/auth-runtime-pc-react\/appbasePcAuthRuntime'/,
+  );
+  assert.match(
+    iamSessionProjectionSource,
+    /from '@sdkwork\/auth-runtime-pc-react\/appbasePcAuthSessionBridge'/,
+  );
+
+  const expectedExports = {
+    "./appbasePcAuthRuntime": "./src/appbasePcAuthRuntime.ts",
+    "./appbasePcAuthSessionBridge": "./src/appbasePcAuthSessionBridge.ts",
+    "./attachSdkworkSdkSessionAuthBoundary": "./src/attachSdkworkSdkSessionAuthBoundary.ts",
+    "./handleSdkworkSessionAuthUnauthorizedError": "./src/handleSdkworkSessionAuthUnauthorizedError.ts",
+    "./sdkSessionAuthError": "./src/sdkSessionAuthError.ts",
+  };
+
+  for (const [subpath, entry] of Object.entries(expectedExports)) {
+    assert.equal(authRuntimePackageJson.exports[subpath]?.types, entry);
+    assert.equal(authRuntimePackageJson.exports[subpath]?.import, entry);
+    assert.equal(authRuntimePackageJson.exports[subpath]?.default, entry);
+  }
 });
 
 test("portal resolves sdkwork UI through workspace package exports", () => {

@@ -219,7 +219,7 @@ fn top_level_model_from_json_value(value: &Value) -> Result<Option<String>, Invo
                 return Err(InvocationError::new(
                     InvocationErrorKind::InvalidRequest,
                     "model must be a string",
-                ))
+                ));
             }
         }
     }

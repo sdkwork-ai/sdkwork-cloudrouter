@@ -1,7 +1,5 @@
 import {
   ensureSdkworkApiSuccess,
-  getClawRouterBackendSdkClient,
-  getModelsBackendSdkClient,
   isRecord,
   optionalBoundedPositiveInteger as optionalQueryPageSize,
   optionalPositiveInteger as optionalQueryPage,
@@ -20,11 +18,15 @@ import {
   readStringArray,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
+import {
+  getClawRouterBackendSdkClient,
+  getModelsBackendSdkClient,
+} from '@sdkwork/clawrouter-pc-admin-core/sdk';
 import type {
   AdminChannelGroupCreateRequest,
   AdminChannelGroupUpdateRequest,
   AdminRuntimeRouteExplainRequest,
-} from '@sdkwork/clawrouter-backend-sdk';
+} from '@sdkwork/clawrouter-pc-admin-core/sdk';
 
 export type GroupPriceReferenceMode = 'multiplier' | 'official_price';
 

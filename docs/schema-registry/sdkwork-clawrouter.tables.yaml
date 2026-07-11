@@ -160,6 +160,7 @@ table_fragments:
 - tables/ai-metering.yaml
 - tables/ai-pricing.yaml
 - tables/iam-gateway.yaml
+- tables/ops-runtime.yaml
 modules:
   ai-routing:
     owner: claw-router-platform
@@ -223,6 +224,24 @@ modules:
     - iam_gateway_api_key_channel_group
     - iam_gateway_risk_rule
     ddl_location: database/migrations/iam-gateway.sql
+  ops-runtime:
+    owner: claw-router-platform
+    description: Claw Router-owned operational runtime tables for audit logs, job execution history, gateway health,
+      monitoring snapshots, alerts, and notification projections.
+    compliance_level: L2
+    tables_count: 10
+    tables:
+    - ops_alert_event
+    - ops_audit_log
+    - ops_config_snapshot
+    - ops_gateway_heartbeat
+    - ops_gateway_instance
+    - ops_job_execution
+    - ops_metric_snapshot
+    - ops_notification_message
+    - ops_notification_recipient
+    - ops_notification_delivery
+    ddl_location: database/migrations/ops-runtime.sql
 registry_dependencies:
 - module_id: sdkwork-iam
   locator: ../sdkwork-iam
@@ -314,23 +333,6 @@ registry_dependencies:
   - commerce_discount
   ownership: independent
   access: api_event
-- module_id: sdkwork-ops
-  locator: ../sdkwork-ops
-  registry_path: docs/schema-registry/sdkwork-ops.tables.yaml
-  description: "\u7CFB\u7EDF\u76D1\u63A7\u3001\u5BA1\u8BA1\u65E5\u5FD7\u3001\u4F5C\u4E1A\u8C03\u5EA6\u3001\u544A\u8B66\u7BA1\
-    \u7406\n\n\u884C\u4E1A\u5BF9\u6807: AWS CloudTrail + Datadog\n\n\u6A21\u5757\u804C\u8D23:\n- \u5B9A\u4E49ops_audit_log\u7B49\
-    7\u5F20\u8868\n- \u72EC\u7ACB\u7BA1\u7406schema\n"
-  tables_count: 7
-  tables:
-  - ops_instance
-  - ops_heartbeat
-  - ops_audit_log
-  - ops_job
-  - ops_alert
-  - ops_config_snapshot
-  - ops_metric
-  ownership: independent
-  access: sdk
 - module_id: sdkwork-integration
   locator: ../sdkwork-integration
   registry_path: docs/schema-registry/sdkwork-integration.tables.yaml
@@ -431,39 +433,25 @@ data_flow:
   monitoring:
     description: "\u76D1\u63A7\u6570\u636E\u63A8\u9001"
     steps:
-    - "router-service\u63A8\u9001\u76D1\u63A7\u6307\u6807"
-    - "sdkwork-ops-sdk\u8C03\u7528"
-    - "ops_metric\u5199\u5165\uFF08sdkwork-ops\u672C\u5730\uFF09"
+    - "router-service\u8BB0\u5F55\u8FD0\u884C\u76D1\u63A7\u548C\u4F5C\u4E1A\u5BA1\u8BA1"
+    - "ops-runtime\u672C\u5730\u8868\u63D0\u4F9B\u53EF\u5206\u9875\u7684\u76D1\u63A7\u3001\u901A\u77E5\u548C\u5BA1\u8BA1\u8BFB\u6A21\u578B"
+    - "ops_metric_snapshot\u3001ops_job_execution\u3001ops_audit_log\u5199\u5165\uFF08claw-router\u672C\u5730\uFF09"
 statistics:
-  claw_router_local_tables: 33
-  combined_module_tables: 45
-  total_tables: 78
+  claw_router_local_tables: 43
+  composed_dependency_tables: 19
+  total_tables: 62
   table_prefix_distribution:
-    ai_: 33
-    iam_: 9
-    commerce_: 18
-    integration_: 17
-    ops_: 7
-    analytics_: 2
-    catalog_: 1
-    system_: 2
+    ai_: 48
+    iam_: 4
+    ops_: 10
   module_distribution:
-    claw-router: 33
-    sdkwork-iam: 5
-    sdkwork-account: 3
-    sdkwork-order: 2
-    sdkwork-payment: 3
-    sdkwork-invoice: 2
-    sdkwork-membership: 3
-    sdkwork-promotion: 3
-    sdkwork-ops: 7
-    sdkwork-integration: 17
-    sdkwork-kernel: 2
-    sdkwork-models: 2
-    sdkwork-analytics: 2
-    sdkwork-catalog: 1
-    sdkwork-platform: 2
+    claw-router: 43
+    sdkwork-models: 19
+    ai-routing: 21
+    ai-metering: 3
+    ai-pricing: 5
     iam-gateway: 4
+    ops-runtime: 10
 compliance:
   financial_tables:
   - ai_usage
@@ -475,6 +463,8 @@ compliance:
   audit_tables:
   - ai_request_trace
   - ai_routing_decision_log
+  - ops_audit_log
+  - ops_job_execution
   retention_policy:
     financial_data:
       online_retention: 12mo

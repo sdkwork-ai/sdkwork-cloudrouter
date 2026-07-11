@@ -11,7 +11,6 @@ pub(crate) mod dashboard_overview_metrics;
 pub(crate) mod iam_application_bootstrap;
 pub mod iam_scope_resolver;
 pub mod installer;
-pub(crate) mod membership_seed_compat;
 pub(crate) mod model_catalog_import;
 pub(crate) mod model_modality;
 pub mod pool;

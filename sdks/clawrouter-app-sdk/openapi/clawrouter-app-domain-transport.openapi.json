@@ -82,33 +82,6 @@
         "description": "Addresses default selection create result schema exposed by Claw Router.",
         "x-operation-id": "addresses.defaultSelection.create"
       },
-      "AddressesDeleteResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by addresses delete result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Addresses delete result schema exposed by Claw Router.",
-        "x-operation-id": "addresses.delete"
-      },
       "AddressesListResult": {
         "allOf": [
           {
@@ -243,33 +216,6 @@
         ],
         "description": "Cart items create result schema exposed by Claw Router.",
         "x-operation-id": "cart.items.create"
-      },
-      "CartItemsDeleteResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by cart items delete result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Cart items delete result schema exposed by Claw Router.",
-        "x-operation-id": "cart.items.delete"
       },
       "CartItemsUpdateResult": {
         "allOf": [
@@ -1617,33 +1563,6 @@
         "description": "Orders list result schema exposed by Claw Router.",
         "x-operation-id": "orders.list"
       },
-      "OrdersPayResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by orders pay result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Orders pay result schema exposed by Claw Router.",
-        "x-operation-id": "orders.pay"
-      },
       "OrdersPaymentSuccessRetrieveResult": {
         "allOf": [
           {
@@ -1670,6 +1589,33 @@
         ],
         "description": "Orders payment success retrieve result schema exposed by Claw Router.",
         "x-operation-id": "orders.paymentSuccess.retrieve"
+      },
+      "OrdersPaymentsCreateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by orders payments create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Orders payments create result schema exposed by Claw Router.",
+        "x-operation-id": "orders.payments.create"
       },
       "OrdersRetrieveResult": {
         "allOf": [
@@ -2022,33 +1968,6 @@
         "description": "Payments order payments list result schema exposed by Claw Router.",
         "x-operation-id": "payments.orderPayments.list"
       },
-      "PaymentsReconcileResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by payments reconcile result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Payments reconcile result schema exposed by Claw Router.",
-        "x-operation-id": "payments.reconcile"
-      },
       "PaymentsRecordsListResult": {
         "allOf": [
           {
@@ -2130,14 +2049,14 @@
         "description": "Payments statistics retrieve result schema exposed by Claw Router.",
         "x-operation-id": "payments.statistics.retrieve"
       },
-      "PaymentsStatusRetrieveByOutTradeNoResult": {
+      "PaymentsStatusOutTradeNoRetrieveResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by payments status retrieve by out trade no result.",
+            "description": "Object schema used by payments status out trade no retrieve result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -2154,8 +2073,8 @@
             "type": "object"
           }
         ],
-        "description": "Payments status retrieve by out trade no result schema exposed by Claw Router.",
-        "x-operation-id": "payments.status.retrieveByOutTradeNo"
+        "description": "Payments status out trade no retrieve result schema exposed by Claw Router.",
+        "x-operation-id": "payments.status.outTradeNo.retrieve"
       },
       "PaymentsStatusRetrieveResult": {
         "allOf": [
@@ -2311,14 +2230,14 @@
         "description": "Promotions discount applications create result schema exposed by Claw Router.",
         "x-operation-id": "promotions.discountApplications.create"
       },
-      "PromotionsDiscountApplicationsReleaseResult": {
+      "PromotionsDiscountApplicationsReleasesCreateResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by promotions discount applications release result.",
+            "description": "Object schema used by promotions discount applications releases create result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -2335,8 +2254,8 @@
             "type": "object"
           }
         ],
-        "description": "Promotions discount applications release result schema exposed by Claw Router.",
-        "x-operation-id": "promotions.discountApplications.release"
+        "description": "Promotions discount applications releases create result schema exposed by Claw Router.",
+        "x-operation-id": "promotions.discountApplications.releases.create"
       },
       "PromotionsDiscountApplicationsReversalsCreateResult": {
         "allOf": [
@@ -2392,14 +2311,14 @@
         "description": "Promotions discount applications rollback result schema exposed by Claw Router.",
         "x-operation-id": "promotions.discountApplications.rollback"
       },
-      "PromotionsDiscountApplicationsSettleResult": {
+      "PromotionsDiscountApplicationsSettlementsCreateResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by promotions discount applications settle result.",
+            "description": "Object schema used by promotions discount applications settlements create result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -2416,8 +2335,8 @@
             "type": "object"
           }
         ],
-        "description": "Promotions discount applications settle result schema exposed by Claw Router.",
-        "x-operation-id": "promotions.discountApplications.settle"
+        "description": "Promotions discount applications settlements create result schema exposed by Claw Router.",
+        "x-operation-id": "promotions.discountApplications.settlements.create"
       },
       "PromotionsOffersListResult": {
         "allOf": [
@@ -2608,14 +2527,14 @@
         "description": "Promotions user coupons wallet retrieve result schema exposed by Claw Router.",
         "x-operation-id": "promotions.userCoupons.wallet.retrieve"
       },
-      "RechargesOrdersCancelResult": {
+      "RechargesOrdersCancellationsCreateResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by recharges orders cancel result.",
+            "description": "Object schema used by recharges orders cancellations create result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -2632,8 +2551,8 @@
             "type": "object"
           }
         ],
-        "description": "Recharges orders cancel result schema exposed by Claw Router.",
-        "x-operation-id": "recharges.orders.cancel"
+        "description": "Recharges orders cancellations create result schema exposed by Claw Router.",
+        "x-operation-id": "recharges.orders.cancellations.create"
       },
       "RechargesOrdersCreateResult": {
         "allOf": [
@@ -2742,6 +2661,33 @@
         ],
         "description": "Recharges settings retrieve result schema exposed by Claw Router.",
         "x-operation-id": "recharges.settings.retrieve"
+      },
+      "ReconciliationsCreateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by reconciliations create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Reconciliations create result schema exposed by Claw Router.",
+        "x-operation-id": "reconciliations.create"
       },
       "RefundsCreateResult": {
         "allOf": [
@@ -3859,7 +3805,7 @@
         "operationId": "addresses.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -3867,7 +3813,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -3951,15 +3897,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AddressesDeleteResult"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "content": {
@@ -4133,7 +4072,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -4141,7 +4080,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -4375,7 +4314,7 @@
         "operationId": "cart.items.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -4383,7 +4322,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -4467,15 +4406,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CartItemsDeleteResult"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "content": {
@@ -5409,7 +5341,7 @@
         "operationId": "checkout.sessions.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -5417,7 +5349,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -5591,7 +5523,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -5599,7 +5531,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -5683,7 +5615,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -5691,7 +5623,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -6013,7 +5945,7 @@
         "operationId": "invoices.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -6021,7 +5953,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -6445,7 +6377,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -6453,7 +6385,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -6627,7 +6559,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -6635,7 +6567,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -7539,7 +7471,7 @@
         "operationId": "memberships.points.dailyRewards.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -7547,7 +7479,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -7781,7 +7713,7 @@
         "operationId": "memberships.privileges.speedUps.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -7789,7 +7721,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -7943,7 +7875,7 @@
         "operationId": "memberships.purchases.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -7951,7 +7883,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -8267,7 +8199,7 @@
         "operationId": "orders.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -8275,7 +8207,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -8621,7 +8553,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -8629,7 +8561,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -8968,7 +8900,7 @@
       },
       "post": {
         "description": "Pay. Reads commerce. Writes ops_audit_log. File targets none.",
-        "operationId": "orders.pay",
+        "operationId": "orders.payments.create",
         "parameters": [
           {
             "description": "Order id path parameter.",
@@ -8981,15 +8913,15 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrdersPayResult"
+                  "$ref": "#/components/schemas/OrdersPaymentsCreateResult"
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -9050,7 +8982,7 @@
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
         "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "orders",
+        "x-sdkwork-resource": "orders.payments",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
@@ -9153,7 +9085,7 @@
         "operationId": "payments.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -9161,7 +9093,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -9415,7 +9347,7 @@
         "operationId": "payments.intents.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -9423,7 +9355,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -9597,7 +9529,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -9605,7 +9537,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -9848,18 +9780,18 @@
     "/app/v3/api/payments/reconciliations": {
       "post": {
         "description": "Reconcile. Reads commerce. Writes ops_audit_log. File targets none.",
-        "operationId": "payments.reconcile",
+        "operationId": "reconciliations.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaymentsReconcileResult"
+                  "$ref": "#/components/schemas/ReconciliationsCreateResult"
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -9920,7 +9852,7 @@
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
         "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "payments",
+        "x-sdkwork-resource": "reconciliations",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
@@ -10180,7 +10112,7 @@
     "/app/v3/api/payments/status/out_trade_no/{outTradeNo}": {
       "get": {
         "description": "Retrieve by out trade no. Reads commerce. Writes none. File targets none.",
-        "operationId": "payments.status.retrieveByOutTradeNo",
+        "operationId": "payments.status.outTradeNo.retrieve",
         "parameters": [
           {
             "description": "Out trade no path parameter.",
@@ -10197,7 +10129,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaymentsStatusRetrieveByOutTradeNoResult"
+                  "$ref": "#/components/schemas/PaymentsStatusOutTradeNoRetrieveResult"
                 }
               }
             },
@@ -10262,7 +10194,7 @@
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
         "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "payments.status",
+        "x-sdkwork-resource": "payments.status.outTradeNo",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": []
       }
@@ -10466,7 +10398,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -10474,7 +10406,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -10548,7 +10480,7 @@
         "operationId": "promotions.discountApplications.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -10556,7 +10488,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -10630,7 +10562,7 @@
         "operationId": "promotions.discountApplications.reversals.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -10638,7 +10570,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -10709,7 +10641,7 @@
     "/app/v3/api/promotions/discount_applications/{applicationId}/releases": {
       "post": {
         "description": "Release. Reads system. Writes ops_audit_log. File targets none.",
-        "operationId": "promotions.discountApplications.release",
+        "operationId": "promotions.discountApplications.releases.create",
         "parameters": [
           {
             "description": "Application id path parameter.",
@@ -10722,15 +10654,15 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PromotionsDiscountApplicationsReleaseResult"
+                  "$ref": "#/components/schemas/PromotionsDiscountApplicationsReleasesCreateResult"
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -10791,7 +10723,7 @@
         "x-route-scope": "console",
         "x-sdk-domain": "promotion",
         "x-sdkwork-domain": "promotion",
-        "x-sdkwork-resource": "promotions.discountApplications",
+        "x-sdkwork-resource": "promotions.discountApplications.releases",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
@@ -10893,7 +10825,7 @@
     "/app/v3/api/promotions/discount_applications/{applicationId}/settlements": {
       "post": {
         "description": "Settle. Reads system. Writes ops_audit_log. File targets none.",
-        "operationId": "promotions.discountApplications.settle",
+        "operationId": "promotions.discountApplications.settlements.create",
         "parameters": [
           {
             "description": "Application id path parameter.",
@@ -10906,15 +10838,15 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PromotionsDiscountApplicationsSettleResult"
+                  "$ref": "#/components/schemas/PromotionsDiscountApplicationsSettlementsCreateResult"
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -10975,7 +10907,7 @@
         "x-route-scope": "console",
         "x-sdk-domain": "promotion",
         "x-sdkwork-domain": "promotion",
-        "x-sdkwork-resource": "promotions.discountApplications",
+        "x-sdkwork-resource": "promotions.discountApplications.settlements",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
@@ -11158,7 +11090,7 @@
         "operationId": "promotions.userCoupons.claims.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -11166,7 +11098,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -11580,7 +11512,7 @@
         "operationId": "recharges.orders.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -11588,7 +11520,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -11749,7 +11681,7 @@
     "/app/v3/api/recharges/orders/{orderId}/cancellations": {
       "post": {
         "description": "Cancel. Reads commerce. Writes ops_audit_log. File targets none.",
-        "operationId": "recharges.orders.cancel",
+        "operationId": "recharges.orders.cancellations.create",
         "parameters": [
           {
             "description": "Order id path parameter.",
@@ -11762,15 +11694,15 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RechargesOrdersCancelResult"
+                  "$ref": "#/components/schemas/RechargesOrdersCancellationsCreateResult"
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -11831,7 +11763,7 @@
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
         "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "recharges.orders",
+        "x-sdkwork-resource": "recharges.orders.cancellations",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
@@ -12082,7 +12014,7 @@
         "operationId": "refunds.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -12090,7 +12022,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -13014,7 +12946,7 @@
         "operationId": "wallet.adjustments.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -13022,7 +12954,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -13334,7 +13266,7 @@
         "operationId": "wallet.holds.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -13342,7 +13274,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -13416,7 +13348,7 @@
         "operationId": "wallet.holds.releases.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -13424,7 +13356,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -13498,7 +13430,7 @@
         "operationId": "wallet.holds.settlements.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -13506,7 +13438,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -13910,7 +13842,7 @@
         "operationId": "wallet.pointExchanges.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -13918,7 +13850,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -14082,7 +14014,7 @@
         "operationId": "wallet.pointTransfers.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -14090,7 +14022,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -14414,7 +14346,7 @@
         "operationId": "wallet.topupTransfers.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -14422,7 +14354,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -14666,7 +14598,7 @@
         "operationId": "wallet.withdrawalTransfers.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -14674,7 +14606,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {

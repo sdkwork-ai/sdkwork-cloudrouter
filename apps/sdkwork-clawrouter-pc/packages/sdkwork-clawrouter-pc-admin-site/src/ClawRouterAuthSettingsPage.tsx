@@ -4,7 +4,7 @@ import type {
   AdminAuthSettingsUpdateRequest,
   AdminAuthWechatMini,
   AdminAuthWechatOfficial,
-} from '@sdkwork/clawrouter-backend-sdk';
+} from '@sdkwork/clawrouter-pc-admin-core/sdk';
 import { useTranslation } from 'react-i18next';
 import { BusinessStatePanel } from '@sdkwork/clawroutes-pc-commons/components/BusinessState';
 import {

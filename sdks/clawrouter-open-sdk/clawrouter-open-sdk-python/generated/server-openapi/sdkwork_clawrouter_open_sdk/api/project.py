@@ -194,7 +194,7 @@ class ProjectApi:
     def list_groups_roles(self, project_id: str, group_id: str, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiRoleAssignmentList:
         """List project group roles"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -212,7 +212,7 @@ class ProjectApi:
     def list_roles(self, project_id: str, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiRoleList:
         """List project roles"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -230,7 +230,7 @@ class ProjectApi:
     def list_users_roles(self, project_id: str, user_id: str, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiRoleAssignmentList:
         """List project user roles"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},

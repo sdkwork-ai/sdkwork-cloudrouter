@@ -5,6 +5,7 @@ use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::routing_config_change::{
     record_postgres_ai_routing_config_change, AiRoutingConfigChange,
 };
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     AdminProviderSecretCommandFuture, AdminProviderSecretItem, AdminProviderSecretListPage,
@@ -349,6 +350,7 @@ async fn insert_provider_secret(
     tx: &mut Transaction<'_, Postgres>,
     command: &CreateAdminProviderSecretCommand,
 ) -> DomainResult<i64> {
+    let secret_id = next_claw_runtime_id("integration_provider_account")?;
     let auth_config = serde_json::json!({
         "authType": &command.auth_type,
         "secretStoredAsRef": true
@@ -357,9 +359,9 @@ async fn insert_provider_secret(
     sqlx::query_scalar(
         r#"
         INSERT INTO integration_provider_account
-            (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, provider_code, account_code, account_name, auth_type, credential_profile, auth_config, secret_ref, secret_hash, masked_label, consecutive_error_count, risk_level)
+            (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, provider_code, account_code, account_name, auth_type, credential_profile, auth_config, secret_ref, secret_hash, masked_label, consecutive_error_count, risk_level, id)
         VALUES
-            ($1, $2, $3, 1, $4, $5::timestamptz, $6::timestamptz, 0, $7, $8, $9, $10, 1, $11::jsonb, $12, $13, $14, 0, 1)
+            ($1, $2, $3, 1, $4, $5::timestamptz, $6::timestamptz, 0, $7, $8, $9, $10, 1, $11::jsonb, $12, $13, $14, 0, 1, $15)
         RETURNING id
         "#,
     )
@@ -377,6 +379,7 @@ async fn insert_provider_secret(
     .bind(&command.secret_ref)
     .bind(digest_hex(&command.secret_ref))
     .bind(&command.masked_label)
+    .bind(secret_id)
     .fetch_one(&mut **tx)
     .await
     .map_err(|error| store_error("failed to create provider secret", error))
@@ -530,11 +533,12 @@ async fn insert_audit_log(
     sqlx::query(
         r#"
         INSERT INTO ops_audit_log
-            (uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
+            (id, uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb)
         "#,
     )
+    .bind(next_claw_runtime_id("ops_audit_log")?)
     .bind(audit_log_uuid)
     .bind(tenant_id)
     .bind(organization_id)
@@ -567,11 +571,12 @@ async fn insert_config_snapshot(
     sqlx::query(
         r#"
         INSERT INTO ops_config_snapshot
-            (uuid, tenant_id, organization_id, user_id, request_id, snapshot_no, config_scope, config_type, source_table, source_ids, config_payload, config_hash, published_at, published_by)
+            (id, uuid, tenant_id, organization_id, user_id, request_id, snapshot_no, config_scope, config_type, source_table, source_ids, config_payload, config_hash, published_at, published_by)
         VALUES
-            ($1, $2, $3, $4, $5, $6, 1, $7, 'integration_provider_account', $8::jsonb, $9::jsonb, $10, $11::timestamptz, $12)
+            ($1, $2, $3, $4, $5, $6, $7, 1, $8, 'integration_provider_account', $9::jsonb, $10::jsonb, $11, $12::timestamptz, $13)
         "#,
     )
+    .bind(next_claw_runtime_id("ops_config_snapshot")?)
     .bind(config_snapshot_uuid)
     .bind(tenant_id)
     .bind(organization_id)

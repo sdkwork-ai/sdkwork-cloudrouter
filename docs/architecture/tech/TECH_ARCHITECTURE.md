@@ -2,7 +2,7 @@
 
 Status: active
 Owner: SDKWork maintainers
-Updated: 2026-06-29
+Updated: 2026-07-10
 Specs: ARCHITECTURE_DECISION_SPEC.md, DOCUMENTATION_SPEC.md
 
 This document is the **single entry point** for the Claw Router technical
@@ -367,6 +367,8 @@ Detailed deployment: [TECH-09-deploymentarchitecturedesign.md](TECH-09-deploymen
 | 0008 | Baseline-plus-migrations database strategy | Accepted | [TECH-30-flyway-schema-contract-audit.md](TECH-30-flyway-schema-contract-audit.md) |
 | 0009 | Provider adapter trait + per-provider crate | Accepted | [TECH-provider-adapter-architecture.md](TECH-provider-adapter-architecture.md) |
 | 0010 | Single shared HMAC for app session (0.3.x) | Accepted, sunset | [docs/standard-alignment-audit.md](../../standard-alignment-audit.md) |
+
+| 0011 | Commercial gateway safety boundaries | Accepted | [ADR-20260710](../decisions/ADR-20260710-commercial-gateway-safety-boundaries.md) |
 
 Full ADR list: [TECH-changelog.md](TECH-changelog.md)
 

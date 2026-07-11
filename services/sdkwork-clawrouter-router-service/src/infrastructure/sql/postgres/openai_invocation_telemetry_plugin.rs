@@ -8,6 +8,7 @@ use crate::api::{
     OpenAiProviderRoute,
 };
 use crate::domain::{DomainError, DomainResult, ProviderCircuitBreakerPolicy};
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 
 const HEALTHY: i64 = 1;
@@ -284,16 +285,17 @@ async fn insert_snapshot(
     sqlx::query(
         r#"
         INSERT INTO integration_provider_health_snapshot
-            (uuid, tenant_id, organization_id, user_id, request_id, trace_id, status, created_at, metadata, provider_id, channel_id, provider_account_id, check_type, health_status, latency_ms, http_status, error_code, error_message_masked, checked_at)
+            (id, uuid, tenant_id, organization_id, user_id, request_id, trace_id, status, created_at, metadata, provider_id, channel_id, provider_account_id, check_type, health_status, latency_ms, http_status, error_code, error_message_masked, checked_at)
         SELECT
-            $1, c.tenant_id, c.organization_id, $2, $3, $4, 1, CURRENT_TIMESTAMP, $5::jsonb, c.provider_id, c.id, c.id, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP
+            $1, $2, c.tenant_id, c.organization_id, $3, $4, $5, 1, CURRENT_TIMESTAMP, $6::jsonb, c.provider_id, c.id, c.id, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP
         FROM ai_channel c
-        WHERE c.id = $12
-          AND c.tenant_id = $13
-          AND c.organization_id = $14
+        WHERE c.id = $13
+          AND c.tenant_id = $14
+          AND c.organization_id = $15
           AND c.deleted_at IS NULL
         "#,
     )
+    .bind(next_claw_runtime_id("integration_provider_health_snapshot")?)
     .bind(snapshot_uuid(context, route, health_status))
     .bind(context.api_key_context.user_id)
     .bind(request_id(context))

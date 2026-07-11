@@ -2,6 +2,7 @@ use sha2::{Digest, Sha256};
 use sqlx::{Row, Sqlite, SqlitePool, Transaction};
 
 use crate::domain::{DecimalValue, DomainError, DomainResult};
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::sql_admin_service_provider::{
     risk_label_sql, status_label_sql, SERVICE_PROVIDER_AUDIT_TARGET_ADJUSTMENT,
     SERVICE_PROVIDER_AUDIT_TARGET_CONTRACT, SERVICE_PROVIDER_AUDIT_TARGET_EDGE,
@@ -583,12 +584,13 @@ async fn create_downstream(
             &command.idempotency_key,
         ],
     );
-    let provider_result = sqlx::query(
+    let buyer_provider_id = next_claw_runtime_id("integration_service_provider")?;
+    sqlx::query(
         r#"
         INSERT INTO integration_service_provider
-            (uuid, tenant_id, organization_id, status, created_at, updated_at, provider_no, display_name, provider_type, default_currency, default_timezone, risk_level)
+            (uuid, tenant_id, organization_id, status, created_at, updated_at, provider_no, display_name, provider_type, default_currency, default_timezone, risk_level, id)
         VALUES
-            (?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, 'UTC', 1)
+            (?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, 'UTC', 1, ?)
         "#,
     )
     .bind(provider_uuid)
@@ -598,10 +600,10 @@ async fn create_downstream(
     .bind(&command.display_name)
     .bind(command.provider_type.as_deref())
     .bind(command.default_currency.as_deref().unwrap_or("USD"))
+    .bind(buyer_provider_id)
     .execute(&mut *tx)
     .await
     .map_err(|error| write_error("failed to create service provider downstream", error))?;
-    let buyer_provider_id = provider_result.last_insert_rowid();
 
     let edge_no = stable_uuid(
         "sp-edge",
@@ -613,12 +615,13 @@ async fn create_downstream(
             &command.idempotency_key,
         ],
     );
-    let edge_result = sqlx::query(
+    let edge_id = next_claw_runtime_id("integration_service_provider_edge")?;
+    sqlx::query(
         r#"
         INSERT INTO integration_service_provider_edge
-            (uuid, tenant_id, organization_id, status, edge_no, seller_provider_id, buyer_provider_id, edge_type, settlement_mode)
+            (uuid, tenant_id, organization_id, status, edge_no, seller_provider_id, buyer_provider_id, edge_type, settlement_mode, id)
         VALUES
-            (?, ?, ?, 1, ?, ?, ?, 'resale', ?)
+            (?, ?, ?, 1, ?, ?, ?, 'resale', ?, ?)
         "#,
     )
     .bind(stable_uuid("sp-edge-row", &[&edge_no]))
@@ -628,10 +631,10 @@ async fn create_downstream(
     .bind(seller_provider_id)
     .bind(buyer_provider_id)
     .bind(command.settlement_mode.as_deref())
+    .bind(edge_id)
     .execute(&mut *tx)
     .await
     .map_err(|error| write_error("failed to create service provider edge", error))?;
-    let edge_id = edge_result.last_insert_rowid();
 
     insert_downstream_closure_rows(
         &mut tx,
@@ -995,12 +998,13 @@ async fn create_pricing_rule(
     )
     .await?;
 
-    let rule_result = sqlx::query(
+    let rule_id = next_claw_runtime_id("integration_service_provider_price_rule")?;
+    sqlx::query(
         r#"
         INSERT INTO integration_service_provider_price_rule
-            (uuid, tenant_id, organization_id, status, seller_provider_id, buyer_provider_id, edge_id, price_plan_id, catalog_key, model, billing_meter_code, token_kind, unit_price, unit_size, minimum_charge, priority)
+            (uuid, tenant_id, organization_id, status, seller_provider_id, buyer_provider_id, edge_id, price_plan_id, catalog_key, model, billing_meter_code, token_kind, unit_price, unit_size, minimum_charge, priority, id)
         VALUES
-            (?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         "#,
     )
     .bind(stable_uuid(
@@ -1028,10 +1032,10 @@ async fn create_pricing_rule(
     .bind(&command.unit_size)
     .bind(&command.minimum_charge)
     .bind(command.priority)
+    .bind(rule_id)
     .execute(&mut *tx)
     .await
     .map_err(|error| write_error("failed to create service provider price rule", error))?;
-    let rule_id = rule_result.last_insert_rowid();
 
     insert_audit_if_absent(
         &mut tx,
@@ -1276,9 +1280,9 @@ async fn insert_price_simulation_audit(
     sqlx::query(
         r#"
         INSERT INTO ops_audit_log
-            (uuid, tenant_id, organization_id, request_id, operator_id, operator_type, action, target_type, target_id, created_at)
+            (uuid, tenant_id, organization_id, request_id, operator_id, operator_type, action, target_type, target_id, created_at, id)
         SELECT
-            ?1, ?2, ?3, ?4, ?5, ?6, 'service_provider.price_simulation.create', ?7, ?8, CURRENT_TIMESTAMP
+            ?1, ?2, ?3, ?4, ?5, ?6, 'service_provider.price_simulation.create', ?7, ?8, CURRENT_TIMESTAMP, ?9
         WHERE NOT EXISTS (
             SELECT 1
             FROM ops_audit_log
@@ -1300,6 +1304,7 @@ async fn insert_price_simulation_audit(
     .bind(command.subject.operator_type)
     .bind(target_type)
     .bind(target_id)
+    .bind(next_claw_runtime_id("ops_audit_log")?)
     .execute(pool)
     .await
     .map_err(store_error)?;
@@ -2721,9 +2726,9 @@ async fn insert_closure_row(
     sqlx::query(
         r#"
         INSERT INTO integration_service_provider_closure
-            (uuid, tenant_id, organization_id, status, ancestor_provider_id, descendant_provider_id, depth, path, direct_edge_id)
+            (uuid, tenant_id, organization_id, status, ancestor_provider_id, descendant_provider_id, depth, path, direct_edge_id, id)
         VALUES
-            (?, ?, ?, 1, ?, ?, ?, ?, ?)
+            (?, ?, ?, 1, ?, ?, ?, ?, ?, ?)
         "#,
     )
     .bind(stable_uuid(
@@ -2743,6 +2748,9 @@ async fn insert_closure_row(
     .bind(depth)
     .bind(path)
     .bind(direct_edge_id)
+    .bind(next_claw_runtime_id(
+        "integration_service_provider_closure",
+    )?)
     .execute(&mut **tx)
     .await
     .map_err(|error| write_error("failed to create service provider closure row", error))?;
@@ -2760,12 +2768,13 @@ async fn create_default_price_plan_for_downstream(
         .price_plan_code
         .clone()
         .unwrap_or_else(|| format!("default-{edge_id}"));
-    let result = sqlx::query(
+    let plan_id = next_claw_runtime_id("integration_service_provider_price_plan")?;
+    sqlx::query(
         r#"
         INSERT INTO integration_service_provider_price_plan
-            (uuid, tenant_id, organization_id, status, seller_provider_id, buyer_provider_id, edge_id, plan_code, plan_name, base_amount_source, pricing_mode, default_multiplier, default_markup_amount, currency)
+            (uuid, tenant_id, organization_id, status, seller_provider_id, buyer_provider_id, edge_id, plan_code, plan_name, base_amount_source, pricing_mode, default_multiplier, default_markup_amount, currency, id)
         VALUES
-            (?, ?, ?, 1, ?, ?, ?, ?, ?, 'upstream_cost', 'multiplier', ?, '0', ?)
+            (?, ?, ?, 1, ?, ?, ?, ?, ?, 'upstream_cost', 'multiplier', ?, '0', ?, ?)
         "#,
     )
     .bind(stable_uuid(
@@ -2787,10 +2796,11 @@ async fn create_default_price_plan_for_downstream(
     .bind(format!("Default plan for {}", command.provider_no))
     .bind(command.default_multiplier.as_deref().unwrap_or("1"))
     .bind(command.default_currency.as_deref().unwrap_or("USD"))
+    .bind(plan_id)
     .execute(&mut **tx)
     .await
     .map_err(|error| write_error("failed to create service provider price plan", error))?;
-    Ok(Some(result.last_insert_rowid()))
+    Ok(Some(plan_id))
 }
 
 async fn resolve_pricing_edge_id(
@@ -2928,12 +2938,13 @@ async fn resolve_or_create_price_plan(
     }
 
     let plan_code = format!("default-{edge_id}");
-    let result = sqlx::query(
+    let plan_id = next_claw_runtime_id("integration_service_provider_price_plan")?;
+    sqlx::query(
         r#"
         INSERT INTO integration_service_provider_price_plan
-            (uuid, tenant_id, organization_id, status, seller_provider_id, buyer_provider_id, edge_id, plan_code, plan_name, base_amount_source, pricing_mode, default_multiplier, default_markup_amount, currency)
+            (uuid, tenant_id, organization_id, status, seller_provider_id, buyer_provider_id, edge_id, plan_code, plan_name, base_amount_source, pricing_mode, default_multiplier, default_markup_amount, currency, id)
         VALUES
-            (?, ?, ?, 1, ?, ?, ?, ?, ?, 'upstream_cost', 'specific_rule', '1', '0', ?)
+            (?, ?, ?, 1, ?, ?, ?, ?, ?, 'upstream_cost', 'specific_rule', '1', '0', ?, ?)
         "#,
     )
     .bind(stable_uuid(
@@ -2953,10 +2964,11 @@ async fn resolve_or_create_price_plan(
     .bind(&plan_code)
     .bind(format!("Default plan for edge {edge_id}"))
     .bind(currency.unwrap_or("USD"))
+    .bind(plan_id)
     .execute(&mut **tx)
     .await
     .map_err(|error| write_error("failed to create service provider price plan", error))?;
-    Ok(result.last_insert_rowid())
+    Ok(plan_id)
 }
 
 async fn ensure_price_rule_billable_point_available(
@@ -3018,9 +3030,9 @@ async fn insert_audit_if_absent(
     sqlx::query(
         r#"
         INSERT INTO ops_audit_log
-            (uuid, tenant_id, organization_id, request_id, operator_id, operator_type, action, target_type, target_id, target_uuid, created_at)
+            (uuid, tenant_id, organization_id, request_id, operator_id, operator_type, action, target_type, target_id, target_uuid, created_at, id)
         SELECT
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?
         WHERE NOT EXISTS (
             SELECT 1
             FROM ops_audit_log
@@ -3049,6 +3061,7 @@ async fn insert_audit_if_absent(
     .bind(target_type)
     .bind(target_id)
     .bind(target_uuid)
+    .bind(next_claw_runtime_id("ops_audit_log")?)
     .bind(subject.tenant_id)
     .bind(subject.organization_id)
     .bind(action)

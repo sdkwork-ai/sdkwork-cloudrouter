@@ -1,4 +1,4 @@
-use sdkwork_claw_config::{DeploymentMode, RuntimeTomlConfig};
+use sdkwork_claw_config::{DeploymentMode, RuntimeTomlConfig, StartupInstallMode};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IamRuntimeContext {
@@ -11,7 +11,7 @@ impl IamRuntimeContext {
     pub fn from_deployment_mode(deployment_mode: DeploymentMode) -> Self {
         let deployment_mode_label = deployment_mode.as_str().to_owned();
         Self {
-            environment: std::env::var("SDKWORK_CLAW_ENVIRONMENT")
+            environment: std::env::var(StartupInstallMode::ENV_ROUTER_ENVIRONMENT)
                 .ok()
                 .filter(|value| !value.trim().is_empty())
                 .unwrap_or_else(|| default_environment_for_deployment(deployment_mode).to_owned()),
@@ -56,5 +56,26 @@ fn default_runtime_target_for_deployment(deployment_mode: DeploymentMode) -> &'s
         DeploymentMode::Server => "server",
         DeploymentMode::Docker => "container",
         DeploymentMode::Kubernetes => "container",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn runtime_context_reads_only_the_application_scoped_environment_key() {
+        unsafe {
+            std::env::set_var("SDKWORK_CLAW_ROUTER_ENVIRONMENT", "staging");
+            std::env::set_var("SDKWORK_CLAW_ENVIRONMENT", "development");
+        }
+
+        let context = IamRuntimeContext::from_deployment_mode(DeploymentMode::Server);
+
+        unsafe {
+            std::env::remove_var("SDKWORK_CLAW_ROUTER_ENVIRONMENT");
+            std::env::remove_var("SDKWORK_CLAW_ENVIRONMENT");
+        }
+        assert_eq!(context.environment, "staging");
     }
 }

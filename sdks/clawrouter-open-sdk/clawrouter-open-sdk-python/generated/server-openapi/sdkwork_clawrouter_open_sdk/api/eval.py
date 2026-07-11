@@ -194,7 +194,7 @@ class EvalApi:
     def list(self, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiEvalList:
         """List evals"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -220,7 +220,7 @@ class EvalApi:
     def list_runs(self, eval_id: str, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiEvalRunList:
         """List eval runs"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -238,7 +238,7 @@ class EvalApi:
     def list_runs_output_items(self, eval_id: str, run_id: str, limit: Optional[int] = None, order: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None) -> OpenAiEvalRunOutputItemList:
         """List eval run output items"""
         query = build_query_string([
-            {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'order', 'value': order, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after', 'value': after, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'before', 'value': before, 'style': 'form', 'explode': True, 'allow_reserved': False},

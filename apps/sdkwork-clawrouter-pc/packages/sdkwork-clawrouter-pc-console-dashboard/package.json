@@ -6,6 +6,7 @@
   "type": "module",
   "main": "./src/index.ts",
   "dependencies": {
+    "@sdkwork/clawrouter-pc-console-core": "workspace:*",
     "@sdkwork/clawroutes-pc-commons": "workspace:*"
   },
   "exports": {

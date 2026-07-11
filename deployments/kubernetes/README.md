@@ -1,6 +1,6 @@
 # SDKWork Claw Router — Kubernetes Deployment Example
 
-This example targets a distributed **cloud** deployment (`SDKWORK_CLAW_DEPLOYMENT_PROFILE=cloud`, `SDKWORK_CLAW_RUNTIME_TARGET=container`) with PostgreSQL and Redis managed outside the cluster.
+This example targets a distributed **cloud** production deployment (`SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE=cloud`, `SDKWORK_CLAW_ROUTER_RUNTIME_TARGET=container`) with PostgreSQL and Redis managed outside the cluster.
 
 ## Prerequisites
 
@@ -36,8 +36,10 @@ Gateway handles OpenAI-compatible invocation (`/v1/*`) on port **18080**. Edge (
 Use canonical deployment metadata:
 
 ```text
-SDKWORK_CLAW_DEPLOYMENT_PROFILE=cloud
-SDKWORK_CLAW_RUNTIME_TARGET=container
+SDKWORK_CLAW_ROUTER_CONFIG_PROFILE=prod
+SDKWORK_CLAW_ROUTER_ENVIRONMENT=production
+SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE=cloud
+SDKWORK_CLAW_ROUTER_RUNTIME_TARGET=container
 ```
 
 `SDKWORK_CLAW_DEPLOYMENT_MODE=cloud` is retired and rejected at startup.

@@ -516,7 +516,7 @@ async fn failover_rewrites_query_model_for_selected_candidate() {
     );
     invocation.request = InvocationRequest::new(Method::GET, "/v1/models")
         .with_request_id("req-dispatch-query")
-        .with_query("model=gpt-4o-mini&limit=10");
+        .with_query("model=gpt-4o-mini&page_size=10");
 
     DispatchExecutor::new(Arc::new(dispatcher.clone()))
         .before(&mut invocation)
@@ -526,13 +526,13 @@ async fn failover_rewrites_query_model_for_selected_candidate() {
     let provider_requests = dispatcher.provider_requests();
     assert_eq!(2, provider_requests.len());
     assert_eq!(
-        Some("model=primary-model&limit=10"),
+        Some("model=primary-model&page_size=10"),
         provider_requests[0]
             .as_ref()
             .and_then(|request| request.query.as_deref())
     );
     assert_eq!(
-        Some("model=fallback-model&limit=10"),
+        Some("model=fallback-model&page_size=10"),
         provider_requests[1]
             .as_ref()
             .and_then(|request| request.query.as_deref())

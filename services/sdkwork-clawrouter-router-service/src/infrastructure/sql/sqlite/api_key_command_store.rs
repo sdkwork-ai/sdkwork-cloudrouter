@@ -530,11 +530,12 @@ async fn insert_audit_log(
     sqlx::query(
         r#"
         INSERT INTO ops_audit_log
-            (uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
+            (id, uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
         VALUES
-            (?, ?, ?, 'create_api_key', 1, ?, ?, ?, ?, ?)
+            (?, ?, ?, ?, 'create_api_key', 1, ?, ?, ?, ?, ?)
         "#,
     )
+    .bind(next_claw_runtime_id("ops_audit_log")?)
     .bind(&command.audit_log_uuid)
     .bind(command.tenant_id)
     .bind(command.organization_id)
@@ -1067,11 +1068,12 @@ async fn insert_update_audit_log(
     sqlx::query(
         r#"
         INSERT INTO ops_audit_log
-            (uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
+            (id, uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
         VALUES
-            (?, ?, ?, 'update_api_key', 1, ?, ?, ?, ?, ?)
+            (?, ?, ?, ?, 'update_api_key', 1, ?, ?, ?, ?, ?)
         "#,
     )
+    .bind(next_claw_runtime_id("ops_audit_log")?)
     .bind(&command.audit_log_uuid)
     .bind(command.tenant_id)
     .bind(command.organization_id)
@@ -1103,11 +1105,12 @@ async fn insert_delete_audit_log(
     sqlx::query(
         r#"
         INSERT INTO ops_audit_log
-            (uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
+            (id, uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
         VALUES
-            (?, ?, ?, 'delete_api_key', 1, ?, ?, ?, ?, ?)
+            (?, ?, ?, ?, 'delete_api_key', 1, ?, ?, ?, ?, ?)
         "#,
     )
+    .bind(next_claw_runtime_id("ops_audit_log")?)
     .bind(&command.audit_log_uuid)
     .bind(command.tenant_id)
     .bind(command.organization_id)
@@ -1138,11 +1141,12 @@ async fn insert_delete_for_organization_audit_log(
     sqlx::query(
         r#"
         INSERT INTO ops_audit_log
-            (uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
+            (id, uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
         VALUES
-            (?, ?, ?, 'delete_api_key', 1, ?, ?, ?, ?, ?)
+            (?, ?, ?, ?, 'delete_api_key', 1, ?, ?, ?, ?, ?)
         "#,
     )
+    .bind(next_claw_runtime_id("ops_audit_log")?)
     .bind(&command.audit_log_uuid)
     .bind(command.tenant_id)
     .bind(command.organization_id)

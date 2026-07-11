@@ -14,7 +14,7 @@ class OrganizationApi {
   /// List organization admin API keys
   Future<OpenAiOrganizationAdminApiKeyList?> listAdminApiKeys([int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -55,7 +55,7 @@ class OrganizationApi {
       QueryParameterSpec('actor_ids[]', actorIds, 'form', true, false, null),
       QueryParameterSpec('actor_emails[]', actorEmails, 'form', true, false, null),
       QueryParameterSpec('resource_ids[]', resourceIds, 'form', true, false, null),
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
     ]);
@@ -69,7 +69,7 @@ class OrganizationApi {
   /// List organization certificates
   Future<OpenAiCertificateList?> listCertificates([int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -131,7 +131,7 @@ class OrganizationApi {
       QueryParameterSpec('api_key_ids', apiKeyIds, 'form', true, false, null),
       QueryParameterSpec('models', models, 'form', true, false, null),
       QueryParameterSpec('group_by', groupBy, 'form', true, false, null),
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('page', page, 'form', true, false, null)
     ]);
     final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.aiPath('/organization/costs'), query));
@@ -144,7 +144,7 @@ class OrganizationApi {
   /// List organization groups
   Future<OpenAiOrganizationGroupList?> listGroups([int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -178,7 +178,7 @@ class OrganizationApi {
   /// List organization group roles
   Future<OpenAiRoleAssignmentList?> listGroupsRoles(String groupId, [int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -212,7 +212,7 @@ class OrganizationApi {
   /// List organization group users
   Future<OpenAiOrganizationUserList?> listGroupsUsers(String groupId, [int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -246,7 +246,7 @@ class OrganizationApi {
   /// List organization invites
   Future<OpenAiOrganizationInviteList?> listInvites([int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -280,7 +280,7 @@ class OrganizationApi {
   /// List organization projects
   Future<OpenAiProjectList?> listProjects([int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -305,7 +305,7 @@ class OrganizationApi {
   /// List project API keys
   Future<OpenAiProjectApiKeyList?> listProjectsApiKeys(String projectId, [int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -338,7 +338,7 @@ class OrganizationApi {
   /// List project certificates
   Future<OpenAiCertificateList?> listProjectsCertificates(String projectId, [int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -373,7 +373,7 @@ class OrganizationApi {
   /// List project groups
   Future<OpenAiOrganizationGroupList?> listProjectsGroups(String projectId, [int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -407,7 +407,7 @@ class OrganizationApi {
   /// List project rate limits
   Future<OpenAiProjectRateLimitList?> listProjectsRateLimits(String projectId, [int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -432,7 +432,7 @@ class OrganizationApi {
   /// List project service accounts
   Future<OpenAiProjectServiceAccountList?> listProjectsServiceAccounts(String projectId, [int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -466,7 +466,7 @@ class OrganizationApi {
   /// List project users
   Future<OpenAiProjectUserList?> listProjectsUsers(String projectId, [int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -500,7 +500,7 @@ class OrganizationApi {
   /// List organization roles
   Future<OpenAiRoleList?> listRoles([int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -542,7 +542,7 @@ class OrganizationApi {
       QueryParameterSpec('api_key_ids', apiKeyIds, 'form', true, false, null),
       QueryParameterSpec('models', models, 'form', true, false, null),
       QueryParameterSpec('group_by', groupBy, 'form', true, false, null),
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('page', page, 'form', true, false, null)
     ]);
     final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.aiPath('/organization/usage/audio_speeches'), query));
@@ -563,7 +563,7 @@ class OrganizationApi {
       QueryParameterSpec('api_key_ids', apiKeyIds, 'form', true, false, null),
       QueryParameterSpec('models', models, 'form', true, false, null),
       QueryParameterSpec('group_by', groupBy, 'form', true, false, null),
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('page', page, 'form', true, false, null)
     ]);
     final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.aiPath('/organization/usage/audio_transcriptions'), query));
@@ -584,7 +584,7 @@ class OrganizationApi {
       QueryParameterSpec('api_key_ids', apiKeyIds, 'form', true, false, null),
       QueryParameterSpec('models', models, 'form', true, false, null),
       QueryParameterSpec('group_by', groupBy, 'form', true, false, null),
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('page', page, 'form', true, false, null)
     ]);
     final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.aiPath('/organization/usage/code_interpreter_sessions'), query));
@@ -605,7 +605,7 @@ class OrganizationApi {
       QueryParameterSpec('api_key_ids', apiKeyIds, 'form', true, false, null),
       QueryParameterSpec('models', models, 'form', true, false, null),
       QueryParameterSpec('group_by', groupBy, 'form', true, false, null),
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('page', page, 'form', true, false, null)
     ]);
     final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.aiPath('/organization/usage/completions'), query));
@@ -626,7 +626,7 @@ class OrganizationApi {
       QueryParameterSpec('api_key_ids', apiKeyIds, 'form', true, false, null),
       QueryParameterSpec('models', models, 'form', true, false, null),
       QueryParameterSpec('group_by', groupBy, 'form', true, false, null),
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('page', page, 'form', true, false, null)
     ]);
     final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.aiPath('/organization/usage/embeddings'), query));
@@ -647,7 +647,7 @@ class OrganizationApi {
       QueryParameterSpec('api_key_ids', apiKeyIds, 'form', true, false, null),
       QueryParameterSpec('models', models, 'form', true, false, null),
       QueryParameterSpec('group_by', groupBy, 'form', true, false, null),
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('page', page, 'form', true, false, null)
     ]);
     final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.aiPath('/organization/usage/images'), query));
@@ -668,7 +668,7 @@ class OrganizationApi {
       QueryParameterSpec('api_key_ids', apiKeyIds, 'form', true, false, null),
       QueryParameterSpec('models', models, 'form', true, false, null),
       QueryParameterSpec('group_by', groupBy, 'form', true, false, null),
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('page', page, 'form', true, false, null)
     ]);
     final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.aiPath('/organization/usage/moderations'), query));
@@ -689,7 +689,7 @@ class OrganizationApi {
       QueryParameterSpec('api_key_ids', apiKeyIds, 'form', true, false, null),
       QueryParameterSpec('models', models, 'form', true, false, null),
       QueryParameterSpec('group_by', groupBy, 'form', true, false, null),
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('page', page, 'form', true, false, null)
     ]);
     final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.aiPath('/organization/usage/vector_stores'), query));
@@ -702,7 +702,7 @@ class OrganizationApi {
   /// List organization users
   Future<OpenAiOrganizationUserList?> listUsers([int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -736,7 +736,7 @@ class OrganizationApi {
   /// List organization user roles
   Future<OpenAiRoleAssignmentList?> listUsersRoles(String userId, [int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)

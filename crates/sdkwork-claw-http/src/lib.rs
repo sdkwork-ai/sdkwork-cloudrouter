@@ -6,6 +6,7 @@ pub mod headers;
 pub mod health;
 pub mod metrics;
 pub mod readiness;
+pub mod query_string;
 pub mod router;
 pub mod shutdown;
 pub mod signing_service;
@@ -26,7 +27,7 @@ pub use auth::{
     verify_app_session_token_claims_with_resolver,
     verify_app_session_token_claims_with_signing_secret, ApiKeyCredential, ApiKeyCredentialSource,
     ApiKeyIdentity, ApiKeyIdentityError, AppSessionTokenClaims, AppSessionTokenError,
-    AppSessionTokenKind, AppSubjectBoundaryConfig, TrustedRequestSubject,
+    AppSessionTokenKind, AppSubjectBoundaryConfig, QueryStringApiKeyPolicy, TrustedRequestSubject,
     TrustedRequestSubjectError, TrustedSubjectBoundaryError,
 };
 pub use claw_web_resolver::{
@@ -44,12 +45,19 @@ pub use error::{not_implemented_response, NotImplementedData};
 pub use headers::{default_security_headers, redact_http_header};
 pub use metrics::{metrics, metrics_middleware, record_readiness_check};
 pub use readiness::{combine_readiness_checks, ReadinessCheckFn};
+pub use query_string::{
+    sanitize_sensitive_query, sanitize_sensitive_query_in_uri, upsert_query_parameter,
+    QueryStringError,
+};
 pub use router::{
     service_router, service_router_with_contract_routes,
     service_router_with_contract_routes_and_database_config, service_router_with_database_config,
     service_router_with_database_config_and_readiness_check,
+    service_router_with_database_config_readiness_check_and_deployment_mode,
+    service_router_with_deployment_mode,
     service_router_with_filtered_contract_routes_and_database_config,
     service_router_with_filtered_contract_routes_database_config_and_readiness_check,
+    service_router_with_filtered_contract_routes_database_config_readiness_check_and_deployment_mode,
     ContractOperationFilter,
 };
 pub use sdkwork_claw_contract::{ApiSurface, ContractOperation};

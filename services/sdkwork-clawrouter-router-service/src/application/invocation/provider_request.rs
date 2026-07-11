@@ -1,5 +1,6 @@
 use axum::http::{header, HeaderMap, HeaderName, HeaderValue};
 use sdkwork_claw_provider_adapter_contract::AdapterInvocationShape;
+use sdkwork_claw_http::{sanitize_sensitive_query, upsert_query_parameter};
 use serde_json::{json, Value};
 
 use super::multipart_form::{request_content_type_is_multipart_form, rewrite_multipart_model};
@@ -26,7 +27,7 @@ impl ProviderRequestBuilder {
         let mut headers = sanitized_inbound_headers(&invocation.request.headers);
         apply_default_headers(&mut headers, &account.auth_profile)?;
         let mut query = rewrite_query_model(
-            sanitized_inbound_query(invocation.request.query.clone()),
+            sanitize_sensitive_query(invocation.request.query.as_deref()),
             account.provider_model.as_deref(),
         );
         apply_auth(
@@ -110,34 +111,6 @@ fn should_preserve_inbound_header(name: &HeaderName) -> bool {
             | "x-goog-api-key"
             | "api-key"
             | "access-token"
-    )
-}
-
-fn sanitized_inbound_query(query: Option<String>) -> Option<String> {
-    let query = query?;
-    let preserved = query
-        .split('&')
-        .filter(|part| {
-            part.split_once('=')
-                .map(|(name, _)| should_preserve_query_param(name))
-                .unwrap_or_else(|| should_preserve_query_param(part))
-        })
-        .filter(|part| !part.trim().is_empty())
-        .collect::<Vec<_>>();
-    if preserved.is_empty() {
-        None
-    } else {
-        Some(preserved.join("&"))
-    }
-}
-
-fn should_preserve_query_param(name: &str) -> bool {
-    !matches!(
-        decoded_query_component(name)
-            .trim()
-            .to_ascii_lowercase()
-            .as_str(),
-        "api_key" | "apikey" | "key" | "access_token" | "token"
     )
 }
 
@@ -270,18 +243,7 @@ fn rewrite_query_model(query: Option<String>, provider_model: Option<&str>) -> O
 }
 
 fn append_query_pair(query: &mut Option<String>, name: &str, value: &str) {
-    let pair = format!(
-        "{}={}",
-        percent_encode_query_component(name),
-        percent_encode_query_component(value)
-    );
-    match query {
-        Some(existing) if !existing.trim().is_empty() => {
-            existing.push('&');
-            existing.push_str(&pair);
-        }
-        _ => *query = Some(pair),
-    }
+    *query = Some(upsert_query_parameter(query.as_deref(), name, value));
 }
 
 fn percent_encode_query_component(value: &str) -> String {

@@ -1,17 +1,19 @@
-use axum::Router;
 use axum::body::Body;
 use axum::extract::State;
 use axum::http::HeaderMap;
 use axum::http::{Request, StatusCode};
 use axum::routing::any;
+use axum::Router;
 use sdkwork_claw_config::{
-    ProviderAdapterConfig, ProviderRelayConfig, ProviderSecretMapConfig, StartupInstallMode,
+    DeploymentMode, DeploymentProfile, DeploymentRuntime, ProviderAdapterConfig,
+    ProviderRelayConfig, ProviderSecretMapConfig, RuntimeTarget, StartupInstallMode,
 };
+use sdkwork_claw_http::QueryStringApiKeyPolicy;
 use sdkwork_claw_provider_adapter_contract::{
     AdapterInvocationRequest, AdapterInvocationResponse, AdapterInvocationShape, AdapterSecret,
     AdapterUsageLine,
 };
-use sdkwork_claw_test_support::{SeededSqliteCatalog, assert_server_generated_request_id};
+use sdkwork_claw_test_support::{assert_server_generated_request_id, SeededSqliteCatalog};
 use sdkwork_clawrouter_router_service::application::ApiKeySecretCodec;
 use sdkwork_clawrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_clawrouter_router_service::application::UsageSettlementWorkerConfig;
@@ -168,6 +170,32 @@ async fn seeded_gateway_router_with_provider_configs(
         StartupInstallMode::Skip,
     )
     .await
+}
+
+async fn seeded_gateway_router_with_provider_configs_and_query_string_api_key_policy(
+    catalog: &SeededSqliteCatalog,
+    provider_relay_config: Option<ProviderRelayConfig>,
+    provider_secret_map_config: Option<ProviderSecretMapConfig>,
+    query_string_api_key_policy: QueryStringApiKeyPolicy,
+) -> Result<Router, sdkwork_clawrouter_cloud_gateway::GatewayRouterError> {
+    sdkwork_clawrouter_cloud_gateway::runtime::router_with_database_api_key_provider_configs_usage_settlement_worker_config_startup_install_mode_and_query_string_api_key_policy(
+        catalog.database_config().unwrap(),
+        Some(catalog.api_key_security_config().unwrap()),
+        provider_relay_config,
+        provider_secret_map_config,
+        UsageSettlementWorkerConfig::disabled(),
+        StartupInstallMode::Skip,
+        query_string_api_key_policy,
+    )
+    .await
+}
+
+fn standalone_desktop_query_string_api_key_policy() -> QueryStringApiKeyPolicy {
+    QueryStringApiKeyPolicy::from_configured_runtime(Some(DeploymentRuntime {
+        profile: DeploymentProfile::Standalone,
+        target: RuntimeTarget::Desktop,
+        mode: DeploymentMode::Desktop,
+    }))
 }
 
 async fn seeded_gateway_router_with_provider_relay_config(
@@ -466,8 +494,8 @@ async fn gateway_mounts_provider_native_passthrough_boundaries_without_404() {
 }
 
 #[tokio::test]
-async fn gateway_provider_native_passthrough_keeps_official_standard_provider_direct_when_only_non_standard_adapter_route_exists()
- {
+async fn gateway_provider_native_passthrough_keeps_official_standard_provider_direct_when_only_non_standard_adapter_route_exists(
+) {
     let direct_captured = Arc::new(Mutex::new(Vec::new()));
     let provider = Router::new()
         .route(
@@ -1212,8 +1240,8 @@ async fn gateway_database_provider_native_adapter_records_standard_usage_lines()
 }
 
 #[tokio::test]
-async fn gateway_database_provider_native_adapter_directs_when_selected_account_has_no_adapter_route()
- {
+async fn gateway_database_provider_native_adapter_directs_when_selected_account_has_no_adapter_route(
+) {
     let direct_captured = Arc::new(Mutex::new(Vec::new()));
     let direct_provider = Router::new()
         .route(
@@ -1863,6 +1891,129 @@ async fn gateway_database_router_merges_configured_provider_native_passthrough()
 }
 
 #[tokio::test]
+async fn gateway_database_legacy_builder_rejects_google_query_api_key_without_calling_upstream() {
+    let captured = Arc::new(Mutex::new(Vec::new()));
+    let provider = Router::new()
+        .route(
+            "/v1beta/models/gemini-2.5-flash:generateContent",
+            any(capture_native_provider_request),
+        )
+        .with_state(Arc::clone(&captured));
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        axum::serve(listener, provider).await.unwrap();
+    });
+    let catalog = sdkwork_claw_test_support::seeded_sqlite_catalog()
+        .await
+        .unwrap();
+    let config = ProviderRelayConfig::from_provider_passthrough_json(format!(
+        r#"{{
+            "google": {{
+                "baseUrl": "http://{addr}",
+                "auth": {{
+                    "type": "query",
+                    "name": "key",
+                    "value": "sk-google-upstream"
+                }}
+            }}
+        }}"#
+    ))
+    .unwrap();
+    let router = seeded_gateway_router_with_provider_relay_config(&catalog, Some(config))
+        .await
+        .unwrap();
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!(
+                    "/provider/google/v1beta/models/gemini-2.5-flash:generateContent?alt=sse&key={}",
+                    catalog.gateway_api_key()
+                ))
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"contents":[{"parts":[{"text":"hello"}]}]}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::BAD_REQUEST, response.status());
+    assert_eq!(0, captured.lock().unwrap().len());
+}
+
+#[tokio::test]
+async fn gateway_database_standalone_desktop_google_query_api_key_is_consumed_before_provider_auth()
+{
+    let captured = Arc::new(Mutex::new(Vec::new()));
+    let provider = Router::new()
+        .route(
+            "/v1beta/models/gemini-2.5-flash:generateContent",
+            any(capture_native_provider_request),
+        )
+        .with_state(Arc::clone(&captured));
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        axum::serve(listener, provider).await.unwrap();
+    });
+    let catalog = sdkwork_claw_test_support::seeded_sqlite_catalog()
+        .await
+        .unwrap();
+    let config = ProviderRelayConfig::from_provider_passthrough_json(format!(
+        r#"{{
+            "google": {{
+                "baseUrl": "http://{addr}",
+                "auth": {{
+                    "type": "query",
+                    "name": "key",
+                    "value": "sk-google-upstream"
+                }}
+            }}
+        }}"#
+    ))
+    .unwrap();
+    let router = seeded_gateway_router_with_provider_configs_and_query_string_api_key_policy(
+        &catalog,
+        Some(config),
+        None,
+        standalone_desktop_query_string_api_key_policy(),
+    )
+    .await
+    .unwrap();
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!(
+                    "/provider/google/v1beta/models/gemini-2.5-flash:generateContent?alt=sse&api_key=client-api-key&token=client-token&key={}",
+                    catalog.gateway_api_key()
+                ))
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"contents":[{"parts":[{"text":"hello"}]}]}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::CREATED, response.status());
+    let captured = captured.lock().unwrap();
+    assert_eq!(1, captured.len());
+    assert_eq!(
+        "/v1beta/models/gemini-2.5-flash:generateContent?alt=sse&key=sk-google-upstream",
+        captured[0].path_and_query
+    );
+    assert_eq!(1, captured[0].path_and_query.matches("key=").count());
+    assert!(!captured[0]
+        .path_and_query
+        .contains(catalog.gateway_api_key()));
+    assert!(!captured[0].path_and_query.contains("client-api-key"));
+    assert!(!captured[0].path_and_query.contains("client-token"));
+}
+
+#[tokio::test]
 async fn gateway_database_router_rejects_provider_native_passthrough_without_api_key() {
     let captured = Arc::new(Mutex::new(Vec::new()));
     let provider = Router::new()
@@ -1913,8 +2064,8 @@ async fn gateway_database_router_rejects_provider_native_passthrough_without_api
 }
 
 #[tokio::test]
-async fn gateway_database_provider_native_passthrough_prefers_group_channel_route_when_static_target_exists()
- {
+async fn gateway_database_provider_native_passthrough_prefers_group_channel_route_when_static_target_exists(
+) {
     let captured_account = Arc::new(Mutex::new(Vec::new()));
     let account_provider = Router::new()
         .route(
@@ -2221,8 +2372,8 @@ async fn gateway_database_router_forwards_configured_openai_standard_passthrough
 }
 
 #[tokio::test]
-async fn gateway_database_router_does_not_duplicate_openai_v1_prefix_for_configured_openai_passthrough()
- {
+async fn gateway_database_router_does_not_duplicate_openai_v1_prefix_for_configured_openai_passthrough(
+) {
     let captured = Arc::new(Mutex::new(Vec::new()));
     let provider = Router::new()
         .route(
@@ -2603,23 +2754,17 @@ fake-png-bytes\r\n\
         captured_standard[0].authorization
     );
     assert_eq!("/v1/images/edits", captured_standard[0].path_and_query);
-    assert!(
-        captured_standard[0]
-            .content_type
-            .as_deref()
-            .unwrap()
-            .starts_with("multipart/form-data")
-    );
-    assert!(
-        captured_standard[0]
-            .body
-            .contains("name=\"model\"\r\n\r\nopenrouter/gpt-image-1-standard\r\n")
-    );
-    assert!(
-        !captured_standard[0]
-            .body
-            .contains("name=\"model\"\r\n\r\ngpt-image-1\r\n")
-    );
+    assert!(captured_standard[0]
+        .content_type
+        .as_deref()
+        .unwrap()
+        .starts_with("multipart/form-data"));
+    assert!(captured_standard[0]
+        .body
+        .contains("name=\"model\"\r\n\r\nopenrouter/gpt-image-1-standard\r\n"));
+    assert!(!captured_standard[0]
+        .body
+        .contains("name=\"model\"\r\n\r\ngpt-image-1\r\n"));
     assert!(captured_standard[0].body.contains("fake-png-bytes"));
     assert_eq!(0, captured_premium.lock().unwrap().len());
 }
@@ -2723,8 +2868,8 @@ async fn gateway_database_openai_passthrough_prefers_group_channel_route_when_gl
 }
 
 #[tokio::test]
-async fn gateway_database_openai_passthrough_prefers_managed_group_channel_route_when_global_relay_exists()
- {
+async fn gateway_database_openai_passthrough_prefers_managed_group_channel_route_when_global_relay_exists(
+) {
     let captured_standard = Arc::new(Mutex::new(Vec::new()));
     let standard_provider = Router::new()
         .route(
@@ -2827,8 +2972,8 @@ async fn gateway_database_openai_passthrough_prefers_managed_group_channel_route
 }
 
 #[tokio::test]
-async fn gateway_database_openai_passthrough_uses_global_default_channel_route_when_group_pool_is_not_bound()
- {
+async fn gateway_database_openai_passthrough_uses_global_default_channel_route_when_group_pool_is_not_bound(
+) {
     let captured_group = Arc::new(Mutex::new(Vec::new()));
     let group_provider = Router::new()
         .route("/v1/files", any(capture_native_provider_request))
@@ -3074,12 +3219,10 @@ async fn gateway_database_route_scoped_stored_chat_creation_fails_closed_without
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!("invalid_request", payload["error"]["code"]);
-    assert!(
-        payload["error"]["message"]
-            .as_str()
-            .unwrap()
-            .contains("model is required")
-    );
+    assert!(payload["error"]["message"]
+        .as_str()
+        .unwrap()
+        .contains("model is required"));
 }
 
 #[tokio::test]
@@ -3123,12 +3266,10 @@ async fn gateway_database_route_scoped_stored_chat_creation_rejects_malformed_js
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!("invalid_request", payload["error"]["code"]);
-    assert!(
-        payload["error"]["message"]
-            .as_str()
-            .unwrap()
-            .contains("invalid request body")
-    );
+    assert!(payload["error"]["message"]
+        .as_str()
+        .unwrap()
+        .contains("invalid request body"));
 }
 
 #[tokio::test]
@@ -3484,11 +3625,9 @@ async fn gateway_database_route_scoped_openai_image_passthrough_records_image_re
         captured[0].authorization
     );
     assert_eq!("/v1/images/generations", captured[0].path_and_query);
-    assert!(
-        captured[0]
-            .body
-            .contains(r#""model":"openrouter/gpt-image-1-standard""#)
-    );
+    assert!(captured[0]
+        .body
+        .contains(r#""model":"openrouter/gpt-image-1-standard""#));
     drop(captured);
 
     let read_pool = catalog.open_pool().await.unwrap();
@@ -3672,8 +3811,8 @@ async fn gateway_database_route_scoped_openai_management_passthrough_records_api
 }
 
 #[tokio::test]
-async fn gateway_database_route_scoped_stored_chat_list_uses_channel_route_without_rewriting_query_model()
- {
+async fn gateway_database_route_scoped_stored_chat_list_uses_channel_route_without_rewriting_query_model(
+) {
     let captured_standard = Arc::new(Mutex::new(Vec::new()));
     let standard_provider = Router::new()
         .route("/v1/chat/completions", any(capture_native_provider_request))
@@ -3932,8 +4071,8 @@ async fn gateway_database_route_scoped_openai_passthrough_rewrites_delete_path_m
 }
 
 #[tokio::test]
-async fn gateway_database_route_scoped_openai_passthrough_routes_bodyless_management_calls_by_group_channel_route()
- {
+async fn gateway_database_route_scoped_openai_passthrough_routes_bodyless_management_calls_by_group_channel_route(
+) {
     let captured_standard = Arc::new(Mutex::new(Vec::new()));
     let standard_provider = Router::new()
         .route("/v1/files", any(capture_native_provider_request))
@@ -4009,8 +4148,8 @@ async fn gateway_database_route_scoped_openai_passthrough_routes_bodyless_manage
 }
 
 #[tokio::test]
-async fn gateway_database_route_scoped_openai_passthrough_routes_audio_voice_management_by_specific_route_key()
- {
+async fn gateway_database_route_scoped_openai_passthrough_routes_audio_voice_management_by_specific_route_key(
+) {
     let captured_standard = Arc::new(Mutex::new(Vec::new()));
     let standard_provider = Router::new()
         .route("/v1/audio/voices", any(capture_native_provider_request))
@@ -4100,8 +4239,8 @@ async fn gateway_database_route_scoped_openai_passthrough_routes_audio_voice_man
 }
 
 #[tokio::test]
-async fn gateway_database_route_scoped_openai_passthrough_routes_response_resource_management_by_specific_route_key()
- {
+async fn gateway_database_route_scoped_openai_passthrough_routes_response_resource_management_by_specific_route_key(
+) {
     let captured_standard = Arc::new(Mutex::new(Vec::new()));
     let standard_provider = Router::new()
         .route(
@@ -4197,8 +4336,8 @@ async fn gateway_database_route_scoped_openai_passthrough_routes_response_resour
 }
 
 #[tokio::test]
-async fn gateway_database_route_scoped_openai_passthrough_routes_video_resource_management_by_specific_route_key()
- {
+async fn gateway_database_route_scoped_openai_passthrough_routes_video_resource_management_by_specific_route_key(
+) {
     let captured_standard = Arc::new(Mutex::new(Vec::new()));
     let standard_provider = Router::new()
         .route(
@@ -4423,16 +4562,12 @@ async fn gateway_database_route_scoped_openai_passthrough_routes_optional_model_
         "/v1/evals/eval_123/runs",
         captured_standard[1].path_and_query
     );
-    assert!(
-        captured_standard[1]
-            .body
-            .contains(r#""model":"gpt-4o-mini""#)
-    );
-    assert!(
-        !captured_standard[1]
-            .body
-            .contains(r#""model":"openai/global/gpt-4o-mini""#)
-    );
+    assert!(captured_standard[1]
+        .body
+        .contains(r#""model":"gpt-4o-mini""#));
+    assert!(!captured_standard[1]
+        .body
+        .contains(r#""model":"openai/global/gpt-4o-mini""#));
     assert_eq!(0, captured_premium.lock().unwrap().len());
 }
 
@@ -4511,19 +4646,17 @@ async fn gateway_database_route_scoped_openai_passthrough_rejects_malformed_opti
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!("invalid_request", payload["error"]["code"]);
-    assert!(
-        payload["error"]["message"]
-            .as_str()
-            .unwrap()
-            .contains("invalid request body")
-    );
+    assert!(payload["error"]["message"]
+        .as_str()
+        .unwrap()
+        .contains("invalid request body"));
     assert_eq!(0, captured_standard.lock().unwrap().len());
     assert_eq!(0, captured_premium.lock().unwrap().len());
 }
 
 #[tokio::test]
-async fn gateway_database_route_scoped_openai_passthrough_rejects_blank_optional_model_before_channel_route_routing()
- {
+async fn gateway_database_route_scoped_openai_passthrough_rejects_blank_optional_model_before_channel_route_routing(
+) {
     let captured_standard = Arc::new(Mutex::new(Vec::new()));
     let standard_provider = Router::new()
         .route(
@@ -4597,19 +4730,17 @@ async fn gateway_database_route_scoped_openai_passthrough_rejects_blank_optional
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!("invalid_request", payload["error"]["code"]);
-    assert!(
-        payload["error"]["message"]
-            .as_str()
-            .unwrap()
-            .contains("model must not be blank")
-    );
+    assert!(payload["error"]["message"]
+        .as_str()
+        .unwrap()
+        .contains("model must not be blank"));
     assert_eq!(0, captured_standard.lock().unwrap().len());
     assert_eq!(0, captured_premium.lock().unwrap().len());
 }
 
 #[tokio::test]
-async fn gateway_database_route_scoped_openai_passthrough_rejects_non_string_optional_model_before_channel_route_routing()
- {
+async fn gateway_database_route_scoped_openai_passthrough_rejects_non_string_optional_model_before_channel_route_routing(
+) {
     let captured_standard = Arc::new(Mutex::new(Vec::new()));
     let standard_provider = Router::new()
         .route(
@@ -4683,19 +4814,17 @@ async fn gateway_database_route_scoped_openai_passthrough_rejects_non_string_opt
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!("invalid_request", payload["error"]["code"]);
-    assert!(
-        payload["error"]["message"]
-            .as_str()
-            .unwrap()
-            .contains("model must be a string")
-    );
+    assert!(payload["error"]["message"]
+        .as_str()
+        .unwrap()
+        .contains("model must be a string"));
     assert_eq!(0, captured_standard.lock().unwrap().len());
     assert_eq!(0, captured_premium.lock().unwrap().len());
 }
 
 #[tokio::test]
-async fn gateway_database_route_scoped_openai_passthrough_rejects_multipart_without_boundary_before_channel_route_routing()
- {
+async fn gateway_database_route_scoped_openai_passthrough_rejects_multipart_without_boundary_before_channel_route_routing(
+) {
     let captured_standard = Arc::new(Mutex::new(Vec::new()));
     let standard_provider = Router::new()
         .route("/v1/images/edits", any(capture_native_provider_request))
@@ -4763,12 +4892,10 @@ async fn gateway_database_route_scoped_openai_passthrough_rejects_multipart_with
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!("invalid_request", payload["error"]["code"]);
-    assert!(
-        payload["error"]["message"]
-            .as_str()
-            .unwrap()
-            .contains("multipart/form-data boundary is required")
-    );
+    assert!(payload["error"]["message"]
+        .as_str()
+        .unwrap()
+        .contains("multipart/form-data boundary is required"));
     assert_eq!(0, captured_standard.lock().unwrap().len());
     assert_eq!(0, captured_premium.lock().unwrap().len());
 }

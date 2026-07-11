@@ -47,9 +47,13 @@ spec:
             capabilities:
               drop: [ALL]
           env:
-            - name: SDKWORK_CLAW_DEPLOYMENT_PROFILE
+            - name: SDKWORK_CLAW_ROUTER_CONFIG_PROFILE
+              value: prod
+            - name: SDKWORK_CLAW_ROUTER_ENVIRONMENT
+              value: production
+            - name: SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE
               value: cloud
-            - name: SDKWORK_CLAW_RUNTIME_TARGET
+            - name: SDKWORK_CLAW_ROUTER_RUNTIME_TARGET
               value: container
             - name: SDKWORK_CLAW_CONFIG_FILE
               value: /etc/sdkwork/clawrouter.toml

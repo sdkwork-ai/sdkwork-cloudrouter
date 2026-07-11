@@ -4,7 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::api::app_sql_subject::{map_required_app_sql_subject, RequiredAppSqlScopedSubject};
 use axum::body::Bytes;
 use axum::extract::{Path, State};
-use axum::http::{HeaderMap, StatusCode, Uri};
+use axum::http::{HeaderMap, Uri};
 use axum::response::{IntoResponse, Response};
 use axum::routing::post;
 use axum::{Json, Router};
@@ -12,7 +12,9 @@ use serde::Deserialize;
 use serde_json::{Map, Value};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_created_response, no_content_response, problem_from_wire_code, success_envelope,
+};
 use crate::application::EntityUuidGenerator;
 use crate::domain::{DomainError, ProviderCircuitBreakerPolicy, ProviderRetryPolicy};
 use crate::infrastructure::OsApiKeySecretGenerator;
@@ -204,7 +206,7 @@ async fn create_routing_channel(
     };
 
     match state.store.create_channel(command).await {
-        Ok(outcome) => Json(success_envelope(outcome)).into_response(),
+        Ok(outcome) => json_created_response(None, outcome),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
             routing_channel_system_response("routing channel command store is unavailable", error)
@@ -295,7 +297,7 @@ async fn delete_routing_channel(
     };
 
     match state.store.delete_channel(command).await {
-        Ok(outcome) if outcome.deleted => Json(success_envelope(outcome)).into_response(),
+        Ok(outcome) if outcome.deleted => no_content_response(None),
         Ok(_) => not_found_response("routing channel was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {

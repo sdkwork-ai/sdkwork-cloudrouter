@@ -28,7 +28,7 @@ public class FineTuningApi {
     /** List fine-tuning checkpoint permissions */
     public OpenAiFineTuningCheckpointPermissionList retrievePermission(String fineTunedModelCheckpoint, Integer limit, String order, String after, String before, String projectId) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null),
@@ -53,7 +53,7 @@ public class FineTuningApi {
     /** List fine-tuning jobs */
     public OpenAiFineTuningJobList listJob(Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -83,7 +83,7 @@ public class FineTuningApi {
     /** List fine-tuning checkpoints */
     public OpenAiFineTuningJobCheckpointList retrieveCheckpoint(String fineTuningJobId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -95,7 +95,7 @@ public class FineTuningApi {
     /** List fine-tuning events */
     public OpenAiFineTuningJobEventList retrieveEvent(String fineTuningJobId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)

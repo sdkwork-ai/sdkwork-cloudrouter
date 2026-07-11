@@ -1,6 +1,6 @@
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use sdkwork_claw_config::DatabaseConfig;
+use sdkwork_claw_config::{DatabaseConfig, DeploymentMode};
 use sdkwork_claw_http::ApiSurface;
 use serde_json::{Map, Value};
 use tower::ServiceExt;
@@ -39,6 +39,29 @@ async fn service_router_exposes_standard_health_and_ready_endpoints() {
         .await
         .unwrap();
     assert_eq!(StatusCode::OK, ready.status());
+}
+
+#[tokio::test]
+async fn service_router_health_uses_the_resolved_deployment_mode_from_state() {
+    let response = sdkwork_claw_http::service_router_with_deployment_mode(
+        "sdkwork-clawrouter-cloud-gateway",
+        DeploymentMode::Kubernetes,
+    )
+    .oneshot(
+        Request::builder()
+            .uri("/healthz")
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(StatusCode::OK, response.status());
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!("kubernetes", payload["deployment_mode"]);
 }
 
 #[tokio::test]

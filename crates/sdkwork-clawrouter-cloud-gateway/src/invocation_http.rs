@@ -14,7 +14,9 @@ use sdkwork_clawrouter_router_service::application::{
 use sdkwork_clawrouter_router_service::ports::PricingCatalog;
 use serde_json::{json, Value};
 
-use crate::gateway_api_key_auth::authenticate_gateway_api_key;
+use crate::gateway_api_key_auth::{
+    authenticate_gateway_api_key, sanitize_authenticated_gateway_uri,
+};
 use crate::invocation_router::InvocationRouterState;
 use crate::request_identity::generate_server_request_id;
 
@@ -25,7 +27,21 @@ pub(crate) async fn handle_invocation<C>(
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
-    let (parts, body) = request.into_parts();
+    let (mut parts, body) = request.into_parts();
+    let auth_context = match authenticate_gateway_api_key(
+        state.catalog.as_ref(),
+        state.api_key_hasher.as_ref(),
+        &parts.headers,
+        &parts.uri,
+        state.query_string_api_key_policy,
+    ) {
+        Ok(context) => context,
+        Err(response) => return response,
+    };
+    parts.uri = match sanitize_authenticated_gateway_uri(&parts.uri) {
+        Ok(uri) => uri,
+        Err(response) => return response,
+    };
     let preclassified_openai = if is_openai_prefixed_path(parts.uri.path()) {
         match classify_request(&parts.method, &parts.uri) {
             Ok(classified) => Some(classified),
@@ -33,16 +49,6 @@ where
         }
     } else {
         None
-    };
-
-    let auth_context = match authenticate_gateway_api_key(
-        state.catalog.as_ref(),
-        state.api_key_hasher.as_ref(),
-        &parts.headers,
-        &parts.uri,
-    ) {
-        Ok(context) => context,
-        Err(response) => return response,
     };
 
     let client_ip = extract_client_ip(&parts, false);

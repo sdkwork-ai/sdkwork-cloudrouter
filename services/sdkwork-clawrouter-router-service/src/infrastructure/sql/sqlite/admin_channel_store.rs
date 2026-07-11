@@ -1215,12 +1215,13 @@ async fn upsert_ai_resource_bindings(
         } else {
             ""
         };
+        let channel_resource_id = next_claw_runtime_id("channel resource binding")?;
         sqlx::query(
             r#"
             INSERT INTO ai_channel_resource
-                (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, channel_id, provider_code, channel_code, resource_id, resource_code, resource_group_id, resource_group_code, grant_type, priority, weight)
+                (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, channel_id, provider_code, channel_code, resource_id, resource_code, resource_group_id, resource_group_code, grant_type, priority, weight)
             VALUES
-                (?, ?, ?, 1, 1, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, 'allow', ?, ?)
+                (?, ?, ?, ?, 1, 1, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, 'allow', ?, ?)
             ON CONFLICT(tenant_id, organization_id, channel_id, resource_code, resource_group_code) DO UPDATE SET
                 status = 1,
                 deleted_at = NULL,
@@ -1236,6 +1237,7 @@ async fn upsert_ai_resource_bindings(
                 version = COALESCE(ai_channel_resource.version, 0) + 1
             "#,
         )
+        .bind(channel_resource_id)
         .bind(format!("chn-resource-{uuid_suffix}"))
         .bind(scope.tenant_id)
         .bind(scope.organization_id)
@@ -1723,11 +1725,12 @@ async fn insert_provider_health_snapshot(
     sqlx::query(
         r#"
         INSERT INTO integration_provider_health_snapshot
-            (uuid, tenant_id, organization_id, user_id, request_id, status, created_at, metadata, provider_id, channel_id, provider_account_id, check_type, health_status, latency_ms, http_status, error_code, error_message_masked, checked_at)
+            (id, uuid, tenant_id, organization_id, user_id, request_id, status, created_at, metadata, provider_id, channel_id, provider_account_id, check_type, health_status, latency_ms, http_status, error_code, error_message_masked, checked_at)
         VALUES
-            (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)
+            (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)
         "#,
     )
+    .bind(next_claw_runtime_id("integration_provider_health_snapshot")?)
     .bind(format!("health-{}", command.config_snapshot_uuid))
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)

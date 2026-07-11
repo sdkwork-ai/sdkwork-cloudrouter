@@ -5,7 +5,7 @@ use axum::routing::post;
 use axum::{Json, Router};
 use sdkwork_claw_config::{ProviderRelayConfig, ProviderSecretMapConfig, StartupInstallMode};
 use sdkwork_claw_test_support::{
-    SeededSqliteCatalog, assert_server_generated_request_id, seeded_sqlite_catalog,
+    assert_server_generated_request_id, seeded_sqlite_catalog, SeededSqliteCatalog,
 };
 use sdkwork_clawrouter_router_service::application::UsageSettlementWorkerConfig;
 use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::SqlitePricingCatalogLoader;
@@ -13,7 +13,7 @@ use sdkwork_clawrouter_router_service::ports::PricingCatalog;
 use serde_json::json;
 use sqlx::{Row, SqlitePool};
 use std::sync::{Arc, Mutex};
-use tokio::time::{Duration, sleep};
+use tokio::time::{sleep, Duration};
 use tower::ServiceExt;
 
 async fn set_openrouter_test_base_url(pool: &SqlitePool, base_url: &str) {
@@ -427,11 +427,9 @@ async fn database_config_router_applies_database_retry_policy_without_duplicate_
     assert!(captured.iter().all(|request| {
         request.authorization.as_deref() == Some("Bearer sk-provider-token-from-secret-map")
     }));
-    assert!(
-        captured
-            .iter()
-            .all(|request| request.body["model"] == "gpt-4o-mini")
-    );
+    assert!(captured
+        .iter()
+        .all(|request| request.body["model"] == "gpt-4o-mini"));
     drop(captured);
 
     let read_pool = catalog.open_pool().await.unwrap();
@@ -622,8 +620,8 @@ async fn database_config_router_background_settlement_worker_settles_recorded_ch
 }
 
 #[tokio::test]
-async fn database_config_router_background_settlement_worker_wakes_on_new_usage_without_waiting_full_interval()
- {
+async fn database_config_router_background_settlement_worker_wakes_on_new_usage_without_waiting_full_interval(
+) {
     let catalog = seeded_sqlite_catalog().await.unwrap();
     let pool = catalog.open_pool().await.unwrap();
     catalog

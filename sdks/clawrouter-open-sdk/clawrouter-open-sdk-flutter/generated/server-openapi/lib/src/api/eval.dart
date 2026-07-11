@@ -14,7 +14,7 @@ class EvalApi {
   /// List evals
   Future<OpenAiEvalList?> list([int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -67,7 +67,7 @@ class EvalApi {
   /// List eval runs
   Future<OpenAiEvalRunList?> listRuns(String evalId, [int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -101,7 +101,7 @@ class EvalApi {
   /// List eval run output items
   Future<OpenAiEvalRunOutputItemList?> listRunsOutputItems(String evalId, String runId, [int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('limit', limit, 'form', true, false, null),
+      QueryParameterSpec('page_size', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)

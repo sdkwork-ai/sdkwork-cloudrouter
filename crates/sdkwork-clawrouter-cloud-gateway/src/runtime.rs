@@ -8,10 +8,12 @@ use sdkwork_api_cloud_gateway_config::{
 };
 use sdkwork_claw_config::{
     ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig, DatabaseEngine, DeploymentMode,
-    PaymentWebhookConfig, ProviderAdapterConfig, ProviderAdapterManifestDiscoveryConfig,
-    ProviderRelayConfig, ProviderSecretMapConfig, RequestLimitsConfig, RuntimeConfigProfile,
-    RuntimeTomlConfig, StartupInstallMode, TrustedSubjectConfig,
+    DeploymentRuntime, PaymentWebhookConfig, ProviderAdapterConfig,
+    ProviderAdapterManifestDiscoveryConfig, ProviderRelayConfig, ProviderSecretMapConfig,
+    RequestLimitsConfig, RuntimeConfigProfile, RuntimeTomlConfig, StartupInstallMode,
+    TrustedSubjectConfig,
 };
+use sdkwork_claw_http::QueryStringApiKeyPolicy;
 use sdkwork_claw_provider_adapter_contract::AdapterRouteStatus;
 use sdkwork_claw_provider_adapter_http::ProviderAdapterHttpClient;
 use sdkwork_claw_provider_adapter_registry::{ProviderAdapterRegistry, ProviderAdapterRouteConfig};
@@ -93,6 +95,7 @@ fn router_with_invocation_runtime_routes<C>(
     sticky_store: Option<Arc<dyn StickyRouteStore>>,
     usage_recorder: Option<UsageRecorder>,
     provider_adapter_config: Option<ProviderAdapterConfig>,
+    query_string_api_key_policy: QueryStringApiKeyPolicy,
     runtime_toml: Option<&RuntimeTomlConfig>,
     tenant_inflight_config: Option<TenantInflightConfig>,
     estimated_instance_count: u32,
@@ -114,7 +117,7 @@ where
                 sdkwork_claw_config::RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
             );
     base_router.merge(
-        crate::invocation_router::invocation_router_with_full_pipeline_provider_adapter_and_tenant_inflight(
+        crate::invocation_router::invocation_router_with_full_pipeline_provider_adapter_tenant_inflight_and_query_string_api_key_policy(
             catalog,
             api_key_hasher,
             Arc::new(InvocationHttpDispatcher::new()),
@@ -129,6 +132,7 @@ where
             tenant_inflight_config,
             redis_config.as_ref(),
             body_limit_bytes,
+            query_string_api_key_policy,
         ),
     )
 }
@@ -141,6 +145,7 @@ fn merge_relay_authenticated_openai_passthrough<C>(
     provider_adapter_config: Option<ProviderAdapterConfig>,
     usage_recorder: Option<UsageRecorder>,
     secret_resolver_configured: bool,
+    query_string_api_key_policy: QueryStringApiKeyPolicy,
 ) -> Router
 where
     C: PricingCatalog + Send + Sync + 'static,
@@ -152,12 +157,13 @@ where
         return router;
     };
     router.merge(
-        crate::passthrough::authenticated_gateway_passthrough_router_with_adapter_config(
+        crate::passthrough::authenticated_gateway_passthrough_router_with_adapter_config_and_query_string_api_key_policy(
             config,
             catalog,
             api_key_hasher,
             provider_adapter_config,
             usage_recorder,
+            query_string_api_key_policy,
         ),
     )
 }
@@ -172,6 +178,7 @@ fn router_with_database_runtime_routes<C>(
     provider_passthrough_config: Option<ProviderRelayConfig>,
     provider_adapter_config: Option<ProviderAdapterConfig>,
     provider_runtime_config: ProviderRelayRuntimeConfig,
+    query_string_api_key_policy: QueryStringApiKeyPolicy,
     runtime_toml: Option<&RuntimeTomlConfig>,
 ) -> Result<Router, GatewayRouterError>
 where
@@ -187,6 +194,7 @@ where
             invocation_sticky_store,
             usage_recorder.clone(),
             provider_adapter_config.clone(),
+            query_string_api_key_policy,
             runtime_toml,
             Some(provider_runtime_config.tenant_inflight_config),
             provider_runtime_config.estimated_instance_count,
@@ -223,6 +231,7 @@ where
             invocation_sticky_store,
             usage_recorder.clone(),
             provider_adapter_config.clone(),
+            query_string_api_key_policy,
             runtime_toml,
             Some(provider_runtime_config.tenant_inflight_config),
             provider_runtime_config.estimated_instance_count,
@@ -236,6 +245,7 @@ where
         provider_adapter_config,
         usage_recorder,
         secret_resolver_configured,
+        query_string_api_key_policy,
     ))
 }
 
@@ -350,6 +360,7 @@ struct AllInOneRuntimeContext {
     request_limits_config: RequestLimitsConfig,
     models_catalog_root: Option<String>,
     deployment_mode: DeploymentMode,
+    query_string_api_key_policy: QueryStringApiKeyPolicy,
     app_runtime_gateway_client:
         Arc<dyn sdkwork_clawrouter_router_service::ports::AppRuntimeGatewayClient + Send + Sync>,
     app_runtime_stream_bus: Arc<dyn RuntimeStreamBus + Send + Sync>,
@@ -716,6 +727,7 @@ pub async fn router_with_database_api_key_provider_configs_and_adapter_config(
         StartupInstallMode::Ensure,
         None,
         provider_adapter_config,
+        QueryStringApiKeyPolicy::default(),
     )
     .await
 }
@@ -737,6 +749,7 @@ pub async fn router_with_database_api_key_provider_configs_adapter_config_and_st
         startup_install_mode,
         None,
         provider_adapter_config,
+        QueryStringApiKeyPolicy::default(),
     )
     .await
 }
@@ -776,6 +789,30 @@ pub async fn router_with_database_api_key_provider_configs_usage_settlement_work
         startup_install_mode,
         None,
         None,
+        QueryStringApiKeyPolicy::default(),
+    )
+    .await
+}
+
+pub async fn router_with_database_api_key_provider_configs_usage_settlement_worker_config_startup_install_mode_and_query_string_api_key_policy(
+    config: DatabaseConfig,
+    api_key_config: Option<ApiKeySecurityConfig>,
+    provider_relay_config: Option<ProviderRelayConfig>,
+    provider_secret_map_config: Option<ProviderSecretMapConfig>,
+    usage_settlement_worker_config: UsageSettlementWorkerConfig,
+    startup_install_mode: StartupInstallMode,
+    query_string_api_key_policy: QueryStringApiKeyPolicy,
+) -> Result<Router, GatewayRouterError> {
+    router_with_database_api_key_provider_configs_usage_settlement_worker_config_startup_install_mode_and_runtime_toml(
+        config,
+        api_key_config,
+        provider_relay_config,
+        provider_secret_map_config,
+        usage_settlement_worker_config,
+        startup_install_mode,
+        None,
+        None,
+        query_string_api_key_policy,
     )
     .await
 }
@@ -789,6 +826,36 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
     startup_install_mode: StartupInstallMode,
     runtime_toml: Option<&RuntimeTomlConfig>,
     provider_adapter_config_override: Option<ProviderAdapterConfig>,
+    query_string_api_key_policy: QueryStringApiKeyPolicy,
+) -> Result<Router, GatewayRouterError> {
+    let deployment_mode = DeploymentMode::from_env_or_runtime_toml(runtime_toml)
+        .map_err(GatewayRouterError::Config)?;
+    router_with_database_api_key_provider_configs_usage_settlement_worker_config_startup_install_mode_runtime_toml_and_deployment_mode(
+        config,
+        api_key_config,
+        provider_relay_config,
+        provider_secret_map_config,
+        usage_settlement_worker_config,
+        startup_install_mode,
+        runtime_toml,
+        provider_adapter_config_override,
+        deployment_mode,
+        query_string_api_key_policy,
+    )
+    .await
+}
+
+async fn router_with_database_api_key_provider_configs_usage_settlement_worker_config_startup_install_mode_runtime_toml_and_deployment_mode(
+    config: DatabaseConfig,
+    api_key_config: Option<ApiKeySecurityConfig>,
+    provider_relay_config: Option<ProviderRelayConfig>,
+    provider_secret_map_config: Option<ProviderSecretMapConfig>,
+    usage_settlement_worker_config: UsageSettlementWorkerConfig,
+    startup_install_mode: StartupInstallMode,
+    runtime_toml: Option<&RuntimeTomlConfig>,
+    provider_adapter_config_override: Option<ProviderAdapterConfig>,
+    deployment_mode: DeploymentMode,
+    query_string_api_key_policy: QueryStringApiKeyPolicy,
 ) -> Result<Router, GatewayRouterError> {
     let api_key_security_config = require_api_key_security_config(api_key_config)?;
     let api_key_hasher = build_api_key_hasher(&api_key_security_config)?;
@@ -862,6 +929,7 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
                     Some(&config),
                     provider_secret_resolver.is_none() && provider_passthrough_config.is_none(),
                     readiness_check,
+                    Some(deployment_mode),
                 ),
                 catalog,
                 api_key_hasher,
@@ -871,6 +939,7 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
                 provider_passthrough_config,
                 provider_adapter_config.clone(),
                 provider_runtime,
+                query_string_api_key_policy,
                 runtime_toml,
             )
         }
@@ -935,6 +1004,7 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
                     Some(&config),
                     provider_secret_resolver.is_none() && provider_passthrough_config.is_none(),
                     readiness_check,
+                    Some(deployment_mode),
                 ),
                 catalog,
                 api_key_hasher,
@@ -944,6 +1014,7 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
                 provider_passthrough_config,
                 provider_adapter_config.clone(),
                 provider_runtime,
+                query_string_api_key_policy,
                 runtime_toml,
             )
         }
@@ -992,9 +1063,17 @@ pub async fn router_with_optional_database_api_key_and_provider_configs(
     }
 }
 
+fn router_without_database(deployment_mode: DeploymentMode) -> Router {
+    router_with_database_status_and_passthrough_placeholder(None, true, None, Some(deployment_mode))
+}
+
 pub async fn router_from_env() -> Result<Router, GatewayRouterError> {
     let runtime_toml =
         RuntimeTomlConfig::from_env_config_file().map_err(GatewayRouterError::Config)?;
+    let query_string_api_key_policy = QueryStringApiKeyPolicy::from_configured_runtime(
+        DeploymentRuntime::resolve_configured(runtime_toml.as_ref())
+            .map_err(GatewayRouterError::Config)?,
+    );
     let config = database_config_from_env_for_startup(runtime_toml.as_ref())?;
     let api_key_config = ApiKeySecurityConfig::from_env_or_runtime_toml(runtime_toml.as_ref())
         .map_err(GatewayRouterError::Config)?;
@@ -1013,14 +1092,16 @@ pub async fn router_from_env() -> Result<Router, GatewayRouterError> {
         startup_install_mode,
     )
     .map_err(GatewayRouterError::Config)?;
+    let deployment_mode = DeploymentMode::from_env_or_runtime_toml(runtime_toml.as_ref())
+        .map_err(GatewayRouterError::Config)?;
     sdkwork_claw_config::ensure_server_production_redis_config(
-        DeploymentMode::from_env(),
+        deployment_mode,
         runtime_toml.as_ref(),
     )
     .map_err(GatewayRouterError::Config)?;
     match config {
         Some(config) => {
-            router_with_database_api_key_provider_configs_usage_settlement_worker_config_startup_install_mode_and_runtime_toml(
+            router_with_database_api_key_provider_configs_usage_settlement_worker_config_startup_install_mode_runtime_toml_and_deployment_mode(
                 config,
                 api_key_config,
                 provider_relay_config,
@@ -1029,10 +1110,12 @@ pub async fn router_from_env() -> Result<Router, GatewayRouterError> {
                 startup_install_mode,
                 runtime_toml.as_ref(),
                 None,
+                deployment_mode,
+                query_string_api_key_policy,
             )
             .await
         }
-        None => Ok(router()),
+        None => Ok(router_without_database(deployment_mode)),
     }
 }
 
@@ -1076,6 +1159,7 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
                     context.trusted_subject_config.clone(),
                     context.app_session_config.clone(),
                     Arc::clone(&context.provider_health_probe),
+                    context.deployment_mode,
                     context.cache_manager.clone(),
                     Arc::clone(&context.database_installer),
                     context.request_limits_config.clone(),
@@ -1117,6 +1201,7 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
                     context.trusted_subject_config.clone(),
                     context.app_session_config.clone(),
                     Arc::clone(&context.provider_health_probe),
+                    context.deployment_mode,
                     context.cache_manager.clone(),
                     Arc::clone(&context.database_installer),
                     context.request_limits_config.clone(),
@@ -1302,6 +1387,9 @@ fn claw_router_appbase_backend_dependency_surface() -> DependencyApiSurfaceConfi
 async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntimeContext> {
     let runtime_toml = RuntimeTomlConfig::from_env_config_file().map_err(anyhow::Error::msg)?;
     let runtime_toml_ref = runtime_toml.as_ref();
+    let query_string_api_key_policy = QueryStringApiKeyPolicy::from_configured_runtime(
+        DeploymentRuntime::resolve_configured(runtime_toml_ref).map_err(anyhow::Error::msg)?,
+    );
     let profile = RuntimeConfigProfile::from_env_or_runtime_toml(runtime_toml_ref)
         .unwrap_or(RuntimeConfigProfile::Server);
     let database_config = DatabaseConfig::from_env_or_runtime_toml_or_initialize(runtime_toml_ref)
@@ -1360,12 +1448,8 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
         provider_adapter_config_from_env_or_runtime_toml(runtime_toml_ref)
             .await
             .map_err(anyhow::Error::msg)?;
-    let deployment_mode = DeploymentMode::from_optional_part(
-        std::env::var(DeploymentMode::ENV_DEPLOYMENT_MODE)
-            .ok()
-            .or_else(|| runtime_toml_ref.and_then(|config| config.runtime.deployment_mode.clone())),
-    )
-    .map_err(anyhow::Error::msg)?;
+    let deployment_mode =
+        DeploymentMode::from_env_or_runtime_toml(runtime_toml_ref).map_err(anyhow::Error::msg)?;
     let provider_health_probe =
         sdkwork_routes_clawrouter_backend_api::shared_provider_health_probe_from_runtime_toml(
             provider_secret_map_config.clone(),
@@ -1494,6 +1578,7 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
                 request_limits_config,
                 models_catalog_root,
                 deployment_mode,
+                query_string_api_key_policy,
                 app_runtime_gateway_client,
                 app_runtime_stream_bus,
                 model_ranking_refresh_worker_config,
@@ -1578,6 +1663,7 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
                 request_limits_config,
                 models_catalog_root,
                 deployment_mode,
+                query_string_api_key_policy,
                 app_runtime_gateway_client,
                 app_runtime_stream_bus,
                 model_ranking_refresh_worker_config,
@@ -1617,6 +1703,7 @@ fn build_gateway_router_from_all_in_one_context(
             Some(&context.database_config),
             true,
             readiness_check,
+            Some(context.deployment_mode),
         ),
         Arc::clone(&context.catalog),
         api_key_hasher,
@@ -1628,6 +1715,7 @@ fn build_gateway_router_from_all_in_one_context(
         context.provider_relay_config.clone(),
         context.provider_adapter_config.clone(),
         context.provider_runtime_config.clone(),
+        context.query_string_api_key_policy,
         runtime_toml.as_ref(),
     )
     .map_err(anyhow::Error::new)
@@ -2641,6 +2729,28 @@ impl From<PostgresCatalogLoadError> for GatewayRouterError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn no_database_router_health_uses_explicit_deployment_mode() {
+        use axum::body::{to_bytes, Body};
+        use axum::http::Request;
+        use tower::ServiceExt;
+
+        let response = router_without_database(DeploymentMode::Server)
+            .oneshot(
+                Request::builder()
+                    .uri("/healthz")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+        assert_eq!("server", payload["deployment_mode"]);
+        assert_eq!(false, payload["database"]["configured"]);
+    }
 
     #[tokio::test]
     async fn embedded_sdkwork_api_cloud_gateway_router_builds_for_all_in_one_runtime() {

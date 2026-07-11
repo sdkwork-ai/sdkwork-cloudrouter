@@ -735,9 +735,9 @@ frontend_operations:
   - ops_audit_log
 - route: /console/chat/conversations/{conversationId}/turns/{turnId}/response
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: create
-  operation_id: turnResponses.create
-  kind: create
+  operation: complete
+  operation_id: turnResponses.complete
+  kind: action
   api_surface: app
   api_method: POST
   api_path: /app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response
@@ -2300,9 +2300,9 @@ frontend_operations:
   - ops_audit_log
 - route: /console/runtime/invocations/{invocationId}/complete
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: submit
-  operation_id: invocations.submit
-  kind: create
+  operation: complete
+  operation_id: invocations.complete
+  kind: action
   api_surface: app
   api_method: POST
   api_path: /app/v3/api/runtime/invocations/{invocationId}/complete
@@ -3706,7 +3706,7 @@ frontend_operations:
 - route: /admin/ai/model_mappings
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: replace
-  operation_id: modelMappings.replace
+  operation_id: modelMappings.collection.update
   kind: update
   api_surface: backend
   api_method: PUT
@@ -3722,7 +3722,7 @@ frontend_operations:
 - route: /admin/ai/model_mappings/resolve
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: create
-  operation_id: modelMappings.resolve.create
+  operation_id: modelMappings.resolve
   kind: create
   api_surface: backend
   api_method: POST
@@ -4399,9 +4399,9 @@ frontend_operations:
   - ops_audit_log
 - route: /admin/ai/route_explain
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: create
-  operation_id: routeExplain.create
-  kind: create
+  operation: explain
+  operation_id: routeExplain.explain
+  kind: action
   api_surface: backend
   api_method: POST
   api_path: /backend/v3/api/ai/route_explain

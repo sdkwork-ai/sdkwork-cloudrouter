@@ -350,14 +350,14 @@ async fn list_users(
             COALESCE(u.phone, '') AS mobile,
             COALESCE(NULLIF(m.membership_kind, ''), 'user') AS role_code,
             COALESCE(NULLIF(m.membership_kind, ''), 'standard') AS group_code,
-            CAST(COALESCE(a.available_amount, '0') AS TEXT) AS balance,
+            '0' AS balance,
             CASE LOWER(COALESCE(u.status, ''))
                 WHEN 'active' THEN 1
                 WHEN 'banned' THEN 2
                 WHEN 'disabled' THEN 3
                 WHEN 'inactive' THEN 4
             END AS user_status,
-            CAST(COALESCE(le.last_active, u.updated_at, u.created_at, '') AS TEXT) AS last_active,
+            CAST(COALESCE(u.last_login_at, u.updated_at, u.created_at, '') AS TEXT) AS last_active,
             CAST(COALESCE(k.last_used_at, '') AS TEXT) AS last_used,
             CAST(COALESCE(u.created_at, '') AS TEXT) AS created_at,
             CAST(COALESCE(u.updated_at, '') AS TEXT) AS updated_at,
@@ -378,26 +378,6 @@ async fn list_users(
         ) m
           ON m.tenant_id = u.tenant_id
          AND m.user_id = u.id
-        LEFT JOIN commerce_account a
-          ON a.id = (
-              SELECT account.id
-              FROM commerce_account account
-              WHERE account.owner_user_id = u.id
-                AND account.tenant_id = ?
-                AND account.organization_id = ?
-                AND account.asset_type = ?
-                AND account.currency_code = ?
-                AND account.status = 'active'
-              ORDER BY account.updated_at DESC, account.id DESC
-              LIMIT 1
-          )
-        LEFT JOIN (
-            SELECT user_id, MAX(COALESCE(occurred_at, created_at)) AS last_active
-            FROM iam_user_login_event
-            WHERE tenant_id = ?
-              AND organization_id = ?
-            GROUP BY user_id
-        ) le ON le.user_id = CAST(u.id AS INTEGER)
         LEFT JOIN (
             SELECT user_id, MAX(last_used_at) AS last_used_at
             FROM iam_gateway_api_key
@@ -421,12 +401,6 @@ async fn list_users(
         "#,
     )
     .bind(query.subject.organization_id.to_string())
-    .bind(query.subject.tenant_id.to_string())
-    .bind(query.subject.organization_id.to_string())
-    .bind(CommerceAccountAssetType::Cash.as_str())
-    .bind(CASH_CURRENCY_CODE)
-    .bind(query.subject.tenant_id)
-    .bind(query.subject.organization_id)
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.subject.tenant_id.to_string())
@@ -1176,14 +1150,14 @@ async fn load_user_by_id(
             COALESCE(u.phone, '') AS mobile,
             COALESCE(NULLIF(m.membership_kind, ''), 'user') AS role_code,
             COALESCE(NULLIF(m.membership_kind, ''), 'standard') AS group_code,
-            CAST(COALESCE(a.available_amount, '0') AS TEXT) AS balance,
+            '0' AS balance,
             CASE LOWER(COALESCE(u.status, ''))
                 WHEN 'active' THEN 1
                 WHEN 'banned' THEN 2
                 WHEN 'disabled' THEN 3
                 WHEN 'inactive' THEN 4
             END AS user_status,
-            CAST(COALESCE(le.last_active, u.updated_at, u.created_at, '') AS TEXT) AS last_active,
+            CAST(COALESCE(u.last_login_at, u.updated_at, u.created_at, '') AS TEXT) AS last_active,
             CAST(COALESCE(k.last_used_at, '') AS TEXT) AS last_used,
             CAST(COALESCE(u.created_at, '') AS TEXT) AS created_at,
             CAST(COALESCE(u.updated_at, '') AS TEXT) AS updated_at
@@ -1203,26 +1177,6 @@ async fn load_user_by_id(
         ) m
           ON m.tenant_id = u.tenant_id
          AND m.user_id = u.id
-        LEFT JOIN commerce_account a
-          ON a.id = (
-              SELECT account.id
-              FROM commerce_account account
-              WHERE account.owner_user_id = u.id
-                AND account.tenant_id = ?
-                AND account.organization_id = ?
-                AND account.asset_type = ?
-                AND account.currency_code = ?
-                AND account.status = 'active'
-              ORDER BY account.updated_at DESC, account.id DESC
-              LIMIT 1
-          )
-        LEFT JOIN (
-            SELECT user_id, MAX(COALESCE(occurred_at, created_at)) AS last_active
-            FROM iam_user_login_event
-            WHERE tenant_id = ?
-              AND organization_id = ?
-            GROUP BY user_id
-        ) le ON le.user_id = CAST(u.id AS INTEGER)
         LEFT JOIN (
             SELECT user_id, MAX(last_used_at) AS last_used_at
             FROM iam_gateway_api_key
@@ -1238,12 +1192,6 @@ async fn load_user_by_id(
         "#,
     )
     .bind(organization_id.to_string())
-    .bind(tenant_id.to_string())
-    .bind(organization_id.to_string())
-    .bind(CommerceAccountAssetType::Cash.as_str())
-    .bind(CASH_CURRENCY_CODE)
-    .bind(tenant_id)
-    .bind(organization_id)
     .bind(tenant_id)
     .bind(organization_id)
     .bind(user_id.to_string())

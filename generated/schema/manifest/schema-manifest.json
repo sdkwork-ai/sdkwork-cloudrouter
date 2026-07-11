@@ -33,7 +33,17 @@
     "iam_gateway_access_policy",
     "iam_gateway_api_key",
     "iam_gateway_api_key_channel_group",
-    "iam_gateway_risk_rule"
+    "iam_gateway_risk_rule",
+    "ops_alert_event",
+    "ops_audit_log",
+    "ops_config_snapshot",
+    "ops_gateway_heartbeat",
+    "ops_gateway_instance",
+    "ops_job_execution",
+    "ops_metric_snapshot",
+    "ops_notification_delivery",
+    "ops_notification_message",
+    "ops_notification_recipient"
   ],
   "routes": {
     "/": {
@@ -326,16 +336,16 @@
   },
   "summary": {
     "api_surface_counts": {
-      "app": 42,
-      "backend": 52,
+      "app": 52,
+      "backend": 62,
       "openai_v1": 3,
-      "worker": 48
+      "worker": 58
     },
     "external_legacy_table_count": 0,
     "frontend_route_count": 18,
-    "generated_table_count": 33,
+    "generated_table_count": 43,
     "legacy_table_count": 0,
-    "table_count": 52
+    "table_count": 62
   },
   "tables": [
     {
@@ -14776,6 +14786,17 @@
       "profile": "ledger_source_fact",
       "projection_policy": null,
       "security": null,
+      "semantic_contracts": {
+        "ranking_refresh_source_fact": {
+          "aggregation_grain": [
+            "tenant_id",
+            "organization_id",
+            "catalog_key"
+          ],
+          "time_field": "occurred_at",
+          "window_predicate": "half_open_utc"
+        }
+      },
       "source_refs": [],
       "source_tables": [],
       "system_of_record": true,
@@ -16872,6 +16893,2517 @@
         }
       ],
       "write_owner": "gateway-iam-service"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "event_log",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "request_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "trace_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "payload_hash",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "retention_until",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "legal_hold",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "alert_no",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "severity",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "source",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "title",
+          "source": "explicit",
+          "type": "string(200)"
+        },
+        {
+          "name": "message",
+          "source": "explicit",
+          "type": "string(1024)"
+        },
+        {
+          "name": "alert_status",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "first_seen_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "last_seen_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "resolved_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "resolved_by",
+          "source": "explicit",
+          "type": "int64"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "event_log",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "request_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "trace_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "payload_hash",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "retention_until",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "legal_hold",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ops",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "alert_status",
+            "severity",
+            "last_seen_at",
+            "id"
+          ],
+          "name": "idx_ops_alert_event_status_severity",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "audit_event",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ops_alert_event",
+      "unique_constraints": [
+        {
+          "columns": [
+            "alert_no"
+          ],
+          "name": "uk_ops_alert_event_no"
+        }
+      ],
+      "write_owner": "clawrouter-ops-runtime"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "name": "id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "uuid",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "tenant_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "organization_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "request_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "trace_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "operator_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "action",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "target_type",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "target_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "created_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "retention_until",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "legal_hold",
+          "source": "explicit",
+          "type": "bool"
+        },
+        {
+          "name": "metadata",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "operator_type",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "operator_name_snapshot",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "target_uuid",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "client_ip_hash",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "user_agent_hash",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "before_hash",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "after_hash",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "change_summary",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "risk_level",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "approval_id",
+          "source": "explicit",
+          "type": "int64"
+        }
+      ],
+      "common_columns": [],
+      "compliance_level": "L3",
+      "domain": "ops",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "operator_type",
+            "operator_id",
+            "created_at",
+            "id"
+          ],
+          "name": "idx_ops_audit_log_tenant_operator_created",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "target_type",
+            "target_id",
+            "created_at",
+            "id"
+          ],
+          "name": "idx_ops_audit_log_tenant_target_created",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "request_id"
+          ],
+          "name": "idx_ops_audit_log_request",
+          "unique": false
+        }
+      ],
+      "lifecycle": {
+        "partition_by": "created_at_month"
+      },
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "audit_event",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ops_audit_log",
+      "unique_constraints": [],
+      "write_owner": "clawrouter-ops-runtime"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "event_log",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "request_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "trace_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "payload_hash",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "retention_until",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "legal_hold",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "snapshot_no",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "config_scope",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "config_type",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "source_table",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "source_ids",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "config_payload",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "config_hash",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "published_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "published_by",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "rollback_from_snapshot_id",
+          "source": "explicit",
+          "type": "int64"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "event_log",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "request_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "trace_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "payload_hash",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "retention_until",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "legal_hold",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ops",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "config_scope",
+            "config_type",
+            "created_at",
+            "id"
+          ],
+          "name": "idx_ops_config_snapshot_tenant_scope",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "audit_event",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ops_config_snapshot",
+      "unique_constraints": [
+        {
+          "columns": [
+            "snapshot_no"
+          ],
+          "name": "uk_ops_config_snapshot_no"
+        }
+      ],
+      "write_owner": "clawrouter-ops-runtime"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "event_log",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "request_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "trace_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "payload_hash",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "retention_until",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "legal_hold",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "instance_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "heartbeat_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "cpu_percent",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "memory_percent",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "disk_percent",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "network_in_bytes",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "network_out_bytes",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "active_connections",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "uptime_seconds",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "open_file_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "thread_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "payload",
+          "source": "explicit",
+          "type": "json"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "event_log",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "request_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "trace_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "payload_hash",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "retention_until",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "legal_hold",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ops",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "instance_id",
+            "heartbeat_at",
+            "id"
+          ],
+          "name": "idx_ops_gateway_heartbeat_instance_time",
+          "unique": false
+        }
+      ],
+      "lifecycle": {
+        "partition_by": "created_at_month"
+      },
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "operational_state",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ops_gateway_heartbeat",
+      "unique_constraints": [],
+      "write_owner": "clawrouter-ops-runtime"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "instance_code",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "deployment_mode",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "region",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "cell",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "version_name",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "host_name",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "ip_address_hash",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "ip_address_masked",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "node_name",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "pod_name",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "container_id_hash",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "desktop_device_hash",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "runtime_type",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "orchestrator",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "started_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "last_heartbeat_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "health_status",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "config_hash",
+          "source": "explicit",
+          "type": "string(128)"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ops",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "region",
+            "cell",
+            "health_status",
+            "last_heartbeat_at"
+          ],
+          "name": "idx_ops_gateway_instance_region_status",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "operational_state",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ops_gateway_instance",
+      "unique_constraints": [
+        {
+          "columns": [
+            "instance_code"
+          ],
+          "name": "uk_ops_gateway_instance_code"
+        }
+      ],
+      "write_owner": "clawrouter-ops-runtime"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "event_log",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "request_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "trace_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "payload_hash",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "retention_until",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "legal_hold",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "job_name",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "job_type",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "trigger_type",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "started_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "ended_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "duration_ms",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "execution_status",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "processed_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "success_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "failure_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "failure_reason",
+          "source": "explicit",
+          "type": "string(1024)"
+        },
+        {
+          "name": "payload",
+          "source": "explicit",
+          "type": "json"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "event_log",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "request_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "trace_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "payload_hash",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "retention_until",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "legal_hold",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ops",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "job_name",
+            "started_at",
+            "id"
+          ],
+          "name": "idx_ops_job_execution_name_started",
+          "unique": false
+        },
+        {
+          "columns": [
+            "execution_status",
+            "started_at",
+            "id"
+          ],
+          "name": "idx_ops_job_execution_status_started",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "status",
+            "job_type",
+            "job_name",
+            "started_at",
+            "id"
+          ],
+          "name": "idx_ops_job_execution_model_ranking_scope_started",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "operational_state",
+      "projection_policy": null,
+      "security": null,
+      "semantic_contracts": {
+        "model_ranking_refresh": {
+          "execution_status": {
+            "empty": 4,
+            "failed": 3,
+            "running": 1,
+            "skipped": 5,
+            "succeeded": 2
+          },
+          "job_name": "model_ranking_refresh",
+          "job_type": {
+            "code": 20,
+            "meaning": "model ranking refresh"
+          },
+          "payload_contract": {
+            "required_fields": [
+              "rankScope",
+              "snapshotDate",
+              "snapshotPeriod",
+              "windowStart",
+              "windowEnd",
+              "generatedCount",
+              "sourceCount",
+              "refreshIntervalSeconds",
+              "cacheMaxAgeSeconds",
+              "nextRefreshAt",
+              "status",
+              "attemptCount",
+              "retryCount",
+              "consecutiveFailureCount",
+              "alertRecommended",
+              "sourceTables"
+            ],
+            "source_tables": [
+              "ai_usage",
+              "ai_model",
+              "ai_model_rank_snapshot"
+            ]
+          },
+          "runtime_contract": {
+            "cache_invalidation": {
+              "invalidate_after_status": [
+                "succeeded",
+                "empty"
+              ]
+            },
+            "concurrency_lock": {
+              "overlap_behavior": "audit_skipped",
+              "scope": [
+                "worker_instance",
+                "tenant_id",
+                "organization_id",
+                "rank_scope"
+              ]
+            },
+            "delayed_alerting": {
+              "alert_after_consecutive_failures_default": 3
+            },
+            "retry": {
+              "max_retry_attempts_default": 1,
+              "max_retry_attempts_max": 5
+            },
+            "scheduler_owner": "sdkwork-clawrouter-standalone-gateway",
+            "startup_policy": {
+              "run_on_startup_default": true
+            },
+            "timeout": {
+              "default_millis": 300000
+            }
+          },
+          "trigger_types": {
+            "manual": 2,
+            "scheduled": 1
+          }
+        }
+      },
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ops_job_execution",
+      "unique_constraints": [],
+      "write_owner": "clawrouter-ops-runtime"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "projection",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "source_type",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "source_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "source_version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "rebuild_version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "metric_scope",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "metric_name",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "metric_period",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "period_start",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "period_end",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "dimension_key",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "dimension_value",
+          "source": "explicit",
+          "type": "string(256)"
+        },
+        {
+          "name": "metric_value",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "metric_unit",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "payload",
+          "source": "explicit",
+          "type": "json"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "projection",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "source_type",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "source_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "source_version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "rebuild_version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "projection",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ops",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "read_model",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ops_metric_snapshot",
+      "unique_constraints": [
+        {
+          "columns": [
+            "metric_scope",
+            "metric_name",
+            "metric_period",
+            "period_start",
+            "dimension_key",
+            "dimension_value"
+          ],
+          "name": "uk_ops_metric_snapshot"
+        }
+      ],
+      "write_owner": "clawrouter-ops-runtime"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "name": "id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "uuid",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "tenant_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "organization_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "user_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "data_scope",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "status",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "created_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "updated_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "version",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "deleted_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "deleted_by",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "metadata",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "app_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "message_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "delivery_channel",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "delivery_status",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "read_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "popup_seen_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "archived_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "delivered_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "failure_code",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "retry_count",
+          "source": "explicit",
+          "type": "int32"
+        }
+      ],
+      "common_columns": [],
+      "compliance_level": "L2",
+      "domain": "ops",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "app_id",
+            "read_at",
+            "created_at",
+            "id"
+          ],
+          "name": "idx_ops_notification_delivery_user_read",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "app_id",
+            "popup_seen_at",
+            "id"
+          ],
+          "name": "idx_ops_notification_delivery_popup_seen",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "user_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ops_notification_delivery",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "message_id",
+            "user_id",
+            "app_id",
+            "delivery_channel"
+          ],
+          "name": "uk_ops_notification_delivery_user_message_app"
+        }
+      ],
+      "write_owner": "clawrouter-ops-runtime"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "app_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "scope_type",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "message_code",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "message_type",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "title",
+          "source": "explicit",
+          "type": "string(200)"
+        },
+        {
+          "name": "summary",
+          "source": "explicit",
+          "type": "string(512)"
+        },
+        {
+          "name": "content",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "severity",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "priority",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "show_as_popup",
+          "source": "explicit",
+          "type": "bool"
+        },
+        {
+          "name": "action_url",
+          "source": "explicit",
+          "type": "string(1024)"
+        },
+        {
+          "name": "published_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "expire_at",
+          "source": "explicit",
+          "type": "instant"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ops",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "app_id",
+            "scope_type",
+            "status",
+            "published_at",
+            "id"
+          ],
+          "name": "idx_ops_notification_message_scope",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "show_as_popup",
+            "published_at",
+            "id"
+          ],
+          "name": "idx_ops_notification_message_popup",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "operational_state",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ops_notification_message",
+      "unique_constraints": [],
+      "write_owner": "clawrouter-ops-runtime"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "relation_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "message_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "app_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "recipient_type",
+          "source": "explicit",
+          "type": "enum_int32"
+        },
+        {
+          "name": "recipient_value",
+          "source": "explicit",
+          "type": "string(256)"
+        },
+        {
+          "name": "recipient_user_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "recipient_role_code",
+          "source": "explicit",
+          "type": "string(128)"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "relation_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ops",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "message_id",
+            "status",
+            "id"
+          ],
+          "name": "idx_ops_notification_recipient_message",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "recipient_type",
+            "recipient_user_id",
+            "status",
+            "id"
+          ],
+          "name": "idx_ops_notification_recipient_user",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "recipient_type",
+            "recipient_role_code",
+            "status",
+            "id"
+          ],
+          "name": "idx_ops_notification_recipient_role",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "relation_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ops_notification_recipient",
+      "unique_constraints": [],
+      "write_owner": "clawrouter-ops-runtime"
     }
   ]
 }

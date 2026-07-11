@@ -8,10 +8,18 @@ pub fn resolve_usage_settlement_worker_config(
     match resolve_usage_settlement_worker_config_result(runtime_toml) {
         Ok(config) => config,
         Err(error) => {
-            if DeploymentMode::from_env().is_production_like() {
-                panic!(
-                    "invalid usage settlement worker config in production-like deployment: {error}"
-                );
+            match DeploymentMode::from_env_or_runtime_toml(runtime_toml) {
+                Ok(mode) if mode.is_production_like() => {
+                    panic!(
+                        "invalid usage settlement worker config in production-like deployment: {error}"
+                    );
+                }
+                Err(lifecycle_error) => {
+                    panic!(
+                        "invalid deployment lifecycle: {lifecycle_error}; invalid usage settlement worker config: {error}"
+                    );
+                }
+                Ok(_) => {}
             }
             tracing::warn!(
                 %error,

@@ -13,8 +13,9 @@ use serde_json::{Map, Value};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
-    json_success_list_response, normalize_list_search_query, offset_page_info,
-    parse_offset_list_query, problem_from_wire_code, success_envelope,
+    json_created_response, json_success_list_response, no_content_response,
+    normalize_list_search_query, offset_page_info, parse_offset_list_query, problem_from_wire_code,
+    success_envelope,
 };
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
@@ -223,10 +224,9 @@ async fn create_provider_secret(
     };
 
     match state.store.create_provider_secret(command).await {
-        Ok(item) => Json(success_envelope(AdminProviderSecretItemEnvelope {
+        Ok(item) => json_created_response(None, AdminProviderSecretItemEnvelope {
             item: to_item_response(item),
-        }))
-        .into_response(),
+        }),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
             provider_secret_system_response("provider secret command store is unavailable", error)
@@ -284,10 +284,7 @@ async fn delete_provider_secret(
     };
 
     match state.store.delete_provider_secret(command).await {
-        Ok(true) => Json(success_envelope(AdminProviderSecretDeleteResponse {
-            deleted: true,
-        }))
-        .into_response(),
+        Ok(true) => no_content_response(None),
         Ok(false) => not_found_response("provider secret was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
@@ -883,6 +880,9 @@ mod tests {
     #[test]
     fn provider_secret_sdk_query_maps_to_normalized_filters() {
         let request = normalize_list_query(ProviderSecretListQuery {
+            page: None,
+            page_size: None,
+            q: None,
             provider_code: Some("OpenAI".to_owned()),
             status: Some("disabled".to_owned()),
         })

@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "sdkwork-clawrouter-app-gateway-traces-repository-sqlx",
+    "displayName": "SDKWork Claw Router App Gateway Traces Repository SQLx",
+    "version": "0.3.0",
+    "type": "rust-crate",
+    "root": "sdkwork-clawrouter/crates/sdkwork-clawrouter-app-gateway-traces-repository-sqlx",
+    "domain": "platform",
+    "capability": "app-gateway-traces",
+    "surface": "repository",
+    "status": "standardizing",
+    "languages": ["rust"],
+    "generated": false,
+    "private": true,
+    "manifests": ["Cargo.toml"]
+  },
+  "canonicalSpecs": [
+    { "file": "COMPONENT_SPEC.md", "path": "../../../../sdkwork-specs/COMPONENT_SPEC.md", "purpose": "Component ownership and discovery." },
+    { "file": "CODE_STYLE_SPEC.md", "path": "../../../../sdkwork-specs/CODE_STYLE_SPEC.md", "purpose": "Authored source boundaries." },
+    { "file": "NAMING_SPEC.md", "path": "../../../../sdkwork-specs/NAMING_SPEC.md", "purpose": "Repository crate naming." },
+    { "file": "RUST_CODE_SPEC.md", "path": "../../../../sdkwork-specs/RUST_CODE_SPEC.md", "purpose": "Rust repository layering." },
+    { "file": "DATABASE_SPEC.md", "path": "../../../../sdkwork-specs/DATABASE_SPEC.md", "purpose": "SQL, scope, and query contracts." },
+    { "file": "PAGINATION_SPEC.md", "path": "../../../../sdkwork-specs/PAGINATION_SPEC.md", "purpose": "Bounded read-model queries." },
+    { "file": "COMPOSABLE_ARCHITECTURE_SPEC.md", "path": "../../../../sdkwork-specs/COMPOSABLE_ARCHITECTURE_SPEC.md", "purpose": "Repository port composition." },
+    { "file": "TEST_SPEC.md", "path": "../../../../sdkwork-specs/TEST_SPEC.md", "purpose": "Dialect and isolation verification." }
+  ],
+  "contracts": {
+    "layerRole": "backend-repository",
+    "publicExports": ["."],
+    "providedPorts": [{ "name": "appGatewayTracesReadStore", "export": "." }],
+    "requiredPorts": [],
+    "runtimeEntrypoints": ["PostgresAppGatewayTracesReadStore::new", "SqliteAppGatewayTracesReadStore::new"],
+    "routeManifest": null,
+    "sdkClients": [],
+    "sdkDependencies": [],
+    "dependencyApiExports": [],
+    "dependencyApiSurfaces": [],
+    "events": [],
+    "configKeys": []
+  },
+  "integration": {
+    "authority": "The root migration manifest tracks application composition; Cargo remains dependency authority.",
+    "dependencyPolicy": "Consumers use package-root repository types and constructors only.",
+    "languagePolicy": "The crate contains authored Rust SQLx implementations for PostgreSQL and SQLite."
+  },
+  "verification": {
+    "commands": ["cargo test -p sdkwork-clawrouter-app-gateway-traces-repository-sqlx --test dialect_parity"]
+  }
+}

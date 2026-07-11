@@ -2,6 +2,7 @@ use sqlx::{Row, SqlitePool};
 
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::model_catalog_import::stable_uuid;
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::sql_admin_messaging::{
     status_label_sql, MESSAGING_AUDIT_TARGET_PROVIDER_ACCOUNT, MESSAGING_AUDIT_TARGET_ROUTE_RULE,
     MESSAGING_AUDIT_TARGET_SENDER_IDENTITY, MESSAGING_AUDIT_TARGET_SEND_REQUEST,
@@ -246,13 +247,14 @@ async fn create_provider_account(
         .await
         .map_err(store_error)?;
 
-        let result = sqlx::query(
+        let account_id = next_claw_runtime_id("integration_provider_account")?;
+        sqlx::query(
             r#"
             INSERT INTO integration_provider_account
                 (uuid, tenant_id, organization_id, status, provider_id, provider_code, account_code,
-                 account_name, auth_type, base_url, auth_config, secret_ref)
+                 account_name, auth_type, base_url, auth_config, secret_ref, id)
             VALUES
-                (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+                (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
             "#,
         )
         .bind(stable_uuid(
@@ -277,10 +279,11 @@ async fn create_provider_account(
             &serde_json::json!({ "authType": command.auth_type }),
         ))
         .bind(&command.secret_ref)
+        .bind(account_id)
         .execute(pool)
         .await
         .map_err(|error| write_error("failed to create messaging provider account", error))?;
-        result.last_insert_rowid()
+        account_id
     };
 
     if existing_provider_capability_id(
@@ -298,9 +301,9 @@ async fn create_provider_account(
             INSERT INTO messaging_provider_capability
                 (uuid, tenant_id, organization_id, status, provider_code, provider_account_id, channel,
                  delivery_purpose, capability_schema, supports_template_sync, supports_delivery_receipt,
-                 supports_test_send, supports_batch_send, supports_webhook, sandbox_supported)
+                 supports_test_send, supports_batch_send, supports_webhook, sandbox_supported, id)
             VALUES
-                (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
+                (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)
             "#,
         )
         .bind(stable_uuid(
@@ -332,6 +335,7 @@ async fn create_provider_account(
         .bind(json_bool(&command.capability_schema, "supportsBatchSend"))
         .bind(json_bool(&command.capability_schema, "supportsWebhook"))
         .bind(json_bool(&command.capability_schema, "sandboxSupported"))
+        .bind(next_claw_runtime_id("messaging_provider_capability")?)
         .execute(pool)
         .await
         .map_err(|error| write_error("failed to create messaging provider capability", error))?;
@@ -411,14 +415,15 @@ async fn create_sender_identity(
     {
         return Ok(mutation(id, "draft"));
     }
-    let result = sqlx::query(
+    let id = next_claw_runtime_id("messaging_sender_identity")?;
+    sqlx::query(
         r#"
         INSERT INTO messaging_sender_identity
             (uuid, tenant_id, organization_id, status, provider_account_id, provider_code, channel,
              identity_code, display_name, from_email, from_name, reply_to, domain_name, sign_name,
-             sender_id, country_code)
+             sender_id, country_code, id)
         VALUES
-            (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)
+            (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)
         "#,
     )
     .bind(stable_uuid(
@@ -445,10 +450,10 @@ async fn create_sender_identity(
     .bind(command.sign_name.as_deref())
     .bind(command.sender_id.as_deref())
     .bind(command.country_code.as_deref())
+    .bind(id)
     .execute(pool)
     .await
     .map_err(|error| write_error("failed to create messaging sender identity", error))?;
-    let id = result.last_insert_rowid();
     insert_audit_if_absent(
         pool,
         command.subject,
@@ -516,12 +521,13 @@ async fn create_template(
     if let Some(id) = existing_template_id(pool, command.subject, &command.template_code).await? {
         return Ok(mutation(id, "draft"));
     }
-    let template_result = sqlx::query(
+    let template_id = next_claw_runtime_id("messaging_template")?;
+    sqlx::query(
         r#"
         INSERT INTO messaging_template
-            (uuid, tenant_id, organization_id, status, template_code, scene_code, channel, delivery_purpose, category, template_name, publish_status)
+            (uuid, tenant_id, organization_id, status, template_code, scene_code, channel, delivery_purpose, category, template_name, publish_status, id)
         VALUES
-            (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, 'draft')
+            (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, 'draft', ?10)
         "#,
     )
     .bind(stable_uuid(
@@ -541,18 +547,19 @@ async fn create_template(
     .bind(&command.delivery_purpose)
     .bind(&command.category)
     .bind(&command.template_name)
+    .bind(template_id)
     .execute(pool)
     .await
     .map_err(|error| write_error("failed to create messaging template", error))?;
-    let template_id = template_result.last_insert_rowid();
     let content_hash = stable_uuid("messaging-template-content", &[&command.body_template]);
-    let version_result = sqlx::query(
+    let version_id = next_claw_runtime_id("messaging_template_version")?;
+    sqlx::query(
         r#"
         INSERT INTO messaging_template_version
             (uuid, tenant_id, organization_id, status, template_id, version_no, subject_template,
-             text_template, html_template, variable_schema, content_hash)
+             text_template, html_template, variable_schema, content_hash, id)
         VALUES
-            (?1, ?2, ?3, 1, ?4, 1, ?5, ?6, ?7, ?8, ?9)
+            (?1, ?2, ?3, 1, ?4, 1, ?5, ?6, ?7, ?8, ?9, ?10)
         "#,
     )
     .bind(stable_uuid(
@@ -579,16 +586,16 @@ async fn create_template(
     })
     .bind(json_text(&command.variable_schema))
     .bind(&content_hash)
+    .bind(version_id)
     .execute(pool)
     .await
     .map_err(|error| write_error("failed to create messaging template version", error))?;
-    let version_id = version_result.last_insert_rowid();
     sqlx::query(
         r#"
         INSERT INTO messaging_template_variant
-            (uuid, tenant_id, organization_id, status, template_version_id, channel, locale, content_format, body_template)
+            (uuid, tenant_id, organization_id, status, template_version_id, channel, locale, content_format, body_template, id)
         VALUES
-            (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7, ?8)
+            (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9)
         "#,
     )
     .bind(stable_uuid(
@@ -606,6 +613,7 @@ async fn create_template(
     .bind(command.locale.as_deref().unwrap_or("default"))
     .bind(command.content_format.as_deref().unwrap_or("text"))
     .bind(&command.body_template)
+    .bind(next_claw_runtime_id("messaging_template_variant")?)
     .execute(pool)
     .await
     .map_err(|error| write_error("failed to create messaging template variant", error))?;
@@ -743,13 +751,14 @@ async fn create_route_rule(
         return Ok(mutation(id, "active"));
     }
     let targets = validate_route_rule_targets(pool, &command).await?;
-    let result = sqlx::query(
+    let rule_id = next_claw_runtime_id("messaging_route_rule")?;
+    sqlx::query(
         r#"
         INSERT INTO messaging_route_rule
             (uuid, tenant_id, organization_id, status, rule_code, scene_code, channel, delivery_purpose, country_code,
-             locale, user_segment, priority, failover_policy)
+             locale, user_segment, priority, failover_policy, id)
         VALUES
-            (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
+            (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
         "#,
     )
     .bind(stable_uuid(
@@ -772,18 +781,18 @@ async fn create_route_rule(
     .bind(command.user_segment.as_deref().unwrap_or("*"))
     .bind(command.priority.unwrap_or(100))
     .bind(json_text(&command.failover_policy))
+    .bind(rule_id)
     .execute(pool)
     .await
     .map_err(|error| write_error("failed to create messaging route rule", error))?;
-    let rule_id = result.last_insert_rowid();
     for target in &targets {
         sqlx::query(
             r#"
             INSERT INTO messaging_route_rule_target
                 (uuid, tenant_id, organization_id, status, route_rule_id, provider_account_id,
-                 provider_code, sender_identity_id, template_binding_id, target_order, weight)
+                 provider_code, sender_identity_id, template_binding_id, target_order, weight, id)
             VALUES
-                (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+                (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
             "#,
         )
         .bind(stable_uuid(
@@ -803,6 +812,7 @@ async fn create_route_rule(
         .bind(target.template_binding_id)
         .bind(target.target_order)
         .bind(target.weight)
+        .bind(next_claw_runtime_id("messaging_route_rule_target")?)
         .execute(pool)
         .await
         .map_err(|error| write_error("failed to create messaging route rule target", error))?;
@@ -1079,15 +1089,16 @@ async fn send_template_like(
         "queued"
     };
     let variable_keys = template_variable_keys(variables);
-    let result = sqlx::query(
+    let send_request_id = next_claw_runtime_id("messaging_send_request")?;
+    sqlx::query(
         r#"
         INSERT INTO messaging_send_request
             (uuid, tenant_id, organization_id, request_id, payload_hash, request_no, idempotency_key,
              scene_code, channel, delivery_purpose, target_type, target_hash, target_masked,
              template_version_id, template_variant_id, resolved_route_rule_id, resolved_provider_account_id, resolved_sender_identity_id, render_hash,
-             request_payload_redacted, dry_run, delivery_status)
+             request_payload_redacted, dry_run, delivery_status, id)
         VALUES
-            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22)
+            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23)
         "#,
     )
     .bind(stable_uuid("message-request-row", &[&request_no]))
@@ -1122,20 +1133,21 @@ async fn send_template_like(
     })))
     .bind(is_dry_run)
     .bind(delivery_status)
+    .bind(send_request_id)
     .execute(pool)
     .await
     .map_err(|error| write_error("failed to create messaging test send request", error))?;
-    let send_request_id = result.last_insert_rowid();
     let provider_code = target.as_ref().map(|target| target.provider_code.clone());
     let mut send_attempt_id = None;
     if let (Some(target), "queued") = (target.as_ref(), delivery_status) {
-        let attempt_result = sqlx::query(
+        let attempt_id = next_claw_runtime_id("messaging_send_attempt")?;
+        sqlx::query(
             r#"
             INSERT INTO messaging_send_attempt
                 (uuid, tenant_id, organization_id, request_id, payload_hash, send_request_id, attempt_no,
-                 provider_code, provider_account_id, provider_status, attempted_at)
+                 provider_code, provider_account_id, provider_status, attempted_at, id)
             VALUES
-                (?1, ?2, ?3, ?4, ?5, ?6, 1, ?7, ?8, 'queued', CURRENT_TIMESTAMP)
+                (?1, ?2, ?3, ?4, ?5, ?6, 1, ?7, ?8, 'queued', CURRENT_TIMESTAMP, ?9)
             "#,
         )
         .bind(stable_uuid("message-attempt", &[&send_request_id.to_string(), "1"]))
@@ -1146,10 +1158,11 @@ async fn send_template_like(
         .bind(send_request_id)
         .bind(&target.provider_code)
         .bind(target.provider_account_id)
+        .bind(attempt_id)
         .execute(pool)
         .await
         .map_err(|error| write_error("failed to create messaging test send attempt", error))?;
-        send_attempt_id = Some(attempt_result.last_insert_rowid());
+        send_attempt_id = Some(attempt_id);
     }
     let event_provider_code = provider_code.as_deref().unwrap_or("unresolved");
     insert_delivery_event(
@@ -1270,13 +1283,14 @@ async fn create_suppression(
         return Ok(mutation(id, "active"));
     }
 
-    let result = sqlx::query(
+    let suppression_id = next_claw_runtime_id("messaging_suppression")?;
+    sqlx::query(
         r#"
         INSERT INTO messaging_suppression
             (uuid, tenant_id, organization_id, status, channel, target_hash, target_masked,
-             reason_code, scope_type, scope_id, starts_at, ends_at, source, note)
+             reason_code, scope_type, scope_id, starts_at, ends_at, source, note, id)
         VALUES
-            (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
+            (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
         "#,
     )
     .bind(stable_uuid(
@@ -1303,10 +1317,10 @@ async fn create_suppression(
     .bind(command.ends_at.as_deref())
     .bind(&command.source)
     .bind(command.note.as_deref())
+    .bind(suppression_id)
     .execute(pool)
     .await
     .map_err(|error| write_error("failed to create messaging suppression", error))?;
-    let suppression_id = result.last_insert_rowid();
 
     insert_audit_if_absent(
         pool,
@@ -1867,10 +1881,10 @@ async fn increment_rate_limit_bucket(
         INSERT INTO messaging_rate_limit_bucket
             (uuid, tenant_id, organization_id, status, scene_code, channel, target_hash,
              ip_hash, device_hash, window_start, window_seconds, send_count, verify_count,
-             reject_count, last_event_at)
+             reject_count, last_event_at, id)
         VALUES
             (?1, ?2, ?3, 1, ?4, ?5, ?6, '*', '*',
-             strftime('%Y-%m-%d %H:00:00', 'now'), 3600, ?7, 0, ?8, CURRENT_TIMESTAMP)
+             strftime('%Y-%m-%d %H:00:00', 'now'), 3600, ?7, 0, ?8, CURRENT_TIMESTAMP, ?9)
         "#,
     )
     .bind(stable_uuid(
@@ -1890,6 +1904,7 @@ async fn increment_rate_limit_bucket(
     .bind(target_hash)
     .bind(send_delta)
     .bind(reject_delta)
+    .bind(next_claw_runtime_id("messaging_rate_limit_bucket")?)
     .execute(pool)
     .await
     .map_err(|error| write_error("failed to create messaging rate-limit bucket", error))?;
@@ -1920,9 +1935,9 @@ async fn insert_delivery_event(
         INSERT INTO messaging_delivery_event
             (uuid, tenant_id, organization_id, request_id, payload_hash, send_request_id,
              send_attempt_id, provider_code, provider_event_id, provider_message_id,
-             event_type, event_at, payload_redacted)
+             event_type, event_at, payload_redacted, id)
         VALUES
-            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, NULL, ?10, CURRENT_TIMESTAMP, ?11)
+            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, NULL, ?10, CURRENT_TIMESTAMP, ?11, ?12)
         "#,
     )
     .bind(stable_uuid(
@@ -1939,6 +1954,7 @@ async fn insert_delivery_event(
     .bind(provider_event_id)
     .bind(event_type)
     .bind(json_text(payload_redacted))
+    .bind(next_claw_runtime_id("messaging_delivery_event")?)
     .execute(pool)
     .await
     .map_err(|error| write_error("failed to create messaging delivery event", error))?;
@@ -2346,16 +2362,16 @@ async fn insert_audit_if_absent(
     sqlx::query(
         r#"
         INSERT INTO ops_audit_log
-            (uuid, tenant_id, organization_id, request_id, operator_id, operator_type, action, target_type, target_id, target_uuid, created_at)
+            (uuid, tenant_id, organization_id, request_id, operator_id, operator_type, action, target_type, target_id, target_uuid, created_at, id)
         SELECT
-            ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, CURRENT_TIMESTAMP
+            ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, CURRENT_TIMESTAMP, ?11
         WHERE NOT EXISTS (
             SELECT 1
             FROM ops_audit_log
-            WHERE tenant_id = ?11
-              AND organization_id = ?12
-              AND request_id = ?13
-              AND action = ?14
+            WHERE tenant_id = ?12
+              AND organization_id = ?13
+              AND request_id = ?14
+              AND action = ?15
         )
         "#,
     )
@@ -2377,6 +2393,7 @@ async fn insert_audit_if_absent(
     .bind(target_type)
     .bind(target_id)
     .bind(target_uuid)
+    .bind(next_claw_runtime_id("ops_audit_log")?)
     .bind(subject.tenant_id)
     .bind(subject.organization_id)
     .bind(request_id)

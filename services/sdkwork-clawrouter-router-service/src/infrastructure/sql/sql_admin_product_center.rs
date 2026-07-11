@@ -20,13 +20,6 @@ pub(crate) fn sql_error_message(error: &sqlx::Error) -> String {
     error.to_string()
 }
 
-pub(crate) fn is_missing_table_error(error: &sqlx::Error) -> bool {
-    let message = error.to_string();
-    message.contains("no such table")
-        || message.contains("does not exist")
-        || message.contains("UndefinedTable")
-}
-
 pub(crate) fn is_unique_constraint_error(error: &sqlx::Error) -> bool {
     let message = error.to_string();
     message.contains("UNIQUE constraint failed")

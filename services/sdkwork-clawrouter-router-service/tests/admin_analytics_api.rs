@@ -66,7 +66,7 @@ async fn admin_analytics_route_rejects_pagination_alias_and_invalid_ranking_size
         .clone()
         .oneshot(signed_request(
             "GET",
-            "/backend/v3/api/system/analytics/admin/overview?limit=12",
+            "/backend/v3/api/system/analytics/admin/overview?page_size=12",
         ))
         .await
         .unwrap();

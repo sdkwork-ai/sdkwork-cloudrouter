@@ -33,6 +33,9 @@ const TARGETS = [
     ],
     routeManifestPath:
       "sdks/_route-manifests/app-api/sdkwork-routes-clawrouter-app-api.route-manifest.json",
+    projectionRouteManifestPaths: [
+      "sdks/_route-manifests/app-api/sdkwork-router-app-api.route-manifest.json",
+    ],
   },
   {
     surface: "backend-api",
@@ -49,6 +52,9 @@ const TARGETS = [
     ],
     routeManifestPath:
       "sdks/_route-manifests/backend-api/sdkwork-routes-clawrouter-backend-api.route-manifest.json",
+    projectionRouteManifestPaths: [
+      "sdks/_route-manifests/backend-api/sdkwork-router-backend-api.route-manifest.json",
+    ],
   },
   {
     surface: "open-api",
@@ -65,8 +71,7 @@ const TARGETS = [
     ],
     routeManifestPath:
       "sdks/_route-manifests/open-api/sdkwork-routes-clawrouter-open-api.route-manifest.json",
-    routeManifestPaths: [
-      "sdks/_route-manifests/open-api/sdkwork-routes-clawrouter-open-api.route-manifest.json",
+    projectionRouteManifestPaths: [
       "sdks/_route-manifests/open-api/sdkwork-router-open-api.route-manifest.json",
     ],
   },
@@ -187,12 +192,15 @@ function stampOpenApiExtensions(document, target) {
       if (!HTTP_METHODS.has(method) || !operation || typeof operation !== "object") {
         continue;
       }
+      const owner = operation["x-sdkwork-owner"] ?? "sdkwork-clawrouter";
+      const apiAuthority = operation["x-sdkwork-api-authority"] ?? target.apiAuthority;
+      const sourceRouteCrate = operation["x-sdkwork-source-route-crate"] ?? target.packageName;
       const extensions = {
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": target.apiAuthority,
+        "x-sdkwork-owner": owner,
+        "x-sdkwork-api-authority": apiAuthority,
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": target.apiSurface,
-        "x-sdkwork-source-route-crate": target.packageName,
+        "x-sdkwork-source-route-crate": sourceRouteCrate,
       };
       for (const [key, value] of Object.entries(extensions)) {
         if (operation[key] !== value) {
@@ -258,8 +266,12 @@ function buildRouteManifest(document, target) {
           name: null,
         },
         ownership: {
-          owner: "sdkwork-clawrouter",
-          apiAuthority: target.apiAuthority,
+          owner: operation["x-sdkwork-owner"] ?? "sdkwork-clawrouter",
+          apiAuthority: operation["x-sdkwork-api-authority"] ?? target.apiAuthority,
+        },
+        source: {
+          routeCrate: operation["x-sdkwork-source-route-crate"] ?? target.packageName,
+          openApiAuthority: target.openApiPaths[0],
         },
         requestContext: "WebRequestContext",
         apiSurface: target.apiSurface,
@@ -287,6 +299,57 @@ function buildRouteManifest(document, target) {
   };
 }
 
+function routeKey(method, routePath) {
+  return `${String(method ?? "").toUpperCase()}\0${String(routePath ?? "")}`;
+}
+
+function projectionRoutePatchIndex(routeManifest) {
+  const index = new Map();
+  for (const route of routeManifest.routes) {
+    index.set(routeKey(route.method, route.path), route);
+  }
+  return index;
+}
+
+function patchProjectionRouteManifest(existingManifest, routeManifest) {
+  const projected = JSON.parse(JSON.stringify(existingManifest));
+  const routeIndex = projectionRoutePatchIndex(routeManifest);
+  let changed = 0;
+
+  if (!Array.isArray(projected.routes)) {
+    projected.routes = [];
+    changed += 1;
+  }
+
+  for (const route of projected.routes) {
+    if (!route || typeof route !== "object") {
+      continue;
+    }
+    const canonical = routeIndex.get(routeKey(route.method, route.path));
+    if (!canonical) {
+      continue;
+    }
+    for (const key of ["operationId", "tags", "auth", "handler", "ownership", "source", "requestContext", "apiSurface"]) {
+      const expected = canonical[key];
+      if (expected === undefined) {
+        continue;
+      }
+      const actualJson = JSON.stringify(route[key] ?? null);
+      const expectedJson = JSON.stringify(expected);
+      if (actualJson === expectedJson) {
+        continue;
+      }
+      route[key] = JSON.parse(expectedJson);
+      changed += 1;
+    }
+  }
+
+  return {
+    changed,
+    content: `${JSON.stringify(projected, null, 2)}\n`,
+  };
+}
+
 async function processTarget(target, mode) {
   const primaryOpenApiPath = path.join(workspaceRoot, target.openApiPaths[0]);
   const document = JSON.parse(await readFile(primaryOpenApiPath, "utf8"));
@@ -301,17 +364,25 @@ async function processTarget(target, mode) {
       ? target.openApiPaths.filter((relativePath) => relativePath.startsWith("apis/"))
       : target.openApiPaths;
 
-  const routeManifestPaths = target.routeManifestPaths ?? [target.routeManifestPath];
   const outputs = [
     ...stampedOpenApiPaths.map((relativePath) => ({
       relativePath,
       content: openApiJson,
     })),
-    ...routeManifestPaths.map((relativePath) => ({
-      relativePath,
+    {
+      relativePath: target.routeManifestPath,
       content: manifestJson,
-    })),
+    },
   ];
+  for (const relativePath of target.projectionRouteManifestPaths ?? []) {
+    const absolutePath = path.join(workspaceRoot, relativePath);
+    const existingManifest = JSON.parse(await readFile(absolutePath, "utf8"));
+    const patched = patchProjectionRouteManifest(existingManifest, routeManifest);
+    outputs.push({
+      relativePath,
+      content: patched.content,
+    });
+  }
 
   const messages = [];
   for (const output of outputs) {

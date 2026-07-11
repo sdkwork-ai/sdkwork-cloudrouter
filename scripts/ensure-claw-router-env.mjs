@@ -13,13 +13,13 @@ const DEFAULT_WORKSPACE_ROOT = path.resolve(__dirname, '..');
 function printHelp() {
   console.log(`Usage: node scripts/ensure-claw-router-env.mjs [options]
 
-Ensures SDKWork-standard env profiles with generated SDKWORK_ACCESS_TOKEN values.
+Ensures SDKWork-standard env profiles; only dev creates a local bootstrap token overlay.
 
 Lifecycles:
   dev           apps/sdkwork-clawrouter-pc/.env.development
   build         apps/sdkwork-clawrouter-pc/.env.production
   start         .env.release and apps/sdkwork-clawrouter-pc/.env.production
-  all           development, production, and release profiles
+  all           token-free production and release profiles
 
 Options:
   --lifecycle <dev|build|start|all>   Default: dev

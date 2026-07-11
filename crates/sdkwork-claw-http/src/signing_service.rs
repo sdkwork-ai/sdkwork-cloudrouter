@@ -426,6 +426,8 @@ impl SessionTokenSigningService {
 mod tests {
     use super::*;
 
+    const TEST_MASTER_ENCRYPTION_KEY: [u8; 32] = [0x42; 32];
+
     #[tokio::test]
     async fn test_hmac_fallback_signing() {
         let config = SigningServiceConfig {
@@ -449,11 +451,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_per_tenant_ed25519_signing() {
-        let master_key = b"master-encryption-key-32bytes!!";
         let config = SigningServiceConfig {
             default_algorithm: SigningAlgorithm::EdDsa,
             fallback_secret: Some("fallback-secret".to_string()),
-            master_encryption_key: Some(master_key.to_vec()),
+            master_encryption_key: Some(TEST_MASTER_ENCRYPTION_KEY.to_vec()),
             rotation_period_days: 90,
             per_tenant_asymmetric_keys: true,
         };
@@ -483,11 +484,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_key_rotation() {
-        let master_key = b"master-encryption-key-for-rotation!!";
         let config = SigningServiceConfig {
             default_algorithm: SigningAlgorithm::Es256,
             fallback_secret: None,
-            master_encryption_key: Some(master_key.to_vec()),
+            master_encryption_key: Some(TEST_MASTER_ENCRYPTION_KEY.to_vec()),
             rotation_period_days: 90,
             per_tenant_asymmetric_keys: true,
         };

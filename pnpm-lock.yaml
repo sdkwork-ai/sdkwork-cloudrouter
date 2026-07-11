@@ -331,7 +331,7 @@ importers:
     dependencies:
       '@sdkwork/assets-core':
         specifier: workspace:*
-        version: link:../../../../packages/sdkwork-assets-core
+        version: link:../../../sdkwork-assets-common/packages/sdkwork-assets-core
       '@sdkwork/utils':
         specifier: workspace:*
         version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
@@ -433,11 +433,11 @@ importers:
         specifier: ^4.1.2
         version: 4.1.5(@types/node@25.9.4)(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.22.4)
 
-  ../sdkwork-assets/packages/sdkwork-assets-core:
+  ../sdkwork-assets/apps/sdkwork-assets-common/packages/sdkwork-assets-core:
     dependencies:
       '@sdkwork/utils':
         specifier: workspace:*
-        version: link:../../../sdkwork-utils/packages/sdkwork-utils-typescript
+        version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
     devDependencies:
       typescript:
         specifier: 'catalog:'

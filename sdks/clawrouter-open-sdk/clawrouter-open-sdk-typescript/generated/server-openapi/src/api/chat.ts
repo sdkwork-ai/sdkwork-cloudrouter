@@ -22,7 +22,7 @@ export class ChatCompletionsMessagesApi {
 /** List stored chat completion messages */
   async list(completionId: string, params?: ChatCompletionsMessagesListParams): Promise<OpenAiChatCompletionMessageList> {
     const query = buildQueryString([
-      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -53,7 +53,7 @@ export class ChatCompletionsApi {
 /** List stored chat completions */
   async list(params?: ChatCompletionsListParams): Promise<OpenAiChatCompletionList> {
     const query = buildQueryString([
-      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },

@@ -19,12 +19,12 @@ use crate::ports::{
 };
 use sdkwork_models_contract_service::{
     AdminAiModelItem, AdminAiModelListPage, AdminModelCatalogSyncItem, AdminModelCommandFuture,
-    AdminModelMappingRuleItem, AdminModelVendorItem, CreateAdminAiModelCommand,
-    CreateAdminModelMappingCommand, CreateAdminModelVendorCommand, DeleteAdminAiModelCommand,
-    DeleteAdminModelMappingCommand, DomainResult, ListAdminAiModelsQuery,
-    ListAdminModelMappingsQuery, ListAdminModelVendorsQuery, ModelCatalogAdminStore,
-    ResolveAdminModelMappingQuery, ResolveAdminModelMappingResult, SyncAdminModelCatalogCommand,
-    UpdateAdminAiModelCommand, UpdateAdminModelMappingCommand,
+    AdminModelMappingListPage, AdminModelMappingRuleItem, AdminModelVendorItem,
+    CreateAdminAiModelCommand, CreateAdminModelMappingCommand, CreateAdminModelVendorCommand,
+    DeleteAdminAiModelCommand, DeleteAdminModelMappingCommand, DomainResult,
+    ListAdminAiModelsQuery, ListAdminModelMappingsQuery, ListAdminModelVendorsQuery,
+    ModelCatalogAdminStore, ResolveAdminModelMappingQuery, ResolveAdminModelMappingResult,
+    SyncAdminModelCatalogCommand, UpdateAdminAiModelCommand, UpdateAdminModelMappingCommand,
 };
 
 use super::{
@@ -282,7 +282,7 @@ impl ModelCatalogAdminStore for AiRoutingCacheInvalidatingAdminModelStore {
     fn list_model_mappings<'a>(
         &'a self,
         query: ListAdminModelMappingsQuery,
-    ) -> AdminModelCommandFuture<'a, Vec<AdminModelMappingRuleItem>> {
+    ) -> AdminModelCommandFuture<'a, AdminModelMappingListPage> {
         self.inner.list_model_mappings(query)
     }
 

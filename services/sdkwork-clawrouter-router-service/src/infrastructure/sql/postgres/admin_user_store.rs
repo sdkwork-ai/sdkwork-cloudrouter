@@ -347,14 +347,14 @@ async fn list_users(pool: &PgPool, query: ListAdminUsersQuery) -> DomainResult<A
             COALESCE(u.phone, '') AS mobile,
             COALESCE(NULLIF(m.membership_kind, ''), 'user') AS role_code,
             COALESCE(NULLIF(m.membership_kind, ''), 'standard') AS group_code,
-            COALESCE(a.available_amount, '0')::text AS balance,
+            '0' AS balance,
             CASE LOWER(COALESCE(u.status, ''))
                 WHEN 'active' THEN 1
                 WHEN 'banned' THEN 2
                 WHEN 'disabled' THEN 3
                 WHEN 'inactive' THEN 4
             END AS user_status,
-            COALESCE(le.last_active, u.updated_at, u.created_at)::text AS last_active,
+            COALESCE(u.last_login_at, u.updated_at, u.created_at)::text AS last_active,
             COALESCE(k.last_used_at::text, '') AS last_used,
             COALESCE(u.created_at::text, '') AS created_at,
             COALESCE(u.updated_at::text, '') AS updated_at,
@@ -375,54 +375,29 @@ async fn list_users(pool: &PgPool, query: ListAdminUsersQuery) -> DomainResult<A
         ) m
           ON m.tenant_id = u.tenant_id
          AND m.user_id = u.id
-        LEFT JOIN LATERAL (
-            SELECT account.id, account.available_amount
-            FROM commerce_account account
-            WHERE account.owner_user_id = u.id
-              AND account.tenant_id = $2
-              AND account.organization_id = $3
-              AND account.asset_type = $4
-              AND account.currency_code = $5
-              AND account.status = 'active'
-            ORDER BY account.updated_at DESC NULLS LAST, account.id DESC
-            LIMIT 1
-        ) a ON true
-        LEFT JOIN (
-            SELECT user_id, MAX(COALESCE(occurred_at, created_at)) AS last_active
-            FROM iam_user_login_event
-            WHERE tenant_id = $6
-              AND organization_id = $7
-            GROUP BY user_id
-        ) le ON le.user_id = u.id::bigint
         LEFT JOIN (
             SELECT user_id, MAX(last_used_at) AS last_used_at
             FROM iam_gateway_api_key
-            WHERE tenant_id = $8
-              AND organization_id = $9
+            WHERE tenant_id = $2
+              AND organization_id = $3
               AND deleted_at IS NULL
             GROUP BY user_id
         ) k ON k.user_id = u.id::bigint
-        WHERE u.tenant_id = $10
+        WHERE u.tenant_id = $4
           AND LOWER(COALESCE(u.status, '')) IN ('active', 'banned', 'disabled', 'inactive')
           AND (
-              $11 IS NULL
-              OR LOWER(COALESCE(u.email, '')) LIKE $12
-              OR LOWER(COALESCE(u.username, '')) LIKE $13
-              OR LOWER(COALESCE(u.display_name, '')) LIKE $14
-              OR LOWER(COALESCE(u.phone, '')) LIKE $15
-              OR u.id::text LIKE $16
+              $5 IS NULL
+              OR LOWER(COALESCE(u.email, '')) LIKE $6
+              OR LOWER(COALESCE(u.username, '')) LIKE $7
+              OR LOWER(COALESCE(u.display_name, '')) LIKE $8
+              OR LOWER(COALESCE(u.phone, '')) LIKE $9
+              OR u.id::text LIKE $10
           )
         ORDER BY u.created_at DESC NULLS LAST, u.id::bigint DESC
-        LIMIT $17 OFFSET $18
+        LIMIT $11 OFFSET $12
         "#,
     )
     .bind(query.subject.organization_id.to_string())
-    .bind(query.subject.tenant_id.to_string())
-    .bind(query.subject.organization_id.to_string())
-    .bind(CommerceAccountAssetType::Cash.as_str())
-    .bind(CASH_CURRENCY_CODE)
-    .bind(query.subject.tenant_id)
-    .bind(query.subject.organization_id)
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.subject.tenant_id.to_string())
@@ -1121,14 +1096,14 @@ async fn load_user_by_id(
             COALESCE(u.phone, '') AS mobile,
             COALESCE(NULLIF(m.membership_kind, ''), 'user') AS role_code,
             COALESCE(NULLIF(m.membership_kind, ''), 'standard') AS group_code,
-            COALESCE(a.available_amount, '0')::text AS balance,
+            '0' AS balance,
             CASE LOWER(COALESCE(u.status, ''))
                 WHEN 'active' THEN 1
                 WHEN 'banned' THEN 2
                 WHEN 'disabled' THEN 3
                 WHEN 'inactive' THEN 4
             END AS user_status,
-            COALESCE(le.last_active, u.updated_at, u.created_at)::text AS last_active,
+            COALESCE(u.last_login_at, u.updated_at, u.created_at)::text AS last_active,
             COALESCE(k.last_used_at::text, '') AS last_used,
             COALESCE(u.created_at::text, '') AS created_at,
             COALESCE(u.updated_at::text, '') AS updated_at
@@ -1148,46 +1123,21 @@ async fn load_user_by_id(
         ) m
           ON m.tenant_id = u.tenant_id
          AND m.user_id = u.id
-        LEFT JOIN LATERAL (
-            SELECT account.id, account.available_amount
-            FROM commerce_account account
-            WHERE account.owner_user_id = u.id
-              AND account.tenant_id = $2
-              AND account.organization_id = $3
-              AND account.asset_type = $4
-              AND account.currency_code = $5
-              AND account.status = 'active'
-            ORDER BY account.updated_at DESC NULLS LAST, account.id DESC
-            LIMIT 1
-        ) a ON true
-        LEFT JOIN (
-            SELECT user_id, MAX(COALESCE(occurred_at, created_at)) AS last_active
-            FROM iam_user_login_event
-            WHERE tenant_id = $6
-              AND organization_id = $7
-            GROUP BY user_id
-        ) le ON le.user_id = u.id::bigint
         LEFT JOIN (
             SELECT user_id, MAX(last_used_at) AS last_used_at
             FROM iam_gateway_api_key
-            WHERE tenant_id = $8
-              AND organization_id = $9
+            WHERE tenant_id = $2
+              AND organization_id = $3
               AND deleted_at IS NULL
             GROUP BY user_id
         ) k ON k.user_id = u.id::bigint
-        WHERE u.id = $10
-          AND u.tenant_id = $11
+        WHERE u.id = $4
+          AND u.tenant_id = $5
           AND LOWER(COALESCE(u.status, '')) IN ('active', 'banned', 'disabled', 'inactive')
         LIMIT 1
         "#,
     )
     .bind(organization_id.to_string())
-    .bind(tenant_id.to_string())
-    .bind(organization_id.to_string())
-    .bind(CommerceAccountAssetType::Cash.as_str())
-    .bind(CASH_CURRENCY_CODE)
-    .bind(tenant_id)
-    .bind(organization_id)
     .bind(tenant_id)
     .bind(organization_id)
     .bind(user_id.to_string())

@@ -1,6 +1,7 @@
 use sqlx::{Row, SqlitePool};
 
 use crate::domain::{DomainError, DomainResult};
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::ports::{
     AcknowledgeAppNotificationCommand, AppNotificationFuture, AppNotificationItem,
     AppNotificationItems, AppNotificationQuery, AppNotificationStore,
@@ -166,9 +167,9 @@ LIMIT 1
 
 const MARK_POPUP_SEEN: &str = r#"
 INSERT INTO ops_notification_delivery
-    (uuid, tenant_id, organization_id, user_id, status, app_id, message_id, delivery_channel, delivery_status, popup_seen_at, delivered_at, created_at, updated_at)
+    (uuid, tenant_id, organization_id, user_id, status, app_id, message_id, delivery_channel, delivery_status, popup_seen_at, delivered_at, created_at, updated_at, id)
 VALUES
-    (?1, ?2, ?3, ?4, 1, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    (?1, ?2, ?3, ?4, 1, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?9)
 ON CONFLICT(tenant_id, organization_id, message_id, user_id, app_id, delivery_channel) DO UPDATE SET
     popup_seen_at = COALESCE(ops_notification_delivery.popup_seen_at, CURRENT_TIMESTAMP),
     delivered_at = COALESCE(ops_notification_delivery.delivered_at, CURRENT_TIMESTAMP),
@@ -180,9 +181,9 @@ ON CONFLICT(tenant_id, organization_id, message_id, user_id, app_id, delivery_ch
 
 const ACKNOWLEDGE: &str = r#"
 INSERT INTO ops_notification_delivery
-    (uuid, tenant_id, organization_id, user_id, status, app_id, message_id, delivery_channel, delivery_status, read_at, popup_seen_at, delivered_at, created_at, updated_at)
+    (uuid, tenant_id, organization_id, user_id, status, app_id, message_id, delivery_channel, delivery_status, read_at, popup_seen_at, delivered_at, created_at, updated_at, id)
 VALUES
-    (?1, ?2, ?3, ?4, 1, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    (?1, ?2, ?3, ?4, 1, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?9)
 ON CONFLICT(tenant_id, organization_id, message_id, user_id, app_id, delivery_channel) DO UPDATE SET
     read_at = COALESCE(ops_notification_delivery.read_at, CURRENT_TIMESTAMP),
     popup_seen_at = COALESCE(ops_notification_delivery.popup_seen_at, CURRENT_TIMESTAMP),
@@ -369,6 +370,7 @@ impl AppNotificationStore for SqliteAppNotificationStore {
                 )
                 .await?;
             self.ensure_delivery_upsert_index().await?;
+            let delivery_id = next_claw_runtime_id("ops_notification_delivery")?;
             sqlx::query(MARK_POPUP_SEEN)
                 .bind(delivery_uuid(
                     "popup",
@@ -383,6 +385,7 @@ impl AppNotificationStore for SqliteAppNotificationStore {
                 .bind(message_id)
                 .bind(DELIVERY_CHANNEL_IN_APP)
                 .bind(DELIVERY_STATUS_DELIVERED)
+                .bind(delivery_id)
                 .execute(&self.pool)
                 .await
                 .map_err(sql_error)?;
@@ -403,6 +406,7 @@ impl AppNotificationStore for SqliteAppNotificationStore {
                 )
                 .await?;
             self.ensure_delivery_upsert_index().await?;
+            let delivery_id = next_claw_runtime_id("ops_notification_delivery")?;
             sqlx::query(ACKNOWLEDGE)
                 .bind(delivery_uuid(
                     "ack",
@@ -417,6 +421,7 @@ impl AppNotificationStore for SqliteAppNotificationStore {
                 .bind(message_id)
                 .bind(DELIVERY_CHANNEL_IN_APP)
                 .bind(DELIVERY_STATUS_DELIVERED)
+                .bind(delivery_id)
                 .execute(&self.pool)
                 .await
                 .map_err(sql_error)?;

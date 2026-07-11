@@ -185,28 +185,28 @@ test('root package exposes pnpm application entrypoints', () => {
     readFileSync(path.join(workspaceRoot, 'package.json'), 'utf8'),
   );
 
-  const canonicalBrowser = 'node scripts/claw-router-dev.mjs --target browser --deployment-profile standalone --service-layout unified-process --database postgres --dev-env-file .env.postgres';
-  const canonicalBrowserSqlite = 'node scripts/claw-router-dev.mjs --target browser --deployment-profile standalone --service-layout unified-process --database sqlite';
-  const canonicalDesktop = 'node scripts/claw-router-dev.mjs --target desktop --deployment-profile standalone --service-layout unified-process --database postgres --dev-env-file .env.postgres';
-  const canonicalDesktopSqlite = 'node scripts/claw-router-dev.mjs --target desktop --deployment-profile standalone --service-layout unified-process --database sqlite';
-  const canonicalPlanSqlite = 'node scripts/claw-router-dev.mjs --target plan --deployment-profile standalone --service-layout unified-process --database sqlite';
-  const canonicalPlanPostgres = 'node scripts/claw-router-dev.mjs --target plan --deployment-profile standalone --service-layout unified-process --database postgres --dev-env-file .env.postgres';
+  const canonicalBrowser = 'node scripts/claw-router-dev.mjs --target browser --deployment-profile standalone --database postgres --dev-env-file .env.postgres';
+  const canonicalBrowserSqlite = 'node scripts/claw-router-dev.mjs --target browser --deployment-profile standalone --database sqlite';
+  const canonicalDesktop = 'node scripts/claw-router-dev.mjs --target desktop --deployment-profile standalone --database postgres --dev-env-file .env.postgres';
+  const canonicalDesktopSqlite = 'node scripts/claw-router-dev.mjs --target desktop --deployment-profile standalone --database sqlite';
+  const canonicalPlanSqlite = 'node scripts/claw-router-dev.mjs --target plan --deployment-profile standalone --database sqlite';
+  const canonicalPlanPostgres = 'node scripts/claw-router-dev.mjs --target plan --deployment-profile standalone --database postgres --dev-env-file .env.postgres';
 
   assert.equal(rootPackage.private, true);
   assert.equal(rootPackage.packageManager, 'pnpm@10.33.0');
   assert.equal(rootPackage.scripts.dev, 'pnpm install:deps:ensure && pnpm dev:browser');
-  assert.equal(rootPackage.scripts['dev:browser'], 'pnpm dev:browser:postgres:unified-process:standalone');
-  assert.equal(rootPackage.scripts['dev:browser:postgres'], 'pnpm dev:browser:postgres:unified-process:standalone');
+  assert.equal(rootPackage.scripts['dev:browser'], 'pnpm dev:browser:postgres:standalone');
+  assert.equal(rootPackage.scripts['dev:browser:postgres'], 'pnpm dev:browser:postgres:standalone');
   assert.equal(rootPackage.scripts['dev:browser:sqlite'], canonicalBrowserSqlite);
-  assert.equal(rootPackage.scripts['dev:browser:postgres:unified-process:standalone'], canonicalBrowser);
+  assert.equal(rootPackage.scripts['dev:browser:postgres:standalone'], canonicalBrowser);
   assert.equal(
     rootPackage.scripts.test,
     'pnpm topology:validate && pnpm test:topology && node scripts/run-claw-router-application.test.mjs',
   );
   assert.match(rootPackage.scripts['topology:validate'], /sdkwork-topology\.mjs validate/u);
   assert.match(rootPackage.scripts['test:topology'], /verify-claw-router-topology\.test\.mjs/u);
-  assert.match(rootPackage.scripts['dev:browser:postgres:unified-process:standalone'], /claw-router-dev\.mjs/u);
-  assert.match(rootPackage.scripts['dev:browser:postgres:split-services:cloud'], /--service-layout split-services/u);
+  assert.match(rootPackage.scripts['dev:browser:postgres:standalone'], /claw-router-dev\.mjs/u);
+  assert.match(rootPackage.scripts['dev:browser:postgres:cloud'], /--deployment-profile cloud/u);
   assert.match(rootPackage.scripts['gateway:matrix'], /sdkwork-topology\.mjs print-matrix/u);
   assert.equal(
     rootPackage.scripts.build,
@@ -276,16 +276,16 @@ test('root package exposes pnpm application entrypoints', () => {
     rootPackage.scripts['db:refresh-catalog'],
     'node scripts/manage-claw-router-database.mjs refresh-catalog',
   );
-  assert.equal(rootPackage.scripts['dev:desktop'], 'pnpm dev:desktop:postgres:unified-process:standalone');
-  assert.equal(rootPackage.scripts['dev:desktop:postgres'], 'pnpm dev:desktop:postgres:unified-process:standalone');
-  assert.equal(rootPackage.scripts['dev:desktop:postgres:unified-process:standalone'], canonicalDesktop);
+  assert.equal(rootPackage.scripts['dev:desktop'], 'pnpm dev:desktop:postgres:standalone');
+  assert.equal(rootPackage.scripts['dev:desktop:postgres'], 'pnpm dev:desktop:postgres:standalone');
+  assert.equal(rootPackage.scripts['dev:desktop:postgres:standalone'], canonicalDesktop);
   assert.equal(rootPackage.scripts['dev:desktop:sqlite'], canonicalDesktopSqlite);
   assert.equal(rootPackage.scripts['dev:service'], undefined);
   assert.equal(rootPackage.scripts['dev:service:sqlite'], undefined);
   assert.equal(rootPackage.scripts['dev:portal'], undefined);
-  assert.equal(rootPackage.scripts['dev:server'], 'pnpm dev:browser:postgres:unified-process:standalone');
+  assert.equal(rootPackage.scripts['dev:server'], 'pnpm dev:browser:postgres:standalone');
   assert.equal(rootPackage.scripts['dev:server:sqlite'], canonicalBrowserSqlite);
-  assert.equal(rootPackage.scripts['dev:server:postgres'], 'pnpm dev:browser:postgres:unified-process:standalone');
+  assert.equal(rootPackage.scripts['dev:server:postgres'], 'pnpm dev:browser:postgres:standalone');
   assert.equal(rootPackage.scripts['topology:plan:server:sqlite'], canonicalPlanSqlite);
   assert.equal(rootPackage.scripts['topology:plan:server:postgres'], canonicalPlanPostgres);
   assert.equal(
@@ -424,11 +424,10 @@ test('pnpm dev delegates to canonical browser topology command', () => {
   const rootPackage = readWorkspaceJson('package.json');
 
   assert.equal(rootPackage.scripts.dev, 'pnpm install:deps:ensure && pnpm dev:browser');
-  assert.equal(rootPackage.scripts['dev:browser'], 'pnpm dev:browser:postgres:unified-process:standalone');
-  assert.match(rootPackage.scripts['dev:browser:postgres:unified-process:standalone'], /--target browser/u);
-  assert.match(rootPackage.scripts['dev:browser:postgres:unified-process:standalone'], /--deployment-profile standalone/u);
-  assert.match(rootPackage.scripts['dev:browser:postgres:unified-process:standalone'], /--service-layout unified-process/u);
-  assert.doesNotMatch(rootPackage.scripts['dev:browser:postgres:unified-process:standalone'], /client/u);
+  assert.equal(rootPackage.scripts['dev:browser'], 'pnpm dev:browser:postgres:standalone');
+  assert.match(rootPackage.scripts['dev:browser:postgres:standalone'], /--target browser/u);
+  assert.match(rootPackage.scripts['dev:browser:postgres:standalone'], /--deployment-profile standalone/u);
+  assert.doesNotMatch(rootPackage.scripts['dev:browser:postgres:standalone'], /client/u);
   assert.doesNotMatch(rootPackage.scripts['dev:browser:sqlite'], /client/u);
 });
 
@@ -7523,16 +7522,27 @@ test('release environment documentation stays aligned with the executable contra
   }
 });
 
-test('environment and deployment specs document Claw Router runtime config standards', () => {
+test('global and application environment contracts document Claw Router runtime config standards', () => {
   const specsRoot = resolveClawRouterBusinessSpecsRoot(workspaceRoot);
   const environmentSpec = readFileSync(path.join(specsRoot, 'ENVIRONMENT_SPEC.md'), 'utf8');
   const deploymentSpec = readFileSync(path.join(specsRoot, 'DEPLOYMENT_SPEC.md'), 'utf8');
+  const applicationEnvStandard = readFileSync(
+    path.join(workspaceRoot, 'specs', 'application-env-standard.md'),
+    'utf8',
+  );
+
+  for (const key of [
+    'SDKWORK_CLAW_ROUTER_CONFIG_PROFILE',
+    'SDKWORK_CLAW_ROUTER_ENVIRONMENT',
+    'SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE',
+    'SDKWORK_CLAW_ROUTER_RUNTIME_TARGET',
+  ]) {
+    assert.ok(applicationEnvStandard.includes(key));
+  }
 
   for (const content of [environmentSpec, deploymentSpec]) {
     assert.ok(content.includes('SdkWork Claw Router'));
     assert.ok(content.includes('SDKWORK_CLAW_CONFIG_FILE'));
-    assert.ok(content.includes('SDKWORK_CLAW_DEPLOYMENT_PROFILE'));
-    assert.ok(content.includes('SDKWORK_CLAW_RUNTIME_TARGET'));
     assert.ok(content.includes('SDKWORK_<APP>_DATABASE_ENGINE'));
     assert.ok(content.includes('SDKWORK_<APP>_DATABASE_SSL_MODE'));
     assert.ok(content.includes('SDKWORK_CLAW_DATABASE_URL'));

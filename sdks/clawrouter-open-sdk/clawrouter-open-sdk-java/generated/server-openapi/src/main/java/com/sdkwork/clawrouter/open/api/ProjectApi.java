@@ -16,7 +16,7 @@ public class ProjectApi {
     /** List project group roles */
     public OpenAiRoleAssignmentList listGroupsRoles(String projectId, String groupId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -40,7 +40,7 @@ public class ProjectApi {
     /** List project roles */
     public OpenAiRoleList listRoles(String projectId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -64,7 +64,7 @@ public class ProjectApi {
     /** List project user roles */
     public OpenAiRoleAssignmentList listUsersRoles(String projectId, String userId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)

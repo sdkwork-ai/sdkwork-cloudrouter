@@ -1,0 +1,44 @@
+diff --git a/crates/sdkwork-models-catalog-service/src/api/admin_model_catalog.rs b/crates/sdkwork-models-catalog-service/src/api/admin_model_catalog.rs
+index 0000000..0000000 100644
+--- a/crates/sdkwork-models-catalog-service/src/api/admin_model_catalog.rs
++++ b/crates/sdkwork-models-catalog-service/src/api/admin_model_catalog.rs
+@@
+-        limit: None,
++        page_size: None,
+diff --git a/crates/sdkwork-models-catalog-service/src/api/app_models.rs b/crates/sdkwork-models-catalog-service/src/api/app_models.rs
+index 0000000..0000000 100644
+--- a/crates/sdkwork-models-catalog-service/src/api/app_models.rs
++++ b/crates/sdkwork-models-catalog-service/src/api/app_models.rs
+@@
+-        limit: Some(page_size),
++        page_size: Some(page_size),
+diff --git a/crates/sdkwork-models-catalog-service/src/api/admin_model_command.rs b/crates/sdkwork-models-catalog-service/src/api/admin_model_command.rs
+index 0000000..0000000 100644
+--- a/crates/sdkwork-models-catalog-service/src/api/admin_model_command.rs
++++ b/crates/sdkwork-models-catalog-service/src/api/admin_model_command.rs
+@@
+-        limit: Some(page_size),
++        page_size: Some(page_size),
+@@
+-        limit: Some(page_size),
++        page_size: Some(page_size),
+diff --git a/crates/sdkwork-models-catalog-service/src/api/model_rankings.rs b/crates/sdkwork-models-catalog-service/src/api/model_rankings.rs
+index 0000000..0000000 100644
+--- a/crates/sdkwork-models-catalog-service/src/api/model_rankings.rs
++++ b/crates/sdkwork-models-catalog-service/src/api/model_rankings.rs
+@@
+-    let page_size = query.page_size;
++    let page_size = query.limit;
+@@
+-                limit: Some(Value::String("50".to_owned())),
++                page_size: Some(Value::String("50".to_owned())),
+@@
+-                limit: Some(Value::String("not-an-integer".to_owned())),
++                page_size: Some(Value::String("not-an-integer".to_owned())),
+diff --git a/crates/sdkwork-models-catalog-service/src/application/model_catalog_query.rs b/crates/sdkwork-models-catalog-service/src/application/model_catalog_query.rs
+index 0000000..0000000 100644
+--- a/crates/sdkwork-models-catalog-service/src/application/model_catalog_query.rs
++++ b/crates/sdkwork-models-catalog-service/src/application/model_catalog_query.rs
+@@
+-            .limit
++            .page_size

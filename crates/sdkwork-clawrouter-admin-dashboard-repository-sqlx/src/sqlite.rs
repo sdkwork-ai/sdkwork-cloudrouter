@@ -1,6 +1,6 @@
 use sqlx::{Row, SqlitePool};
 
-use crate::error::{RepositoryError, RepositoryResult, store_error};
+use crate::error::{store_error, RepositoryError, RepositoryResult};
 use crate::modality;
 use crate::types::{
     AdminDashboardQuery, AdminDashboardReadFuture, AdminDashboardReadStore,

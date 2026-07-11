@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import fs, { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
@@ -637,6 +637,31 @@ test("development mode injects bootstrap access token while production build doe
   assert.equal(productionConfig.define?.["process.env.SDKWORK_ACCESS_TOKEN"], undefined);
 });
 
+test("production Vite config never probes a bootstrap token overlay", async () => {
+  const originalExistsSync = fs.existsSync;
+  const productionBootstrapPath = path.resolve(
+    import.meta.dirname,
+    ".env.production.bootstrap.local",
+  );
+  let productionBootstrapProbeDetected = false;
+
+  fs.existsSync = (candidate) => {
+    if (path.resolve(String(candidate)) === productionBootstrapPath) {
+      productionBootstrapProbeDetected = true;
+      return false;
+    }
+    return originalExistsSync(candidate);
+  };
+
+  try {
+    await resolvePortalViteConfig("production", "build");
+  } finally {
+    fs.existsSync = originalExistsSync;
+  }
+
+  assert.equal(productionBootstrapProbeDetected, false);
+});
+
 test("portal runtime env script never exposes bootstrap access token", () => {
   const script = buildPortalRuntimeEnvScript({
     PORTAL_PUBLIC_API_BASE_URL: "/v1",
@@ -934,7 +959,7 @@ test("portal runtime env keeps appbase backend SDK base URL independent from cla
   assert.match(envExample, /PORTAL_PUBLIC_APPBASE_BACKEND_API_BASE_URL/);
   assert.match(envExample, /PORTAL_PUBLIC_APPBASE_BACKEND_API_BASE_URL=""/);
   assert.match(releaseEnvExample, /PORTAL_PUBLIC_APPBASE_BACKEND_API_BASE_URL=""/);
-  assert.match(releaseEnvExample, /SDKWORK_ACCESS_TOKEN=/);
+  assert.doesNotMatch(releaseEnvExample, /SDKWORK_ACCESS_TOKEN/u);
   assert.doesNotMatch(envExample, /PORTAL_PUBLIC_APPBASE_BACKEND_API_BASE_URL="\/backend\/v3\/api"/);
   assert.doesNotMatch(releaseEnvExample, /PORTAL_PUBLIC_APPBASE_BACKEND_API_BASE_URL="\/backend\/v3\/api"/);
   assert.match(startProductionSource, /PORTAL_PUBLIC_APPBASE_BACKEND_API_BASE_URL/);

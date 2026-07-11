@@ -1,9 +1,9 @@
 {
-  "name": "sdkwork-clawrouter-backend-sdk-generated-typescript",
+  "name": "clawrouter-backend-sdk-generated-typescript",
   "version": "0.1.0",
   "private": true,
   "sdkworkRole": "transport",
-  "description": "Generator-owned TypeScript transport SDK for sdkwork-clawrouter-backend-sdk.",
+  "description": "Generator-owned TypeScript transport SDK for clawrouter-backend-sdk.",
   "author": "SDKWork Team",
   "license": "MIT",
   "type": "module",

@@ -1,6 +1,7 @@
 use sqlx::{Row, Sqlite, SqlitePool, Transaction};
 
 use crate::domain::{DomainError, DomainResult};
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     SettingsCommandFuture, SettingsData, SettingsNotifications, SettingsReadFuture, SettingsStore,
@@ -31,9 +32,9 @@ LIMIT 1
 
 const UPSERT_USER_PREFERENCE: &str = r#"
 INSERT INTO iam_user_preference
-    (uuid, tenant_id, organization_id, user_id, owner_type, owner_id, data_scope, status, created_at, updated_at, version, metadata, language, timezone, notification_preferences)
+    (uuid, tenant_id, organization_id, user_id, owner_type, owner_id, data_scope, status, created_at, updated_at, version, metadata, language, timezone, notification_preferences, id)
 VALUES
-    (?1, ?2, ?3, ?4, 1, ?4, 1, 1, ?5, ?5, 0, '{}', ?6, ?7, ?8)
+    (?1, ?2, ?3, ?4, 1, ?4, 1, 1, ?5, ?5, 0, '{}', ?6, ?7, ?8, ?9)
 ON CONFLICT(tenant_id, organization_id, user_id) DO UPDATE SET
     language = excluded.language,
     timezone = excluded.timezone,
@@ -47,9 +48,9 @@ ON CONFLICT(tenant_id, organization_id, user_id) DO UPDATE SET
 
 const UPSERT_WEBHOOK_ENDPOINT: &str = r#"
 INSERT INTO integration_webhook_endpoint
-    (uuid, tenant_id, organization_id, user_id, owner_type, owner_id, data_scope, status, created_at, updated_at, version, metadata, endpoint_code, name, target_url, event_types, signing_alg, retry_policy, failure_count)
+    (uuid, tenant_id, organization_id, user_id, owner_type, owner_id, data_scope, status, created_at, updated_at, version, metadata, endpoint_code, name, target_url, event_types, signing_alg, retry_policy, failure_count, id)
 VALUES
-    (?1, ?2, ?3, ?4, 1, ?4, 1, 1, ?5, ?5, 0, ?6, ?7, 'Console Settings Webhook', ?8, ?9, 'hmac-sha256', ?10, 0)
+    (?1, ?2, ?3, ?4, 1, ?4, 1, 1, ?5, ?5, 0, ?6, ?7, 'Console Settings Webhook', ?8, ?9, 'hmac-sha256', ?10, 0, ?11)
 ON CONFLICT(tenant_id, organization_id, endpoint_code) DO UPDATE SET
     user_id = excluded.user_id,
     owner_id = excluded.owner_id,
@@ -138,6 +139,7 @@ async fn upsert_user_preference(
         .bind(&command.settings.language)
         .bind(&command.settings.timezone)
         .bind(notifications_json(&command.settings.notifications)?)
+        .bind(next_claw_runtime_id("iam_user_preference")?)
         .execute(&mut **tx)
         .await
         .map_err(|error| store_error("failed to upsert user preference", error))?;
@@ -159,6 +161,7 @@ async fn upsert_webhook_endpoint(
         .bind(&command.settings.webhook_url)
         .bind(webhook_event_types_json(&command.settings.notifications)?)
         .bind(webhook_retry_policy_json()?)
+        .bind(next_claw_runtime_id("integration_webhook_endpoint")?)
         .execute(&mut **tx)
         .await
         .map_err(|error| store_error("failed to upsert webhook endpoint", error))?;

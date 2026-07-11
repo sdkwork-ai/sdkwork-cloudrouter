@@ -3,23 +3,23 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::infrastructure::sql::commerce_bootstrap::{
-    commerce_database_indexes, commerce_database_tables, commerce_experience_seed_manifest,
-    commerce_initial_migration_sql, commerce_initial_migration_sqlite,
-    commerce_recharge_package_seeds, commerce_recharge_settings_seeds,
+    commerce_database_indexes, commerce_database_tables, commerce_initial_migration_sql,
+    commerce_initial_migration_sqlite, commerce_recharge_package_seeds,
+    commerce_recharge_settings_seeds,
 };
-use sdkwork_claw_config::deployment::{DeploymentProfile, resolve_deployment_runtime};
+use sdkwork_claw_config::deployment::{resolve_deployment_runtime, DeploymentProfile};
 use sdkwork_contract_service::CommerceServiceError;
 use sdkwork_iam_bootstrap::{
-    DEFAULT_BOOTSTRAP_ADMIN_DISPLAY_NAME, DEFAULT_BOOTSTRAP_ADMIN_EMAIL,
-    DEFAULT_BOOTSTRAP_ADMIN_USER_ID, DEFAULT_BOOTSTRAP_ADMIN_USERNAME, DEFAULT_IAM_ORGANIZATION_ID,
-    DEFAULT_IAM_TENANT_ID, iam_baseline_postgres_sql, iam_rbac_federation_postgres_sql,
-    import_postgres_default_iam_seed, import_sqlite_default_iam_seed,
-    postgres_default_iam_seed_complete, sqlite_default_iam_seed_complete,
+    iam_baseline_postgres_sql, iam_rbac_federation_postgres_sql, import_postgres_default_iam_seed,
+    import_sqlite_default_iam_seed, postgres_default_iam_seed_complete,
+    sqlite_default_iam_seed_complete, DEFAULT_BOOTSTRAP_ADMIN_DISPLAY_NAME,
+    DEFAULT_BOOTSTRAP_ADMIN_EMAIL, DEFAULT_BOOTSTRAP_ADMIN_USERNAME,
+    DEFAULT_BOOTSTRAP_ADMIN_USER_ID, DEFAULT_IAM_ORGANIZATION_ID, DEFAULT_IAM_TENANT_ID,
 };
 use sdkwork_iam_directory_repository_sqlx::iam_database_tables;
 use sdkwork_models::ModelCatalog;
@@ -38,13 +38,13 @@ use crate::infrastructure::sql::ai_routing_seed::{
     sqlite_ai_routing_seed_complete,
 };
 use crate::infrastructure::sql::model_catalog_import::{
-    CatalogScopeCounts, DEFAULT_CATALOG_REFRESH_SOURCE, catalog_ai_resource_projections,
-    catalog_api_endpoint_projections, catalog_modality_api_endpoint_projections,
-    catalog_modality_projections, catalog_model_api_endpoint_projections,
-    catalog_model_modality_projections, catalog_scope_counts, catalog_scope_vendor_codes,
-    catalog_vendor_api_endpoint_projections, catalog_vendor_modality_projections,
-    catalog_vendor_records, catalog_with_selected_vendors, load_catalog_root_with_pin,
-    model_catalog_key, pricing_catalog_key,
+    catalog_ai_resource_projections, catalog_api_endpoint_projections,
+    catalog_modality_api_endpoint_projections, catalog_modality_projections,
+    catalog_model_api_endpoint_projections, catalog_model_modality_projections,
+    catalog_scope_counts, catalog_scope_vendor_codes, catalog_vendor_api_endpoint_projections,
+    catalog_vendor_modality_projections, catalog_vendor_records, catalog_with_selected_vendors,
+    load_catalog_root_with_pin, model_catalog_key, pricing_catalog_key, CatalogScopeCounts,
+    DEFAULT_CATALOG_REFRESH_SOURCE,
 };
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::sql_admin_product_center::{
@@ -59,12 +59,6 @@ const CLAWROUTER_LEGACY_PROJECTION_SQL: &str = include_str!(
 );
 const GATEWAY_ROUTING_DICTIONARY_SQL: &str = include_str!(
     "../../../../../database/ddl/baseline/postgres/0003_gateway_routing_dictionary.sql"
-);
-const CLAWROUTER_RUNTIME_SCHEMA_REPAIRS_POSTGRES_SQL: &str = include_str!(
-    "../../../../../database/ddl/baseline/postgres/0005_clawrouter_runtime_schema_repairs.sql"
-);
-const CLAWROUTER_RUNTIME_SCHEMA_REPAIRS_SQLITE_SQL: &str = include_str!(
-    "../../../../../database/ddl/baseline/sqlite/0005_clawrouter_runtime_schema_repairs.sql"
 );
 const BUNDLED_MODELS_CATALOG_MANIFEST: &str =
     include_str!("../../../../../data/sdkwork-models/sdkwork-models.json");
@@ -128,29 +122,6 @@ static APPBASE_COMMERCE_SCHEMA_POSTGRES_TABLE_COLUMNS: OnceLock<
     Vec<(String, Vec<SchemaColumnDefinition>)>,
 > = OnceLock::new();
 static APPBASE_IAM_OAUTH_SCHEMA_INDEX_NAMES: OnceLock<BTreeSet<String>> = OnceLock::new();
-
-const APPBASE_COMMERCE_LEGACY_NOT_NULL_COLUMN_REPAIRS: &[(&str, &str, &str)] = &[
-    (
-        "commerce_product_spu",
-        "sales_status",
-        r#"ALTER TABLE "commerce_product_spu" ALTER COLUMN "sales_status" DROP NOT NULL"#,
-    ),
-    (
-        "commerce_product_sku",
-        "sales_status",
-        r#"ALTER TABLE "commerce_product_sku" ALTER COLUMN "sales_status" DROP NOT NULL"#,
-    ),
-    (
-        "commerce_product_sku",
-        "delivery_mode",
-        r#"ALTER TABLE "commerce_product_sku" ALTER COLUMN "delivery_mode" DROP NOT NULL"#,
-    ),
-    (
-        "commerce_payment_method",
-        "provider",
-        r#"ALTER TABLE "commerce_payment_method" ALTER COLUMN "provider" DROP NOT NULL"#,
-    ),
-];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DatabaseInstallOptions {
@@ -1011,17 +982,11 @@ impl DatabaseInstaller {
                 if product_database_iam_seed_enabled() {
                     import_sqlite_default_iam_subject_seed(pool).await?;
                 }
-                if compose_sibling_commerce_module() {
-                    import_sqlite_commerce_experience_seed(pool).await?;
-                }
             }
             InstallerBackend::Postgres(pool) => {
                 import_postgres_bundled_ai_routing_seed(pool).await?;
                 if product_database_iam_seed_enabled() {
                     import_postgres_default_iam_subject_seed(pool).await?;
-                }
-                if compose_sibling_commerce_module() {
-                    import_postgres_commerce_experience_seed(pool).await?;
                 }
             }
         }
@@ -1224,7 +1189,6 @@ impl DatabaseInstaller {
                     apply_sqlite_clawrouter_legacy_projection_schema(pool).await?;
                     sqlite_changed = true;
                 }
-                sqlite_changed |= apply_sqlite_clawrouter_runtime_schema_repairs(pool).await?;
                 if !COMPOSE_SDKWORK_MODELS_CATALOG_MODULE
                     && !sqlite_gateway_routing_dictionary_schema_tables_exist(pool).await?
                 {
@@ -1243,7 +1207,6 @@ impl DatabaseInstaller {
                         apply_postgres_appbase_commerce_schema(pool).await?;
                         changed = true;
                     }
-                    changed |= repair_postgres_appbase_commerce_legacy_constraints(pool).await?;
                 }
                 if standalone_iam_bootstrap_enabled() {
                     if !postgres_appbase_iam_foundation_schema_tables_exist(pool).await? {
@@ -1270,7 +1233,6 @@ impl DatabaseInstaller {
                     apply_postgres_clawrouter_legacy_projection_schema(pool).await?;
                     changed = true;
                 }
-                changed |= apply_postgres_clawrouter_runtime_schema_repairs(pool).await?;
                 if !COMPOSE_SDKWORK_MODELS_CATALOG_MODULE
                     && !postgres_gateway_routing_dictionary_schema_tables_exist(pool).await?
                 {
@@ -2112,9 +2074,6 @@ async fn sqlite_status(
     {
         return Ok(InstallationStatus::UpgradeRequired);
     }
-    if compose_sibling_commerce_module() && !sqlite_commerce_experience_seed_complete(pool).await? {
-        return Ok(InstallationStatus::UpgradeRequired);
-    }
     Ok(InstallationStatus::Installed)
 }
 
@@ -2180,7 +2139,6 @@ async fn prepare_sqlite_schema_with_catalog_version(
         apply_sqlite_appbase_iam_oauth_schema(pool).await?;
     }
     apply_sqlite_clawrouter_legacy_projection_schema(pool).await?;
-    apply_sqlite_clawrouter_runtime_schema_repairs(pool).await?;
     record_sqlite_migration_completed(
         pool,
         "schema",
@@ -2325,11 +2283,6 @@ async fn postgres_status(
     {
         return Ok(InstallationStatus::UpgradeRequired);
     }
-    if compose_sibling_commerce_module()
-        && !postgres_commerce_experience_seed_complete(pool).await?
-    {
-        return Ok(InstallationStatus::UpgradeRequired);
-    }
     Ok(InstallationStatus::Installed)
 }
 
@@ -2425,7 +2378,6 @@ async fn prepare_postgres_schema_with_catalog_version(
         apply_postgres_appbase_iam_oauth_schema(pool).await?;
     }
     apply_postgres_clawrouter_legacy_projection_schema(pool).await?;
-    apply_postgres_clawrouter_runtime_schema_repairs(pool).await?;
     record_postgres_migration_completed(
         pool,
         "schema",
@@ -2474,7 +2426,6 @@ async fn install_sqlite(
     import_sqlite_bundled_ai_routing_seed(pool).await?;
     import_sqlite_default_iam_subject_seed(pool).await?;
     if compose_sibling_commerce_module() {
-        import_sqlite_commerce_experience_seed(pool).await?;
         ensure_sqlite_bootstrap_admin_recharge_catalog(pool).await?;
     }
     let bootstrap_admin =
@@ -2521,7 +2472,6 @@ async fn install_postgres(
     import_postgres_bundled_ai_routing_seed(pool).await?;
     import_postgres_default_iam_subject_seed(pool).await?;
     if compose_sibling_commerce_module() {
-        import_postgres_commerce_experience_seed(pool).await?;
         ensure_postgres_bootstrap_admin_recharge_catalog(pool).await?;
     }
     let bootstrap_admin =
@@ -2636,42 +2586,6 @@ async fn repair_sqlite_installation(
         import_sqlite_default_iam_subject_seed(pool).await?;
     }
     if compose_sibling_commerce_module() {
-        let commerce_payload = commerce_experience_seed_manifest().payload_json;
-        let commerce_integrity =
-            crate::infrastructure::sql::membership_seed_compat::sqlite_commerce_experience_seed_integrity_report(
-                pool,
-            )
-            .await?;
-        let commerce_payload_current = sqlite_seed_migration_payload_current(
-            pool,
-            "commerce-experience",
-            CURRENT_SCHEMA_VERSION,
-            commerce_payload.as_str(),
-        )
-        .await?;
-        if !commerce_payload_current {
-            import_sqlite_commerce_experience_seed(pool).await?;
-        } else if !commerce_integrity.complete {
-            record_sqlite_migration_started(
-                pool,
-                "commerce-experience",
-                CURRENT_SCHEMA_VERSION,
-                commerce_payload.as_str(),
-            )
-            .await?;
-            crate::infrastructure::sql::membership_seed_compat::repair_sqlite_commerce_experience_seed_from_report(
-                pool,
-                &commerce_integrity,
-            )
-            .await?;
-            record_sqlite_migration_completed(
-                pool,
-                "commerce-experience",
-                CURRENT_SCHEMA_VERSION,
-                commerce_payload.as_str(),
-            )
-            .await?;
-        }
         ensure_sqlite_bootstrap_admin_recharge_catalog(pool).await?;
     }
     let bootstrap_admin =
@@ -2720,7 +2634,6 @@ async fn repair_postgres_installation(
         {
             apply_postgres_appbase_commerce_schema(pool).await?;
         }
-        repair_postgres_appbase_commerce_legacy_constraints(pool).await?;
         if !postgres_sdkwork_models_catalog_module_schema_tables_exist(pool).await?
             || !postgres_sdkwork_models_catalog_module_schema_indexes_exist(pool).await?
         {
@@ -2789,9 +2702,6 @@ async fn repair_postgres_installation(
         import_postgres_default_iam_subject_seed(pool).await?;
     }
     if compose_sibling_commerce_module() {
-        if !postgres_commerce_experience_seed_complete(pool).await? {
-            import_postgres_commerce_experience_seed(pool).await?;
-        }
         ensure_postgres_bootstrap_admin_recharge_catalog(pool).await?;
     }
     let bootstrap_admin =
@@ -2856,56 +2766,6 @@ async fn import_postgres_default_iam_subject_seed(
     import_postgres_default_iam_seed(pool)
         .await
         .map_err(DatabaseInstallError::Database)
-}
-
-async fn import_sqlite_commerce_experience_seed(
-    pool: &SqlitePool,
-) -> Result<(), DatabaseInstallError> {
-    let payload = commerce_experience_seed_manifest().payload_json;
-    record_sqlite_migration_started(
-        pool,
-        "commerce-experience",
-        CURRENT_SCHEMA_VERSION,
-        payload.as_str(),
-    )
-    .await?;
-    crate::infrastructure::sql::membership_seed_compat::upsert_sqlite_commerce_experience_seed(
-        pool,
-    )
-    .await?;
-    record_sqlite_migration_completed(
-        pool,
-        "commerce-experience",
-        CURRENT_SCHEMA_VERSION,
-        payload.as_str(),
-    )
-    .await?;
-    Ok(())
-}
-
-async fn import_postgres_commerce_experience_seed(
-    pool: &PgPool,
-) -> Result<(), DatabaseInstallError> {
-    let payload = commerce_experience_seed_manifest().payload_json;
-    record_postgres_migration_started(
-        pool,
-        "commerce-experience",
-        CURRENT_SCHEMA_VERSION,
-        payload.as_str(),
-    )
-    .await?;
-    crate::infrastructure::sql::membership_seed_compat::upsert_postgres_commerce_experience_seed(
-        pool,
-    )
-    .await?;
-    record_postgres_migration_completed(
-        pool,
-        "commerce-experience",
-        CURRENT_SCHEMA_VERSION,
-        payload.as_str(),
-    )
-    .await?;
-    Ok(())
 }
 
 async fn ensure_sqlite_bootstrap_admin_recharge_catalog(
@@ -3177,7 +3037,7 @@ async fn upsert_postgres_bootstrap_admin_recharge_settings(
             INSERT INTO commerce_exchange_rule
                 (id, tenant_id, organization_id, rule_no, source_asset_type, target_asset_type, rate, status, remark, request_no, idempotency_key, created_at, updated_at)
             VALUES
-                ($1, $2, $3, $4, $5, $6, $7, 'active', $8, $9, $10, $11, $12)
+                ($1, $2, $3, $4, $5, $6, $7, 'active', $8, $9, $10, $11::timestamptz, $12::timestamptz)
             ON CONFLICT(id) DO UPDATE SET
                 rule_no = excluded.rule_no,
                 rate = excluded.rate,
@@ -3227,7 +3087,7 @@ async fn upsert_sqlite_bootstrap_admin_recharge_packages(
     let now = current_utc_timestamp_string();
     let mut sort_weight = 1_i64;
     let package_seeds = commerce_recharge_package_seeds();
-    let cny_spu_sales_status = if package_seeds.iter().any(|package| {
+    let cny_spu_status = if package_seeds.iter().any(|package| {
         bootstrap_recharge_group_key(package.currency_code) == "cny"
             && package.status.eq_ignore_ascii_case("active")
     }) {
@@ -3235,7 +3095,7 @@ async fn upsert_sqlite_bootstrap_admin_recharge_packages(
     } else {
         "inactive"
     };
-    let non_cny_spu_sales_status = if package_seeds.iter().any(|package| {
+    let non_cny_spu_status = if package_seeds.iter().any(|package| {
         bootstrap_recharge_group_key(package.currency_code) == "non-cny"
             && package.status.eq_ignore_ascii_case("active")
     }) {
@@ -3269,10 +3129,10 @@ async fn upsert_sqlite_bootstrap_admin_recharge_packages(
         } else {
             "Bootstrap admin recharge catalog (Non-CNY)"
         };
-        let spu_sales_status = if group_key == "cny" {
-            cny_spu_sales_status
+        let spu_status = if group_key == "cny" {
+            cny_spu_status
         } else {
-            non_cny_spu_sales_status
+            non_cny_spu_status
         };
         let spec_json = serde_json::json!({
             "kind": "points_recharge_package",
@@ -3310,7 +3170,7 @@ async fn upsert_sqlite_bootstrap_admin_recharge_packages(
         .bind(spu_title)
         .bind("Bootstrap admin recharge catalog")
         .bind("Bootstrap admin recharge package")
-        .bind(spu_sales_status)
+        .bind(spu_status)
         .bind(&now)
         .bind(&now)
         .execute(pool)
@@ -3428,7 +3288,7 @@ async fn upsert_postgres_bootstrap_admin_recharge_packages(
     let now = current_utc_timestamp_string();
     let mut sort_weight = 1_i64;
     let package_seeds = commerce_recharge_package_seeds();
-    let cny_spu_sales_status = if package_seeds.iter().any(|package| {
+    let cny_spu_status = if package_seeds.iter().any(|package| {
         bootstrap_recharge_group_key(package.currency_code) == "cny"
             && package.status.eq_ignore_ascii_case("active")
     }) {
@@ -3436,7 +3296,7 @@ async fn upsert_postgres_bootstrap_admin_recharge_packages(
     } else {
         "inactive"
     };
-    let non_cny_spu_sales_status = if package_seeds.iter().any(|package| {
+    let non_cny_spu_status = if package_seeds.iter().any(|package| {
         bootstrap_recharge_group_key(package.currency_code) == "non-cny"
             && package.status.eq_ignore_ascii_case("active")
     }) {
@@ -3470,10 +3330,10 @@ async fn upsert_postgres_bootstrap_admin_recharge_packages(
         } else {
             "Bootstrap admin recharge catalog (Non-CNY)"
         };
-        let spu_sales_status = if group_key == "cny" {
-            cny_spu_sales_status
+        let spu_status = if group_key == "cny" {
+            cny_spu_status
         } else {
-            non_cny_spu_sales_status
+            non_cny_spu_status
         };
         let spec_json = serde_json::json!({
             "kind": "points_recharge_package",
@@ -3490,7 +3350,7 @@ async fn upsert_postgres_bootstrap_admin_recharge_packages(
             INSERT INTO commerce_product_spu
                 (id, tenant_id, organization_id, spu_no, title, subtitle, description, product_type, status, visible_surfaces, created_at, updated_at)
             VALUES
-                ($1, $2, $3, $4, $5, $6, $7, 'points_recharge', $8, '["app","console","admin"]', $9, $10)
+                ($1, $2, $3, $4, $5, $6, $7, 'points_recharge', $8, '["app","console","admin"]', $9::timestamptz, $10::timestamptz)
             ON CONFLICT(id) DO UPDATE SET
                 tenant_id = excluded.tenant_id,
                 organization_id = excluded.organization_id,
@@ -3511,7 +3371,7 @@ async fn upsert_postgres_bootstrap_admin_recharge_packages(
         .bind(spu_title)
         .bind("Bootstrap admin recharge catalog")
         .bind("Bootstrap admin recharge package")
-        .bind(spu_sales_status)
+        .bind(spu_status)
         .bind(&now)
         .bind(&now)
         .execute(pool)
@@ -3522,7 +3382,7 @@ async fn upsert_postgres_bootstrap_admin_recharge_packages(
             INSERT INTO commerce_product_spu_category
                 (id, tenant_id, organization_id, spu_id, category_id, primary_flag, sort_order, status, created_at, updated_at)
             VALUES
-                ($1, $2, $3, $4, 'commerce-recharge', 1, 0, 'active', $5, $6)
+                ($1, $2, $3, $4, 'commerce-recharge', TRUE, 0, 'active', $5::timestamptz, $6::timestamptz)
             ON CONFLICT(id) DO UPDATE SET
                 organization_id = excluded.organization_id,
                 primary_flag = excluded.primary_flag,
@@ -3545,7 +3405,7 @@ async fn upsert_postgres_bootstrap_admin_recharge_packages(
             INSERT INTO commerce_product_sku
                 (id, tenant_id, organization_id, spu_id, sku_no, name, title, price_amount, original_price_amount, currency_code, fulfillment_type, inventory_tracking, status, spec_json, created_at, updated_at)
             VALUES
-                ($1, $2, $3, $4, $5, $6, $7, $8, NULL, $9, 'points_credit', 'untracked', $10, $11, $12, $13)
+                ($1, $2, $3, $4, $5, $6, $7, $8, NULL, $9, 'points_credit', 'untracked', $10, $11, $12::timestamptz, $13::timestamptz)
             ON CONFLICT(id) DO UPDATE SET
                 organization_id = excluded.organization_id,
                 spu_id = excluded.spu_id,
@@ -3582,7 +3442,7 @@ async fn upsert_postgres_bootstrap_admin_recharge_packages(
             INSERT INTO commerce_recharge_package
                 (id, tenant_id, organization_id, external_id, package_no, sku_id, name, price_amount, currency_code, bonus_points, status, valid_from, valid_to, sort_weight, request_no, idempotency_key, created_at, updated_at)
             VALUES
-                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NULL, NULL, $12, $13, $14, $15, $16)
+                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NULL, NULL, $12, $13, $14, $15::timestamptz, $16::timestamptz)
             ON CONFLICT(id) DO UPDATE SET
                 organization_id = excluded.organization_id,
                 external_id = excluded.external_id,
@@ -3949,36 +3809,6 @@ async fn postgres_default_iam_subject_seed_complete(pool: &PgPool) -> Result<boo
         return Ok(true);
     }
     postgres_default_iam_seed_complete(pool).await
-}
-
-async fn sqlite_commerce_experience_seed_complete(
-    pool: &SqlitePool,
-) -> Result<bool, DatabaseInstallError> {
-    if !crate::infrastructure::sql::membership_seed_compat::sqlite_commerce_experience_seed_complete(pool).await? {
-        return Ok(false);
-    }
-    Ok(sqlite_seed_migration_payload_current(
-        pool,
-        "commerce-experience",
-        CURRENT_SCHEMA_VERSION,
-        commerce_experience_seed_manifest().payload_json.as_str(),
-    )
-    .await?)
-}
-
-async fn postgres_commerce_experience_seed_complete(
-    pool: &PgPool,
-) -> Result<bool, DatabaseInstallError> {
-    if !crate::infrastructure::sql::membership_seed_compat::postgres_commerce_experience_seed_complete(pool).await? {
-        return Ok(false);
-    }
-    Ok(postgres_seed_migration_payload_current(
-        pool,
-        "commerce-experience",
-        CURRENT_SCHEMA_VERSION,
-        commerce_experience_seed_manifest().payload_json.as_str(),
-    )
-    .await?)
 }
 
 async fn sqlite_bootstrap_admin_seed_complete(
@@ -4394,7 +4224,7 @@ async fn upsert_postgres_bootstrap_admin(
         INSERT INTO iam_organization_membership
             (id, tenant_id, organization_id, user_id, membership_kind, display_name, is_primary, status, joined_at, created_at, updated_at)
         VALUES
-            ($1, $2, $3, $4, 'admin', $5, 1, 'active', $6::timestamptz, $6::timestamptz, $6::timestamptz)
+            ($1, $2, $3, $4, 'admin', $5, TRUE, 'active', $6::timestamptz, $6::timestamptz, $6::timestamptz)
         ON CONFLICT(id) DO UPDATE SET
             tenant_id = excluded.tenant_id,
             organization_id = excluded.organization_id,
@@ -6616,7 +6446,6 @@ async fn apply_postgres_appbase_commerce_schema(pool: &PgPool) -> Result<(), Dat
     for statement in appbase_commerce_postgres_schema_statements() {
         execute_postgres_statement(pool, statement.as_str()).await?;
     }
-    repair_postgres_appbase_commerce_legacy_constraints(pool).await?;
     record_postgres_migration_completed(
         pool,
         "appbase-commerce-schema",
@@ -7093,143 +6922,6 @@ async fn apply_postgres_clawrouter_legacy_projection_schema(
     )
     .await?;
     Ok(())
-}
-
-fn clawrouter_runtime_schema_repairs_postgres_statements() -> Vec<String> {
-    strip_line_comments(CLAWROUTER_RUNTIME_SCHEMA_REPAIRS_POSTGRES_SQL)
-        .split(';')
-        .map(str::trim)
-        .filter(|statement| !statement.is_empty())
-        .map(str::to_owned)
-        .collect()
-}
-
-fn clawrouter_runtime_schema_repairs_sqlite_statements() -> Vec<String> {
-    strip_line_comments(CLAWROUTER_RUNTIME_SCHEMA_REPAIRS_SQLITE_SQL)
-        .split(';')
-        .map(str::trim)
-        .filter(|statement| !statement.is_empty())
-        .map(str::to_owned)
-        .collect()
-}
-
-async fn postgres_clawrouter_runtime_schema_repairs_needed(
-    pool: &PgPool,
-) -> Result<bool, DatabaseInstallError> {
-    let notifications_ready = postgres_table_exists(pool, "ops_notification_message").await?;
-    Ok(!notifications_ready)
-}
-
-async fn sqlite_clawrouter_runtime_schema_repairs_needed(
-    pool: &SqlitePool,
-) -> Result<bool, DatabaseInstallError> {
-    let notifications_ready = sqlite_table_exists(pool, "ops_notification_message").await?;
-    Ok(!notifications_ready)
-}
-
-async fn apply_postgres_clawrouter_runtime_schema_repairs(
-    pool: &PgPool,
-) -> Result<bool, DatabaseInstallError> {
-    if !postgres_clawrouter_runtime_schema_repairs_needed(pool).await? {
-        return Ok(false);
-    }
-
-    let mut changed = false;
-    if !postgres_table_exists(pool, "ops_notification_message").await? {
-        record_postgres_migration_started(
-            pool,
-            "clawrouter-runtime-schema-repairs",
-            CURRENT_SCHEMA_VERSION,
-            CLAWROUTER_RUNTIME_SCHEMA_REPAIRS_POSTGRES_SQL,
-        )
-        .await?;
-        for statement in clawrouter_runtime_schema_repairs_postgres_statements() {
-            execute_postgres_statement(pool, statement.as_str()).await?;
-        }
-        record_postgres_migration_completed(
-            pool,
-            "clawrouter-runtime-schema-repairs",
-            CURRENT_SCHEMA_VERSION,
-            CLAWROUTER_RUNTIME_SCHEMA_REPAIRS_POSTGRES_SQL,
-        )
-        .await?;
-        changed = true;
-    }
-    Ok(changed)
-}
-
-async fn apply_sqlite_clawrouter_runtime_schema_repairs(
-    pool: &SqlitePool,
-) -> Result<bool, DatabaseInstallError> {
-    if !sqlite_clawrouter_runtime_schema_repairs_needed(pool).await? {
-        return Ok(false);
-    }
-
-    let mut changed = false;
-    if !sqlite_table_exists(pool, "ops_notification_message").await? {
-        record_sqlite_migration_started(
-            pool,
-            "clawrouter-runtime-schema-repairs",
-            CURRENT_SCHEMA_VERSION,
-            CLAWROUTER_RUNTIME_SCHEMA_REPAIRS_SQLITE_SQL,
-        )
-        .await?;
-        for statement in clawrouter_runtime_schema_repairs_sqlite_statements() {
-            execute_sqlite_statement(pool, statement.as_str()).await?;
-        }
-        record_sqlite_migration_completed(
-            pool,
-            "clawrouter-runtime-schema-repairs",
-            CURRENT_SCHEMA_VERSION,
-            CLAWROUTER_RUNTIME_SCHEMA_REPAIRS_SQLITE_SQL,
-        )
-        .await?;
-        changed = true;
-    }
-    Ok(changed)
-}
-
-async fn repair_postgres_appbase_commerce_legacy_constraints(
-    pool: &PgPool,
-) -> Result<bool, sqlx::Error> {
-    let mut changed = false;
-    for (table, column, statement) in APPBASE_COMMERCE_LEGACY_NOT_NULL_COLUMN_REPAIRS {
-        if !postgres_column_is_not_nullable(pool, table, column).await? {
-            continue;
-        }
-        sqlx::query(statement).execute(pool).await?;
-        changed = true;
-    }
-    Ok(changed)
-}
-
-async fn postgres_column_is_not_nullable(
-    pool: &PgPool,
-    table: &str,
-    column: &str,
-) -> Result<bool, sqlx::Error> {
-    let is_nullable: Option<String> = sqlx::query_scalar(
-        r#"
-        SELECT is_nullable
-        FROM information_schema.columns
-        WHERE table_schema = current_schema()
-          AND table_name = $1
-          AND column_name = $2
-        "#,
-    )
-    .bind(table)
-    .bind(column)
-    .fetch_optional(pool)
-    .await?;
-    Ok(is_nullable.as_deref() == Some("NO"))
-}
-
-#[cfg(test)]
-fn postgres_appbase_commerce_legacy_not_null_constraint_repairs() -> Vec<&'static str> {
-    APPBASE_COMMERCE_LEGACY_NOT_NULL_COLUMN_REPAIRS
-        .iter()
-        .map(|(_, _, statement)| *statement)
-        .collect()
 }
 
 fn appbase_iam_oauth_postgres_schema_statements() -> Vec<String> {
@@ -8069,7 +7761,7 @@ fn normalize_install_code(value: String, name: &str) -> Result<String, DatabaseI
 pub async fn ensure_sqlite_integration_iam_fixture(
     pool: &SqlitePool,
 ) -> Result<(), DatabaseInstallError> {
-    if sqlite_table_exists(pool, "iam_user").await? {
+    if sqlite_integration_iam_fixture_current(pool).await? {
         return Ok(());
     }
     apply_sqlite_appbase_iam_foundation_schema(pool).await?;
@@ -8079,7 +7771,94 @@ pub async fn ensure_sqlite_integration_iam_fixture(
         .map_err(DatabaseInstallError::Database)?;
     let mut options = BootstrapAdminOptions::default();
     options.password = Some("Integration-Test-Admin-Password-2026!".to_owned());
-    bootstrap_sqlite_admin_user(pool, &options).await?;
+    upsert_sqlite_integration_bootstrap_admin(pool, &options).await?;
+    if !sqlite_integration_iam_fixture_current(pool).await? {
+        return Err(DatabaseInstallError::InvalidState(
+            "sqlite integration IAM fixture is incomplete after bootstrap".to_owned(),
+        ));
+    }
+    Ok(())
+}
+
+pub async fn sqlite_integration_iam_fixture_current(
+    pool: &SqlitePool,
+) -> Result<bool, DatabaseInstallError> {
+    for table in [
+        "iam_user",
+        "iam_organization_membership",
+        "iam_credential",
+        "iam_user_identity",
+    ] {
+        if !sqlite_table_exists(pool, table).await? {
+            return Ok(false);
+        }
+    }
+    if !sqlite_default_iam_seed_complete(pool)
+        .await
+        .map_err(DatabaseInstallError::Database)?
+    {
+        return Ok(false);
+    }
+    let options = BootstrapAdminOptions::default();
+    let count: i64 = sqlx::query_scalar(
+        r#"
+        SELECT COUNT(1)
+        FROM iam_user u
+        JOIN iam_organization_membership m
+          ON m.tenant_id = u.tenant_id
+         AND m.user_id = u.id
+         AND m.status = 'active'
+        JOIN iam_credential c
+          ON c.tenant_id = u.tenant_id
+         AND c.user_id = u.id
+         AND c.credential_type = 'password'
+         AND c.status = 'active'
+        JOIN iam_user_identity i
+          ON i.tenant_id = u.tenant_id
+         AND i.user_id = u.id
+         AND i.provider = 'email'
+        WHERE u.tenant_id = ?
+          AND u.username = ?
+          AND u.email = ?
+          AND u.status = 'active'
+          AND m.organization_id = ?
+          AND LOWER(COALESCE(m.membership_kind, '')) = 'admin'
+        "#,
+    )
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(options.username.as_str())
+    .bind(options.email.as_str())
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .fetch_one(pool)
+    .await?;
+    Ok(count > 0)
+}
+
+async fn upsert_sqlite_integration_bootstrap_admin(
+    pool: &SqlitePool,
+    options: &BootstrapAdminOptions,
+) -> Result<(), DatabaseInstallError> {
+    let mut tx = pool.begin().await?;
+    let now = current_utc_timestamp_string();
+    let user_id =
+        match sqlite_bootstrap_admin_user_id_in_transaction(&mut tx, options.username.as_str())
+            .await?
+        {
+            Some(user_id) => user_id,
+            None => DEFAULT_BOOTSTRAP_ADMIN_USER_ID.to_owned(),
+        };
+    let has_active_password =
+        sqlite_bootstrap_admin_has_active_password_credential_in_transaction(&mut tx, &user_id)
+            .await?;
+    let password_hash = if has_active_password {
+        None
+    } else {
+        let password = options.password()?;
+        Some(bootstrap_password_hash(&password, &user_id, now.as_str())?)
+    };
+    upsert_sqlite_bootstrap_admin(&mut tx, options, &user_id, password_hash.as_deref(), &now)
+        .await?;
+    tx.commit().await?;
     Ok(())
 }
 
@@ -8379,20 +8158,6 @@ mod tests {
             "\"agent_run_step_id_key\" VARCHAR(128) GENERATED ALWAYS AS (COALESCE(agent_run_step_id, '')) STORED",
             postgres_add_column_definition(&column).unwrap(),
             "Postgres schema repair must restore generated columns required by generated unique indexes"
-        );
-    }
-
-    #[test]
-    fn postgres_appbase_commerce_repair_relaxes_retired_not_null_columns() {
-        assert_eq!(
-            vec![
-                r#"ALTER TABLE "commerce_product_spu" ALTER COLUMN "sales_status" DROP NOT NULL"#,
-                r#"ALTER TABLE "commerce_product_sku" ALTER COLUMN "sales_status" DROP NOT NULL"#,
-                r#"ALTER TABLE "commerce_product_sku" ALTER COLUMN "delivery_mode" DROP NOT NULL"#,
-                r#"ALTER TABLE "commerce_payment_method" ALTER COLUMN "provider" DROP NOT NULL"#,
-            ],
-            postgres_appbase_commerce_legacy_not_null_constraint_repairs(),
-            "Postgres appbase commerce repair must preserve legacy columns while allowing canonical status/fulfillment_type writes"
         );
     }
 }

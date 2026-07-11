@@ -1,6 +1,5 @@
 import {
   ensureSdkworkApiSuccess,
-  getClawRouterAppSdkClient,
   isRecord,
   optionalBoundedPositiveInteger,
   optionalPositiveInteger,
@@ -13,7 +12,10 @@ import {
   readRequiredString,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
-import type { UsageLogsResponse as SdkUsageLogsResponse } from '@sdkwork/clawrouter-app-sdk';
+import {
+  getClawRouterAppSdkClient,
+  type UsageLogsResponse as SdkUsageLogsResponse,
+} from '@sdkwork/clawrouter-pc-console-core/sdk';
 
 const MAX_USAGE_LOG_PAGE_SIZE = 200;
 const MAX_USAGE_LOG_QUERY_TEXT_LENGTH = 128;

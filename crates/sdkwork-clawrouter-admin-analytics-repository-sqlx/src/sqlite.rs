@@ -1,11 +1,10 @@
 use sqlx::{Row, SqlitePool};
 
-use crate::error::{RepositoryResult, store_error};
+use crate::error::{store_error, RepositoryResult};
 use crate::modality;
 use crate::snapshot::{
-    AnalyticsModelRankRow, AnalyticsPieRow, AnalyticsSummaryRow, AnalyticsTrendRow,
-    AnalyticsUserRankRow, PI_LIMIT, USER_MODEL_LIMIT, build_snapshot, scope_filter,
-    vendor_from_catalog_key,
+    build_snapshot, scope_filter, vendor_from_catalog_key, AnalyticsModelRankRow, AnalyticsPieRow,
+    AnalyticsSummaryRow, AnalyticsTrendRow, AnalyticsUserRankRow, PI_LIMIT, USER_MODEL_LIMIT,
 };
 use crate::types::{
     AdminAnalyticsQuery, AdminAnalyticsReadFuture, AdminAnalyticsReadStore, AdminAnalyticsSnapshot,

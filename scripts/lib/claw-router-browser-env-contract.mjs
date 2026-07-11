@@ -2,8 +2,9 @@
  * Claw Router browser env naming contract aligned with ../sdkwork-specs/ENVIRONMENT_SPEC.md.
  *
  * Development profile (.env.development):
- *   - SDKWORK_CLAW_* profile metadata
- *   - SDKWORK_ACCESS_TOKEN private bootstrap access credential
+ *   - SDKWORK_CLAW_ROUTER_* application lifecycle metadata
+ *   - SDKWORK_ACCESS_TOKEN blank tracked placeholder; live value is in the
+ *     ignored .env.development.bootstrap.local overlay
  *   - SDKWORK_CLAW_BROWSER_DEV_PROXY_* private Vite proxy origins
  *   - VITE_* browser-visible SDK/runtime values
  *
@@ -17,6 +18,20 @@ import {
 } from './claw-router-edge-env-contract.mjs';
 
 export const CLAW_ROUTER_BROWSER_DEVELOPMENT_FORBIDDEN_KEY_PREFIX = 'PORTAL_PUBLIC_';
+
+export const CLAW_ROUTER_LIFECYCLE_ENV_KEYS = Object.freeze({
+  configProfile: 'SDKWORK_CLAW_ROUTER_CONFIG_PROFILE',
+  environment: 'SDKWORK_CLAW_ROUTER_ENVIRONMENT',
+  deploymentProfile: 'SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE',
+  runtimeTarget: 'SDKWORK_CLAW_ROUTER_RUNTIME_TARGET',
+});
+
+export const CLAW_ROUTER_RETIRED_LIFECYCLE_ENV_KEYS = Object.freeze([
+  'SDKWORK_CLAW_CONFIG_PROFILE',
+  'SDKWORK_CLAW_ENVIRONMENT',
+  'SDKWORK_CLAW_DEPLOYMENT_PROFILE',
+  'SDKWORK_CLAW_RUNTIME_TARGET',
+]);
 
 export const CLAW_ROUTER_BROWSER_DEVELOPMENT_LEGACY_PROXY_KEYS = Object.freeze([
   'PORTAL_DEV_PROXY_GATEWAY_TARGET',
@@ -56,10 +71,10 @@ export const CLAW_ROUTER_BROWSER_DEVELOPMENT_DEFAULT_VITE_ENV = Object.freeze({
 });
 
 export const CLAW_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_ORDER = Object.freeze([
-  'SDKWORK_CLAW_CONFIG_PROFILE',
-  'SDKWORK_CLAW_ENVIRONMENT',
-  'SDKWORK_CLAW_DEPLOYMENT_PROFILE',
-  'SDKWORK_CLAW_RUNTIME_TARGET',
+  CLAW_ROUTER_LIFECYCLE_ENV_KEYS.configProfile,
+  CLAW_ROUTER_LIFECYCLE_ENV_KEYS.environment,
+  CLAW_ROUTER_LIFECYCLE_ENV_KEYS.deploymentProfile,
+  CLAW_ROUTER_LIFECYCLE_ENV_KEYS.runtimeTarget,
   'SDKWORK_ACCESS_TOKEN',
   CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.openApi,
   CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.backendApi,
@@ -74,7 +89,7 @@ export const CLAW_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_ORDER = Object.freeze([
 
 export const CLAW_ROUTER_BROWSER_DEVELOPMENT_ENV_SECTIONS = Object.freeze([
   {
-    beforeKey: 'SDKWORK_CLAW_CONFIG_PROFILE',
+    beforeKey: CLAW_ROUTER_LIFECYCLE_ENV_KEYS.configProfile,
     lines: ['# SDKWork application profile metadata.'],
   },
   {
@@ -203,7 +218,7 @@ export function resolveBrowserDevProxyOrigin(env, canonicalKey, fallback) {
 export function pickBrowserDevelopmentPortalRuntimeEnv(portalRuntimeEnv = {}) {
   const picked = {};
   for (const key of CLAW_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_ORDER) {
-    if (key.startsWith('SDKWORK_CLAW_CONFIG_') || key === 'SDKWORK_ACCESS_TOKEN') {
+    if (key === CLAW_ROUTER_LIFECYCLE_ENV_KEYS.configProfile || key === 'SDKWORK_ACCESS_TOKEN') {
       continue;
     }
     const value = normalizeText(portalRuntimeEnv[key]);
@@ -230,8 +245,21 @@ export function pickBrowserDevelopmentPortalRuntimeEnv(portalRuntimeEnv = {}) {
   return picked;
 }
 
+export function normalizeClawRouterLifecycleEnvRecord(record = {}, expectedLifecycleEnv = {}) {
+  const normalized = { ...record };
+  for (const retiredKey of CLAW_ROUTER_RETIRED_LIFECYCLE_ENV_KEYS) {
+    delete normalized[retiredKey];
+  }
+  for (const key of Object.values(CLAW_ROUTER_LIFECYCLE_ENV_KEYS)) {
+    if (Object.prototype.hasOwnProperty.call(expectedLifecycleEnv, key)) {
+      normalized[key] = expectedLifecycleEnv[key];
+    }
+  }
+  return normalized;
+}
+
 export function migrateLegacyBrowserDevelopmentEnvRecord(record = {}) {
-  const migrated = { ...record };
+  const migrated = normalizeClawRouterLifecycleEnvRecord(record);
   for (const [canonicalKey, legacyKey] of Object.entries(CLAW_ROUTER_BROWSER_DEV_PROXY_LEGACY_ALIASES)) {
     const legacyValue = normalizeText(migrated[legacyKey]);
     if (legacyValue) {
@@ -268,12 +296,9 @@ export function sanitizeBrowserDevelopmentEnvRecord(record = {}) {
 }
 
 export function sanitizeBrowserProductionEnvRecord(record = {}) {
-  const sanitized = { ...record };
+  const sanitized = normalizeClawRouterLifecycleEnvRecord(record);
   delete sanitized.SDKWORK_AUTH_TOKEN;
-  if (Object.prototype.hasOwnProperty.call(sanitized, 'SDKWORK_ACCESS_TOKEN')
-    && `${sanitized.SDKWORK_ACCESS_TOKEN ?? ''}`.trim()) {
-    sanitized.SDKWORK_ACCESS_TOKEN = '';
-  }
+  delete sanitized.SDKWORK_ACCESS_TOKEN;
   for (const key of Object.keys(sanitized)) {
     if (isForbiddenBrowserProductionEnvKey(key)) {
       delete sanitized[key];

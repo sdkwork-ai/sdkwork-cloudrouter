@@ -10,7 +10,7 @@ public class FilesGoogleApi {
     /// Google Gemini list files
     public func listV1betaFiles(pageSize: Int? = nil, pageToken: String? = nil) async throws -> GoogleFileListResponse? {
         let query = buildQueryString([
-            QueryParameterSpec(name: "pageSize", value: pageSize, style: "form", explode: true, allowReserved: false, contentType: nil),
+            QueryParameterSpec(name: "page_size", value: pageSize, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "pageToken", value: pageToken, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
         return try await client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/google/v1beta/files"), query), responseType: GoogleFileListResponse.self)

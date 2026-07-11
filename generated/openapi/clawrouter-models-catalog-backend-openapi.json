@@ -64,33 +64,6 @@
         "description": "Ai resource groups create result schema exposed by Claw Router.",
         "x-operation-id": "aiResourceGroups.create"
       },
-      "AiResourceGroupsDeleteResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by ai resource groups delete result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Ai resource groups delete result schema exposed by Claw Router.",
-        "x-operation-id": "aiResourceGroups.delete"
-      },
       "AiResourceGroupsListResult": {
         "allOf": [
           {
@@ -462,6 +435,33 @@
         ],
         "type": "object"
       },
+      "ModelMappingsCollectionUpdateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by model mappings collection update result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Model mappings collection update result schema exposed by Claw Router.",
+        "x-operation-id": "modelMappings.collection.update"
+      },
       "ModelMappingsCreateResult": {
         "allOf": [
           {
@@ -488,33 +488,6 @@
         ],
         "description": "Model mappings create result schema exposed by Claw Router.",
         "x-operation-id": "modelMappings.create"
-      },
-      "ModelMappingsDeleteResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by model mappings delete result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Model mappings delete result schema exposed by Claw Router.",
-        "x-operation-id": "modelMappings.delete"
       },
       "ModelMappingsListResult": {
         "allOf": [
@@ -543,14 +516,14 @@
         "description": "Model mappings list result schema exposed by Claw Router.",
         "x-operation-id": "modelMappings.list"
       },
-      "ModelMappingsReplaceResult": {
+      "ModelMappingsResolveResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by model mappings replace result.",
+            "description": "Object schema used by model mappings resolve result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -567,35 +540,8 @@
             "type": "object"
           }
         ],
-        "description": "Model mappings replace result schema exposed by Claw Router.",
-        "x-operation-id": "modelMappings.replace"
-      },
-      "ModelMappingsResolveCreateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by model mappings resolve create result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Model mappings resolve create result schema exposed by Claw Router.",
-        "x-operation-id": "modelMappings.resolve.create"
+        "description": "Model mappings resolve result schema exposed by Claw Router.",
+        "x-operation-id": "modelMappings.resolve"
       },
       "ModelMappingsUpdateResult": {
         "allOf": [
@@ -914,33 +860,6 @@
         ],
         "description": "Models create result schema exposed by Claw Router.",
         "x-operation-id": "models.create"
-      },
-      "ModelsDeleteResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by models delete result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Models delete result schema exposed by Claw Router.",
-        "x-operation-id": "models.delete"
       },
       "ModelsListResult": {
         "allOf": [
@@ -1376,7 +1295,7 @@
         "operationId": "modelMappings.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -1384,7 +1303,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -1456,14 +1375,14 @@
       },
       "put": {
         "description": "Replace. Reads ai. Writes ops_audit_log. File targets none.",
-        "operationId": "modelMappings.replace",
+        "operationId": "modelMappings.collection.update",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ModelMappingsReplaceResult"
+                  "$ref": "#/components/schemas/ModelMappingsCollectionUpdateResult"
                 }
               }
             },
@@ -1530,7 +1449,7 @@
         "x-sdkwork-api-authority": "sdkwork-models-backend-api",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-owner": "sdkwork-models",
-        "x-sdkwork-resource": "modelMappings",
+        "x-sdkwork-resource": "modelMappings.collection",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
@@ -1541,14 +1460,14 @@
     "/backend/v3/api/ai/model_mappings/resolve": {
       "post": {
         "description": "Create. Reads ai. Writes ops_audit_log. File targets none.",
-        "operationId": "modelMappings.resolve.create",
+        "operationId": "modelMappings.resolve",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ModelMappingsResolveCreateResult"
+                  "$ref": "#/components/schemas/ModelMappingsResolveResult"
                 }
               }
             },
@@ -1615,7 +1534,7 @@
         "x-sdkwork-api-authority": "sdkwork-models-backend-api",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-owner": "sdkwork-models",
-        "x-sdkwork-resource": "modelMappings.resolve",
+        "x-sdkwork-resource": "modelMappings",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
@@ -1639,15 +1558,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ModelMappingsDeleteResult"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "content": {
@@ -2419,7 +2331,7 @@
         "operationId": "modelVendors.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -2427,7 +2339,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -2699,7 +2611,7 @@
         "operationId": "models.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -2707,7 +2619,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -2879,15 +2791,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ModelsDeleteResult"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "content": {
@@ -3138,7 +3043,7 @@
         "operationId": "aiResourceGroups.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -3146,7 +3051,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -3360,15 +3265,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AiResourceGroupsDeleteResult"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "content": {
@@ -3654,7 +3552,7 @@
         "operationId": "aiResources.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -3662,7 +3560,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {

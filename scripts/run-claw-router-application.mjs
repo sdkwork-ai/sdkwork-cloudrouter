@@ -358,7 +358,7 @@ Options:
   -h, --help             Show this help
 
 Database profiles:
-  pnpm dev:browser starts the topology-aware integrated product server workspace (default profile: standalone.unified-process.development).
+  pnpm dev:browser starts the topology-aware integrated product server workspace (default profile: standalone.development).
   pnpm dev:desktop starts the desktop dev workspace with PostgreSQL and standalone topology by default.
   Desktop packages and first-run local user data use SQLite under ~/.sdkwork/router/data.
   Use pnpm dev:browser:sqlite or pnpm dev:desktop:sqlite to validate explicit SQLite behavior.

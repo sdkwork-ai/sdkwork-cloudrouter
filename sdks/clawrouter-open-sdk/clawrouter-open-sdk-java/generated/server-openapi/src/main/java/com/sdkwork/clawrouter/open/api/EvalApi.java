@@ -16,7 +16,7 @@ public class EvalApi {
     /** List evals */
     public OpenAiEvalList list(Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -52,7 +52,7 @@ public class EvalApi {
     /** List eval runs */
     public OpenAiEvalRunList listRuns(String evalId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -76,7 +76,7 @@ public class EvalApi {
     /** List eval run output items */
     public OpenAiEvalRunOutputItemList listRunsOutputItems(String evalId, String runId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)

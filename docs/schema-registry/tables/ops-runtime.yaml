@@ -1,0 +1,532 @@
+tables:
+- table: ops_alert_event
+  domain: ops
+  profile: audit_event
+  compliance_level: L2
+  system_of_record: true
+  write_owner: clawrouter-ops-runtime
+  common_columns: event_log
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    alert_no: string(128)
+    severity: enum_int32
+    source: string(128)
+    title: string(200)
+    message: string(1024)
+    alert_status: enum_int32
+    first_seen_at: instant
+    last_seen_at: instant
+    resolved_at: instant
+    resolved_by: int64
+  unique_constraints:
+  - name: uk_ops_alert_event_no
+    columns:
+    - alert_no
+  indexes:
+  - name: idx_ops_alert_event_status_severity
+    columns:
+    - alert_status
+    - severity
+    - last_seen_at
+    - id
+- table: ops_audit_log
+  domain: ops
+  profile: audit_event
+  compliance_level: L3
+  system_of_record: true
+  write_owner: clawrouter-ops-runtime
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id:
+      type: int64
+      constraints: NOT NULL PRIMARY KEY
+    uuid:
+      type: string(64)
+      constraints: NOT NULL
+    tenant_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    organization_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    request_id: string(128)
+    trace_id: string(128)
+    operator_id: int64
+    action: string(128)
+    target_type: enum_int32
+    target_id: int64
+    created_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+    retention_until: instant
+    legal_hold:
+      type: bool
+      constraints: NOT NULL DEFAULT FALSE
+    metadata:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    operator_type: enum_int32
+    operator_name_snapshot: string(128)
+    target_uuid: string(64)
+    client_ip_hash: string(128)
+    user_agent_hash: string(128)
+    before_hash: string(128)
+    after_hash: string(128)
+    change_summary: json
+    risk_level: enum_int32
+    approval_id: int64
+  indexes:
+  - name: idx_ops_audit_log_tenant_operator_created
+    columns:
+    - tenant_id
+    - organization_id
+    - operator_type
+    - operator_id
+    - created_at
+    - id
+  - name: idx_ops_audit_log_tenant_target_created
+    columns:
+    - tenant_id
+    - organization_id
+    - target_type
+    - target_id
+    - created_at
+    - id
+  - name: idx_ops_audit_log_request
+    columns:
+    - tenant_id
+    - organization_id
+    - request_id
+  lifecycle:
+    partition_by: created_at_month
+- table: ops_config_snapshot
+  domain: ops
+  profile: audit_event
+  compliance_level: L2
+  system_of_record: true
+  write_owner: clawrouter-ops-runtime
+  common_columns: event_log
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    snapshot_no: string(128)
+    config_scope: enum_int32
+    config_type: enum_int32
+    source_table: string(128)
+    source_ids: json
+    config_payload: json
+    config_hash: string(128)
+    published_at: instant
+    published_by: int64
+    rollback_from_snapshot_id: int64
+  unique_constraints:
+  - name: uk_ops_config_snapshot_no
+    columns:
+    - snapshot_no
+  indexes:
+  - name: idx_ops_config_snapshot_tenant_scope
+    columns:
+    - tenant_id
+    - organization_id
+    - config_scope
+    - config_type
+    - created_at
+    - id
+- table: ops_gateway_heartbeat
+  domain: ops
+  profile: operational_state
+  compliance_level: L2
+  system_of_record: true
+  write_owner: clawrouter-ops-runtime
+  common_columns: event_log
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    instance_id: int64
+    heartbeat_at: instant
+    cpu_percent: decimal
+    memory_percent: decimal
+    disk_percent: decimal
+    network_in_bytes: int64
+    network_out_bytes: int64
+    active_connections: int64
+    uptime_seconds: int64
+    open_file_count: int64
+    thread_count: int64
+    payload: json
+  indexes:
+  - name: idx_ops_gateway_heartbeat_instance_time
+    columns:
+    - instance_id
+    - heartbeat_at
+    - id
+  lifecycle:
+    partition_by: created_at_month
+- table: ops_gateway_instance
+  domain: ops
+  profile: operational_state
+  compliance_level: L2
+  system_of_record: true
+  write_owner: clawrouter-ops-runtime
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    instance_code: string(128)
+    deployment_mode: enum_int32
+    region: string(64)
+    cell: string(64)
+    version_name: string(64)
+    host_name: string(128)
+    ip_address_hash: string(128)
+    ip_address_masked: string(64)
+    node_name: string(128)
+    pod_name: string(128)
+    container_id_hash: string(128)
+    desktop_device_hash: string(128)
+    runtime_type: enum_int32
+    orchestrator: enum_int32
+    started_at: instant
+    last_heartbeat_at: instant
+    health_status: enum_int32
+    config_hash: string(128)
+  unique_constraints:
+  - name: uk_ops_gateway_instance_code
+    columns:
+    - instance_code
+  indexes:
+  - name: idx_ops_gateway_instance_region_status
+    columns:
+    - region
+    - cell
+    - health_status
+    - last_heartbeat_at
+- table: ops_job_execution
+  domain: ops
+  profile: operational_state
+  compliance_level: L2
+  system_of_record: true
+  write_owner: clawrouter-ops-runtime
+  common_columns: event_log
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    job_name: string(128)
+    job_type: enum_int32
+    trigger_type: enum_int32
+    started_at: instant
+    ended_at: instant
+    duration_ms: int64
+    execution_status: enum_int32
+    processed_count: int64
+    success_count: int64
+    failure_count: int64
+    failure_reason: string(1024)
+    payload: json
+  semantic_contracts:
+    model_ranking_refresh:
+      job_name: model_ranking_refresh
+      job_type:
+        code: 20
+        meaning: model ranking refresh
+      trigger_types:
+        scheduled: 1
+        manual: 2
+      execution_status:
+        running: 1
+        succeeded: 2
+        failed: 3
+        empty: 4
+        skipped: 5
+      payload_contract:
+        required_fields:
+        - rankScope
+        - snapshotDate
+        - snapshotPeriod
+        - windowStart
+        - windowEnd
+        - generatedCount
+        - sourceCount
+        - refreshIntervalSeconds
+        - cacheMaxAgeSeconds
+        - nextRefreshAt
+        - status
+        - attemptCount
+        - retryCount
+        - consecutiveFailureCount
+        - alertRecommended
+        - sourceTables
+        source_tables:
+        - ai_usage
+        - ai_model
+        - ai_model_rank_snapshot
+      runtime_contract:
+        scheduler_owner: sdkwork-clawrouter-standalone-gateway
+        startup_policy:
+          run_on_startup_default: true
+        timeout:
+          default_millis: 300000
+        retry:
+          max_retry_attempts_default: 1
+          max_retry_attempts_max: 5
+        concurrency_lock:
+          scope:
+          - worker_instance
+          - tenant_id
+          - organization_id
+          - rank_scope
+          overlap_behavior: audit_skipped
+        cache_invalidation:
+          invalidate_after_status:
+          - succeeded
+          - empty
+        delayed_alerting:
+          alert_after_consecutive_failures_default: 3
+  indexes:
+  - name: idx_ops_job_execution_name_started
+    columns:
+    - job_name
+    - started_at
+    - id
+  - name: idx_ops_job_execution_status_started
+    columns:
+    - execution_status
+    - started_at
+    - id
+  - name: idx_ops_job_execution_model_ranking_scope_started
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - job_type
+    - job_name
+    - started_at
+    - id
+- table: ops_metric_snapshot
+  domain: ops
+  profile: read_model
+  compliance_level: L2
+  system_of_record: true
+  write_owner: clawrouter-ops-runtime
+  common_columns: projection
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    metric_scope: enum_int32
+    metric_name: string(128)
+    metric_period: enum_int32
+    period_start: instant
+    period_end: instant
+    dimension_key: string(128)
+    dimension_value: string(256)
+    metric_value: decimal
+    metric_unit: string(64)
+    payload: json
+  unique_constraints:
+  - name: uk_ops_metric_snapshot
+    columns:
+    - metric_scope
+    - metric_name
+    - metric_period
+    - period_start
+    - dimension_key
+    - dimension_value
+- table: ops_notification_message
+  domain: ops
+  profile: operational_state
+  compliance_level: L2
+  system_of_record: true
+  write_owner: clawrouter-ops-runtime
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    app_id: string(128)
+    scope_type:
+      type: enum_int32
+      constraints: NOT NULL DEFAULT 1
+    message_code: string(128)
+    message_type: enum_int32
+    title: string(200)
+    summary: string(512)
+    content: text
+    severity: enum_int32
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    show_as_popup:
+      type: bool
+      constraints: NOT NULL DEFAULT FALSE
+    action_url: string(1024)
+    published_at: instant
+    expire_at: instant
+  indexes:
+  - name: idx_ops_notification_message_scope
+    columns:
+    - tenant_id
+    - organization_id
+    - app_id
+    - scope_type
+    - status
+    - published_at
+    - id
+  - name: idx_ops_notification_message_popup
+    columns:
+    - tenant_id
+    - organization_id
+    - show_as_popup
+    - published_at
+    - id
+- table: ops_notification_recipient
+  domain: ops
+  profile: relation_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: clawrouter-ops-runtime
+  common_columns: relation_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    message_id:
+      type: int64
+      constraints: NOT NULL
+    app_id: string(128)
+    recipient_type:
+      type: enum_int32
+      constraints: NOT NULL
+    recipient_value: string(256)
+    recipient_user_id: int64
+    recipient_role_code: string(128)
+  indexes:
+  - name: idx_ops_notification_recipient_message
+    columns:
+    - tenant_id
+    - organization_id
+    - message_id
+    - status
+    - id
+  - name: idx_ops_notification_recipient_user
+    columns:
+    - tenant_id
+    - organization_id
+    - recipient_type
+    - recipient_user_id
+    - status
+    - id
+  - name: idx_ops_notification_recipient_role
+    columns:
+    - tenant_id
+    - organization_id
+    - recipient_type
+    - recipient_role_code
+    - status
+    - id
+- table: ops_notification_delivery
+  domain: ops
+  profile: user_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: clawrouter-ops-runtime
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id:
+      type: int64
+      constraints: NOT NULL PRIMARY KEY
+    uuid:
+      type: string(64)
+      constraints: NOT NULL
+    tenant_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    organization_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    user_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    data_scope:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    status:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    created_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+    version:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    deleted_at: instant
+    deleted_by: int64
+    metadata:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    app_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT 'default'
+    message_id:
+      type: int64
+      constraints: NOT NULL
+    delivery_channel: enum_int32
+    delivery_status: enum_int32
+    read_at: instant
+    popup_seen_at: instant
+    archived_at: instant
+    delivered_at: instant
+    failure_code: string(128)
+    retry_count:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+  unique_constraints:
+  - name: uk_ops_notification_delivery_user_message_app
+    columns:
+    - tenant_id
+    - organization_id
+    - message_id
+    - user_id
+    - app_id
+    - delivery_channel
+  indexes:
+  - name: idx_ops_notification_delivery_user_read
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - app_id
+    - read_at
+    - created_at
+    - id
+  - name: idx_ops_notification_delivery_popup_seen
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - app_id
+    - popup_seen_at
+    - id

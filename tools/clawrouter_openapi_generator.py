@@ -34,6 +34,10 @@ class ClawRouterOpenApiGenerator:
         "app": "clawrouter-app-openapi.json",
         "backend": "clawrouter-backend-openapi.json",
     }
+    API_AUTHORITY_OUTPUTS = {
+        "app": Path("apis/app-api/clawrouter/clawrouter-app-api.openapi.json"),
+        "backend": Path("apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"),
+    }
     MODELS_CATALOG_OUTPUTS = {
         "app": "clawrouter-models-catalog-app-openapi.json",
         "backend": "clawrouter-models-catalog-backend-openapi.json",
@@ -521,8 +525,13 @@ class ClawRouterOpenApiGenerator:
         outputs: dict[str, Path] = {}
         for surface in self.SURFACES:
             output = self.output_path(surface)
-            output.write_text(self.render_json(surface), encoding="utf-8", newline="\n")
+            rendered = self.render_json(surface)
+            output.write_text(rendered, encoding="utf-8", newline="\n")
             outputs[surface] = output
+            api_authority_output = self.api_authority_output_path(surface)
+            api_authority_output.parent.mkdir(parents=True, exist_ok=True)
+            api_authority_output.write_text(rendered, encoding="utf-8", newline="\n")
+            outputs[f"api-authority-{surface}"] = api_authority_output
             models_catalog_output = self.models_catalog_output_path(surface)
             models_catalog_output.write_text(
                 self.render_models_catalog_json(surface),
@@ -552,6 +561,16 @@ class ClawRouterOpenApiGenerator:
                 actual = self._normalized_openapi_text(surface, from_disk=True)
                 if actual != expected:
                     messages.append(f"clawrouter {surface} OpenAPI spec is stale: {output}")
+                api_authority_output = self.api_authority_output_path(surface)
+                api_authority_expected = self.render_json(surface)
+                if not api_authority_output.exists():
+                    messages.append(f"clawrouter {surface} API authority OpenAPI spec is missing: {api_authority_output}")
+                    continue
+                api_authority_actual = api_authority_output.read_text(encoding="utf-8")
+                if api_authority_actual != api_authority_expected:
+                    messages.append(
+                        f"clawrouter {surface} API authority OpenAPI spec is stale: {api_authority_output}"
+                    )
                 models_catalog_output = self.models_catalog_output_path(surface)
                 models_catalog_expected = self.render_models_catalog_json(surface)
                 if not models_catalog_output.exists():
@@ -584,6 +603,11 @@ class ClawRouterOpenApiGenerator:
         if surface not in self.OUTPUTS:
             raise ValueError(f"unsupported OpenAPI surface: {surface}")
         return self.output_dir / self.OUTPUTS[surface]
+
+    def api_authority_output_path(self, surface: str) -> Path:
+        if surface not in self.API_AUTHORITY_OUTPUTS:
+            raise ValueError(f"unsupported OpenAPI surface: {surface}")
+        return self.root / self.API_AUTHORITY_OUTPUTS[surface]
 
     def models_catalog_output_path(self, surface: str) -> Path:
         if surface not in self.MODELS_CATALOG_OUTPUTS:
@@ -712,20 +736,7 @@ class ClawRouterOpenApiGenerator:
             "summary": self._summary(operation, operation_id),
             "description": self._description(operation),
             "parameters": parameters,
-            "responses": {
-                "200": {
-                    "description": "OK",
-                    "content": {
-                        "application/json": {
-                            "schema": self._success_response_schema(operation, operation_id, schema_components),
-                        },
-                    },
-                },
-                "default": self._problem_response("Error response."),
-                "400": self._problem_response("Bad Request"),
-                "401": self._problem_response("Unauthorized"),
-                "500": self._problem_response("Server Error"),
-            },
+            "responses": self._operation_responses(operation, operation_id, schema_components),
             "x-source-file": self._string(operation.get("source")),
             "x-route-scope": self._string(operation.get("route_scope")),
             "x-contract-kind": self._string(operation.get("kind")),
@@ -752,6 +763,37 @@ class ClawRouterOpenApiGenerator:
                 },
             }
         return spec
+
+    def _operation_responses(
+        self,
+        operation: dict[str, Any],
+        operation_id: str,
+        schema_components: dict[str, Any],
+    ) -> dict[str, Any]:
+        method = self._string(operation.get("api_method")).upper()
+        responses: dict[str, Any] = {}
+        if method == "DELETE":
+            responses["204"] = {"description": "No Content"}
+        else:
+            status = "201" if method == "POST" and self._operation_id_action(operation_id) == "create" else "200"
+            responses[status] = {
+                "description": "Created" if status == "201" else "OK",
+                "content": {
+                    "application/json": {
+                        "schema": self._success_response_schema(operation, operation_id, schema_components),
+                    },
+                },
+            }
+        responses["default"] = self._problem_response("Error response.")
+        responses["400"] = self._problem_response("Bad Request")
+        responses["401"] = self._problem_response("Unauthorized")
+        responses["500"] = self._problem_response("Server Error")
+        return responses
+
+    def _operation_id_action(self, operation_id: str) -> str:
+        if not operation_id:
+            return ""
+        return operation_id.rsplit(".", 1)[-1]
 
     def _problem_response(self, description: str) -> dict[str, Any]:
         return {
@@ -1570,6 +1612,8 @@ class ClawRouterOpenApiGenerator:
     ) -> dict[str, Any]:
         result: dict[str, Any] = {}
         for operation in operations:
+            if self._string(operation.get("api_method")).upper() == "DELETE":
+                continue
             data_schema = self._operation_data_schema(operation, schema_components)
             if data_schema is None:
                 data_schema = self._no_data_schema("No business data returned by this operation.")

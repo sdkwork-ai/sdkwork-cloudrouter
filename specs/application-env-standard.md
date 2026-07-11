@@ -1,219 +1,112 @@
-# SDKWork Application Environment Profile Standard
+# Claw Router Application Environment Contract
 
-Version: 1.0  
-Scope: Claw Router repository; reusable by other SDKWork application roots.
+- Status: Current
+- Contract version: 4
+- Application: `sdkwork-clawrouter`
+- Authority: `../../sdkwork-specs/CONFIG_SPEC.md`,
+  `../../sdkwork-specs/ENVIRONMENT_SPEC.md`, and
+  `../../sdkwork-specs/APP_RUNTIME_TOPOLOGY_SPEC.md`
 
-## 1. Naming Rule (No `.local`)
+This contract narrows the SDKWork environment standards for the Claw Router
+application. It defines only active profiles and namespaces. Runtime code,
+environment writers, deployment manifests, and checked-in templates must use
+the same values.
 
-SDKWork profile env files use **profile name only**. Do not add a `.local` suffix.
+## Lifecycle Namespace
 
-| Role | Pattern | Git |
+The four application lifecycle axes are independent:
+
+| Axis | Process key | Allowed values |
 | --- | --- | --- |
-| Template | `.env.{profile}.example` | tracked |
-| Host profile | `.env.{profile}` | ignored (via `.env.*`) |
+| Config profile | `SDKWORK_CLAW_ROUTER_CONFIG_PROFILE` | `dev`, `test`, `staging`, `prod` |
+| Environment | `SDKWORK_CLAW_ROUTER_ENVIRONMENT` | `development`, `test`, `staging`, `production` |
+| Deployment profile | `SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE` | `standalone`, `cloud` |
+| Runtime target | `SDKWORK_CLAW_ROUTER_RUNTIME_TARGET` | `browser`, `desktop`, `server`, `container`, `test-runner` |
 
-Examples:
+Implementations read these application-scoped keys exclusively. A profile
+writer must replace invalid or stale lifecycle assignments with the canonical
+values for the selected lifecycle; it must not preserve alternate aliases.
 
-```text
-.env.development.example   →   .env.development
-.env.release.example       →   .env.release
-.env.postgres.example      →   .env.postgres
-```
+## Active Profile Matrix
 
-Rationale:
+| Lifecycle artifact | Config profile | Environment | Deployment profile | Runtime target |
+| --- | --- | --- | --- | --- |
+| `apps/sdkwork-clawrouter-pc/.env.development` | `dev` | `development` | `standalone` | `browser` |
+| `apps/sdkwork-clawrouter-pc/.env.production` | `prod` | `production` | `standalone` | `browser` |
+| `.env.release` | `prod` | `production` | `standalone` | `server` |
+| Kubernetes workloads | `prod` | `production` | `cloud` | `container` |
 
-- `.local` duplicates Vite's legacy override layer and confuses operators.
-- One profile → one file is easier to document, generate, and audit.
-- Vite, Node, and release tooling all load `.env.{mode}` directly.
+The checked-in `*.example` files are non-secret templates. Host profile files
+without the `.example` suffix are generated or refreshed by
+`scripts/dev/claw-router-application-env.mjs` and are not committed.
 
-## 2. Profile Matrix
+## Topology Profiles
 
-| Script alias | Canonical environment | Profile file | Template |
-| --- | --- | --- | --- |
-| `dev` | `development` | `.env.development` | `.env.development.example` |
-| `test` | `test` | `.env.test` | `.env.test.example` |
-| `staging` | `staging` | `.env.staging` | `.env.staging.example` |
-| `prod` | `production` | `.env.production` | `.env.production.example` |
-| `release` | `production` (release host) | `.env.release` | `.env.release.example` |
-| `postgres` | database overlay | `.env.postgres` | `.env.postgres.example` |
+Topology profile ids contain exactly the deployment profile and environment:
 
-Every generated profile file should declare:
-
-```text
-SDKWORK_<APP>_CONFIG_PROFILE
-SDKWORK_<APP>_ENVIRONMENT
-SDKWORK_<APP>_DEPLOYMENT_PROFILE
-SDKWORK_<APP>_RUNTIME_TARGET
-```
-
-## 3. Runtime Target Roots
-
-| Runtime target | Env root | Typical framework |
-| --- | --- | --- |
-| `browser` | `apps/sdkwork-<app>-pc/` | Vite / React |
-| `desktop` | `apps/sdkwork-<app>-pc/` or user config dir | Tauri |
-| `server` | repository root | Node / Rust service launcher |
-| `container` | repository root or mounted config | Node / Rust |
-| `test-runner` | ephemeral or repo root | Node test harness |
-
-Database overlays (`postgres` profile) always live at **repository root** unless the app spec narrows otherwise.
-
-## 4. Load Precedence
-
-Within one env root, later layers override earlier keys:
-
-```text
-1. .env                      (optional shared base)
-2. .env.{profile}            (host profile; startup-managed)
-```
-
-Startup merge rule for managed keys:
-
-1. Read existing `.env.{profile}`.
-2. Generate defaults from template + runtime topology.
-3. **Keep existing non-empty values**; fill only missing or empty keys.
-4. Write merged result back to `.env.{profile}`.
-
-## 5. Framework Notes
-
-### Vite (browser / PC)
-
-- `loadEnv(mode, appRoot)` loads `.env.development` when `mode=development`.
-- Production builds load `.env.production` when `mode=production`.
-- Private bootstrap credential `SDKWORK_ACCESS_TOKEN` is stored in gitignored `.env.{profile}.bootstrap.local` files (for example `.env.development.bootstrap.local` and `.env.production.bootstrap.local`). Tracked profile files keep `SDKWORK_ACCESS_TOKEN` blank; never place live tokens in `VITE_*` or `PORTAL_PUBLIC_*`.
-- Vite may inject `SDKWORK_ACCESS_TOKEN` into the development client bundle only from the bootstrap local layer. Production portal builds must not embed bootstrap tokens in static assets; release host tokens stay in `.env.release` for server processes.
-
-### Node (workspace launchers)
-
-- `scripts/lib/sdkwork-application-env.mjs` resolves paths and ensures profile files.
-- `scripts/dev/claw-router-application-env.mjs` supplies Claw Router generated values.
-
-### Release / production host
-
-- Template: `.env.release.example`
-- Host file: `.env.release`
-- `pnpm start` and `pnpm release:env:write` both target `.env.release`.
-- Release host startup also generates `SDKWORK_ACCESS_TOKEN` into `.env.release`.
-- Never package `.env.release` in install archives.
-
-### Spring / Flutter / Tauri (future)
-
-- Map canonical profile to framework config:
-  - Spring: `application-{profile}.yml` examples + host file outside git
-  - Flutter: `--dart-define-from-file=config/app/.env.{profile}`
-  - Tauri: server profile separate from `tauri.conf.json` packaging metadata
-
-Use the same profile names and merge semantics even when the on-disk format is TOML/YAML/JSON.
-
-## 6. Claw Router Commands
-
-| Command | Ensures |
+| Profile id | Profile file |
 | --- | --- |
-| `pnpm dev` | `apps/sdkwork-clawrouter-pc/.env.development` |
-| `pnpm build` | `apps/sdkwork-clawrouter-pc/.env.production` |
-| `pnpm check` | `check:application-env` guard + portal product check (includes production build) |
-| `pnpm start` | `.env.release` and `apps/sdkwork-clawrouter-pc/.env.production` |
-| `node scripts/ensure-claw-router-env.mjs --lifecycle dev` | browser development profile |
-| `node scripts/ensure-claw-router-env.mjs --lifecycle build` | browser production profile |
-| `node scripts/ensure-claw-router-env.mjs --lifecycle start` | release host + browser production profiles |
-| `node scripts/dev/claw-router-application-env.mjs --profile development` | browser development profile |
-| `node scripts/dev/claw-router-application-env.mjs --profile production` | browser production profile |
-| `node scripts/dev/claw-router-application-env.mjs --profile release` | release host profile |
+| `standalone.development` | `configs/topology/standalone.development.env` |
+| `standalone.production` | `configs/topology/standalone.production.env` |
+| `cloud.development` | `configs/topology/cloud.development.env` |
+| `cloud.production` | `configs/topology/cloud.production.env` |
 
-## 7. Secrets
+Runtime target, database engine, process layout, and hosting details are not
+encoded in a topology profile id. `specs/topology.spec.json` is the machine
+authority for profile lookup and surface bindings.
 
-- Templates (`.env.*.example`) must not contain live secrets or tokens.
-- Host files (`.env.{profile}`) are gitignored; may contain development-only secrets.
-- Production secrets prefer TOML + secret files (`database.secret`) on Linux service installs.
+## Browser And Process Visibility
 
-## 8. Verification
+- `VITE_*` is the only namespace available to browser application code.
+- `SDKWORK_CLAW_ROUTER_*`, `SDKWORK_CLAW_BROWSER_DEV_PROXY_*`, and
+  `SDKWORK_CLAW_EDGE_*` are process-side values and must not be emitted into a
+  browser runtime bag.
+- `PORTAL_PUBLIC_*` values are release-host inputs. The edge renderer maps only
+  approved public values to their `VITE_*` runtime equivalents.
+- `SDKWORK_ACCESS_TOKEN` is a development-only private bootstrap input. A live
+  locally signed value may exist only in the ignored
+  `.env.development.bootstrap.local` overlay and must never be emitted by the
+  production or release profile generators, templates, or env writers.
+- Production service credentials, when required, are injected at the process
+  boundary by deployment secret management or a real IAM authority. They are
+  not materialized by repository env generation.
+- API keys, provider credentials, refresh tokens, database passwords, and
+  Redis passwords must not appear in tracked environment files.
+
+## Shared Infrastructure Namespace
+
+Database and Redis settings remain in the workspace-wide Claw infrastructure
+namespaces `SDKWORK_CLAW_DATABASE_*` and `SDKWORK_CLAW_REDIS_*`. They are not
+application lifecycle axes and must not be renamed by lifecycle tooling.
+
+## Lifecycle Commands
 
 ```bash
-node --test scripts/dev/claw-router-application-env.test.mjs
-node --test scripts/lib/claw-router-browser-env-contract.test.mjs
-node --test scripts/lib/claw-router-edge-env-contract.test.mjs
-node --test scripts/dev/ensure-claw-router-env.test.mjs
-node --test scripts/write-release-env.test.mjs
-node --test scripts/release-environment-validation.test.mjs
-node scripts/check-claw-router-application-env.mjs
-pnpm check:gateway-request-identity
+node scripts/ensure-claw-router-env.mjs --lifecycle dev
+node scripts/ensure-claw-router-env.mjs --lifecycle build
+node scripts/ensure-claw-router-env.mjs --lifecycle start
+pnpm check:application-env
+pnpm topology:validate
 ```
 
-## 9. Claw Router Browser Env Namespaces
+`dev` owns `.env.development`, `build` owns `.env.production`, and `start`
+owns `.env.release`. Each command is idempotent, preserves unrelated non-empty
+operator settings, removes non-canonical lifecycle assignments, and writes the
+canonical lifecycle tuple shown above.
 
-Aligned with `../sdkwork-specs/ENVIRONMENT_SPEC.md`:
+Only the explicit `dev` lifecycle may invoke the fixed local development
+signer and create `.env.development.bootstrap.local`. The `build`, `start`,
+`production`, and `release` paths neither generate nor persist
+`SDKWORK_ACCESS_TOKEN` and do not create a production bootstrap overlay.
 
-| Namespace | Profile | Purpose |
-| --- | --- | --- |
-| `SDKWORK_CLAW_*` | development, production, release | Private application metadata and process-only settings |
-| `SDKWORK_CLAW_EDGE_*` / `SDKWORK_CLAW_TOOL_API_*` | release host only (`.env.release`) | Private Rust edge-server CSP, tool API, and archive settings |
-| `SDKWORK_ACCESS_TOKEN` | development, production, release | Private bootstrap credential in `.env.{profile}.bootstrap.local` (browser profiles) or `.env.release` (release host); tracked profile files keep this blank; never `VITE_*` or `PORTAL_PUBLIC_*` |
-| `SDKWORK_CLAW_BROWSER_DEV_PROXY_*_ORIGIN` | development only | Private Vite dev-server proxy upstream origins |
-| `VITE_*` | development (inlined), release (via `/runtime-env.js`) | Browser-visible SDK and runtime configuration |
-| `PORTAL_PUBLIC_*` | release host only (`.env.release`) | Server inputs mapped to `VITE_*` by `/runtime-env.js` |
+## Verification
 
-Rules:
+The application environment gate must prove all of the following:
 
-- `.env.development` must **not** contain `PORTAL_PUBLIC_*` or legacy `PORTAL_DEV_PROXY_*`.
-- `.env.production` must **not** contain any `PORTAL_*` keys; production browser bundles read public runtime from `/runtime-env.js`, not build-time env files.
-- Legacy `PORTAL_FORWARD_*` keys are retired; use topology profile URLs and `SDKWORK_CLAW_BROWSER_DEV_PROXY_*_ORIGIN` instead.
-- Use `VITE_CLAWROUTER_*`, `VITE_API_BASE_URL`, and `VITE_TOOL_API_ENABLED` in development.
-- Legacy keys in an existing `.env.development` are migrated and stripped on the next workspace ensure.
-
-## 10. PORTAL Keyword Policy (SDKWork Alignment)
-
-`PORTAL` is **not** a blanket legacy prefix. SDKWork `ENVIRONMENT_SPEC.md` defines three distinct layers:
-
-| Layer | Prefix | Profile / process | Role |
-| --- | --- | --- | --- |
-| Release browser public runtime | `PORTAL_PUBLIC_*` | `.env.release`, Rust edge server | Server inputs mapped to browser `VITE_*` via `/runtime-env.js` |
-| Development browser runtime | `VITE_*` | `.env.development`, Vite dev server | Build-time / dev inlined SDK URLs |
-| Private dev proxy upstream | `SDKWORK_CLAW_BROWSER_DEV_PROXY_*_ORIGIN` | `.env.development`, Vite dev server | Process-only proxy targets |
-
-**Retired (must not appear in browser profile files or Vite config):**
-
-- `PORTAL_DEV_PROXY_*` → `SDKWORK_CLAW_BROWSER_DEV_PROXY_*_ORIGIN`
-- `PORTAL_FORWARD_*` → topology profile URLs / edge forwarding env
-- `PORTAL_PUBLIC_*` in `.env.development` or `.env.production` → use `VITE_*` or release profile respectively
-
-**Still required by spec (not debt):**
-
-- `PORTAL_PUBLIC_*` on the release host and in Rust edge startup for production `/runtime-env.js`
-- `PORTAL_PUBLIC_TOOL_API_ENABLED` as the browser-visible tool UI gate on release hosts
-
-**Private edge server settings** (gateway process only; not browser-visible):
-
-| Canonical key | Legacy alias (read-only fallback) |
-| --- | --- |
-| `SDKWORK_CLAW_EDGE_CSP_CONNECT_SRC` | `PORTAL_CSP_CONNECT_SRC` |
-| `SDKWORK_CLAW_EDGE_PORTAL_STATIC_*_CACHE_CONTROL` | `PORTAL_STATIC_*` |
-| `SDKWORK_CLAW_EDGE_HSTS_*` | `PORTAL_SECURITY_HSTS_*` |
-| `SDKWORK_CLAW_EDGE_CSP_FRAME_SRC` | `PORTAL_SECURITY_CSP_FRAME_SRC` |
-| `SDKWORK_CLAW_TOOL_API_*` | `PORTAL_TOOL_API_*` |
-
-Orchestration scripts (`start-workspace`, `start-claw-router-production`) emit canonical `SDKWORK_CLAW_*` keys through `buildRuntimeEdgePrivateEnv()`. The Rust gateway reads canonical keys first and accepts legacy aliases during migration. Do not assign new `PORTAL_TOOL_API_*`, `PORTAL_CSP_*`, `PORTAL_SECURITY_*`, or `PORTAL_STATIC_*` values in tracked templates.
-
-**Release host profile (`.env.release`):**
-
-- `PORTAL_PUBLIC_*` browser runtime inputs for `/runtime-env.js`
-- `SDKWORK_CLAW_EDGE_*` / `SDKWORK_CLAW_TOOL_API_*` private edge-server settings
-- `ensureClawRouterReleaseEnv()` backfills every `CLAW_ROUTER_RELEASE_ENV_KEY_ORDER` key, including empty optional values, so partial host files are expanded on ensure
-
-**Development workspace rule:** the portal Vite process receives only `VITE_*` and `SDKWORK_CLAW_*` browser/dev keys. The integrated edge/server process receives `PORTAL_PUBLIC_*` for runtime script generation and `SDKWORK_CLAW_EDGE_*` / `SDKWORK_CLAW_TOOL_API_*` for private edge configuration.
-
-**Development database overlay (`.env.postgres`):**
-
-- When a complete split PostgreSQL profile is present, it takes precedence over a stale `SDKWORK_CLAW_DATABASE_URL` in the process environment.
-- Explicit process overrides still win when tests or operators pass `skipDevEnvFile` isolation or set split fields directly without a conflicting file overlay.
-
-## 11. HTTP Web Framework (Rust Edge / API Processes)
-
-Aligned with `../sdkwork-specs/WEB_FRAMEWORK_SPEC.md` and `docs/standard-alignment-audit.md` §1.
-
-| Variable | Default | Process | Purpose |
-| --- | --- | --- | --- |
-| `SDKWORK_CLAW_WEB_FRAMEWORK_ENABLED` | `true` (implicit) | Rust app/backend route servers | When `false`, skip `WebFrameworkLayer` wrapping |
-| `SDKWORK_CLAW_WEB_FRAMEWORK_LEGACY` | unset | Rust route integration tests | When `true`, use claw app-session token boundaries instead of IAM JWT web-framework path |
-| `SDKWORK_IAM_DATABASE_URL` | bridged from claw postgres | Rust IAM resolver | IAM token validation database; auto-materialized from unified claw postgres profile when unset |
-
-Production browser traffic (`pnpm dev` unified edge on port 3900) must use IAM dual-token JWTs resolved by sdkwork-web-framework. Do not set `SDKWORK_CLAW_WEB_FRAMEWORK_LEGACY` in production profiles.
+1. Checked-in templates declare the exact canonical lifecycle tuple.
+2. Kubernetes workloads declare the cloud production container tuple.
+3. Browser output contains only approved `VITE_*` public runtime values.
+4. Topology profile lookup does not fall back to an alternate lifecycle key.
+5. Rust configuration, HTTP security policy, and IAM runtime context resolve
+   the same application-scoped environment.
+6. Shared database and Redis infrastructure namespaces remain unchanged.

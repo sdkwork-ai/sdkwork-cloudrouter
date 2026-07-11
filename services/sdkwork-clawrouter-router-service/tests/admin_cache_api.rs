@@ -424,7 +424,7 @@ async fn admin_cache_route_reports_unknown_management_targets_as_not_found() {
         .clone()
         .oneshot(signed_request(
             "GET",
-            "/backend/v3/api/system/cache/namespaces/auth.qr.challenge/keys?limit=1",
+            "/backend/v3/api/system/cache/namespaces/auth.qr.challenge/keys?page_size=1",
         ))
         .await
         .unwrap();

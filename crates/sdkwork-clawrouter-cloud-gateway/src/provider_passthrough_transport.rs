@@ -1,5 +1,6 @@
 use axum::http::header::{self, HeaderName, HeaderValue};
 use axum::http::request::{Builder as RequestBuilder, Parts as RequestParts};
+use axum::http::uri::PathAndQuery;
 use axum::http::{HeaderMap, Uri};
 use axum::response::Response;
 use bytes::Bytes;
@@ -12,6 +13,7 @@ use hyper_util::rt::TokioExecutor;
 use sdkwork_claw_config::{
     ProviderPassthroughAuth, ProviderPassthroughAuthType, ProviderPassthroughHeader,
 };
+use sdkwork_claw_http::upsert_query_parameter;
 use std::collections::HashSet;
 
 pub(crate) type PassthroughBody = Full<Bytes>;
@@ -91,17 +93,11 @@ impl ProviderPassthroughTarget {
             .auth
             .name()
             .ok_or_else(|| "provider passthrough query auth name is missing".to_owned())?;
-        let mut path_and_query = path_and_query.to_owned();
-        let separator = if path_and_query.contains('?') {
-            '&'
-        } else {
-            '?'
-        };
-        path_and_query.push(separator);
-        path_and_query.push_str(&percent_encode_query_component(name));
-        path_and_query.push('=');
-        path_and_query.push_str(&percent_encode_query_component(self.auth.value()));
-        Ok(path_and_query)
+        let path_and_query = path_and_query
+            .parse::<PathAndQuery>()
+            .map_err(|error| format!("provider passthrough path and query are invalid: {error}"))?;
+        let query = upsert_query_parameter(path_and_query.query(), name, self.auth.value());
+        Ok(format!("{}?{query}", path_and_query.path()))
     }
 }
 
@@ -272,19 +268,6 @@ fn connection_header_names(headers: &HeaderMap) -> HashSet<String> {
         .map(|value| value.trim().to_ascii_lowercase())
         .filter(|value| !value.is_empty())
         .collect()
-}
-
-fn percent_encode_query_component(value: &str) -> String {
-    let mut encoded = String::new();
-    for byte in value.bytes() {
-        let character = byte as char;
-        if character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.' | '~') {
-            encoded.push(character);
-        } else {
-            encoded.push_str(&format!("%{byte:02X}"));
-        }
-    }
-    encoded
 }
 
 fn is_hop_by_hop_header(name: &HeaderName) -> bool {

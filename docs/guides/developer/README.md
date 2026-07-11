@@ -20,7 +20,7 @@ pnpm.cmd install
 pnpm.cmd dev
 ```
 
-`pnpm dev` starts the default topology profile `standalone.unified-process.development`. The integrated Rust edge listens on `http://127.0.0.1:3900`; the portal Vite dev server runs on `http://127.0.0.1:3901`.
+`pnpm dev` starts the default topology profile `standalone.development`. The integrated Rust edge listens on `http://127.0.0.1:3900`; the portal Vite dev server runs on `http://127.0.0.1:3901`.
 
 For SQLite development (no PostgreSQL required):
 
@@ -181,7 +181,56 @@ When error monitoring is added:
 - Do not ship sourcemaps as publicly accessible static assets. Upload them to the provider and delete from the production bundle.
 - Do not log secrets, auth headers, or user PII to the monitoring provider.
 
-## 8. Related
+## 8. cc-switch Client Integration
+
+[cc-switch](https://github.com/farion1231/cc-switch) is a cross-platform desktop manager (Tauri 2 + React + TypeScript + Rust) that switches Claude Code, Codex, Gemini CLI, OpenCode, and Hermes Agent between different provider configurations. Contributors run it locally to point these CLI agents at the dev Claw Router gateway for end-to-end routing, billing, and provider-adapter testing, without editing `~/.claude` or `~/.codex` config files by hand.
+
+### Why use it during development
+
+The Rust edge exposes three vendor-compatible gateway surfaces on a single origin, so one local Claw Router instance can serve all three CLI agents:
+
+| CLI agent | Gateway surface | Base URL (dev) | Wire protocol |
+| --- | --- | --- | --- |
+| Claude Code | `/anthropic/v1/*` | `http://127.0.0.1:3900/anthropic` | Anthropic Messages |
+| Codex | `/v1/*` | `http://127.0.0.1:3900/v1` | OpenAI Chat / Responses |
+| Gemini CLI | `/google/v1beta/*` | `http://127.0.0.1:3900/google` | Google Generative Language |
+
+### Prerequisites
+
+1. Local dev topology running: `pnpm.cmd dev` (edge on `http://127.0.0.1:3900`, portal on `http://127.0.0.1:3901`).
+2. At least one provider credential, model, and channel configured in the admin console (`/admin`) so the gateway can dispatch requests.
+3. A gateway API key created in the end-user console (`/console` → API Keys). Copy the key value; it is the `Bearer` token for all three surfaces.
+4. cc-switch installed from the [latest release](https://github.com/farion1231/cc-switch/releases).
+
+### Configure Claw Router as a provider
+
+In cc-switch, add a new provider under the tab for each CLI agent you want to test. Use the gateway API key from step 3 as the API key, and the Base URL from the table above.
+
+| cc-switch agent tab | Base URL | API Key |
+| --- | --- | --- |
+| Claude Code | `http://127.0.0.1:3900/anthropic` | Claw Router gateway API key |
+| Codex | `http://127.0.0.1:3900/v1` | Claw Router gateway API key |
+| Gemini CLI | `http://127.0.0.1:3900/google` | Claw Router gateway API key |
+
+Switch the active provider to the Claw Router entry, then launch (or restart) the CLI agent from cc-switch so it picks up the new base URL and token.
+
+### Verify the request hits Claw Router
+
+1. Send a prompt through the CLI agent (e.g. run `claude`, `codex`, or `gemini` and ask a question).
+2. Confirm the model name is one configured in your Claw Router model catalog; the gateway rejects unknown models.
+3. Check the gateway request landed:
+   - Portal: `/console/usage` shows the call record with tokens, latency, and the routed provider.
+   - Edge logs: structured stdout logs include the route, model, and provider relay latency.
+   - `curl http://127.0.0.1:3900/v1/models -H "Authorization: Bearer <key>"` lists models the gateway can serve.
+
+### Notes and limits
+
+- The three vendor-compatible surfaces share one API key and one gateway rate-limit budget; rotating the key in `/console` invalidates all cc-switch provider entries that use it.
+- Prefer `127.0.0.1` over `localhost` in Base URLs; some CLI agents reject `localhost`.
+- cc-switch writes the chosen base URL and token into the CLI agent's own config (`~/.claude`, `~/.codex`, Gemini CLI config). To return to the official upstream, switch the active provider back in cc-switch rather than hand-editing those files.
+- For streaming, the standalone dev profile streams directly with no buffering proxy in front.
+
+## 9. Related
 
 - [Portal README](../../../apps/sdkwork-clawrouter-pc/README.md)
 - [Technical architecture](../../architecture/tech/TECH_ARCHITECTURE.md)

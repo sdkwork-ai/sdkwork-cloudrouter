@@ -1,10 +1,9 @@
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
-use axum::http::{HeaderMap, StatusCode};
+use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, patch};
 use axum::{Json, Router};
@@ -13,8 +12,8 @@ use sha2::{Digest, Sha256};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
-    json_success_list_response, offset_page_info, parse_offset_list_query, problem_from_wire_code,
-    success_envelope,
+    json_created_response, json_success_list_response, no_content_response, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, success_envelope,
 };
 use crate::application::{validate_payment_secret_ref, PaymentProviderRegistryError};
 use crate::domain::DomainError;
@@ -124,12 +123,6 @@ struct NormalizedPaymentProviderAccountMutation {
 #[serde(rename_all = "camelCase")]
 struct TransactionCenterResourceResponse {
     item: AdminTransactionJsonRecord,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct TransactionCenterDeleteResponse {
-    deleted: bool,
 }
 
 pub fn admin_transaction_center_router_with_store(
@@ -330,9 +323,7 @@ async fn create_payment_provider_account(
         Err(response) => return response,
     };
     match state.store.create_payment_provider_account(command).await {
-        Ok(item) => {
-            Json(success_envelope(TransactionCenterResourceResponse { item })).into_response()
-        }
+        Ok(item) => json_created_response(None, TransactionCenterResourceResponse { item }),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => transaction_center_system_response(
             "payment provider account command store is unavailable",
@@ -432,10 +423,8 @@ async fn delete_payment_provider_account(
         Err(response) => return response,
     };
     match state.store.delete_payment_provider_account(command).await {
-        Ok(deleted) => Json(success_envelope(TransactionCenterDeleteResponse {
-            deleted,
-        }))
-        .into_response(),
+        Ok(true) => no_content_response(None),
+        Ok(false) => not_found_response("payment provider account was not found"),
         Err(error) if error.is_not_found() => not_found_response(error.to_string()),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => transaction_center_system_response(

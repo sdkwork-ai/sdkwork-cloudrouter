@@ -2,6 +2,7 @@ use sha2::{Digest, Sha256};
 use sqlx::{Row, Sqlite, SqlitePool, Transaction};
 
 use crate::domain::{DomainError, DomainResult};
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::ports::{
     AdminTransactionCenterFuture, AdminTransactionCenterStore, AdminTransactionCenterSubject,
     AdminTransactionCollection, AdminTransactionJsonRecord,
@@ -1185,16 +1186,16 @@ async fn insert_payment_provider_account_audit_if_absent(
         r#"
         INSERT INTO ops_audit_log
             (uuid, tenant_id, organization_id, request_id, operator_id, operator_type,
-             action, target_type, target_uuid, created_at, change_summary)
+             action, target_type, target_uuid, created_at, change_summary, id)
         SELECT
-            ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11
+            ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12
         WHERE NOT EXISTS (
             SELECT 1
             FROM ops_audit_log
-            WHERE tenant_id = ?12
-              AND organization_id = ?13
-              AND request_id = ?14
-              AND action = ?15
+            WHERE tenant_id = ?13
+              AND organization_id = ?14
+              AND request_id = ?15
+              AND action = ?16
         )
         "#,
     )
@@ -1218,6 +1219,7 @@ async fn insert_payment_provider_account_audit_if_absent(
     .bind(provider_account_id)
     .bind(&command.requested_at)
     .bind(change_summary)
+    .bind(next_claw_runtime_id("ops_audit_log")?)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .bind(audit_request_id)
@@ -1250,16 +1252,16 @@ async fn insert_payment_provider_account_mutation_audit(
         r#"
         INSERT INTO ops_audit_log
             (uuid, tenant_id, organization_id, request_id, operator_id, operator_type,
-             action, target_type, target_uuid, created_at, change_summary)
+             action, target_type, target_uuid, created_at, change_summary, id)
         SELECT
-            ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11
+            ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12
         WHERE NOT EXISTS (
             SELECT 1
             FROM ops_audit_log
-            WHERE tenant_id = ?12
-              AND organization_id = ?13
-              AND request_id = ?14
-              AND action = ?15
+            WHERE tenant_id = ?13
+              AND organization_id = ?14
+              AND request_id = ?15
+              AND action = ?16
         )
         "#,
     )
@@ -1283,6 +1285,7 @@ async fn insert_payment_provider_account_mutation_audit(
     .bind(input.target_uuid)
     .bind(input.requested_at)
     .bind(input.change_summary.to_string())
+    .bind(next_claw_runtime_id("ops_audit_log")?)
     .bind(input.subject.tenant_id)
     .bind(input.subject.organization_id)
     .bind(audit_request_id)

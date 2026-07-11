@@ -1,4 +1,4 @@
-use sdkwork_clawrouter_router_service::infrastructure::sql::commerce_bootstrap::commerce_database_tables;
+use sdkwork_clawrouter_router_service::commerce_database_tables;
 use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::SqlitePaymentCallbackStore;
 use sdkwork_clawrouter_router_service::ports::{
     PaymentCallbackCommand, PaymentCallbackStatus, PaymentCallbackStore,

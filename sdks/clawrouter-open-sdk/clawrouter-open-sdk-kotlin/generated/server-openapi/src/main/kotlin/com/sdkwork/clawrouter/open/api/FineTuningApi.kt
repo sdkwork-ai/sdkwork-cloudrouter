@@ -23,7 +23,7 @@ class FineTuningApi(private val client: HttpClient) {
     /** List fine-tuning checkpoint permissions */
     suspend fun retrievePermission(fineTunedModelCheckpoint: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null, projectId: String? = null): OpenAiFineTuningCheckpointPermissionList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null),
@@ -48,7 +48,7 @@ class FineTuningApi(private val client: HttpClient) {
     /** List fine-tuning jobs */
     suspend fun listJob(limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiFineTuningJobList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -78,7 +78,7 @@ class FineTuningApi(private val client: HttpClient) {
     /** List fine-tuning checkpoints */
     suspend fun retrieveCheckpoint(fineTuningJobId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiFineTuningJobCheckpointList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -90,7 +90,7 @@ class FineTuningApi(private val client: HttpClient) {
     /** List fine-tuning events */
     suspend fun retrieveEvent(fineTuningJobId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiFineTuningJobEventList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)

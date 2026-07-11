@@ -22,7 +22,7 @@ export class EvalRunsOutputItemsApi {
 /** List eval run output items */
   async list(evalId: string, runId: string, params?: EvalRunsOutputItemsListParams): Promise<OpenAiEvalRunOutputItemList> {
     const query = buildQueryString([
-      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -56,7 +56,7 @@ export class EvalRunsApi {
 /** List eval runs */
   async list(evalId: string, params?: EvalRunsListParams): Promise<OpenAiEvalRunList> {
     const query = buildQueryString([
-      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -105,7 +105,7 @@ export class EvalApi {
 /** List evals */
   async list(params?: EvalListParams): Promise<OpenAiEvalList> {
     const query = buildQueryString([
-      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{routing::get, Router};
-use sdkwork_claw_config::DatabaseConfig;
+use sdkwork_claw_config::{DatabaseConfig, DeploymentMode};
 use sdkwork_claw_contract::{ApiSurface, ContractManifest, ContractOperation};
 use sdkwork_claw_health::DatabaseHealth;
 use tower_http::trace::TraceLayer;
@@ -25,11 +25,24 @@ pub struct ServiceState {
     pub(crate) contract_manifest: Option<Arc<ContractManifest>>,
     pub(crate) contract_operation_filter: Option<ContractOperationFilter>,
     pub(crate) database: DatabaseHealth,
+    pub(crate) deployment_mode: Result<DeploymentMode, String>,
     pub(crate) readiness_check: Option<ReadinessCheckFn>,
 }
 
 pub fn service_router(service_name: &'static str) -> Router {
     service_router_with_database_config(service_name, None)
+}
+
+pub fn service_router_with_deployment_mode(
+    service_name: &'static str,
+    deployment_mode: DeploymentMode,
+) -> Router {
+    service_router_with_database_config_readiness_check_and_deployment_mode(
+        service_name,
+        None,
+        None,
+        deployment_mode,
+    )
 }
 
 pub fn service_router_with_database_config(
@@ -44,12 +57,41 @@ pub fn service_router_with_database_config_and_readiness_check(
     database_config: Option<&DatabaseConfig>,
     readiness_check: Option<ReadinessCheckFn>,
 ) -> Router {
+    service_router_with_database_config_readiness_check_and_deployment_result(
+        service_name,
+        database_config,
+        readiness_check,
+        DeploymentMode::from_env(),
+    )
+}
+
+pub fn service_router_with_database_config_readiness_check_and_deployment_mode(
+    service_name: &'static str,
+    database_config: Option<&DatabaseConfig>,
+    readiness_check: Option<ReadinessCheckFn>,
+    deployment_mode: DeploymentMode,
+) -> Router {
+    service_router_with_database_config_readiness_check_and_deployment_result(
+        service_name,
+        database_config,
+        readiness_check,
+        Ok(deployment_mode),
+    )
+}
+
+fn service_router_with_database_config_readiness_check_and_deployment_result(
+    service_name: &'static str,
+    database_config: Option<&DatabaseConfig>,
+    readiness_check: Option<ReadinessCheckFn>,
+    deployment_mode: Result<DeploymentMode, String>,
+) -> Router {
     base_router().with_state(service_state(
         service_name,
         None,
         database_config,
         None,
         readiness_check,
+        deployment_mode,
     ))
 }
 
@@ -71,6 +113,7 @@ pub fn service_router_with_contract_routes_and_database_config(
         database_config,
         None,
         None,
+        DeploymentMode::from_env(),
     )
 }
 
@@ -86,6 +129,7 @@ pub fn service_router_with_filtered_contract_routes_and_database_config(
         database_config,
         Some(operation_filter),
         None,
+        DeploymentMode::from_env(),
     )
 }
 
@@ -102,6 +146,25 @@ pub fn service_router_with_filtered_contract_routes_database_config_and_readines
         database_config,
         Some(operation_filter),
         readiness_check,
+        DeploymentMode::from_env(),
+    )
+}
+
+pub fn service_router_with_filtered_contract_routes_database_config_readiness_check_and_deployment_mode(
+    service_name: &'static str,
+    surface: ApiSurface,
+    database_config: Option<&DatabaseConfig>,
+    operation_filter: ContractOperationFilter,
+    readiness_check: Option<ReadinessCheckFn>,
+    deployment_mode: DeploymentMode,
+) -> Router {
+    service_router_with_optional_contract_operation_filter(
+        service_name,
+        surface,
+        database_config,
+        Some(operation_filter),
+        readiness_check,
+        Ok(deployment_mode),
     )
 }
 
@@ -111,6 +174,7 @@ fn service_router_with_optional_contract_operation_filter(
     database_config: Option<&DatabaseConfig>,
     operation_filter: Option<ContractOperationFilter>,
     readiness_check: Option<ReadinessCheckFn>,
+    deployment_mode: Result<DeploymentMode, String>,
 ) -> Router {
     let manifest = ContractManifest::from_embedded()
         .expect("embedded ClawRouter API contract manifest must be valid JSON");
@@ -122,6 +186,7 @@ fn service_router_with_optional_contract_operation_filter(
             database_config,
             operation_filter,
             readiness_check,
+            deployment_mode,
         ))
 }
 
@@ -153,6 +218,7 @@ fn service_state(
     database_config: Option<&DatabaseConfig>,
     contract_operation_filter: Option<ContractOperationFilter>,
     readiness_check: Option<ReadinessCheckFn>,
+    deployment_mode: Result<DeploymentMode, String>,
 ) -> ServiceState {
     let (contract_surface, contract_manifest) = match contract {
         Some((surface, manifest)) => (Some(surface), Some(manifest)),
@@ -165,6 +231,7 @@ fn service_state(
         contract_manifest,
         contract_operation_filter,
         database: DatabaseHealth::from_config(database_config),
+        deployment_mode,
         readiness_check,
     }
 }

@@ -11,7 +11,7 @@ class ProjectApi(private val client: HttpClient) {
     /** List project group roles */
     suspend fun listGroupsRoles(projectId: String, groupId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiRoleAssignmentList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -35,7 +35,7 @@ class ProjectApi(private val client: HttpClient) {
     /** List project roles */
     suspend fun listRoles(projectId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiRoleList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -59,7 +59,7 @@ class ProjectApi(private val client: HttpClient) {
     /** List project user roles */
     suspend fun listUsersRoles(projectId: String, userId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiRoleAssignmentList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("limit", limit, "form", true, false, null),
+            QueryParameterSpec("page_size", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)

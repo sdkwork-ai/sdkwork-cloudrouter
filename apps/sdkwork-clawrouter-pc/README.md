@@ -1,6 +1,6 @@
 # SDKWork ClawRouter PC
 
-SDKWork ClawRouter PC is the browser console for the Claw Router product. Default root `pnpm dev` starts the integrated product server workspace (topology profile `standalone.unified-process.development`); gateway-backed client mode is available via `pnpm dev:desktop`. Production packages are served by the Rust edge server. Frontend business calls stay behind the portal service layer, generated SDKs, and SDKWork API entrypoints.
+SDKWork ClawRouter PC is the browser console for the Claw Router product. Default root `pnpm dev` starts the integrated product server workspace (topology profile `standalone.development`); gateway-backed client mode is available via `pnpm dev:desktop`. Production packages are served by the Rust edge server. Frontend business calls stay behind the portal service layer, generated SDKs, and SDKWork API entrypoints.
 
 ## Architecture
 
@@ -9,7 +9,7 @@ SDKWork ClawRouter PC is the browser console for the Claw Router product. Defaul
 - Admin and backend APIs use `@sdkwork/clawrouter-backend-sdk` for `/backend/v3/api`.
 - `sdkwork-api-cloud-gateway` backs gateway-only client development (`pnpm dev:desktop`); integrated dev uses the Rust edge on `application.public-ingress` (default `http://127.0.0.1:3900`).
 - The Rust edge server is the default development entrypoint (`pnpm dev`) and the production packaged entrypoint.
-- Direct product service ports remain available for split-services profiles (`pnpm dev:browser:postgres:split-services:standalone`) and explicit diagnostics.
+- Direct product service ports remain available for distributed profiles (`pnpm dev:browser:postgres:standalone:debug`) and explicit diagnostics.
 
 ## Local Layout
 
@@ -44,7 +44,7 @@ See `docs/topology-standard.md` for topology profiles, URLs, and env keys.
 
 Useful root entrypoints:
 
-- `pnpm.cmd dev` starts the integrated Rust edge plus portal dev server (default unified-process profile on port 3900).
+- `pnpm.cmd dev` starts the integrated Rust edge plus portal dev server (default standalone profile on port 3900).
 - `pnpm.cmd dev:desktop` starts `sdkwork-api-cloud-gateway` and the portal dev server only (gateway-backed client).
 - `pnpm.cmd test` runs launcher and tooling contract tests.
 - `pnpm.cmd build` builds production portal assets and the Rust edge server release binary.
@@ -57,7 +57,7 @@ Useful root entrypoints:
 
 ## Development Entrypoint
 
-Default development uses topology profile `standalone.unified-process.development` (see `docs/topology-standard.md`). The integrated Rust edge listens on `application.public-ingress` (default `http://127.0.0.1:3900`); the portal Vite dev server runs on port `3901` and is health-gated behind backend `/healthz`.
+Default development uses topology profile `standalone.development` (see `docs/topology-standard.md`). The integrated Rust edge listens on `application.public-ingress` (default `http://127.0.0.1:3900`); the portal Vite dev server runs on port `3901` and is health-gated behind backend `/healthz`.
 
 Default integrated development URLs:
 

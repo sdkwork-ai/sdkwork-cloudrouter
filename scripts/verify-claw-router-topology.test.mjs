@@ -25,32 +25,28 @@ async function readJson(relativePath) {
   return JSON.parse(await read(relativePath));
 }
 
-test('declares v2 topology spec and profile env files for sdkwork-clawrouter', async () => {
+test('declares v4 topology spec and profile env files for sdkwork-clawrouter', async () => {
   assert.equal(await exists('specs/topology.spec.json'), true);
   assert.equal(await exists('scripts/lib/claw-router-topology.mjs'), true);
   assert.equal(await exists('scripts/claw-router-dev.mjs'), true);
   assert.equal(await exists('docs/topology-standard.md'), true);
 
   const spec = await readJson('specs/topology.spec.json');
-  assert.equal(spec.schemaVersion, 2);
+  assert.equal(spec.schemaVersion, 4);
   assert.equal(spec.kind, 'sdkwork.app.topology');
   assert.equal(spec.appId, 'sdkwork-clawrouter');
   assert.equal(spec.archetype, 'application-http-gateway');
-  assert.equal(spec.defaults.developmentProfileId, 'standalone.unified-process.development');
+  assert.equal(spec.defaults.developmentProfileId, 'standalone.development');
   assert.ok(spec.surfaces['application.public-ingress']);
   assert.ok(spec.surfaces['application.backend-http']);
   assert.ok(spec.surfaces['application.open-http']);
   assert.ok(spec.surfaces['platform.api-gateway']);
 
   for (const profileId of [
-    'standalone.unified-process.development',
-    'standalone.split-services.development',
-    'standalone.unified-process.production',
-    'standalone.split-services.production',
-    'cloud.unified-process.development',
-    'cloud.unified-process.production',
-    'cloud.split-services.development',
-    'cloud.split-services.production',
+    'standalone.development',
+    'standalone.production',
+    'cloud.development',
+    'cloud.production',
   ]) {
     const profilePath = spec.profileFiles[profileId];
     assert.equal(await exists(profilePath), true, `${profilePath} should exist`);
@@ -70,23 +66,20 @@ test('root package.json wires @sdkwork/app-topology and canonical dev scripts', 
     'expected @sdkwork/app-topology to resolve via sibling file: or workspace:* link',
   );
   assert.equal(packageJson.scripts.dev, 'pnpm install:deps:ensure && pnpm dev:browser');
-  assert.equal(packageJson.scripts['dev:browser'], 'pnpm dev:browser:postgres:unified-process:standalone');
-  assert.match(packageJson.scripts['dev:browser:postgres:unified-process:standalone'], /scripts\/claw-router-dev\.mjs/);
-  assert.match(packageJson.scripts['dev:browser:postgres:unified-process:standalone'], /--deployment-profile standalone/u);
-  assert.match(packageJson.scripts['dev:browser:postgres:unified-process:standalone'], /--service-layout unified-process/u);
-  assert.match(packageJson.scripts['dev:browser:postgres:unified-process:standalone'], /--target browser/u);
-  assert.match(packageJson.scripts['dev:browser:postgres:unified-process:standalone'], /--database postgres/u);
-  assert.match(packageJson.scripts['dev:browser:postgres:split-services:cloud'], /--service-layout split-services/u);
-  assert.match(packageJson.scripts['dev:browser:postgres:split-services:cloud'], /--deployment-profile cloud/u);
-  assert.equal(packageJson.scripts['dev:desktop'], 'pnpm dev:desktop:postgres:unified-process:standalone');
-  assert.match(packageJson.scripts['dev:desktop:postgres:unified-process:standalone'], /--target desktop/u);
+  assert.equal(packageJson.scripts['dev:browser'], 'pnpm dev:browser:postgres:standalone');
+  assert.match(packageJson.scripts['dev:browser:postgres:standalone'], /scripts\/claw-router-dev\.mjs/);
+  assert.match(packageJson.scripts['dev:browser:postgres:standalone'], /--deployment-profile standalone/u);
+  assert.match(packageJson.scripts['dev:browser:postgres:standalone'], /--target browser/u);
+  assert.match(packageJson.scripts['dev:browser:postgres:standalone'], /--database postgres/u);
+  assert.match(packageJson.scripts['dev:browser:postgres:cloud'], /--deployment-profile cloud/u);
+  assert.equal(packageJson.scripts['dev:desktop'], 'pnpm dev:desktop:postgres:standalone');
+  assert.match(packageJson.scripts['dev:desktop:postgres:standalone'], /--target desktop/u);
   assert.match(packageJson.scripts['topology:validate'], /sdkwork-topology\.mjs validate/);
   assert.match(packageJson.scripts['gateway:matrix'], /sdkwork-topology\.mjs print-matrix/);
   assert.match(packageJson.scripts['gateway:package:cloud'], /gateway-cloud-bundle\.mjs bundle/);
-  assert.equal(spec.scripts.clawRouterDev, 'scripts/claw-router-dev.mjs');
+  assert.equal(spec.scripts.applicationDev, 'scripts/claw-router-dev.mjs');
   assert.equal(spec.scripts.gatewayCloudBundle, 'scripts/gateway-cloud-bundle.mjs');
   assert.equal(spec.scripts.pnpm.dev.deploymentProfile, 'standalone');
-  assert.equal(spec.scripts.pnpm.dev.serviceLayout, 'unified-process');
 });
 
 test('declares cloud gateway config bundles referenced by topology spec', async () => {
@@ -107,6 +100,20 @@ test('start-workspace loads topology profile env from adapter', async () => {
   assert.match(workspaceScript, /--deployment-profile/);
   assert.match(workspaceScript, /--service-layout/);
   assert.match(workspaceScript, /--topology is retired/);
+});
+
+test('workspace topology reads only the application-scoped deployment profile key', async () => {
+  const { applyTopologyProfileToWorkspaceSettings } = await import('./lib/claw-router-topology.mjs');
+  const settings = applyTopologyProfileToWorkspaceSettings({}, {
+    SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE: 'cloud',
+    SDKWORK_CLAW_DEPLOYMENT_PROFILE: 'standalone',
+  });
+  assert.equal(settings.deploymentProfile, 'cloud');
+
+  const retiredOnlySettings = applyTopologyProfileToWorkspaceSettings({}, {
+    SDKWORK_CLAW_DEPLOYMENT_PROFILE: 'standalone',
+  });
+  assert.equal(retiredOnlySettings.deploymentProfile, undefined);
 });
 
 test('workspace health gate resolves URLs from topology runtime mode', async () => {
@@ -208,7 +215,6 @@ test('profile env files do not use retired topology vocabulary', async () => {
     }
     assert.doesNotMatch(profileEnv, /^SDKWORK_CLAW_ROUTER_TOPOLOGY=/m);
     assert.match(profileEnv, /SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE=/);
-    assert.match(profileEnv, /SDKWORK_CLAW_ROUTER_SERVICE_LAYOUT=/);
     assert.match(profileEnv, /SDKWORK_CLAW_ROUTER_PROFILE_ID=/);
   }
 });

@@ -1,8 +1,18 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import fs, {
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import {
   CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS,
@@ -11,7 +21,8 @@ import {
 } from '../lib/claw-router-browser-env-contract.mjs';
 import {
   CLAW_ROUTER_RELEASE_ENV_KEY_ORDER,
-  buildClawRouterBootstrapSessionTokenEnv,
+  buildClawRouterBrowserProductionGeneratedEnv,
+  buildClawRouterReleaseGeneratedEnv,
   ensureClawRouterBrowserDevelopmentEnv,
   ensureClawRouterBrowserProductionEnv,
   ensureClawRouterReleaseEnv,
@@ -26,8 +37,39 @@ import { signLocalAppSessionAccessToken } from './sign-local-app-session-access-
 
 const COMPLIANT_BOOTSTRAP_ACCESS_TOKEN = signLocalAppSessionAccessToken({
   appSessionSecret: 'sdkwork-clawrouter-local-dev-secret-20260507',
+  environment: 'development',
   nowUnixSeconds: 1_800_000_000,
 });
+
+const RETIRED_CLAW_LIFECYCLE_ENV_KEYS = Object.freeze([
+  'SDKWORK_CLAW_CONFIG_PROFILE',
+  'SDKWORK_CLAW_ENVIRONMENT',
+  'SDKWORK_CLAW_DEPLOYMENT_PROFILE',
+  'SDKWORK_CLAW_RUNTIME_TARGET',
+]);
+
+function captureProfileWrites(profileFilePath, operation) {
+  const resolvedProfileFilePath = path.resolve(profileFilePath);
+  const originalWriteFileSync = fs.writeFileSync;
+  const writtenContents = [];
+  fs.writeFileSync = (...args) => {
+    if (path.resolve(String(args[0])) === resolvedProfileFilePath) {
+      writtenContents.push(String(args[1]));
+    }
+    return originalWriteFileSync(...args);
+  };
+  syncBuiltinESMExports();
+
+  try {
+    return {
+      result: operation(),
+      writtenContents,
+    };
+  } finally {
+    fs.writeFileSync = originalWriteFileSync;
+    syncBuiltinESMExports();
+  }
+}
 
 test('resolveApplicationEnvFileNames uses profile files without .local suffix', () => {
   assert.deepEqual(resolveApplicationEnvFileNames('development'), {
@@ -113,6 +155,10 @@ test('ensureClawRouterBrowserDevelopmentEnv writes .env.development and preserve
     writeFileSync(
       profileFilePath,
       [
+        'SDKWORK_CLAW_CONFIG_PROFILE=dev',
+        'SDKWORK_CLAW_ENVIRONMENT=development',
+        'SDKWORK_CLAW_DEPLOYMENT_PROFILE=standalone',
+        'SDKWORK_CLAW_RUNTIME_TARGET=browser',
         'SDKWORK_ACCESS_TOKEN=' + COMPLIANT_BOOTSTRAP_ACCESS_TOKEN,
         'PORTAL_DEV_PROXY_GATEWAY_TARGET=http://127.0.0.1:3999',
         'PORTAL_PUBLIC_API_BASE_URL=/v1',
@@ -134,16 +180,23 @@ test('ensureClawRouterBrowserDevelopmentEnv writes .env.development and preserve
     assert.equal(result.profileFilePath, profileFilePath);
     assert.equal(result.mergedEnv.SDKWORK_ACCESS_TOKEN, '');
     const bootstrapLocal = loadEnvFile(path.join(applicationRoot, '.env.development.bootstrap.local'));
-    const expectedBootstrap = buildClawRouterBootstrapSessionTokenEnv({
-      workspaceRoot: tempRoot,
-      runtimeTarget: 'browser',
-    });
-    assert.equal(bootstrapLocal.SDKWORK_ACCESS_TOKEN, expectedBootstrap.SDKWORK_ACCESS_TOKEN);
+    assert.equal(
+      typeof bootstrapLocal.SDKWORK_ACCESS_TOKEN === 'string'
+        && bootstrapLocal.SDKWORK_ACCESS_TOKEN.startsWith('v2.'),
+      true,
+    );
     assert.equal(result.mergedEnv[CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.openApi], 'http://127.0.0.1:3999');
     assert.equal(result.mergedEnv[CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.backendApi], 'http://127.0.0.1:3900');
     assert.equal(result.mergedEnv.PORTAL_PUBLIC_API_BASE_URL, undefined);
     assert.equal(result.mergedEnv.VITE_API_BASE_URL, '/v1');
     assert.equal(result.mergedEnv.VITE_TOOL_API_ENABLED, 'false');
+    assert.equal(result.mergedEnv.SDKWORK_CLAW_ROUTER_CONFIG_PROFILE, 'dev');
+    assert.equal(result.mergedEnv.SDKWORK_CLAW_ROUTER_ENVIRONMENT, 'development');
+    assert.equal(result.mergedEnv.SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE, 'standalone');
+    assert.equal(result.mergedEnv.SDKWORK_CLAW_ROUTER_RUNTIME_TARGET, 'browser');
+    for (const retiredKey of RETIRED_CLAW_LIFECYCLE_ENV_KEYS) {
+      assert.equal(result.mergedEnv[retiredKey], undefined);
+    }
     assert.match(written, /SDKWORK_CLAW_BROWSER_DEV_PROXY_OPEN_API_ORIGIN=http:\/\/127\.0\.0\.1:3999/u);
     assert.doesNotMatch(written, /^PORTAL_PUBLIC_/mu);
     assert.doesNotMatch(written, /^PORTAL_DEV_PROXY_/mu);
@@ -152,7 +205,20 @@ test('ensureClawRouterBrowserDevelopmentEnv writes .env.development and preserve
   }
 });
 
-test('ensureClawRouterReleaseEnv writes .env.release from .env.release.example defaults', () => {
+test('production and release generated env records omit SDKWORK_ACCESS_TOKEN', () => {
+  const env = { SDKWORK_ACCESS_TOKEN: 'test-only-input-token' };
+  const generatedRecords = [
+    buildClawRouterBrowserProductionGeneratedEnv({ env }),
+    buildClawRouterReleaseGeneratedEnv({ env }),
+  ];
+
+  for (const generated of generatedRecords) {
+    assert.equal(Object.hasOwn(generated, 'SDKWORK_ACCESS_TOKEN'), false);
+  }
+  assert.equal(CLAW_ROUTER_RELEASE_ENV_KEY_ORDER.includes('SDKWORK_ACCESS_TOKEN'), false);
+});
+
+test('ensureClawRouterReleaseEnv writes a token-free .env.release from example defaults', () => {
   const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'claw-router-release-env-'));
 
   try {
@@ -184,14 +250,24 @@ test('ensureClawRouterReleaseEnv writes .env.release from .env.release.example d
     assert.equal(result.mergedEnv.PORTAL_PUBLIC_API_BASE_URL, '/v1');
     assert.equal(result.mergedEnv.SDKWORK_CLAW_TOOL_API_RATE_LIMIT_REQUESTS, '120');
     assert.equal(result.mergedEnv.SDKWORK_CLAW_TOOL_API_RATE_LIMIT_WINDOW_SECONDS, '60');
-    assert.equal(result.mergedEnv.SDKWORK_CLAW_ENVIRONMENT, 'production');
-    assert.match(result.mergedEnv.SDKWORK_ACCESS_TOKEN, /^v2\./u);
+    assert.equal(result.mergedEnv.SDKWORK_CLAW_ROUTER_CONFIG_PROFILE, 'prod');
+    assert.equal(result.mergedEnv.SDKWORK_CLAW_ROUTER_ENVIRONMENT, 'production');
+    assert.equal(result.mergedEnv.SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE, 'standalone');
+    assert.equal(result.mergedEnv.SDKWORK_CLAW_ROUTER_RUNTIME_TARGET, 'server');
+    for (const retiredKey of RETIRED_CLAW_LIFECYCLE_ENV_KEYS) {
+      assert.equal(result.mergedEnv[retiredKey], undefined);
+    }
+    assert.equal(Object.hasOwn(result.mergedEnv, 'SDKWORK_ACCESS_TOKEN'), false);
+    assert.doesNotMatch(
+      readFileSync(path.join(tempRoot, '.env.release'), 'utf8'),
+      /^SDKWORK_ACCESS_TOKEN=/mu,
+    );
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
   }
 });
 
-test('ensureClawRouterBrowserProductionEnv writes .env.production with access token', () => {
+test('ensureClawRouterBrowserProductionEnv omits token state and production bootstrap overlay', () => {
   const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'claw-router-production-env-'));
   const applicationRoot = path.join(tempRoot, 'apps', 'sdkwork-clawrouter-pc');
   const profileFilePath = path.join(applicationRoot, '.env.production');
@@ -217,18 +293,34 @@ test('ensureClawRouterBrowserProductionEnv writes .env.production with access to
       'utf8',
     );
 
-    const result = ensureClawRouterBrowserProductionEnv({
-      workspaceRoot: tempRoot,
-      applicationRoot,
-    });
+    const { result, writtenContents } = captureProfileWrites(
+      profileFilePath,
+      () => ensureClawRouterBrowserProductionEnv({
+        workspaceRoot: tempRoot,
+        applicationRoot,
+      }),
+    );
 
     const written = readFileSync(profileFilePath, 'utf8');
 
+    assert.equal(writtenContents.length, 1);
+    assert.equal(
+      writtenContents.some((content) => /^SDKWORK_ACCESS_TOKEN=/mu.test(content)),
+      false,
+    );
     assert.equal(result.profileFilePath, profileFilePath);
-    assert.equal(result.mergedEnv.SDKWORK_ACCESS_TOKEN, '');
-    const bootstrapLocal = loadEnvFile(path.join(applicationRoot, '.env.production.bootstrap.local'));
-    assert.match(bootstrapLocal.SDKWORK_ACCESS_TOKEN, /^v2\./u);
-    assert.equal(result.mergedEnv.SDKWORK_CLAW_ENVIRONMENT, 'production');
+    assert.equal(Object.hasOwn(result.mergedEnv, 'SDKWORK_ACCESS_TOKEN'), false);
+    assert.equal(
+      existsSync(path.join(applicationRoot, '.env.production.bootstrap.local')),
+      false,
+    );
+    assert.equal(result.mergedEnv.SDKWORK_CLAW_ROUTER_CONFIG_PROFILE, 'prod');
+    assert.equal(result.mergedEnv.SDKWORK_CLAW_ROUTER_ENVIRONMENT, 'production');
+    assert.equal(result.mergedEnv.SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE, 'standalone');
+    assert.equal(result.mergedEnv.SDKWORK_CLAW_ROUTER_RUNTIME_TARGET, 'browser');
+    for (const retiredKey of RETIRED_CLAW_LIFECYCLE_ENV_KEYS) {
+      assert.equal(result.mergedEnv[retiredKey], undefined);
+    }
     assert.equal(result.mergedEnv.PORTAL_PUBLIC_API_BASE_URL, undefined);
     assert.doesNotMatch(written, /^PORTAL_/mu);
   } finally {
@@ -281,7 +373,7 @@ test('ensureClawRouterReleaseEnv migrates legacy private edge keys to canonical 
   }
 });
 
-test('ensureClawRouterReleaseEnv backfills missing canonical keys in an existing profile', () => {
+test('ensureClawRouterReleaseEnv replaces retired lifecycle keys and the release profile alias', () => {
   const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'claw-router-release-backfill-'));
   const profileFilePath = path.join(tempRoot, '.env.release');
 
@@ -306,14 +398,17 @@ test('ensureClawRouterReleaseEnv backfills missing canonical keys in an existing
     writeFileSync(
       profileFilePath,
       [
+        'SDKWORK_CLAW_ROUTER_CONFIG_PROFILE=release',
+        'SDKWORK_CLAW_ROUTER_ENVIRONMENT=production',
+        'SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE=standalone',
+        'SDKWORK_CLAW_ROUTER_RUNTIME_TARGET=server',
         'SDKWORK_CLAW_CONFIG_PROFILE=release',
-        'SDKWORK_CLAW_ENVIRONMENT=production',
-        'SDKWORK_CLAW_DEPLOYMENT_PROFILE=standalone',
-        'SDKWORK_CLAW_RUNTIME_TARGET=server',
+        'SDKWORK_CLAW_ENVIRONMENT=development',
+        'SDKWORK_CLAW_DEPLOYMENT_PROFILE=cloud',
+        'SDKWORK_CLAW_RUNTIME_TARGET=browser',
         'SDKWORK_ACCESS_TOKEN=' + COMPLIANT_BOOTSTRAP_ACCESS_TOKEN,
         'PORTAL_PUBLIC_SDK_BASE_URL=/',
         'PORTAL_PUBLIC_API_BASE_URL=/v1',
-        'PORTAL_PUBLIC_APP_API_BASE_URL=/app/v3/api',
         'PORTAL_PUBLIC_BACKEND_API_BASE_URL=/backend/v3/api',
         'PORTAL_PUBLIC_TOOL_API_ENABLED=false',
         'SDKWORK_CLAW_TOOL_API_RATE_LIMIT_REQUESTS=120',
@@ -323,12 +418,27 @@ test('ensureClawRouterReleaseEnv backfills missing canonical keys in an existing
       'utf8',
     );
 
-    const result = ensureClawRouterReleaseEnv({
-      workspaceRoot: tempRoot,
-    });
+    const { result, writtenContents } = captureProfileWrites(
+      profileFilePath,
+      () => ensureClawRouterReleaseEnv({
+        workspaceRoot: tempRoot,
+      }),
+    );
 
+    assert.equal(writtenContents.length, 1);
+    assert.equal(
+      writtenContents.some((content) => /^SDKWORK_ACCESS_TOKEN=/mu.test(content)),
+      false,
+    );
     assert.equal(result.changed, true);
-    assert.equal(result.mergedEnv.SDKWORK_ACCESS_TOKEN, COMPLIANT_BOOTSTRAP_ACCESS_TOKEN);
+    assert.equal(Object.hasOwn(result.mergedEnv, 'SDKWORK_ACCESS_TOKEN'), false);
+    assert.equal(result.mergedEnv.SDKWORK_CLAW_ROUTER_CONFIG_PROFILE, 'prod');
+    assert.equal(result.mergedEnv.SDKWORK_CLAW_ROUTER_ENVIRONMENT, 'production');
+    assert.equal(result.mergedEnv.SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE, 'standalone');
+    assert.equal(result.mergedEnv.SDKWORK_CLAW_ROUTER_RUNTIME_TARGET, 'server');
+    for (const retiredKey of RETIRED_CLAW_LIFECYCLE_ENV_KEYS) {
+      assert.equal(result.mergedEnv[retiredKey], undefined);
+    }
     for (const key of CLAW_ROUTER_RELEASE_ENV_KEY_ORDER) {
       assert.ok(
         Object.prototype.hasOwnProperty.call(result.mergedEnv, key),
@@ -337,6 +447,10 @@ test('ensureClawRouterReleaseEnv backfills missing canonical keys in an existing
     }
 
     const writtenRecord = loadEnvFile(profileFilePath);
+    assert.equal(writtenRecord.SDKWORK_CLAW_ROUTER_CONFIG_PROFILE, 'prod');
+    for (const retiredKey of RETIRED_CLAW_LIFECYCLE_ENV_KEYS) {
+      assert.equal(writtenRecord[retiredKey], undefined);
+    }
     for (const key of CLAW_ROUTER_RELEASE_ENV_KEY_ORDER) {
       assert.ok(
         Object.prototype.hasOwnProperty.call(writtenRecord, key),
@@ -384,6 +498,7 @@ test('ensureClawRouterReleaseEnv writes comment-prefixed edge key documentation'
 
 test('signLocalAppSessionAccessToken emits v2 access claim tokens', () => {
   const token = signLocalAppSessionAccessToken({
+    environment: 'development',
     appSessionSecret: 'sdkwork-clawrouter-local-dev-secret-20260507',
     nowUnixSeconds: 1_800_000_000,
   });
@@ -396,6 +511,69 @@ test('signLocalAppSessionAccessToken emits v2 access claim tokens', () => {
   assert.equal(payload.tenant_id, '100001');
   assert.equal(payload.app_id, 'sdkwork-clawrouter');
   assert.equal(payload.login_scope, 'TENANT');
+});
+
+test('fixed local signer requires an explicit development lifecycle', () => {
+  const appSessionSecret = 'test-only-local-signing-material'.padEnd(32, 'x');
+  assert.throws(
+    () => signLocalAppSessionAccessToken({
+      appSessionSecret,
+      nowUnixSeconds: 1_800_000_000,
+    }),
+    /explicit development lifecycle/u,
+  );
+  assert.throws(
+    () => signLocalAppSessionAccessToken({
+      appSessionSecret,
+      environment: 'production',
+      nowUnixSeconds: 1_800_000_000,
+    }),
+    /development lifecycle/u,
+  );
+});
+
+test('direct profile CLI rejects unknown profiles before invoking the local signer', () => {
+  const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'claw-router-profile-cli-'));
+  const applicationRoot = path.join(tempRoot, 'apps', 'sdkwork-clawrouter-pc');
+
+  try {
+    mkdirSync(applicationRoot, { recursive: true });
+    writeFileSync(
+      path.join(tempRoot, 'sdkwork.app.config.json'),
+      JSON.stringify({
+        app: { key: 'sdkwork-clawrouter' },
+        backend: { tenantId: '100001', organizationId: '0' },
+      }),
+      'utf8',
+    );
+
+    const cliResult = spawnSync(
+      process.execPath,
+      [
+        fileURLToPath(new URL('./claw-router-application-env.mjs', import.meta.url)),
+        '--workspace-root',
+        tempRoot,
+        '--profile',
+        'unsupported-profile',
+      ],
+      {
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          SDKWORK_CLAW_APP_SESSION_SECRET: 'too-short',
+        },
+      },
+    );
+
+    assert.notEqual(cliResult.status, 0);
+    assert.match(cliResult.stderr, /unsupported profile/u);
+    assert.equal(
+      existsSync(path.join(applicationRoot, '.env.development.bootstrap.local')),
+      false,
+    );
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
 });
 
 test('ensureClawRouterBrowserDevelopmentEnv refreshes stale bootstrap access tokens', () => {

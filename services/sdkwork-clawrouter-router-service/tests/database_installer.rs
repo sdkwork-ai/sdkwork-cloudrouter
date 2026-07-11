@@ -1,11 +1,5 @@
 use sdkwork_clawrouter_router_service::application::{PasswordHasher, Pbkdf2Sha256PasswordHasher};
 use sdkwork_clawrouter_router_service::domain::DecimalValue;
-use sdkwork_clawrouter_router_service::infrastructure::sql::commerce_bootstrap::commerce_database_tables;
-use sdkwork_clawrouter_router_service::infrastructure::sql::commerce_bootstrap::{
-    commerce_payment_channel_seeds, commerce_payment_method_seeds,
-    commerce_payment_provider_account_seeds, commerce_payment_provider_seeds,
-    commerce_payment_route_rule_seeds, membership_package_group_seeds, membership_plan_seeds,
-};
 use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
     CatalogRefreshOptions, DatabaseInstallOptions, DatabaseInstaller, InstallationStatus,
     CURRENT_SCHEMA_VERSION,
@@ -231,12 +225,15 @@ async fn sqlite_installed_admin_user_store_lists_iam_bootstrap_admin_without_plu
                 operator_type: 1,
             },
             q: None,
+            page_no: 1,
             page_size: 200,
+            offset: 0,
         })
         .await
         .unwrap();
 
     let admin = users
+        .items
         .iter()
         .find(|user| user.id == 1)
         .expect("bootstrap admin must be visible through admin user read store");
@@ -283,12 +280,15 @@ async fn sqlite_admin_user_store_lists_registered_tenant_users_outside_current_o
                 operator_type: 1,
             },
             q: None,
+            page_no: 1,
             page_size: 200,
+            offset: 0,
         })
         .await
         .unwrap();
 
     let registered = users
+        .items
         .iter()
         .find(|user| user.id == 2)
         .expect("registered tenant user must be visible even before being added to the current organization");
@@ -306,13 +306,15 @@ async fn sqlite_admin_user_store_lists_registered_tenant_users_outside_current_o
                 operator_type: 1,
             },
             q: Some("registered-cross-org@example.com".to_owned()),
+            page_no: 1,
             page_size: 20,
+            offset: 0,
         })
         .await
         .unwrap();
 
-    assert_eq!(1, matched_users.len());
-    assert_eq!("registered-cross-org", matched_users[0].username);
+    assert_eq!(1, matched_users.items.len());
+    assert_eq!("registered-cross-org", matched_users.items[0].username);
 }
 
 #[tokio::test]
@@ -1556,53 +1558,27 @@ async fn sqlite_installer_installs_seed_projection_indexes_for_fast_startup_chec
 }
 
 #[tokio::test]
-async fn sqlite_installer_repairs_missing_commerce_experience_seed_on_startup_check() {
+async fn sqlite_installer_does_not_record_retired_commerce_experience_seed() {
     let pool = repair_sqlite_pool().await;
     let installer = installer(pool.clone());
 
-    assert_sqlite_row_exists(&pool, "membership_package", "id = '302'").await;
-    assert_sqlite_row_exists(
-        &pool,
-        "commerce_payment_channel",
-        "id = 'seed-payment-channel-card-checkout'",
-    )
-    .await;
-    sqlx::query("DELETE FROM membership_package WHERE id = '302'")
-        .execute(&pool)
-        .await
-        .unwrap();
-    sqlx::query(
-        "DELETE FROM commerce_payment_channel WHERE id = 'seed-payment-channel-card-checkout'",
-    )
-    .execute(&pool)
-    .await
-    .unwrap();
-    sqlx::query(
-        "UPDATE commerce_payment_provider SET display_name = 'Production Stripe' WHERE provider_code = 'stripe'",
-    )
-    .execute(&pool)
-    .await
-    .unwrap();
+    let installed = installer.ensure_installed().await.unwrap();
+    assert_eq!(InstallationStatus::Installed, installed.status);
 
-    assert_eq!(
-        InstallationStatus::UpgradeRequired,
-        installer.status().await.unwrap(),
-        "installer status must detect missing membership and recharge experience seed rows"
-    );
-
-    let repaired = installer.ensure_installed().await.unwrap();
-    assert_eq!(InstallationStatus::Installed, repaired.status);
-    assert!(repaired.changed);
-    assert_commerce_experience_seed_rows(&pool).await;
-    let provider_display_name: String = sqlx::query_scalar(
-        "SELECT display_name FROM commerce_payment_provider WHERE provider_code = 'stripe'",
+    let seed_migration_count: i64 = sqlx::query_scalar(
+        r#"
+        SELECT COUNT(1)
+        FROM system_schema_migration
+        WHERE migration_key = ?
+        "#,
     )
+    .bind(format!("commerce-experience:{SCHEMA_VERSION}"))
     .fetch_one(&pool)
     .await
     .unwrap();
     assert_eq!(
-        "Production Stripe", provider_display_name,
-        "startup repair must not replay unrelated commerce seed slices when the bundled payload is already current"
+        0, seed_migration_count,
+        "retired commerce experience seed must not be recorded as completed work"
     );
 }
 
@@ -2175,18 +2151,22 @@ async fn sqlite_installer_auto_initializes_recharge_catalog_for_non_default_admi
             sdkwork_clawrouter_router_service::ports::ListAdminRechargePackagesQuery {
                 subject,
                 status: None,
+                page_no: 1,
+                page_size: 200,
+                offset: 0,
             },
         )
         .await
         .unwrap();
     assert_eq!(
         18,
-        packages.len(),
+        packages.items.len(),
         "non-default admin tenant must receive a full recharge catalog on first read"
     );
     assert_eq!(
         9,
         packages
+            .items
             .iter()
             .filter(|item| item.status == "active")
             .count(),
@@ -2195,6 +2175,7 @@ async fn sqlite_installer_auto_initializes_recharge_catalog_for_non_default_admi
     assert_eq!(
         9,
         packages
+            .items
             .iter()
             .filter(|item| item.status == "inactive")
             .count(),
@@ -3112,412 +3093,6 @@ async fn assert_pricing_snapshot_contains_catalog_models(
             "{model} must be visible to the pricing catalog loader"
         );
     }
-}
-
-async fn assert_commerce_experience_seed_rows(pool: &SqlitePool) {
-    let membership_plan_count: i64 = sqlx::query_scalar(
-        r#"
-        SELECT COUNT(1)
-        FROM membership_plan
-        WHERE tenant_id = '100001'
-          AND organization_id = '0'
-          AND status = 'active'
-        "#,
-    )
-    .fetch_one(pool)
-    .await
-    .unwrap();
-    assert_eq!(
-        4, membership_plan_count,
-        "installer must seed four membership plans: free, pro, max, vip"
-    );
-
-    let membership_product_count: i64 = sqlx::query_scalar(
-        r#"
-        SELECT COUNT(1)
-        FROM commerce_product_spu
-        WHERE tenant_id = '100001'
-          AND organization_id = '0'
-          AND spu_no = 'membership'
-          AND status = 'active'
-        "#,
-    )
-    .fetch_one(pool)
-    .await
-    .unwrap();
-    assert_eq!(
-        1, membership_product_count,
-        "membership product SPU must be seeded"
-    );
-
-    let membership_package_count: i64 = sqlx::query_scalar(
-        r#"
-        SELECT COUNT(1)
-        FROM membership_package
-        WHERE tenant_id = '100001'
-          AND organization_id = '0'
-          AND package_no LIKE 'membership-%'
-          AND status = 'active'
-        "#,
-    )
-    .fetch_one(pool)
-    .await
-    .unwrap();
-    assert_eq!(
-        6, membership_package_count,
-        "installer must seed two purchase groups with three membership packages each"
-    );
-
-    let expected_groups = membership_package_group_seeds()
-        .into_iter()
-        .map(|group| {
-            (
-                group
-                    .package_group_no
-                    .strip_prefix("membership-")
-                    .unwrap_or(group.package_group_no)
-                    .to_owned(),
-                group.name.to_owned(),
-                group.duration_days,
-            )
-        })
-        .collect::<Vec<_>>();
-    for (group_code, group_name, duration_days) in expected_groups {
-        let group_count: i64 = sqlx::query_scalar(
-            r#"
-            SELECT COUNT(1)
-            FROM membership_package
-            WHERE tenant_id = '100001'
-              AND organization_id = '0'
-              AND package_no LIKE ?
-              AND status = 'active'
-            "#,
-        )
-        .bind(format!("membership-{group_code}-%"))
-        .fetch_one(pool)
-        .await
-        .unwrap();
-        assert_eq!(
-            3, group_count,
-            "{group_name} group must contain pro/max/vip packages"
-        );
-
-        let rows = sqlx::query(
-            r#"
-            SELECT sku_no, spec_json
-            FROM commerce_product_sku
-            WHERE tenant_id = '100001'
-              AND organization_id = '0'
-              AND spu_id = 'seed-product-membership'
-              AND sku_no LIKE ?
-              AND status = 'active'
-            "#,
-        )
-        .bind(format!("membership-{group_code}-%"))
-        .fetch_all(pool)
-        .await
-        .unwrap();
-        let mut tier_codes = BTreeSet::new();
-        for row in rows {
-            let sku_no = row.get::<String, _>("sku_no");
-            let spec: serde_json::Value =
-                serde_json::from_str(&row.get::<String, _>("spec_json")).unwrap();
-            assert_eq!(
-                "membership_package",
-                spec["kind"].as_str().unwrap_or_default()
-            );
-            assert_eq!(
-                group_code.as_str(),
-                spec["groupCode"].as_str().unwrap_or_default()
-            );
-            assert_eq!(
-                group_name.as_str(),
-                spec["groupName"].as_str().unwrap_or_default()
-            );
-            assert_eq!(
-                duration_days,
-                spec["durationDays"].as_i64().unwrap_or_default()
-            );
-            let tier_code = spec["planCode"].as_str().unwrap_or_default().to_owned();
-            assert!(
-                tier_codes.insert(tier_code),
-                "{sku_no} must not duplicate tier code inside {group_name}"
-            );
-        }
-        assert_eq!(
-            ["max", "pro", "vip"]
-                .into_iter()
-                .map(str::to_owned)
-                .collect::<BTreeSet<_>>(),
-            tier_codes,
-            "{group_name} group must seed expected tier codes"
-        );
-    }
-
-    let expected_levels = membership_plan_seeds()
-        .into_iter()
-        .map(|level| (level.plan_no.to_owned(), level.name.to_owned(), level.rank))
-        .collect::<Vec<_>>();
-    for (level_no, name, level_value) in expected_levels {
-        let row = sqlx::query(
-            r#"
-            SELECT name, rank
-            FROM membership_plan
-            WHERE tenant_id = '100001'
-              AND organization_id = '0'
-              AND plan_no = ?
-              AND status = 'active'
-            "#,
-        )
-        .bind(level_no.as_str())
-        .fetch_one(pool)
-        .await
-        .unwrap();
-        assert_eq!(name, row.get::<String, _>("name"));
-        assert_eq!(level_value, row.get::<i64, _>("rank"));
-    }
-
-    let recharge_product_count: i64 = sqlx::query_scalar(
-        r#"
-        SELECT COUNT(1)
-        FROM commerce_product_spu
-        WHERE tenant_id = '100001'
-          AND organization_id = '0'
-          AND spu_no IN ('points-recharge-cny', 'points-recharge-non-cny')
-          AND status = 'active'
-        "#,
-    )
-    .fetch_one(pool)
-    .await
-    .unwrap();
-    assert_eq!(
-        2, recharge_product_count,
-        "points recharge seed products must include CNY and non-CNY groups"
-    );
-
-    let recharge_package_count: i64 = sqlx::query_scalar(
-        r#"
-        SELECT COUNT(1)
-        FROM commerce_recharge_package
-        WHERE tenant_id = '100001'
-          AND organization_id = '0'
-          AND status = 'active'
-        "#,
-    )
-    .fetch_one(pool)
-    .await
-    .unwrap();
-    assert_eq!(
-        9, recharge_package_count,
-        "installer must seed nine active default points recharge packages"
-    );
-
-    let recharge_package_total_count: i64 = sqlx::query_scalar(
-        r#"
-        SELECT COUNT(1)
-        FROM commerce_recharge_package
-        WHERE tenant_id = '100001'
-          AND organization_id = '0'
-          AND status <> 'deleted'
-        "#,
-    )
-    .fetch_one(pool)
-    .await
-    .unwrap();
-    assert_eq!(
-        18, recharge_package_total_count,
-        "installer must initialize the full recharge package catalog"
-    );
-
-    let recharge_settings = sqlx::query(
-        r#"
-        SELECT rate, remark
-        FROM commerce_exchange_rule
-        WHERE tenant_id = '100001'
-          AND organization_id = '0'
-          AND rule_no = 'CASH_TO_POINTS'
-          AND source_asset_type = 'cash'
-          AND target_asset_type = 'points'
-          AND status = 'active'
-        LIMIT 1
-        "#,
-    )
-    .fetch_one(pool)
-    .await
-    .unwrap();
-    assert_eq!("10", recharge_settings.get::<String, _>("rate"));
-    let remark: serde_json::Value =
-        serde_json::from_str(&recharge_settings.get::<String, _>("remark")).unwrap();
-    assert_eq!(
-        "CNY",
-        remark["baseCurrencyCode"].as_str().unwrap_or_default()
-    );
-    assert_eq!(
-        "1",
-        remark["currencyToCnyRates"]["CNY"]
-            .as_str()
-            .unwrap_or_default()
-    );
-    assert_eq!(
-        "7",
-        remark["currencyToCnyRates"]["USD"]
-            .as_str()
-            .unwrap_or_default()
-    );
-
-    let store = SqliteAdminMarketingStore::new(pool.clone());
-    let subject = AdminMarketingSubject {
-        tenant_id: 100001,
-        organization_id: 0,
-        operator_id: 1,
-        operator_type: 1,
-    };
-    let admin_packages = store
-        .list_recharge_packages(
-            sdkwork_clawrouter_router_service::ports::ListAdminRechargePackagesQuery {
-                subject,
-                status: None,
-            },
-        )
-        .await
-        .unwrap();
-    assert_eq!(
-        18,
-        admin_packages.len(),
-        "default admin tenant must see the initialized recharge package catalog on startup"
-    );
-    assert_eq!(
-        9,
-        admin_packages
-            .iter()
-            .filter(|item| item.status == "active")
-            .count(),
-        "default admin catalog must only activate the RMB recharge packages on startup"
-    );
-    assert_eq!(
-        9,
-        admin_packages
-            .iter()
-            .filter(|item| item.status == "inactive")
-            .count(),
-        "default admin catalog must keep USD recharge packages inactive on startup"
-    );
-    let admin_settings = store.load_recharge_settings(subject).await.unwrap();
-    assert_eq!("CNY", admin_settings.base_currency_code);
-    assert_eq!("10", admin_settings.base_points_per_cny);
-    assert_eq!(
-        Some("1"),
-        admin_settings
-            .currency_to_cny_rates
-            .get("CNY")
-            .map(String::as_str)
-    );
-    assert_eq!(
-        Some("7"),
-        admin_settings
-            .currency_to_cny_rates
-            .get("USD")
-            .map(String::as_str)
-    );
-
-    assert_seed_statuses(
-        pool,
-        "commerce_payment_method",
-        "method_key",
-        "status",
-        commerce_payment_method_seeds()
-            .into_iter()
-            .map(|method| (method.method_key.to_owned(), "active".to_owned()))
-            .collect(),
-        "payment methods",
-    )
-    .await;
-
-    assert_seed_statuses(
-        pool,
-        "commerce_payment_provider",
-        "provider_code",
-        "status",
-        commerce_payment_provider_seeds()
-            .into_iter()
-            .map(|provider| (provider.provider_code.to_owned(), "active".to_owned()))
-            .collect(),
-        "payment providers",
-    )
-    .await;
-    assert_seed_statuses(
-        pool,
-        "commerce_payment_provider_account",
-        "account_no",
-        "status",
-        commerce_payment_provider_account_seeds()
-            .into_iter()
-            .map(|account| (account.account_no.to_owned(), account.status.to_owned()))
-            .collect(),
-        "payment provider accounts",
-    )
-    .await;
-    assert_seed_statuses(
-        pool,
-        "commerce_payment_channel",
-        "channel_no",
-        "status",
-        commerce_payment_channel_seeds()
-            .into_iter()
-            .map(|channel| (channel.channel_no.to_owned(), channel.status.to_owned()))
-            .collect(),
-        "payment channels",
-    )
-    .await;
-    assert_seed_statuses(
-        pool,
-        "commerce_payment_route_rule",
-        "rule_no",
-        "status",
-        commerce_payment_route_rule_seeds()
-            .into_iter()
-            .map(|rule| (rule.rule_no.to_owned(), rule.status.to_owned()))
-            .collect(),
-        "payment route rules",
-    )
-    .await;
-}
-
-async fn assert_seed_statuses(
-    pool: &SqlitePool,
-    table: &str,
-    key_column: &str,
-    status_column: &str,
-    expected: BTreeMap<String, String>,
-    label: &str,
-) {
-    let rows = sqlx::query(
-        format!(
-            r#"
-            SELECT {key_column} AS seed_key, {status_column} AS seed_status
-            FROM {table}
-            WHERE tenant_id = '100001'
-              AND organization_id = '0'
-            "#
-        )
-        .as_str(),
-    )
-    .fetch_all(pool)
-    .await
-    .unwrap();
-    let actual = rows
-        .into_iter()
-        .map(|row| {
-            (
-                row.get::<String, _>("seed_key"),
-                row.get::<String, _>("seed_status"),
-            )
-        })
-        .collect::<BTreeMap<_, _>>();
-    assert_eq!(
-        expected, actual,
-        "installer must seed all standard {label} with the bootstrap-defined status"
-    );
 }
 
 fn bundled_catalog() -> sdkwork_models::ModelCatalog {

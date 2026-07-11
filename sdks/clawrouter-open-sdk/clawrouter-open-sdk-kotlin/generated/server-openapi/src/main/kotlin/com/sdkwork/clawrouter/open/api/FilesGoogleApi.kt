@@ -11,7 +11,7 @@ class FilesGoogleApi(private val client: HttpClient) {
     /** Google Gemini list files */
     suspend fun listV1betaFiles(pageSize: Int? = null, pageToken: String? = null): GoogleFileListResponse? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("pageSize", pageSize, "form", true, false, null),
+            QueryParameterSpec("page_size", pageSize, "form", true, false, null),
             QueryParameterSpec("pageToken", pageToken, "form", true, false, null)
         ))
         val raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/google/v1beta/files"), query))

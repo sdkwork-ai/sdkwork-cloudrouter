@@ -96,8 +96,8 @@ export class AiAiResourceGroupsApi {
   }
 
 /** Delete */
-  async delete(groupId: string): Promise<Record<string, never>> {
-    return this.client.delete<Record<string, never>>(backendApiPath(`/ai/resource_groups/${serializePathParameter(groupId, { name: 'groupId', style: 'simple', explode: false })}`));
+  async delete(groupId: string): Promise<void> {
+    return this.client.delete<void>(backendApiPath(`/ai/resource_groups/${serializePathParameter(groupId, { name: 'groupId', style: 'simple', explode: false })}`));
   }
 
 /** Update */
@@ -153,8 +153,8 @@ export class AiModelsApi {
   }
 
 /** Delete */
-  async delete(modelId: string): Promise<Record<string, never>> {
-    return this.client.delete<Record<string, never>>(backendApiPath(`/ai/models/${serializePathParameter(modelId, { name: 'modelId', style: 'simple', explode: false })}`));
+  async delete(modelId: string): Promise<void> {
+    return this.client.delete<void>(backendApiPath(`/ai/models/${serializePathParameter(modelId, { name: 'modelId', style: 'simple', explode: false })}`));
   }
 
 /** Update */
@@ -280,7 +280,7 @@ export class AiModelRankingsApi {
   }
 }
 
-export class AiModelMappingsResolveApi {
+export class AiModelMappingsCollectionApi {
   private client: HttpClient;
 
   constructor(client: HttpClient) {
@@ -288,19 +288,19 @@ export class AiModelMappingsResolveApi {
   }
 
 
-/** Create */
-  async create(): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/ai/model_mappings/resolve`));
+/** Replace */
+  async update(): Promise<Record<string, never>> {
+    return this.client.put<Record<string, never>>(backendApiPath(`/ai/model_mappings`));
   }
 }
 
 export class AiModelMappingsApi {
   private client: HttpClient;
-  public readonly resolve: AiModelMappingsResolveApi;
+  public readonly collection: AiModelMappingsCollectionApi;
 
   constructor(client: HttpClient) {
     this.client = client;
-    this.resolve = new AiModelMappingsResolveApi(client);
+    this.collection = new AiModelMappingsCollectionApi(client);
   }
 
 
@@ -314,14 +314,14 @@ export class AiModelMappingsApi {
     return this.client.post<Record<string, never>>(backendApiPath(`/ai/model_mappings`));
   }
 
-/** Replace */
-  async replace(): Promise<Record<string, never>> {
-    return this.client.put<Record<string, never>>(backendApiPath(`/ai/model_mappings`));
+/** Create */
+  async resolve(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(backendApiPath(`/ai/model_mappings/resolve`));
   }
 
 /** Delete */
-  async delete(mappingId: string): Promise<Record<string, never>> {
-    return this.client.delete<Record<string, never>>(backendApiPath(`/ai/model_mappings/${serializePathParameter(mappingId, { name: 'mappingId', style: 'simple', explode: false })}`));
+  async delete(mappingId: string): Promise<void> {
+    return this.client.delete<void>(backendApiPath(`/ai/model_mappings/${serializePathParameter(mappingId, { name: 'mappingId', style: 'simple', explode: false })}`));
   }
 
 /** Update */
@@ -400,8 +400,8 @@ export class AiChannelGroupsApi {
   }
 
 /** Delete */
-  async delete(channelGroupId: string): Promise<Record<string, never>> {
-    return this.client.delete<Record<string, never>>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}`));
+  async delete(channelGroupId: string): Promise<void> {
+    return this.client.delete<void>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}`));
   }
 
 /** Update */

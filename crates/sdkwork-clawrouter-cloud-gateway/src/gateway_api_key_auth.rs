@@ -1,7 +1,9 @@
 use axum::http::{HeaderMap, StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use axum::Json;
-use sdkwork_claw_http::ApiKeyIdentity;
+use sdkwork_claw_http::{
+    sanitize_sensitive_query_in_uri, ApiKeyIdentity, QueryStringApiKeyPolicy,
+};
 use sdkwork_clawrouter_router_service::application::{
     ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
 };
@@ -13,11 +15,17 @@ pub(crate) fn authenticate_gateway_api_key<C>(
     api_key_hasher: &(dyn ApiKeySecretHasher + Send + Sync),
     headers: &HeaderMap,
     uri: &Uri,
+    query_string_api_key_policy: QueryStringApiKeyPolicy,
 ) -> Result<AuthenticatedApiKeyContext, Response>
 where
     C: PricingCatalog,
 {
-    let identity = ApiKeyIdentity::from_headers_and_uri(headers, uri).map_err(|error| {
+    let identity = ApiKeyIdentity::from_headers_and_uri_with_query_key_policy(
+        headers,
+        uri,
+        query_string_api_key_policy,
+    )
+    .map_err(|error| {
         gateway_auth_error(
             StatusCode::BAD_REQUEST,
             "invalid_request",
@@ -44,6 +52,17 @@ where
                 "api key credential is invalid",
             )
         })
+}
+
+pub(crate) fn sanitize_authenticated_gateway_uri(uri: &Uri) -> Result<Uri, Response> {
+    sanitize_sensitive_query_in_uri(uri).map_err(|_| {
+        gateway_auth_error(
+            StatusCode::BAD_REQUEST,
+            "invalid_request",
+            "invalid_request_error",
+            "request URI could not be sanitized",
+        )
+    })
 }
 
 fn gateway_auth_error(

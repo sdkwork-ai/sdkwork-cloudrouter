@@ -941,33 +941,6 @@
         "description": "Ai resource groups create result schema exposed by Claw Router.",
         "x-operation-id": "aiResourceGroups.create"
       },
-      "AiResourceGroupsDeleteResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by ai resource groups delete result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Ai resource groups delete result schema exposed by Claw Router.",
-        "x-operation-id": "aiResourceGroups.delete"
-      },
       "AiResourceGroupsListResult": {
         "allOf": [
           {
@@ -1274,14 +1247,14 @@
         "description": "Auth settings update result schema exposed by Claw Router.",
         "x-operation-id": "auth.settings.update"
       },
-      "CacheInstancesDeleteResult": {
+      "CacheInstancesRefreshResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by cache instances delete result.",
+            "description": "Object schema used by cache instances refresh result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -1289,7 +1262,7 @@
                     "$ref": "#/components/schemas/CacheOperationOutcome"
                   }
                 ],
-                "description": "Data field on cache instances delete result."
+                "description": "Data field on cache instances refresh result."
               }
             },
             "required": [
@@ -1298,35 +1271,8 @@
             "type": "object"
           }
         ],
-        "description": "Cache instances delete result schema exposed by Claw Router.",
-        "x-operation-id": "cache.instances.delete"
-      },
-      "CacheInstancesRefreshCreateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by cache instances refresh create result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/CacheOperationOutcome"
-                  }
-                ],
-                "description": "Data field on cache instances refresh create result."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Cache instances refresh create result schema exposed by Claw Router.",
-        "x-operation-id": "cache.instances.refresh.create"
+        "description": "Cache instances refresh result schema exposed by Claw Router.",
+        "x-operation-id": "cache.instances.refresh"
       },
       "CacheNamespaceKeyPage": {
         "additionalProperties": false,
@@ -1427,60 +1373,6 @@
         ],
         "type": "object"
       },
-      "CacheNamespacesDeleteResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by cache namespaces delete result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/CacheOperationOutcome"
-                  }
-                ],
-                "description": "Data field on cache namespaces delete result."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Cache namespaces delete result schema exposed by Claw Router.",
-        "x-operation-id": "cache.namespaces.delete"
-      },
-      "CacheNamespacesKeysDeleteResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by cache namespaces keys delete result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/CacheOperationOutcome"
-                  }
-                ],
-                "description": "Data field on cache namespaces keys delete result."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Cache namespaces keys delete result schema exposed by Claw Router.",
-        "x-operation-id": "cache.namespaces.keys.delete"
-      },
       "CacheNamespacesKeysListResult": {
         "allOf": [
           {
@@ -1508,14 +1400,14 @@
         "description": "Cache namespaces keys list result schema exposed by Claw Router.",
         "x-operation-id": "cache.namespaces.keys.list"
       },
-      "CacheNamespacesRefreshCreateResult": {
+      "CacheNamespacesRefreshResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by cache namespaces refresh create result.",
+            "description": "Object schema used by cache namespaces refresh result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -1523,7 +1415,7 @@
                     "$ref": "#/components/schemas/CacheOperationOutcome"
                   }
                 ],
-                "description": "Data field on cache namespaces refresh create result."
+                "description": "Data field on cache namespaces refresh result."
               }
             },
             "required": [
@@ -1532,8 +1424,8 @@
             "type": "object"
           }
         ],
-        "description": "Cache namespaces refresh create result schema exposed by Claw Router.",
-        "x-operation-id": "cache.namespaces.refresh.create"
+        "description": "Cache namespaces refresh result schema exposed by Claw Router.",
+        "x-operation-id": "cache.namespaces.refresh"
       },
       "CacheOperationOutcome": {
         "additionalProperties": false,
@@ -1994,14 +1886,14 @@
         "description": "Cache overview retrieve result schema exposed by Claw Router.",
         "x-operation-id": "cache.overview.retrieve"
       },
-      "CacheRefreshCreateResult": {
+      "CacheRefreshResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by cache refresh create result.",
+            "description": "Object schema used by cache refresh result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -2009,7 +1901,7 @@
                     "$ref": "#/components/schemas/CacheOperationOutcome"
                   }
                 ],
-                "description": "Data field on cache refresh create result."
+                "description": "Data field on cache refresh result."
               }
             },
             "required": [
@@ -2018,8 +1910,8 @@
             "type": "object"
           }
         ],
-        "description": "Cache refresh create result schema exposed by Claw Router.",
-        "x-operation-id": "cache.refresh.create"
+        "description": "Cache refresh result schema exposed by Claw Router.",
+        "x-operation-id": "cache.refresh"
       },
       "ChannelGroupsChannelBindingsListResult": {
         "allOf": [
@@ -2101,33 +1993,6 @@
         ],
         "description": "Channel groups create result schema exposed by Claw Router.",
         "x-operation-id": "channelGroups.create"
-      },
-      "ChannelGroupsDeleteResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by channel groups delete result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Channel groups delete result schema exposed by Claw Router.",
-        "x-operation-id": "channelGroups.delete"
       },
       "ChannelGroupsListResult": {
         "allOf": [
@@ -2236,33 +2101,6 @@
         ],
         "description": "Channels create result schema exposed by Claw Router.",
         "x-operation-id": "channels.create"
-      },
-      "ChannelsDeleteResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by channels delete result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Channels delete result schema exposed by Claw Router.",
-        "x-operation-id": "channels.delete"
       },
       "ChannelsListResult": {
         "allOf": [
@@ -2443,33 +2281,6 @@
         "description": "Firewalls rules create result schema exposed by Claw Router.",
         "x-operation-id": "firewalls.rules.create"
       },
-      "FirewallsRulesDeleteResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by firewalls rules delete result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Firewalls rules delete result schema exposed by Claw Router.",
-        "x-operation-id": "firewalls.rules.delete"
-      },
       "FirewallsRulesListResult": {
         "allOf": [
           {
@@ -2496,33 +2307,6 @@
         ],
         "description": "Firewalls rules list result schema exposed by Claw Router.",
         "x-operation-id": "firewalls.rules.list"
-      },
-      "HealthCheckCreateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by health check create result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Health check create result schema exposed by Claw Router.",
-        "x-operation-id": "healthCheck.create"
       },
       "InstallationStatusRetrieveResult": {
         "allOf": [
@@ -2734,6 +2518,33 @@
         "description": "Model mapping options list result schema exposed by Claw Router.",
         "x-operation-id": "modelMappingOptions.list"
       },
+      "ModelMappingsCollectionUpdateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by model mappings collection update result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Model mappings collection update result schema exposed by Claw Router.",
+        "x-operation-id": "modelMappings.collection.update"
+      },
       "ModelMappingsCreateResult": {
         "allOf": [
           {
@@ -2760,33 +2571,6 @@
         ],
         "description": "Model mappings create result schema exposed by Claw Router.",
         "x-operation-id": "modelMappings.create"
-      },
-      "ModelMappingsDeleteResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by model mappings delete result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Model mappings delete result schema exposed by Claw Router.",
-        "x-operation-id": "modelMappings.delete"
       },
       "ModelMappingsListResult": {
         "allOf": [
@@ -2815,14 +2599,14 @@
         "description": "Model mappings list result schema exposed by Claw Router.",
         "x-operation-id": "modelMappings.list"
       },
-      "ModelMappingsReplaceResult": {
+      "ModelMappingsResolveResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by model mappings replace result.",
+            "description": "Object schema used by model mappings resolve result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -2839,35 +2623,8 @@
             "type": "object"
           }
         ],
-        "description": "Model mappings replace result schema exposed by Claw Router.",
-        "x-operation-id": "modelMappings.replace"
-      },
-      "ModelMappingsResolveCreateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by model mappings resolve create result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Model mappings resolve create result schema exposed by Claw Router.",
-        "x-operation-id": "modelMappings.resolve.create"
+        "description": "Model mappings resolve result schema exposed by Claw Router.",
+        "x-operation-id": "modelMappings.resolve"
       },
       "ModelMappingsUpdateResult": {
         "allOf": [
@@ -3187,33 +2944,6 @@
         "description": "Models create result schema exposed by Claw Router.",
         "x-operation-id": "models.create"
       },
-      "ModelsDeleteResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by models delete result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Models delete result schema exposed by Claw Router.",
-        "x-operation-id": "models.delete"
-      },
       "ModelsListResult": {
         "allOf": [
           {
@@ -3503,33 +3233,6 @@
         ],
         "description": "Provider secrets create result schema exposed by Claw Router.",
         "x-operation-id": "providerSecrets.create"
-      },
-      "ProviderSecretsDeleteResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by provider secrets delete result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Provider secrets delete result schema exposed by Claw Router.",
-        "x-operation-id": "providerSecrets.delete"
       },
       "ProviderSecretsListResult": {
         "allOf": [
@@ -4025,33 +3728,6 @@
         "description": "Service nodes create result schema exposed by Claw Router.",
         "x-operation-id": "serviceNodes.create"
       },
-      "ServiceNodesDeleteResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by service nodes delete result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Service nodes delete result schema exposed by Claw Router.",
-        "x-operation-id": "serviceNodes.delete"
-      },
       "ServiceNodesListResult": {
         "allOf": [
           {
@@ -4160,14 +3836,14 @@
         "description": "Shops approve result schema exposed by Claw Router.",
         "x-operation-id": "shops.approve"
       },
-      "ShopsBrandAuthorizationsUpsertResult": {
+      "ShopsBrandAuthorizationsUpdateResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by shops brand authorizations upsert result.",
+            "description": "Object schema used by shops brand authorizations update result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -4184,8 +3860,8 @@
             "type": "object"
           }
         ],
-        "description": "Shops brand authorizations upsert result schema exposed by Claw Router.",
-        "x-operation-id": "shops.brandAuthorizations.upsert"
+        "description": "Shops brand authorizations update result schema exposed by Claw Router.",
+        "x-operation-id": "shops.brandAuthorizations.update"
       },
       "ShopsBusinessHoursUpdateResult": {
         "allOf": [
@@ -4214,14 +3890,14 @@
         "description": "Shops business hours update result schema exposed by Claw Router.",
         "x-operation-id": "shops.businessHours.update"
       },
-      "ShopsCategoryBindingsUpsertResult": {
+      "ShopsCategoryBindingsUpdateResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by shops category bindings upsert result.",
+            "description": "Object schema used by shops category bindings update result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -4238,8 +3914,8 @@
             "type": "object"
           }
         ],
-        "description": "Shops category bindings upsert result schema exposed by Claw Router.",
-        "x-operation-id": "shops.categoryBindings.upsert"
+        "description": "Shops category bindings update result schema exposed by Claw Router.",
+        "x-operation-id": "shops.categoryBindings.update"
       },
       "ShopsChannelsCreateResult": {
         "allOf": [
@@ -4349,14 +4025,14 @@
         "description": "Shops create result schema exposed by Claw Router.",
         "x-operation-id": "shops.create"
       },
-      "ShopsCustomerServicesUpsertResult": {
+      "ShopsCustomerServicesUpdateResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by shops customer services upsert result.",
+            "description": "Object schema used by shops customer services update result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -4373,8 +4049,8 @@
             "type": "object"
           }
         ],
-        "description": "Shops customer services upsert result schema exposed by Claw Router.",
-        "x-operation-id": "shops.customerServices.upsert"
+        "description": "Shops customer services update result schema exposed by Claw Router.",
+        "x-operation-id": "shops.customerServices.update"
       },
       "ShopsDepositAccountReviewResult": {
         "allOf": [
@@ -4511,14 +4187,14 @@
         "description": "Shops policies update result schema exposed by Claw Router.",
         "x-operation-id": "shops.policies.update"
       },
-      "ShopsQualificationsUpsertResult": {
+      "ShopsQualificationsUpdateResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by shops qualifications upsert result.",
+            "description": "Object schema used by shops qualifications update result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -4535,8 +4211,8 @@
             "type": "object"
           }
         ],
-        "description": "Shops qualifications upsert result schema exposed by Claw Router.",
-        "x-operation-id": "shops.qualifications.upsert"
+        "description": "Shops qualifications update result schema exposed by Claw Router.",
+        "x-operation-id": "shops.qualifications.update"
       },
       "ShopsRejectResult": {
         "allOf": [
@@ -4592,14 +4268,14 @@
         "description": "Shops resume result schema exposed by Claw Router.",
         "x-operation-id": "shops.resume"
       },
-      "ShopsReturnAddressesUpsertResult": {
+      "ShopsReturnAddressesUpdateResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by shops return addresses upsert result.",
+            "description": "Object schema used by shops return addresses update result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -4616,8 +4292,8 @@
             "type": "object"
           }
         ],
-        "description": "Shops return addresses upsert result schema exposed by Claw Router.",
-        "x-operation-id": "shops.returnAddresses.upsert"
+        "description": "Shops return addresses update result schema exposed by Claw Router.",
+        "x-operation-id": "shops.returnAddresses.update"
       },
       "ShopsRiskSignalsCreateResult": {
         "allOf": [
@@ -4808,14 +4484,14 @@
         "description": "Shops settlement profile update result schema exposed by Claw Router.",
         "x-operation-id": "shops.settlementProfile.update"
       },
-      "ShopsShippingTemplatesUpsertResult": {
+      "ShopsShippingTemplatesUpdateResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by shops shipping templates upsert result.",
+            "description": "Object schema used by shops shipping templates update result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -4832,8 +4508,8 @@
             "type": "object"
           }
         ],
-        "description": "Shops shipping templates upsert result schema exposed by Claw Router.",
-        "x-operation-id": "shops.shippingTemplates.upsert"
+        "description": "Shops shipping templates update result schema exposed by Claw Router.",
+        "x-operation-id": "shops.shippingTemplates.update"
       },
       "ShopsSubmitReviewResult": {
         "allOf": [
@@ -5024,33 +4700,6 @@
         "description": "Site create result schema exposed by Claw Router.",
         "x-operation-id": "site.create"
       },
-      "SiteDeleteResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by site delete result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Site delete result schema exposed by Claw Router.",
-        "x-operation-id": "site.delete"
-      },
       "SiteSettingsRetrieveResult": {
         "allOf": [
           {
@@ -5132,14 +4781,14 @@
         "description": "Site update result schema exposed by Claw Router.",
         "x-operation-id": "site.update"
       },
-      "TestConnectionCreateResult": {
+      "SitesHealthCheckResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by test connection create result.",
+            "description": "Object schema used by sites health check result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -5156,8 +4805,35 @@
             "type": "object"
           }
         ],
-        "description": "Test connection create result schema exposed by Claw Router.",
-        "x-operation-id": "testConnection.create"
+        "description": "Sites health check result schema exposed by Claw Router.",
+        "x-operation-id": "sites.healthCheck"
+      },
+      "SitesTestConnectionResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by sites test connection result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Sites test connection result schema exposed by Claw Router.",
+        "x-operation-id": "sites.testConnection"
       }
     },
     "securitySchemes": {
@@ -5258,14 +4934,21 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "channelGroups",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.channelGroups.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Create. Reads ai. Writes ops_audit_log. File targets none.",
         "operationId": "channelGroups.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -5273,7 +4956,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -5338,7 +5021,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.channelGroups.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/channel_groups/{channelGroupId}": {
@@ -5357,15 +5047,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ChannelGroupsDeleteResult"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "content": {
@@ -5430,7 +5113,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.channelGroups.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "patch": {
         "description": "Update. Reads ai. Writes ops_audit_log. File targets none.",
@@ -5520,7 +5210,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.channelGroups.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/channel_groups/{channelGroupId}/channel_bindings": {
@@ -5610,7 +5307,14 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "channelGroups.channelBindings",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.channelGroups_channelBindings.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "put": {
         "description": "Update. Reads ai. Writes ops_audit_log. File targets none.",
@@ -5700,7 +5404,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.channelGroups_channelBindings.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/channel_groups/{channelGroupId}/route_explain": {
@@ -5790,7 +5501,14 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "channelGroups.routeExplain",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.channelGroups_routeExplain.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/model_mapping_options": {
@@ -5870,7 +5588,14 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "modelMappingOptions",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.modelMappingOptions.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/model_mappings": {
@@ -5953,14 +5678,18 @@
         "x-sdkwork-resource": "modelMappings",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.modelMappings.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Create. Reads ai. Writes ops_audit_log. File targets none.",
         "operationId": "modelMappings.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -5968,7 +5697,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -6036,18 +5765,22 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.modelMappings.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "put": {
         "description": "Replace. Reads ai. Writes ops_audit_log. File targets none.",
-        "operationId": "modelMappings.replace",
+        "operationId": "modelMappings.collection.update",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ModelMappingsReplaceResult"
+                  "$ref": "#/components/schemas/ModelMappingsCollectionUpdateResult"
                 }
               }
             },
@@ -6114,25 +5847,29 @@
         "x-sdkwork-api-authority": "sdkwork-models-backend-api",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-owner": "sdkwork-models",
-        "x-sdkwork-resource": "modelMappings",
+        "x-sdkwork-resource": "modelMappings.collection",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.modelMappings_collection.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/model_mappings/resolve": {
       "post": {
         "description": "Create. Reads ai. Writes ops_audit_log. File targets none.",
-        "operationId": "modelMappings.resolve.create",
+        "operationId": "modelMappings.resolve",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ModelMappingsResolveCreateResult"
+                  "$ref": "#/components/schemas/ModelMappingsResolveResult"
                 }
               }
             },
@@ -6199,12 +5936,16 @@
         "x-sdkwork-api-authority": "sdkwork-models-backend-api",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-owner": "sdkwork-models",
-        "x-sdkwork-resource": "modelMappings.resolve",
+        "x-sdkwork-resource": "modelMappings",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.modelMappings.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/model_mappings/{mappingId}": {
@@ -6223,15 +5964,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ModelMappingsDeleteResult"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "content": {
@@ -6299,7 +6033,11 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.modelMappings.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "patch": {
         "description": "Update. Reads ai. Writes ops_audit_log. File targets none.",
@@ -6392,7 +6130,11 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.modelMappings.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/model_rankings": {
@@ -6525,7 +6267,11 @@
         "x-sdkwork-resource": "modelRankings",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.modelRankings.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/model_rankings/jobs": {
@@ -6631,7 +6377,11 @@
         "x-sdkwork-resource": "modelRankings.jobs",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.modelRankings_jobs.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/model_rankings/refresh": {
@@ -6716,7 +6466,11 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.modelRankings.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/model_rankings/status": {
@@ -6913,7 +6667,11 @@
         "x-sdkwork-resource": "modelRankings.status",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.modelRankings_status.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/model_vendors": {
@@ -6996,14 +6754,18 @@
         "x-sdkwork-resource": "modelVendors",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.modelVendors.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Create. Reads ai. Writes ops_audit_log. File targets none.",
         "operationId": "modelVendors.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -7011,7 +6773,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -7079,7 +6841,11 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.modelVendors.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/models": {
@@ -7276,14 +7042,18 @@
         "x-sdkwork-resource": "models",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.models.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Create. Reads ai. Writes ops_audit_log. File targets none.",
         "operationId": "models.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -7291,7 +7061,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -7359,7 +7129,11 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.models.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/models/refresh": {
@@ -7444,7 +7218,11 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.models.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/models/{modelId}": {
@@ -7463,15 +7241,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ModelsDeleteResult"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "content": {
@@ -7539,7 +7310,11 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.models.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "patch": {
         "description": "Update. Reads ai. Writes ops_audit_log. File targets none.",
@@ -7632,7 +7407,11 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.models.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/resource_groups": {
@@ -7715,14 +7494,18 @@
         "x-sdkwork-resource": "aiResourceGroups",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.aiResourceGroups.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Create. Reads ai. Writes ops_audit_log. File targets none.",
         "operationId": "aiResourceGroups.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -7730,7 +7513,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -7798,7 +7581,11 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.aiResourceGroups.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/resource_groups/{groupIdOrCode}/resources": {
@@ -7925,7 +7712,11 @@
         "x-sdkwork-resource": "aiResourceGroups.resources",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.aiResourceGroups_resources.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/resource_groups/{groupId}": {
@@ -7944,15 +7735,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AiResourceGroupsDeleteResult"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "content": {
@@ -8020,7 +7804,11 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.aiResourceGroups.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "patch": {
         "description": "Update. Reads ai. Writes ops_audit_log. File targets none.",
@@ -8113,7 +7901,11 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.aiResourceGroups.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/resources": {
@@ -8231,14 +8023,18 @@
         "x-sdkwork-resource": "aiResources",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.aiResources.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Create. Reads ai. Writes ops_audit_log. File targets none.",
         "operationId": "aiResources.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -8246,7 +8042,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -8314,7 +8110,11 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.aiResources.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/resources/{resourceId}": {
@@ -8409,7 +8209,11 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "clawrouter.aiResources.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/ai/route_explain": {
@@ -8418,7 +8222,7 @@
         "operationId": "routeExplain.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -8426,7 +8230,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -8491,7 +8295,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.routeExplain.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/audit/commerce_events": {
@@ -8571,7 +8382,14 @@
         "x-sdkwork-domain": "commerce",
         "x-sdkwork-resource": "audit.commerceEvents",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.audit_commerceEvents.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/integration/channels": {
@@ -8651,14 +8469,21 @@
         "x-sdkwork-domain": "integration",
         "x-sdkwork-resource": "channels",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.channels.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Create. Reads integration. Writes ops_audit_log. File targets none.",
         "operationId": "channels.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -8666,7 +8491,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -8731,7 +8556,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.channels.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "put": {
         "description": "Update. Reads integration. Writes ops_audit_log. File targets none.",
@@ -8811,7 +8643,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.channels.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/integration/channels/{channelId}": {
@@ -8830,15 +8669,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ChannelsDeleteResult"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "content": {
@@ -8903,7 +8735,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.channels.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/integration/channels/{channelId}/verify": {
@@ -8995,7 +8834,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.channels.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/integration/provider_secrets": {
@@ -9075,14 +8921,21 @@
         "x-sdkwork-domain": "integration",
         "x-sdkwork-resource": "providerSecrets",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.providerSecrets.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Create. Reads integration. Writes ops_audit_log. File targets none.",
         "operationId": "providerSecrets.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -9090,7 +8943,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -9155,7 +9008,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.providerSecrets.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "put": {
         "description": "Update. Reads integration. Writes ops_audit_log. File targets none.",
@@ -9235,7 +9095,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.providerSecrets.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/integration/provider_secrets/{secretId}": {
@@ -9254,15 +9121,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProviderSecretsDeleteResult"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "content": {
@@ -9327,7 +9187,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.providerSecrets.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/sites": {
@@ -9407,14 +9274,21 @@
         "x-sdkwork-domain": "sites",
         "x-sdkwork-resource": "siteCatalog",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.siteCatalog.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Create. Reads sites. Writes ops_audit_log. File targets none.",
         "operationId": "site.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -9422,7 +9296,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -9487,7 +9361,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.site.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/sites/{siteId}": {
@@ -9506,15 +9387,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SiteDeleteResult"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "content": {
@@ -9579,7 +9453,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.site.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "patch": {
         "description": "Update. Reads sites. Writes ops_audit_log. File targets none.",
@@ -9669,7 +9550,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.site.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/sites/{siteId}/channels": {
@@ -9759,13 +9647,20 @@
         "x-sdkwork-domain": "sites",
         "x-sdkwork-resource": "siteChannels",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.siteChannels.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/sites/{siteId}/health_check": {
       "post": {
         "description": "Create. Reads sites. Writes ops_audit_log. File targets none.",
-        "operationId": "healthCheck.create",
+        "operationId": "sites.healthCheck",
         "parameters": [
           {
             "description": "Site id path parameter.",
@@ -9782,7 +9677,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HealthCheckCreateResult"
+                  "$ref": "#/components/schemas/SitesHealthCheckResult"
                 }
               }
             },
@@ -9847,17 +9742,24 @@
         "x-route-scope": "admin",
         "x-sdk-domain": "sites",
         "x-sdkwork-domain": "sites",
-        "x-sdkwork-resource": "healthCheck",
+        "x-sdkwork-resource": "sites",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.sites.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/sites/{siteId}/test_connection": {
       "post": {
         "description": "Create. Reads sites. Writes ops_audit_log. File targets none.",
-        "operationId": "testConnection.create",
+        "operationId": "sites.testConnection",
         "parameters": [
           {
             "description": "Site id path parameter.",
@@ -9874,7 +9776,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TestConnectionCreateResult"
+                  "$ref": "#/components/schemas/SitesTestConnectionResult"
                 }
               }
             },
@@ -9939,11 +9841,18 @@
         "x-route-scope": "admin",
         "x-sdk-domain": "sites",
         "x-sdkwork-domain": "sites",
-        "x-sdkwork-resource": "testConnection",
+        "x-sdkwork-resource": "sites",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.sites.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/after_sales/requests/{afterSalesRequestId}/reviews": {
@@ -9962,7 +9871,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -9970,7 +9879,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -10035,7 +9944,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.afterSales_reviews.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/analytics/admin/overview": {
@@ -10165,7 +10081,14 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "analytics.admin.overview",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.analytics_admin_overview.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/auth/settings": {
@@ -10245,7 +10168,14 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "auth.settings",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.auth_settings.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "patch": {
         "description": "Update. Reads system. Writes ops_audit_log. File targets none.",
@@ -10325,7 +10255,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.auth_settings.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/cache/instances/{instanceName}": {
@@ -10344,15 +10281,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CacheInstancesDeleteResult"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "content": {
@@ -10417,13 +10347,20 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.cache_instances.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/cache/instances/{instanceName}/refresh": {
       "post": {
         "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
-        "operationId": "cache.instances.refresh.create",
+        "operationId": "cache.instances.refresh",
         "parameters": [
           {
             "description": "Instance name path parameter.",
@@ -10440,7 +10377,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CacheInstancesRefreshCreateResult"
+                  "$ref": "#/components/schemas/CacheInstancesRefreshResult"
                 }
               }
             },
@@ -10505,11 +10442,18 @@
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
         "x-sdkwork-domain": "system",
-        "x-sdkwork-resource": "cache.instances.refresh",
+        "x-sdkwork-resource": "cache.instances",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.cache_instances.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/cache/namespaces/{namespace}": {
@@ -10528,15 +10472,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CacheNamespacesDeleteResult"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "content": {
@@ -10601,7 +10538,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.cache_namespaces.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/cache/namespaces/{namespace}/keys": {
@@ -10714,7 +10658,14 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "cache.namespaces.keys",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.cache_namespaces_keys.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/cache/namespaces/{namespace}/keys/{key}": {
@@ -10742,15 +10693,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CacheNamespacesKeysDeleteResult"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "content": {
@@ -10815,13 +10759,20 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.cache_namespaces_keys.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/cache/namespaces/{namespace}/refresh": {
       "post": {
         "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
-        "operationId": "cache.namespaces.refresh.create",
+        "operationId": "cache.namespaces.refresh",
         "parameters": [
           {
             "description": "Namespace path parameter.",
@@ -10838,7 +10789,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CacheNamespacesRefreshCreateResult"
+                  "$ref": "#/components/schemas/CacheNamespacesRefreshResult"
                 }
               }
             },
@@ -10903,11 +10854,18 @@
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
         "x-sdkwork-domain": "system",
-        "x-sdkwork-resource": "cache.namespaces.refresh",
+        "x-sdkwork-resource": "cache.namespaces",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.cache_namespaces.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/cache/overview": {
@@ -10987,20 +10945,27 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "cache.overview",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.cache_overview.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/cache/refresh": {
       "post": {
         "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
-        "operationId": "cache.refresh.create",
+        "operationId": "cache.refresh",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CacheRefreshCreateResult"
+                  "$ref": "#/components/schemas/CacheRefreshResult"
                 }
               }
             },
@@ -11065,11 +11030,18 @@
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
         "x-sdkwork-domain": "system",
-        "x-sdkwork-resource": "cache.refresh",
+        "x-sdkwork-resource": "cache",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.cache.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/dashboard/admin/overview": {
@@ -11149,7 +11121,14 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "dashboard.admin.overview",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.dashboard_admin_overview.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/firewalls/rules": {
@@ -11229,14 +11208,21 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "firewalls.rules",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.gateway.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "firewalls.rules.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -11244,7 +11230,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -11309,7 +11295,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.gateway.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/firewalls/rules/{ruleId}": {
@@ -11328,15 +11321,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FirewallsRulesDeleteResult"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "content": {
@@ -11401,7 +11387,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.gateway.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/installation/status": {
@@ -11481,7 +11474,14 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "installation.status",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.system.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/marketing/referral_stats": {
@@ -11561,7 +11561,14 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "marketing.referralStats",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.marketing_referralStats.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/monitor/alerts": {
@@ -11641,7 +11648,14 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "monitor.alerts",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.system.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/monitor/nodes": {
@@ -11721,7 +11735,14 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "monitor.nodes",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.system.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/monitor/performance": {
@@ -11801,7 +11822,14 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "monitor.performance",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.system.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/rate_limits/api_keys": {
@@ -11881,14 +11909,21 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "rateLimits.apiKeys",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.gateway.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "rateLimits.apiKeys.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -11896,7 +11931,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -11961,7 +11996,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.gateway.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/rate_limits/ip": {
@@ -12041,14 +12083,21 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "rateLimits.ip",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.rateLimits_ip.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "rateLimits.ip.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -12056,7 +12105,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -12121,7 +12170,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.rateLimits_ip.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/rate_limits/models": {
@@ -12201,14 +12257,21 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "rateLimits.models",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.rateLimits_models.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "rateLimits.models.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -12216,7 +12279,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -12281,7 +12344,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.rateLimits_models.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/records": {
@@ -12361,7 +12431,14 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "records",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.records.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/runtime_region/settings": {
@@ -12441,7 +12518,14 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "runtimeRegion.settings",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.runtimeRegion_settings.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "patch": {
         "description": "Update. Reads system. Writes ops_audit_log. File targets none.",
@@ -12521,7 +12605,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.runtimeRegion_settings.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/service_nodes": {
@@ -12601,14 +12692,21 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "serviceNodes",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.serviceNodes.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Create. Reads system. Writes ops_audit_log. File targets none.",
         "operationId": "serviceNodes.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -12616,7 +12714,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -12681,7 +12779,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.serviceNodes.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/service_nodes/{nodeId}": {
@@ -12700,15 +12805,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServiceNodesDeleteResult"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "content": {
@@ -12773,7 +12871,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.serviceNodes.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "put": {
         "description": "Update. Reads system. Writes ops_audit_log. File targets none.",
@@ -12863,7 +12968,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.serviceNodes.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/service_nodes/{nodeId}/status": {
@@ -12955,7 +13067,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.serviceNodes_status.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops": {
@@ -12964,7 +13083,7 @@
         "operationId": "shops.create",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -12972,7 +13091,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -13037,7 +13156,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}": {
@@ -13129,7 +13255,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/approve": {
@@ -13221,13 +13354,20 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/brand_authorizations": {
       "put": {
         "description": "Upsert. Reads system. Writes ops_audit_log. File targets none.",
-        "operationId": "shops.brandAuthorizations.upsert",
+        "operationId": "shops.brandAuthorizations.update",
         "parameters": [
           {
             "description": "Shop id path parameter.",
@@ -13244,7 +13384,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ShopsBrandAuthorizationsUpsertResult"
+                  "$ref": "#/components/schemas/ShopsBrandAuthorizationsUpdateResult"
                 }
               }
             },
@@ -13313,7 +13453,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_brandAuthorizations.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/business_hours": {
@@ -13405,13 +13552,20 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_businessHours.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/category_bindings": {
       "put": {
         "description": "Upsert. Reads system. Writes ops_audit_log. File targets none.",
-        "operationId": "shops.categoryBindings.upsert",
+        "operationId": "shops.categoryBindings.update",
         "parameters": [
           {
             "description": "Shop id path parameter.",
@@ -13428,7 +13582,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ShopsCategoryBindingsUpsertResult"
+                  "$ref": "#/components/schemas/ShopsCategoryBindingsUpdateResult"
                 }
               }
             },
@@ -13497,7 +13651,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_categoryBindings.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/channels": {
@@ -13516,7 +13677,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -13524,7 +13685,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -13589,7 +13750,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_channels.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/channels/{channelId}": {
@@ -13690,7 +13858,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_channels.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/close": {
@@ -13782,13 +13957,20 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/customer_services": {
       "put": {
         "description": "Upsert. Reads system. Writes ops_audit_log. File targets none.",
-        "operationId": "shops.customerServices.upsert",
+        "operationId": "shops.customerServices.update",
         "parameters": [
           {
             "description": "Shop id path parameter.",
@@ -13805,7 +13987,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ShopsCustomerServicesUpsertResult"
+                  "$ref": "#/components/schemas/ShopsCustomerServicesUpdateResult"
                 }
               }
             },
@@ -13874,7 +14056,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_customerServices.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/deposit_account": {
@@ -13966,7 +14155,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_depositAccount.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/deposit_account/review": {
@@ -14058,7 +14254,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_depositAccount.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/fulfillment_profile": {
@@ -14150,7 +14353,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_fulfillmentProfile.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/policies": {
@@ -14169,7 +14379,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -14177,7 +14387,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -14242,7 +14452,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_policies.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/policies/{policyId}": {
@@ -14343,13 +14560,20 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_policies.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/qualifications": {
       "put": {
         "description": "Upsert. Reads system. Writes ops_audit_log. File targets none.",
-        "operationId": "shops.qualifications.upsert",
+        "operationId": "shops.qualifications.update",
         "parameters": [
           {
             "description": "Shop id path parameter.",
@@ -14366,7 +14590,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ShopsQualificationsUpsertResult"
+                  "$ref": "#/components/schemas/ShopsQualificationsUpdateResult"
                 }
               }
             },
@@ -14435,7 +14659,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_qualifications.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/reject": {
@@ -14527,7 +14758,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/resume": {
@@ -14619,13 +14857,20 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/return_addresses": {
       "put": {
         "description": "Upsert. Reads system. Writes ops_audit_log. File targets none.",
-        "operationId": "shops.returnAddresses.upsert",
+        "operationId": "shops.returnAddresses.update",
         "parameters": [
           {
             "description": "Shop id path parameter.",
@@ -14642,7 +14887,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ShopsReturnAddressesUpsertResult"
+                  "$ref": "#/components/schemas/ShopsReturnAddressesUpdateResult"
                 }
               }
             },
@@ -14711,7 +14956,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_returnAddresses.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/risk_signals": {
@@ -14730,7 +14982,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -14738,7 +14990,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -14803,7 +15055,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_riskSignals.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/risk_signals/{riskSignalId}/resolve": {
@@ -14904,7 +15163,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_riskSignals.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/service_areas": {
@@ -14923,7 +15189,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -14931,7 +15197,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -14996,7 +15262,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_serviceAreas.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/service_areas/{serviceAreaId}": {
@@ -15097,7 +15370,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_serviceAreas.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/settlement_profile": {
@@ -15189,7 +15469,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_settlementProfile.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/settlement_profile/approve": {
@@ -15281,7 +15568,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_settlementProfile.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/settlement_profile/reject": {
@@ -15373,13 +15667,20 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_settlementProfile.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/shipping_templates": {
       "put": {
         "description": "Upsert. Reads system. Writes ops_audit_log. File targets none.",
-        "operationId": "shops.shippingTemplates.upsert",
+        "operationId": "shops.shippingTemplates.update",
         "parameters": [
           {
             "description": "Shop id path parameter.",
@@ -15396,7 +15697,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ShopsShippingTemplatesUpsertResult"
+                  "$ref": "#/components/schemas/ShopsShippingTemplatesUpdateResult"
                 }
               }
             },
@@ -15465,7 +15766,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_shippingTemplates.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/submit_review": {
@@ -15557,7 +15865,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/suspend": {
@@ -15649,7 +15964,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/shops/{shopId}/verifications/{verificationId}": {
@@ -15750,7 +16072,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.shops_verifications.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/backend/v3/api/system/site/settings": {
@@ -15830,7 +16159,14 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "site.settings",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.site_settings.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "patch": {
         "description": "Update. Reads system. Writes ops_audit_log. File targets none.",
@@ -15910,7 +16246,14 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ]
+        ],
+        "x-sdkwork-owner": "sdkwork-clawrouter",
+        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
+        "x-sdkwork-permission": "clawrouter.site_settings.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     }
   },

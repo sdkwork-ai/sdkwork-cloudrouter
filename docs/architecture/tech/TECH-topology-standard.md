@@ -17,7 +17,7 @@ use **platform.api-gateway**.
 
 ## Default Dev Profile
 
-`standalone.unified-process.development` - single-port integrated runtime on
+`standalone.development` - single-port integrated runtime on
 `application.public-ingress`.
 
 Topology profiles use the SDKWork `deploymentProfile` axis directly:
@@ -31,17 +31,17 @@ Canonical topology commands use `scripts/claw-router-dev.mjs` with explicit
 Authoritative mapping is also declared in `specs/topology.spec.json` ->
 `scripts.pnpm`.
 
-| Script | Deployment profile | Service layout | Target | Database |
-| --- | --- | --- | --- | --- |
-| `pnpm dev` | standalone | unified-process | browser | postgres |
-| `pnpm dev:browser` | standalone | unified-process | browser | postgres |
-| `pnpm dev:browser:sqlite` | standalone | unified-process | browser | sqlite |
-| `pnpm dev:browser:postgres:split-services:standalone` | standalone | split-services | browser | postgres |
-| `pnpm dev:browser:postgres:unified-process:cloud` | cloud | unified-process | browser | postgres |
-| `pnpm dev:browser:postgres:split-services:cloud` | cloud | split-services | browser | postgres |
-| `pnpm dev:desktop` | standalone | unified-process | desktop | postgres |
-| `pnpm dev:desktop:sqlite` | standalone | unified-process | desktop | sqlite |
-| `pnpm topology:plan:server` | standalone | unified-process | plan | postgres |
+| Script | Deployment profile | Target | Database |
+| --- | --- | --- | --- |
+| `pnpm dev` | standalone | browser | postgres |
+| `pnpm dev:browser` | standalone | browser | postgres |
+| `pnpm dev:browser:sqlite` | standalone | browser | sqlite |
+| `pnpm dev:browser:postgres:standalone:debug` | standalone | browser | postgres |
+| `pnpm dev:browser:postgres:cloud` | cloud | browser | postgres |
+| `pnpm dev:browser:postgres:cloud:debug` | cloud | browser | postgres |
+| `pnpm dev:desktop` | standalone | desktop | postgres |
+| `pnpm dev:desktop:sqlite` | standalone | desktop | sqlite |
+| `pnpm topology:plan:server` | standalone | plan | postgres |
 
 `pnpm dev`, `pnpm dev:browser`, and `pnpm dev:desktop` delegate to the canonical
 standard profile scripts above. Product-prefixed `clawrouter:*`, platform-first
@@ -56,7 +56,7 @@ Gateway packaging (cloud config bundle only, binary owned by `sdkwork-api-cloud-
 | `pnpm gateway:package:cloud` | bundle `configs/sdkwork-api-cloud-gateway.claw-router.*.toml` |
 | `pnpm topology:validate` | validate `specs/topology.spec.json` |
 
-## Local URLs (standalone unified dev)
+## Local URLs (standalone dev)
 
 | Surface | URL |
 | --- | --- |

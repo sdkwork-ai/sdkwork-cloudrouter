@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::extract::{Path, Query, State};
-use axum::http::{HeaderMap, StatusCode};
+use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
@@ -13,8 +13,8 @@ use serde_json::{Map, Value};
 use crate::api::app_sql_subject::{map_required_app_sql_subject, RequiredAppSqlScopedSubject};
 
 use crate::api::response::{
-    json_success_list_response, offset_page_info, parse_offset_list_query, problem_from_wire_code,
-    success_envelope,
+    json_created_response, json_success_list_response, offset_page_info, parse_offset_list_query,
+    problem_from_wire_code, success_envelope,
 };
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
@@ -282,7 +282,7 @@ async fn create_conversation(
         }
     };
     match state.store.create_conversation(command).await {
-        Ok(item) => Json(success_envelope(AppChatConversationEnvelope { item })).into_response(),
+        Ok(item) => json_created_response(None, AppChatConversationEnvelope { item }),
         Err(error) if error.is_conflict() => {
             problem_from_wire_code("4090", error.to_string()).into_response()
         }
@@ -341,7 +341,7 @@ async fn create_turn(
         }
     };
     match state.store.create_turn(command).await {
-        Ok(outcome) => Json(success_envelope(outcome)).into_response(),
+        Ok(outcome) => json_created_response(None, outcome),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) => app_chat_system_response("app chat turn is unavailable", error),
     }

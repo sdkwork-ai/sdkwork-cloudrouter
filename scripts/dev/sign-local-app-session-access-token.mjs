@@ -12,7 +12,7 @@ export const DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT = Object.freeze({
   userId: 30,
   appId: 'sdkwork-clawrouter',
   sessionId: 'bootstrap-local-dev',
-  environment: 'dev',
+  environment: 'development',
   deploymentMode: 'local',
   authLevel: 'password',
   permissionScope: [LOCAL_DEV_CONSOLE_PERMISSION],
@@ -35,7 +35,7 @@ function signLocalAppSessionToken({
   userId = DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.userId,
   appId = DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.appId,
   sessionId = DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.sessionId,
-  environment = DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.environment,
+  environment,
   deploymentMode = DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.deploymentMode,
   authLevel = DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.authLevel,
   permissionScope = DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.permissionScope,
@@ -43,6 +43,9 @@ function signLocalAppSessionToken({
   nowUnixSeconds = Math.floor(Date.now() / 1000),
 } = {}) {
   const secret = String(appSessionSecret ?? '').trim();
+  if (environment !== 'development') {
+    throw new Error('local bootstrap token signing requires an explicit development lifecycle');
+  }
   if (secret.length < 32) {
     throw new Error('SDKWORK_CLAW_APP_SESSION_SECRET must be at least 32 characters');
   }

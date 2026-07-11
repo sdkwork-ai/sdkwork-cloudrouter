@@ -33,6 +33,25 @@ test('buildReleaseEnvFilePlan writes every canonical release key including empty
   assert.ok(!plan.safeSummary.includes('secret'));
 });
 
+test('buildReleaseEnvFilePlan never persists SDKWORK_ACCESS_TOKEN from process env', () => {
+  const plan = buildReleaseEnvFilePlan({
+    env: {
+      ...validReleaseEnv,
+      SDKWORK_ACCESS_TOKEN: 'test-only-input-token',
+    },
+    outputPath: '.env.release',
+    overwrite: false,
+    existingFile: false,
+  });
+
+  const writtenKeys = plan.content
+    .split(/\r?\n/u)
+    .filter(Boolean)
+    .filter((line) => !line.startsWith('#'))
+    .map((line) => line.slice(0, line.indexOf('=')));
+  assert.equal(writtenKeys.includes('SDKWORK_ACCESS_TOKEN'), false);
+});
+
 test('buildReleaseEnvFilePlan rejects invalid edge rate limit values', () => {
   assert.throws(
     () => buildReleaseEnvFilePlan({

@@ -1147,49 +1147,50 @@ async fn upsert_ai_resource_bindings(
         .take(32)
         .collect::<String>();
         let priority = priority_offset.saturating_add(i64::try_from(index + 1).unwrap_or(i64::MAX));
+        let channel_resource_id = next_claw_runtime_id("channel resource binding")?;
         sqlx::query(
             r#"
             WITH resource_match AS (
                 SELECT id
                 FROM ai_resource
-                WHERE tenant_id = $9
-                  AND organization_id = $10
-                  AND resource_code = $11
+                WHERE tenant_id = $10
+                  AND organization_id = $11
+                  AND resource_code = $12
                   AND deleted_at IS NULL
                 LIMIT 1
             ),
             resource_group_match AS (
                 SELECT id
                 FROM ai_resource_group
-                WHERE tenant_id = $9
-                  AND organization_id = $10
-                  AND group_code = $11
+                WHERE tenant_id = $10
+                  AND organization_id = $11
+                  AND group_code = $12
                   AND deleted_at IS NULL
                 LIMIT 1
             )
             INSERT INTO ai_channel_resource
-                (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, channel_id, provider_code, channel_code, resource_id, resource_code, resource_group_id, resource_group_code, grant_type, priority, weight)
+                (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, channel_id, provider_code, channel_code, resource_id, resource_code, resource_group_id, resource_group_code, grant_type, priority, weight)
             VALUES
-                ($1, $2, $3, 1, 1, $4::timestamptz, $5::timestamptz, 0, $6, $7, $8,
+                ($1, $2, $3, $4, 1, 1, $5::timestamptz, $6::timestamptz, 0, $7, $8, $9,
                  CASE
                     WHEN EXISTS (SELECT 1 FROM resource_group_match) THEN NULL
                     ELSE (SELECT id FROM resource_match)
                  END,
                  CASE
                     WHEN EXISTS (SELECT 1 FROM resource_group_match) THEN ''
-                    WHEN EXISTS (SELECT 1 FROM resource_match) THEN $11
-                    ELSE $11
+                    WHEN EXISTS (SELECT 1 FROM resource_match) THEN $12
+                    ELSE $12
                  END,
                  CASE
                     WHEN EXISTS (SELECT 1 FROM resource_group_match) THEN (SELECT id FROM resource_group_match)
                     ELSE NULL
                  END,
                  CASE
-                    WHEN EXISTS (SELECT 1 FROM resource_group_match) THEN $11
+                    WHEN EXISTS (SELECT 1 FROM resource_group_match) THEN $12
                     WHEN EXISTS (SELECT 1 FROM resource_match) THEN ''
                     ELSE ''
                  END,
-                 'allow', $12, $13)
+                 'allow', $13, $14)
             ON CONFLICT(tenant_id, organization_id, channel_id, resource_code, resource_group_code) DO UPDATE SET
                 status = 1,
                 deleted_at = NULL,
@@ -1205,6 +1206,7 @@ async fn upsert_ai_resource_bindings(
                 version = COALESCE(ai_channel_resource.version, 0) + 1
             "#,
         )
+        .bind(channel_resource_id)
         .bind(format!("chn-resource-{uuid_suffix}"))
         .bind(scope.tenant_id)
         .bind(scope.organization_id)

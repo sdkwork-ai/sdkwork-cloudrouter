@@ -30,13 +30,15 @@ impl PaymentProviderAdapterFactory for DefaultPaymentProviderAdapterFactory {
         Box::pin(async move {
             match credentials {
                 PaymentProviderResolvedCredentials::Stripe(config) => {
-                    let adapter: Arc<dyn PaymentProviderAdapter> =
-                        Arc::new(StripePaymentProviderAdapter::with_default_http_client(config)?);
+                    let adapter: Arc<dyn PaymentProviderAdapter> = Arc::new(
+                        StripePaymentProviderAdapter::with_default_http_client(config)?,
+                    );
                     Ok(adapter)
                 }
                 PaymentProviderResolvedCredentials::PayPal(config) => {
-                    let adapter: Arc<dyn PaymentProviderAdapter> =
-                        Arc::new(PayPalPaymentProviderAdapter::with_default_http_client(config)?);
+                    let adapter: Arc<dyn PaymentProviderAdapter> = Arc::new(
+                        PayPalPaymentProviderAdapter::with_default_http_client(config)?,
+                    );
                     Ok(adapter)
                 }
                 PaymentProviderResolvedCredentials::Alipay(_) => Err(invalid_dependency(

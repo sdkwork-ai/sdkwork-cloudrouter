@@ -1,3 +1,4 @@
+use sdkwork_claw_config::StartupInstallMode;
 use sdkwork_web_core::{SecurityPolicy, WebEnvironment};
 
 fn parse_environment(value: Option<String>) -> WebEnvironment {
@@ -41,9 +42,7 @@ fn split_env_list(value: &str) -> Vec<String> {
 /// Resolve the canonical SDKWork web environment for Claw Router HTTP services.
 pub fn resolve_claw_web_environment_from_process_env() -> WebEnvironment {
     parse_environment(first_nonempty_env(&[
-        "SDKWORK_CLAW_ENVIRONMENT",
-        "SDKWORK_IM_ENVIRONMENT",
-        "SDKWORK_ENV",
+        StartupInstallMode::ENV_ROUTER_ENVIRONMENT,
     ]))
 }
 
@@ -89,13 +88,15 @@ mod tests {
     #[test]
     fn resolve_environment_from_claw_env_key() {
         unsafe {
-            std::env::set_var("SDKWORK_CLAW_ENVIRONMENT", "development");
+            std::env::set_var("SDKWORK_CLAW_ROUTER_ENVIRONMENT", "development");
+            std::env::set_var("SDKWORK_CLAW_ENVIRONMENT", "production");
         }
         assert_eq!(
             resolve_claw_web_environment_from_process_env(),
             WebEnvironment::Dev
         );
         unsafe {
+            std::env::remove_var("SDKWORK_CLAW_ROUTER_ENVIRONMENT");
             std::env::remove_var("SDKWORK_CLAW_ENVIRONMENT");
         }
     }

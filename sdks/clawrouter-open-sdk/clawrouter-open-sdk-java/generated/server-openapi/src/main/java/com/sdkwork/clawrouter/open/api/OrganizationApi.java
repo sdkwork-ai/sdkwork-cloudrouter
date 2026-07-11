@@ -16,7 +16,7 @@ public class OrganizationApi {
     /** List organization admin API keys */
     public OpenAiOrganizationAdminApiKeyList listAdminApiKeys(Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -47,7 +47,7 @@ public class OrganizationApi {
             new QueryParameterSpec("actor_ids[]", actorIds, "form", true, false, null),
             new QueryParameterSpec("actor_emails[]", actorEmails, "form", true, false, null),
             new QueryParameterSpec("resource_ids[]", resourceIds, "form", true, false, null),
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
         ));
@@ -58,7 +58,7 @@ public class OrganizationApi {
     /** List organization certificates */
     public OpenAiCertificateList listCertificates(Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -102,7 +102,7 @@ public class OrganizationApi {
             new QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
             new QueryParameterSpec("models", models, "form", true, false, null),
             new QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("page", page, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/costs"), query));
@@ -112,7 +112,7 @@ public class OrganizationApi {
     /** List organization groups */
     public OpenAiOrganizationGroupList listGroups(Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -136,7 +136,7 @@ public class OrganizationApi {
     /** List organization group roles */
     public OpenAiRoleAssignmentList listGroupsRoles(String groupId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -160,7 +160,7 @@ public class OrganizationApi {
     /** List organization group users */
     public OpenAiOrganizationUserList listGroupsUsers(String groupId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -184,7 +184,7 @@ public class OrganizationApi {
     /** List organization invites */
     public OpenAiOrganizationInviteList listInvites(Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -208,7 +208,7 @@ public class OrganizationApi {
     /** List organization projects */
     public OpenAiProjectList listProjects(Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -226,7 +226,7 @@ public class OrganizationApi {
     /** List project API keys */
     public OpenAiProjectApiKeyList listProjectsApiKeys(String projectId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -250,7 +250,7 @@ public class OrganizationApi {
     /** List project certificates */
     public OpenAiCertificateList listProjectsCertificates(String projectId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -274,7 +274,7 @@ public class OrganizationApi {
     /** List project groups */
     public OpenAiOrganizationGroupList listProjectsGroups(String projectId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -298,7 +298,7 @@ public class OrganizationApi {
     /** List project rate limits */
     public OpenAiProjectRateLimitList listProjectsRateLimits(String projectId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -316,7 +316,7 @@ public class OrganizationApi {
     /** List project service accounts */
     public OpenAiProjectServiceAccountList listProjectsServiceAccounts(String projectId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -340,7 +340,7 @@ public class OrganizationApi {
     /** List project users */
     public OpenAiProjectUserList listProjectsUsers(String projectId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -364,7 +364,7 @@ public class OrganizationApi {
     /** List organization roles */
     public OpenAiRoleList listRoles(Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -396,7 +396,7 @@ public class OrganizationApi {
             new QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
             new QueryParameterSpec("models", models, "form", true, false, null),
             new QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("page", page, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/audio_speeches"), query));
@@ -414,7 +414,7 @@ public class OrganizationApi {
             new QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
             new QueryParameterSpec("models", models, "form", true, false, null),
             new QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("page", page, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/audio_transcriptions"), query));
@@ -432,7 +432,7 @@ public class OrganizationApi {
             new QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
             new QueryParameterSpec("models", models, "form", true, false, null),
             new QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("page", page, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/code_interpreter_sessions"), query));
@@ -450,7 +450,7 @@ public class OrganizationApi {
             new QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
             new QueryParameterSpec("models", models, "form", true, false, null),
             new QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("page", page, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/completions"), query));
@@ -468,7 +468,7 @@ public class OrganizationApi {
             new QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
             new QueryParameterSpec("models", models, "form", true, false, null),
             new QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("page", page, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/embeddings"), query));
@@ -486,7 +486,7 @@ public class OrganizationApi {
             new QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
             new QueryParameterSpec("models", models, "form", true, false, null),
             new QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("page", page, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/images"), query));
@@ -504,7 +504,7 @@ public class OrganizationApi {
             new QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
             new QueryParameterSpec("models", models, "form", true, false, null),
             new QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("page", page, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/moderations"), query));
@@ -522,7 +522,7 @@ public class OrganizationApi {
             new QueryParameterSpec("api_key_ids", apiKeyIds, "form", true, false, null),
             new QueryParameterSpec("models", models, "form", true, false, null),
             new QueryParameterSpec("group_by", groupBy, "form", true, false, null),
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("page", page, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/organization/usage/vector_stores"), query));
@@ -532,7 +532,7 @@ public class OrganizationApi {
     /** List organization users */
     public OpenAiOrganizationUserList listUsers(Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -556,7 +556,7 @@ public class OrganizationApi {
     /** List organization user roles */
     public OpenAiRoleAssignmentList listUsersRoles(String userId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("limit", limit, "form", true, false, null),
+            new QueryParameterSpec("page_size", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)

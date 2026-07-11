@@ -6,7 +6,7 @@ use sqlx::{PgPool, Row};
 use crate::application::c_category_type_scope;
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::sql_admin_product_center::{
-    drive_uri_from_resource, is_missing_table_error, is_unique_constraint_error, sql_error_message,
+    drive_uri_from_resource, is_unique_constraint_error, sql_error_message,
     stable_product_center_id,
 };
 use crate::ports::{
@@ -566,7 +566,7 @@ async fn delete_category(pool: &PgPool, command: DeleteAdminCategoryCommand) -> 
           AND (pc.organization_id = $2::text OR pc.organization_id IS NULL)
           AND pc.category_id = $3
           AND pc.status = 'active'
-          AND p.sales_status <> 'archived'
+          AND p.status <> 'archived'
         "#,
     )
     .bind(command.subject.tenant_id)
@@ -624,7 +624,7 @@ async fn initialize_category_seeds(
             target => {
                 return Err(DomainError::new(format!(
                     "unsupported category seed target {target}"
-                )))
+                )));
             }
         };
         summaries.push(summary);
@@ -871,7 +871,7 @@ async fn list_products(
                   AND (pc.organization_id = p.organization_id OR pc.organization_id IS NULL OR p.organization_id IS NULL)
                   AND pc.status = 'active'
             ) AS category_ids,
-            p.sales_status,
+            p.status,
             p.created_at,
             p.updated_at,
             (SELECT s.id FROM commerce_product_sku s WHERE s.tenant_id = p.tenant_id AND s.spu_id = p.id ORDER BY s.price_amount::numeric ASC, s.id ASC LIMIT 1) AS default_sku_id,
@@ -881,7 +881,7 @@ async fn list_products(
         FROM commerce_product_spu p
         WHERE p.tenant_id = $1::text
           AND (p.organization_id = $2::text OR p.organization_id IS NULL)
-          AND ($3 IS NULL OR p.sales_status = $3)
+          AND ($3 IS NULL OR p.status = $3)
           AND ($4 IS NULL OR EXISTS (
               SELECT 1
               FROM commerce_product_spu_category pc
@@ -945,7 +945,7 @@ async fn upsert_product(
                 subtitle = $3,
                 description = $4,
                 product_type = $5,
-                sales_status = $6,
+                status = $6,
                 updated_at = $7
             WHERE id = $8
               AND tenant_id = $9::text
@@ -972,7 +972,7 @@ async fn upsert_product(
         sqlx::query(
             r#"
             INSERT INTO commerce_product_spu
-                (id, tenant_id, organization_id, spu_no, title, subtitle, description, product_type, sales_status, visible_surfaces, created_at, updated_at)
+                (id, tenant_id, organization_id, spu_no, title, subtitle, description, product_type, status, visible_surfaces, created_at, updated_at)
             VALUES
                 ($1, $2::text, $3::text, $4, $5, $6, $7, $8, $9, '["backend","app"]', $10, $10)
             ON CONFLICT (tenant_id, spu_no) DO UPDATE SET
@@ -980,7 +980,7 @@ async fn upsert_product(
                 subtitle = EXCLUDED.subtitle,
                 description = EXCLUDED.description,
                 product_type = EXCLUDED.product_type,
-                sales_status = EXCLUDED.sales_status,
+                status = EXCLUDED.status,
                 updated_at = EXCLUDED.updated_at
             "#,
         )
@@ -1064,7 +1064,7 @@ async fn delete_product(pool: &PgPool, command: DeleteAdminProductCommand) -> Do
     let product_result = sqlx::query(
         r#"
         UPDATE commerce_product_spu
-        SET sales_status = 'archived',
+        SET status = 'archived',
             updated_at = $1
         WHERE id = $2
           AND tenant_id = $3::text
@@ -1084,7 +1084,7 @@ async fn delete_product(pool: &PgPool, command: DeleteAdminProductCommand) -> Do
     sqlx::query(
         r#"
         UPDATE commerce_product_sku
-        SET sales_status = 'archived',
+        SET status = 'archived',
             updated_at = $1
         WHERE spu_id = $2
           AND tenant_id = $3::text
@@ -1113,10 +1113,10 @@ async fn list_skus(
             s.sku_no,
             s.spu_id,
             s.title,
-            s.delivery_mode,
+            s.fulfillment_type,
             s.price_amount,
             s.currency_code,
-            s.sales_status,
+            s.status,
             s.spec_json,
             s.created_at,
             s.updated_at,
@@ -1128,8 +1128,8 @@ async fn list_skus(
         WHERE s.tenant_id = $1::text
           AND (s.organization_id = $2::text OR s.organization_id IS NULL)
           AND ($3 IS NULL OR s.spu_id = $3)
-          AND ($4 IS NULL OR s.delivery_mode = $4)
-          AND ($5 IS NULL OR s.sales_status = $5)
+          AND ($4 IS NULL OR s.fulfillment_type = $4)
+          AND ($5 IS NULL OR s.status = $5)
         ORDER BY s.updated_at DESC, s.id DESC
         LIMIT $6 OFFSET $7
         "#,
@@ -1190,9 +1190,9 @@ async fn upsert_sku(
                 title = $3,
                 price_amount = $4,
                 currency_code = $5,
-                delivery_mode = $6,
+                fulfillment_type = $6,
                 inventory_tracking = $7,
-                sales_status = $8,
+                status = $8,
                 spec_json = $9,
                 updated_at = $10
             WHERE id = $11
@@ -1223,7 +1223,7 @@ async fn upsert_sku(
         sqlx::query(
             r#"
             INSERT INTO commerce_product_sku
-                (id, tenant_id, organization_id, spu_id, sku_no, name, title, price_amount, original_price_amount, currency_code, delivery_mode, inventory_tracking, sales_status, spec_json, created_at, updated_at)
+                (id, tenant_id, organization_id, spu_id, sku_no, name, title, price_amount, original_price_amount, currency_code, fulfillment_type, inventory_tracking, status, spec_json, created_at, updated_at)
             VALUES
                 ($1, $2::text, $3::text, $4, $5, $6, $6, $7, NULL, $8, $9, $10, $11, $12, $13, $13)
             ON CONFLICT (tenant_id, sku_no) DO UPDATE SET
@@ -1232,9 +1232,9 @@ async fn upsert_sku(
                 title = EXCLUDED.title,
                 price_amount = EXCLUDED.price_amount,
                 currency_code = EXCLUDED.currency_code,
-                delivery_mode = EXCLUDED.delivery_mode,
+                fulfillment_type = EXCLUDED.fulfillment_type,
                 inventory_tracking = EXCLUDED.inventory_tracking,
-                sales_status = EXCLUDED.sales_status,
+                status = EXCLUDED.status,
                 spec_json = EXCLUDED.spec_json,
                 updated_at = EXCLUDED.updated_at
             "#,
@@ -1266,7 +1266,7 @@ async fn delete_sku(pool: &PgPool, command: DeleteAdminSkuCommand) -> DomainResu
     let result = sqlx::query(
         r#"
         UPDATE commerce_product_sku
-        SET sales_status = 'archived',
+        SET status = 'archived',
             updated_at = $1
         WHERE id = $2
           AND tenant_id = $3::text
@@ -1735,7 +1735,7 @@ async fn list_price_lists(
     pool: &PgPool,
     query: ListAdminCatalogRecordsQuery,
 ) -> DomainResult<AdminCatalogCollection> {
-    let result = sqlx::query(
+    let rows = sqlx::query(
         r#"
         SELECT
             id,
@@ -1767,14 +1767,8 @@ async fn list_price_lists(
     .bind(query.page_size)
     .bind(query.offset)
     .fetch_all(pool)
-    .await;
-    let rows = match result {
-        Ok(rows) => rows,
-        Err(error) if is_missing_table_error(&error) => {
-            return Ok(collection(Vec::new(), 0, &query))
-        }
-        Err(error) => return Err(store_error(error)),
-    };
+    .await
+    .map_err(store_error)?;
     let total = rows
         .first()
         .map(|row| integer_cell(row, "total"))
@@ -1799,7 +1793,7 @@ async fn create_price_list(
             &command.price_list_no,
         ],
     );
-    let result = sqlx::query(
+    sqlx::query(
         r#"
         INSERT INTO commerce_price_list
             (id, tenant_id, organization_id, price_list_no, currency_code, market_code, customer_segment, starts_at, ends_at, status, created_at, updated_at)
@@ -1827,14 +1821,9 @@ async fn create_price_list(
     .bind(&command.status)
     .bind(&command.requested_at)
     .execute(pool)
-    .await;
-    match result {
-        Ok(_) => load_price_list(pool, command.subject, &price_list_id).await,
-        Err(error) if is_missing_table_error(&error) => Err(DomainError::new(
-            "commerce_price_list table is not installed; run the commerce schema migration before creating price lists",
-        )),
-        Err(error) => Err(write_error("failed to create price list", error)),
-    }
+    .await
+    .map_err(|error| write_error("failed to create price list", error))?;
+    load_price_list(pool, command.subject, &price_list_id).await
 }
 
 async fn load_category(
@@ -1873,7 +1862,7 @@ async fn load_product(
                   AND (pc.organization_id = p.organization_id OR pc.organization_id IS NULL OR p.organization_id IS NULL)
                   AND pc.status = 'active'
             ) AS category_ids,
-            p.sales_status,
+            p.status,
             p.created_at,
             p.updated_at,
             (SELECT s.id FROM commerce_product_sku s WHERE s.tenant_id = p.tenant_id AND s.spu_id = p.id ORDER BY s.price_amount::numeric, s.id LIMIT 1) AS default_sku_id,
@@ -1903,7 +1892,7 @@ async fn load_sku(
 ) -> DomainResult<AdminCatalogJsonRecord> {
     let row = sqlx::query(
         r#"
-        SELECT id, sku_no, spu_id, title, delivery_mode, price_amount, currency_code, sales_status, spec_json, created_at, updated_at
+        SELECT id, sku_no, spu_id, title, fulfillment_type, price_amount, currency_code, status, spec_json, created_at, updated_at
         FROM commerce_product_sku
         WHERE id = $1
           AND tenant_id = $2::text
@@ -2050,7 +2039,7 @@ fn product_record_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<AdminCat
         Value::Array(csv_string_array_cell(row, "category_ids")?),
     );
     insert_optional_string(&mut item, "brand", None);
-    insert_string(&mut item, "status", string_cell(row, "sales_status")?);
+    insert_string(&mut item, "status", string_cell(row, "status")?);
     insert_optional_string(&mut item, "publishedAt", None);
     insert_optional_string(
         &mut item,
@@ -2121,7 +2110,7 @@ async fn sku_record_from_row(
     insert_string(
         &mut item,
         "fulfillmentType",
-        string_cell(row, "delivery_mode")?,
+        string_cell(row, "fulfillment_type")?,
     );
     insert_optional_string(
         &mut item,
@@ -2146,7 +2135,7 @@ async fn sku_record_from_row(
         "defaultCurrencyCode",
         optional_string_cell(row, "currency_code")?,
     );
-    insert_string(&mut item, "status", string_cell(row, "sales_status")?);
+    insert_string(&mut item, "status", string_cell(row, "status")?);
     insert_optional_string(&mut item, "publishedAt", None);
     item.insert(
         "attributes".to_owned(),

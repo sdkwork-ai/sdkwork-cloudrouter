@@ -5,6 +5,7 @@ use sdkwork_contract_service::{CommerceAccountAssetType, CommerceLedgerDirection
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
 use crate::domain::DomainError;
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     UsageSettlementCommand, UsageSettlementFuture, UsageSettlementOutcome, UsageSettlementStore,
@@ -265,7 +266,7 @@ async fn settle_usage_group(
     }
 
     let first_usage_fact = &group.candidates[0].usage_fact;
-    let account = projection_wallet_account(first_usage_fact);
+    let account = ensure_points_account(tx, command, first_usage_fact).await?;
     let allocations = allocate_candidate_points(&group.candidates, points)?;
     let mut settlement_ids = Vec::with_capacity(group.candidates.len());
     for (candidate, allocated_points) in group.candidates.iter().zip(allocations.iter()) {
@@ -281,8 +282,54 @@ async fn settle_usage_group(
         );
     }
 
+    let transaction_id = settlement_batch_no(&group.candidates);
+    let ledger_entry_id = match existing_account_ledger_entry_id(tx, &account.id, &transaction_id)
+        .await?
+    {
+        Some(ledger_entry_id) => ledger_entry_id,
+        None => {
+            if account.available_amount < points {
+                for (candidate, settlement_id) in group.candidates.iter().zip(settlement_ids.iter())
+                {
+                    mark_settlement_failed(
+                        tx,
+                        &candidate.usage_fact,
+                        *settlement_id,
+                        "INSUFFICIENT_POINTS",
+                        "usage settlement account has insufficient points",
+                    )
+                    .await?;
+                }
+                return Ok(UsageSettlementOutcome {
+                    settled_count: 0,
+                    failed_count: group.candidates.len() as i64,
+                    debited_points: 0,
+                });
+            }
+            let balance_after = account.available_amount - points;
+            update_account_points(tx, &account.id, points, balance_after).await?;
+            insert_account_ledger_entry(
+                tx,
+                &stable_ledger_entry_id(&transaction_id),
+                first_usage_fact,
+                &account.id,
+                balance_after,
+                points,
+                &transaction_id,
+            )
+            .await?
+        }
+    };
+
     for (candidate, settlement_id) in group.candidates.iter().zip(settlement_ids.iter()) {
-        mark_settlement_success(tx, command, &candidate.usage_fact, *settlement_id, None).await?;
+        mark_settlement_success(
+            tx,
+            command,
+            &candidate.usage_fact,
+            *settlement_id,
+            Some(&ledger_entry_id),
+        )
+        .await?;
     }
     Ok(UsageSettlementOutcome {
         settled_count: group.candidates.len() as i64,
@@ -432,9 +479,9 @@ async fn upsert_processing_settlement(
         INSERT INTO commerce_settlement
             (uuid, tenant_id, organization_id, user_id, request_id, trace_id, status, created_at,
              metadata, settlement_no, usage_fact_id, account_id, asset_type, direction, amount,
-             points, tokens, currency, price_snapshot, settlement_status)
+             points, tokens, currency, price_snapshot, settlement_status, id)
         VALUES
-            ($1, $2, $3, $4, $5, $6, 1, $7::timestamp AT TIME ZONE 'UTC', '{}'::jsonb, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17::jsonb, $18)
+            ($1, $2, $3, $4, $5, $6, 1, $7::timestamp AT TIME ZONE 'UTC', '{}'::jsonb, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17::jsonb, $18, $19)
         ON CONFLICT (tenant_id, organization_id, usage_fact_id) DO UPDATE SET
             user_id = excluded.user_id,
             request_id = excluded.request_id,
@@ -450,7 +497,7 @@ async fn upsert_processing_settlement(
             settlement_status = excluded.settlement_status,
             failure_code = NULL,
             failure_message = NULL
-        WHERE commerce_settlement.settlement_status <> $19
+        WHERE commerce_settlement.settlement_status <> $20
         RETURNING id
         "#,
     )
@@ -472,6 +519,7 @@ async fn upsert_processing_settlement(
     .bind(&usage_fact.currency)
     .bind(&usage_fact.pricing_snapshot)
     .bind(USAGE_SETTLEMENT_PENDING)
+    .bind(next_claw_runtime_id("commerce_settlement")?)
     .bind(USAGE_SETTLEMENT_SUCCESS)
     .fetch_optional(&mut **tx)
     .await

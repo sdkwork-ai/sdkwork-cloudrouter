@@ -21,6 +21,8 @@ import {
   CLAW_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_ORDER,
   CLAW_ROUTER_BROWSER_DEVELOPMENT_ENV_SECTIONS,
   CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS,
+  CLAW_ROUTER_LIFECYCLE_ENV_KEYS,
+  normalizeClawRouterLifecycleEnvRecord,
   pickBrowserDevelopmentPortalRuntimeEnv,
   resolveBrowserDevProxyOrigin,
   sanitizeBrowserDevelopmentEnvRecord,
@@ -34,8 +36,6 @@ import {
 } from '../lib/claw-router-edge-env-contract.mjs';
 import {
   DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT,
-  isLocalBootstrapAccessTokenCompliant,
-  isLocalBootstrapAuthTokenCompliant,
   signLocalAppSessionAccessToken,
 } from './sign-local-app-session-access-token.mjs';
 
@@ -49,11 +49,10 @@ const DEFAULT_DEV_PROXY_GATEWAY_TARGET = 'http://127.0.0.1:3900';
 export { CLAW_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_ORDER };
 
 export const CLAW_ROUTER_RELEASE_ENV_KEY_ORDER = Object.freeze([
-  'SDKWORK_CLAW_CONFIG_PROFILE',
-  'SDKWORK_CLAW_ENVIRONMENT',
-  'SDKWORK_CLAW_DEPLOYMENT_PROFILE',
-  'SDKWORK_CLAW_RUNTIME_TARGET',
-  'SDKWORK_ACCESS_TOKEN',
+  CLAW_ROUTER_LIFECYCLE_ENV_KEYS.configProfile,
+  CLAW_ROUTER_LIFECYCLE_ENV_KEYS.environment,
+  CLAW_ROUTER_LIFECYCLE_ENV_KEYS.deploymentProfile,
+  CLAW_ROUTER_LIFECYCLE_ENV_KEYS.runtimeTarget,
   'SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL',
   'PORTAL_PUBLIC_SDK_BASE_URL',
   'PORTAL_PUBLIC_API_BASE_URL',
@@ -97,6 +96,7 @@ function normalizeText(value) {
 
 function completeReleaseEnvKeyOrder(mergedEnv, generatedEnv) {
   const complete = { ...mergedEnv };
+  delete complete.SDKWORK_ACCESS_TOKEN;
   for (const key of CLAW_ROUTER_RELEASE_ENV_KEY_ORDER) {
     if (!Object.prototype.hasOwnProperty.call(complete, key)) {
       complete[key] = generatedEnv[key] ?? '';
@@ -139,16 +139,6 @@ function ensureClawRouterBootstrapLocalEnv({
   return { bootstrapLocalPath, changed, bootstrapEnv };
 }
 
-function refreshStaleBootstrapSessionTokens(mergedEnv, options = {}) {
-  if (isLocalBootstrapAccessTokenCompliant(mergedEnv.SDKWORK_ACCESS_TOKEN)) {
-    return mergedEnv;
-  }
-  return {
-    ...mergedEnv,
-    SDKWORK_ACCESS_TOKEN: buildClawRouterBootstrapSessionTokenEnv(options).SDKWORK_ACCESS_TOKEN,
-  };
-}
-
 function resolveBootstrapPermissionScope(manifest) {
   const scopes = manifest?.backend?.accessTokenPermissionScope;
   if (Array.isArray(scopes) && scopes.length > 0) {
@@ -160,11 +150,14 @@ function resolveBootstrapPermissionScope(manifest) {
 export function buildClawRouterBootstrapSessionTokenEnv({
   env = process.env,
   workspaceRoot = DEFAULT_REPOSITORY_ROOT,
-  environment = DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.environment,
+  environment,
   deploymentMode = DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.deploymentMode,
   sessionId = DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.sessionId,
   runtimeTarget = 'browser',
 } = {}) {
+  if (environment !== 'development') {
+    throw new Error('local bootstrap token generation requires an explicit development lifecycle');
+  }
   const manifest = readApplicationManifest(workspaceRoot);
   const appSessionSecret = normalizeText(env.SDKWORK_CLAW_APP_SESSION_SECRET)
     ?? DEFAULT_DEV_APP_SESSION_SECRET;
@@ -201,11 +194,10 @@ export function buildClawRouterBootstrapAccessTokenEnv(params = {}) {
 }
 
 export const CLAW_ROUTER_BROWSER_PRODUCTION_ENV_KEY_ORDER = Object.freeze([
-  'SDKWORK_CLAW_CONFIG_PROFILE',
-  'SDKWORK_CLAW_ENVIRONMENT',
-  'SDKWORK_CLAW_DEPLOYMENT_PROFILE',
-  'SDKWORK_CLAW_RUNTIME_TARGET',
-  'SDKWORK_ACCESS_TOKEN',
+  CLAW_ROUTER_LIFECYCLE_ENV_KEYS.configProfile,
+  CLAW_ROUTER_LIFECYCLE_ENV_KEYS.environment,
+  CLAW_ROUTER_LIFECYCLE_ENV_KEYS.deploymentProfile,
+  CLAW_ROUTER_LIFECYCLE_ENV_KEYS.runtimeTarget,
 ]);
 
 const BROWSER_PRODUCTION_ENV_HEADER = Object.freeze([
@@ -224,16 +216,10 @@ export function buildClawRouterBrowserDevelopmentGeneratedEnv({
   const manifestAppId = normalizeText(manifest?.app?.key) ?? 'sdkwork-clawrouter';
   const pickedPortalRuntimeEnv = pickBrowserDevelopmentPortalRuntimeEnv(portalRuntimeEnv);
   const generated = {
-    SDKWORK_CLAW_CONFIG_PROFILE: 'dev',
-    SDKWORK_CLAW_ENVIRONMENT: 'development',
-    SDKWORK_CLAW_DEPLOYMENT_PROFILE: deploymentProfile,
-    SDKWORK_CLAW_RUNTIME_TARGET: 'browser',
-    ...buildClawRouterBootstrapSessionTokenEnv({
-      env,
-      workspaceRoot,
-      deploymentMode: DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.deploymentMode,
-      runtimeTarget: 'browser',
-    }),
+    [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.configProfile]: 'dev',
+    [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.environment]: 'development',
+    [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.deploymentProfile]: deploymentProfile,
+    [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.runtimeTarget]: 'browser',
     [CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.openApi]: resolveBrowserDevProxyOrigin(
       { ...env, ...pickedPortalRuntimeEnv },
       CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.openApi,
@@ -264,44 +250,26 @@ export function buildClawRouterBrowserDevelopmentGeneratedEnv({
 }
 
 export function buildClawRouterBrowserProductionGeneratedEnv({
-  env = process.env,
-  workspaceRoot = DEFAULT_REPOSITORY_ROOT,
   deploymentProfile = 'standalone',
 } = {}) {
   return {
-    SDKWORK_CLAW_CONFIG_PROFILE: 'prod',
-    SDKWORK_CLAW_ENVIRONMENT: 'production',
-    SDKWORK_CLAW_DEPLOYMENT_PROFILE: deploymentProfile,
-    SDKWORK_CLAW_RUNTIME_TARGET: 'browser',
-    ...buildClawRouterBootstrapSessionTokenEnv({
-      env,
-      workspaceRoot,
-      environment: 'production',
-      deploymentMode: 'server',
-      sessionId: 'bootstrap-production-browser',
-      runtimeTarget: 'browser',
-    }),
+    [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.configProfile]: 'prod',
+    [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.environment]: 'production',
+    [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.deploymentProfile]: deploymentProfile,
+    [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.runtimeTarget]: 'browser',
   };
 }
 
 export function buildClawRouterReleaseGeneratedEnv({
   env = process.env,
-  workspaceRoot = DEFAULT_REPOSITORY_ROOT,
   deploymentProfile = 'standalone',
   runtimeTarget = 'server',
 } = {}) {
   return {
-    SDKWORK_CLAW_CONFIG_PROFILE: 'release',
-    SDKWORK_CLAW_ENVIRONMENT: 'production',
-    SDKWORK_CLAW_DEPLOYMENT_PROFILE: deploymentProfile,
-    SDKWORK_CLAW_RUNTIME_TARGET: runtimeTarget,
-    ...buildClawRouterBootstrapSessionTokenEnv({
-      env,
-      workspaceRoot,
-      environment: 'production',
-      deploymentMode: runtimeTarget === 'desktop' ? 'desktop' : 'server',
-      runtimeTarget,
-    }),
+    [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.configProfile]: 'prod',
+    [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.environment]: 'production',
+    [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.deploymentProfile]: deploymentProfile,
+    [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.runtimeTarget]: runtimeTarget,
     SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL:
       normalizeText(env.SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL),
     PORTAL_PUBLIC_SDK_BASE_URL:
@@ -334,30 +302,29 @@ export function ensureClawRouterBrowserDevelopmentEnv({
     ?? resolveDefaultPcApplicationRoot(workspaceRoot);
   const profileFilePath = path.join(resolvedApplicationRoot, '.env.development');
   const existingBeforeEnsure = loadEnvFile(profileFilePath);
+  const generatedEnv = buildClawRouterBrowserDevelopmentGeneratedEnv({
+    env,
+    workspaceRoot,
+    portalRuntimeEnv,
+    deploymentProfile,
+  });
   const result = ensureApplicationEnv({
     workspaceRoot,
     applicationRoot: resolvedApplicationRoot,
     runtimeTarget: 'browser',
     configProfile: 'development',
-    generatedEnv: buildClawRouterBrowserDevelopmentGeneratedEnv({
-      env,
-      workspaceRoot,
-      portalRuntimeEnv,
-      deploymentProfile,
-    }),
+    generatedEnv,
     keyOrder: CLAW_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_ORDER,
     headerLines: [...BROWSER_DEVELOPMENT_ENV_HEADER],
-    dryRun,
+    // The profile-specific sanitizer below owns the only write.
+    dryRun: true,
   });
-  const sanitizedMergedEnv = sanitizeBrowserDevelopmentEnvRecord({
-    ...refreshStaleBootstrapSessionTokens(result.mergedEnv, {
-      env,
-      workspaceRoot,
-      deploymentMode: DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.deploymentMode,
-      runtimeTarget: 'browser',
-    }),
-    ...pickBrowserDevelopmentPortalRuntimeEnv(portalRuntimeEnv),
-  });
+  const sanitizedMergedEnv = sanitizeBrowserDevelopmentEnvRecord(
+    normalizeClawRouterLifecycleEnvRecord({
+      ...result.mergedEnv,
+      ...pickBrowserDevelopmentPortalRuntimeEnv(portalRuntimeEnv),
+    }, generatedEnv),
+  );
   const formattedContent = formatEnvFileContent(sanitizedMergedEnv, {
     headerLines: [...BROWSER_DEVELOPMENT_ENV_HEADER],
     keyOrder: CLAW_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_ORDER,
@@ -373,6 +340,7 @@ export function ensureClawRouterBrowserDevelopmentEnv({
   const bootstrapCredentials = buildClawRouterBootstrapSessionTokenEnv({
     env,
     workspaceRoot,
+    environment: 'development',
     deploymentMode: DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.deploymentMode,
     runtimeTarget: 'browser',
   });
@@ -401,27 +369,27 @@ export function ensureClawRouterBrowserProductionEnv({
     ?? resolveDefaultPcApplicationRoot(workspaceRoot);
   const profileFilePath = path.join(resolvedApplicationRoot, '.env.production');
   const existingBeforeEnsure = loadEnvFile(profileFilePath);
+  const generatedEnv = buildClawRouterBrowserProductionGeneratedEnv({
+    env,
+    workspaceRoot,
+    deploymentProfile,
+  });
   const result = ensureApplicationEnv({
     workspaceRoot,
     applicationRoot: resolvedApplicationRoot,
     runtimeTarget: 'browser',
     configProfile: 'production',
-    generatedEnv: buildClawRouterBrowserProductionGeneratedEnv({
-      env,
-      workspaceRoot,
-      deploymentProfile,
-    }),
+    generatedEnv,
     keyOrder: CLAW_ROUTER_BROWSER_PRODUCTION_ENV_KEY_ORDER,
     headerLines: [...BROWSER_PRODUCTION_ENV_HEADER],
-    dryRun,
+    // Resolve without persisting unsanitized values from an existing profile.
+    dryRun: true,
   });
   const sanitizedMergedEnv = sanitizeBrowserProductionEnvRecord(
-    refreshStaleBootstrapSessionTokens(result.mergedEnv, {
-      env,
-      workspaceRoot,
-      deploymentMode: DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.deploymentMode,
-      runtimeTarget: 'browser',
-    }),
+    normalizeClawRouterLifecycleEnvRecord(
+      result.mergedEnv,
+      generatedEnv,
+    ),
   );
   const formattedContent = formatEnvFileContent(sanitizedMergedEnv, {
     headerLines: [...BROWSER_PRODUCTION_ENV_HEADER],
@@ -433,24 +401,10 @@ export function ensureClawRouterBrowserProductionEnv({
     mkdirSync(path.dirname(result.profileFilePath), { recursive: true });
     writeFileSync(result.profileFilePath, formattedContent, 'utf8');
   }
-  const bootstrapCredentials = buildClawRouterBootstrapSessionTokenEnv({
-    env,
-    workspaceRoot,
-    environment: 'production',
-    deploymentMode: DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.deploymentMode,
-    runtimeTarget: 'browser',
-  });
-  const bootstrapLocal = ensureClawRouterBootstrapLocalEnv({
-    applicationRoot: resolvedApplicationRoot,
-    configProfile: 'production',
-    credentials: bootstrapCredentials,
-    dryRun,
-  });
   return {
     ...result,
     mergedEnv: sanitizedMergedEnv,
-    changed: result.changed || sanitizedChanged || bootstrapLocal.changed,
-    bootstrapLocalPath: bootstrapLocal.bootstrapLocalPath,
+    changed: result.changed || sanitizedChanged,
   };
 }
 
@@ -476,10 +430,12 @@ export function ensureClawRouterReleaseEnv({
     generatedEnv,
     keyOrder: CLAW_ROUTER_RELEASE_ENV_KEY_ORDER,
     headerLines: [...RELEASE_ENV_HEADER],
-    dryRun,
+    // Resolve without persisting unsanitized values from an existing profile.
+    dryRun: true,
   });
-  const sanitizedMergedEnv = sanitizeReleaseHostEnvRecord(
-    completeReleaseEnvKeyOrder(result.mergedEnv, generatedEnv),
+  const sanitizedMergedEnv = normalizeClawRouterLifecycleEnvRecord(
+    sanitizeReleaseHostEnvRecord(completeReleaseEnvKeyOrder(result.mergedEnv, generatedEnv)),
+    generatedEnv,
   );
   const formattedContent = formatEnvFileContent(sanitizedMergedEnv, {
     headerLines: [...RELEASE_ENV_HEADER],
@@ -524,19 +480,30 @@ export function ensureClawRouterEnvForLifecycle(lifecycle, options = {}) {
       };
     case 'start':
     case 'release':
-      return {
-        release: ensureClawRouterReleaseEnv(options),
-        production: ensureClawRouterBrowserProductionEnv(options),
-      };
     case 'all':
       return {
-        development: ensureClawRouterBrowserDevelopmentEnv(options),
-        production: ensureClawRouterBrowserProductionEnv(options),
         release: ensureClawRouterReleaseEnv(options),
+        production: ensureClawRouterBrowserProductionEnv(options),
       };
     default:
       throw new Error(
         `unsupported lifecycle "${lifecycle}"; expected dev, build, start, or all`,
+      );
+  }
+}
+
+export function ensureClawRouterEnvForProfile(profile, options = {}) {
+  const normalized = String(profile ?? '').trim().toLowerCase();
+  switch (normalized) {
+    case 'development':
+      return ensureClawRouterBrowserDevelopmentEnv(options);
+    case 'production':
+      return ensureClawRouterBrowserProductionEnv(options);
+    case 'release':
+      return ensureClawRouterReleaseEnv(options);
+    default:
+      throw new Error(
+        `unsupported profile "${profile}"; expected development, production, or release`,
       );
   }
 }
@@ -609,20 +576,16 @@ function main() {
   }
 
   const profile = String(options.profile).trim().toLowerCase();
-  const result = profile === 'release'
-    ? ensureClawRouterReleaseEnv({
-        workspaceRoot: options.workspaceRoot,
-        dryRun: options.dryRun,
-      })
-    : profile === 'production'
-      ? ensureClawRouterBrowserProductionEnv({
-          workspaceRoot: options.workspaceRoot,
-          dryRun: options.dryRun,
-        })
-      : ensureClawRouterBrowserDevelopmentEnv({
-          workspaceRoot: options.workspaceRoot,
-          dryRun: options.dryRun,
-        });
+  let result;
+  try {
+    result = ensureClawRouterEnvForProfile(profile, {
+      workspaceRoot: options.workspaceRoot,
+      dryRun: options.dryRun,
+    });
+  } catch (error) {
+    console.error(`[claw-router-application-env] ${error.message}`);
+    process.exit(1);
+  }
 
   console.log('[claw-router-application-env] application env ready');
   console.log(JSON.stringify({

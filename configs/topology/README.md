@@ -2,9 +2,9 @@
 
 Authoritative profile env files for `specs/topology.spec.json`.
 
-Pattern: `{hosting}.{serviceLayout}.{environment}.env`
+Pattern: `{deploymentProfile}.{environment}.env`
 
-Default local development profile: `standalone.unified-process.development` (single-port integrated runtime).
+Default local development profile: `standalone.development` (single-port integrated runtime).
 
 Validate:
 
@@ -16,6 +16,6 @@ Canonical dev commands (see `docs/topology-standard.md` and `specs/topology.spec
 
 ```bash
 pnpm dev
-pnpm dev:browser:postgres:split-services:standalone
-pnpm dev:browser:postgres:unified-process:cloud
+pnpm dev:browser:postgres:standalone:debug
+pnpm dev:browser:postgres:cloud
 ```

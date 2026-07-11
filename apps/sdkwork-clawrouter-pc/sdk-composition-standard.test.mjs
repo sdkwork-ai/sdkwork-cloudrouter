@@ -17,7 +17,7 @@ function json(path) {
   return JSON.parse(source(path));
 }
 
-test('portal workspace declares appbase app and backend generated SDK packages', () => {
+test('portal workspace declares appbase app and backend composed SDK packages', () => {
   const packageJson = json('package.json');
   const commonsPackageJson = json('packages/sdkwork-clawroutes-pc-commons/package.json');
   const workspaceSource = repoSource('pnpm-workspace.yaml');
@@ -32,25 +32,38 @@ test('portal workspace declares appbase app and backend generated SDK packages',
 
   for (const [appPattern, rootPattern] of [
     [
-      '../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/*-typescript/generated/server-openapi',
-      '../sdkwork-iam/sdks/sdkwork-iam-app-sdk/*-typescript/generated/server-openapi',
+      '../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript',
+      '../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript',
     ],
     [
-      '../../../sdkwork-iam/sdks/sdkwork-iam-backend-sdk/*-typescript/generated/server-openapi',
-      '../sdkwork-iam/sdks/sdkwork-iam-backend-sdk/*-typescript/generated/server-openapi',
+      '../../../sdkwork-iam/sdks/sdkwork-iam-backend-sdk/sdkwork-iam-backend-sdk-typescript',
+      '../sdkwork-iam/sdks/sdkwork-iam-backend-sdk/sdkwork-iam-backend-sdk-typescript',
     ],
   ]) {
     assert.ok(packageJson.workspaces.includes(appPattern), `package workspaces must include ${appPattern}`);
     assert.ok(workspaceSource.includes(rootPattern), `pnpm workspace must include ${rootPattern}`);
   }
 
+  for (const forbiddenPattern of [
+    '../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/*-typescript/generated/server-openapi',
+    '../../../sdkwork-iam/sdks/sdkwork-iam-backend-sdk/*-typescript/generated/server-openapi',
+    '../sdkwork-iam/sdks/sdkwork-iam-app-sdk/*-typescript/generated/server-openapi',
+    '../sdkwork-iam/sdks/sdkwork-iam-backend-sdk/*-typescript/generated/server-openapi',
+  ]) {
+    assert.ok(!packageJson.workspaces.includes(forbiddenPattern), `package workspaces must not include generated transport ${forbiddenPattern}`);
+    assert.ok(!workspaceSource.includes(forbiddenPattern), `pnpm workspace must not include generated transport ${forbiddenPattern}`);
+  }
+  assert.ok(
+    !packageJson.workspaces.some((entry) => entry.includes('generated/server-openapi')),
+    'portal package workspaces must not register generated transport outputs',
+  );
+
   for (const [packageName, sdkFamily] of [
     ['@sdkwork/iam-app-sdk', 'sdkwork-iam-app-sdk'],
     ['@sdkwork/iam-backend-sdk', 'sdkwork-iam-backend-sdk'],
   ]) {
     assert.equal(packageJson.dependencies[packageName], 'workspace:*');
-    assert.ok(workspaceSource.includes(`sdks/${sdkFamily}/${sdkFamily}-typescript/generated/server-openapi`)
-      || workspaceSource.includes(`sdks/${sdkFamily}/*-typescript/generated/server-openapi`));
+    assert.ok(workspaceSource.includes(`sdks/${sdkFamily}/${sdkFamily}-typescript`));
   }
 
   assert.match(viteConfigSource, /clawrouter-portal-pnpm-workspace-resolver/);
@@ -102,8 +115,8 @@ test('portal workspace composes commerce capabilities through clawrouter SDK cli
 });
 
 test('clawrouter SDK families declare domain capabilities and exclude domain transport from product SDK', () => {
-  const appAssembly = json('../../sdks/clawrouter-app-sdk/.sdkwork-assembly.json');
-  const backendAssembly = json('../../sdks/clawrouter-backend-sdk/.sdkwork-assembly.json');
+  const appManifest = json('../../sdks/clawrouter-app-sdk/sdk-manifest.json');
+  const backendManifest = json('../../sdks/clawrouter-backend-sdk/sdk-manifest.json');
   const appOpenapi = json('../../sdks/clawrouter-app-sdk/openapi/clawrouter-app-sdk.openapi.json');
   const backendOpenapi = json('../../sdks/clawrouter-backend-sdk/openapi/clawrouter-backend-sdk.openapi.json');
 
@@ -113,7 +126,7 @@ test('clawrouter SDK families declare domain capabilities and exclude domain tra
     'clawrouter-app-promotion-capability',
   ]) {
     assert.ok(
-      appAssembly.sdkDependencies.some((dependency) => dependency.workspace === workspace),
+      appManifest.sdkDependencies.some((dependency) => dependency.workspace === workspace),
       `ClawRouter app SDK must declare ${workspace}`,
     );
   }
@@ -124,7 +137,7 @@ test('clawrouter SDK families declare domain capabilities and exclude domain tra
     'clawrouter-backend-promotion-capability',
   ]) {
     assert.ok(
-      backendAssembly.sdkDependencies.some((dependency) => dependency.workspace === workspace),
+      backendManifest.sdkDependencies.some((dependency) => dependency.workspace === workspace),
       `ClawRouter backend SDK must declare ${workspace}`,
     );
   }
@@ -148,17 +161,17 @@ test('clawrouter SDK families declare domain capabilities and exclude domain tra
   }
 
   assert.equal(
-    existsSync(new URL('../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts/api/commerce.ts', portalRoot)),
+    existsSync(new URL('../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/api/commerce.ts', portalRoot)),
     false,
     'ClawRouter app generated SDK must not contain a Commerce API module',
   );
   assert.equal(
-    existsSync(new URL('../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/api/commerce.ts', portalRoot)),
+    existsSync(new URL('../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/api/commerce.ts', portalRoot)),
     false,
     'ClawRouter backend generated SDK must not contain a Commerce API module',
   );
 
-  const backendSystemApi = source('../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/api/system.ts');
+  const backendSystemApi = source('../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/api/system.ts');
   assert.doesNotMatch(
     backendSystemApi,
     /SystemPromotions(?:Offers|CouponStocks|UserCoupons|DiscountApplications|DiscountAllocations|CouponLedgerEntries)/,

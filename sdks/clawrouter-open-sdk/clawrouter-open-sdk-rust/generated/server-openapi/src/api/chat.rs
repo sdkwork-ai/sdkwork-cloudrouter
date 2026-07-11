@@ -29,7 +29,7 @@ impl ChatApi {
         metadata: Option<&str>,
     ) -> Result<OpenAiChatCompletionList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),
@@ -106,7 +106,7 @@ impl ChatApi {
         before: Option<&str>,
     ) -> Result<OpenAiChatCompletionMessageList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),

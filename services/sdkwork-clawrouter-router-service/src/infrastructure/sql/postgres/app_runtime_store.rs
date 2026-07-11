@@ -2,6 +2,7 @@ use serde_json::Value;
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
 use crate::domain::{DomainError, DomainResult};
+use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::sql_admin_product_center::drive_uri_from_resource;
 use crate::ports::{
     AppRuntimeArtifactItem, AppRuntimeArtifactList, AppRuntimeEventItem, AppRuntimeEventList,
@@ -144,9 +145,10 @@ impl AppRuntimeStore for PostgresAppRuntimeStore {
                     started_at,
                     request_json,
                     created_at,
-                    metadata
+                    metadata,
+                    id
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 1, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27::timestamp AT TIME ZONE 'UTC', $28::jsonb, $27::timestamp AT TIME ZONE 'UTC', $29::jsonb)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 1, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27::timestamp AT TIME ZONE 'UTC', $28::jsonb, $27::timestamp AT TIME ZONE 'UTC', $29::jsonb, $30)
                 "#,
             )
             .bind(&command.invocation_uuid)
@@ -178,6 +180,7 @@ impl AppRuntimeStore for PostgresAppRuntimeStore {
             .bind(&command.requested_at)
             .bind(&request_json)
             .bind(&metadata)
+            .bind(next_claw_runtime_id("ai_runtime_invocation")?)
             .execute(&self.pool)
             .await
             .map_err(sql_error)?;
@@ -552,9 +555,10 @@ async fn create_event(
             payload_json,
             text_delta,
             created_at,
-            metadata
+            metadata,
+            id
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb, $15, $16::timestamp AT TIME ZONE 'UTC', $17::jsonb)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb, $15, $16::timestamp AT TIME ZONE 'UTC', $17::jsonb, $18)
         "#,
     )
     .bind(&command.event_uuid)
@@ -574,6 +578,7 @@ async fn create_event(
     .bind(&command.text_delta)
     .bind(&command.requested_at)
     .bind(&metadata)
+    .bind(next_claw_runtime_id("ai_runtime_invocation_event")?)
     .execute(&mut *tx)
     .await
     .map_err(sql_error)?;
@@ -640,9 +645,10 @@ async fn create_artifact(
             sha256,
             size_bytes,
             created_at,
-            metadata
+            metadata,
+            id
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::jsonb, $17, $18::jsonb, $19, $20, $21::timestamp AT TIME ZONE 'UTC', $22::jsonb)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::jsonb, $17, $18::jsonb, $19, $20, $21::timestamp AT TIME ZONE 'UTC', $22::jsonb, $23)
         "#,
     )
     .bind(&command.artifact_uuid)
@@ -667,6 +673,7 @@ async fn create_artifact(
     .bind(command.size_bytes)
     .bind(&command.requested_at)
     .bind(&metadata)
+    .bind(next_claw_runtime_id("ai_runtime_artifact")?)
     .execute(pool)
     .await
     .map_err(sql_error)?;

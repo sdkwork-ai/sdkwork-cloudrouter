@@ -303,6 +303,93 @@
     },
     {
       "api_method": "POST",
+      "api_path": "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#complete@/console/chat/conversations/{conversationId}/turns/{turnId}/response",
+      "kind": "action",
+      "module": "response",
+      "openapi_exposed": true,
+      "operation": "complete",
+      "operation_id": "turnResponses.complete",
+      "path_params": [
+        "conversationId",
+        "turnId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "chat"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/console/chat/conversations/{conversationId}/turns/{turnId}/response",
+      "route_scope": "console",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "chat",
+      "sdk_family": "clawrouter-app-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "chat",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/app/v3/api/runtime/invocations/{invocationId}/complete",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#complete@/console/runtime/invocations/{invocationId}/complete",
+      "kind": "action",
+      "module": "complete",
+      "openapi_exposed": true,
+      "operation": "complete",
+      "operation_id": "invocations.complete",
+      "path_params": [
+        "invocationId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "runtime"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/console/runtime/invocations/{invocationId}/complete",
+      "route_scope": "console",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "runtime",
+      "sdk_family": "clawrouter-app-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "runtime",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
       "api_path": "/backend/v3/api/ai/channel_groups",
       "api_surface": "backend",
       "file_targets": [],
@@ -394,7 +481,7 @@
       "module": "resolve",
       "openapi_exposed": true,
       "operation": "create",
-      "operation_id": "modelMappings.resolve.create",
+      "operation_id": "modelMappings.resolve",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": false,
@@ -590,47 +677,6 @@
     },
     {
       "api_method": "POST",
-      "api_path": "/backend/v3/api/ai/route_explain",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/admin/ai/route_explain",
-      "kind": "create",
-      "module": "route_explain",
-      "openapi_exposed": true,
-      "operation": "create",
-      "operation_id": "routeExplain.create",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "ai"
-      ],
-      "request_body_required": false,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/ai/route_explain",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "intelligence",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "ai",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
       "api_path": "/backend/v3/api/integration/channels",
       "api_surface": "backend",
       "file_targets": [],
@@ -763,7 +809,7 @@
       "module": "health_check",
       "openapi_exposed": true,
       "operation": "create",
-      "operation_id": "healthCheck.create",
+      "operation_id": "sites.healthCheck",
       "path_params": [
         "siteId"
       ],
@@ -806,7 +852,7 @@
       "module": "test_connection",
       "openapi_exposed": true,
       "operation": "create",
-      "operation_id": "testConnection.create",
+      "operation_id": "sites.testConnection",
       "path_params": [
         "siteId"
       ],
@@ -892,7 +938,7 @@
       "module": "refresh",
       "openapi_exposed": true,
       "operation": "create",
-      "operation_id": "cache.instances.refresh.create",
+      "operation_id": "cache.instances.refresh",
       "path_params": [
         "instanceName"
       ],
@@ -977,7 +1023,7 @@
       "module": "refresh",
       "openapi_exposed": true,
       "operation": "create",
-      "operation_id": "cache.namespaces.refresh.create",
+      "operation_id": "cache.namespaces.refresh",
       "path_params": [
         "namespace"
       ],
@@ -1062,7 +1108,7 @@
       "module": "refresh",
       "openapi_exposed": true,
       "operation": "create",
-      "operation_id": "cache.refresh.create",
+      "operation_id": "cache.refresh",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": false,
@@ -1750,50 +1796,6 @@
         }
       },
       "route": "/console/chat/conversations/{conversationId}/turns",
-      "route_scope": "console",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "chat",
-      "sdk_family": "clawrouter-app-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "chat",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/console/chat/conversations/{conversationId}/turns/{turnId}/response",
-      "kind": "create",
-      "module": "response",
-      "openapi_exposed": true,
-      "operation": "create",
-      "operation_id": "turnResponses.create",
-      "path_params": [
-        "conversationId",
-        "turnId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "chat"
-      ],
-      "request_body_required": false,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/console/chat/conversations/{conversationId}/turns/{turnId}/response",
       "route_scope": "console",
       "sdk_api_prefix": "/app/v3/api",
       "sdk_client": "SdkworkAppClient",
@@ -4300,6 +4302,47 @@
       "sdk_family": "clawrouter-app-sdk",
       "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
       "tag": "iam",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/route_explain",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#explain@/admin/ai/route_explain",
+      "kind": "action",
+      "module": "route_explain",
+      "openapi_exposed": true,
+      "operation": "explain",
+      "operation_id": "routeExplain.explain",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ai"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/ai/route_explain",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "ai",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -9266,7 +9309,7 @@
       "module": "payments",
       "openapi_exposed": true,
       "operation": "pay",
-      "operation_id": "orders.pay",
+      "operation_id": "orders.payments.create",
       "path_params": [
         "orderId"
       ],
@@ -9352,7 +9395,7 @@
       "module": "reconciliations",
       "openapi_exposed": true,
       "operation": "reconcile",
-      "operation_id": "payments.reconcile",
+      "operation_id": "reconciliations.create",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": false,
@@ -9561,7 +9604,7 @@
       "module": "releases",
       "openapi_exposed": true,
       "operation": "release",
-      "operation_id": "promotions.discountApplications.release",
+      "operation_id": "promotions.discountApplications.releases.create",
       "path_params": [
         "applicationId"
       ],
@@ -9645,7 +9688,7 @@
       "module": "model_mappings",
       "openapi_exposed": true,
       "operation": "replace",
-      "operation_id": "modelMappings.replace",
+      "operation_id": "modelMappings.collection.update",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": false,
@@ -13972,7 +14015,7 @@
       "module": "{outTradeNo}",
       "openapi_exposed": true,
       "operation": "retrieveByOutTradeNo",
-      "operation_id": "payments.status.retrieveByOutTradeNo",
+      "operation_id": "payments.status.outTradeNo.retrieve",
       "path_params": [
         "outTradeNo"
       ],
@@ -14099,7 +14142,7 @@
       "module": "settlements",
       "openapi_exposed": true,
       "operation": "settle",
-      "operation_id": "promotions.discountApplications.settle",
+      "operation_id": "promotions.discountApplications.settlements.create",
       "path_params": [
         "applicationId"
       ],
@@ -14127,49 +14170,6 @@
       "sdk_family": "clawrouter-app-sdk",
       "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
       "tag": "promotions",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/runtime/invocations/{invocationId}/complete",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#submit@/console/runtime/invocations/{invocationId}/complete",
-      "kind": "create",
-      "module": "complete",
-      "openapi_exposed": true,
-      "operation": "submit",
-      "operation_id": "invocations.submit",
-      "path_params": [
-        "invocationId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "runtime"
-      ],
-      "request_body_required": false,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/console/runtime/invocations/{invocationId}/complete",
-      "route_scope": "console",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "runtime",
-      "sdk_family": "clawrouter-app-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "runtime",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -15889,7 +15889,7 @@
       "module": "brand_authorizations",
       "openapi_exposed": true,
       "operation": "upsert",
-      "operation_id": "shops.brandAuthorizations.upsert",
+      "operation_id": "shops.brandAuthorizations.update",
       "path_params": [
         "shopId"
       ],
@@ -15932,7 +15932,7 @@
       "module": "category_bindings",
       "openapi_exposed": true,
       "operation": "upsert",
-      "operation_id": "shops.categoryBindings.upsert",
+      "operation_id": "shops.categoryBindings.update",
       "path_params": [
         "shopId"
       ],
@@ -15975,7 +15975,7 @@
       "module": "customer_services",
       "openapi_exposed": true,
       "operation": "upsert",
-      "operation_id": "shops.customerServices.upsert",
+      "operation_id": "shops.customerServices.update",
       "path_params": [
         "shopId"
       ],
@@ -16018,7 +16018,7 @@
       "module": "qualifications",
       "openapi_exposed": true,
       "operation": "upsert",
-      "operation_id": "shops.qualifications.upsert",
+      "operation_id": "shops.qualifications.update",
       "path_params": [
         "shopId"
       ],
@@ -16061,7 +16061,7 @@
       "module": "return_addresses",
       "openapi_exposed": true,
       "operation": "upsert",
-      "operation_id": "shops.returnAddresses.upsert",
+      "operation_id": "shops.returnAddresses.update",
       "path_params": [
         "shopId"
       ],
@@ -16104,7 +16104,7 @@
       "module": "shipping_templates",
       "openapi_exposed": true,
       "operation": "upsert",
-      "operation_id": "shops.shippingTemplates.upsert",
+      "operation_id": "shops.shippingTemplates.update",
       "path_params": [
         "shopId"
       ],
@@ -16147,7 +16147,7 @@
       "module": "brand_authorizations",
       "openapi_exposed": true,
       "operation": "upsert",
-      "operation_id": "shops.current.brandAuthorizations.upsert",
+      "operation_id": "shops.current.brandAuthorizations.update",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": false,
@@ -16188,7 +16188,7 @@
       "module": "category_bindings",
       "openapi_exposed": true,
       "operation": "upsert",
-      "operation_id": "shops.current.categoryBindings.upsert",
+      "operation_id": "shops.current.categoryBindings.update",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": false,
@@ -16229,7 +16229,7 @@
       "module": "customer_services",
       "openapi_exposed": true,
       "operation": "upsert",
-      "operation_id": "shops.current.customerServices.upsert",
+      "operation_id": "shops.current.customerServices.update",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": false,
@@ -16270,7 +16270,7 @@
       "module": "qualifications",
       "openapi_exposed": true,
       "operation": "upsert",
-      "operation_id": "shops.current.qualifications.upsert",
+      "operation_id": "shops.current.qualifications.update",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": false,
@@ -16311,7 +16311,7 @@
       "module": "return_addresses",
       "openapi_exposed": true,
       "operation": "upsert",
-      "operation_id": "shops.current.returnAddresses.upsert",
+      "operation_id": "shops.current.returnAddresses.update",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": false,
@@ -16352,7 +16352,7 @@
       "module": "shipping_templates",
       "openapi_exposed": true,
       "operation": "upsert",
-      "operation_id": "shops.current.shippingTemplates.upsert",
+      "operation_id": "shops.current.shippingTemplates.update",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": false,

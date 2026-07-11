@@ -15,8 +15,8 @@ use serde_json::Value;
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
-    json_success_list_response, offset_page_info, parse_offset_list_query, problem_from_wire_code,
-    success_envelope, ParsedOffsetListQuery,
+    json_created_response, json_success_list_response, no_content_response, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, success_envelope, ParsedOffsetListQuery,
 };
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
@@ -52,12 +52,6 @@ struct AdminMarketingState {
 #[serde(rename_all = "camelCase")]
 struct AdminMarketingItemEnvelope<T> {
     item: T,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct AdminMarketingDeleteResponse {
-    deleted: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -443,10 +437,9 @@ async fn create_promotion_offer(
         };
 
     match state.store.create_promotion_offer(command).await {
-        Ok(item) => Json(success_envelope(AdminMarketingItemEnvelope {
+        Ok(item) => json_created_response(None, AdminMarketingItemEnvelope {
             item: promotion_offer_item(item),
-        }))
-        .into_response(),
+        }),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
             marketing_system_response("promotion offer command store is unavailable", error)
@@ -472,10 +465,7 @@ async fn delete_promotion_offer(
         };
 
     match state.store.delete_promotion_offer(command).await {
-        Ok(true) => Json(success_envelope(AdminMarketingDeleteResponse {
-            deleted: true,
-        }))
-        .into_response(),
+        Ok(true) => no_content_response(None),
         Ok(false) => not_found_response("promotion offer was not found"),
         Err(error) if error.is_not_found() => not_found_response("promotion offer was not found"),
         Err(error) => {
@@ -709,7 +699,7 @@ async fn create_recharge_package(
         };
 
     match state.store.create_recharge_package(command).await {
-        Ok(item) => Json(success_envelope(AdminMarketingItemEnvelope { item })).into_response(),
+        Ok(item) => json_created_response(None, AdminMarketingItemEnvelope { item }),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
             marketing_system_response("recharge package command store is unavailable", error)
@@ -773,10 +763,7 @@ async fn delete_recharge_package(
         };
 
     match state.store.delete_recharge_package(command).await {
-        Ok(true) => Json(success_envelope(AdminMarketingDeleteResponse {
-            deleted: true,
-        }))
-        .into_response(),
+        Ok(true) => no_content_response(None),
         Ok(false) => not_found_response("recharge package was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {

@@ -679,7 +679,7 @@ fn intent_from_row(row: &sqlx::sqlite::SqliteRow) -> DomainResult<PaymentIntentR
         value => {
             return Err(DomainError::new(format!(
                 "unsupported payment intent status: {value}"
-            )))
+            )));
         }
     };
     Ok(PaymentIntentRuntimeRecord {
@@ -728,7 +728,7 @@ fn refund_from_row(row: &sqlx::sqlite::SqliteRow) -> DomainResult<PaymentRefundR
         value => {
             return Err(DomainError::new(format!(
                 "unsupported payment refund status: {value}"
-            )))
+            )));
         }
     };
     Ok(PaymentRefundRuntimeRecord {

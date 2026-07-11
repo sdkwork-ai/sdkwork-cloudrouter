@@ -22,7 +22,7 @@ export class ProjectUsersRolesApi {
 /** List project user roles */
   async list(projectId: string, userId: string, params?: ProjectUsersRolesListParams): Promise<OpenAiRoleAssignmentList> {
     const query = buildQueryString([
-      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -70,7 +70,7 @@ export class ProjectRolesApi {
 /** List project roles */
   async list(projectId: string, params?: ProjectRolesListParams): Promise<OpenAiRoleList> {
     const query = buildQueryString([
-      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -117,7 +117,7 @@ export class ProjectGroupsRolesApi {
 /** List project group roles */
   async list(projectId: string, groupId: string, params?: ProjectGroupsRolesListParams): Promise<OpenAiRoleAssignmentList> {
     const query = buildQueryString([
-      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },

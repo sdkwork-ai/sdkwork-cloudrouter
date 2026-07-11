@@ -237,6 +237,24 @@ pub fn json_success_response<T: Serialize>(
 }
 
 /// Default list query values per `API_SPEC.md` §14.1.1.
+pub fn json_created_response<T: Serialize>(
+    context: Option<&WebRequestContext>,
+    data: T,
+) -> Response {
+    let trace_id = resolve_trace_id(context);
+    let envelope = SdkWorkApiResponse::success(data, trace_id.clone());
+    let mut response = (StatusCode::CREATED, Json(envelope)).into_response();
+    attach_trace_header(&mut response, &trace_id);
+    response
+}
+
+pub fn no_content_response(context: Option<&WebRequestContext>) -> Response {
+    let trace_id = resolve_trace_id(context);
+    let mut response = StatusCode::NO_CONTENT.into_response();
+    attach_trace_header(&mut response, &trace_id);
+    response
+}
+
 pub const DEFAULT_LIST_PAGE_NO: i64 = 1;
 pub const DEFAULT_LIST_PAGE_SIZE: i64 = 20;
 pub const MAX_LIST_PAGE_SIZE: i64 = 200;
@@ -435,6 +453,54 @@ mod tests {
         let payload: serde_json::Value = serde_json::from_slice(&bytes).expect("json");
         assert_eq!(0, payload["code"].as_i64().unwrap());
         assert!(payload["data"]["item"]["summary"].is_object());
+    }
+
+    #[test]
+    fn json_created_response_uses_created_status_and_sdkwork_envelope() {
+        let response = json_created_response(None, serde_json::json!({"item": {"id": "1"}}));
+        assert_eq!(StatusCode::CREATED, response.status());
+        let trace_header = response
+            .headers()
+            .get(HeaderName::from_static("x-sdkwork-trace-id"))
+            .and_then(|value| value.to_str().ok())
+            .map(str::to_owned);
+        assert!(trace_header.as_deref().is_some_and(|value| !value.is_empty()));
+
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("runtime");
+        let bytes = rt
+            .block_on(async { axum::body::to_bytes(response.into_body(), usize::MAX).await })
+            .expect("body");
+        let payload: serde_json::Value = serde_json::from_slice(&bytes).expect("json");
+        assert_eq!(0, payload["code"].as_i64().unwrap());
+        assert_eq!("1", payload["data"]["item"]["id"].as_str().unwrap());
+        assert_eq!(trace_header.unwrap(), payload["traceId"].as_str().unwrap());
+    }
+
+    #[test]
+    fn no_content_response_uses_204_with_no_json_body() {
+        let response = no_content_response(None);
+        assert_eq!(StatusCode::NO_CONTENT, response.status());
+        assert!(response
+            .headers()
+            .get(header::CONTENT_TYPE)
+            .is_none());
+        assert!(response
+            .headers()
+            .get(HeaderName::from_static("x-sdkwork-trace-id"))
+            .and_then(|value| value.to_str().ok())
+            .is_some_and(|value| !value.is_empty()));
+
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("runtime");
+        let bytes = rt
+            .block_on(async { axum::body::to_bytes(response.into_body(), usize::MAX).await })
+            .expect("body");
+        assert!(bytes.is_empty());
     }
 
     #[test]

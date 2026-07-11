@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 
 import {
   CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS,
+  CLAW_ROUTER_LIFECYCLE_ENV_KEYS,
+  CLAW_ROUTER_RETIRED_LIFECYCLE_ENV_KEYS,
   assertEnvTemplateFreeOfForbiddenBrowserProfileKeys,
   findForbiddenEnvKeysInContent,
 } from './lib/claw-router-browser-env-contract.mjs';
@@ -75,9 +77,58 @@ const REQUIRED_TEMPLATE_FILES = Object.freeze([
   path.join(WORKSPACE_ROOT, '.env.release.example'),
 ]);
 
+const DEVELOPMENT_ACCESS_TOKEN_TEMPLATE = path.join(
+  PORTAL_ROOT,
+  '.env.development.example',
+);
+
+const TOKEN_FREE_PRODUCTION_TEMPLATE_FILES = Object.freeze([
+  path.join(PORTAL_ROOT, '.env.example'),
+  path.join(PORTAL_ROOT, '.env.production.example'),
+  path.join(WORKSPACE_ROOT, '.env.release.example'),
+]);
+
 const BROWSER_PROFILE_TEMPLATE_FILES = Object.freeze([
   path.join(PORTAL_ROOT, '.env.development.example'),
   path.join(PORTAL_ROOT, '.env.production.example'),
+]);
+
+const KUBERNETES_RUNTIME_FILES = Object.freeze([
+  'claw-router-admin-api.yaml',
+  'claw-router-app-api.yaml',
+  'claw-router-edge.yaml',
+  'claw-router-gateway.yaml',
+  'claw-router-migration-job.yaml',
+].map((fileName) => path.join(WORKSPACE_ROOT, 'deployments', 'kubernetes', fileName)));
+
+const LIFECYCLE_TEMPLATE_EXPECTATIONS = Object.freeze([
+  {
+    file: path.join(PORTAL_ROOT, '.env.development.example'),
+    expected: {
+      [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.configProfile]: 'dev',
+      [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.environment]: 'development',
+      [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.deploymentProfile]: 'standalone',
+      [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.runtimeTarget]: 'browser',
+    },
+  },
+  {
+    file: path.join(PORTAL_ROOT, '.env.production.example'),
+    expected: {
+      [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.configProfile]: 'prod',
+      [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.environment]: 'production',
+      [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.deploymentProfile]: 'standalone',
+      [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.runtimeTarget]: 'browser',
+    },
+  },
+  {
+    file: path.join(WORKSPACE_ROOT, '.env.release.example'),
+    expected: {
+      [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.configProfile]: 'prod',
+      [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.environment]: 'production',
+      [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.deploymentProfile]: 'standalone',
+      [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.runtimeTarget]: 'server',
+    },
+  },
 ]);
 
 const LEGACY_PRIVATE_EDGE_ENV_PREFIXES = CLAW_ROUTER_LEGACY_PRIVATE_EDGE_ENV_PREFIXES;
@@ -103,6 +154,80 @@ function assertTemplateDocumentsAccessToken(templatePath) {
   }
   if (/SDKWORK_ACCESS_TOKEN=v2\./u.test(content)) {
     throw new Error(`${templatePath} must not contain live SDKWORK_ACCESS_TOKEN values`);
+  }
+}
+
+function assertTemplateOmitsAccessToken(templatePath) {
+  const content = readFileSync(templatePath, 'utf8');
+  if (content.includes('SDKWORK_ACCESS_TOKEN')) {
+    throw new Error(`${templatePath} must not document or assign SDKWORK_ACCESS_TOKEN`);
+  }
+}
+
+function assertTemplateAccessTokenLifecycleBoundaries() {
+  assertTemplateDocumentsAccessToken(DEVELOPMENT_ACCESS_TOKEN_TEMPLATE);
+  for (const templatePath of TOKEN_FREE_PRODUCTION_TEMPLATE_FILES) {
+    assertTemplateOmitsAccessToken(templatePath);
+  }
+}
+
+function assertLifecycleRecord(label, record, expected) {
+  for (const retiredKey of CLAW_ROUTER_RETIRED_LIFECYCLE_ENV_KEYS) {
+    if (Object.prototype.hasOwnProperty.call(record, retiredKey)) {
+      throw new Error(`${label} must not declare retired lifecycle key ${retiredKey}`);
+    }
+  }
+  for (const [key, expectedValue] of Object.entries(expected)) {
+    if (record[key] !== expectedValue) {
+      throw new Error(`${label} must set ${key}=${expectedValue}`);
+    }
+  }
+}
+
+function assertLifecycleTemplatesUseApplicationNamespace() {
+  for (const { file, expected } of LIFECYCLE_TEMPLATE_EXPECTATIONS) {
+    assertLifecycleRecord(path.relative(WORKSPACE_ROOT, file), loadEnvFile(file), expected);
+  }
+}
+
+function assertKubernetesUsesProductionLifecycleNamespace() {
+  const expected = {
+    [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.configProfile]: 'prod',
+    [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.environment]: 'production',
+    [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.deploymentProfile]: 'cloud',
+    [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.runtimeTarget]: 'container',
+  };
+  for (const file of KUBERNETES_RUNTIME_FILES) {
+    const content = readFileSync(file, 'utf8');
+    for (const retiredKey of CLAW_ROUTER_RETIRED_LIFECYCLE_ENV_KEYS) {
+      if (content.includes(`name: ${retiredKey}`)) {
+        throw new Error(`${path.basename(file)} must not declare retired lifecycle key ${retiredKey}`);
+      }
+    }
+    for (const [key, expectedValue] of Object.entries(expected)) {
+      const assignment = new RegExp(`- name: ${key}\\r?\\n\\s+value: ${expectedValue}(?:\\r?\\n|$)`, 'u');
+      if (!assignment.test(content)) {
+        throw new Error(`${path.basename(file)} must set ${key}=${expectedValue}`);
+      }
+    }
+  }
+}
+
+function assertApplicationEnvStandardDocumentsOnlyCurrentLifecycleKeys() {
+  const standardPath = path.join(WORKSPACE_ROOT, 'specs', 'application-env-standard.md');
+  if (!existsSync(standardPath)) {
+    throw new Error('specs/application-env-standard.md is required');
+  }
+  const content = readFileSync(standardPath, 'utf8');
+  for (const key of Object.values(CLAW_ROUTER_LIFECYCLE_ENV_KEYS)) {
+    if (!content.includes(key)) {
+      throw new Error(`specs/application-env-standard.md must document ${key}`);
+    }
+  }
+  for (const retiredKey of CLAW_ROUTER_RETIRED_LIFECYCLE_ENV_KEYS) {
+    if (content.includes(retiredKey)) {
+      throw new Error(`specs/application-env-standard.md must not retain ${retiredKey}`);
+    }
   }
 }
 
@@ -302,9 +427,27 @@ function assertHostReleaseProfileHasCanonicalKeyOrder() {
   if (missing.length > 0) {
     throw new Error(
       `.env.release is missing canonical keys; run `
-      + 'node scripts/ensure-claw-router-env.mjs --lifecycle all: '
+      + 'node scripts/ensure-claw-router-env.mjs --lifecycle start: '
       + missing.join(', '),
     );
+  }
+}
+
+function assertHostProductionProfilesDoNotPersistAccessToken() {
+  for (const profileFilePath of [
+    path.join(PORTAL_ROOT, '.env.production'),
+    path.join(WORKSPACE_ROOT, '.env.release'),
+  ]) {
+    if (!existsSync(profileFilePath)) {
+      continue;
+    }
+    const record = loadEnvFile(profileFilePath);
+    if (Object.hasOwn(record, 'SDKWORK_ACCESS_TOKEN')) {
+      throw new Error(
+        `${path.relative(WORKSPACE_ROOT, profileFilePath)} must not persist SDKWORK_ACCESS_TOKEN; `
+        + 'run node scripts/ensure-claw-router-env.mjs --lifecycle start',
+      );
+    }
   }
 }
 
@@ -340,16 +483,14 @@ function main() {
   for (const templatePath of REQUIRED_TEMPLATE_FILES) {
     if (!existsSync(templatePath)) {
       issues.push(`missing template file: ${templatePath}`);
-      continue;
-    }
-    try {
-      assertTemplateDocumentsAccessToken(templatePath);
-    } catch (error) {
-      issues.push(error instanceof Error ? error.message : String(error));
     }
   }
 
   for (const assertion of [
+    assertTemplateAccessTokenLifecycleBoundaries,
+    assertLifecycleTemplatesUseApplicationNamespace,
+    assertKubernetesUsesProductionLifecycleNamespace,
+    assertApplicationEnvStandardDocumentsOnlyCurrentLifecycleKeys,
     assertViteDevelopmentOnlyBootstrapToken,
     assertRuntimeEnvScriptDoesNotExposeAccessToken,
     assertDevelopmentTemplateUsesStandardBrowserEnvKeys,
@@ -363,6 +504,7 @@ function main() {
     assertViteReadsStandardBrowserDevProxyKeys,
     assertHostReleaseProfileFreeOfLegacyEdgeKeys,
     assertHostReleaseProfileHasCanonicalKeyOrder,
+    assertHostProductionProfilesDoNotPersistAccessToken,
     assertHostBrowserProfilesFreeOfLegacyPortalKeys,
     assertEntrypointMarkers,
   ]) {
@@ -391,18 +533,25 @@ if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
 export {
   REQUIRED_ENTRYPOINT_MARKERS,
   REQUIRED_TEMPLATE_FILES,
+  TOKEN_FREE_PRODUCTION_TEMPLATE_FILES,
+  assertApplicationEnvStandardDocumentsOnlyCurrentLifecycleKeys,
   assertBrowserProfileTemplatesDoNotUseLegacyPortalKeys,
   assertDevelopmentTemplateUsesStandardBrowserEnvKeys,
   assertEntrypointMarkers,
   assertEnvExampleIsReleaseRuntimeReference,
   assertGatewayReadsCanonicalEdgeEnvKeys,
   assertHostReleaseProfileHasCanonicalKeyOrder,
+  assertHostProductionProfilesDoNotPersistAccessToken,
   assertHostBrowserProfilesFreeOfLegacyPortalKeys,
+  assertKubernetesUsesProductionLifecycleNamespace,
+  assertLifecycleTemplatesUseApplicationNamespace,
   assertProductionTemplateForbidsLegacyPortalKeys,
   assertReleaseTemplateDocumentsPortalPublicKeys,
   assertReleaseEnvironmentContractMatchesEdgeKeyOrder,
   assertRuntimeEnvScriptDoesNotExposeAccessToken,
   assertTemplateDocumentsAccessToken,
+  assertTemplateAccessTokenLifecycleBoundaries,
+  assertTemplateOmitsAccessToken,
   assertViteDevelopmentOnlyBootstrapToken,
   assertViteReadsStandardBrowserDevProxyKeys,
   main,

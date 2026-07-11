@@ -9,9 +9,10 @@ use sdkwork_clawrouter_router_service::application::EntityUuidGenerator;
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
     AdminExchangeRuleItem, AdminMarketingCommandFuture, AdminMarketingStore, AdminMarketingSubject,
-    AdminPaymentAttemptItem, AdminRechargePackageItem, AdminRechargeRecordItem,
-    AdminRechargeSettingsItem, AdminReferralStatItem, CreateAdminRechargePackageCommand,
-    CreatePromotionOfferCommand, DeleteAdminRechargePackageCommand, DeletePromotionOfferCommand,
+    AdminMarketingListPage, AdminPaymentAttemptItem, AdminRechargePackageItem,
+    AdminRechargeRecordItem, AdminRechargeSettingsItem, AdminReferralStatItem,
+    CreateAdminRechargePackageCommand, CreatePromotionOfferCommand,
+    DeleteAdminRechargePackageCommand, DeletePromotionOfferCommand,
     GeneratePromotionCouponStockCommand, ListAdminExchangeRulesQuery,
     ListAdminPaymentAttemptsQuery, ListAdminRechargePackagesQuery, ListAdminRechargeRecordsQuery,
     ListAdminReferralStatsQuery, ListPromotionCodeRedemptionsQuery, ListPromotionCodesQuery,
@@ -23,6 +24,10 @@ use sdkwork_clawrouter_router_service::ports::{
 };
 use serde_json::Value;
 use tower::ServiceExt;
+
+const TEST_TENANT_ID: i64 = 100001;
+const TEST_ORGANIZATION_ID: i64 = 0;
+const TEST_OPERATOR_ID: i64 = 30;
 
 #[tokio::test]
 async fn admin_marketing_route_lists_all_marketing_read_models() {
@@ -143,11 +148,17 @@ async fn admin_marketing_route_lists_all_marketing_read_models() {
         signed_request("GET", "/backend/v3/api/billing/exchange_rules", ""),
     )
     .await;
-    assert_eq!("exchange-1", exchange_rules["data"][0]["id"]);
-    assert_eq!("POINTS", exchange_rules["data"][0]["sourceAssetType"]);
-    assert_eq!("CASH", exchange_rules["data"][0]["targetAssetType"]);
-    assert_eq!("120", exchange_rules["data"][0]["rate"]);
-    assert_eq!("active", exchange_rules["data"][0]["status"]);
+    assert_eq!("exchange-1", exchange_rules["data"]["items"][0]["id"]);
+    assert_eq!(
+        "POINTS",
+        exchange_rules["data"]["items"][0]["sourceAssetType"]
+    );
+    assert_eq!(
+        "CASH",
+        exchange_rules["data"]["items"][0]["targetAssetType"]
+    );
+    assert_eq!("120", exchange_rules["data"]["items"][0]["rate"]);
+    assert_eq!("active", exchange_rules["data"]["items"][0]["status"]);
 
     let payment_attempts = request_json(
         router.clone(),
@@ -243,13 +254,14 @@ async fn admin_marketing_route_creates_deletes_generates_and_updates_codes() {
         Arc::new(TestUuidGenerator),
     );
 
-    let create_promotion_offer = request_json(
+    let create_promotion_offer = request_json_with_status(
         router.clone(),
         signed_request(
             "POST",
             "/backend/v3/api/promotions/offers",
             r#"{"name":"Launch credit","discount_type":"amount","value":"$8.50"}"#,
         ),
+        StatusCode::CREATED,
     )
     .await;
     assert_eq!(
@@ -349,13 +361,14 @@ async fn admin_marketing_route_creates_deletes_generates_and_updates_codes() {
     .await;
     assert_eq!(true, update_status["data"]["updated"]);
 
-    let create_package = request_json(
+    let create_package = request_json_with_status(
         router.clone(),
         signed_request(
             "POST",
             "/backend/v3/api/recharges/packages",
             r#"{"priceAmount":"12.00","currencyCode":"CNY","bonusPoints":30,"status":"active"}"#,
         ),
+        StatusCode::CREATED,
     )
     .await;
     assert_eq!(
@@ -426,23 +439,23 @@ async fn admin_marketing_route_creates_deletes_generates_and_updates_codes() {
     assert_eq!("250", update_exchange_rule["data"]["item"]["rate"]);
     assert_eq!("active", update_exchange_rule["data"]["item"]["status"]);
 
-    let delete_package = request_json(
+    request_empty_with_status(
         router.clone(),
         signed_request(
             "DELETE",
             "/backend/v3/api/recharges/packages/recharge-package-10-20-901",
             "",
         ),
+        StatusCode::NO_CONTENT,
     )
     .await;
-    assert_eq!(true, delete_package["data"]["deleted"]);
 
-    let delete_promotion_offer = request_json(
+    request_empty_with_status(
         router,
         signed_request("DELETE", "/backend/v3/api/promotions/offers/99", ""),
+        StatusCode::NO_CONTENT,
     )
     .await;
-    assert_eq!(true, delete_promotion_offer["data"]["deleted"]);
 
     assert_eq!(
         vec![
@@ -570,16 +583,37 @@ fn signed_request(method: &str, path: &str, body: &str) -> Request<Body> {
         .method(method)
         .uri(path)
         .header("content-type", "application/json")
-        .internal_trusted_subject(100001, 0, 30)
+        .internal_trusted_subject(TEST_TENANT_ID, TEST_ORGANIZATION_ID, TEST_OPERATOR_ID)
         .header("X-Request-Id", "request-admin-marketing-test")
         .body(Body::from(body.to_owned()))
         .unwrap()
 }
 
 async fn request_json(router: axum::Router, request: Request<Body>) -> Value {
+    request_json_with_status(router, request, StatusCode::OK).await
+}
+
+async fn request_json_with_status(
+    router: axum::Router,
+    request: Request<Body>,
+    expected_status: StatusCode,
+) -> Value {
     let response = router.oneshot(request).await.unwrap();
-    assert_eq!(StatusCode::OK, response.status());
+    assert_eq!(expected_status, response.status());
     json_payload(response).await
+}
+
+async fn request_empty_with_status(
+    router: axum::Router,
+    request: Request<Body>,
+    expected_status: StatusCode,
+) {
+    let response = router.oneshot(request).await.unwrap();
+    assert_eq!(expected_status, response.status());
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    assert!(body.is_empty());
 }
 
 async fn json_payload(response: axum::response::Response) -> Value {
@@ -598,16 +632,21 @@ impl AdminMarketingStore for TestAdminMarketingStore {
     fn list_promotion_offers<'a>(
         &'a self,
         query: ListPromotionOffersQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<PromotionOfferItem>> {
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<PromotionOfferItem>> {
         Box::pin(async move {
-            assert_eq!(10, query.subject.tenant_id);
-            Ok(vec![PromotionOfferItem {
+            assert_eq!(TEST_TENANT_ID, query.subject.tenant_id);
+            Ok(test_marketing_page(
+                vec![PromotionOfferItem {
                 id: "1".to_owned(),
                 name: "Welcome credit".to_owned(),
                 discount_type: "amount".to_owned(),
                 value: "$5.00".to_owned(),
                 status: "active".to_owned(),
-            }])
+                }],
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
         })
     }
 
@@ -617,7 +656,7 @@ impl AdminMarketingStore for TestAdminMarketingStore {
     ) -> AdminMarketingCommandFuture<'a, PromotionOfferItem> {
         Box::pin(async move {
             self.commands.lock().unwrap().push("create_promotion_offer");
-            assert_eq!(20, command.subject.organization_id);
+            assert_eq!(TEST_ORGANIZATION_ID, command.subject.organization_id);
             assert_eq!(850, command.amount_cents);
             Ok(PromotionOfferItem {
                 id: "99".to_owned(),
@@ -666,17 +705,22 @@ impl AdminMarketingStore for TestAdminMarketingStore {
     fn list_promotion_coupon_stocks<'a>(
         &'a self,
         query: ListPromotionCouponStocksQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<PromotionCouponStockItem>> {
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<PromotionCouponStockItem>> {
         Box::pin(async move {
-            assert_eq!(30, query.subject.operator_id);
-            Ok(vec![PromotionCouponStockItem {
+            assert_eq!(TEST_OPERATOR_ID, query.subject.operator_id);
+            Ok(test_marketing_page(
+                vec![PromotionCouponStockItem {
                 id: "11".to_owned(),
                 offer_id: "1".to_owned(),
                 name: "Welcome stock".to_owned(),
                 total_quantity: 2,
                 code_prefix: "WELCOME".to_owned(),
                 created_at: "2026-04-29 09:00:00".to_owned(),
-            }])
+                }],
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
         })
     }
 
@@ -715,10 +759,11 @@ impl AdminMarketingStore for TestAdminMarketingStore {
 
     fn list_promotion_codes<'a>(
         &'a self,
-        _query: ListPromotionCodesQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<PromotionCodeItem>> {
+        query: ListPromotionCodesQuery,
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<PromotionCodeItem>> {
         Box::pin(async move {
-            Ok(vec![
+            Ok(test_marketing_page(
+                vec![
                 PromotionCodeItem {
                     id: "501".to_owned(),
                     stock_id: "11".to_owned(),
@@ -735,7 +780,11 @@ impl AdminMarketingStore for TestAdminMarketingStore {
                     used_by: Some("owner@example.com".to_owned()),
                     used_at: Some("2026-04-29 09:30:00".to_owned()),
                 },
-            ])
+                ],
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
         })
     }
 
@@ -756,26 +805,32 @@ impl AdminMarketingStore for TestAdminMarketingStore {
 
     fn list_promotion_code_redemptions<'a>(
         &'a self,
-        _query: ListPromotionCodeRedemptionsQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<PromotionCodeRedemptionItem>> {
+        query: ListPromotionCodeRedemptionsQuery,
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<PromotionCodeRedemptionItem>> {
         Box::pin(async move {
-            Ok(vec![PromotionCodeRedemptionItem {
+            Ok(test_marketing_page(
+                vec![PromotionCodeRedemptionItem {
                 id: "502".to_owned(),
                 owner_user_id: "30".to_owned(),
                 user: "owner@example.com".to_owned(),
                 submitted_code: "WELCOME-0002".to_owned(),
                 amount: "$5.00".to_owned(),
                 occurred_at: "2026-04-29 09:30:00".to_owned(),
-            }])
+                }],
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
         })
     }
 
     fn list_recharge_records<'a>(
         &'a self,
-        _query: ListAdminRechargeRecordsQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<AdminRechargeRecordItem>> {
+        query: ListAdminRechargeRecordsQuery,
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<AdminRechargeRecordItem>> {
         Box::pin(async move {
-            Ok(vec![AdminRechargeRecordItem {
+            Ok(test_marketing_page(
+                vec![AdminRechargeRecordItem {
                 id: "701".to_owned(),
                 trade_no: "recharge-100".to_owned(),
                 user_id: "30".to_owned(),
@@ -785,7 +840,11 @@ impl AdminMarketingStore for TestAdminMarketingStore {
                 method: "stripe".to_owned(),
                 status: "success".to_owned(),
                 time: "2026-04-29 10:00:00".to_owned(),
-            }])
+                }],
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
         })
     }
 
@@ -812,10 +871,11 @@ impl AdminMarketingStore for TestAdminMarketingStore {
     fn list_recharge_packages<'a>(
         &'a self,
         query: ListAdminRechargePackagesQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<AdminRechargePackageItem>> {
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<AdminRechargePackageItem>> {
         Box::pin(async move {
-            assert_eq!(10, query.subject.tenant_id);
-            Ok(vec![AdminRechargePackageItem {
+            assert_eq!(TEST_TENANT_ID, query.subject.tenant_id);
+            Ok(test_marketing_page(
+                vec![AdminRechargePackageItem {
                 id: "100".to_owned(),
                 package_no: "RECHARGE-PACKAGE-100".to_owned(),
                 name: "Starter Recharge Pack".to_owned(),
@@ -827,16 +887,20 @@ impl AdminMarketingStore for TestAdminMarketingStore {
                 points: 125,
                 status: "active".to_owned(),
                 updated_at: "2026-04-29 10:00:00".to_owned(),
-            }])
+                }],
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
         })
     }
 
     fn list_exchange_rules<'a>(
         &'a self,
         query: ListAdminExchangeRulesQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<AdminExchangeRuleItem>> {
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<AdminExchangeRuleItem>> {
         Box::pin(async move {
-            assert_eq!(10, query.subject.tenant_id);
+            assert_eq!(TEST_TENANT_ID, query.subject.tenant_id);
             if let Some(source_asset_type) = query.source_asset_type.as_deref() {
                 assert_eq!("POINTS", source_asset_type);
             }
@@ -846,13 +910,18 @@ impl AdminMarketingStore for TestAdminMarketingStore {
             if let Some(status) = query.status.as_deref() {
                 assert_eq!("active", status);
             }
-            Ok(vec![AdminExchangeRuleItem {
+            Ok(test_marketing_page(
+                vec![AdminExchangeRuleItem {
                 id: "exchange-1".to_owned(),
                 source_asset_type: "POINTS".to_owned(),
                 target_asset_type: "CASH".to_owned(),
                 rate: "120".to_owned(),
                 status: "active".to_owned(),
-            }])
+                }],
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
         })
     }
 
@@ -918,7 +987,7 @@ impl AdminMarketingStore for TestAdminMarketingStore {
         subject: AdminMarketingSubject,
     ) -> AdminMarketingCommandFuture<'a, AdminRechargeSettingsItem> {
         Box::pin(async move {
-            assert_eq!(10, subject.tenant_id);
+            assert_eq!(TEST_TENANT_ID, subject.tenant_id);
             Ok(AdminRechargeSettingsItem {
                 base_currency_code: "CNY".to_owned(),
                 base_points_per_cny: "10".to_owned(),
@@ -936,8 +1005,8 @@ impl AdminMarketingStore for TestAdminMarketingStore {
     ) -> AdminMarketingCommandFuture<'a, AdminExchangeRuleItem> {
         Box::pin(async move {
             self.commands.lock().unwrap().push("update_exchange_rule");
-            assert_eq!(10, command.subject.tenant_id);
-            assert_eq!(20, command.subject.organization_id);
+            assert_eq!(TEST_TENANT_ID, command.subject.tenant_id);
+            assert_eq!(TEST_ORGANIZATION_ID, command.subject.organization_id);
             assert_eq!("POINTS", command.source_asset_type);
             assert_eq!("CASH", command.target_asset_type);
             assert_eq!("250", command.rate);
@@ -991,34 +1060,64 @@ impl AdminMarketingStore for TestAdminMarketingStore {
     fn list_payment_attempts<'a>(
         &'a self,
         query: ListAdminPaymentAttemptsQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<AdminPaymentAttemptItem>> {
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<AdminPaymentAttemptItem>> {
         Box::pin(async move {
-            assert_eq!(10, query.subject.tenant_id);
-            Ok(vec![AdminPaymentAttemptItem {
+            assert_eq!(TEST_TENANT_ID, query.subject.tenant_id);
+            Ok(test_marketing_page(
+                vec![AdminPaymentAttemptItem {
                 id: "payment-1".to_owned(),
                 order_no: "order-100".to_owned(),
                 provider: "wechat".to_owned(),
                 amount: "25.50".to_owned(),
                 status: "success".to_owned(),
                 created_at: "2026-04-29 09:10:00".to_owned(),
-            }])
+                }],
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
         })
     }
 
     fn list_referral_stats<'a>(
         &'a self,
-        _query: ListAdminReferralStatsQuery,
-    ) -> AdminMarketingCommandFuture<'a, Vec<AdminReferralStatItem>> {
+        query: ListAdminReferralStatsQuery,
+    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<AdminReferralStatItem>> {
         Box::pin(async move {
-            Ok(vec![AdminReferralStatItem {
+            Ok(test_marketing_page(
+                vec![AdminReferralStatItem {
                 id: "801".to_owned(),
                 inviter: "Owner".to_owned(),
                 total_invited: 3,
                 total_revenue: "$120.00".to_owned(),
                 bonus_awarded: "$12.00".to_owned(),
                 link: "https://claw.local/invite/OWNER".to_owned(),
-            }])
+                }],
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
         })
+    }
+}
+
+fn test_marketing_page<T>(
+    items: Vec<T>,
+    page_no: i64,
+    page_size: i64,
+    offset: i64,
+) -> AdminMarketingListPage<T> {
+    let total = items.len() as i64;
+    let items = items
+        .into_iter()
+        .skip(offset.max(0) as usize)
+        .take(page_size.max(0) as usize)
+        .collect();
+    AdminMarketingListPage {
+        items,
+        total,
+        page_no,
+        page_size,
     }
 }
 

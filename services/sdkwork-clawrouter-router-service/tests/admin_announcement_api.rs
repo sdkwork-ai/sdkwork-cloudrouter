@@ -1,5 +1,4 @@
 mod common;
-use common::missing_internal_tenant_header_message;
 use common::InternalTrustedSubjectHeaders;
 use std::sync::{Arc, Mutex};
 
@@ -8,9 +7,9 @@ use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::EntityUuidGenerator;
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
-    AdminAnnouncementCommandFuture, AdminAnnouncementItem, AdminAnnouncementStore,
-    CreateAdminAnnouncementCommand, DeleteAdminAnnouncementCommand, ListAdminAnnouncementsQuery,
-    UpdateAdminAnnouncementCommand,
+    AdminAnnouncementCommandFuture, AdminAnnouncementItem, AdminAnnouncementListPage,
+    AdminAnnouncementStore, CreateAdminAnnouncementCommand, DeleteAdminAnnouncementCommand,
+    ListAdminAnnouncementsQuery, UpdateAdminAnnouncementCommand,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -39,7 +38,7 @@ async fn admin_announcement_route_creates_lists_updates_and_soft_deletes_items()
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, create_response.status());
+    assert_eq!(StatusCode::CREATED, create_response.status());
     let create_payload = json_payload(create_response).await;
     assert_eq!(0, create_payload["code"].as_i64().unwrap());
     assert_eq!(
@@ -113,9 +112,8 @@ async fn admin_announcement_route_creates_lists_updates_and_soft_deletes_items()
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, delete_response.status());
-    let delete_payload = json_payload(delete_response).await;
-    assert_eq!(true, delete_payload["data"]["deleted"]);
+    assert_eq!(StatusCode::NO_CONTENT, delete_response.status());
+    assert_empty_body(delete_response).await;
 
     let final_list_response = router
         .oneshot(
@@ -157,7 +155,7 @@ async fn admin_announcement_route_rejects_missing_trusted_subject_for_store_back
     assert!(payload["detail"]
         .as_str()
         .unwrap()
-        .contains(missing_internal_tenant_header_message()));
+        .contains("trusted request subject is required"));
 }
 
 #[tokio::test]
@@ -200,6 +198,13 @@ async fn json_payload(response: axum::response::Response) -> Value {
     serde_json::from_slice(&body).unwrap()
 }
 
+async fn assert_empty_body(response: axum::response::Response) {
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    assert!(body.is_empty());
+}
+
 #[derive(Default)]
 struct TestAnnouncementStore {
     items: Mutex<Vec<AdminAnnouncementItem>>,
@@ -210,9 +215,9 @@ impl AdminAnnouncementStore for TestAnnouncementStore {
     fn list_announcements<'a>(
         &'a self,
         query: ListAdminAnnouncementsQuery,
-    ) -> AdminAnnouncementCommandFuture<'a, Vec<AdminAnnouncementItem>> {
+    ) -> AdminAnnouncementCommandFuture<'a, AdminAnnouncementListPage> {
         Box::pin(async move {
-            Ok(self
+            let items = self
                 .items
                 .lock()
                 .unwrap()
@@ -223,7 +228,13 @@ impl AdminAnnouncementStore for TestAnnouncementStore {
                         && item.deleted_at.is_none()
                 })
                 .cloned()
-                .collect())
+                .collect();
+            Ok(test_announcement_page(
+                items,
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
         })
     }
 
@@ -304,6 +315,26 @@ impl AdminAnnouncementStore for TestAnnouncementStore {
             item.deleted_at = Some(command.requested_at);
             Ok(true)
         })
+    }
+}
+
+fn test_announcement_page(
+    items: Vec<AdminAnnouncementItem>,
+    page_no: i64,
+    page_size: i64,
+    offset: i64,
+) -> AdminAnnouncementListPage {
+    let total = items.len() as i64;
+    let items = items
+        .into_iter()
+        .skip(offset.max(0) as usize)
+        .take(page_size.max(0) as usize)
+        .collect();
+    AdminAnnouncementListPage {
+        items,
+        total,
+        page_no,
+        page_size,
     }
 }
 

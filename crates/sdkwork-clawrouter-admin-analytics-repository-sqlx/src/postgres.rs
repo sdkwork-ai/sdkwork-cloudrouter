@@ -1,10 +1,10 @@
 use sqlx::{PgPool, Row};
 
-use crate::error::{RepositoryError, RepositoryResult, store_error};
+use crate::error::{store_error, RepositoryError, RepositoryResult};
 use crate::modality;
 use crate::snapshot::{
-    AnalyticsModelRankRow, AnalyticsPieRow, AnalyticsSummaryRow, AnalyticsTrendRow,
-    AnalyticsUserRankRow, PI_LIMIT, USER_MODEL_LIMIT, build_snapshot, vendor_from_catalog_key,
+    build_snapshot, vendor_from_catalog_key, AnalyticsModelRankRow, AnalyticsPieRow,
+    AnalyticsSummaryRow, AnalyticsTrendRow, AnalyticsUserRankRow, PI_LIMIT, USER_MODEL_LIMIT,
 };
 use crate::types::{
     AdminAnalyticsQuery, AdminAnalyticsReadFuture, AdminAnalyticsReadStore, AdminAnalyticsSnapshot,

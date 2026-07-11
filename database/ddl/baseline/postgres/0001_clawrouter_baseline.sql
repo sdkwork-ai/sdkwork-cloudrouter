@@ -4772,7 +4772,7 @@ CREATE INDEX IF NOT EXISTS idx_system_schema_migration_status_started ON system_
 
 -- Retired: ai_usage is canonical in this baseline; no legacy rename step is needed.
 
--- Notification projection tables (merged from 0005_clawrouter_runtime_schema_repairs.sql)
+-- Notification projection tables.
 
 CREATE TABLE IF NOT EXISTS ops_notification_message (
     id BIGINT NOT NULL PRIMARY KEY,

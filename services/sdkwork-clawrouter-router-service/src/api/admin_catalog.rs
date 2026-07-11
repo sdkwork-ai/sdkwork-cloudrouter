@@ -1,10 +1,9 @@
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
-use axum::http::{HeaderMap, StatusCode};
+use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
@@ -13,14 +12,15 @@ use serde_json::Value;
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
-    json_success_list_response, normalize_list_search_query, offset_page_info,
-    parse_offset_list_query, problem_from_wire_code, success_envelope,
+    json_created_response, json_success_list_response, no_content_response,
+    normalize_list_search_query, offset_page_info, parse_offset_list_query,
+    problem_from_wire_code, success_envelope,
 };
 use crate::application::{load_admin_category_seed_bundles, DEFAULT_ADMIN_CATEGORY_SEED_DATASETS};
 use crate::domain::DomainError;
 use crate::ports::{
     AdminAttributeMutationCommand, AdminCatalogCollection, AdminCatalogJsonRecord,
-    AdminCatalogStore, AdminCatalogSubject, AdminCategoryAttributeMutationCommand,
+    AdminCatalogStore, AdminCategoryAttributeMutationCommand,
     AdminCategoryMutationCommand, AdminCategorySeedInitializeCommand,
     AdminCategorySeedInitializeSummary, AdminPriceListMutationCommand, AdminProductMutationCommand,
     AdminSkuAttributeInput, AdminSkuMutationCommand, DeleteAdminCategoryAttributeCommand,
@@ -184,12 +184,6 @@ struct CatalogResourceResponse {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct CatalogDeleteResponse {
-    deleted: bool,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
 struct CategorySeedInitializeResponse {
     items: Vec<AdminCategorySeedInitializeSummary>,
 }
@@ -314,7 +308,7 @@ async fn create_category(
         Ok(command) => command,
         Err(response) => return response,
     };
-    resource_result(
+    resource_created_result(
         state.store.create_category(command).await,
         "catalog category command failed",
     )
@@ -366,7 +360,8 @@ async fn delete_category(
         requested_at: current_timestamp_string(),
     };
     match state.store.delete_category(command).await {
-        Ok(deleted) => Json(success_envelope(CatalogDeleteResponse { deleted })).into_response(),
+        Ok(true) => no_content_response(None),
+        Ok(false) => not_found_response("catalog category was not found"),
         Err(error) => domain_error_response("catalog category delete failed", error),
     }
 }
@@ -432,7 +427,7 @@ async fn create_product(
         Ok(command) => command,
         Err(response) => return response,
     };
-    resource_result(
+    resource_created_result(
         state.store.create_product(command).await,
         "catalog product command failed",
     )
@@ -484,7 +479,8 @@ async fn delete_product(
         requested_at: current_timestamp_string(),
     };
     match state.store.delete_product(command).await {
-        Ok(deleted) => Json(success_envelope(CatalogDeleteResponse { deleted })).into_response(),
+        Ok(true) => no_content_response(None),
+        Ok(false) => not_found_response("catalog product was not found"),
         Err(error) => domain_error_response("catalog product delete failed", error),
     }
 }
@@ -503,7 +499,7 @@ async fn create_sku(
         Ok(command) => command,
         Err(response) => return response,
     };
-    resource_result(
+    resource_created_result(
         state.store.create_sku(command).await,
         "catalog sku command failed",
     )
@@ -555,7 +551,8 @@ async fn delete_sku(
         requested_at: current_timestamp_string(),
     };
     match state.store.delete_sku(command).await {
-        Ok(deleted) => Json(success_envelope(CatalogDeleteResponse { deleted })).into_response(),
+        Ok(true) => no_content_response(None),
+        Ok(false) => not_found_response("catalog sku was not found"),
         Err(error) => domain_error_response("catalog sku delete failed", error),
     }
 }
@@ -574,7 +571,7 @@ async fn create_attribute(
         Ok(command) => command,
         Err(response) => return response,
     };
-    resource_result(
+    resource_created_result(
         state.store.create_attribute(command).await,
         "catalog attribute command failed",
     )
@@ -595,7 +592,7 @@ async fn create_category_attribute(
         Ok(command) => command,
         Err(response) => return response,
     };
-    resource_result(
+    resource_created_result(
         state.store.create_category_attribute(command).await,
         "catalog category attribute command failed",
     )
@@ -648,7 +645,8 @@ async fn delete_category_attribute(
         requested_at: current_timestamp_string(),
     };
     match state.store.delete_category_attribute(command).await {
-        Ok(deleted) => Json(success_envelope(CatalogDeleteResponse { deleted })).into_response(),
+        Ok(true) => no_content_response(None),
+        Ok(false) => not_found_response("catalog category attribute was not found"),
         Err(error) => domain_error_response("catalog category attribute delete failed", error),
     }
 }
@@ -667,7 +665,7 @@ async fn create_price_list(
         Ok(command) => command,
         Err(response) => return response,
     };
-    resource_result(
+    resource_created_result(
         state.store.create_price_list(command).await,
         "catalog price list command failed",
     )
@@ -700,6 +698,16 @@ where
 fn resource_result(result: Result<AdminCatalogJsonRecord, DomainError>, context: &str) -> Response {
     match result {
         Ok(item) => Json(success_envelope(CatalogResourceResponse { item })).into_response(),
+        Err(error) => domain_error_response(context, error),
+    }
+}
+
+fn resource_created_result(
+    result: Result<AdminCatalogJsonRecord, DomainError>,
+    context: &str,
+) -> Response {
+    match result {
+        Ok(item) => json_created_response(None, CatalogResourceResponse { item }),
         Err(error) => domain_error_response(context, error),
     }
 }
@@ -1122,6 +1130,10 @@ fn normalize_optional_media_resource(
 
 fn bad_request(message: impl Into<String>) -> Response {
     problem_from_wire_code("4001", message.into()).into_response()
+}
+
+fn not_found_response(message: impl Into<String>) -> Response {
+    problem_from_wire_code("4040", message.into()).into_response()
 }
 
 fn domain_error_response(context: &str, error: DomainError) -> Response {

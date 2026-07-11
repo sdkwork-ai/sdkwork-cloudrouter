@@ -98,6 +98,10 @@ function parseArgs(argv) {
       index += 1;
       continue;
     }
+    if (arg === '--distributed') {
+      settings.serviceLayout = 'split-services';
+      continue;
+    }
     if (arg === '--target') {
       settings.target = argv[index + 1] ?? settings.target;
       index += 1;
@@ -150,6 +154,7 @@ Topology-aware Claw Router dev entry. Loads configs/topology profile env via @sd
 Options:
   --deployment-profile <standalone|cloud>           Default: standalone
   --service-layout <unified-process|split-services> Default: unified-process
+  --distributed                                      Alias for --service-layout split-services
   --target <browser|browser-only|desktop|plan|service>
                                                     Default: browser (integrated product server)
   --database <postgres|sqlite>                      Optional database overlay
@@ -161,7 +166,7 @@ Note: --topology is retired. Use --deployment-profile and --service-layout inste
 
 Examples:
   pnpm dev:browser
-  pnpm dev:browser:postgres:split-services:cloud
+  pnpm dev:browser:postgres:cloud
   pnpm dev:desktop
   pnpm dev:desktop:sqlite
 `);

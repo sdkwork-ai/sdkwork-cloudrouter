@@ -14,8 +14,8 @@ use sha2::{Digest, Sha256};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
-    json_success_list_response, normalize_list_search_query, offset_page_info,
-    parse_offset_list_query, problem_from_wire_code, success_envelope,
+    json_created_response, json_success_list_response, normalize_list_search_query,
+    offset_page_info, parse_offset_list_query, problem_from_wire_code, success_envelope,
 };
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
@@ -165,10 +165,9 @@ async fn create_ip_rate_limit(
     };
 
     match state.store.create_ip_rate_limit(command).await {
-        Ok(item) => Json(success_envelope(AdminIpRateLimitItemEnvelope {
+        Ok(item) => json_created_response(None, AdminIpRateLimitItemEnvelope {
             item: to_item_response(item),
-        }))
-        .into_response(),
+        }),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
             ip_rate_limit_system_response("ip rate limit command store is unavailable", error)

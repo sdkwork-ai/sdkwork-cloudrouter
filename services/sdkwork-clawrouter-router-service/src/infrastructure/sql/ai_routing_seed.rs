@@ -31,8 +31,7 @@ const SYSTEM_DATA_SCOPE: i32 = 1;
 const DEFAULT_ADMIN_DATA_SCOPE: i32 = 1;
 const MAX_SEED_UUID_LENGTH: usize = 64;
 const DEFAULT_OPENAI_BASE_URL: &str = "https://api.openai.com/v1";
-const DEFAULT_ADMIN_CHANNEL_SEED_SOURCE: &str =
-    "default-admin-channel-seed.v1|openai-default|openai|official|openai_compatible|https://api.openai.com/v1";
+const DEFAULT_ADMIN_CHANNEL_SEED_SOURCE: &str = "default-admin-channel-seed.v1|openai-default|openai|official|openai_compatible|https://api.openai.com/v1";
 
 #[derive(Debug)]
 pub(crate) enum AiRoutingSeedLoadError {

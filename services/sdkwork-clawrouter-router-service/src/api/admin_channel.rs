@@ -15,8 +15,9 @@ use sha2::{Digest, Sha256};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
-    json_success_list_response, normalize_list_search_query, offset_page_info,
-    parse_offset_list_query, problem_from_wire_code, success_envelope,
+    json_created_response, json_success_list_response, no_content_response,
+    normalize_list_search_query, offset_page_info, parse_offset_list_query, problem_from_wire_code,
+    success_envelope,
 };
 use crate::application::EntityUuidGenerator;
 use crate::domain::{DomainError, ProviderCircuitBreakerPolicy, ProviderRetryPolicy};
@@ -285,10 +286,9 @@ async fn create_channel(
     };
 
     match state.store.create_channel(command).await {
-        Ok(item) => Json(success_envelope(AdminChannelItemEnvelope {
+        Ok(item) => json_created_response(None, AdminChannelItemEnvelope {
             item: to_safe_item_response(item),
-        }))
-        .into_response(),
+        }),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => channel_system_response("channel command store is unavailable", error),
     }
@@ -342,10 +342,7 @@ async fn delete_channel(
     };
 
     match state.store.delete_channel(command).await {
-        Ok(true) => Json(success_envelope(AdminChannelDeleteResponse {
-            deleted: true,
-        }))
-        .into_response(),
+        Ok(true) => no_content_response(None),
         Ok(false) => not_found_response("channel was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => channel_system_response("channel command store is unavailable", error),

@@ -36,6 +36,8 @@ pub struct RuntimeTomlConfig {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
 #[serde(default)]
 pub struct RuntimeSectionConfig {
+    pub deployment_profile: Option<String>,
+    pub runtime_target: Option<String>,
     pub deployment_mode: Option<String>,
 }
 
@@ -345,12 +347,15 @@ pub struct BootstrapAdminSectionConfig {
 }
 
 impl RuntimeConfig {
-    pub fn new(service_name: impl Into<String>, bind_addr: impl Into<String>) -> Self {
-        Self {
+    pub fn new(
+        service_name: impl Into<String>,
+        bind_addr: impl Into<String>,
+    ) -> Result<Self, String> {
+        Ok(Self {
             service_name: service_name.into(),
-            deployment_mode: DeploymentMode::from_env(),
+            deployment_mode: DeploymentMode::from_env()?,
             bind_addr: bind_addr.into(),
-        }
+        })
     }
 
     pub fn from_env(

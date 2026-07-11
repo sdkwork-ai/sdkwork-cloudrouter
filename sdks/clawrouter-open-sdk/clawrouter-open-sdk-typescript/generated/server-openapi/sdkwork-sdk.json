@@ -2,6 +2,8 @@
   "language": "typescript",
   "sdkType": "backend",
   "name": "clawrouter-open-sdk",
-  "packageName": "@sdkwork/clawrouter-open-sdk",
-  "version": "0.1.0"
+  "packageName": "clawrouter-open-sdk-generated-typescript",
+  "version": "0.1.0",
+  "transportPackageName": "clawrouter-open-sdk-generated-typescript",
+  "consumerPackageName": "@sdkwork/clawrouter-open-sdk"
 }

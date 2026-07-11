@@ -680,7 +680,7 @@ fn intent_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<PaymentIntentRun
         value => {
             return Err(DomainError::new(format!(
                 "unsupported payment intent status: {value}"
-            )))
+            )));
         }
     };
     Ok(PaymentIntentRuntimeRecord {
@@ -712,7 +712,7 @@ fn refund_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<PaymentRefundRun
         value => {
             return Err(DomainError::new(format!(
                 "unsupported payment refund status: {value}"
-            )))
+            )));
         }
     };
     Ok(PaymentRefundRuntimeRecord {

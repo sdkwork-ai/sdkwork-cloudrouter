@@ -40,7 +40,7 @@ impl OrganizationApi {
         before: Option<&str>,
     ) -> Result<OpenAiOrganizationAdminApiKeyList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),
@@ -106,7 +106,7 @@ impl OrganizationApi {
             QueryParameterSpec::new("actor_ids[]", actor_ids, "form", true, false, None),
             QueryParameterSpec::new("actor_emails[]", actor_emails, "form", true, false, None),
             QueryParameterSpec::new("resource_ids[]", resource_ids, "form", true, false, None),
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),
         ]);
@@ -123,7 +123,7 @@ impl OrganizationApi {
         before: Option<&str>,
     ) -> Result<OpenAiCertificateList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),
@@ -203,7 +203,7 @@ impl OrganizationApi {
             QueryParameterSpec::new("api_key_ids", api_key_ids, "form", true, false, None),
             QueryParameterSpec::new("models", models, "form", true, false, None),
             QueryParameterSpec::new("group_by", group_by, "form", true, false, None),
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("page", page, "form", true, false, None),
         ]);
         let path = append_query_string(ai_path(&"/organization/costs".to_string()), &query);
@@ -219,7 +219,7 @@ impl OrganizationApi {
         before: Option<&str>,
     ) -> Result<OpenAiOrganizationGroupList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),
@@ -261,7 +261,7 @@ impl OrganizationApi {
         before: Option<&str>,
     ) -> Result<OpenAiRoleAssignmentList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),
@@ -324,7 +324,7 @@ impl OrganizationApi {
         before: Option<&str>,
     ) -> Result<OpenAiOrganizationUserList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),
@@ -386,7 +386,7 @@ impl OrganizationApi {
         before: Option<&str>,
     ) -> Result<OpenAiOrganizationInviteList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),
@@ -427,7 +427,7 @@ impl OrganizationApi {
         before: Option<&str>,
     ) -> Result<OpenAiProjectList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),
@@ -457,7 +457,7 @@ impl OrganizationApi {
         before: Option<&str>,
     ) -> Result<OpenAiProjectApiKeyList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),
@@ -519,7 +519,7 @@ impl OrganizationApi {
         before: Option<&str>,
     ) -> Result<OpenAiCertificateList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),
@@ -583,7 +583,7 @@ impl OrganizationApi {
         before: Option<&str>,
     ) -> Result<OpenAiOrganizationGroupList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),
@@ -649,7 +649,7 @@ impl OrganizationApi {
         before: Option<&str>,
     ) -> Result<OpenAiProjectRateLimitList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),
@@ -700,7 +700,7 @@ impl OrganizationApi {
         before: Option<&str>,
     ) -> Result<OpenAiProjectServiceAccountList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),
@@ -766,7 +766,7 @@ impl OrganizationApi {
         before: Option<&str>,
     ) -> Result<OpenAiProjectUserList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),
@@ -828,7 +828,7 @@ impl OrganizationApi {
         before: Option<&str>,
     ) -> Result<OpenAiRoleList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),
@@ -880,7 +880,7 @@ impl OrganizationApi {
             QueryParameterSpec::new("api_key_ids", api_key_ids, "form", true, false, None),
             QueryParameterSpec::new("models", models, "form", true, false, None),
             QueryParameterSpec::new("group_by", group_by, "form", true, false, None),
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("page", page, "form", true, false, None),
         ]);
         let path = append_query_string(
@@ -913,7 +913,7 @@ impl OrganizationApi {
             QueryParameterSpec::new("api_key_ids", api_key_ids, "form", true, false, None),
             QueryParameterSpec::new("models", models, "form", true, false, None),
             QueryParameterSpec::new("group_by", group_by, "form", true, false, None),
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("page", page, "form", true, false, None),
         ]);
         let path = append_query_string(
@@ -946,7 +946,7 @@ impl OrganizationApi {
             QueryParameterSpec::new("api_key_ids", api_key_ids, "form", true, false, None),
             QueryParameterSpec::new("models", models, "form", true, false, None),
             QueryParameterSpec::new("group_by", group_by, "form", true, false, None),
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("page", page, "form", true, false, None),
         ]);
         let path = append_query_string(
@@ -979,7 +979,7 @@ impl OrganizationApi {
             QueryParameterSpec::new("api_key_ids", api_key_ids, "form", true, false, None),
             QueryParameterSpec::new("models", models, "form", true, false, None),
             QueryParameterSpec::new("group_by", group_by, "form", true, false, None),
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("page", page, "form", true, false, None),
         ]);
         let path = append_query_string(
@@ -1012,7 +1012,7 @@ impl OrganizationApi {
             QueryParameterSpec::new("api_key_ids", api_key_ids, "form", true, false, None),
             QueryParameterSpec::new("models", models, "form", true, false, None),
             QueryParameterSpec::new("group_by", group_by, "form", true, false, None),
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("page", page, "form", true, false, None),
         ]);
         let path = append_query_string(
@@ -1045,7 +1045,7 @@ impl OrganizationApi {
             QueryParameterSpec::new("api_key_ids", api_key_ids, "form", true, false, None),
             QueryParameterSpec::new("models", models, "form", true, false, None),
             QueryParameterSpec::new("group_by", group_by, "form", true, false, None),
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("page", page, "form", true, false, None),
         ]);
         let path = append_query_string(ai_path(&"/organization/usage/images".to_string()), &query);
@@ -1075,7 +1075,7 @@ impl OrganizationApi {
             QueryParameterSpec::new("api_key_ids", api_key_ids, "form", true, false, None),
             QueryParameterSpec::new("models", models, "form", true, false, None),
             QueryParameterSpec::new("group_by", group_by, "form", true, false, None),
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("page", page, "form", true, false, None),
         ]);
         let path = append_query_string(
@@ -1108,7 +1108,7 @@ impl OrganizationApi {
             QueryParameterSpec::new("api_key_ids", api_key_ids, "form", true, false, None),
             QueryParameterSpec::new("models", models, "form", true, false, None),
             QueryParameterSpec::new("group_by", group_by, "form", true, false, None),
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("page", page, "form", true, false, None),
         ]);
         let path = append_query_string(
@@ -1127,7 +1127,7 @@ impl OrganizationApi {
         before: Option<&str>,
     ) -> Result<OpenAiOrganizationUserList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),
@@ -1170,7 +1170,7 @@ impl OrganizationApi {
         before: Option<&str>,
     ) -> Result<OpenAiRoleAssignmentList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("limit", limit, "form", true, false, None),
+            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),

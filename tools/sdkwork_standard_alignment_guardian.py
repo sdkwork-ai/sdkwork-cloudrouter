@@ -4,6 +4,10 @@ import argparse
 import json
 import os
 import re
+import stat
+import subprocess
+import tomllib
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -37,7 +41,29 @@ class SdkworkStandardAlignmentGuardian:
     ROOT_COMPONENT_SPEC = "specs/component.spec.json"
     WORKFLOW_MANIFEST = "sdkwork.workflow.json"
     CARGO_MANIFEST = "Cargo.toml"
-    ALIGNMENT_MANIFEST = "specs/standard-alignment.manifest.json"
+    DATABASE_LEGACY_STORE_ROOT = (
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql"
+    )
+    DATABASE_LEGACY_STORE_GLOB = "**/*_store.rs"
+    REPOSITORY_SQLX_PACKAGE_PATTERN = re.compile(
+        r"sdkwork-clawrouter-[a-z0-9]+(?:-[a-z0-9]+)*-repository-sqlx"
+    )
+
+    REQUIRED_REPOSITORY_CONTRACTS: tuple[str, ...] = (
+        "specs/README.md",
+        "specs/component.spec.json",
+        "specs/topology.spec.json",
+        "specs/application-env-standard.md",
+        "specs/database-store-migration.manifest.json",
+    )
+    RETIRED_REPOSITORY_CONTRACTS: tuple[str, ...] = (
+        "specs/API_SPEC.md",
+        "specs/DATABASE_SPEC.md",
+        "specs/appbase-integration.yaml",
+        "specs/dependency-api-surfaces.json",
+        "specs/naming-migration.manifest.json",
+        "specs/standard-alignment.manifest.json",
+    )
 
     REQUIRED_ROOT_CANONICAL_SPECS: tuple[str, ...] = (
         "WEB_FRAMEWORK_SPEC.md",
@@ -83,9 +109,382 @@ class SdkworkStandardAlignmentGuardian:
     def __init__(self, root: Path) -> None:
         self.root = Path(root).resolve()
 
+    @staticmethod
+    def _is_canonical_repository_relative_path(value: object) -> bool:
+        if not isinstance(value, str) or not value or value != value.strip():
+            return False
+        if "\\" in value or ":" in value or "\0" in value:
+            return False
+        return all(part not in {"", ".", ".."} for part in value.split("/"))
+
+    def _path_has_link_component(self, candidate: Path) -> bool:
+        try:
+            relative = candidate.absolute().relative_to(self.root)
+        except ValueError:
+            return True
+        current = self.root
+        for part in relative.parts:
+            current /= part
+            try:
+                metadata = current.lstat()
+                file_attributes = getattr(metadata, "st_file_attributes", 0)
+                if stat.S_ISLNK(metadata.st_mode) or (
+                    file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT
+                ):
+                    return True
+            except FileNotFoundError:
+                continue
+            except OSError:
+                return True
+        return False
+
+    def _resolve_repository_path(
+        self,
+        relative: object,
+        *,
+        require_file: bool = False,
+        require_dir: bool = False,
+    ) -> Path | None:
+        if not self._is_canonical_repository_relative_path(relative):
+            return None
+        assert isinstance(relative, str)
+        lexical = Path(relative)
+        if lexical.is_absolute() or ".." in lexical.parts:
+            return None
+        candidate = self.root / lexical
+        if self._path_has_link_component(candidate):
+            return None
+        try:
+            resolved = candidate.resolve(strict=require_file or require_dir)
+        except (OSError, RuntimeError):
+            return None
+        if resolved != self.root and self.root not in resolved.parents:
+            return None
+        if require_file and not resolved.is_file():
+            return None
+        if require_dir and not resolved.is_dir():
+            return None
+        return resolved
+
+    @staticmethod
+    def _read_toml(path: Path) -> dict[str, object] | None:
+        try:
+            data = tomllib.loads(path.read_text(encoding="utf-8"))
+        except (OSError, tomllib.TOMLDecodeError):
+            return None
+        return data if isinstance(data, dict) else None
+
+    @staticmethod
+    def _normalize_repository_relative_path(value: object) -> str | None:
+        if not SdkworkStandardAlignmentGuardian._is_canonical_repository_relative_path(value):
+            return None
+        assert isinstance(value, str)
+        return value
+
+    def _cargo_metadata(self) -> tuple[dict[str, object] | None, str | None]:
+        argv = ["cargo", "metadata", "--no-deps", "--format-version", "1"]
+        try:
+            completed = subprocess.run(
+                argv,
+                cwd=self.root,
+                capture_output=True,
+                text=True,
+                timeout=60,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired) as error:
+            return None, f"cargo metadata execution failed: {error}"
+        if completed.returncode != 0:
+            detail = completed.stderr.strip() or completed.stdout.strip()
+            return None, f"cargo metadata failed with exit code {completed.returncode}: {detail}"
+        try:
+            metadata = json.loads(completed.stdout)
+        except json.JSONDecodeError as error:
+            return None, f"cargo metadata returned invalid JSON: {error}"
+        if not isinstance(metadata, dict):
+            return None, "cargo metadata root must be a JSON object"
+        return metadata, None
+
+    def _repository_sqlx_closure_issues(
+        self, declared_status_by_path: dict[str, str]
+    ) -> list[str]:
+        issues: list[str] = []
+
+        metadata, metadata_error = self._cargo_metadata()
+        if metadata_error is not None or metadata is None:
+            return [metadata_error or "cargo metadata is unavailable"]
+
+        raw_packages = metadata.get("packages")
+        raw_workspace_members = metadata.get("workspace_members")
+        if not isinstance(raw_packages, list) or not all(
+            isinstance(package, dict) for package in raw_packages
+        ):
+            return ["cargo metadata packages must be an array of objects"]
+        if not isinstance(raw_workspace_members, list) or not all(
+            isinstance(member, str) for member in raw_workspace_members
+        ):
+            return ["cargo metadata workspace_members must be an array of strings"]
+
+        workspace_member_ids = set(raw_workspace_members)
+        workspace_packages = [
+            package
+            for package in raw_packages
+            if isinstance(package.get("id"), str)
+            and package.get("id") in workspace_member_ids
+        ]
+        repository_packages: dict[str, dict[str, object]] = {}
+        for package in workspace_packages:
+            package_name = package.get("name")
+            if not isinstance(package_name, str) or not self.REPOSITORY_SQLX_PACKAGE_PATTERN.fullmatch(
+                package_name
+            ):
+                continue
+            manifest_value = package.get("manifest_path")
+            if not isinstance(manifest_value, str):
+                issues.append(f"cargo metadata package {package_name} has no manifest_path")
+                continue
+            manifest_path = Path(manifest_value)
+            try:
+                manifest_resolved = manifest_path.resolve(strict=True)
+                crate_root = manifest_resolved.parent
+                crate_relative = crate_root.relative_to(self.root).as_posix()
+            except (OSError, RuntimeError, ValueError):
+                issues.append(
+                    f"cargo metadata repository package is outside the repository: {package_name}"
+                )
+                continue
+            if (
+                self._path_has_link_component(manifest_resolved)
+                or crate_root.name != package_name
+                or crate_relative != f"crates/{package_name}"
+            ):
+                issues.append(
+                    f"repository crate package/path identity mismatch: {package_name} at {crate_relative}"
+                )
+                continue
+            repository_packages[crate_relative] = package
+
+        production_consumers: dict[str, set[str]] = {
+            relative: set() for relative in repository_packages
+        }
+        repository_paths_by_name = {
+            str(package.get("name")): relative
+            for relative, package in repository_packages.items()
+        }
+        for consumer in workspace_packages:
+            consumer_name = consumer.get("name")
+            dependencies = consumer.get("dependencies")
+            if not isinstance(consumer_name, str) or not isinstance(dependencies, list):
+                continue
+            for dependency in dependencies:
+                if not isinstance(dependency, dict) or dependency.get("kind") not in {None, "normal"}:
+                    continue
+                dependency_name = dependency.get("name")
+                relative = repository_paths_by_name.get(str(dependency_name))
+                if relative is None:
+                    continue
+                dependency_path = dependency.get("path")
+                if isinstance(dependency_path, str):
+                    try:
+                        if Path(dependency_path).resolve(strict=True) != self.root / relative:
+                            continue
+                    except (OSError, RuntimeError):
+                        continue
+                production_consumers[relative].add(consumer_name)
+
+        root_manifest = self._resolve_repository_path("Cargo.toml", require_file=True)
+        root_cargo = self._read_toml(root_manifest) if root_manifest is not None else None
+        workspace = root_cargo.get("workspace") if root_cargo is not None else None
+        if not isinstance(workspace, dict):
+            issues.append("root Cargo.toml must contain a readable [workspace] table")
+            workspace = {}
+
+        raw_workspace_dependencies = workspace.get("dependencies")
+        workspace_dependency_paths: dict[str, str] = {}
+        if isinstance(raw_workspace_dependencies, dict):
+            for package_name, declaration in raw_workspace_dependencies.items():
+                if not isinstance(package_name, str) or not self.REPOSITORY_SQLX_PACKAGE_PATTERN.fullmatch(
+                    package_name
+                ):
+                    continue
+                path_value = declaration.get("path") if isinstance(declaration, dict) else None
+                normalized = self._normalize_repository_relative_path(path_value)
+                if normalized is not None:
+                    workspace_dependency_paths[normalized] = package_name
+
+        existing_paths = set(repository_packages)
+        for relative, package in sorted(repository_packages.items()):
+            package_name = str(package.get("name"))
+            if workspace_dependency_paths.get(relative) != package_name:
+                issues.append(f"repository crate is not a root workspace dependency: {relative}")
+        for relative in sorted(set(workspace_dependency_paths).difference(existing_paths)):
+            issues.append(f"workspace dependency repository crate is missing: {relative}")
+
+        declared_paths = set(declared_status_by_path)
+        for relative in sorted(existing_paths.difference(declared_paths)):
+            issues.append(
+                f"repository crate is absent from the migration manifest: {relative}"
+            )
+        for relative, status_value in sorted(declared_status_by_path.items()):
+            consumers = production_consumers.get(relative, set())
+            if status_value == "MIGRATED":
+                if relative not in existing_paths:
+                    issues.append(
+                        f"MIGRATED manifest entry is not a Cargo workspace repository crate: {relative}"
+                    )
+                elif not consumers:
+                    issues.append(
+                        f"MIGRATED repository crate has no production Cargo dependency edge: {relative}"
+                    )
+            elif status_value == "PENDING" and consumers:
+                issues.append(
+                    f"production repository dependency must be MIGRATED, not PENDING: {relative} "
+                    f"(consumers: {', '.join(sorted(consumers))})"
+                )
+        return issues
+
+    def _repository_component_verification(
+        self,
+        crate_relative: str,
+        *,
+        package_name: str,
+        capability: str,
+    ) -> tuple[set[str], list[str]]:
+        component_path = self._resolve_repository_path(
+            f"{crate_relative}/specs/component.spec.json", require_file=True
+        )
+        if component_path is None:
+            return set(), ["missing component spec"]
+        try:
+            data = json.loads(component_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            return set(), [f"unreadable component spec: {error}"]
+        issues: list[str] = []
+        if (
+            not isinstance(data, dict)
+            or data.get("schemaVersion") != 1
+            or data.get("kind") != "sdkwork.component.spec"
+        ):
+            return set(), ["invalid component spec schema/kind"]
+
+        component = data.get("component")
+        if not isinstance(component, dict):
+            issues.append("component must be an object")
+            component = {}
+        expected_component_fields = {
+            "name": package_name,
+            "type": "rust-crate",
+            "root": f"sdkwork-clawrouter/{crate_relative}",
+            "domain": "platform",
+            "capability": capability,
+            "surface": "repository",
+            "generated": False,
+        }
+        for field, expected in expected_component_fields.items():
+            if component.get(field) != expected:
+                issues.append(f"component.{field} must equal {expected!r}")
+        if component.get("languages") != ["rust"]:
+            issues.append("component.languages must equal ['rust']")
+        manifests = component.get("manifests")
+        if not isinstance(manifests, list) or "Cargo.toml" not in manifests:
+            issues.append("component.manifests must include Cargo.toml")
+
+        required_canonical_specs = {
+            "COMPONENT_SPEC.md",
+            "CODE_STYLE_SPEC.md",
+            "NAMING_SPEC.md",
+            "RUST_CODE_SPEC.md",
+            "DATABASE_SPEC.md",
+            "TEST_SPEC.md",
+        }
+        canonical_specs = data.get("canonicalSpecs")
+        canonical_files: set[str] = set()
+        if not isinstance(canonical_specs, list):
+            issues.append("canonicalSpecs must be an array")
+        else:
+            for reference in canonical_specs:
+                if not isinstance(reference, dict):
+                    issues.append("canonicalSpecs entries must be objects")
+                    continue
+                file_name = reference.get("file")
+                if not isinstance(file_name, str):
+                    issues.append("canonicalSpecs entries must declare file")
+                    continue
+                canonical_files.add(file_name)
+                expected_path = f"../../../../sdkwork-specs/{file_name}"
+                if reference.get("path") != expected_path:
+                    issues.append(
+                        f"canonical spec {file_name} must use path {expected_path!r}"
+                    )
+            missing_specs = sorted(required_canonical_specs.difference(canonical_files))
+            if missing_specs:
+                issues.append(
+                    f"canonicalSpecs missing {', '.join(missing_specs)}"
+                )
+
+        contracts = data.get("contracts")
+        if not isinstance(contracts, dict):
+            issues.append("contracts must be an object")
+            contracts = {}
+        if contracts.get("layerRole") != "backend-repository":
+            issues.append("contracts.layerRole must equal 'backend-repository'")
+        public_exports = contracts.get("publicExports")
+        if not isinstance(public_exports, list) or "." not in public_exports:
+            issues.append("contracts.publicExports must include '.'")
+        for field in (
+            "providedPorts",
+            "requiredPorts",
+            "runtimeEntrypoints",
+            "sdkClients",
+            "sdkDependencies",
+            "dependencyApiExports",
+            "dependencyApiSurfaces",
+            "events",
+            "configKeys",
+        ):
+            if not isinstance(contracts.get(field), list):
+                issues.append(f"contracts.{field} must be an array")
+        if contracts.get("routeManifest") is not None:
+            issues.append("contracts.routeManifest must be null")
+
+        verification = data.get("verification")
+        commands = verification.get("commands") if isinstance(verification, dict) else None
+        if not isinstance(commands, list) or not commands or not all(
+            isinstance(command, str) and command.strip() for command in commands
+        ):
+            issues.append("verification.commands must be a non-empty string array")
+            return set(), issues
+        return {command.strip() for command in commands}, issues
+
+    def _canonical_repository_test_command(
+        self,
+        command: str,
+        *,
+        package_name: str,
+        crate_relative: str,
+        parity_test_paths: set[str],
+    ) -> list[str] | None:
+        match = re.fullmatch(
+            r"cargo test -p ([a-z0-9]+(?:-[a-z0-9]+)*) --test "
+            r"([a-z0-9]+(?:[_-][a-z0-9]+)*)( -- --nocapture)?",
+            command.strip(),
+        )
+        if match is None or match.group(1) != package_name:
+            return None
+        target = match.group(2)
+        target_path = f"{crate_relative}/tests/{target}.rs"
+        if target_path not in parity_test_paths:
+            return None
+        argv = ["cargo", "test", "-p", package_name, "--test", target]
+        if match.group(3):
+            argv.extend(["--", "--nocapture"])
+        return argv
+
     def run(self) -> AlignmentGuardianResult:
         checks: list[AlignmentCheck] = []
         checks.extend(self._check_root_component_specs())
+        checks.extend(self._check_repository_contracts())
+        checks.append(self._check_standalone_production_profile())
         checks.extend(self._check_workflow_dependencies())
         checks.extend(self._check_cargo_workspace_dependencies())
         checks.extend(self._check_web_framework_integration())
@@ -102,27 +501,216 @@ class SdkworkStandardAlignmentGuardian:
         checks.extend(self._check_iam_resolver_standardization())
         return AlignmentGuardianResult(checks=tuple(checks))
 
+    def _check_repository_contracts(self) -> list[AlignmentCheck]:
+        checks: list[AlignmentCheck] = []
+        required_contracts = set(self.REQUIRED_REPOSITORY_CONTRACTS)
+        specs_root = self._resolve_repository_path("specs", require_dir=True)
+        for relative in self.REQUIRED_REPOSITORY_CONTRACTS:
+            contract_id = Path(relative).stem.lower()
+            exists = self._resolve_repository_path(relative, require_file=True) is not None
+            checks.append(
+                AlignmentCheck(
+                    id=f"repository-contract-{contract_id}",
+                    category="metadata",
+                    severity="blocking",
+                    status="pass" if exists else "fail",
+                    message=(
+                        f"current repository contract exists: {relative}"
+                        if exists
+                        else f"missing or non-repository-owned current contract: {relative}"
+                    ),
+                    remediation=(
+                        ""
+                        if exists
+                        else f"create {relative} from current authored authorities and runtime facts"
+                    ),
+                )
+            )
+
+        for relative in self.RETIRED_REPOSITORY_CONTRACTS:
+            contract_id = Path(relative).name.split(".")[0].lower()
+            exists = (self.root / relative).exists()
+            checks.append(
+                AlignmentCheck(
+                    id=f"repository-contract-retired-{contract_id}",
+                    category="metadata",
+                    severity="blocking",
+                    status="fail" if exists else "pass",
+                    message=(
+                        f"retired repository contract is still present: {relative}"
+                        if exists
+                        else f"retired repository contract is absent: {relative}"
+                    ),
+                    remediation=(
+                        "remove the retired contract and declare active composition in "
+                        "specs/component.spec.json; materialize cross-stack facts in "
+                        "generated/composition.resolved.json"
+                        if exists
+                        else ""
+                    ),
+                )
+            )
+
+        actual_contracts = {
+            path.relative_to(self.root).as_posix()
+            for path in specs_root.iterdir()
+            if self._resolve_repository_path(
+                path.relative_to(self.root).as_posix(), require_file=True
+            ) is not None
+        } if specs_root is not None else set()
+        unexpected = sorted(actual_contracts.difference(required_contracts))
+        missing = sorted(required_contracts.difference(actual_contracts))
+        exact = specs_root is not None and not unexpected and not missing
+        details: list[str] = []
+        if specs_root is None:
+            details.append("specs directory is not repository-owned")
+        if unexpected:
+            details.append(f"unexpected: {', '.join(unexpected)}")
+        if missing:
+            details.append(f"missing: {', '.join(missing)}")
+        checks.append(
+            AlignmentCheck(
+                id="repository-contract-exact-set",
+                category="metadata",
+                severity="blocking",
+                status="pass" if exact else "fail",
+                message=(
+                    "root specs directory contains exactly the current repository contracts"
+                    if exact
+                    else f"root specs contract set is not exact ({'; '.join(details)})"
+                ),
+                remediation=(
+                    "keep only the current repository contracts declared by the root contract index"
+                    if not exact
+                    else ""
+                ),
+            )
+        )
+        return checks
+
     def _check_root_component_specs(self) -> list[AlignmentCheck]:
-        spec_path = self.root / self.ROOT_COMPONENT_SPEC
-        if not spec_path.exists():
+        spec_path = self._resolve_repository_path(
+            self.ROOT_COMPONENT_SPEC, require_file=True
+        )
+        if spec_path is None:
             return [
                 AlignmentCheck(
                     id="component-spec-present",
                     category="metadata",
                     severity="blocking",
                     status="fail",
-                    message=f"missing root component spec at {self.ROOT_COMPONENT_SPEC}",
+                    message=(
+                        f"missing or non-repository-owned root component spec at "
+                        f"{self.ROOT_COMPONENT_SPEC}"
+                    ),
                     remediation="create specs/component.spec.json per COMPONENT_SPEC.md",
                 )
             ]
 
-        data = json.loads(spec_path.read_text(encoding="utf-8"))
+        try:
+            data = json.loads(spec_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            return [
+                AlignmentCheck(
+                    id="component-spec-schema",
+                    category="metadata",
+                    severity="blocking",
+                    status="fail",
+                    message=f"cannot read root component spec: {error}",
+                    remediation="write a valid sdkwork.component.spec JSON object",
+                )
+            ]
+        if not isinstance(data, dict):
+            return [
+                AlignmentCheck(
+                    id="component-spec-schema",
+                    category="metadata",
+                    severity="blocking",
+                    status="fail",
+                    message="root component spec root must be a JSON object",
+                    remediation="write a schemaVersion 1 sdkwork.component.spec object",
+                )
+            ]
+
+        schema_errors: list[str] = []
+        if data.get("schemaVersion") != 1:
+            schema_errors.append("schemaVersion must equal 1")
+        if data.get("kind") != "sdkwork.component.spec":
+            schema_errors.append("kind must equal 'sdkwork.component.spec'")
+        component = data.get("component")
+        if not isinstance(component, dict):
+            schema_errors.append("component must be an object")
+        else:
+            expected_component_identity = {
+                "name": "sdkwork-clawrouter",
+                "root": ".",
+                "type": "app",
+            }
+            for field, expected in expected_component_identity.items():
+                if component.get(field) != expected:
+                    schema_errors.append(f"component.{field} must equal {expected!r}")
+        canonical_specs = data.get("canonicalSpecs")
+        if not isinstance(canonical_specs, list) or not canonical_specs:
+            schema_errors.append("canonicalSpecs must be a non-empty array")
+            canonical_specs = []
+        elif not all(isinstance(entry, dict) for entry in canonical_specs):
+            schema_errors.append("canonicalSpecs entries must be objects")
+            canonical_specs = []
+
+        declared_files: list[str] = []
+        for entry in canonical_specs:
+            file_name = entry.get("file")
+            spec_relative_path = entry.get("path")
+            purpose = entry.get("purpose")
+            if not isinstance(file_name, str) or not file_name.strip():
+                schema_errors.append("canonicalSpecs.file must be a non-empty string")
+                continue
+            declared_files.append(file_name)
+            if spec_relative_path != f"../sdkwork-specs/{file_name}":
+                schema_errors.append(
+                    f"canonicalSpecs path for {file_name} must equal "
+                    f"'../sdkwork-specs/{file_name}'"
+                )
+            if not isinstance(purpose, str) or not purpose.strip():
+                schema_errors.append(
+                    f"canonicalSpecs purpose for {file_name} must be a non-empty string"
+                )
+        duplicate_files = sorted(
+            file_name
+            for file_name, count in Counter(declared_files).items()
+            if count > 1
+        )
+        if duplicate_files:
+            schema_errors.append(
+                f"canonicalSpecs contains duplicate files: {', '.join(duplicate_files)}"
+            )
+        if schema_errors:
+            return [
+                AlignmentCheck(
+                    id="component-spec-schema",
+                    category="metadata",
+                    severity="blocking",
+                    status="fail",
+                    message=f"invalid root component spec: {'; '.join(schema_errors)}",
+                    remediation="align specs/component.spec.json with COMPONENT_SPEC.md",
+                )
+            ]
+
         declared = {
             entry.get("file")
-            for entry in data.get("canonicalSpecs", [])
+            for entry in canonical_specs
             if isinstance(entry, dict) and isinstance(entry.get("file"), str)
         }
-        checks: list[AlignmentCheck] = []
+        checks: list[AlignmentCheck] = [
+            AlignmentCheck(
+                id="component-spec-schema",
+                category="metadata",
+                severity="blocking",
+                status="pass",
+                message="root component spec has the canonical schema and application identity",
+                remediation="",
+            )
+        ]
         for required in self.REQUIRED_ROOT_CANONICAL_SPECS:
             if required in declared:
                 checks.append(
@@ -719,44 +1307,609 @@ class SdkworkStandardAlignmentGuardian:
             )
             return checks
 
-        data = json.loads(manifest_path.read_text(encoding="utf-8"))
-        migrated = [
-            entry
-            for entry in data.get("migratedStores", [])
-            if isinstance(entry, dict) and entry.get("status") == "MIGRATED"
-        ]
-        sql_infra = self.root / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql"
-        legacy_store_files = 0
-        if sql_infra.exists():
-            legacy_store_files = sum(
-                1 for path in sql_infra.rglob("*_store.rs") if path.is_file()
+        try:
+            data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            return [
+                AlignmentCheck(
+                    id="database-store-migration-manifest",
+                    category="database",
+                    severity="blocking",
+                    status="fail",
+                    message=f"invalid database store migration manifest: {error}",
+                    remediation="write valid JSON derived from the current legacy store inventory",
+                )
+            ]
+
+        if not isinstance(data, dict):
+            return [
+                AlignmentCheck(
+                    id="database-store-migration-manifest",
+                    category="database",
+                    severity="blocking",
+                    status="fail",
+                    message="database store migration manifest root must be a JSON object",
+                    remediation="write a schemaVersion 2 sdkwork.database-store-migration object",
+                )
+            ]
+
+        manifest_errors: list[str] = []
+        expected_identity = {
+            "schemaVersion": 2,
+            "kind": "sdkwork.database-store-migration",
+            "application": "sdkwork-clawrouter",
+            "authority": "../sdkwork-specs/DATABASE_SPEC.md",
+        }
+        for field, expected in expected_identity.items():
+            if data.get(field) != expected:
+                manifest_errors.append(f"{field} must equal {expected!r}")
+
+        inventory = data.get("legacyInventory")
+        if not isinstance(inventory, dict):
+            manifest_errors.append("legacyInventory must be an object")
+            inventory = {}
+        if inventory.get("path") != self.DATABASE_LEGACY_STORE_ROOT:
+            manifest_errors.append(
+                f"legacyInventory.path must equal {self.DATABASE_LEGACY_STORE_ROOT!r}"
             )
+        if inventory.get("glob") != self.DATABASE_LEGACY_STORE_GLOB:
+            manifest_errors.append(
+                f"legacyInventory.glob must equal {self.DATABASE_LEGACY_STORE_GLOB!r}"
+            )
+
+        raw_capabilities = data.get("capabilities")
+        if not isinstance(raw_capabilities, list) or not all(
+            isinstance(entry, dict) for entry in raw_capabilities
+        ):
+            manifest_errors.append("capabilities must be an array of objects")
+            raw_capabilities = []
+        stats = data.get("migrationStats")
+        if not isinstance(stats, dict):
+            manifest_errors.append("migrationStats must be an object")
+            stats = {}
+
+        required_list_fields = ("portPaths", "legacyPaths", "tables", "parityTests")
+        for index, entry in enumerate(raw_capabilities):
+            prefix = f"capabilities[{index}]"
+            for field in required_list_fields:
+                values = entry.get(field)
+                if (
+                    not isinstance(values, list)
+                    or not values
+                    or not all(
+                        isinstance(value, str) and bool(value.strip()) for value in values
+                    )
+                ):
+                    manifest_errors.append(
+                        f"{prefix}.{field} must be a non-empty array of strings"
+                    )
+            logical_store_count = entry.get("logicalStoreCount")
+            if logical_store_count is not None and (
+                not isinstance(logical_store_count, int)
+                or isinstance(logical_store_count, bool)
+                or logical_store_count < 1
+            ):
+                manifest_errors.append(
+                    f"{prefix}.logicalStoreCount must be a positive integer"
+                )
+            if "freshnessCommands" in entry:
+                manifest_errors.append(
+                    f"{prefix}.freshnessCommands is not allowed; executable verification "
+                    "belongs to the repository component spec"
+                )
+            owner_review_required = entry.get("ownerReviewRequired")
+            if owner_review_required is not None and not isinstance(
+                owner_review_required, bool
+            ):
+                manifest_errors.append(
+                    f"{prefix}.ownerReviewRequired must be a boolean"
+                )
+            if "ownerReview" in entry:
+                manifest_errors.append(
+                    f"{prefix}.ownerReview is not allowed; human review authority belongs "
+                    "in docs/engineering/reviews/REVIEW-*.md and the external review gate"
+                )
+            if entry.get("status") == "MIGRATED" and entry.get(
+                "verificationStatus"
+            ) not in {"INCOMPLETE", "COMPLETE"}:
+                manifest_errors.append(
+                    f"{prefix}.verificationStatus must be INCOMPLETE or COMPLETE"
+                )
+
+        integer_stat_fields = (
+            "legacyStoreFiles",
+            "coveredLegacyStoreFiles",
+            "currentDialectPairs",
+            "migratedCapabilities",
+            "pendingCapabilities",
+            "pendingCapabilityGroups",
+            "pendingLogicalStores",
+            "migratedLogicalStores",
+            "totalLogicalStores",
+        )
+        for field in integer_stat_fields:
+            value = stats.get(field)
+            if (
+                not isinstance(value, int)
+                or isinstance(value, bool)
+                or value < 0
+            ):
+                manifest_errors.append(
+                    f"migrationStats.{field} must be a non-negative integer"
+                )
+        completion_stat = stats.get("completionPercentage")
+        if (
+            not isinstance(completion_stat, (int, float))
+            or isinstance(completion_stat, bool)
+            or not 0 <= completion_stat <= 100
+        ):
+            manifest_errors.append(
+                "migrationStats.completionPercentage must be a number from 0 to 100"
+            )
+
+        if manifest_errors:
+            return [
+                AlignmentCheck(
+                    id="database-store-migration-manifest",
+                    category="database",
+                    severity="blocking",
+                    status="fail",
+                    message=f"invalid database store migration manifest: {'; '.join(manifest_errors)}",
+                    remediation="use the canonical schema and fixed repository-owned inventory scope",
+                )
+            ]
+
+        def safe_repository_path(relative: object) -> Path | None:
+            return self._resolve_repository_path(relative)
+
+        sql_infra = self._resolve_repository_path(
+            self.DATABASE_LEGACY_STORE_ROOT, require_dir=True
+        )
+        if sql_infra is None:
+            return [
+                AlignmentCheck(
+                    id="database-store-migration-manifest",
+                    category="database",
+                    severity="blocking",
+                    status="fail",
+                    message=(
+                        "legacy store inventory root is missing or is not repository-owned"
+                    ),
+                    remediation=(
+                        f"restore {self.DATABASE_LEGACY_STORE_ROOT} as a repository-owned directory"
+                    ),
+                )
+            ]
+        current_paths = {
+            path.relative_to(self.root).as_posix()
+            for path in sql_infra.glob(self.DATABASE_LEGACY_STORE_GLOB)
+            if path.is_file()
+        }
+        inventory_prefix = f"{self.DATABASE_LEGACY_STORE_ROOT}/"
+
+        def logical_store_paths(entry: dict[str, object]) -> set[str]:
+            logical_paths: set[str] = set()
+            legacy_paths = entry.get("legacyPaths")
+            if not isinstance(legacy_paths, list):
+                return logical_paths
+            for relative in legacy_paths:
+                if not isinstance(relative, str) or not relative.startswith(inventory_prefix):
+                    continue
+                remainder = relative.removeprefix(inventory_prefix)
+                engine, separator, logical_path = remainder.partition("/")
+                if separator and engine in {"postgres", "sqlite"} and logical_path:
+                    logical_paths.add(logical_path)
+            return logical_paths
+
+        capabilities = list(raw_capabilities)
+        tracked_paths = [
+            relative
+            for entry in capabilities
+            for relative in entry.get("legacyPaths", [])
+            if isinstance(relative, str)
+        ]
+        tracked_counts = Counter(tracked_paths)
+        duplicate_paths = sorted(
+            relative for relative, count in tracked_counts.items() if count > 1
+        )
+        tracked_current = current_paths.intersection(tracked_counts)
+        untracked_paths = sorted(current_paths.difference(tracked_counts))
+        pending_paths = {
+            relative
+            for entry in capabilities
+            if entry.get("status") == "PENDING"
+            for relative in entry.get("legacyPaths", [])
+            if isinstance(relative, str)
+        }
+        stale_pending_paths = sorted(pending_paths.difference(current_paths))
+
+        migrated = [entry for entry in capabilities if entry.get("status") == "MIGRATED"]
+        pending = [entry for entry in capabilities if entry.get("status") == "PENDING"]
+        invalid_statuses = sorted(
+            {
+                str(entry.get("status"))
+                for entry in capabilities
+                if entry.get("status") not in {"MIGRATED", "PENDING"}
+            }
+        )
+        incomplete_entries: list[str] = []
+        capability_ids: list[str] = []
+        migration_orders: list[int] = []
+        for entry in capabilities:
+            capability = entry.get("capability")
+            entry_issues: list[str] = []
+            if not isinstance(capability, str) or re.fullmatch(
+                r"[a-z0-9]+(?:-[a-z0-9]+)*", capability
+            ) is None:
+                entry_issues.append("invalid capability")
+                capability = "<unknown>"
+            else:
+                capability_ids.append(capability)
+
+            crate_path = entry.get("crate")
+            if (
+                not isinstance(crate_path, str)
+                or re.fullmatch(
+                    r"crates/sdkwork-clawrouter-[a-z0-9-]+-repository-sqlx",
+                    crate_path,
+                ) is None
+                or safe_repository_path(crate_path) is None
+            ):
+                entry_issues.append("invalid crate")
+
+            for field in ("portPaths", "legacyPaths", "tables", "parityTests"):
+                values = entry.get(field)
+                if (
+                    not isinstance(values, list)
+                    or not values
+                    or not all(isinstance(value, str) and value.strip() for value in values)
+                ):
+                    entry_issues.append(f"invalid {field}")
+
+            port_paths = entry.get("portPaths")
+            if isinstance(port_paths, list):
+                for relative in port_paths:
+                    resolved = safe_repository_path(relative)
+                    if (
+                        resolved is None
+                        or not isinstance(relative, str)
+                        or not relative.startswith(
+                            "services/sdkwork-clawrouter-router-service/src/ports/"
+                        )
+                    ):
+                        entry_issues.append(f"unsafe port path {relative!r}")
+
+            legacy_paths = entry.get("legacyPaths")
+            if isinstance(legacy_paths, list):
+                for relative in legacy_paths:
+                    resolved = safe_repository_path(relative)
+                    if (
+                        resolved is None
+                        or not isinstance(relative, str)
+                        or not relative.startswith(f"{self.DATABASE_LEGACY_STORE_ROOT}/")
+                        or not relative.endswith("_store.rs")
+                    ):
+                        entry_issues.append(f"unsafe legacy path {relative!r}")
+            derived_logical_store_count = len(logical_store_paths(entry))
+            if derived_logical_store_count < 1:
+                entry_issues.append("legacyPaths do not identify a logical store")
+            declared_logical_store_count = entry.get("logicalStoreCount")
+            if (
+                declared_logical_store_count is not None
+                and declared_logical_store_count != derived_logical_store_count
+            ):
+                entry_issues.append(
+                    "logicalStoreCount does not match the dialect inventory"
+                )
+
+            tables = entry.get("tables")
+            if isinstance(tables, list) and any(
+                not isinstance(table, str)
+                or re.fullmatch(r"[a-z][a-z0-9_]*", table) is None
+                for table in tables
+            ):
+                entry_issues.append("invalid tables")
+
+            migration_order = entry.get("migrationOrder")
+            if not isinstance(migration_order, int) or isinstance(migration_order, bool) or migration_order < 1:
+                entry_issues.append("invalid migrationOrder")
+            else:
+                migration_orders.append(migration_order)
+
+            if entry.get("status") not in {"MIGRATED", "PENDING"}:
+                entry_issues.append("invalid status")
+            if entry.get("priority") not in {"CRITICAL", "HIGH", "MEDIUM", "LOW"}:
+                entry_issues.append("invalid priority")
+            if not isinstance(entry.get("rollback"), str) or not entry.get("rollback", "").strip():
+                entry_issues.append("invalid rollback")
+
+            parity_tests = entry.get("parityTests")
+            if isinstance(parity_tests, list) and any(
+                safe_repository_path(relative) is None for relative in parity_tests
+            ):
+                entry_issues.append("unsafe parityTests")
+
+            if entry_issues:
+                incomplete_entries.append(f"{capability}: {', '.join(entry_issues)}")
+
+        duplicate_capabilities = sorted(
+            capability for capability, count in Counter(capability_ids).items() if count > 1
+        )
+        duplicate_orders = sorted(
+            order for order, count in Counter(migration_orders).items() if count > 1
+        )
+
+        store_engines: dict[str, set[str]] = {}
+        for relative in current_paths:
+            remainder = relative.removeprefix(inventory_prefix)
+            engine, separator, logical_path = remainder.partition("/")
+            if separator and engine in {"postgres", "sqlite"}:
+                store_engines.setdefault(logical_path, set()).add(engine)
+        unpaired_stores = sorted(
+            logical_path
+            for logical_path, engines in store_engines.items()
+            if engines != {"postgres", "sqlite"}
+        )
+        pending_logical_paths = {
+            relative.removeprefix(inventory_prefix).partition("/")[2]
+            for relative in pending_paths.intersection(current_paths)
+        }
+        migrated_logical_stores = sum(
+            len(logical_store_paths(entry)) for entry in migrated
+        )
+        pending_logical_stores = len(pending_logical_paths)
+        total_logical_stores = migrated_logical_stores + pending_logical_stores
+        completion_percentage = (
+            round((migrated_logical_stores / total_logical_stores) * 100, 2)
+            if total_logical_stores
+            else 100.0
+        )
+        expected_stats = {
+            "legacyStoreFiles": len(current_paths),
+            "coveredLegacyStoreFiles": len(tracked_current),
+            "currentDialectPairs": len(store_engines),
+            "migratedCapabilities": len(migrated),
+            "pendingCapabilities": len(pending),
+            "pendingCapabilityGroups": len(pending),
+            "pendingLogicalStores": pending_logical_stores,
+            "migratedLogicalStores": migrated_logical_stores,
+            "totalLogicalStores": total_logical_stores,
+            "completionPercentage": completion_percentage,
+        }
+        stale_stats = [
+            f"{key}={stats.get(key)!r} (expected {value})"
+            for key, value in expected_stats.items()
+            if stats.get(key) != value
+        ]
+
+        coverage_issues: list[str] = []
+        if duplicate_paths:
+            coverage_issues.append(f"duplicate paths: {', '.join(duplicate_paths)}")
+        if untracked_paths:
+            coverage_issues.append(f"untracked paths: {', '.join(untracked_paths)}")
+        if stale_pending_paths:
+            coverage_issues.append(
+                f"stale pending paths: {', '.join(stale_pending_paths)}"
+            )
+        if invalid_statuses:
+            coverage_issues.append(f"invalid statuses: {', '.join(invalid_statuses)}")
+        if incomplete_entries:
+            coverage_issues.append(f"incomplete entries: {'; '.join(incomplete_entries)}")
+        if duplicate_capabilities:
+            coverage_issues.append(
+                f"duplicate capabilities: {', '.join(duplicate_capabilities)}"
+            )
+        if duplicate_orders:
+            coverage_issues.append(
+                f"duplicate migrationOrder values: {', '.join(map(str, duplicate_orders))}"
+            )
+        if unpaired_stores:
+            coverage_issues.append(f"unpaired dialect stores: {', '.join(unpaired_stores)}")
+        if stale_stats:
+            coverage_issues.append(f"stale statistics: {'; '.join(stale_stats)}")
+
         checks.append(
             AlignmentCheck(
                 id="database-store-migration-manifest",
                 category="database",
-                severity="warning",
+                severity="blocking",
                 status="pass",
                 message=(
-                    f"database store migration manifest tracks {len(migrated)} migrated repository-sqlx "
-                    f"module(s); {legacy_store_files} legacy *_store.rs modules remain in router service"
+                    f"database store migration manifest declares {len(migrated)} migrated and "
+                    f"{len(pending)} pending capability owner(s)"
                 ),
-                remediation="continue phased migration documented in specs/database-store-migration.manifest.json",
+                remediation="",
             )
         )
+        checks.append(
+            AlignmentCheck(
+                id="database-store-migration-inventory-coverage",
+                category="database",
+                severity="blocking",
+                status="fail" if coverage_issues else "pass",
+                message=(
+                    "; ".join(coverage_issues)
+                    if coverage_issues
+                    else (
+                        f"database store migration manifest tracks {len(tracked_current)}/"
+                        f"{len(current_paths)} current legacy store paths exactly once"
+                    )
+                ),
+                remediation=(
+                    "rebuild the manifest from the current PostgreSQL/SQLite inventory; every "
+                    "legacy path must be covered exactly once and migrationStats must be computed"
+                    if coverage_issues
+                    else ""
+                ),
+            )
+        )
+
+        declared_status_by_path = {
+            crate_path: status_value
+            for entry in capabilities
+            if isinstance((crate_path := entry.get("crate")), str)
+            and isinstance((status_value := entry.get("status")), str)
+        }
+        repository_closure_issues = self._repository_sqlx_closure_issues(
+            declared_status_by_path
+        )
+        checks.append(
+            AlignmentCheck(
+                id="database-store-migration-repository-closure",
+                category="database",
+                severity="blocking",
+                status="fail" if repository_closure_issues else "pass",
+                message=(
+                    "; ".join(repository_closure_issues)
+                    if repository_closure_issues
+                    else (
+                        "Cargo workspace repository crates, production dependency edges, and "
+                        "migration statuses form an exact closure"
+                    )
+                ),
+                remediation=(
+                    "reconcile cargo metadata, root workspace dependencies, repository crate "
+                    "manifests, production dependency edges, and capability statuses"
+                    if repository_closure_issues
+                    else ""
+                ),
+            )
+        )
+
         for entry in migrated:
+            capability = str(entry.get("capability", "unknown"))
             crate_path = entry.get("crate")
-            if isinstance(crate_path, str) and (self.root / crate_path / "Cargo.toml").exists():
-                checks.append(
-                    AlignmentCheck(
-                        id=f"database-store-migration-{entry.get('capability', 'unknown')}",
-                        category="database",
-                        severity="info",
-                        status="pass",
-                        message=f"{crate_path} is registered as a migrated repository-sqlx crate",
-                        remediation="",
+            crate_root = safe_repository_path(crate_path)
+            crate_exists = crate_root is not None and (crate_root / "Cargo.toml").is_file()
+            crate_manifest = (
+                self._read_toml(crate_root / "Cargo.toml") if crate_exists else None
+            )
+            package = crate_manifest.get("package") if crate_manifest is not None else None
+            package_name = package.get("name") if isinstance(package, dict) else None
+            component_commands: set[str] = set()
+            component_issues = ["missing component spec"]
+            if (
+                isinstance(crate_path, str)
+                and isinstance(package_name, str)
+            ):
+                component_commands, component_issues = (
+                    self._repository_component_verification(
+                        crate_path,
+                        package_name=package_name,
+                        capability=capability,
                     )
                 )
+            port_paths = entry.get("portPaths", [])
+            ports_exist = isinstance(port_paths, list) and all(
+                (resolved := safe_repository_path(relative)) is not None and resolved.is_file()
+                for relative in port_paths
+            )
+            parity_tests = entry.get("parityTests", [])
+            parity_test_paths = {
+                relative
+                for relative in parity_tests
+                if isinstance(relative, str)
+            } if isinstance(parity_tests, list) else set()
+            parity_paths_are_tests = bool(parity_test_paths) and all(
+                re.fullmatch(r"[A-Za-z0-9._/-]+/tests/[A-Za-z0-9_-]+\.rs", relative)
+                is not None
+                and (resolved := safe_repository_path(relative)) is not None
+                and resolved.is_file()
+                for relative in parity_test_paths
+            )
+            crate_parity_tests = {
+                relative
+                for relative in parity_test_paths
+                if isinstance(crate_path, str)
+                and relative.startswith(f"{crate_path}/tests/")
+            }
+            parity_exists = parity_paths_are_tests and bool(crate_parity_tests)
+            canonical_commands: list[list[str]] = []
+            executable_verification_declared = (
+                isinstance(package_name, str)
+                and isinstance(crate_path, str)
+                and not component_issues
+            )
+            covered_parity_tests: set[str] = set()
+            if executable_verification_declared:
+                for command in sorted(component_commands):
+                    argv = self._canonical_repository_test_command(
+                        command,
+                        package_name=package_name,
+                        crate_relative=crate_path,
+                        parity_test_paths=crate_parity_tests,
+                    )
+                    if argv is not None:
+                        canonical_commands.append(argv)
+                        covered_parity_tests.add(
+                            f"{crate_path}/tests/{argv[5]}.rs"
+                        )
+                executable_verification_declared = (
+                    bool(canonical_commands)
+                    and covered_parity_tests == crate_parity_tests
+                )
+            verification_complete = entry.get("verificationStatus") == "COMPLETE"
+            owner_review_complete = not entry.get("ownerReviewRequired", False)
+            evidence_issues: list[str] = []
+            if not crate_exists:
+                evidence_issues.append("Cargo.toml")
+            if component_issues:
+                evidence_issues.append(
+                    f"component spec identity/contract ({'; '.join(component_issues)})"
+                )
+            if not ports_exist:
+                evidence_issues.append("ports")
+            if not parity_exists:
+                evidence_issues.append("parity tests")
+            if not executable_verification_declared:
+                evidence_issues.append("executable component verification")
+            if not owner_review_complete:
+                evidence_issues.append("external human owner review")
+            if not verification_complete:
+                evidence_issues.append(
+                    f"verificationStatus={entry.get('verificationStatus')!r}"
+                )
+            if not evidence_issues:
+                for argv in canonical_commands:
+                    try:
+                        completed = subprocess.run(
+                            argv,
+                            cwd=self.root,
+                            capture_output=True,
+                            text=True,
+                            timeout=300,
+                            check=False,
+                        )
+                    except (OSError, subprocess.TimeoutExpired):
+                        evidence_issues.append("component verification command execution")
+                        break
+                    if completed.returncode != 0:
+                        evidence_issues.append("component verification command execution")
+                        break
+            ready = not evidence_issues
+            checks.append(
+                AlignmentCheck(
+                    id=f"database-store-migration-{capability}",
+                    category="database",
+                    severity="blocking",
+                    status="pass" if ready else "fail",
+                    message=(
+                        f"{crate_path} has complete migrated repository ownership evidence"
+                        if ready
+                        else (
+                            f"{crate_path} migrated ownership is incomplete: "
+                            f"{', '.join(evidence_issues)}"
+                        )
+                    ),
+                    remediation=(
+                        "add the repository component contract and executable parity verification; "
+                        "obtain any required external human owner review; set "
+                        "verificationStatus=COMPLETE only after those gates pass"
+                        if not ready
+                        else ""
+                    ),
+                )
+            )
         return checks
 
     def _check_http_route_manifest_runtime(self) -> list[AlignmentCheck]:
@@ -1007,37 +2160,154 @@ class SdkworkStandardAlignmentGuardian:
                 )
             )
 
-        standalone_profile_candidates = (
-            self.root / "configs" / "topology" / "standalone.unified-process.production.env",
-            self.root / "configs" / "topology" / "self-hosted.unified-process.production.env",
-        )
-        standalone_profiles = next(
-            (path for path in standalone_profile_candidates if path.exists()),
-            None,
-        )
-        if standalone_profiles is not None:
-            checks.append(
-                AlignmentCheck(
-                    id="deployment-standalone-profile",
-                    category="deployment",
-                    severity="blocking",
-                    status="pass",
-                    message="standalone production topology profile is present under configs/topology/",
-                    remediation="",
-                )
-            )
-        else:
-            checks.append(
-                AlignmentCheck(
-                    id="deployment-standalone-profile",
-                    category="deployment",
-                    severity="blocking",
-                    status="fail",
-                    message="missing standalone production topology profile",
-                    remediation="add configs/topology/standalone.unified-process.production.env per APP_RUNTIME_TOPOLOGY_NAMING.md",
-                )
-            )
         return checks
+
+    def _check_standalone_production_profile(self) -> AlignmentCheck:
+        topology_spec_path = self._resolve_repository_path(
+            "specs/topology.spec.json", require_file=True
+        )
+        if topology_spec_path is None:
+            return AlignmentCheck(
+                id="deployment-standalone-profile",
+                category="deployment",
+                severity="blocking",
+                status="fail",
+                message=(
+                    "missing or non-repository-owned topology authority at "
+                    "specs/topology.spec.json"
+                ),
+                remediation="create specs/topology.spec.json per APP_RUNTIME_TOPOLOGY_SPEC.md",
+            )
+
+        try:
+            topology_spec = json.loads(topology_spec_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            return AlignmentCheck(
+                id="deployment-standalone-profile",
+                category="deployment",
+                severity="blocking",
+                status="fail",
+                message=f"cannot read topology authority: {error}",
+                remediation="fix specs/topology.spec.json and run pnpm topology:validate",
+            )
+
+        if not isinstance(topology_spec, dict):
+            return AlignmentCheck(
+                id="deployment-standalone-profile",
+                category="deployment",
+                severity="blocking",
+                status="fail",
+                message="topology authority root must be a JSON object",
+                remediation="write a schemaVersion 4 sdkwork.app.topology object",
+            )
+        if (
+            topology_spec.get("schemaVersion") != 4
+            or topology_spec.get("kind") != "sdkwork.app.topology"
+        ):
+            return AlignmentCheck(
+                id="deployment-standalone-profile",
+                category="deployment",
+                severity="blocking",
+                status="fail",
+                message="topology authority must use schemaVersion 4 and kind sdkwork.app.topology",
+                remediation="migrate specs/topology.spec.json to APP_RUNTIME_TOPOLOGY_SPEC.md v4",
+            )
+
+        profile_files = topology_spec.get("profileFiles")
+        if not isinstance(profile_files, dict):
+            return AlignmentCheck(
+                id="deployment-standalone-profile",
+                category="deployment",
+                severity="blocking",
+                status="fail",
+                message="topology authority profileFiles must be an object",
+                remediation="add standalone.production to specs/topology.spec.json profileFiles",
+            )
+
+        invalid_standalone_production_ids = sorted(
+            profile_id
+            for profile_id in profile_files
+            if isinstance(profile_id, str)
+            and profile_id.startswith("standalone.")
+            and profile_id.endswith(".production")
+            and profile_id != "standalone.production"
+        )
+        if invalid_standalone_production_ids:
+            return AlignmentCheck(
+                id="deployment-standalone-profile",
+                category="deployment",
+                severity="blocking",
+                status="fail",
+                message=(
+                    "standalone production profile ids must contain exactly two segments; "
+                    f"invalid: {', '.join(invalid_standalone_production_ids)}"
+                ),
+                remediation="replace retired profile ids with standalone.production",
+            )
+
+        expected_profile_id = "standalone.production"
+        expected_relative_path = "configs/topology/standalone.production.env"
+        relative_path = profile_files.get(expected_profile_id)
+        if relative_path != expected_relative_path:
+            return AlignmentCheck(
+                id="deployment-standalone-profile",
+                category="deployment",
+                severity="blocking",
+                status="fail",
+                message="topology authority does not declare the canonical standalone production mapping",
+                remediation=f"add {expected_relative_path} as profileFiles.{expected_profile_id}",
+            )
+
+        expected_parent = self._resolve_repository_path(
+            "configs/topology", require_dir=True
+        )
+        profile_path = self._resolve_repository_path(
+            expected_relative_path, require_file=True
+        )
+        if (
+            expected_parent is None
+            or profile_path is None
+            or expected_parent not in profile_path.parents
+        ):
+            return AlignmentCheck(
+                id="deployment-standalone-profile",
+                category="deployment",
+                severity="blocking",
+                status="fail",
+                message=(
+                    "standalone production topology profile is missing or is not "
+                    "repository-owned"
+                ),
+                remediation=f"add {expected_relative_path} and run pnpm topology:validate",
+            )
+
+        profile_text = profile_path.read_text(encoding="utf-8")
+        profile_ids = [
+            line.split("=", 1)[1].strip()
+            for line in profile_text.splitlines()
+            if line.strip().startswith("SDKWORK_CLAW_ROUTER_PROFILE_ID=")
+        ]
+        if profile_ids != [expected_profile_id]:
+            return AlignmentCheck(
+                id="deployment-standalone-profile",
+                category="deployment",
+                severity="blocking",
+                status="fail",
+                message="standalone production profile must declare its exact canonical profile id once",
+                remediation=(
+                    f"set SDKWORK_CLAW_ROUTER_PROFILE_ID={expected_profile_id} in "
+                    f"{expected_relative_path}"
+                ),
+            )
+
+        return AlignmentCheck(
+            id="deployment-standalone-profile",
+            category="deployment",
+            severity="blocking",
+            status="pass",
+            message=f"topology authority provides standalone production profile: {expected_profile_id}",
+            remediation="",
+        )
 
     def _iter_scan_files(self, root: Path, *, suffixes: tuple[str, ...] = ()) -> list[Path]:
         skip_dir_names = {"node_modules", "target", "dist", "build", ".git", ".tmp", ".pnpm-store"}

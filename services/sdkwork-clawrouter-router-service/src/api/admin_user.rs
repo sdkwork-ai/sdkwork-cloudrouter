@@ -4,7 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
-use axum::http::{HeaderMap, StatusCode};
+use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, post};
 use axum::{Json, Router};
@@ -13,8 +13,9 @@ use serde_json::Value;
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
-    json_success_list_response, normalize_list_search_query, offset_page_info,
-    parse_offset_list_query, problem_from_wire_code, success_envelope,
+    json_created_response, json_success_list_response, no_content_response,
+    normalize_list_search_query, offset_page_info, parse_offset_list_query, problem_from_wire_code,
+    success_envelope,
 };
 use crate::application::{ApiKeySecretGenerator, ApiKeySecretHasher};
 use crate::domain::{DecimalValue, DomainError, GatewayApiKey};
@@ -49,12 +50,6 @@ struct AdminUserItemEnvelope {
 struct AdminUserApiKeyCreateResponse {
     key: AdminUserApiKeyItem,
     raw_key: String,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct AdminUserApiKeyDeleteResponse {
-    deleted: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -473,11 +468,10 @@ async fn create_api_key(
     };
 
     match state.store.create_api_key(command).await {
-        Ok(key) => Json(success_envelope(AdminUserApiKeyCreateResponse {
+        Ok(key) => json_created_response(None, AdminUserApiKeyCreateResponse {
             key,
             raw_key,
-        }))
-        .into_response(),
+        }),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) if error.is_not_found() => not_found_response(&error.to_string()),
         Err(error) => {
@@ -516,10 +510,7 @@ async fn delete_api_key(
     };
 
     match state.store.delete_api_key(command).await {
-        Ok(true) => Json(success_envelope(AdminUserApiKeyDeleteResponse {
-            deleted: true,
-        }))
-        .into_response(),
+        Ok(true) => no_content_response(None),
         Ok(false) => not_found_response("api key was not found"),
         Err(error) => {
             admin_user_system_response("admin api key command store is unavailable", error)
@@ -587,7 +578,7 @@ async fn create_backend_api_key(
     {
         Ok(group) => group,
         Err(error) => {
-            return admin_user_system_response("admin api key command store is unavailable", error)
+            return admin_user_system_response("admin api key command store is unavailable", error);
         }
     };
     let command = match build_backend_create_api_key_command(
@@ -607,11 +598,10 @@ async fn create_backend_api_key(
     };
 
     match state.command_store.create_gateway_api_key(command).await {
-        Ok(created) => Json(success_envelope(AdminUserApiKeyCreateResponse {
+        Ok(created) => json_created_response(None, AdminUserApiKeyCreateResponse {
             key: admin_api_key_item_from_gateway(created.api_key),
             raw_key,
-        }))
-        .into_response(),
+        }),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
             admin_user_system_response("admin api key command store is unavailable", error)
@@ -656,10 +646,7 @@ async fn delete_backend_api_key(
         .delete_gateway_api_key_for_organization(command)
         .await
     {
-        Ok(true) => Json(success_envelope(AdminUserApiKeyDeleteResponse {
-            deleted: true,
-        }))
-        .into_response(),
+        Ok(true) => no_content_response(None),
         Ok(false) => not_found_response("api key was not found"),
         Err(error) => {
             admin_user_system_response("admin api key command store is unavailable", error)
