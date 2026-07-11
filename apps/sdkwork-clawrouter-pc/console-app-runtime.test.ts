@@ -107,6 +107,20 @@ function generationResult(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function gatewayTrace(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "trace-1",
+    time: "2026-05-05T08:00:00Z",
+    ip: "10.***.***.11",
+    endpoint: "/v1/chat/completions",
+    method: "POST",
+    status: 200,
+    duration: "128ms",
+    channel: "openai-main",
+    ...overrides,
+  };
+}
+
 function mediaUrl(resource: { publicUrl?: string; url?: string; uri?: string } | undefined): string {
   return resource?.publicUrl || resource?.url || resource?.uri || "";
 }
@@ -1150,30 +1164,69 @@ test("console messages service fails closed when SDK message items omit required
   );
 });
 
-test("console gateway service reads trace items returned by the generated app SDK", async () => {
-  await withAppSdkResponse(
-    {
-      code: "2000",
-      data: {
-        items: [
-          {
-            id: "trace-1",
-            time: "2026-05-05T08:00:00Z",
-            ip: "10.***.***.11",
-            endpoint: "/v1/chat/completions",
-            method: "POST",
-            status: 200,
-            duration: "128ms",
-            channel: "openai-main",
+test("console gateway service follows opaque cursor pagination returned by the generated app SDK", async () => {
+  const nextCursor = "eyJ2IjoxLCJpZCI6MTAxfQ";
+  await withAppSdkResponses(
+    [
+      {
+        code: 0,
+        data: {
+          items: [gatewayTrace()],
+          pageInfo: {
+            mode: "cursor",
+            pageSize: 20,
+            hasMore: true,
+            nextCursor,
           },
-        ],
+        },
+        traceId: "gateway-trace-list-1",
       },
-    },
+      {
+        code: 0,
+        data: {
+          items: [gatewayTrace({ id: "trace-2", time: "2026-05-05T07:59:00Z" })],
+          pageInfo: {
+            mode: "cursor",
+            pageSize: 20,
+            hasMore: false,
+            nextCursor: null,
+          },
+        },
+        traceId: "gateway-trace-list-2",
+      },
+    ],
     async (captured) => {
-      const result = await GatewayService.fetchTraces();
+      const firstPage = await GatewayService.fetchTraces({ pageSize: 20, q: "chat route" });
+      const secondPage = await GatewayService.fetchTraces({
+        cursor: firstPage.pageInfo.nextCursor ?? undefined,
+        pageSize: 20,
+        q: "chat route",
+      });
 
-      assert.equal(captured[0].url, "/app/v3/api/ai/gateway/traces");
-      assert.deepEqual(result.map((item) => item.id), ["trace-1"]);
+      assert.deepEqual(firstPage.items.map((item) => item.id), ["trace-1"]);
+      assert.deepEqual(firstPage.pageInfo, {
+        mode: "cursor",
+        pageSize: 20,
+        hasMore: true,
+        nextCursor,
+      });
+      assert.deepEqual(secondPage.items.map((item) => item.id), ["trace-2"]);
+      assert.equal(secondPage.pageInfo.hasMore, false);
+      assert.equal(secondPage.pageInfo.nextCursor, null);
+
+      const firstUrl = new URL(captured[0].url, "https://clawrouter.test");
+      assert.equal(firstUrl.pathname, "/app/v3/api/ai/gateway/traces");
+      assert.equal(firstUrl.searchParams.get("page_size"), "20");
+      assert.equal(firstUrl.searchParams.get("q"), "chat route");
+      assert.equal(firstUrl.searchParams.has("cursor"), false);
+
+      const continuationUrl = new URL(captured[1].url, "https://clawrouter.test");
+      assert.equal(continuationUrl.searchParams.get("cursor"), nextCursor);
+      assert.equal(continuationUrl.searchParams.get("page_size"), "20");
+      assert.equal(continuationUrl.searchParams.get("q"), "chat route");
+      for (const forbiddenAlias of ["page", "pageSize", "limit", "offset", "page_no", "pageNo", "per_page", "size"]) {
+        assert.equal(continuationUrl.searchParams.has(forbiddenAlias), false);
+      }
     },
   );
 });
@@ -1181,31 +1234,20 @@ test("console gateway service reads trace items returned by the generated app SD
 test("console gateway service fails closed when SDK trace items omit required fields", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         items: [
-          {
-            id: "trace-1",
-            time: "2026-05-05T08:00:00Z",
-            ip: "10.***.***.11",
-            endpoint: "/v1/chat/completions",
-            method: "POST",
-            status: 200,
-            duration: "128ms",
-            channel: "openai-main",
-          },
-          {
-            id: "trace-2",
-            time: "2026-05-05T08:00:00Z",
-            ip: "10.***.***.12",
-            endpoint: "/v1/chat/completions",
-            method: "TRACE",
-            status: "200",
-            duration: "128ms",
-            channel: "openai-main",
-          },
+          gatewayTrace(),
+          gatewayTrace({ id: "trace-2", method: "TRACE" }),
         ],
+        pageInfo: {
+          mode: "cursor",
+          pageSize: 20,
+          hasMore: false,
+          nextCursor: null,
+        },
       },
+      traceId: "gateway-trace-invalid-method",
     },
     async () => {
       await assert.rejects(
@@ -1219,27 +1261,137 @@ test("console gateway service fails closed when SDK trace items omit required fi
 test("console gateway service fails closed when SDK trace list contains malformed rows", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         items: [
-          {
-            id: "trace-1",
-            time: "2026-05-05T08:00:00Z",
-            ip: "10.***.***.11",
-            endpoint: "/v1/chat/completions",
-            method: "POST",
-            status: 200,
-            duration: "128ms",
-            channel: "openai-main",
-          },
+          gatewayTrace(),
           "malformed-row",
         ],
+        pageInfo: {
+          mode: "cursor",
+          pageSize: 20,
+          hasMore: false,
+          nextCursor: null,
+        },
       },
+      traceId: "gateway-trace-malformed-row",
     },
     async () => {
       await assert.rejects(
         () => GatewayService.fetchTraces(),
         /Gateway trace record is required/,
+      );
+    },
+  );
+});
+
+test("console gateway service fails closed on invalid cursor page metadata", async () => {
+  const cases: Array<{
+    name: string;
+    pageInfo: Record<string, unknown>;
+    expected: RegExp;
+  }> = [
+    {
+      name: "offset mode",
+      pageInfo: { mode: "offset", pageSize: 20, hasMore: false, nextCursor: null },
+      expected: /must use cursor pagination/,
+    },
+    {
+      name: "missing continuation cursor",
+      pageInfo: { mode: "cursor", pageSize: 20, hasMore: true, nextCursor: null },
+      expected: /next cursor is required/,
+    },
+    {
+      name: "final page cursor",
+      pageInfo: { mode: "cursor", pageSize: 20, hasMore: false, nextCursor: "unexpected" },
+      expected: /next cursor must be empty/,
+    },
+    {
+      name: "zero page size",
+      pageInfo: { mode: "cursor", pageSize: 0, hasMore: false, nextCursor: null },
+      expected: /page size must be between 1 and 200/,
+    },
+    {
+      name: "oversized page",
+      pageInfo: { mode: "cursor", pageSize: 201, hasMore: false, nextCursor: null },
+      expected: /page size must be between 1 and 200/,
+    },
+    {
+      name: "string page size",
+      pageInfo: { mode: "cursor", pageSize: "20", hasMore: false, nextCursor: null },
+      expected: /page size is required/,
+    },
+  ];
+
+  for (const testCase of cases) {
+    await withAppSdkResponse(
+      {
+        code: 0,
+        data: { items: [gatewayTrace()], pageInfo: testCase.pageInfo },
+        traceId: `gateway-trace-${testCase.name}`,
+      },
+      async () => {
+        await assert.rejects(
+          () => GatewayService.fetchTraces(),
+          testCase.expected,
+          testCase.name,
+        );
+      },
+    );
+  }
+});
+
+test("console gateway service rejects duplicate rows and cursors that do not advance", async () => {
+  await withAppSdkResponse(
+    {
+      code: 0,
+      data: {
+        items: [gatewayTrace(), gatewayTrace()],
+        pageInfo: { mode: "cursor", pageSize: 20, hasMore: false, nextCursor: null },
+      },
+      traceId: "gateway-trace-duplicate-items",
+    },
+    async () => {
+      await assert.rejects(
+        () => GatewayService.fetchTraces(),
+        /duplicate ids/,
+      );
+    },
+  );
+
+  const cursor = "opaque-cursor-that-must-advance";
+  await withAppSdkResponse(
+    {
+      code: 0,
+      data: {
+        items: [gatewayTrace()],
+        pageInfo: { mode: "cursor", pageSize: 20, hasMore: true, nextCursor: cursor },
+      },
+      traceId: "gateway-trace-stalled-cursor",
+    },
+    async () => {
+      await assert.rejects(
+        () => GatewayService.fetchTraces({ cursor }),
+        /next cursor must advance/,
+      );
+    },
+  );
+});
+
+test("console gateway service rejects non-numeric HTTP status values", async () => {
+  await withAppSdkResponse(
+    {
+      code: 0,
+      data: {
+        items: [gatewayTrace({ status: "200" })],
+        pageInfo: { mode: "cursor", pageSize: 20, hasMore: false, nextCursor: null },
+      },
+      traceId: "gateway-trace-invalid-status",
+    },
+    async () => {
+      await assert.rejects(
+        () => GatewayService.fetchTraces(),
+        /Gateway trace status is required/,
       );
     },
   );

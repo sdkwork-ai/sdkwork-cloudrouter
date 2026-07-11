@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use crate::domain::{
     AiModel, BillingMeter, ChannelGroup, ChannelGroupMetricSnapshot, DecimalValue, DomainResult,
@@ -54,6 +54,45 @@ pub struct SqlPricingCatalogSnapshotSummary {
     pub managed_provider_secrets: usize,
 }
 
+#[derive(Clone)]
+struct ScopedPricingPlan {
+    tenant_id: i64,
+    organization_id: i64,
+    value: PricingPlan,
+}
+
+#[derive(Clone)]
+struct ScopedModelPrice {
+    tenant_id: i64,
+    organization_id: i64,
+    value: ModelPrice,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct ModelPriceBusinessIdentity {
+    catalog_key: String,
+    region_code: String,
+    price_side: PriceSide,
+    billing_meter: BillingMeter,
+    provider_code: Option<String>,
+    channel_id: Option<i64>,
+    pricing_plan_code: Option<String>,
+}
+
+impl From<&ModelPrice> for ModelPriceBusinessIdentity {
+    fn from(price: &ModelPrice) -> Self {
+        Self {
+            catalog_key: price.catalog_key.clone(),
+            region_code: price.region_code.clone(),
+            price_side: price.price_side,
+            billing_meter: price.billing_meter.clone(),
+            provider_code: price.provider_code.clone(),
+            channel_id: price.channel_id,
+            pricing_plan_code: price.pricing_plan_code.clone(),
+        }
+    }
+}
+
 pub struct SqlPricingCatalogSnapshot {
     vendors: Vec<ModelVendorDefinition>,
     models: Vec<AiModel>,
@@ -62,24 +101,24 @@ pub struct SqlPricingCatalogSnapshot {
     routing_policies: Vec<RoutingPolicy>,
     routing_rules: Vec<RoutingRule>,
     model_mappings: Vec<ModelMappingRule>,
-    pricing_plans: Vec<PricingPlan>,
+    pricing_plans: Vec<ScopedPricingPlan>,
     channel_groups: Vec<ChannelGroup>,
     api_keys: Vec<GatewayApiKey>,
     access_policies: Vec<GatewayAccessPolicy>,
     quota_policies: Vec<QuotaPolicy>,
     gateway_risk_rules: Vec<GatewayRiskRule>,
     channel_group_metric_snapshots: Vec<ChannelGroupMetricSnapshot>,
-    prices: Vec<ModelPrice>,
+    prices: Vec<ScopedModelPrice>,
     managed_provider_secrets: BTreeMap<String, String>,
     // --- Indexes for O(1) hot-path lookups ---
     models_by_key: HashMap<String, AiModel>,
     api_keys_by_hash: HashMap<String, GatewayApiKey>,
     api_keys_by_id: HashMap<i64, GatewayApiKey>,
     channel_groups_by_id: HashMap<i64, ChannelGroup>,
-    pricing_plans_by_code: HashMap<String, PricingPlan>,
+    pricing_plans_by_code: HashMap<String, Vec<ScopedPricingPlan>>,
     vendors_by_code: HashMap<String, ModelVendorDefinition>,
     provider_routes_by_key: HashMap<String, Vec<ModelProviderRoute>>,
-    prices_by_key: HashMap<String, Vec<ModelPrice>>,
+    prices_by_key: HashMap<String, Vec<ScopedModelPrice>>,
 }
 
 impl SqlPricingCatalogSnapshot {
@@ -91,10 +130,8 @@ impl SqlPricingCatalogSnapshot {
         rows: PricingCatalogRows,
         managed_provider_secrets: BTreeMap<String, String>,
     ) -> DomainResult<Self> {
-        let pricing_plans = pricing_plans_with_standard_fallback(map_rows(
-            rows.pricing_plans,
-            PricingPlanRow::try_into_domain,
-        )?)?;
+        let pricing_plans = scoped_pricing_plans_with_standard_fallback(rows.pricing_plans)?;
+        let prices = map_scoped_model_prices(rows.prices)?;
         let mut snapshot = Self {
             vendors: map_rows(rows.vendors, ModelVendorRow::try_into_domain)?,
             models: map_rows(rows.models, AiModelRow::try_into_domain)?,
@@ -125,7 +162,7 @@ impl SqlPricingCatalogSnapshot {
                 rows.channel_group_metric_snapshots,
                 ChannelGroupMetricSnapshotRow::try_into_domain,
             )?,
-            prices: map_rows(rows.prices, ModelPriceRow::try_into_domain)?,
+            prices,
             managed_provider_secrets,
             models_by_key: HashMap::new(),
             api_keys_by_hash: HashMap::new(),
@@ -164,11 +201,16 @@ impl SqlPricingCatalogSnapshot {
             .iter()
             .map(|group| (group.id, group.clone()))
             .collect();
-        self.pricing_plans_by_code = self
-            .pricing_plans
-            .iter()
-            .map(|plan| (plan.plan_code.clone(), plan.clone()))
-            .collect();
+        self.pricing_plans_by_code =
+            self.pricing_plans
+                .iter()
+                .fold(HashMap::new(), |mut index, plan| {
+                    index
+                        .entry(plan.value.plan_code.clone())
+                        .or_default()
+                        .push(plan.clone());
+                    index
+                });
         self.vendors_by_code = self
             .vendors
             .iter()
@@ -183,11 +225,12 @@ impl SqlPricingCatalogSnapshot {
                         .push(route.clone());
                     acc
                 });
-        self.prices_by_key = self.prices.iter().fold(HashMap::new(), |mut acc, price| {
-            acc.entry(price.catalog_key.trim().to_owned())
+        self.prices_by_key = self.prices.iter().fold(HashMap::new(), |mut index, price| {
+            index
+                .entry(price.value.catalog_key.trim().to_owned())
                 .or_default()
                 .push(price.clone());
-            acc
+            index
         });
     }
 
@@ -229,6 +272,89 @@ impl SqlPricingCatalogSnapshot {
             prices: self.prices.len(),
             managed_provider_secrets: self.managed_provider_secrets.len(),
         }
+    }
+
+    fn visible_model_prices(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        model: &str,
+        matches: impl Fn(&ModelPrice) -> bool,
+    ) -> Vec<ModelPrice> {
+        let Some(prices) = self.prices_by_key.get(model.trim()) else {
+            return Vec::new();
+        };
+
+        let mut best_specificity: HashMap<ModelPriceBusinessIdentity, u8> = HashMap::new();
+        for price in prices {
+            if !matches(&price.value) {
+                continue;
+            }
+            let Some(specificity) = scope_specificity(
+                price.tenant_id,
+                price.organization_id,
+                tenant_id,
+                organization_id,
+            ) else {
+                continue;
+            };
+            let identity = ModelPriceBusinessIdentity::from(&price.value);
+            best_specificity
+                .entry(identity)
+                .and_modify(|current| *current = (*current).max(specificity))
+                .or_insert(specificity);
+        }
+
+        let mut emitted = HashSet::new();
+        prices
+            .iter()
+            .filter_map(|price| {
+                if !matches(&price.value) {
+                    return None;
+                }
+                let specificity = scope_specificity(
+                    price.tenant_id,
+                    price.organization_id,
+                    tenant_id,
+                    organization_id,
+                )?;
+                let identity = ModelPriceBusinessIdentity::from(&price.value);
+                if best_specificity.get(&identity) != Some(&specificity)
+                    || !emitted.insert(identity)
+                {
+                    return None;
+                }
+                Some(price.value.clone())
+            })
+            .collect()
+    }
+
+    fn scoped_pricing_plan(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        plan_code: &str,
+    ) -> Option<PricingPlan> {
+        let plans = self.pricing_plans_by_code.get(plan_code.trim())?;
+        let mut selected: Option<(u8, &PricingPlan)> = None;
+        for plan in plans {
+            let Some(specificity) = scope_specificity(
+                plan.tenant_id,
+                plan.organization_id,
+                tenant_id,
+                organization_id,
+            ) else {
+                continue;
+            };
+            if selected
+                .as_ref()
+                .map(|(current, _)| specificity > *current)
+                .unwrap_or(true)
+            {
+                selected = Some((specificity, &plan.value));
+            }
+        }
+        selected.map(|(_, plan)| plan.clone())
     }
 }
 
@@ -310,6 +436,38 @@ impl PricingCatalog for RefreshableSqlPricingCatalog {
             .list_model_prices_for_side(model, price_side)
     }
 
+    fn list_model_prices_for_scope(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        model: &str,
+        price_side: PriceSide,
+        billing_meter: BillingMeter,
+    ) -> Vec<ModelPrice> {
+        self.current_snapshot().list_model_prices_for_scope(
+            tenant_id,
+            organization_id,
+            model,
+            price_side,
+            billing_meter,
+        )
+    }
+
+    fn list_model_prices_for_scope_side(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        model: &str,
+        price_side: PriceSide,
+    ) -> Vec<ModelPrice> {
+        self.current_snapshot().list_model_prices_for_scope_side(
+            tenant_id,
+            organization_id,
+            model,
+            price_side,
+        )
+    }
+
     fn find_api_key(&self, api_key_id: i64) -> Option<GatewayApiKey> {
         self.current_snapshot().find_api_key(api_key_id)
     }
@@ -346,6 +504,16 @@ impl PricingCatalog for RefreshableSqlPricingCatalog {
         self.current_snapshot().find_pricing_plan(plan_code)
     }
 
+    fn find_pricing_plan_for_scope(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        plan_code: &str,
+    ) -> Option<PricingPlan> {
+        self.current_snapshot()
+            .find_pricing_plan_for_scope(tenant_id, organization_id, plan_code)
+    }
+
     fn find_model(&self, model: &str) -> Option<AiModel> {
         self.current_snapshot().find_model(model)
     }
@@ -377,6 +545,27 @@ impl PricingCatalog for RefreshableSqlPricingCatalog {
         pricing_plan_code: Option<&str>,
     ) -> Option<ModelPrice> {
         self.current_snapshot().find_model_price(
+            model,
+            price_side,
+            billing_meter,
+            provider_code,
+            pricing_plan_code,
+        )
+    }
+
+    fn find_model_price_for_scope(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        model: &str,
+        price_side: PriceSide,
+        billing_meter: BillingMeter,
+        provider_code: Option<&str>,
+        pricing_plan_code: Option<&str>,
+    ) -> Option<ModelPrice> {
+        self.current_snapshot().find_model_price_for_scope(
+            tenant_id,
+            organization_id,
             model,
             price_side,
             billing_meter,
@@ -440,31 +629,38 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
         price_side: PriceSide,
         billing_meter: BillingMeter,
     ) -> Vec<ModelPrice> {
-        self.prices_by_key
-            .get(model.trim())
-            .map(|prices| {
-                prices
-                    .iter()
-                    .filter(|price| {
-                        price.price_side == price_side && price.billing_meter == billing_meter
-                    })
-                    .cloned()
-                    .collect()
-            })
-            .unwrap_or_default()
+        self.visible_model_prices(0, 0, model, |price| {
+            price.price_side == price_side && price.billing_meter == billing_meter
+        })
     }
 
     fn list_model_prices_for_side(&self, model: &str, price_side: PriceSide) -> Vec<ModelPrice> {
-        self.prices_by_key
-            .get(model.trim())
-            .map(|prices| {
-                prices
-                    .iter()
-                    .filter(|price| price.price_side == price_side)
-                    .cloned()
-                    .collect()
-            })
-            .unwrap_or_default()
+        self.visible_model_prices(0, 0, model, |price| price.price_side == price_side)
+    }
+
+    fn list_model_prices_for_scope(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        model: &str,
+        price_side: PriceSide,
+        billing_meter: BillingMeter,
+    ) -> Vec<ModelPrice> {
+        self.visible_model_prices(tenant_id, organization_id, model, |price| {
+            price.price_side == price_side && price.billing_meter == billing_meter
+        })
+    }
+
+    fn list_model_prices_for_scope_side(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        model: &str,
+        price_side: PriceSide,
+    ) -> Vec<ModelPrice> {
+        self.visible_model_prices(tenant_id, organization_id, model, |price| {
+            price.price_side == price_side
+        })
     }
 
     fn find_api_key(&self, api_key_id: i64) -> Option<GatewayApiKey> {
@@ -508,7 +704,16 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
     }
 
     fn find_pricing_plan(&self, plan_code: &str) -> Option<PricingPlan> {
-        self.pricing_plans_by_code.get(plan_code).cloned()
+        self.scoped_pricing_plan(0, 0, plan_code)
+    }
+
+    fn find_pricing_plan_for_scope(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        plan_code: &str,
+    ) -> Option<PricingPlan> {
+        self.scoped_pricing_plan(tenant_id, organization_id, plan_code)
     }
 
     fn find_model(&self, model: &str) -> Option<AiModel> {
@@ -546,17 +751,35 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
         provider_code: Option<&str>,
         pricing_plan_code: Option<&str>,
     ) -> Option<ModelPrice> {
-        self.prices_by_key.get(model.trim()).and_then(|prices| {
-            prices
-                .iter()
-                .find(|price| {
-                    price.price_side == price_side
-                        && price.billing_meter == billing_meter
-                        && option_matches(price.provider_code.as_deref(), provider_code)
-                        && option_matches(price.pricing_plan_code.as_deref(), pricing_plan_code)
-                })
-                .cloned()
+        self.find_model_price_for_scope(
+            0,
+            0,
+            model,
+            price_side,
+            billing_meter,
+            provider_code,
+            pricing_plan_code,
+        )
+    }
+
+    fn find_model_price_for_scope(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        model: &str,
+        price_side: PriceSide,
+        billing_meter: BillingMeter,
+        provider_code: Option<&str>,
+        pricing_plan_code: Option<&str>,
+    ) -> Option<ModelPrice> {
+        self.visible_model_prices(tenant_id, organization_id, model, |price| {
+            price.price_side == price_side
+                && price.billing_meter == billing_meter
+                && option_matches(price.provider_code.as_deref(), provider_code)
+                && option_matches(price.pricing_plan_code.as_deref(), pricing_plan_code)
         })
+        .into_iter()
+        .next()
     }
 }
 
@@ -564,21 +787,70 @@ fn map_rows<R, T>(rows: Vec<R>, mapper: impl Fn(R) -> DomainResult<T>) -> Domain
     rows.into_iter().map(mapper).collect()
 }
 
-fn pricing_plans_with_standard_fallback(
-    mut pricing_plans: Vec<PricingPlan>,
-) -> DomainResult<Vec<PricingPlan>> {
-    if pricing_plans
-        .iter()
-        .all(|plan| plan.plan_code.trim() != "standard")
-    {
-        pricing_plans.push(PricingPlan::new(
-            "standard",
-            PriceSide::OfficialReference,
-            DecimalValue::parse("1.000000")?,
-            Money::usd("0.000000")?,
-        ));
+fn scoped_pricing_plans_with_standard_fallback(
+    rows: Vec<PricingPlanRow>,
+) -> DomainResult<Vec<ScopedPricingPlan>> {
+    let mut pricing_plans = rows
+        .into_iter()
+        .map(|row| {
+            let tenant_id = row.tenant_id;
+            let organization_id = row.organization_id;
+            Ok(ScopedPricingPlan {
+                tenant_id,
+                organization_id,
+                value: row.try_into_domain()?,
+            })
+        })
+        .collect::<DomainResult<Vec<_>>>()?;
+    if pricing_plans.iter().all(|plan| {
+        plan.tenant_id != 0
+            || plan.organization_id != 0
+            || plan.value.plan_code.trim() != "standard"
+    }) {
+        pricing_plans.push(ScopedPricingPlan {
+            tenant_id: 0,
+            organization_id: 0,
+            value: PricingPlan::new(
+                "standard",
+                PriceSide::OfficialReference,
+                DecimalValue::parse("1.000000")?,
+                Money::usd("0.000000")?,
+            ),
+        });
     }
     Ok(pricing_plans)
+}
+
+fn map_scoped_model_prices(rows: Vec<ModelPriceRow>) -> DomainResult<Vec<ScopedModelPrice>> {
+    rows.into_iter()
+        .map(|row| {
+            let tenant_id = row.tenant_id;
+            let organization_id = row.organization_id;
+            Ok(ScopedModelPrice {
+                tenant_id,
+                organization_id,
+                value: row.try_into_domain()?,
+            })
+        })
+        .collect()
+}
+
+fn scope_specificity(
+    candidate_tenant_id: i64,
+    candidate_organization_id: i64,
+    tenant_id: i64,
+    organization_id: i64,
+) -> Option<u8> {
+    if candidate_tenant_id == tenant_id && candidate_organization_id == organization_id {
+        return Some(3);
+    }
+    if tenant_id > 0 && candidate_tenant_id == tenant_id && candidate_organization_id == 0 {
+        return Some(2);
+    }
+    if candidate_tenant_id == 0 && candidate_organization_id == 0 {
+        return Some(1);
+    }
+    None
 }
 
 fn has_text(value: Option<&str>) -> bool {

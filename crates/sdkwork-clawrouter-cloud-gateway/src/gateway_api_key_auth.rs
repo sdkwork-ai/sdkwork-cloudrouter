@@ -1,9 +1,7 @@
 use axum::http::{HeaderMap, StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use axum::Json;
-use sdkwork_claw_http::{
-    sanitize_sensitive_query_in_uri, ApiKeyIdentity, QueryStringApiKeyPolicy,
-};
+use sdkwork_claw_http::{sanitize_sensitive_query_in_uri, ApiKeyIdentity, QueryStringApiKeyPolicy};
 use sdkwork_clawrouter_router_service::application::{
     ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
 };

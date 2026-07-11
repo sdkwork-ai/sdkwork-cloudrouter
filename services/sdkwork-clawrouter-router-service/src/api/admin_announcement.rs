@@ -175,9 +175,12 @@ async fn create_announcement(
     };
 
     match state.store.create_announcement(command).await {
-        Ok(item) => json_created_response(None, AdminAnnouncementItemEnvelope {
-            item: to_item_response(item),
-        }),
+        Ok(item) => json_created_response(
+            None,
+            AdminAnnouncementItemEnvelope {
+                item: to_item_response(item),
+            },
+        ),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
             announcement_system_response("announcement command store is unavailable", error)

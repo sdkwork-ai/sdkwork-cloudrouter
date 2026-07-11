@@ -725,6 +725,8 @@ impl ChannelGroupRow {
 }
 
 pub struct PricingPlanRow {
+    pub tenant_id: i64,
+    pub organization_id: i64,
     pub plan_code: String,
     pub base_price_side_code: String,
     pub default_multiplier: String,
@@ -744,6 +746,8 @@ impl PricingPlanRow {
 }
 
 pub struct ModelPriceRow {
+    pub tenant_id: i64,
+    pub organization_id: i64,
     pub catalog_key: String,
     pub model: String,
     pub region_code: String,

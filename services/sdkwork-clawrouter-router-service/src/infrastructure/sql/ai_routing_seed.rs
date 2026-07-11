@@ -31,7 +31,7 @@ const SYSTEM_DATA_SCOPE: i32 = 1;
 const DEFAULT_ADMIN_DATA_SCOPE: i32 = 1;
 const MAX_SEED_UUID_LENGTH: usize = 64;
 const DEFAULT_OPENAI_BASE_URL: &str = "https://api.openai.com/v1";
-const DEFAULT_ADMIN_CHANNEL_SEED_SOURCE: &str = "default-admin-channel-seed.v1|openai-default|openai|official|openai_compatible|https://api.openai.com/v1";
+const DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE: &str = "default-admin-routing-topology-seed.v2|openai-default|standard-group|official.openai.full|openai|official|openai_compatible|https://api.openai.com/v1";
 
 #[derive(Debug)]
 pub(crate) enum AiRoutingSeedLoadError {
@@ -147,6 +147,18 @@ struct DefaultAdminChannelSeed {
     weight: i32,
 }
 
+#[derive(Debug, Clone, Copy)]
+struct DefaultAdminChannelGroupSeed {
+    group_code: &'static str,
+    group_name: &'static str,
+    provider_code: &'static str,
+    group_type: &'static str,
+    channel_code: &'static str,
+    resource_group_code: &'static str,
+    priority: i32,
+    weight: i32,
+}
+
 static DEFAULT_ADMIN_CHANNELS: [DefaultAdminChannelSeed; 1] = [DefaultAdminChannelSeed {
     channel_code: "openai-default",
     channel_name: "OpenAI Default",
@@ -157,6 +169,18 @@ static DEFAULT_ADMIN_CHANNELS: [DefaultAdminChannelSeed; 1] = [DefaultAdminChann
     priority: 100,
     weight: 100,
 }];
+
+static DEFAULT_ADMIN_CHANNEL_GROUPS: [DefaultAdminChannelGroupSeed; 1] =
+    [DefaultAdminChannelGroupSeed {
+        group_code: "standard-group",
+        group_name: "Standard Group",
+        provider_code: "openai",
+        group_type: "official",
+        channel_code: "openai-default",
+        resource_group_code: "official.openai.full",
+        priority: 100,
+        weight: 100,
+    }];
 
 impl EndpointSeedDefinition<'_> {
     fn api_code(&self) -> &str {
@@ -254,6 +278,7 @@ impl AiRoutingSeedCatalog {
             "resourceCount": self.resources.len(),
             "resourceGroupCount": self.resource_groups.len(),
             "defaultAdminChannelCount": default_admin_channels().len(),
+            "defaultAdminChannelGroupCount": default_admin_channel_groups().len(),
             "sourceHash": source_hash(),
         })
         .to_string()
@@ -274,6 +299,8 @@ pub(crate) async fn import_sqlite_ai_routing_seed(pool: &SqlitePool) -> Result<(
     import_sqlite_resource_group_items(&mut tx, &catalog).await?;
     import_sqlite_default_admin_channels(&mut tx, &catalog).await?;
     import_sqlite_default_admin_channel_credentials(&mut tx, &catalog).await?;
+    import_sqlite_default_admin_channel_groups(&mut tx, &catalog).await?;
+    import_sqlite_default_admin_channel_group_bindings(&mut tx, &catalog).await?;
     tx.commit().await?;
     Ok(())
 }
@@ -288,6 +315,8 @@ pub(crate) async fn import_postgres_ai_routing_seed(pool: &PgPool) -> Result<(),
     import_postgres_resource_group_items(&mut tx, &catalog).await?;
     import_postgres_default_admin_channels(&mut tx, &catalog).await?;
     import_postgres_default_admin_channel_credentials(&mut tx, &catalog).await?;
+    import_postgres_default_admin_channel_groups(&mut tx, &catalog).await?;
+    import_postgres_default_admin_channel_group_bindings(&mut tx, &catalog).await?;
     tx.commit().await?;
     Ok(())
 }
@@ -314,12 +343,18 @@ pub(crate) async fn sqlite_ai_routing_seed_complete(
     let default_channel_codes = sqlite_default_admin_channel_codes(pool).await?;
     let default_channel_credential_codes =
         sqlite_default_admin_channel_credential_codes(pool).await?;
+    let default_channel_group_codes = sqlite_default_admin_channel_group_codes(pool).await?;
+    let default_channel_group_binding_codes =
+        sqlite_default_admin_channel_group_binding_codes(pool).await?;
 
     Ok(expected_resource_codes(&catalog).is_subset(&resource_codes)
         && expected_group_codes(&catalog).is_subset(&group_codes)
         && expected_endpoint_codes(&catalog).is_subset(&endpoint_codes)
         && expected_default_admin_channel_codes().is_subset(&default_channel_codes)
         && expected_default_admin_channel_codes().is_subset(&default_channel_credential_codes)
+        && expected_default_admin_channel_group_codes().is_subset(&default_channel_group_codes)
+        && expected_default_admin_channel_group_codes()
+            .is_subset(&default_channel_group_binding_codes)
         && sqlite_resource_group_item_count(pool, &catalog).await?
             >= expected_resource_group_item_count(&catalog))
 }
@@ -344,12 +379,18 @@ pub(crate) async fn postgres_ai_routing_seed_complete(pool: &PgPool) -> Result<b
     let default_channel_codes = postgres_default_admin_channel_codes(pool).await?;
     let default_channel_credential_codes =
         postgres_default_admin_channel_credential_codes(pool).await?;
+    let default_channel_group_codes = postgres_default_admin_channel_group_codes(pool).await?;
+    let default_channel_group_binding_codes =
+        postgres_default_admin_channel_group_binding_codes(pool).await?;
 
     Ok(expected_resource_codes(&catalog).is_subset(&resource_codes)
         && expected_group_codes(&catalog).is_subset(&group_codes)
         && expected_endpoint_codes(&catalog).is_subset(&endpoint_codes)
         && expected_default_admin_channel_codes().is_subset(&default_channel_codes)
         && expected_default_admin_channel_codes().is_subset(&default_channel_credential_codes)
+        && expected_default_admin_channel_group_codes().is_subset(&default_channel_group_codes)
+        && expected_default_admin_channel_group_codes()
+            .is_subset(&default_channel_group_binding_codes)
         && postgres_resource_group_item_count(pool, &catalog).await?
             >= expected_resource_group_item_count(&catalog))
 }
@@ -1022,16 +1063,21 @@ async fn import_sqlite_default_admin_channel_credentials(
               AND c.channel_code = ?
               AND c.deleted_at IS NULL
             ON CONFLICT(uuid) DO UPDATE SET
+                data_scope = excluded.data_scope,
+                status = excluded.status,
                 channel_id = excluded.channel_id,
                 provider_code = excluded.provider_code,
                 channel_code = excluded.channel_code,
                 credential_name = excluded.credential_name,
                 base_url = excluded.base_url,
                 auth_config = excluded.auth_config,
+                credential_ref = excluded.credential_ref,
                 credential_hash = excluded.credential_hash,
                 masked_label = excluded.masked_label,
                 priority = excluded.priority,
                 weight = excluded.weight,
+                health_status = excluded.health_status,
+                consecutive_error_count = excluded.consecutive_error_count,
                 metadata = excluded.metadata,
                 deleted_at = NULL,
                 deleted_by = NULL
@@ -1092,16 +1138,21 @@ async fn import_postgres_default_admin_channel_credentials(
               AND c.channel_code = $16
               AND c.deleted_at IS NULL
             ON CONFLICT(uuid) DO UPDATE SET
+                data_scope = excluded.data_scope,
+                status = excluded.status,
                 channel_id = excluded.channel_id,
                 provider_code = excluded.provider_code,
                 channel_code = excluded.channel_code,
                 credential_name = excluded.credential_name,
                 base_url = excluded.base_url,
                 auth_config = excluded.auth_config,
+                credential_ref = excluded.credential_ref,
                 credential_hash = excluded.credential_hash,
                 masked_label = excluded.masked_label,
                 priority = excluded.priority,
                 weight = excluded.weight,
+                health_status = excluded.health_status,
+                consecutive_error_count = excluded.consecutive_error_count,
                 metadata = excluded.metadata,
                 deleted_at = NULL,
                 deleted_by = NULL
@@ -1138,6 +1189,543 @@ async fn import_postgres_default_admin_channel_credentials(
         }
     }
     Ok(())
+}
+
+async fn import_sqlite_default_admin_channel_groups(
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    catalog: &AiRoutingSeedCatalog,
+) -> Result<(), sqlx::Error> {
+    for group in default_admin_channel_groups() {
+        sqlx::query(
+            r#"
+            INSERT INTO ai_channel_group
+                (uuid, tenant_id, organization_id, data_scope, status, metadata,
+                 group_code, group_name, description, provider_code, group_type, environment,
+                 pricing_plan_code, rate_multiplier, price_reference_mode,
+                 official_price_multiplier, billing_type, allowed_origin, id)
+            VALUES
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'standard', '1.000000000000', 1,
+                 '1.000000000000', 1, '[]', ?)
+            ON CONFLICT(tenant_id, organization_id, group_code) DO UPDATE SET
+                data_scope = excluded.data_scope,
+                status = excluded.status,
+                group_name = excluded.group_name,
+                description = excluded.description,
+                provider_code = excluded.provider_code,
+                group_type = excluded.group_type,
+                environment = excluded.environment,
+                pricing_plan_code = excluded.pricing_plan_code,
+                rate_multiplier = excluded.rate_multiplier,
+                price_reference_mode = excluded.price_reference_mode,
+                official_price_multiplier = excluded.official_price_multiplier,
+                billing_type = excluded.billing_type,
+                allowed_origin = excluded.allowed_origin,
+                metadata = excluded.metadata,
+                deleted_at = NULL,
+                deleted_by = NULL
+            "#,
+        )
+        .bind(stable_default_admin_channel_group_uuid(group))
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(DEFAULT_ADMIN_DATA_SCOPE)
+        .bind(ACTIVE_STATUS)
+        .bind(default_admin_channel_group_metadata(catalog, *group))
+        .bind(group.group_code)
+        .bind(group.group_name)
+        .bind(format!(
+            "Default {} routing group backed by {}",
+            group.provider_code, group.resource_group_code
+        ))
+        .bind(group.provider_code)
+        .bind(group.group_type)
+        .bind(stable_default_admin_channel_group_id(group))
+        .execute(&mut **tx)
+        .await?;
+    }
+    Ok(())
+}
+
+async fn import_postgres_default_admin_channel_groups(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    catalog: &AiRoutingSeedCatalog,
+) -> Result<(), sqlx::Error> {
+    for group in default_admin_channel_groups() {
+        sqlx::query(
+            r#"
+            INSERT INTO ai_channel_group
+                (uuid, tenant_id, organization_id, data_scope, status, metadata,
+                 group_code, group_name, description, provider_code, group_type, environment,
+                 pricing_plan_code, rate_multiplier, price_reference_mode,
+                 official_price_multiplier, billing_type, allowed_origin, id)
+            VALUES
+                ($1, $2::bigint, $3::bigint, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, 1,
+                 'standard', '1.000000000000'::numeric, 1, '1.000000000000'::numeric, 1,
+                 '[]'::jsonb, $12)
+            ON CONFLICT(tenant_id, organization_id, group_code) DO UPDATE SET
+                data_scope = excluded.data_scope,
+                status = excluded.status,
+                group_name = excluded.group_name,
+                description = excluded.description,
+                provider_code = excluded.provider_code,
+                group_type = excluded.group_type,
+                environment = excluded.environment,
+                pricing_plan_code = excluded.pricing_plan_code,
+                rate_multiplier = excluded.rate_multiplier,
+                price_reference_mode = excluded.price_reference_mode,
+                official_price_multiplier = excluded.official_price_multiplier,
+                billing_type = excluded.billing_type,
+                allowed_origin = excluded.allowed_origin,
+                metadata = excluded.metadata,
+                deleted_at = NULL,
+                deleted_by = NULL
+            "#,
+        )
+        .bind(stable_default_admin_channel_group_uuid(group))
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(DEFAULT_ADMIN_DATA_SCOPE)
+        .bind(ACTIVE_STATUS)
+        .bind(default_admin_channel_group_metadata(catalog, *group))
+        .bind(group.group_code)
+        .bind(group.group_name)
+        .bind(format!(
+            "Default {} routing group backed by {}",
+            group.provider_code, group.resource_group_code
+        ))
+        .bind(group.provider_code)
+        .bind(group.group_type)
+        .bind(stable_default_admin_channel_group_id(group))
+        .execute(&mut **tx)
+        .await?;
+    }
+    Ok(())
+}
+
+async fn import_sqlite_default_admin_channel_group_bindings(
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    catalog: &AiRoutingSeedCatalog,
+) -> Result<(), sqlx::Error> {
+    for group in default_admin_channel_groups() {
+        let channel_id = sqlite_seed_channel_id(tx, group.channel_code).await?;
+        let channel_group_id = sqlite_seed_channel_group_id(tx, group.group_code).await?;
+        let resource_group_id =
+            sqlite_seed_resource_group_id(tx, group.resource_group_code).await?;
+        import_sqlite_default_admin_channel_group_member(
+            tx,
+            catalog,
+            *group,
+            channel_group_id,
+            channel_id,
+        )
+        .await?;
+        import_sqlite_default_admin_channel_resource(
+            tx,
+            catalog,
+            *group,
+            channel_id,
+            resource_group_id,
+        )
+        .await?;
+        import_sqlite_default_admin_channel_group_resource(
+            tx,
+            catalog,
+            *group,
+            channel_group_id,
+            resource_group_id,
+        )
+        .await?;
+    }
+    Ok(())
+}
+
+async fn import_postgres_default_admin_channel_group_bindings(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    catalog: &AiRoutingSeedCatalog,
+) -> Result<(), sqlx::Error> {
+    for group in default_admin_channel_groups() {
+        let channel_id = postgres_seed_channel_id(tx, group.channel_code).await?;
+        let channel_group_id = postgres_seed_channel_group_id(tx, group.group_code).await?;
+        let resource_group_id =
+            postgres_seed_resource_group_id(tx, group.resource_group_code).await?;
+        import_postgres_default_admin_channel_group_member(
+            tx,
+            catalog,
+            *group,
+            channel_group_id,
+            channel_id,
+        )
+        .await?;
+        import_postgres_default_admin_channel_resource(
+            tx,
+            catalog,
+            *group,
+            channel_id,
+            resource_group_id,
+        )
+        .await?;
+        import_postgres_default_admin_channel_group_resource(
+            tx,
+            catalog,
+            *group,
+            channel_group_id,
+            resource_group_id,
+        )
+        .await?;
+    }
+    Ok(())
+}
+
+async fn import_sqlite_default_admin_channel_group_member(
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    catalog: &AiRoutingSeedCatalog,
+    group: DefaultAdminChannelGroupSeed,
+    channel_group_id: i64,
+    channel_id: i64,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        r#"
+        INSERT INTO ai_channel_group_member
+            (uuid, tenant_id, organization_id, data_scope, status, metadata,
+             channel_group_id, channel_id, priority, weight, enabled, id)
+        VALUES
+            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+        ON CONFLICT(tenant_id, organization_id, channel_group_id, channel_id) DO UPDATE SET
+            data_scope = excluded.data_scope,
+            status = excluded.status,
+            priority = excluded.priority,
+            weight = excluded.weight,
+            enabled = excluded.enabled,
+            metadata = excluded.metadata,
+            deleted_at = NULL,
+            deleted_by = NULL
+        "#,
+    )
+    .bind(stable_default_admin_channel_group_member_uuid(&group))
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .bind(DEFAULT_ADMIN_DATA_SCOPE)
+    .bind(ACTIVE_STATUS)
+    .bind(default_admin_channel_group_member_metadata(catalog, group))
+    .bind(channel_group_id)
+    .bind(channel_id)
+    .bind(group.priority)
+    .bind(group.weight)
+    .bind(stable_default_admin_channel_group_member_id(&group))
+    .execute(&mut **tx)
+    .await?;
+    Ok(())
+}
+
+async fn import_postgres_default_admin_channel_group_member(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    catalog: &AiRoutingSeedCatalog,
+    group: DefaultAdminChannelGroupSeed,
+    channel_group_id: i64,
+    channel_id: i64,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        r#"
+        INSERT INTO ai_channel_group_member
+            (uuid, tenant_id, organization_id, data_scope, status, metadata,
+             channel_group_id, channel_id, priority, weight, enabled, id)
+        VALUES
+            ($1, $2::bigint, $3::bigint, $4, $5, $6::jsonb, $7, $8, $9, $10, TRUE, $11)
+        ON CONFLICT(tenant_id, organization_id, channel_group_id, channel_id) DO UPDATE SET
+            data_scope = excluded.data_scope,
+            status = excluded.status,
+            priority = excluded.priority,
+            weight = excluded.weight,
+            enabled = excluded.enabled,
+            metadata = excluded.metadata,
+            deleted_at = NULL,
+            deleted_by = NULL
+        "#,
+    )
+    .bind(stable_default_admin_channel_group_member_uuid(&group))
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .bind(DEFAULT_ADMIN_DATA_SCOPE)
+    .bind(ACTIVE_STATUS)
+    .bind(default_admin_channel_group_member_metadata(catalog, group))
+    .bind(channel_group_id)
+    .bind(channel_id)
+    .bind(group.priority)
+    .bind(group.weight)
+    .bind(stable_default_admin_channel_group_member_id(&group))
+    .execute(&mut **tx)
+    .await?;
+    Ok(())
+}
+
+async fn import_sqlite_default_admin_channel_resource(
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    catalog: &AiRoutingSeedCatalog,
+    group: DefaultAdminChannelGroupSeed,
+    channel_id: i64,
+    resource_group_id: i64,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        r#"
+        INSERT INTO ai_channel_resource
+            (uuid, tenant_id, organization_id, data_scope, status, metadata,
+             channel_id, provider_code, channel_code, resource_id, resource_code,
+             resource_group_id, resource_group_code, grant_type, priority, weight, id)
+        VALUES
+            (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, '', ?, ?, 'allow', ?, ?, ?)
+        ON CONFLICT(tenant_id, organization_id, channel_id, resource_code, resource_group_code)
+        DO UPDATE SET
+            data_scope = excluded.data_scope,
+            status = excluded.status,
+            provider_code = excluded.provider_code,
+            channel_code = excluded.channel_code,
+            resource_id = excluded.resource_id,
+            resource_group_id = excluded.resource_group_id,
+            grant_type = excluded.grant_type,
+            priority = excluded.priority,
+            weight = excluded.weight,
+            metadata = excluded.metadata,
+            deleted_at = NULL,
+            deleted_by = NULL
+        "#,
+    )
+    .bind(stable_default_admin_channel_resource_uuid(&group))
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .bind(DEFAULT_ADMIN_DATA_SCOPE)
+    .bind(ACTIVE_STATUS)
+    .bind(default_admin_channel_resource_metadata(catalog, group))
+    .bind(channel_id)
+    .bind(group.provider_code)
+    .bind(group.channel_code)
+    .bind(resource_group_id)
+    .bind(group.resource_group_code)
+    .bind(group.priority)
+    .bind(group.weight)
+    .bind(stable_default_admin_channel_resource_id(&group))
+    .execute(&mut **tx)
+    .await?;
+    Ok(())
+}
+
+async fn import_postgres_default_admin_channel_resource(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    catalog: &AiRoutingSeedCatalog,
+    group: DefaultAdminChannelGroupSeed,
+    channel_id: i64,
+    resource_group_id: i64,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        r#"
+        INSERT INTO ai_channel_resource
+            (uuid, tenant_id, organization_id, data_scope, status, metadata,
+             channel_id, provider_code, channel_code, resource_id, resource_code,
+             resource_group_id, resource_group_code, grant_type, priority, weight, id)
+        VALUES
+            ($1, $2::bigint, $3::bigint, $4, $5, $6::jsonb, $7, $8, $9, NULL, '', $10,
+             $11, 'allow', $12, $13, $14)
+        ON CONFLICT(tenant_id, organization_id, channel_id, resource_code, resource_group_code)
+        DO UPDATE SET
+            data_scope = excluded.data_scope,
+            status = excluded.status,
+            provider_code = excluded.provider_code,
+            channel_code = excluded.channel_code,
+            resource_id = excluded.resource_id,
+            resource_group_id = excluded.resource_group_id,
+            grant_type = excluded.grant_type,
+            priority = excluded.priority,
+            weight = excluded.weight,
+            metadata = excluded.metadata,
+            deleted_at = NULL,
+            deleted_by = NULL
+        "#,
+    )
+    .bind(stable_default_admin_channel_resource_uuid(&group))
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .bind(DEFAULT_ADMIN_DATA_SCOPE)
+    .bind(ACTIVE_STATUS)
+    .bind(default_admin_channel_resource_metadata(catalog, group))
+    .bind(channel_id)
+    .bind(group.provider_code)
+    .bind(group.channel_code)
+    .bind(resource_group_id)
+    .bind(group.resource_group_code)
+    .bind(group.priority)
+    .bind(group.weight)
+    .bind(stable_default_admin_channel_resource_id(&group))
+    .execute(&mut **tx)
+    .await?;
+    Ok(())
+}
+
+async fn import_sqlite_default_admin_channel_group_resource(
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    catalog: &AiRoutingSeedCatalog,
+    group: DefaultAdminChannelGroupSeed,
+    channel_group_id: i64,
+    resource_group_id: i64,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        r#"
+        INSERT INTO ai_channel_group_resource
+            (uuid, tenant_id, organization_id, data_scope, status, metadata,
+             channel_group_id, resource_id, resource_code, resource_group_id,
+             resource_group_code, grant_type, priority, id)
+        VALUES
+            (?, ?, ?, ?, ?, ?, ?, NULL, '', ?, ?, 'allow', ?, ?)
+        ON CONFLICT(tenant_id, organization_id, channel_group_id, resource_code, resource_group_code)
+        DO UPDATE SET
+            data_scope = excluded.data_scope,
+            status = excluded.status,
+            resource_id = excluded.resource_id,
+            resource_group_id = excluded.resource_group_id,
+            grant_type = excluded.grant_type,
+            priority = excluded.priority,
+            metadata = excluded.metadata,
+            deleted_at = NULL,
+            deleted_by = NULL
+        "#,
+    )
+    .bind(stable_default_admin_channel_group_resource_uuid(&group))
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .bind(DEFAULT_ADMIN_DATA_SCOPE)
+    .bind(ACTIVE_STATUS)
+    .bind(default_admin_channel_group_resource_metadata(catalog, group))
+    .bind(channel_group_id)
+    .bind(resource_group_id)
+    .bind(group.resource_group_code)
+    .bind(group.priority)
+    .bind(stable_default_admin_channel_group_resource_id(&group))
+    .execute(&mut **tx)
+    .await?;
+    Ok(())
+}
+
+async fn import_postgres_default_admin_channel_group_resource(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    catalog: &AiRoutingSeedCatalog,
+    group: DefaultAdminChannelGroupSeed,
+    channel_group_id: i64,
+    resource_group_id: i64,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        r#"
+        INSERT INTO ai_channel_group_resource
+            (uuid, tenant_id, organization_id, data_scope, status, metadata,
+             channel_group_id, resource_id, resource_code, resource_group_id,
+             resource_group_code, grant_type, priority, id)
+        VALUES
+            ($1, $2::bigint, $3::bigint, $4, $5, $6::jsonb, $7, NULL, '', $8, $9,
+             'allow', $10, $11)
+        ON CONFLICT(tenant_id, organization_id, channel_group_id, resource_code, resource_group_code)
+        DO UPDATE SET
+            data_scope = excluded.data_scope,
+            status = excluded.status,
+            resource_id = excluded.resource_id,
+            resource_group_id = excluded.resource_group_id,
+            grant_type = excluded.grant_type,
+            priority = excluded.priority,
+            metadata = excluded.metadata,
+            deleted_at = NULL,
+            deleted_by = NULL
+        "#,
+    )
+    .bind(stable_default_admin_channel_group_resource_uuid(&group))
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .bind(DEFAULT_ADMIN_DATA_SCOPE)
+    .bind(ACTIVE_STATUS)
+    .bind(default_admin_channel_group_resource_metadata(catalog, group))
+    .bind(channel_group_id)
+    .bind(resource_group_id)
+    .bind(group.resource_group_code)
+    .bind(group.priority)
+    .bind(stable_default_admin_channel_group_resource_id(&group))
+    .execute(&mut **tx)
+    .await?;
+    Ok(())
+}
+
+async fn sqlite_seed_channel_id(
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    channel_code: &str,
+) -> Result<i64, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT id FROM ai_channel WHERE tenant_id = ? AND organization_id = ? AND channel_code = ? AND deleted_at IS NULL LIMIT 1",
+    )
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .bind(channel_code)
+    .fetch_one(&mut **tx)
+    .await
+}
+
+async fn postgres_seed_channel_id(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    channel_code: &str,
+) -> Result<i64, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT id FROM ai_channel WHERE tenant_id = $1::bigint AND organization_id = $2::bigint AND channel_code = $3 AND deleted_at IS NULL LIMIT 1",
+    )
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .bind(channel_code)
+    .fetch_one(&mut **tx)
+    .await
+}
+
+async fn sqlite_seed_channel_group_id(
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    group_code: &str,
+) -> Result<i64, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT id FROM ai_channel_group WHERE tenant_id = ? AND organization_id = ? AND group_code = ? AND deleted_at IS NULL LIMIT 1",
+    )
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .bind(group_code)
+    .fetch_one(&mut **tx)
+    .await
+}
+
+async fn postgres_seed_channel_group_id(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    group_code: &str,
+) -> Result<i64, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT id FROM ai_channel_group WHERE tenant_id = $1::bigint AND organization_id = $2::bigint AND group_code = $3 AND deleted_at IS NULL LIMIT 1",
+    )
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .bind(group_code)
+    .fetch_one(&mut **tx)
+    .await
+}
+
+async fn sqlite_seed_resource_group_id(
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    group_code: &str,
+) -> Result<i64, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT id FROM ai_resource_group WHERE tenant_id = 0 AND organization_id = 0 AND group_code = ? AND status = 1 AND deleted_at IS NULL LIMIT 1",
+    )
+    .bind(group_code)
+    .fetch_one(&mut **tx)
+    .await
+}
+
+async fn postgres_seed_resource_group_id(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    group_code: &str,
+) -> Result<i64, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT id FROM ai_resource_group WHERE tenant_id = 0 AND organization_id = 0 AND group_code = $1 AND status = 1 AND deleted_at IS NULL LIMIT 1",
+    )
+    .bind(group_code)
+    .fetch_one(&mut **tx)
+    .await
 }
 
 fn resource_bundles() -> Result<Vec<ResourceBundle>, AiRoutingSeedLoadError> {
@@ -1323,6 +1911,10 @@ fn default_admin_channels() -> &'static [DefaultAdminChannelSeed] {
     &DEFAULT_ADMIN_CHANNELS
 }
 
+fn default_admin_channel_groups() -> &'static [DefaultAdminChannelGroupSeed] {
+    &DEFAULT_ADMIN_CHANNEL_GROUPS
+}
+
 fn resource_upsert_sqlite() -> &'static str {
     r#"
     INSERT INTO ai_resource
@@ -1467,6 +2059,13 @@ fn expected_default_admin_channel_codes() -> BTreeSet<String> {
         .collect()
 }
 
+fn expected_default_admin_channel_group_codes() -> BTreeSet<String> {
+    default_admin_channel_groups()
+        .iter()
+        .map(|group| group.group_code.to_owned())
+        .collect()
+}
+
 fn expected_resource_group_item_count(catalog: &AiRoutingSeedCatalog) -> i64 {
     catalog
         .resource_groups
@@ -1593,6 +2192,73 @@ async fn sqlite_default_admin_channel_credential_codes(
         .collect())
 }
 
+async fn sqlite_default_admin_channel_group_codes(
+    pool: &SqlitePool,
+) -> Result<BTreeSet<String>, sqlx::Error> {
+    let rows = sqlx::query(
+        r#"
+        SELECT group_code
+        FROM ai_channel_group
+        WHERE tenant_id = ?
+          AND organization_id = ?
+          AND deleted_at IS NULL
+        "#,
+    )
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows
+        .into_iter()
+        .filter_map(|row| row.try_get::<String, _>(0).ok())
+        .collect())
+}
+
+async fn sqlite_default_admin_channel_group_binding_codes(
+    pool: &SqlitePool,
+) -> Result<BTreeSet<String>, sqlx::Error> {
+    let rows = sqlx::query(
+        r#"
+        SELECT DISTINCT g.group_code
+        FROM ai_channel_group g
+        JOIN ai_channel_group_member m
+          ON m.tenant_id = g.tenant_id
+         AND m.organization_id = g.organization_id
+         AND m.channel_group_id = g.id
+         AND m.deleted_at IS NULL
+        JOIN ai_channel c
+          ON c.tenant_id = m.tenant_id
+         AND c.organization_id = m.organization_id
+         AND c.id = m.channel_id
+         AND c.channel_code = 'openai-default'
+         AND c.deleted_at IS NULL
+        JOIN ai_channel_resource cr
+          ON cr.tenant_id = c.tenant_id
+         AND cr.organization_id = c.organization_id
+         AND cr.channel_id = c.id
+         AND cr.resource_group_code = 'official.openai.full'
+         AND cr.deleted_at IS NULL
+        JOIN ai_channel_group_resource gr
+          ON gr.tenant_id = g.tenant_id
+         AND gr.organization_id = g.organization_id
+         AND gr.channel_group_id = g.id
+         AND gr.resource_group_code = 'official.openai.full'
+         AND gr.deleted_at IS NULL
+        WHERE g.tenant_id = ?
+          AND g.organization_id = ?
+          AND g.deleted_at IS NULL
+        "#,
+    )
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows
+        .into_iter()
+        .filter_map(|row| row.try_get::<String, _>(0).ok())
+        .collect())
+}
+
 async fn postgres_default_admin_channel_codes(
     pool: &PgPool,
 ) -> Result<BTreeSet<String>, sqlx::Error> {
@@ -1633,6 +2299,73 @@ async fn postgres_default_admin_channel_credential_codes(
           AND cc.deleted_at IS NULL
           AND NULLIF(cc.base_url, '') IS NOT NULL
           AND NULLIF(cc.credential_ref, '') IS NOT NULL
+        "#,
+    )
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows
+        .into_iter()
+        .filter_map(|row| row.try_get::<String, _>(0).ok())
+        .collect())
+}
+
+async fn postgres_default_admin_channel_group_codes(
+    pool: &PgPool,
+) -> Result<BTreeSet<String>, sqlx::Error> {
+    let rows = sqlx::query(
+        r#"
+        SELECT group_code
+        FROM ai_channel_group
+        WHERE tenant_id = $1::bigint
+          AND organization_id = $2::bigint
+          AND deleted_at IS NULL
+        "#,
+    )
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows
+        .into_iter()
+        .filter_map(|row| row.try_get::<String, _>(0).ok())
+        .collect())
+}
+
+async fn postgres_default_admin_channel_group_binding_codes(
+    pool: &PgPool,
+) -> Result<BTreeSet<String>, sqlx::Error> {
+    let rows = sqlx::query(
+        r#"
+        SELECT DISTINCT g.group_code
+        FROM ai_channel_group g
+        JOIN ai_channel_group_member m
+          ON m.tenant_id = g.tenant_id
+         AND m.organization_id = g.organization_id
+         AND m.channel_group_id = g.id
+         AND m.deleted_at IS NULL
+        JOIN ai_channel c
+          ON c.tenant_id = m.tenant_id
+         AND c.organization_id = m.organization_id
+         AND c.id = m.channel_id
+         AND c.channel_code = 'openai-default'
+         AND c.deleted_at IS NULL
+        JOIN ai_channel_resource cr
+          ON cr.tenant_id = c.tenant_id
+         AND cr.organization_id = c.organization_id
+         AND cr.channel_id = c.id
+         AND cr.resource_group_code = 'official.openai.full'
+         AND cr.deleted_at IS NULL
+        JOIN ai_channel_group_resource gr
+          ON gr.tenant_id = g.tenant_id
+         AND gr.organization_id = g.organization_id
+         AND gr.channel_group_id = g.id
+         AND gr.resource_group_code = 'official.openai.full'
+         AND gr.deleted_at IS NULL
+        WHERE g.tenant_id = $1::bigint
+          AND g.organization_id = $2::bigint
+          AND g.deleted_at IS NULL
         "#,
     )
     .bind(DEFAULT_IAM_TENANT_ID)
@@ -1775,6 +2508,80 @@ fn default_admin_channel_credential_metadata(
     )
 }
 
+fn default_admin_channel_group_metadata(
+    catalog: &AiRoutingSeedCatalog,
+    group: DefaultAdminChannelGroupSeed,
+) -> String {
+    seed_metadata(
+        catalog,
+        "default_admin_channel_group",
+        group.group_code,
+        serde_json::json!({
+            "tenantId": DEFAULT_IAM_TENANT_ID,
+            "organizationId": DEFAULT_IAM_ORGANIZATION_ID,
+            "groupCode": group.group_code,
+            "providerCode": group.provider_code,
+            "channelCode": group.channel_code,
+            "resourceGroupCode": group.resource_group_code,
+            "initialStatus": "active",
+        }),
+    )
+}
+
+fn default_admin_channel_group_member_metadata(
+    catalog: &AiRoutingSeedCatalog,
+    group: DefaultAdminChannelGroupSeed,
+) -> String {
+    seed_metadata(
+        catalog,
+        "default_admin_channel_group_member",
+        group.group_code,
+        serde_json::json!({
+            "tenantId": DEFAULT_IAM_TENANT_ID,
+            "organizationId": DEFAULT_IAM_ORGANIZATION_ID,
+            "groupCode": group.group_code,
+            "channelCode": group.channel_code,
+            "initialStatus": "active",
+        }),
+    )
+}
+
+fn default_admin_channel_resource_metadata(
+    catalog: &AiRoutingSeedCatalog,
+    group: DefaultAdminChannelGroupSeed,
+) -> String {
+    seed_metadata(
+        catalog,
+        "default_admin_channel_resource",
+        group.channel_code,
+        serde_json::json!({
+            "tenantId": DEFAULT_IAM_TENANT_ID,
+            "organizationId": DEFAULT_IAM_ORGANIZATION_ID,
+            "channelCode": group.channel_code,
+            "resourceGroupCode": group.resource_group_code,
+            "initialStatus": "active",
+        }),
+    )
+}
+
+fn default_admin_channel_group_resource_metadata(
+    catalog: &AiRoutingSeedCatalog,
+    group: DefaultAdminChannelGroupSeed,
+) -> String {
+    seed_metadata(
+        catalog,
+        "default_admin_channel_group_resource",
+        group.group_code,
+        serde_json::json!({
+            "tenantId": DEFAULT_IAM_TENANT_ID,
+            "organizationId": DEFAULT_IAM_ORGANIZATION_ID,
+            "groupCode": group.group_code,
+            "resourceGroupCode": group.resource_group_code,
+            "initialStatus": "active",
+        }),
+    )
+}
+
 fn default_protocol_code(item: &ResourceSeed) -> &'static str {
     match item.vendor_code.as_deref().unwrap_or_default() {
         "openai" | "openai_compatible" => "openai_compatible",
@@ -1865,6 +2672,102 @@ fn stable_default_admin_channel_credential_id(channel: &DefaultAdminChannelSeed)
     )
 }
 
+fn stable_default_admin_channel_group_uuid(group: &DefaultAdminChannelGroupSeed) -> String {
+    stable_seed_uuid(
+        "sdk-ai-channel-group",
+        &[
+            &DEFAULT_IAM_TENANT_ID.to_string(),
+            &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+            group.group_code,
+        ],
+    )
+}
+
+fn stable_default_admin_channel_group_id(group: &DefaultAdminChannelGroupSeed) -> i64 {
+    stable_seed_id(
+        "sdk-ai-channel-group-id",
+        &[
+            &DEFAULT_IAM_TENANT_ID.to_string(),
+            &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+            group.group_code,
+        ],
+    )
+}
+
+fn stable_default_admin_channel_group_member_uuid(group: &DefaultAdminChannelGroupSeed) -> String {
+    stable_seed_uuid(
+        "sdk-ai-channel-group-member",
+        &[
+            &DEFAULT_IAM_TENANT_ID.to_string(),
+            &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+            group.group_code,
+            group.channel_code,
+        ],
+    )
+}
+
+fn stable_default_admin_channel_group_member_id(group: &DefaultAdminChannelGroupSeed) -> i64 {
+    stable_seed_id(
+        "sdk-ai-channel-group-member-id",
+        &[
+            &DEFAULT_IAM_TENANT_ID.to_string(),
+            &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+            group.group_code,
+            group.channel_code,
+        ],
+    )
+}
+
+fn stable_default_admin_channel_resource_uuid(group: &DefaultAdminChannelGroupSeed) -> String {
+    stable_seed_uuid(
+        "sdk-ai-channel-resource",
+        &[
+            &DEFAULT_IAM_TENANT_ID.to_string(),
+            &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+            group.channel_code,
+            group.resource_group_code,
+        ],
+    )
+}
+
+fn stable_default_admin_channel_resource_id(group: &DefaultAdminChannelGroupSeed) -> i64 {
+    stable_seed_id(
+        "sdk-ai-channel-resource-id",
+        &[
+            &DEFAULT_IAM_TENANT_ID.to_string(),
+            &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+            group.channel_code,
+            group.resource_group_code,
+        ],
+    )
+}
+
+fn stable_default_admin_channel_group_resource_uuid(
+    group: &DefaultAdminChannelGroupSeed,
+) -> String {
+    stable_seed_uuid(
+        "sdk-ai-channel-group-resource",
+        &[
+            &DEFAULT_IAM_TENANT_ID.to_string(),
+            &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+            group.group_code,
+            group.resource_group_code,
+        ],
+    )
+}
+
+fn stable_default_admin_channel_group_resource_id(group: &DefaultAdminChannelGroupSeed) -> i64 {
+    stable_seed_id(
+        "sdk-ai-channel-group-resource-id",
+        &[
+            &DEFAULT_IAM_TENANT_ID.to_string(),
+            &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+            group.group_code,
+            group.resource_group_code,
+        ],
+    )
+}
+
 fn stable_seed_uuid(prefix: &str, parts: &[&str]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(prefix.as_bytes());
@@ -1911,7 +2814,7 @@ fn source_hash() -> String {
         ADMIN_API_GROUPS_JSON,
         OFFICIAL_PROVIDER_GROUPS_JSON,
         RELAY_PROVIDER_GROUPS_JSON,
-        DEFAULT_ADMIN_CHANNEL_SEED_SOURCE,
+        DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE,
     ] {
         hasher.update(payload.as_bytes());
         hasher.update([0]);

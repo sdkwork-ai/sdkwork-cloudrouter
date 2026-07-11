@@ -165,9 +165,12 @@ async fn create_ip_rate_limit(
     };
 
     match state.store.create_ip_rate_limit(command).await {
-        Ok(item) => json_created_response(None, AdminIpRateLimitItemEnvelope {
-            item: to_item_response(item),
-        }),
+        Ok(item) => json_created_response(
+            None,
+            AdminIpRateLimitItemEnvelope {
+                item: to_item_response(item),
+            },
+        ),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
             ip_rate_limit_system_response("ip rate limit command store is unavailable", error)

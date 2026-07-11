@@ -13,7 +13,8 @@ This README is the SDKWork module entrypoint for `sdkwork-clawrouter-pc-console-
 
 ## Required SDK Surface
 
-- None declared in `specs/component.spec.json`.
+- Consumes `ai.gateway.traces.list` from the composed `@sdkwork/clawrouter-app-sdk` through the `@sdkwork/clawrouter-pc-console-core/sdk` boundary.
+- The list is cursor-paginated. The first request uses `pageSize: 20`; continuation requests pass the server-provided opaque `pageInfo.nextCursor`. The UI never parses cursors, downloads all pages automatically, or paginates with a client-side array slice.
 
 ## Configuration
 
@@ -34,6 +35,9 @@ Extension points are limited to public exports, runtime entrypoints, SDK clients
 ## Verification
 
 - `node apps/scripts/validate-component-specs.mjs --apps-root apps --json`
+- `node --import ./scripts/register-portal-workspace-resolver.mjs --import tsx --test --test-name-pattern="console gateway" console-app-runtime.test.ts` from `apps/sdkwork-clawrouter-pc`
+- `pnpm exec vitest run packages/sdkwork-clawrouter-pc-console-gateway/src/GatewayView.test.tsx` from `apps/sdkwork-clawrouter-pc`
+- `python -B -m unittest tests.test_console_gateway_backend_runtime_standard` from the repository root
 
 ## Owner And Status
 

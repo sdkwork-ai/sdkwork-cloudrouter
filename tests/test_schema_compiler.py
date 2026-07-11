@@ -1,7 +1,8 @@
+import re
+import sqlite3
 import tempfile
 import textwrap
 import unittest
-import re
 from pathlib import Path
 
 from tools.schema_compiler import SchemaCompileError, SchemaCompiler
@@ -41,6 +42,18 @@ class SchemaCompilerTest(unittest.TestCase):
             self.assertIn(f"CREATE TABLE IF NOT EXISTS {table} (", sql)
         self.assertNotIn("CREATE TABLE IF NOT EXISTS ai_pricing (", sql)
         self.assertNotIn("CREATE TABLE IF NOT EXISTS ai_usage_trace (", sql)
+
+        ai_usage_columns = re.search(
+            r"CREATE TABLE IF NOT EXISTS ai_usage \((.*?)\n\);",
+            sql,
+            flags=re.DOTALL,
+        )
+        self.assertIsNotNone(ai_usage_columns)
+        self.assertNotRegex(
+            ai_usage_columns.group(1),
+            r"\b(?:cost_amount|unit_price_snapshot)\b",
+        )
+        self.assertIn("customer_charge_amount", ai_usage_columns.group(1))
 
     def test_rejects_registry_without_project_generated_tables(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -111,6 +124,66 @@ class SchemaCompilerTest(unittest.TestCase):
             self.assertIn("    usage_count BIGINT,", sql)
             self.assertIn("    unit_price NUMERIC(38, 12),", sql)
             self.assertIn("    published_at TIMESTAMPTZ", sql)
+
+    def test_compiles_sqlite_without_postgres_only_syntax(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                """
+                schema_registry:
+                  common_column_groups:
+                    tenant_entity: [id, uuid, tenant_id, organization_id, created_at, metadata]
+                tables:
+                  - table: ai_model_vendor
+                    domain: ai
+                    common_columns: tenant_entity
+                    columns:
+                      enabled: bool
+                      unit_price: decimal
+                      published_at: instant
+                """,
+            )
+
+            sql = SchemaCompiler(root=root, registry_path=registry).compile_sqlite()
+
+            self.assertIn("-- Dialect: sqlite.", sql)
+            self.assertIn("    id INTEGER NOT NULL PRIMARY KEY,", sql)
+            self.assertIn("    uuid TEXT NOT NULL,", sql)
+            self.assertIn("    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,", sql)
+            self.assertIn("    metadata TEXT NOT NULL DEFAULT '{}',", sql)
+            self.assertIn("    enabled INTEGER,", sql)
+            self.assertIn("    unit_price TEXT,", sql)
+            self.assertIn(
+                "CONSTRAINT ck_ai_model_vendor_unit_price_decimal CHECK",
+                sql,
+            )
+            self.assertIn("    published_at TEXT", sql)
+            self.assertNotIn("::jsonb", sql)
+            self.assertNotIn("JSONB", sql)
+            self.assertNotIn("TIMESTAMPTZ", sql)
+
+            connection = sqlite3.connect(":memory:")
+            connection.executescript(sql)
+            connection.execute(
+                "INSERT INTO ai_model_vendor (id, uuid, unit_price) VALUES (?, ?, ?)",
+                (1, "vendor-1", "0.000000000001"),
+            )
+            stored_value, storage_type = connection.execute(
+                "SELECT unit_price, typeof(unit_price) FROM ai_model_vendor WHERE id = 1"
+            ).fetchone()
+            self.assertEqual("0.000000000001", stored_value)
+            self.assertEqual("text", storage_type)
+            for row_id, invalid_value in enumerate(
+                ["01.0", "1e2", "1.0000000000000", "123456789012345678901234567890123456789", "-.1"],
+                start=2,
+            ):
+                with self.assertRaises(sqlite3.IntegrityError):
+                    connection.execute(
+                        "INSERT INTO ai_model_vendor (id, uuid, unit_price) VALUES (?, ?, ?)",
+                        (row_id, f"vendor-{row_id}", invalid_value),
+                    )
+            connection.close()
 
     def test_compiles_tables_from_registry_fragments(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -203,6 +276,222 @@ class SchemaCompilerTest(unittest.TestCase):
                 "CREATE INDEX IF NOT EXISTS idx_ai_model_vendor_status ON ai_model_vendor (tenant_id, organization_id, status, updated_at, id);",
                 sql,
             )
+
+    def test_compiles_checks_foreign_keys_and_partial_unique_indexes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                """
+                tables:
+                  - table: ai_parent
+                    domain: ai
+                    columns:
+                      id: { type: int64, constraints: "PRIMARY KEY" }
+                      tenant_id: int64
+                      organization_id: int64
+                    unique_constraints:
+                      - { name: uk_ai_parent_scope_id, columns: [tenant_id, organization_id, id] }
+                  - table: ai_child
+                    domain: ai
+                    columns:
+                      id: { type: int64, constraints: "PRIMARY KEY" }
+                      tenant_id: int64
+                      organization_id: int64
+                      parent_id: int64
+                      deleted_at: instant
+                    foreign_keys:
+                      - name: fk_ai_child_parent
+                        columns: [tenant_id, organization_id, parent_id]
+                        references_table: ai_parent
+                        references_columns: [tenant_id, organization_id, id]
+                        on_delete: RESTRICT
+                    check_constraints:
+                      - { name: ck_ai_child_tenant, expression: "tenant_id > 0" }
+                    unique_constraints:
+                      - name: uk_ai_child_parent
+                        columns: [tenant_id, organization_id, parent_id]
+                        where: deleted_at IS NULL
+                """,
+            )
+
+            sql = SchemaCompiler(root=root, registry_path=registry).compile_postgres()
+
+            self.assertIn(
+                "CONSTRAINT fk_ai_child_parent FOREIGN KEY (tenant_id, organization_id, parent_id) "
+                "REFERENCES ai_parent (tenant_id, organization_id, id) ON DELETE RESTRICT",
+                sql,
+            )
+            self.assertIn("CONSTRAINT ck_ai_child_tenant CHECK (tenant_id > 0)", sql)
+            self.assertIn(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_child_parent ON ai_child "
+                "(tenant_id, organization_id, parent_id) WHERE deleted_at IS NULL;",
+                sql,
+            )
+
+    def test_explicit_unique_index_remains_foreign_key_candidate_with_active_unique(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                """
+                schema_registry:
+                  common_column_groups:
+                    tenant_entity: [id, uuid, tenant_id, organization_id, deleted_at]
+                  table_profile_policies:
+                    tenant_entity:
+                      soft_delete_policy: active_unique
+                tables:
+                  - table: ai_parent
+                    domain: ai
+                    profile: tenant_entity
+                    common_columns: tenant_entity
+                    columns:
+                      parent_code: string(64)
+                    indexes:
+                      - name: uk_ai_parent_scope_id
+                        unique: true
+                        columns: [tenant_id, organization_id, id]
+                    unique_constraints:
+                      - name: uk_ai_parent_scope_code
+                        columns: [tenant_id, organization_id, parent_code]
+                  - table: ai_child
+                    domain: ai
+                    profile: tenant_entity
+                    common_columns: tenant_entity
+                    columns:
+                      parent_id: int64
+                    required_columns: [parent_id]
+                    foreign_keys:
+                      - name: fk_ai_child_parent
+                        columns: [tenant_id, organization_id, parent_id]
+                        references_table: ai_parent
+                        references_columns: [tenant_id, organization_id, id]
+                        on_delete: RESTRICT
+                """,
+            )
+
+            compiler = SchemaCompiler(root=root, registry_path=registry)
+            postgres_sql = compiler.compile_postgres()
+            sqlite_sql = compiler.compile_sqlite()
+
+            self.assertIn(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_parent_scope_id ON ai_parent "
+                "(tenant_id, organization_id, id);",
+                postgres_sql,
+            )
+            self.assertIn(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_parent_scope_code ON ai_parent "
+                "(tenant_id, organization_id, parent_code) WHERE deleted_at IS NULL;",
+                postgres_sql,
+            )
+
+            connection = sqlite3.connect(":memory:")
+            connection.execute("PRAGMA foreign_keys = ON")
+            connection.executescript(sqlite_sql)
+            connection.execute(
+                "INSERT INTO ai_parent (id, uuid, tenant_id, organization_id, parent_code) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (1, "parent-1", 100, 0, "default"),
+            )
+            connection.execute(
+                "INSERT INTO ai_child (id, uuid, tenant_id, organization_id, parent_id) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (2, "child-2", 100, 0, 1),
+            )
+            with self.assertRaises(sqlite3.IntegrityError):
+                connection.execute(
+                    "INSERT INTO ai_child (id, uuid, tenant_id, organization_id, parent_id) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (3, "child-3", 101, 0, 1),
+                )
+            connection.close()
+
+    def test_full_lifecycle_unique_override_supports_soft_delete_upsert(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                """
+                schema_registry:
+                  common_column_groups:
+                    tenant_entity: [id, uuid, tenant_id, organization_id, deleted_at]
+                  table_profile_policies:
+                    tenant_entity:
+                      soft_delete_policy: active_unique
+                tables:
+                  - table: ai_route
+                    domain: ai
+                    profile: tenant_entity
+                    soft_delete_policy: full_lifecycle_unique
+                    common_columns: tenant_entity
+                    columns:
+                      route_code:
+                        type: string(64)
+                        constraints: NOT NULL
+                    unique_constraints:
+                      - name: uk_ai_route_scope_code
+                        columns: [tenant_id, organization_id, route_code]
+                """,
+            )
+
+            sqlite_sql = SchemaCompiler(root=root, registry_path=registry).compile_sqlite()
+
+            self.assertIn(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_route_scope_code ON ai_route "
+                "(tenant_id, organization_id, route_code);",
+                sqlite_sql,
+            )
+            self.assertNotIn(
+                "uk_ai_route_scope_code ON ai_route "
+                "(tenant_id, organization_id, route_code) WHERE deleted_at IS NULL",
+                sqlite_sql,
+            )
+
+            connection = sqlite3.connect(":memory:")
+            connection.executescript(sqlite_sql)
+            connection.execute(
+                "INSERT INTO ai_route "
+                "(id, uuid, tenant_id, organization_id, route_code, deleted_at) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (1, "route-1", 100, 0, "default", "2026-07-11T00:00:00Z"),
+            )
+            connection.execute(
+                "INSERT INTO ai_route "
+                "(id, uuid, tenant_id, organization_id, route_code) "
+                "VALUES (?, ?, ?, ?, ?) "
+                "ON CONFLICT(tenant_id, organization_id, route_code) DO UPDATE SET "
+                "deleted_at = NULL",
+                (2, "route-2", 100, 0, "default"),
+            )
+            row = connection.execute(
+                "SELECT id, deleted_at FROM ai_route WHERE route_code = 'default'"
+            ).fetchone()
+            self.assertEqual((1, None), row)
+            connection.close()
+
+    def test_rejects_partition_metadata_in_portable_baseline(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                """
+                tables:
+                  - table: ai_usage
+                    domain: ai
+                    lifecycle:
+                      partition_by: created_at_month
+                    columns:
+                      id: { type: int64, constraints: "PRIMARY KEY" }
+                      created_at: instant
+                """,
+            )
+
+            with self.assertRaisesRegex(
+                SchemaCompileError,
+                "ai_usage.partition_by is not supported in the portable baseline",
+            ):
+                SchemaCompiler(root=root, registry_path=registry).compile_postgres()
 
     def test_compiles_explicit_primary_key_for_system_tables(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -386,6 +675,26 @@ class SchemaCompilerTest(unittest.TestCase):
 
             self.assertTrue(output.exists())
             self.assertIn("CREATE TABLE IF NOT EXISTS ai_model_vendor", output.read_text(encoding="utf-8"))
+
+    def test_writes_sqlite_schema_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                """
+                tables:
+                  - table: ai_model_vendor
+                    domain: ai
+                    columns:
+                      vendor_code: string(64)
+                """,
+            )
+            output = root / "generated" / "schema" / "sqlite" / "schema.sql"
+
+            SchemaCompiler(root=root, registry_path=registry).write_sqlite(output)
+
+            self.assertTrue(output.exists())
+            self.assertIn("-- Dialect: sqlite.", output.read_text(encoding="utf-8"))
 
     def test_check_postgres_schema_reports_stale_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

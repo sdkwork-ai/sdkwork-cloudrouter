@@ -674,24 +674,12 @@ async fn list_channels(
             COALESCE(NULLIF(c.channel_type, ''), 'official') AS channel_type,
             CAST(c.upstream_balance_amount AS TEXT) AS balance_amount,
             c.upstream_balance_currency,
-            h.health_status AS snapshot_health_status,
             CAST(c.deleted_at AS TEXT) AS deleted_at,
             COUNT(*) OVER() AS total
         FROM ai_channel c
         LEFT JOIN ai_provider p
             ON p.provider_code = c.provider_code
            AND p.deleted_at IS NULL
-        LEFT JOIN integration_provider_health_snapshot h
-            ON h.id = (
-                SELECT hs.id
-                FROM integration_provider_health_snapshot hs
-                WHERE hs.channel_id = c.id
-                  AND hs.tenant_id = c.tenant_id
-                  AND hs.organization_id = c.organization_id
-                  AND hs.status = 1
-                ORDER BY hs.checked_at DESC, hs.id DESC
-                LIMIT 1
-            )
         WHERE c.tenant_id = ?
           AND c.organization_id = ?
           AND c.deleted_at IS NULL
@@ -748,7 +736,7 @@ async fn insert_channel(
 ) -> DomainResult<i64> {
     let metadata_json = channel_metadata_json(command.expires_at.as_deref())?;
     let channel_id = next_claw_runtime_id("admin channel creation")?;
-    sqlx::query(
+    let result = sqlx::query(
         r#"
         INSERT INTO ai_channel
             (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, provider_code, channel_code, channel_name, channel_type, protocol_code, auth_type, credential_rotation_strategy, timeout_ms, retry_policy, circuit_breaker_policy, environment, priority, weight, health_status, consecutive_error_count)
@@ -1156,50 +1144,20 @@ async fn upsert_ai_resource_bindings(
         .take(32)
         .collect::<String>();
         let priority = priority_offset.saturating_add(i64::try_from(index + 1).unwrap_or(i64::MAX));
-        let resource_group_row = sqlx::query(
-            r#"
-            SELECT id
-            FROM ai_resource_group
-            WHERE tenant_id = ?
-              AND organization_id = ?
-              AND group_code = ?
-              AND deleted_at IS NULL
-            LIMIT 1
-            "#,
+        let resource_group_id = resolve_visible_resource_group_id(
+            tx,
+            scope.tenant_id,
+            scope.organization_id,
+            resource_code,
         )
-        .bind(scope.tenant_id)
-        .bind(scope.organization_id)
-        .bind(resource_code)
-        .fetch_optional(&mut **tx)
-        .await
-        .map_err(|error| store_error("failed to resolve channel resource group", error))?;
-        let resource_group_id = resource_group_row
-            .as_ref()
-            .and_then(|row| optional_integer_cell(row, "id"));
+        .await?;
         let resource_row = if resource_group_id.is_none() {
-            sqlx::query(
-                r#"
-            SELECT id
-            FROM ai_resource
-            WHERE tenant_id = ?
-              AND organization_id = ?
-              AND resource_code = ?
-              AND deleted_at IS NULL
-            LIMIT 1
-            "#,
-            )
-            .bind(scope.tenant_id)
-            .bind(scope.organization_id)
-            .bind(resource_code)
-            .fetch_optional(&mut **tx)
-            .await
-            .map_err(|error| store_error("failed to resolve channel resource", error))?
+            resolve_visible_resource_id(tx, scope.tenant_id, scope.organization_id, resource_code)
+                .await?
         } else {
             None
         };
-        let resource_id = resource_row
-            .as_ref()
-            .and_then(|row| optional_integer_cell(row, "id"));
+        let resource_id = resource_row;
         if resource_group_id.is_none() && resource_id.is_none() {
             return Err(DomainError::not_found(format!(
                 "AI resource was not found: {resource_code}"
@@ -1257,6 +1215,90 @@ async fn upsert_ai_resource_bindings(
         .map_err(|error| store_error("failed to upsert channel resource", error))?;
     }
     Ok(())
+}
+
+async fn resolve_visible_resource_group_id(
+    tx: &mut Transaction<'_, Sqlite>,
+    tenant_id: i64,
+    organization_id: i64,
+    group_code: &str,
+) -> DomainResult<Option<i64>> {
+    sqlx::query_scalar(
+        r#"
+        SELECT id
+        FROM ai_resource_group
+        WHERE group_code = ?
+          AND deleted_at IS NULL
+          AND status = 1
+          AND (
+              (tenant_id = ? AND organization_id = ?)
+              OR (? > 0 AND tenant_id = ? AND organization_id = 0)
+              OR (tenant_id = 0 AND organization_id = 0)
+          )
+        ORDER BY CASE
+            WHEN tenant_id = ? AND organization_id = ? THEN 0
+            WHEN ? > 0 AND tenant_id = ? AND organization_id = 0 THEN 1
+            WHEN tenant_id = 0 AND organization_id = 0 THEN 2
+            ELSE 3
+          END,
+          id ASC
+        LIMIT 1
+        "#,
+    )
+    .bind(group_code)
+    .bind(tenant_id)
+    .bind(organization_id)
+    .bind(organization_id)
+    .bind(tenant_id)
+    .bind(tenant_id)
+    .bind(organization_id)
+    .bind(organization_id)
+    .bind(tenant_id)
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(|error| store_error("failed to resolve channel resource group", error))
+}
+
+async fn resolve_visible_resource_id(
+    tx: &mut Transaction<'_, Sqlite>,
+    tenant_id: i64,
+    organization_id: i64,
+    resource_code: &str,
+) -> DomainResult<Option<i64>> {
+    sqlx::query_scalar(
+        r#"
+        SELECT id
+        FROM ai_resource
+        WHERE resource_code = ?
+          AND deleted_at IS NULL
+          AND status = 1
+          AND (
+              (tenant_id = ? AND organization_id = ?)
+              OR (? > 0 AND tenant_id = ? AND organization_id = 0)
+              OR (tenant_id = 0 AND organization_id = 0)
+          )
+        ORDER BY CASE
+            WHEN tenant_id = ? AND organization_id = ? THEN 0
+            WHEN ? > 0 AND tenant_id = ? AND organization_id = 0 THEN 1
+            WHEN tenant_id = 0 AND organization_id = 0 THEN 2
+            ELSE 3
+          END,
+          id ASC
+        LIMIT 1
+        "#,
+    )
+    .bind(resource_code)
+    .bind(tenant_id)
+    .bind(organization_id)
+    .bind(organization_id)
+    .bind(tenant_id)
+    .bind(tenant_id)
+    .bind(organization_id)
+    .bind(organization_id)
+    .bind(tenant_id)
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(|error| store_error("failed to resolve channel resource", error))
 }
 
 async fn soft_delete_removed_resources(
@@ -1527,8 +1569,6 @@ async fn soft_delete_channel(
 
 #[derive(Debug, Clone)]
 struct ChannelHealthProbeTarget {
-    provider_id: Option<i64>,
-    channel_id: i64,
     provider_account_id: i64,
     provider_base_url: String,
     provider_secret_ref: String,
@@ -1545,8 +1585,6 @@ async fn load_channel_probe_target(
     let row = sqlx::query(
         r#"
         SELECT
-            c.id AS channel_id,
-            p.id AS provider_id,
             cc.id AS provider_account_id,
             COALESCE(NULLIF(cc.base_url, ''), NULLIF(p.base_url, ''), '') AS provider_base_url,
             COALESCE(NULLIF(cc.credential_ref, ''), '') AS provider_secret_ref,
@@ -1613,8 +1651,6 @@ async fn load_channel_probe_target(
         ));
     }
     Ok(Some(ChannelHealthProbeTarget {
-        provider_id: optional_integer_cell(&row, "provider_id"),
-        channel_id: integer_cell(&row, "channel_id"),
         provider_account_id: integer_cell(&row, "provider_account_id"),
         provider_base_url,
         provider_secret_ref,
@@ -1665,7 +1701,6 @@ async fn record_channel_health_test(
         return Ok(false);
     }
     update_channel_credential_health(tx, command, target, outcome, health_status).await?;
-    insert_provider_health_snapshot(tx, command, target, outcome, health_status).await?;
     Ok(true)
 }
 
@@ -1676,7 +1711,7 @@ async fn update_channel_credential_health(
     outcome: &ProviderHealthProbeOutcome,
     health_status: i32,
 ) -> DomainResult<()> {
-    sqlx::query(
+    let result = sqlx::query(
         r#"
         UPDATE ai_channel_credential
         SET updated_at = ?,
@@ -1707,49 +1742,11 @@ async fn update_channel_credential_health(
     .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to update channel credential health", error))?;
-    Ok(())
-}
-
-async fn insert_provider_health_snapshot(
-    tx: &mut Transaction<'_, Sqlite>,
-    command: &TestAdminChannelCommand,
-    target: &ChannelHealthProbeTarget,
-    outcome: &ProviderHealthProbeOutcome,
-    health_status: i32,
-) -> DomainResult<()> {
-    let metadata = serde_json::json!({
-        "source": "admin_channel_test",
-        "providerModel": target.provider_model
-    })
-    .to_string();
-    sqlx::query(
-        r#"
-        INSERT INTO integration_provider_health_snapshot
-            (id, uuid, tenant_id, organization_id, user_id, request_id, status, created_at, metadata, provider_id, channel_id, provider_account_id, check_type, health_status, latency_ms, http_status, error_code, error_message_masked, checked_at)
-        VALUES
-            (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)
-        "#,
-    )
-    .bind(next_claw_runtime_id("integration_provider_health_snapshot")?)
-    .bind(format!("health-{}", command.config_snapshot_uuid))
-    .bind(command.subject.tenant_id)
-    .bind(command.subject.organization_id)
-    .bind(command.subject.operator_id)
-    .bind(&command.request_id)
-    .bind(&command.requested_at)
-    .bind(metadata)
-    .bind(target.provider_id)
-    .bind(target.channel_id)
-    .bind(target.provider_account_id)
-    .bind(health_status)
-    .bind(outcome.latency_ms)
-    .bind(outcome.http_status)
-    .bind(outcome.error_code.as_deref())
-    .bind(outcome.error_message_masked.as_deref())
-    .bind(&command.requested_at)
-    .execute(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to write channel health snapshot", error))?;
+    if result.rows_affected() != 1 {
+        return Err(DomainError::new(
+            "channel credential changed while its health probe was running",
+        ));
+    }
     Ok(())
 }
 
@@ -1819,23 +1816,11 @@ async fn load_channel_by_id(
             COALESCE(NULLIF(c.channel_type, ''), 'official') AS channel_type,
             CAST(c.upstream_balance_amount AS TEXT) AS balance_amount,
             c.upstream_balance_currency,
-            h.health_status AS snapshot_health_status,
             CAST(c.deleted_at AS TEXT) AS deleted_at
         FROM ai_channel c
         LEFT JOIN ai_provider p
             ON p.provider_code = c.provider_code
            AND p.deleted_at IS NULL
-        LEFT JOIN integration_provider_health_snapshot h
-            ON h.id = (
-                SELECT hs.id
-                FROM integration_provider_health_snapshot hs
-                WHERE hs.channel_id = c.id
-                  AND hs.tenant_id = c.tenant_id
-                  AND hs.organization_id = c.organization_id
-                  AND hs.status = 1
-                ORDER BY hs.checked_at DESC, hs.id DESC
-                LIMIT 1
-            )
         WHERE c.id = ?
           AND c.tenant_id = ?
           AND c.organization_id = ?
@@ -2024,7 +2009,7 @@ fn credential_from_sqlite_row(
         masked_label: row.try_get("masked_label").map_err(row_error)?,
         priority: row.try_get("priority").map_err(row_error)?,
         weight: row.try_get("weight").map_err(row_error)?,
-        status: status_label(status, health_status, None, errors)?,
+        status: status_label(status, health_status, errors)?,
         errors,
     })
 }
@@ -2144,7 +2129,6 @@ fn item_from_sqlite_row(
             .sum::<i64>();
     let status = required_integer_cell(&row, "status", "status")?;
     let health_status = required_integer_cell(&row, "health_status", "health_status")?;
-    let snapshot_health_status = optional_valid_health_status_cell(&row, "snapshot_health_status")?;
     let balance = balance_label(
         row.try_get::<Option<String>, _>("balance_amount")
             .ok()
@@ -2182,7 +2166,7 @@ fn item_from_sqlite_row(
         retry_policy_json: row.try_get("retry_policy_json").ok().flatten(),
         circuit_breaker_policy_json: row.try_get("circuit_breaker_policy_json").ok().flatten(),
         weight: row.try_get("weight").map_err(row_error)?,
-        status: status_label(status, health_status, snapshot_health_status, errors)?,
+        status: status_label(status, health_status, errors)?,
         balance,
         errors,
         deleted_at: row.try_get("deleted_at").ok().flatten(),
@@ -2366,12 +2350,7 @@ fn health_status_code(value: &str) -> i32 {
     }
 }
 
-fn status_label(
-    status: i64,
-    health_status: i64,
-    snapshot_health_status: Option<i64>,
-    errors: i64,
-) -> DomainResult<String> {
+fn status_label(status: i64, health_status: i64, errors: i64) -> DomainResult<String> {
     match status {
         -1 | 0 | 1 | 2 => {}
         value => {
@@ -2384,7 +2363,7 @@ fn status_label(
 
     let label = if status == 0 || status == -1 {
         "disabled"
-    } else if status == 2 || health_status == 2 || snapshot_health_status == Some(2) || errors > 0 {
+    } else if status == 2 || health_status == 2 || errors > 0 {
         "error"
     } else {
         "active"
@@ -2447,17 +2426,6 @@ fn required_integer_cell(
     field: &str,
 ) -> DomainResult<i64> {
     optional_integer_cell(row, column).ok_or_else(|| missing_integer_cell_error(field))
-}
-
-fn optional_valid_health_status_cell(
-    row: &sqlx::sqlite::SqliteRow,
-    column: &str,
-) -> DomainResult<Option<i64>> {
-    let Some(value) = optional_integer_cell(row, column) else {
-        return Ok(None);
-    };
-    validate_health_status(value)?;
-    Ok(Some(value))
 }
 
 fn missing_integer_cell_error(field: &str) -> DomainError {

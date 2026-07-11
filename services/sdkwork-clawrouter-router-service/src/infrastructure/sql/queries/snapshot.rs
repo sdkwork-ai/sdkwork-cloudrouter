@@ -106,40 +106,140 @@ ORDER BY rank_score DESC, display_name ASC, id ASC
 
     pub fn load_provider_routes() -> &'static str {
         r#"
-WITH RECURSIVE resource_group_tree AS (
+WITH RECURSIVE
+active_channel_resource AS (
+    SELECT cr.*
+    FROM ai_channel_resource cr
+    WHERE cr.deleted_at IS NULL
+      AND cr.status = 1
+      AND cr.grant_type = 'allow'
+      AND (cr.tenant_id > 0 OR cr.organization_id = 0)
+      AND (cr.effective_from IS NULL OR cr.effective_from <= CURRENT_TIMESTAMP)
+      AND (cr.effective_to IS NULL OR cr.effective_to > CURRENT_TIMESTAMP)
+),
+routing_scope_owner AS (
+    SELECT DISTINCT tenant_id, organization_id
+    FROM active_channel_resource
+),
+resource_group_candidate AS (
     SELECT
-        item.tenant_id,
-        item.organization_id,
-        item.resource_group_id AS root_group_id,
-        item.resource_group_code AS root_group_code,
+        owner.tenant_id AS scope_tenant_id,
+        owner.organization_id AS scope_organization_id,
+        resource_group.id AS resource_group_id,
+        resource_group.tenant_id AS definition_tenant_id,
+        resource_group.organization_id AS definition_organization_id,
+        resource_group.group_code,
+        ROW_NUMBER() OVER (
+            PARTITION BY owner.tenant_id, owner.organization_id, resource_group.group_code
+            ORDER BY CASE
+                WHEN resource_group.tenant_id = owner.tenant_id
+                 AND resource_group.organization_id = owner.organization_id THEN 0
+                WHEN owner.tenant_id > 0
+                 AND resource_group.tenant_id = owner.tenant_id
+                 AND resource_group.organization_id = 0 THEN 1
+                ELSE 2
+            END,
+            resource_group.id ASC
+        ) AS candidate_rank
+    FROM routing_scope_owner owner
+    JOIN ai_resource_group resource_group
+      ON resource_group.deleted_at IS NULL
+     AND resource_group.status = 1
+     AND (resource_group.tenant_id > 0 OR resource_group.organization_id = 0)
+     AND (
+          (resource_group.tenant_id = owner.tenant_id AND resource_group.organization_id = owner.organization_id)
+          OR (owner.tenant_id > 0 AND resource_group.tenant_id = owner.tenant_id AND resource_group.organization_id = 0)
+          OR (resource_group.tenant_id = 0 AND resource_group.organization_id = 0)
+     )
+),
+effective_resource_group AS (
+    SELECT *
+    FROM resource_group_candidate
+    WHERE candidate_rank = 1
+),
+channel_group_binding AS (
+    SELECT
+        cr.id AS binding_id,
+        cr.tenant_id AS scope_tenant_id,
+        cr.organization_id AS scope_organization_id,
+        cr.channel_id,
+        cr.priority,
+        cr.weight,
+        resource_group.resource_group_id,
+        resource_group.definition_tenant_id,
+        resource_group.definition_organization_id,
+        resource_group.group_code
+    FROM active_channel_resource cr
+    LEFT JOIN resource_group_candidate referenced_group
+      ON referenced_group.scope_tenant_id = cr.tenant_id
+     AND referenced_group.scope_organization_id = cr.organization_id
+     AND cr.resource_group_id IS NOT NULL
+     AND referenced_group.resource_group_id = cr.resource_group_id
+    JOIN effective_resource_group resource_group
+      ON resource_group.scope_tenant_id = cr.tenant_id
+     AND resource_group.scope_organization_id = cr.organization_id
+     AND resource_group.group_code = CASE
+         WHEN cr.resource_group_id IS NOT NULL THEN referenced_group.group_code
+         ELSE COALESCE(NULLIF(cr.resource_group_code, ''), NULLIF(cr.resource_code, ''))
+     END
+),
+resource_group_tree AS (
+    SELECT
+        binding.binding_id,
+        binding.scope_tenant_id,
+        binding.scope_organization_id,
+        binding.channel_id,
+        binding.priority,
+        binding.weight,
         item.resource_id,
         item.resource_code,
         item.child_resource_group_id,
         item.child_resource_group_code,
         0 AS depth
-    FROM ai_resource_group_item item
-    WHERE item.deleted_at IS NULL
-      AND item.status = 1
+    FROM channel_group_binding binding
+    JOIN ai_resource_group_item item
+      ON item.tenant_id = binding.definition_tenant_id
+     AND item.organization_id = binding.definition_organization_id
+     AND item.deleted_at IS NULL
+     AND item.status = 1
+     AND (
+          item.resource_group_id = binding.resource_group_id
+          OR (NULLIF(item.resource_group_code, '') IS NOT NULL AND item.resource_group_code = binding.group_code)
+     )
     UNION ALL
     SELECT
-        tree.tenant_id,
-        tree.organization_id,
-        tree.root_group_id,
-        tree.root_group_code,
+        tree.binding_id,
+        tree.scope_tenant_id,
+        tree.scope_organization_id,
+        tree.channel_id,
+        tree.priority,
+        tree.weight,
         child.resource_id,
         child.resource_code,
         child.child_resource_group_id,
         child.child_resource_group_code,
         tree.depth + 1 AS depth
     FROM resource_group_tree tree
+    LEFT JOIN resource_group_candidate referenced_child_group
+      ON referenced_child_group.scope_tenant_id = tree.scope_tenant_id
+     AND referenced_child_group.scope_organization_id = tree.scope_organization_id
+     AND tree.child_resource_group_id IS NOT NULL
+     AND referenced_child_group.resource_group_id = tree.child_resource_group_id
+    JOIN effective_resource_group child_group
+      ON child_group.scope_tenant_id = tree.scope_tenant_id
+     AND child_group.scope_organization_id = tree.scope_organization_id
+     AND child_group.group_code = CASE
+         WHEN tree.child_resource_group_id IS NOT NULL THEN referenced_child_group.group_code
+         ELSE NULLIF(tree.child_resource_group_code, '')
+     END
     JOIN ai_resource_group_item child
-      ON child.tenant_id = tree.tenant_id
-     AND child.organization_id = tree.organization_id
+      ON child.tenant_id = child_group.definition_tenant_id
+     AND child.organization_id = child_group.definition_organization_id
      AND child.deleted_at IS NULL
      AND child.status = 1
      AND (
-          (tree.child_resource_group_id IS NOT NULL AND child.resource_group_id = tree.child_resource_group_id)
-          OR (NULLIF(tree.child_resource_group_code, '') IS NOT NULL AND child.resource_group_code = tree.child_resource_group_code)
+          child.resource_group_id = child_group.resource_group_id
+          OR (NULLIF(child.resource_group_code, '') IS NOT NULL AND child.resource_group_code = child_group.group_code)
      )
     WHERE tree.depth < 8
       AND (
@@ -147,59 +247,111 @@ WITH RECURSIVE resource_group_tree AS (
           OR NULLIF(tree.child_resource_group_code, '') IS NOT NULL
       )
 ),
-resource_group_leaf AS (
-    SELECT DISTINCT
-        tenant_id,
-        organization_id,
-        root_group_id AS resource_group_id,
-        root_group_code AS resource_group_code,
+channel_resource_reference AS (
+    SELECT
+        cr.id AS binding_id,
+        cr.tenant_id AS scope_tenant_id,
+        cr.organization_id AS scope_organization_id,
+        cr.channel_id,
+        cr.priority,
+        cr.weight,
+        cr.resource_id,
+        cr.resource_code
+    FROM active_channel_resource cr
+    WHERE cr.resource_id IS NOT NULL
+       OR NULLIF(cr.resource_code, '') IS NOT NULL
+    UNION ALL
+    SELECT
+        binding_id,
+        scope_tenant_id,
+        scope_organization_id,
+        channel_id,
+        priority,
+        weight,
         resource_id,
         resource_code
     FROM resource_group_tree
     WHERE resource_id IS NOT NULL
        OR NULLIF(resource_code, '') IS NOT NULL
 ),
+resource_reference_target AS (
+    SELECT
+        reference.*,
+        referenced_resource.resource_code AS referenced_resource_code
+    FROM channel_resource_reference reference
+    LEFT JOIN ai_resource referenced_resource
+      ON reference.resource_id IS NOT NULL
+     AND referenced_resource.id = reference.resource_id
+     AND referenced_resource.deleted_at IS NULL
+     AND referenced_resource.status = 1
+     AND (referenced_resource.tenant_id > 0 OR referenced_resource.organization_id = 0)
+     AND (
+          (referenced_resource.tenant_id = reference.scope_tenant_id AND referenced_resource.organization_id = reference.scope_organization_id)
+          OR (reference.scope_tenant_id > 0 AND referenced_resource.tenant_id = reference.scope_tenant_id AND referenced_resource.organization_id = 0)
+          OR (referenced_resource.tenant_id = 0 AND referenced_resource.organization_id = 0)
+     )
+),
+resource_candidate AS (
+    SELECT
+        reference.binding_id,
+        reference.scope_tenant_id,
+        reference.scope_organization_id,
+        reference.channel_id,
+        reference.priority,
+        reference.weight,
+        resource.resource_code AS resolved_resource_code,
+        resource.resource_type,
+        resource.vendor_code,
+        resource.modality_code,
+        resource.api_code,
+        resource.catalog_key,
+        resource.model,
+        resource.provider_native_model,
+        ROW_NUMBER() OVER (
+            PARTITION BY reference.binding_id, resource.resource_code
+            ORDER BY CASE
+                WHEN resource.tenant_id = reference.scope_tenant_id
+                 AND resource.organization_id = reference.scope_organization_id THEN 0
+                WHEN reference.scope_tenant_id > 0
+                 AND resource.tenant_id = reference.scope_tenant_id
+                 AND resource.organization_id = 0 THEN 1
+                ELSE 2
+            END,
+            resource.id ASC
+        ) AS candidate_rank
+    FROM resource_reference_target reference
+    JOIN ai_resource resource
+      ON resource.deleted_at IS NULL
+     AND resource.status = 1
+     AND (resource.tenant_id > 0 OR resource.organization_id = 0)
+     AND resource.resource_code = CASE
+         WHEN reference.resource_id IS NOT NULL THEN reference.referenced_resource_code
+         ELSE NULLIF(reference.resource_code, '')
+     END
+     AND (
+          (resource.tenant_id = reference.scope_tenant_id AND resource.organization_id = reference.scope_organization_id)
+          OR (reference.scope_tenant_id > 0 AND resource.tenant_id = reference.scope_tenant_id AND resource.organization_id = 0)
+          OR (resource.tenant_id = 0 AND resource.organization_id = 0)
+     )
+),
 channel_resource_scope AS (
     SELECT DISTINCT
-        cr.tenant_id,
-        cr.organization_id,
-        cr.channel_id,
-        r.resource_code,
-        r.resource_type,
-        r.vendor_code,
-        r.modality_code,
-        r.api_code,
-        r.catalog_key,
-        r.model,
-        r.provider_native_model,
-        cr.priority,
-        cr.weight,
-        cr.id AS binding_id
-    FROM ai_channel_resource cr
-    LEFT JOIN resource_group_leaf rgi
-      ON rgi.tenant_id = cr.tenant_id
-     AND rgi.organization_id = cr.organization_id
-     AND (
-         (cr.resource_group_id IS NOT NULL AND rgi.resource_group_id = cr.resource_group_id)
-         OR (NULLIF(cr.resource_group_code, '') IS NOT NULL AND rgi.resource_group_code = cr.resource_group_code)
-         OR (NULLIF(cr.resource_code, '') IS NOT NULL AND rgi.resource_group_code = cr.resource_code)
-     )
-    JOIN ai_resource r
-      ON r.tenant_id = cr.tenant_id
-     AND r.organization_id = cr.organization_id
-     AND r.deleted_at IS NULL
-     AND r.status = 1
-     AND (
-         r.id = cr.resource_id
-         OR r.id = rgi.resource_id
-         OR (NULLIF(cr.resource_code, '') IS NOT NULL AND r.resource_code = cr.resource_code)
-         OR (NULLIF(rgi.resource_code, '') IS NOT NULL AND r.resource_code = rgi.resource_code)
-     )
-    WHERE cr.deleted_at IS NULL
-      AND cr.status = 1
-      AND cr.grant_type = 'allow'
-      AND (cr.effective_from IS NULL OR cr.effective_from <= CURRENT_TIMESTAMP)
-      AND (cr.effective_to IS NULL OR cr.effective_to > CURRENT_TIMESTAMP)
+        scope_tenant_id AS tenant_id,
+        scope_organization_id AS organization_id,
+        channel_id,
+        resolved_resource_code AS resource_code,
+        resource_type,
+        vendor_code,
+        modality_code,
+        api_code,
+        catalog_key,
+        model,
+        provider_native_model,
+        priority,
+        weight,
+        binding_id
+    FROM resource_candidate
+    WHERE candidate_rank = 1
 )
 SELECT
     COALESCE(NULLIF(scope.catalog_key, ''), NULLIF(scope.model, '')) AS catalog_key,
@@ -279,40 +431,164 @@ ORDER BY COALESCE(scope.priority, c.priority, 100) ASC,
 
     pub fn load_provider_channel_routes() -> &'static str {
         r#"
-WITH RECURSIVE resource_group_tree AS (
+WITH RECURSIVE
+active_routing_resource_binding AS (
     SELECT
-        item.tenant_id,
-        item.organization_id,
-        item.resource_group_id AS root_group_id,
-        item.resource_group_code AS root_group_code,
+        'group' AS binding_kind,
+        gr.id AS binding_id,
+        gr.tenant_id AS scope_tenant_id,
+        gr.organization_id AS scope_organization_id,
+        gr.channel_group_id AS subject_id,
+        gr.resource_id,
+        gr.resource_code,
+        gr.resource_group_id,
+        gr.resource_group_code
+    FROM ai_channel_group_resource gr
+    WHERE gr.deleted_at IS NULL
+      AND gr.status = 1
+      AND gr.grant_type = 'allow'
+      AND (gr.tenant_id > 0 OR gr.organization_id = 0)
+      AND (gr.effective_from IS NULL OR gr.effective_from <= CURRENT_TIMESTAMP)
+      AND (gr.effective_to IS NULL OR gr.effective_to > CURRENT_TIMESTAMP)
+    UNION ALL
+    SELECT
+        'channel' AS binding_kind,
+        cr.id AS binding_id,
+        cr.tenant_id AS scope_tenant_id,
+        cr.organization_id AS scope_organization_id,
+        cr.channel_id AS subject_id,
+        cr.resource_id,
+        cr.resource_code,
+        cr.resource_group_id,
+        cr.resource_group_code
+    FROM ai_channel_resource cr
+    WHERE cr.deleted_at IS NULL
+      AND cr.status = 1
+      AND cr.grant_type = 'allow'
+      AND (cr.tenant_id > 0 OR cr.organization_id = 0)
+      AND (cr.effective_from IS NULL OR cr.effective_from <= CURRENT_TIMESTAMP)
+      AND (cr.effective_to IS NULL OR cr.effective_to > CURRENT_TIMESTAMP)
+),
+routing_scope_owner AS (
+    SELECT DISTINCT scope_tenant_id AS tenant_id, scope_organization_id AS organization_id
+    FROM active_routing_resource_binding
+),
+resource_group_candidate AS (
+    SELECT
+        owner.tenant_id AS scope_tenant_id,
+        owner.organization_id AS scope_organization_id,
+        resource_group.id AS resource_group_id,
+        resource_group.tenant_id AS definition_tenant_id,
+        resource_group.organization_id AS definition_organization_id,
+        resource_group.group_code,
+        ROW_NUMBER() OVER (
+            PARTITION BY owner.tenant_id, owner.organization_id, resource_group.group_code
+            ORDER BY CASE
+                WHEN resource_group.tenant_id = owner.tenant_id
+                 AND resource_group.organization_id = owner.organization_id THEN 0
+                WHEN owner.tenant_id > 0
+                 AND resource_group.tenant_id = owner.tenant_id
+                 AND resource_group.organization_id = 0 THEN 1
+                ELSE 2
+            END,
+            resource_group.id ASC
+        ) AS candidate_rank
+    FROM routing_scope_owner owner
+    JOIN ai_resource_group resource_group
+      ON resource_group.deleted_at IS NULL
+     AND resource_group.status = 1
+     AND (resource_group.tenant_id > 0 OR resource_group.organization_id = 0)
+     AND (
+          (resource_group.tenant_id = owner.tenant_id AND resource_group.organization_id = owner.organization_id)
+          OR (owner.tenant_id > 0 AND resource_group.tenant_id = owner.tenant_id AND resource_group.organization_id = 0)
+          OR (resource_group.tenant_id = 0 AND resource_group.organization_id = 0)
+     )
+),
+effective_resource_group AS (
+    SELECT *
+    FROM resource_group_candidate
+    WHERE candidate_rank = 1
+),
+routing_group_binding AS (
+    SELECT
+        binding.binding_kind,
+        binding.binding_id,
+        binding.scope_tenant_id,
+        binding.scope_organization_id,
+        binding.subject_id,
+        resource_group.resource_group_id,
+        resource_group.definition_tenant_id,
+        resource_group.definition_organization_id,
+        resource_group.group_code
+    FROM active_routing_resource_binding binding
+    LEFT JOIN resource_group_candidate referenced_group
+      ON referenced_group.scope_tenant_id = binding.scope_tenant_id
+     AND referenced_group.scope_organization_id = binding.scope_organization_id
+     AND binding.resource_group_id IS NOT NULL
+     AND referenced_group.resource_group_id = binding.resource_group_id
+    JOIN effective_resource_group resource_group
+      ON resource_group.scope_tenant_id = binding.scope_tenant_id
+     AND resource_group.scope_organization_id = binding.scope_organization_id
+     AND resource_group.group_code = CASE
+         WHEN binding.resource_group_id IS NOT NULL THEN referenced_group.group_code
+         ELSE COALESCE(NULLIF(binding.resource_group_code, ''), NULLIF(binding.resource_code, ''))
+     END
+),
+resource_group_tree AS (
+    SELECT
+        binding.binding_kind,
+        binding.binding_id,
+        binding.scope_tenant_id,
+        binding.scope_organization_id,
+        binding.subject_id,
         item.resource_id,
         item.resource_code,
         item.child_resource_group_id,
         item.child_resource_group_code,
         0 AS depth
-    FROM ai_resource_group_item item
-    WHERE item.deleted_at IS NULL
-      AND item.status = 1
+    FROM routing_group_binding binding
+    JOIN ai_resource_group_item item
+      ON item.tenant_id = binding.definition_tenant_id
+     AND item.organization_id = binding.definition_organization_id
+     AND item.deleted_at IS NULL
+     AND item.status = 1
+     AND (
+          item.resource_group_id = binding.resource_group_id
+          OR (NULLIF(item.resource_group_code, '') IS NOT NULL AND item.resource_group_code = binding.group_code)
+     )
     UNION ALL
     SELECT
-        tree.tenant_id,
-        tree.organization_id,
-        tree.root_group_id,
-        tree.root_group_code,
+        tree.binding_kind,
+        tree.binding_id,
+        tree.scope_tenant_id,
+        tree.scope_organization_id,
+        tree.subject_id,
         child.resource_id,
         child.resource_code,
         child.child_resource_group_id,
         child.child_resource_group_code,
         tree.depth + 1 AS depth
     FROM resource_group_tree tree
+    LEFT JOIN resource_group_candidate referenced_child_group
+      ON referenced_child_group.scope_tenant_id = tree.scope_tenant_id
+     AND referenced_child_group.scope_organization_id = tree.scope_organization_id
+     AND tree.child_resource_group_id IS NOT NULL
+     AND referenced_child_group.resource_group_id = tree.child_resource_group_id
+    JOIN effective_resource_group child_group
+      ON child_group.scope_tenant_id = tree.scope_tenant_id
+     AND child_group.scope_organization_id = tree.scope_organization_id
+     AND child_group.group_code = CASE
+         WHEN tree.child_resource_group_id IS NOT NULL THEN referenced_child_group.group_code
+         ELSE NULLIF(tree.child_resource_group_code, '')
+     END
     JOIN ai_resource_group_item child
-      ON child.tenant_id = tree.tenant_id
-     AND child.organization_id = tree.organization_id
+      ON child.tenant_id = child_group.definition_tenant_id
+     AND child.organization_id = child_group.definition_organization_id
      AND child.deleted_at IS NULL
      AND child.status = 1
      AND (
-          (tree.child_resource_group_id IS NOT NULL AND child.resource_group_id = tree.child_resource_group_id)
-          OR (NULLIF(tree.child_resource_group_code, '') IS NOT NULL AND child.resource_group_code = tree.child_resource_group_code)
+          child.resource_group_id = child_group.resource_group_id
+          OR (NULLIF(child.resource_group_code, '') IS NOT NULL AND child.resource_group_code = child_group.group_code)
      )
     WHERE tree.depth < 8
       AND (
@@ -320,95 +596,123 @@ WITH RECURSIVE resource_group_tree AS (
           OR NULLIF(tree.child_resource_group_code, '') IS NOT NULL
       )
 ),
-resource_group_leaf AS (
-    SELECT DISTINCT
-        tenant_id,
-        organization_id,
-        root_group_id AS resource_group_id,
-        root_group_code AS resource_group_code,
+routing_resource_reference AS (
+    SELECT
+        binding_kind,
+        binding_id,
+        scope_tenant_id,
+        scope_organization_id,
+        subject_id,
+        resource_id,
+        resource_code
+    FROM active_routing_resource_binding
+    WHERE resource_id IS NOT NULL
+       OR NULLIF(resource_code, '') IS NOT NULL
+    UNION ALL
+    SELECT
+        binding_kind,
+        binding_id,
+        scope_tenant_id,
+        scope_organization_id,
+        subject_id,
         resource_id,
         resource_code
     FROM resource_group_tree
     WHERE resource_id IS NOT NULL
        OR NULLIF(resource_code, '') IS NOT NULL
 ),
+resource_reference_target AS (
+    SELECT
+        reference.*,
+        referenced_resource.resource_code AS referenced_resource_code
+    FROM routing_resource_reference reference
+    LEFT JOIN ai_resource referenced_resource
+      ON reference.resource_id IS NOT NULL
+     AND referenced_resource.id = reference.resource_id
+     AND referenced_resource.deleted_at IS NULL
+     AND referenced_resource.status = 1
+     AND (referenced_resource.tenant_id > 0 OR referenced_resource.organization_id = 0)
+     AND (
+          (referenced_resource.tenant_id = reference.scope_tenant_id AND referenced_resource.organization_id = reference.scope_organization_id)
+          OR (reference.scope_tenant_id > 0 AND referenced_resource.tenant_id = reference.scope_tenant_id AND referenced_resource.organization_id = 0)
+          OR (referenced_resource.tenant_id = 0 AND referenced_resource.organization_id = 0)
+     )
+),
+resource_candidate AS (
+    SELECT
+        reference.binding_kind,
+        reference.binding_id,
+        reference.scope_tenant_id,
+        reference.scope_organization_id,
+        reference.subject_id,
+        resource.resource_code,
+        resource.resource_type,
+        resource.vendor_code,
+        resource.modality_code,
+        resource.api_code,
+        resource.catalog_key,
+        resource.model,
+        resource.provider_native_model,
+        ROW_NUMBER() OVER (
+            PARTITION BY reference.binding_kind, reference.binding_id, resource.resource_code
+            ORDER BY CASE
+                WHEN resource.tenant_id = reference.scope_tenant_id
+                 AND resource.organization_id = reference.scope_organization_id THEN 0
+                WHEN reference.scope_tenant_id > 0
+                 AND resource.tenant_id = reference.scope_tenant_id
+                 AND resource.organization_id = 0 THEN 1
+                ELSE 2
+            END,
+            resource.id ASC
+        ) AS candidate_rank
+    FROM resource_reference_target reference
+    JOIN ai_resource resource
+      ON resource.deleted_at IS NULL
+     AND resource.status = 1
+     AND (resource.tenant_id > 0 OR resource.organization_id = 0)
+     AND resource.resource_code = CASE
+         WHEN reference.resource_id IS NOT NULL THEN reference.referenced_resource_code
+         ELSE NULLIF(reference.resource_code, '')
+     END
+     AND (
+          (resource.tenant_id = reference.scope_tenant_id AND resource.organization_id = reference.scope_organization_id)
+          OR (reference.scope_tenant_id > 0 AND resource.tenant_id = reference.scope_tenant_id AND resource.organization_id = 0)
+          OR (resource.tenant_id = 0 AND resource.organization_id = 0)
+     )
+),
 group_resource_scope AS (
     SELECT DISTINCT
-        gr.tenant_id,
-        gr.organization_id,
-        gr.channel_group_id,
-        r.resource_code,
-        r.resource_type,
-        r.vendor_code,
-        r.modality_code,
-        r.api_code,
-        r.catalog_key,
-        r.model,
-        r.provider_native_model
-    FROM ai_channel_group_resource gr
-    LEFT JOIN resource_group_leaf rgi
-      ON rgi.tenant_id = gr.tenant_id
-     AND rgi.organization_id = gr.organization_id
-     AND (
-         (gr.resource_group_id IS NOT NULL AND rgi.resource_group_id = gr.resource_group_id)
-         OR (NULLIF(gr.resource_group_code, '') IS NOT NULL AND rgi.resource_group_code = gr.resource_group_code)
-         OR (NULLIF(gr.resource_code, '') IS NOT NULL AND rgi.resource_group_code = gr.resource_code)
-     )
-    JOIN ai_resource r
-      ON r.tenant_id = gr.tenant_id
-     AND r.organization_id = gr.organization_id
-     AND r.deleted_at IS NULL
-     AND r.status = 1
-     AND (
-         r.id = gr.resource_id
-         OR r.id = rgi.resource_id
-         OR (NULLIF(gr.resource_code, '') IS NOT NULL AND r.resource_code = gr.resource_code)
-         OR (NULLIF(rgi.resource_code, '') IS NOT NULL AND r.resource_code = rgi.resource_code)
-     )
-    WHERE gr.deleted_at IS NULL
-      AND gr.status = 1
-      AND gr.grant_type = 'allow'
-      AND (gr.effective_from IS NULL OR gr.effective_from <= CURRENT_TIMESTAMP)
-      AND (gr.effective_to IS NULL OR gr.effective_to > CURRENT_TIMESTAMP)
+        scope_tenant_id AS tenant_id,
+        scope_organization_id AS organization_id,
+        subject_id AS channel_group_id,
+        resource_code,
+        resource_type,
+        vendor_code,
+        modality_code,
+        api_code,
+        catalog_key,
+        model,
+        provider_native_model
+    FROM resource_candidate
+    WHERE binding_kind = 'group'
+      AND candidate_rank = 1
 ),
 channel_resource_scope AS (
     SELECT DISTINCT
-        cr.tenant_id,
-        cr.organization_id,
-        cr.channel_id,
-        r.resource_code,
-        r.resource_type,
-        r.vendor_code,
-        r.modality_code,
-        r.api_code,
-        r.catalog_key,
-        r.model,
-        r.provider_native_model
-    FROM ai_channel_resource cr
-    LEFT JOIN resource_group_leaf rgi
-      ON rgi.tenant_id = cr.tenant_id
-     AND rgi.organization_id = cr.organization_id
-     AND (
-         (cr.resource_group_id IS NOT NULL AND rgi.resource_group_id = cr.resource_group_id)
-         OR (NULLIF(cr.resource_group_code, '') IS NOT NULL AND rgi.resource_group_code = cr.resource_group_code)
-         OR (NULLIF(cr.resource_code, '') IS NOT NULL AND rgi.resource_group_code = cr.resource_code)
-     )
-    JOIN ai_resource r
-      ON r.tenant_id = cr.tenant_id
-     AND r.organization_id = cr.organization_id
-     AND r.deleted_at IS NULL
-     AND r.status = 1
-     AND (
-         r.id = cr.resource_id
-         OR r.id = rgi.resource_id
-         OR (NULLIF(cr.resource_code, '') IS NOT NULL AND r.resource_code = cr.resource_code)
-         OR (NULLIF(rgi.resource_code, '') IS NOT NULL AND r.resource_code = rgi.resource_code)
-     )
-    WHERE cr.deleted_at IS NULL
-      AND cr.status = 1
-      AND cr.grant_type = 'allow'
-      AND (cr.effective_from IS NULL OR cr.effective_from <= CURRENT_TIMESTAMP)
-      AND (cr.effective_to IS NULL OR cr.effective_to > CURRENT_TIMESTAMP)
+        scope_tenant_id AS tenant_id,
+        scope_organization_id AS organization_id,
+        subject_id AS channel_id,
+        resource_code,
+        resource_type,
+        vendor_code,
+        modality_code,
+        api_code,
+        catalog_key,
+        model,
+        provider_native_model
+    FROM resource_candidate
+    WHERE binding_kind = 'channel'
+      AND candidate_rank = 1
 ),
 matched_resource_scope AS (
     SELECT DISTINCT
@@ -710,6 +1014,8 @@ ORDER BY
     pub fn load_pricing_plans() -> &'static str {
         r#"
 SELECT
+    tenant_id,
+    organization_id,
     plan_code,
     CASE base_price_side
         WHEN 1 THEN 'official_reference'
@@ -913,6 +1219,8 @@ ORDER BY channel_group_id ASC, snapshot_at DESC, id DESC
     pub fn load_prices() -> &'static str {
         r#"
 SELECT
+    tenant_id,
+    organization_id,
     catalog_key,
     model,
     COALESCE(NULLIF(region_code, ''), 'global') AS region_code,

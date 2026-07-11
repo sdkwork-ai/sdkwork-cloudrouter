@@ -180,7 +180,7 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
         query: SelectProviderRouteQuery,
     ) -> Result<SelectedProviderRoutePlan, ProviderRouteSelectionError> {
         let mut last_unavailable = None;
-        for context in self.route_contexts(&query.context) {
+        for context in self.route_contexts(&query.context)? {
             let scoped_query = SelectProviderRouteQuery {
                 context,
                 ..query.clone()
@@ -279,7 +279,7 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
         query: SelectProviderChannelRouteQuery,
     ) -> Result<SelectedProviderChannelRoute, ProviderRouteSelectionError> {
         let mut last_unavailable = None;
-        for context in self.route_contexts(&query.context) {
+        for context in self.route_contexts(&query.context)? {
             let scoped_query = SelectProviderChannelRouteQuery {
                 context,
                 ..query.clone()
@@ -360,24 +360,30 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
     fn route_contexts(
         &self,
         context: &AuthenticatedApiKeyContext,
-    ) -> Vec<AuthenticatedApiKeyContext> {
-        let mut contexts = self
-            .catalog
-            .find_api_key(context.api_key_id)
-            .map(|api_key| {
-                api_key
-                    .effective_group_bindings()
-                    .into_iter()
-                    .filter(|binding| binding.binding_role.trim().eq_ignore_ascii_case("route"))
-                    .filter_map(|binding| self.context_from_group_binding(context, &binding))
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_default();
+    ) -> Result<Vec<AuthenticatedApiKeyContext>, ProviderRouteSelectionError> {
+        let Some(api_key) = self.catalog.find_api_key(context.api_key_id) else {
+            return Ok(vec![context.clone()]);
+        };
+        if api_key.tenant_id != context.tenant_id
+            || api_key.organization_id != context.organization_id
+            || api_key.user_id != context.user_id
+        {
+            return Err(ProviderRouteSelectionError::provider_route_unavailable(
+                "authenticated api key context does not match catalog ownership",
+            ));
+        }
+
+        let mut contexts = api_key
+            .effective_group_bindings()
+            .into_iter()
+            .filter(|binding| binding.binding_role.trim().eq_ignore_ascii_case("route"))
+            .filter_map(|binding| self.context_from_group_binding(context, &binding))
+            .collect::<Vec<_>>();
 
         if contexts.is_empty() {
             contexts.push(context.clone());
         }
-        contexts
+        Ok(contexts)
     }
 
     fn context_from_group_binding(
@@ -675,7 +681,9 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
                 policy.tenant_id == context.tenant_id
                     && policy.subject_id.unwrap_or(context.tenant_id) == context.tenant_id
             }
-            RoutingPolicyScope::Global => true,
+            RoutingPolicyScope::Global => {
+                policy.tenant_id == 0 && policy.organization_id == 0 && policy.subject_id.is_none()
+            }
         }
     }
 
@@ -974,7 +982,7 @@ fn selected_provider_channel_route(
 
 fn candidate_chain(rule: &RoutingRule, policy: &RoutingPolicy) -> Vec<RouteCandidate> {
     let mut candidates = rule.candidate_channels.clone();
-    candidates.sort_by_key(|candidate| (-candidate.weight, candidate.channel_id));
+    candidates.sort_by_key(|candidate| (Reverse(candidate.weight), candidate.channel_id));
     if policy
         .fallback_mode_or_default()
         .allows_rule_fallback_chain()
@@ -1362,8 +1370,9 @@ fn next_per_channel_offset(provider_code: &str, channel_id: i64, modulus: usize)
         return CREDENTIAL_ROTATION_COUNTER.fetch_add(1, Ordering::Relaxed) as usize % modulus;
     };
     let counter = guard.entry(key).or_insert(0);
+    let offset = *counter as usize % modulus;
     *counter = counter.wrapping_add(1);
-    *counter as usize % modulus
+    offset
 }
 
 /// Fallback global counter for cases where per-channel identity is not
@@ -1534,12 +1543,10 @@ fn weighted_credential_rotation_offset(
     weights: &[usize],
     channel_key: Option<(&str, i64)>,
 ) -> usize {
-    let total_weight = weights
-        .iter()
-        .copied()
-        .map(|weight| weight.max(1))
-        .sum::<usize>()
-        .max(1);
+    let total_weight = weights.iter().copied().sum::<usize>();
+    if total_weight == 0 {
+        return 0;
+    }
     if let Some((provider_code, channel_id)) = channel_key {
         return next_per_channel_offset(provider_code, channel_id, total_weight);
     }
@@ -1549,7 +1556,7 @@ fn weighted_credential_rotation_offset(
 fn weighted_index(weights: impl IntoIterator<Item = usize>, offset: usize) -> usize {
     let mut cursor = 0;
     for (index, weight) in weights.into_iter().enumerate() {
-        cursor += weight.max(1);
+        cursor += weight;
         if offset < cursor {
             return index;
         }

@@ -659,7 +659,7 @@ GET /readyz
 GET /metrics
 ```
 
-Provider-native health probes should run through endpoint adapters or provider common health helpers and update the existing provider health snapshot model through gateway/admin flows.
+Provider-native health probes run through endpoint adapters or provider common health helpers and atomically update the canonical runtime facts on `ai_channel` and `ai_channel_credential`. Provider attempts and route outcomes are recorded in `ai_request_trace` and `ai_routing_decision_log`; the external `ops-worker` may consume those facts to rebuild `integration_provider_health_snapshot`. Gateway and admin flows never write that projection.
 
 ## Error Model
 

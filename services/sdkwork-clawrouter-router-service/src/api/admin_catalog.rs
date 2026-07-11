@@ -13,19 +13,18 @@ use serde_json::Value;
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
     json_created_response, json_success_list_response, no_content_response,
-    normalize_list_search_query, offset_page_info, parse_offset_list_query,
-    problem_from_wire_code, success_envelope,
+    normalize_list_search_query, offset_page_info, parse_offset_list_query, problem_from_wire_code,
+    success_envelope,
 };
 use crate::application::{load_admin_category_seed_bundles, DEFAULT_ADMIN_CATEGORY_SEED_DATASETS};
 use crate::domain::DomainError;
 use crate::ports::{
     AdminAttributeMutationCommand, AdminCatalogCollection, AdminCatalogJsonRecord,
-    AdminCatalogStore, AdminCategoryAttributeMutationCommand,
-    AdminCategoryMutationCommand, AdminCategorySeedInitializeCommand,
-    AdminCategorySeedInitializeSummary, AdminPriceListMutationCommand, AdminProductMutationCommand,
-    AdminSkuAttributeInput, AdminSkuMutationCommand, DeleteAdminCategoryAttributeCommand,
-    DeleteAdminCategoryCommand, DeleteAdminProductCommand, DeleteAdminSkuCommand,
-    ListAdminCatalogRecordsQuery,
+    AdminCatalogStore, AdminCategoryAttributeMutationCommand, AdminCategoryMutationCommand,
+    AdminCategorySeedInitializeCommand, AdminCategorySeedInitializeSummary,
+    AdminPriceListMutationCommand, AdminProductMutationCommand, AdminSkuAttributeInput,
+    AdminSkuMutationCommand, DeleteAdminCategoryAttributeCommand, DeleteAdminCategoryCommand,
+    DeleteAdminProductCommand, DeleteAdminSkuCommand, ListAdminCatalogRecordsQuery,
 };
 
 const MAX_ID_LEN: usize = 128;

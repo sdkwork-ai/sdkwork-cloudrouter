@@ -21,6 +21,10 @@ pub struct InvocationRequest {
     pub request_id: String,
     pub trace_id: Option<String>,
     pub idempotency_key: Option<String>,
+    /// Ephemeral server-owned token used to conditionally complete or release
+    /// the idempotency lease acquired for this invocation. It is never
+    /// serialized to clients or emitted in logs.
+    pub(crate) idempotency_owner_token: Option<String>,
     pub client_ip: Option<String>,
 }
 
@@ -38,6 +42,7 @@ impl InvocationRequest {
             request_id: String::new(),
             trace_id: None,
             idempotency_key: None,
+            idempotency_owner_token: None,
             client_ip: None,
         }
     }

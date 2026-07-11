@@ -82,7 +82,7 @@ interface
 - `DomainModel`：承载业务不变量。
 - `EntityContract`：数据库契约和持久化映射。
 - `Projection`：dashboard、列表页、报表读模型。
-- `Snapshot`：路由策略、模型目录、价格、provider 健康快照。
+- `Snapshot`：路由策略、模型目录、价格，以及从 `ai_channel` / `ai_channel_credential` 运行时事实派生的短生命周期健康视图；`integration_provider_health_snapshot` 属于异步运营投影，不是路由真值。
 
 ## 5. 状态真值模型
 
@@ -107,7 +107,7 @@ Gateway `/v1/**` 请求生命周期：
 2. 解析兼容认证输入：`Authorization: Bearer`、`x-api-key`、`x-goog-api-key`、`?key=`。
 3. 使用 API key hash 得到 tenant、organization、user、api_key、channel_group 和 data_scope。
 4. 解析 capability family、requested model、protocol profile 和调用参数。
-5. 读取模型目录、价格、路由策略、quota、rate limit、provider health snapshot。
+5. 读取模型目录、价格、路由策略、quota、rate limit，以及从 `ai_channel` / `ai_channel_credential` 派生的运行时健康视图；不得同步依赖 `integration_provider_health_snapshot`。
 6. 通过 deterministic priority、weighted random、SLO-aware、geo affinity、fallback chain 生成候选。
 7. 选择 provider/channel/account 并执行 provider adapter。
 8. 对 streaming 响应进行 backpressure-safe 转发，不全量缓冲。
@@ -193,4 +193,3 @@ python -B -m tools.schema_quality_gate
 6. 任一路由决策都能解释候选、过滤、排序、fallback 和最终目标。
 7. 任一部署形态都不改变核心业务逻辑。
 8. 任一前端接入改造都不改变 portal UI 视觉设计。
-

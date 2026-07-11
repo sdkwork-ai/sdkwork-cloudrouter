@@ -52,7 +52,7 @@
     },
     {
       "path": "src/api/ai.ts",
-      "sha256": "b05666c63ebf3aec7668c8dbabe82c514d158c1935192c77b7c21197d72135f0"
+      "sha256": "8ce8797fcef89312e3881971ac100aea3313c83d183d586ed5a1043500a0d7d9"
     },
     {
       "path": "src/api/base.ts",
@@ -60,7 +60,7 @@
     },
     {
       "path": "src/api/chat.ts",
-      "sha256": "03717240d3f0032a252d847b9009cef3aaa94809ee0da55711bb5f70d1147a51"
+      "sha256": "67f881c54e15f6056ed7042de9f4745fa37c31e6658e950df18ed2a355306dcc"
     },
     {
       "path": "src/api/iam.ts",
@@ -80,7 +80,7 @@
     },
     {
       "path": "src/api/runtime.ts",
-      "sha256": "7c74780eb3019b9f55a1a633045cad404a95a9eb2510f143bd3d2e2904f72605"
+      "sha256": "b2dbd48f4438a4a18bf187ea289d101ca48c2af76799e2e9b6a7b80cb1a08908"
     },
     {
       "path": "src/api/system.ts",
@@ -115,8 +115,16 @@
       "sha256": "fba9bdce0aa56c5d984ff8b2134909da389641b40a3bfd56236eca1791441a0a"
     },
     {
+      "path": "src/types/gateway-trace.ts",
+      "sha256": "b10388b1930088634d74ad44e843734f2af82504f9cd6bc935a05da00d375a14"
+    },
+    {
+      "path": "src/types/gateway-traces-page.ts",
+      "sha256": "1d1bd9de8b99b32a32ee77e995bc138c14f70fd5c14e6ddea099de0255cf4bee"
+    },
+    {
       "path": "src/types/index.ts",
-      "sha256": "a4451ef951aeb1cdf3c7512975297fad4db6754902a6a2b60e5e93fe00b245b2"
+      "sha256": "00e039f0e339bfb64268fe855b4d35c31705b006a3b919414333c570603b9862"
     },
     {
       "path": "src/types/json-null.ts",

@@ -5,8 +5,8 @@ use sdkwork_claw_config::{
     TrustedSubjectConfig,
 };
 use sdkwork_claw_http::{
-    optional_app_request_subject, sign_app_session_token, sign_trusted_request_subject,
-    sanitize_sensitive_query, sanitize_sensitive_query_in_uri, upsert_query_parameter,
+    optional_app_request_subject, sanitize_sensitive_query, sanitize_sensitive_query_in_uri,
+    sign_app_session_token, sign_trusted_request_subject, upsert_query_parameter,
     verified_app_request_subject, verified_signed_trusted_request_subject,
     verify_app_session_token, verify_app_session_token_claims, ApiKeyCredentialSource,
     ApiKeyIdentity, ApiKeyIdentityError, AppSessionTokenClaims, AppSessionTokenKind,
@@ -70,9 +70,8 @@ fn api_key_identity_rejects_header_and_query_credentials_as_ambiguous() {
     let uri: Uri = "/google/v1beta/models?key=sk-query".parse().unwrap();
     let policy = standalone_desktop_query_key_policy();
 
-    let error =
-        ApiKeyIdentity::from_headers_and_uri_with_query_key_policy(&headers, &uri, policy)
-            .unwrap_err();
+    let error = ApiKeyIdentity::from_headers_and_uri_with_query_key_policy(&headers, &uri, policy)
+        .unwrap_err();
 
     assert_eq!(ApiKeyIdentityError::AmbiguousCredentialSources, error);
 }
@@ -81,7 +80,9 @@ fn api_key_identity_rejects_header_and_query_credentials_as_ambiguous() {
 fn default_api_key_identity_denies_query_keys_even_in_desktop_process_env() {
     let _env = CanonicalRuntimeEnvGuard::standalone_desktop();
     let headers = HeaderMap::new();
-    let uri: Uri = "/google/v1beta/models?foo=bar&key=sk-query".parse().unwrap();
+    let uri: Uri = "/google/v1beta/models?foo=bar&key=sk-query"
+        .parse()
+        .unwrap();
 
     let error = ApiKeyIdentity::from_headers_and_uri(&headers, &uri).unwrap_err();
 
@@ -158,12 +159,9 @@ runtime_target = "container"
     let policy = QueryStringApiKeyPolicy::from_configured_runtime(runtime);
     let uri: Uri = "/google/v1beta/models?key=sk-query".parse().unwrap();
 
-    let error = ApiKeyIdentity::from_headers_and_uri_with_query_key_policy(
-        &HeaderMap::new(),
-        &uri,
-        policy,
-    )
-    .unwrap_err();
+    let error =
+        ApiKeyIdentity::from_headers_and_uri_with_query_key_policy(&HeaderMap::new(), &uri, policy)
+            .unwrap_err();
 
     assert_eq!(ApiKeyIdentityError::QueryKeyNotAllowed, error);
 }
@@ -261,10 +259,7 @@ impl CanonicalRuntimeEnvGuard {
             previous_target: std::env::var_os(RuntimeTarget::ENV_RUNTIME_TARGET),
         };
         unsafe {
-            std::env::set_var(
-                DeploymentProfile::ENV_DEPLOYMENT_PROFILE,
-                "standalone",
-            );
+            std::env::set_var(DeploymentProfile::ENV_DEPLOYMENT_PROFILE, "standalone");
             std::env::set_var(RuntimeTarget::ENV_RUNTIME_TARGET, "desktop");
         }
         guard
@@ -275,9 +270,7 @@ impl Drop for CanonicalRuntimeEnvGuard {
     fn drop(&mut self) {
         unsafe {
             match self.previous_profile.take() {
-                Some(value) => {
-                    std::env::set_var(DeploymentProfile::ENV_DEPLOYMENT_PROFILE, value)
-                }
+                Some(value) => std::env::set_var(DeploymentProfile::ENV_DEPLOYMENT_PROFILE, value),
                 None => std::env::remove_var(DeploymentProfile::ENV_DEPLOYMENT_PROFILE),
             }
             match self.previous_target.take() {

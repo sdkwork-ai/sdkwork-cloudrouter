@@ -27,7 +27,11 @@ async fn admin_catalog_category_routes_use_standard_create_list_delete_semantics
 
     let categories = request_json(
         router.clone(),
-        signed_request("GET", "/backend/v3/api/catalog/categories?page=1&page_size=1", ""),
+        signed_request(
+            "GET",
+            "/backend/v3/api/catalog/categories?page=1&page_size=1",
+            "",
+        ),
         StatusCode::OK,
     )
     .await;
@@ -186,7 +190,14 @@ impl AdminCatalogStore for TestAdminCatalogStore {
         &'a self,
         query: ListAdminCatalogRecordsQuery,
     ) -> AdminCatalogFuture<'a, AdminCatalogCollection> {
-        Box::pin(async move { Ok(test_catalog_page(Vec::new(), query.page_no, query.page_size, query.offset)) })
+        Box::pin(async move {
+            Ok(test_catalog_page(
+                Vec::new(),
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
+        })
     }
 
     fn create_product<'a>(
@@ -200,7 +211,11 @@ impl AdminCatalogStore for TestAdminCatalogStore {
         &'a self,
         command: AdminProductMutationCommand,
     ) -> AdminCatalogFuture<'a, AdminCatalogJsonRecord> {
-        Box::pin(async move { Ok(record(json!({"id": command.product_id.unwrap_or(command.spu_no)}))) })
+        Box::pin(async move {
+            Ok(record(
+                json!({"id": command.product_id.unwrap_or(command.spu_no)}),
+            ))
+        })
     }
 
     fn delete_product<'a>(
@@ -214,7 +229,14 @@ impl AdminCatalogStore for TestAdminCatalogStore {
         &'a self,
         query: ListAdminCatalogRecordsQuery,
     ) -> AdminCatalogFuture<'a, AdminCatalogCollection> {
-        Box::pin(async move { Ok(test_catalog_page(Vec::new(), query.page_no, query.page_size, query.offset)) })
+        Box::pin(async move {
+            Ok(test_catalog_page(
+                Vec::new(),
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
+        })
     }
 
     fn create_sku<'a>(
@@ -228,7 +250,11 @@ impl AdminCatalogStore for TestAdminCatalogStore {
         &'a self,
         command: AdminSkuMutationCommand,
     ) -> AdminCatalogFuture<'a, AdminCatalogJsonRecord> {
-        Box::pin(async move { Ok(record(json!({"id": command.sku_id.unwrap_or(command.sku_no)}))) })
+        Box::pin(async move {
+            Ok(record(
+                json!({"id": command.sku_id.unwrap_or(command.sku_no)}),
+            ))
+        })
     }
 
     fn delete_sku<'a>(&'a self, _command: DeleteAdminSkuCommand) -> AdminCatalogFuture<'a, bool> {
@@ -239,7 +265,14 @@ impl AdminCatalogStore for TestAdminCatalogStore {
         &'a self,
         query: ListAdminCatalogRecordsQuery,
     ) -> AdminCatalogFuture<'a, AdminCatalogCollection> {
-        Box::pin(async move { Ok(test_catalog_page(Vec::new(), query.page_no, query.page_size, query.offset)) })
+        Box::pin(async move {
+            Ok(test_catalog_page(
+                Vec::new(),
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
+        })
     }
 
     fn create_attribute<'a>(
@@ -253,7 +286,14 @@ impl AdminCatalogStore for TestAdminCatalogStore {
         &'a self,
         query: ListAdminCatalogRecordsQuery,
     ) -> AdminCatalogFuture<'a, AdminCatalogCollection> {
-        Box::pin(async move { Ok(test_catalog_page(Vec::new(), query.page_no, query.page_size, query.offset)) })
+        Box::pin(async move {
+            Ok(test_catalog_page(
+                Vec::new(),
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
+        })
     }
 
     fn create_category_attribute<'a>(
@@ -293,7 +333,14 @@ impl AdminCatalogStore for TestAdminCatalogStore {
         &'a self,
         query: ListAdminCatalogRecordsQuery,
     ) -> AdminCatalogFuture<'a, AdminCatalogCollection> {
-        Box::pin(async move { Ok(test_catalog_page(Vec::new(), query.page_no, query.page_size, query.offset)) })
+        Box::pin(async move {
+            Ok(test_catalog_page(
+                Vec::new(),
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
+        })
     }
 
     fn create_price_list<'a>(

@@ -38,8 +38,8 @@ async fn sqlite_gateway_usage_recorder_upserts_trace_and_usage_fact_without_dupl
         "trace-chat-usage-sqlite",
         trace.get::<String, _>("trace_id")
     );
-    assert_eq!(10_i64, trace.get::<i64, _>("tenant_id"));
-    assert_eq!(20_i64, trace.get::<i64, _>("organization_id"));
+    assert_eq!(100001_i64, trace.get::<i64, _>("tenant_id"));
+    assert_eq!(0_i64, trace.get::<i64, _>("organization_id"));
     assert_eq!(30_i64, trace.get::<i64, _>("user_id"));
     assert_eq!(101_i64, trace.get::<i64, _>("api_key_id"));
     assert_eq!(
@@ -73,7 +73,7 @@ async fn sqlite_gateway_usage_recorder_upserts_trace_and_usage_fact_without_dupl
     assert!(user_agent_hash.chars().all(|ch| ch.is_ascii_hexdigit()));
 
     let usage = sqlx::query(
-        "SELECT request_id, api_key_id, catalog_key, requested_model_catalog_key, model, provider_native_model, region_code, channel_id, usage_type, billing_meter_code, billable_quantity, prompt_tokens, completion_tokens, cached_tokens, total_tokens, base_input_unit_price, base_output_unit_price, cache_read_unit_price, rate_multiplier, reference_multiplier, official_reference_amount, upstream_cost_amount, customer_charge_amount, cost_amount, currency, pricing_plan_code, pricing_snapshot, occurred_at, settlement_status FROM ai_usage",
+        "SELECT request_id, api_key_id, catalog_key, requested_model_catalog_key, model, provider_native_model, region_code, channel_id, usage_type, billing_meter_code, billable_quantity, prompt_tokens, completion_tokens, cached_tokens, total_tokens, base_input_unit_price, base_output_unit_price, cache_read_unit_price, rate_multiplier, reference_multiplier, official_reference_amount, upstream_cost_amount, customer_charge_amount, currency, pricing_plan_code, pricing_snapshot, occurred_at, settlement_status, idempotency_key FROM ai_usage",
     )
     .fetch_one(&pool)
     .await
@@ -116,27 +116,23 @@ async fn sqlite_gateway_usage_recorder_upserts_trace_and_usage_fact_without_dupl
     );
     assert_eq!("4.290000", usage.get::<String, _>("upstream_cost_amount"));
     assert_eq!("7.722000", usage.get::<String, _>("customer_charge_amount"));
-    assert_eq!("7.722000", usage.get::<String, _>("cost_amount"));
     assert_eq!("USD", usage.get::<String, _>("currency"));
     assert_eq!("standard", usage.get::<String, _>("pricing_plan_code"));
+    let idempotency_key = usage.get::<String, _>("idempotency_key");
+    assert!(idempotency_key.starts_with("usage:v1:"));
+    assert_eq!(73, idempotency_key.len());
+    assert!(idempotency_key[9..]
+        .chars()
+        .all(|character| character.is_ascii_hexdigit()));
     let pricing_snapshot: serde_json::Value =
         serde_json::from_str(&usage.get::<String, _>("pricing_snapshot")).unwrap();
-    assert_eq!(
-        "openai",
-        pricing_snapshot["vendor"]["code"].as_i64().unwrap()
-    );
+    assert_eq!("openai", pricing_snapshot["vendor"]["code"]);
     assert_eq!(
         "openai/gpt-4o-mini",
         pricing_snapshot["model"]["catalogKey"]
     );
-    assert_eq!(
-        "openrouter",
-        pricing_snapshot["provider"]["code"].as_i64().unwrap()
-    );
-    assert_eq!(
-        "standard",
-        pricing_snapshot["pricingPlan"]["code"].as_i64().unwrap()
-    );
+    assert_eq!("openrouter", pricing_snapshot["provider"]["code"]);
+    assert_eq!("standard", pricing_snapshot["pricingPlan"]["code"]);
     assert_eq!("1.000000", pricing_snapshot["multipliers"]["rate"]);
     assert_eq!("1.320000", pricing_snapshot["multipliers"]["reference"]);
     assert_eq!(
@@ -177,6 +173,46 @@ async fn sqlite_gateway_usage_recorder_upserts_trace_and_usage_fact_without_dupl
 }
 
 #[tokio::test]
+async fn sqlite_gateway_usage_recorder_rolls_back_trace_when_usage_insert_fails() {
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .unwrap();
+    create_usage_tables(&pool).await;
+    sqlx::query(
+        r#"
+        CREATE TRIGGER reject_gateway_usage
+        BEFORE INSERT ON ai_usage
+        BEGIN
+            SELECT RAISE(ABORT, 'forced usage insert failure');
+        END
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let recorder = SqliteGatewayUsageRecorder::new(pool.clone());
+    let result = recorder
+        .record_gateway_usage(usage_command("req-usage-rollback", 200))
+        .await;
+    assert!(result.is_err());
+
+    for table in ["ai_request_trace", "ai_usage"] {
+        let count = sqlx::query(&format!("SELECT COUNT(*) AS count FROM {table}"))
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+            .get::<i64, _>("count");
+        assert_eq!(
+            0, count,
+            "gateway usage transaction must roll back every write when {table} insert fails"
+        );
+    }
+}
+
+#[tokio::test]
 async fn sqlite_gateway_usage_recorder_records_failed_trace_without_usage_fact() {
     let pool = SqlitePoolOptions::new()
         .max_connections(1)
@@ -211,8 +247,8 @@ async fn sqlite_gateway_usage_recorder_records_failed_trace_without_usage_fact()
         "trace-chat-usage-sqlite",
         trace.get::<String, _>("trace_id")
     );
-    assert_eq!(10_i64, trace.get::<i64, _>("tenant_id"));
-    assert_eq!(20_i64, trace.get::<i64, _>("organization_id"));
+    assert_eq!(100001_i64, trace.get::<i64, _>("tenant_id"));
+    assert_eq!(0_i64, trace.get::<i64, _>("organization_id"));
     assert_eq!(30_i64, trace.get::<i64, _>("user_id"));
     assert_eq!(101_i64, trace.get::<i64, _>("api_key_id"));
     assert_eq!(
@@ -289,7 +325,8 @@ async fn sqlite_gateway_usage_recorder_uses_command_modality_and_meter() {
     let usage = sqlx::query(
         r#"
         SELECT request_id, modality, usage_type, billing_meter_code, billable_quantity,
-               prompt_tokens, completion_tokens, total_tokens, customer_charge_amount, cost_amount
+               prompt_tokens, completion_tokens, total_tokens, customer_charge_amount,
+               upstream_cost_amount
         FROM ai_usage
         WHERE request_id = 'req-embedding-usage-sqlite'
         "#,
@@ -308,7 +345,7 @@ async fn sqlite_gateway_usage_recorder_uses_command_modality_and_meter() {
     assert_eq!(0_i64, usage.get::<i64, _>("completion_tokens"));
     assert_eq!(13_i64, usage.get::<i64, _>("total_tokens"));
     assert_eq!("0.343200", usage.get::<String, _>("customer_charge_amount"));
-    assert_eq!("0.343200", usage.get::<String, _>("cost_amount"));
+    assert_eq!("0.130000", usage.get::<String, _>("upstream_cost_amount"));
 }
 
 #[tokio::test]
@@ -332,7 +369,7 @@ async fn sqlite_gateway_usage_recorder_preserves_successfully_settled_usage_fact
         UPDATE ai_usage
         SET settlement_status = 2,
             customer_charge_amount = '7.722000',
-            cost_amount = '4.290000',
+            upstream_cost_amount = '4.290000',
             total_tokens = 18
         WHERE request_id = 'req-chat-usage-settled'
         "#,
@@ -351,7 +388,7 @@ async fn sqlite_gateway_usage_recorder_preserves_successfully_settled_usage_fact
 
     let usage = sqlx::query(
         r#"
-        SELECT total_tokens, customer_charge_amount, cost_amount, settlement_status
+        SELECT total_tokens, customer_charge_amount, upstream_cost_amount, settlement_status
         FROM ai_usage
         WHERE request_id = 'req-chat-usage-settled'
         "#,
@@ -361,7 +398,7 @@ async fn sqlite_gateway_usage_recorder_preserves_successfully_settled_usage_fact
     .unwrap();
     assert_eq!(18_i64, usage.get::<i64, _>("total_tokens"));
     assert_eq!("7.722000", usage.get::<String, _>("customer_charge_amount"));
-    assert_eq!("4.290000", usage.get::<String, _>("cost_amount"));
+    assert_eq!("4.290000", usage.get::<String, _>("upstream_cost_amount"));
     assert_eq!(
         2_i64,
         usage.get::<i64, _>("settlement_status"),
@@ -387,8 +424,7 @@ async fn sqlite_gateway_usage_recorder_preserves_successfully_settled_usage_fact
 }
 
 #[tokio::test]
-async fn sqlite_gateway_usage_recorder_preserves_unknown_settlement_usage_fact_on_duplicate_request_id(
-) {
+async fn sqlite_gateway_usage_schema_rejects_null_settlement_status() {
     let pool = SqlitePoolOptions::new()
         .max_connections(1)
         .connect("sqlite::memory:")
@@ -397,36 +433,25 @@ async fn sqlite_gateway_usage_recorder_preserves_unknown_settlement_usage_fact_o
     create_usage_tables(&pool).await;
     let recorder = SqliteGatewayUsageRecorder::new(pool.clone());
 
-    let mut command = usage_command("req-chat-usage-unknown-settlement", 200);
-    recorder
-        .record_gateway_usage(command.clone())
-        .await
-        .unwrap();
-    sqlx::query(
+    let command = usage_command("req-chat-usage-unknown-settlement", 200);
+    recorder.record_gateway_usage(command).await.unwrap();
+    let update_result = sqlx::query(
         r#"
         UPDATE ai_usage
-        SET settlement_status = NULL,
-            customer_charge_amount = '7.722000',
-            cost_amount = '4.290000',
-            total_tokens = 18
+        SET settlement_status = NULL
         WHERE request_id = 'req-chat-usage-unknown-settlement'
         "#,
     )
     .execute(&pool)
-    .await
-    .unwrap();
-
-    command.prompt_tokens = 99;
-    command.completion_tokens = 88;
-    command.cached_tokens = 0;
-    command.total_tokens = 187;
-    command.customer_charge_amount = "999.000000".to_owned();
-    command.upstream_cost_amount = "555.000000".to_owned();
-    recorder.record_gateway_usage(command).await.unwrap();
+    .await;
+    assert!(
+        update_result.is_err(),
+        "settlement_status must never enter an unknown NULL state"
+    );
 
     let usage = sqlx::query(
         r#"
-        SELECT total_tokens, customer_charge_amount, cost_amount, settlement_status
+        SELECT settlement_status
         FROM ai_usage
         WHERE request_id = 'req-chat-usage-unknown-settlement'
         "#,
@@ -434,32 +459,7 @@ async fn sqlite_gateway_usage_recorder_preserves_unknown_settlement_usage_fact_o
     .fetch_one(&pool)
     .await
     .unwrap();
-    assert_eq!(18_i64, usage.get::<i64, _>("total_tokens"));
-    assert_eq!("7.722000", usage.get::<String, _>("customer_charge_amount"));
-    assert_eq!("4.290000", usage.get::<String, _>("cost_amount"));
-    assert!(
-        usage
-            .get::<Option<i64>, _>("settlement_status")
-            .is_none(),
-        "a duplicate gateway request id must not convert an unknown settlement status back to pending"
-    );
-
-    let trace = sqlx::query(
-        r#"
-        SELECT total_tokens, http_status
-        FROM ai_request_trace
-        WHERE request_id = 'req-chat-usage-unknown-settlement'
-        "#,
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
-    assert_eq!(
-        18_i64,
-        trace.get::<i64, _>("total_tokens"),
-        "a duplicate gateway request id must not rewrite trace tokens when usage settlement status is unknown"
-    );
-    assert_eq!(200_i64, trace.get::<i64, _>("http_status"));
+    assert_eq!(0_i64, usage.get::<i64, _>("settlement_status"));
 }
 
 #[tokio::test]
@@ -483,7 +483,7 @@ async fn sqlite_gateway_usage_recorder_preserves_failed_settlement_usage_fact_on
         UPDATE ai_usage
         SET settlement_status = 3,
             customer_charge_amount = '7.722000',
-            cost_amount = '4.290000',
+            upstream_cost_amount = '4.290000',
             total_tokens = 18
         WHERE request_id = 'req-chat-usage-settlement-failed'
         "#,
@@ -502,7 +502,7 @@ async fn sqlite_gateway_usage_recorder_preserves_failed_settlement_usage_fact_on
 
     let usage = sqlx::query(
         r#"
-        SELECT total_tokens, customer_charge_amount, cost_amount, settlement_status
+        SELECT total_tokens, customer_charge_amount, upstream_cost_amount, settlement_status
         FROM ai_usage
         WHERE request_id = 'req-chat-usage-settlement-failed'
         "#,
@@ -512,7 +512,7 @@ async fn sqlite_gateway_usage_recorder_preserves_failed_settlement_usage_fact_on
     .unwrap();
     assert_eq!(18_i64, usage.get::<i64, _>("total_tokens"));
     assert_eq!("7.722000", usage.get::<String, _>("customer_charge_amount"));
-    assert_eq!("4.290000", usage.get::<String, _>("cost_amount"));
+    assert_eq!("4.290000", usage.get::<String, _>("upstream_cost_amount"));
     assert_eq!(
         3_i64,
         usage.get::<i64, _>("settlement_status"),
@@ -590,7 +590,7 @@ async fn sqlite_gateway_usage_recorder_records_request_and_video_duration_as_ind
         r#"
         SELECT uuid, usage_type, billing_meter_code, billable_quantity, request_count,
                COALESCE(video_seconds, '') AS video_seconds, total_tokens,
-               customer_charge_amount, cost_amount
+               customer_charge_amount, upstream_cost_amount
         FROM ai_usage
         WHERE request_id = 'req-video-generation-billing'
         ORDER BY usage_type ASC
@@ -613,7 +613,10 @@ async fn sqlite_gateway_usage_recorder_records_request_and_video_duration_as_ind
         "0.050000000000",
         rows[0].get::<String, _>("customer_charge_amount")
     );
-    assert_eq!("0.050000000000", rows[0].get::<String, _>("cost_amount"));
+    assert_eq!(
+        "0.030000000000",
+        rows[0].get::<String, _>("upstream_cost_amount")
+    );
 
     assert_eq!(6_i64, rows[1].get::<i64, _>("usage_type"));
     assert_eq!(
@@ -636,7 +639,10 @@ async fn sqlite_gateway_usage_recorder_records_request_and_video_duration_as_ind
         "3.000000000000",
         rows[1].get::<String, _>("customer_charge_amount")
     );
-    assert_eq!("3.000000000000", rows[1].get::<String, _>("cost_amount"));
+    assert_eq!(
+        "1.800000000000",
+        rows[1].get::<String, _>("upstream_cost_amount")
+    );
 }
 
 #[test]
@@ -677,6 +683,54 @@ fn gateway_usage_quantity_maps_meter_to_canonical_dimensions() {
         Some("12.500000000000".to_owned()),
         video_second.video_seconds
     );
+}
+
+#[test]
+fn gateway_usage_command_rejects_invalid_persistence_values() {
+    let valid = usage_command("req-validation", 200);
+    valid.validate().unwrap();
+
+    let mut invalid_commands = Vec::new();
+
+    let mut command = valid.clone();
+    command.tenant_id = 0;
+    invalid_commands.push(("tenant_id", command));
+
+    let mut command = valid.clone();
+    command.organization_id = -1;
+    invalid_commands.push(("organization_id", command));
+
+    let mut command = valid.clone();
+    command.request_id = " ".to_owned();
+    invalid_commands.push(("request_id", command));
+
+    let mut command = valid.clone();
+    command.http_status = 99;
+    invalid_commands.push(("http_status", command));
+
+    let mut command = valid.clone();
+    command.total_tokens = -1;
+    invalid_commands.push(("total_tokens", command));
+
+    let mut command = valid.clone();
+    command.billing_meter_code.clear();
+    invalid_commands.push(("billing_meter_code", command));
+
+    let mut command = valid.clone();
+    command.customer_charge_amount = "-0.000001".to_owned();
+    invalid_commands.push(("customer_charge_amount", command));
+
+    let mut command = valid;
+    command.pricing_snapshot = "[]".to_owned();
+    invalid_commands.push(("pricing_snapshot", command));
+
+    for (field, command) in invalid_commands {
+        let error = command.validate().unwrap_err().to_string();
+        assert!(
+            error.contains(field),
+            "invalid {field} must produce a field-specific validation error, got: {error}"
+        );
+    }
 }
 
 fn usage_command(request_id: &str, http_status: u16) -> GatewayUsageRecordCommand {
@@ -776,108 +830,10 @@ fn failed_trace_command(request_id: &str) -> GatewayRequestTraceCommand {
 }
 
 async fn create_usage_tables(pool: &sqlx::SqlitePool) {
-    for statement in [
-        r#"
-        CREATE TABLE ai_request_trace (
-            id INTEGER PRIMARY KEY,
-            uuid TEXT NOT NULL,
-            tenant_id INTEGER NOT NULL,
-            organization_id INTEGER NOT NULL,
-            user_id INTEGER NOT NULL,
-            request_id TEXT NOT NULL,
-            trace_id TEXT,
-            status INTEGER NOT NULL,
-            attempt_no INTEGER,
-            api_key_id INTEGER,
-            api_key_name_snapshot TEXT,
-            channel_group_id INTEGER,
-            channel_group_snapshot TEXT,
-            owner_type INTEGER,
-            owner_id INTEGER,
-            channel_id INTEGER,
-            channel_name_snapshot TEXT,
-            requested_model TEXT,
-            requested_model_catalog_key TEXT,
-            provider_model TEXT,
-            provider_native_model TEXT,
-            region_code TEXT,
-            endpoint TEXT,
-            request_path TEXT,
-            http_method TEXT,
-            http_status INTEGER,
-            metadata TEXT NOT NULL DEFAULT '{}',
-            user_agent_hash TEXT,
-            provider_error_code TEXT,
-            error_type TEXT,
-            error_message_masked TEXT,
-            latency_ms INTEGER,
-            ttft_ms INTEGER,
-            started_at TEXT,
-            ended_at TEXT,
-            streaming INTEGER,
-            prompt_tokens INTEGER,
-            cached_tokens INTEGER,
-            completion_tokens INTEGER,
-            total_tokens INTEGER,
-            UNIQUE (tenant_id, organization_id, request_id, attempt_no)
-        )
-        "#,
-        r#"
-        CREATE TABLE ai_usage (
-            id INTEGER PRIMARY KEY,
-            uuid TEXT NOT NULL,
-            tenant_id INTEGER NOT NULL,
-            organization_id INTEGER NOT NULL,
-            user_id INTEGER NOT NULL,
-            request_id TEXT NOT NULL,
-            trace_id TEXT,
-            status INTEGER NOT NULL,
-            api_key_id INTEGER,
-            api_key_name_snapshot TEXT,
-            channel_group_id INTEGER,
-            channel_group_snapshot TEXT,
-            owner_type INTEGER,
-            owner_id INTEGER,
-            catalog_key TEXT NOT NULL,
-            requested_model_catalog_key TEXT,
-            model TEXT,
-            provider_native_model TEXT,
-            region_code TEXT,
-            channel_id INTEGER,
-            modality INTEGER,
-            usage_type INTEGER,
-            billing_meter_code TEXT,
-            billable_quantity TEXT,
-            prompt_tokens INTEGER,
-            cached_tokens INTEGER,
-            completion_tokens INTEGER,
-            total_tokens INTEGER,
-            request_count INTEGER,
-            result_count INTEGER,
-            item_count INTEGER,
-            character_count INTEGER,
-            image_count INTEGER,
-            audio_seconds TEXT,
-            video_seconds TEXT,
-            unit_price_snapshot TEXT,
-            base_input_unit_price TEXT,
-            base_output_unit_price TEXT,
-            cache_read_unit_price TEXT,
-            rate_multiplier TEXT,
-            reference_multiplier TEXT,
-            official_reference_amount TEXT,
-            upstream_cost_amount TEXT,
-            customer_charge_amount TEXT,
-            cost_amount TEXT,
-            currency TEXT,
-            pricing_plan_code TEXT,
-            pricing_snapshot TEXT,
-            occurred_at TEXT,
-            settlement_status INTEGER,
-            UNIQUE (tenant_id, organization_id, request_id, usage_type)
-        )
-        "#,
-    ] {
-        sqlx::query(statement).execute(pool).await.unwrap();
-    }
+    sqlx::raw_sql(include_str!(
+        "../../../database/ddl/baseline/sqlite/0001_clawrouter_baseline.sql"
+    ))
+    .execute(pool)
+    .await
+    .unwrap();
 }

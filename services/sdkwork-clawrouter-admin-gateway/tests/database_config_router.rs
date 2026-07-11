@@ -1,18 +1,20 @@
 use axum::body::Body;
-use axum::extract::State;
-use axum::http::{HeaderMap, Request, StatusCode};
-use axum::routing::post;
-use axum::{Json, Router};
+use axum::http::{Request, StatusCode};
+use axum::Router;
 use sdkwork_claw_config::{
-    ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig, ProviderSecretMapConfig,
-    StartupInstallMode, TrustedSubjectConfig,
+    ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig, StartupInstallMode,
+    TrustedSubjectConfig,
 };
 use sdkwork_claw_http::TrustedRequestSubject;
 use sdkwork_claw_test_support::{
     api_key_security_config as test_api_key_security_config,
     app_session_config as test_app_session_config, app_session_dual_token_headers,
-    default_trusted_request_subject, seeded_sqlite_catalog, trusted_request_subject,
+    seeded_sqlite_catalog, trusted_request_subject,
     trusted_subject_config as test_trusted_subject_config, trusted_subject_signature,
+};
+use sdkwork_clawrouter_router_service::ports::{
+    ProviderHealthProbe, ProviderHealthProbeFuture, ProviderHealthProbeOutcome,
+    ProviderHealthProbeRequest,
 };
 use serde_json::json;
 use serde_json::Value;
@@ -28,8 +30,37 @@ static SQLITE_DB_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Debug, Default)]
 struct CapturedProviderHealthProbe {
-    authorization: Option<String>,
-    body: Value,
+    provider_base_url: String,
+    provider_secret_ref: String,
+    provider_secret_value: Option<String>,
+    provider_model: String,
+    provider_timeout_ms: Option<u64>,
+}
+
+#[derive(Clone)]
+struct RecordingProviderHealthProbe {
+    captured: Arc<Mutex<Vec<CapturedProviderHealthProbe>>>,
+    outcome: ProviderHealthProbeOutcome,
+}
+
+impl ProviderHealthProbe for RecordingProviderHealthProbe {
+    fn probe_provider_health<'a>(
+        &'a self,
+        request: ProviderHealthProbeRequest,
+    ) -> ProviderHealthProbeFuture<'a> {
+        let captured = Arc::clone(&self.captured);
+        let outcome = self.outcome.clone();
+        Box::pin(async move {
+            captured.lock().unwrap().push(CapturedProviderHealthProbe {
+                provider_base_url: request.provider_base_url,
+                provider_secret_ref: request.provider_secret_ref,
+                provider_secret_value: request.provider_secret_value,
+                provider_model: request.provider_model,
+                provider_timeout_ms: request.provider_timeout_ms,
+            });
+            Ok(outcome)
+        })
+    }
 }
 
 #[tokio::test]
@@ -888,15 +919,11 @@ async fn database_config_router_serves_signed_subject_channel_crud() {
 }
 
 #[tokio::test]
-async fn database_config_router_admin_channel_test_runs_real_provider_probe_and_records_health() {
+async fn database_config_router_admin_channel_test_uses_injected_probe_and_records_health() {
     let captured = Arc::new(Mutex::new(Vec::<CapturedProviderHealthProbe>::new()));
-    let provider = Router::new()
-        .route("/v1/chat/completions", post(capture_provider_health_probe))
-        .with_state(Arc::clone(&captured));
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr = listener.local_addr().unwrap();
-    tokio::spawn(async move {
-        axum::serve(listener, provider).await.unwrap();
+    let provider_health_probe = Arc::new(RecordingProviderHealthProbe {
+        captured: Arc::clone(&captured),
+        outcome: ProviderHealthProbeOutcome::success(17, 200),
     });
 
     let database_url = unique_sqlite_url();
@@ -906,43 +933,38 @@ async fn database_config_router_admin_channel_test_runs_real_provider_probe_and_
     pool.close().await;
 
     let secret_ref = "vault://providers/openai/account/main";
-    let router = configured_router_with_provider_secret_map(
-        &database_url,
-        ProviderSecretMapConfig::from_json(
-            json!({secret_ref: "sk-admin-provider-health-probe-secret"}).to_string(),
-        )
-        .unwrap(),
-    )
-    .await;
+    let router =
+        configured_router_with_provider_health_probe(&database_url, provider_health_probe).await;
 
-    let create_payload = request_json(
+    let (create_status, create_payload, create_body_text) = request_json_with_status(
         router.clone(),
-        app_session_request(
+        signed_request(
             "POST",
             "/backend/v3/api/channel",
             Body::from(format!(
-                r#"{{"name":"OpenAI primary","vendor":"OpenAI","protocol":"OpenAI","accessType":"api-key","credentialRotation":"default","credentials":[{{"name":"primary","baseUrl":"http://{addr}","secretRef":"{secret_ref}","priority":1,"weight":100,"status":"active"}}],"models":["openai/gpt-4o-mini"],"capabilities":["llm"],"timeoutMs":60000,"weight":80,"status":"active"}}"#
+                r#"{{"name":"OpenAI primary","vendor":"OpenAI","protocol":"OpenAI","accessType":"api-key","credentialRotation":"default","credentials":[{{"name":"primary","baseUrl":"https://api.openai.example/v1","secretRef":"{secret_ref}","priority":1,"weight":100,"status":"active"}}],"models":["openai/gpt-4o-mini"],"capabilities":["llm"],"timeoutMs":60000,"weight":80,"status":"active"}}"#
             )),
         ),
     )
     .await;
-    assert_eq!("2000", create_payload["code"]);
+    assert_eq!(StatusCode::CREATED, create_status, "{create_body_text}");
+    assert_eq!(0, create_payload["code"]);
     let channel_id = create_payload["data"]["item"]["id"].as_str().unwrap();
 
     let (status, test_payload, body_text) = request_json_with_status(
         router,
-        app_session_request_builder(
+        signed_request_with_header(
             "POST",
             &format!("/backend/v3/api/channel/{channel_id}/test"),
-        )
-        .header("X-Request-Id", "admin-channel-probe-success-1")
-        .body(Body::empty())
-        .unwrap(),
+            Body::empty(),
+            "X-Request-Id",
+            "admin-channel-probe-success-1",
+        ),
     )
     .await;
 
     assert_eq!(StatusCode::OK, status);
-    assert_eq!("2000", test_payload["code"]);
+    assert_eq!(0, test_payload["code"]);
     assert_eq!(true, test_payload["data"]["success"]);
     assert_eq!(channel_id, test_payload["data"]["channelId"]);
     assert_eq!("active", test_payload["data"]["status"]);
@@ -956,22 +978,22 @@ async fn database_config_router_admin_channel_test_runs_real_provider_probe_and_
 
     let captured = captured.lock().unwrap();
     assert_eq!(1, captured.len());
-    assert_eq!(
-        Some("Bearer sk-admin-provider-health-probe-secret".to_owned()),
-        captured[0].authorization
-    );
-    assert_eq!("gpt-4o-mini", captured[0].body["model"]);
-    assert_eq!("ping", captured[0].body["messages"][0]["content"]);
+    assert_eq!("https://api.openai.example/v1", captured[0].provider_base_url);
+    assert_eq!(secret_ref, captured[0].provider_secret_ref);
+    assert_eq!(None, captured[0].provider_secret_value);
+    assert_eq!("gpt-4o-mini", captured[0].provider_model);
+    assert_eq!(Some(60_000), captured[0].provider_timeout_ms);
     drop(captured);
 
     let verification_pool = create_sqlite_pool(&database_url).await;
-    let row = sqlx::query(
+    let audit_row = sqlx::query(
         r#"
-        SELECT request_id, health_status, latency_ms, http_status, error_code, error_message_masked
-        FROM integration_provider_health_snapshot
+        SELECT request_id, change_summary
+        FROM ops_audit_log
         WHERE tenant_id = 100001
           AND organization_id = 0
-          AND channel_id = ?
+          AND action = 'test_channel'
+          AND target_id = ?
         ORDER BY id DESC
         LIMIT 1
         "#,
@@ -981,14 +1003,17 @@ async fn database_config_router_admin_channel_test_runs_real_provider_probe_and_
     .await
     .unwrap();
     assert_server_request_id(
-        &row.get::<String, _>("request_id"),
+        &audit_row.get::<String, _>("request_id"),
         "admin-channel-probe-success-1",
     );
-    assert_eq!(1_i64, row.get::<i64, _>("health_status"));
-    assert!(row.get::<i64, _>("latency_ms") > 0);
-    assert_eq!(200_i64, row.get::<i64, _>("http_status"));
-    assert_eq!(None, row.get::<Option<String>, _>("error_code"));
-    assert_eq!(None, row.get::<Option<String>, _>("error_message_masked"));
+    let audit_summary: Value =
+        serde_json::from_str(&audit_row.get::<String, _>("change_summary")).unwrap();
+    assert_eq!(true, audit_summary["success"]);
+    assert_eq!(200, audit_summary["httpStatus"]);
+    assert!(!audit_summary.to_string().contains(secret_ref));
+    assert!(!audit_summary
+        .to_string()
+        .contains("sk-admin-provider-health-probe-secret"));
 
     let channel_state = sqlx::query(
         "SELECT health_status, last_latency_ms, consecutive_error_count FROM ai_channel WHERE id = ?",
@@ -1003,11 +1028,17 @@ async fn database_config_router_admin_channel_test_runs_real_provider_probe_and_
         0_i64,
         channel_state.get::<i64, _>("consecutive_error_count")
     );
-    let channel_secret_error_count: i64 = sqlx::query_scalar(
+    let credential_state = sqlx::query(
         r#"
-        SELECT consecutive_error_count
-        FROM ai_channel
-        WHERE id = ?
+        SELECT health_status, last_latency_ms, consecutive_error_count, last_verified_at
+        FROM ai_channel_credential
+        WHERE channel_id = ?
+          AND tenant_id = 100001
+          AND organization_id = 0
+          AND status = 1
+          AND deleted_at IS NULL
+        ORDER BY priority ASC, id ASC
+        LIMIT 1
         "#,
     )
     .bind(channel_id)
@@ -1015,43 +1046,28 @@ async fn database_config_router_admin_channel_test_runs_real_provider_probe_and_
     .await
     .unwrap();
     verification_pool.close().await;
-    assert_eq!(0, channel_secret_error_count);
+    assert_eq!(1_i64, credential_state.get::<i64, _>("health_status"));
+    assert!(credential_state.get::<i64, _>("last_latency_ms") > 0);
+    assert_eq!(
+        0_i64,
+        credential_state.get::<i64, _>("consecutive_error_count")
+    );
+    assert!(credential_state
+        .get::<Option<String>, _>("last_verified_at")
+        .is_some());
 }
 
 #[tokio::test]
 async fn database_config_router_admin_channel_test_records_masked_provider_failure() {
     let captured = Arc::new(Mutex::new(Vec::<CapturedProviderHealthProbe>::new()));
-    let provider = Router::new()
-        .route(
-            "/v1/chat/completions",
-            post(
-                |State(captured): State<Arc<Mutex<Vec<CapturedProviderHealthProbe>>>>,
-                 headers: HeaderMap,
-                 Json(body): Json<Value>| async move {
-                    captured.lock().unwrap().push(CapturedProviderHealthProbe {
-                        authorization: headers
-                            .get("authorization")
-                            .and_then(|value| value.to_str().ok())
-                            .map(str::to_owned),
-                        body,
-                    });
-                    (
-                        StatusCode::UNAUTHORIZED,
-                        Json(json!({
-                            "error": {
-                                "code": "invalid_api_key",
-                                "message": "bad upstream key sk-admin-provider-health-probe-secret"
-                            }
-                        })),
-                    )
-                },
-            ),
-        )
-        .with_state(Arc::clone(&captured));
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr = listener.local_addr().unwrap();
-    tokio::spawn(async move {
-        axum::serve(listener, provider).await.unwrap();
+    let provider_health_probe = Arc::new(RecordingProviderHealthProbe {
+        captured: Arc::clone(&captured),
+        outcome: ProviderHealthProbeOutcome::failure(
+            23,
+            Some(401),
+            "invalid_api_key",
+            "provider rejected health probe",
+        ),
     });
 
     let database_url = unique_sqlite_url();
@@ -1061,40 +1077,39 @@ async fn database_config_router_admin_channel_test_records_masked_provider_failu
     pool.close().await;
 
     let secret_ref = "vault://providers/openai/account/main";
-    let router = configured_router_with_provider_secret_map(
-        &database_url,
-        ProviderSecretMapConfig::from_json(
-            json!({secret_ref: "sk-admin-provider-health-probe-secret"}).to_string(),
-        )
-        .unwrap(),
-    )
-    .await;
+    let router =
+        configured_router_with_provider_health_probe(&database_url, provider_health_probe).await;
 
-    let create_payload = request_json(
+    let (create_status, create_payload, create_body_text) = request_json_with_status(
         router.clone(),
-        app_session_request(
+        signed_request(
             "POST",
             "/backend/v3/api/channel",
             Body::from(format!(
-                r#"{{"name":"OpenAI primary","vendor":"OpenAI","protocol":"OpenAI","accessType":"api-key","credentialRotation":"default","credentials":[{{"name":"primary","baseUrl":"http://{addr}","secretRef":"{secret_ref}","priority":1,"weight":100,"status":"active"}}],"models":["openai/gpt-4o-mini"],"capabilities":["llm"],"timeoutMs":60000,"weight":80,"status":"active"}}"#
+                r#"{{"name":"OpenAI primary","vendor":"OpenAI","protocol":"OpenAI","accessType":"api-key","credentialRotation":"default","credentials":[{{"name":"primary","baseUrl":"https://api.openai.example/v1","secretRef":"{secret_ref}","priority":1,"weight":100,"status":"active"}}],"models":["openai/gpt-4o-mini"],"capabilities":["llm"],"timeoutMs":60000,"weight":80,"status":"active"}}"#
             )),
         ),
     )
     .await;
-    assert_eq!("2000", create_payload["code"]);
+    assert_eq!(StatusCode::CREATED, create_status, "{create_body_text}");
+    assert_eq!(0, create_payload["code"]);
     let channel_id = create_payload["data"]["item"]["id"].as_str().unwrap();
 
     let verification_pool = create_sqlite_pool(&database_url).await;
-    sqlx::query("UPDATE ai_channel SET consecutive_error_count = 4 WHERE id = ?")
+    sqlx::query("UPDATE ai_channel SET consecutive_error_count = 5 WHERE id = ?")
         .bind(channel_id)
         .execute(&verification_pool)
         .await
         .unwrap();
     sqlx::query(
         r#"
-        UPDATE ai_channel
+        UPDATE ai_channel_credential
         SET consecutive_error_count = 5
-        WHERE id = ?
+        WHERE channel_id = ?
+          AND tenant_id = 100001
+          AND organization_id = 0
+          AND status = 1
+          AND deleted_at IS NULL
         "#,
     )
     .bind(channel_id)
@@ -1105,18 +1120,18 @@ async fn database_config_router_admin_channel_test_records_masked_provider_failu
 
     let (status, test_payload, body_text) = request_json_with_status(
         router,
-        app_session_request_builder(
+        signed_request_with_header(
             "POST",
             &format!("/backend/v3/api/channel/{channel_id}/test"),
-        )
-        .header("X-Request-Id", "admin-channel-probe-failure-1")
-        .body(Body::empty())
-        .unwrap(),
+            Body::empty(),
+            "X-Request-Id",
+            "admin-channel-probe-failure-1",
+        ),
     )
     .await;
 
     assert_eq!(StatusCode::OK, status);
-    assert_eq!("2000", test_payload["code"]);
+    assert_eq!(0, test_payload["code"]);
     assert_eq!(false, test_payload["data"]["success"]);
     assert_eq!(channel_id, test_payload["data"]["channelId"]);
     assert_eq!("error", test_payload["data"]["status"]);
@@ -1129,20 +1144,22 @@ async fn database_config_router_admin_channel_test_records_masked_provider_failu
 
     let captured = captured.lock().unwrap();
     assert_eq!(1, captured.len());
-    assert_eq!(
-        Some("Bearer sk-admin-provider-health-probe-secret".to_owned()),
-        captured[0].authorization
-    );
+    assert_eq!("https://api.openai.example/v1", captured[0].provider_base_url);
+    assert_eq!(secret_ref, captured[0].provider_secret_ref);
+    assert_eq!(None, captured[0].provider_secret_value);
+    assert_eq!("gpt-4o-mini", captured[0].provider_model);
+    assert_eq!(Some(60_000), captured[0].provider_timeout_ms);
     drop(captured);
 
     let verification_pool = create_sqlite_pool(&database_url).await;
-    let row = sqlx::query(
+    let audit_row = sqlx::query(
         r#"
-        SELECT request_id, health_status, latency_ms, http_status, error_code, error_message_masked
-        FROM integration_provider_health_snapshot
+        SELECT request_id, change_summary
+        FROM ops_audit_log
         WHERE tenant_id = 100001
           AND organization_id = 0
-          AND channel_id = ?
+          AND action = 'test_channel'
+          AND target_id = ?
         ORDER BY id DESC
         LIMIT 1
         "#,
@@ -1152,33 +1169,36 @@ async fn database_config_router_admin_channel_test_records_masked_provider_failu
     .await
     .unwrap();
     assert_server_request_id(
-        &row.get::<String, _>("request_id"),
+        &audit_row.get::<String, _>("request_id"),
         "admin-channel-probe-failure-1",
     );
-    assert_eq!(2_i64, row.get::<i64, _>("health_status"));
-    assert!(row.get::<i64, _>("latency_ms") > 0);
-    assert_eq!(401_i64, row.get::<i64, _>("http_status"));
-    assert_eq!(
-        Some("upstream_http_401".to_owned()),
-        row.get::<Option<String>, _>("error_code")
-    );
-    let error_message = row
-        .get::<Option<String>, _>("error_message_masked")
-        .unwrap();
-    assert!(error_message.contains("upstream health probe returned HTTP 401"));
-    assert!(!error_message.contains("sk-admin-provider-health-probe-secret"));
+    let audit_summary: Value =
+        serde_json::from_str(&audit_row.get::<String, _>("change_summary")).unwrap();
+    assert_eq!(false, audit_summary["success"]);
+    assert_eq!(401, audit_summary["httpStatus"]);
+    assert!(!audit_summary.to_string().contains(secret_ref));
+    assert!(!audit_summary
+        .to_string()
+        .contains("sk-admin-provider-health-probe-secret"));
 
-    let channel_errors: i64 =
-        sqlx::query_scalar("SELECT consecutive_error_count FROM ai_channel WHERE id = ?")
-            .bind(channel_id)
-            .fetch_one(&verification_pool)
-            .await
-            .unwrap();
-    let channel_secret_error_count: i64 = sqlx::query_scalar(
+    let channel_state = sqlx::query(
+        "SELECT health_status, last_latency_ms, consecutive_error_count FROM ai_channel WHERE id = ?",
+    )
+    .bind(channel_id)
+    .fetch_one(&verification_pool)
+    .await
+    .unwrap();
+    let credential_state = sqlx::query(
         r#"
-        SELECT consecutive_error_count
-        FROM ai_channel
-        WHERE id = ?
+        SELECT health_status, last_latency_ms, consecutive_error_count, last_verified_at
+        FROM ai_channel_credential
+        WHERE channel_id = ?
+          AND tenant_id = 100001
+          AND organization_id = 0
+          AND status = 1
+          AND deleted_at IS NULL
+        ORDER BY priority ASC, id ASC
+        LIMIT 1
         "#,
     )
     .bind(channel_id)
@@ -1186,8 +1206,21 @@ async fn database_config_router_admin_channel_test_records_masked_provider_failu
     .await
     .unwrap();
     verification_pool.close().await;
-    assert_eq!(6, channel_errors);
-    assert_eq!(6, channel_secret_error_count);
+    assert_eq!(2_i64, channel_state.get::<i64, _>("health_status"));
+    assert!(channel_state.get::<i64, _>("last_latency_ms") > 0);
+    assert_eq!(
+        6_i64,
+        channel_state.get::<i64, _>("consecutive_error_count")
+    );
+    assert_eq!(2_i64, credential_state.get::<i64, _>("health_status"));
+    assert!(credential_state.get::<i64, _>("last_latency_ms") > 0);
+    assert_eq!(
+        6_i64,
+        credential_state.get::<i64, _>("consecutive_error_count")
+    );
+    assert!(credential_state
+        .get::<Option<String>, _>("last_verified_at")
+        .is_some());
 }
 
 #[tokio::test]
@@ -3069,7 +3102,7 @@ fn api_key_security_config() -> ApiKeySecurityConfig {
 }
 
 fn signed_request(method: &str, path: &str, body: Body) -> Request<Body> {
-    signed_request_for_subject(method, path, body, default_trusted_request_subject())
+    signed_request_for_subject(method, path, body, bootstrap_admin_subject())
 }
 
 fn signed_request_for_subject(
@@ -3090,7 +3123,7 @@ fn signed_request_with_header(
     header_name: &'static str,
     header_value: &'static str,
 ) -> Request<Body> {
-    signed_request_builder_for_subject(method, path, default_trusted_request_subject())
+    signed_request_builder_for_subject(method, path, bootstrap_admin_subject())
         .header(header_name, header_value)
         .body(body)
         .unwrap()
@@ -3107,6 +3140,7 @@ fn signed_request_builder_for_subject(
     Request::builder()
         .method(method)
         .uri(path)
+        .extension(subject)
         .header("content-type", "application/json")
         .header("x-sdkwork-subject-tenant-id", subject.tenant_id.to_string())
         .header(
@@ -3146,42 +3180,16 @@ fn bootstrap_admin_subject() -> TrustedRequestSubject {
     trusted_request_subject(100_001, 0, 1)
 }
 
-async fn capture_provider_health_probe(
-    State(captured): State<Arc<Mutex<Vec<CapturedProviderHealthProbe>>>>,
-    headers: HeaderMap,
-    Json(body): Json<Value>,
-) -> Json<Value> {
-    captured.lock().unwrap().push(CapturedProviderHealthProbe {
-        authorization: headers
-            .get("authorization")
-            .and_then(|value| value.to_str().ok())
-            .map(str::to_owned),
-        body,
-    });
-    Json(json!({
-        "id": "chatcmpl-admin-health",
-        "object": "chat.completion",
-        "model": "gpt-4o-mini",
-        "choices": [
-            {
-                "index": 0,
-                "message": {"role": "assistant", "content": "pong"},
-                "finish_reason": "stop"
-            }
-        ]
-    }))
-}
-
-async fn configured_router_with_provider_secret_map(
+async fn configured_router_with_provider_health_probe(
     database_url: &str,
-    provider_secret_map_config: ProviderSecretMapConfig,
+    provider_health_probe: Arc<dyn ProviderHealthProbe + Send + Sync>,
 ) -> axum::Router {
-    sdkwork_clawrouter_admin_gateway::router_with_database_api_key_trusted_subject_app_session_provider_secret_map_config_and_startup_install_mode(
+    sdkwork_clawrouter_admin_gateway::router_with_database_api_key_trusted_subject_app_session_provider_health_probe_and_startup_install_mode(
         DatabaseConfig::from_url_with_max_connections(database_url, 1).unwrap(),
         api_key_security_config(),
         trusted_subject_config(),
         app_session_config(),
-        provider_secret_map_config,
+        provider_health_probe,
         StartupInstallMode::Skip,
     )
     .await
@@ -4074,28 +4082,6 @@ async fn create_schema(pool: &SqlitePool) {
             publish_attempts INTEGER NOT NULL DEFAULT 0,
             last_error_message TEXT
         )"#,
-        r#"CREATE TABLE integration_provider_health_snapshot (
-            id INTEGER PRIMARY KEY,
-            uuid TEXT NOT NULL DEFAULT 'seed-health',
-            tenant_id INTEGER,
-            organization_id INTEGER,
-            user_id INTEGER,
-            request_id TEXT,
-            status INTEGER NOT NULL DEFAULT 1,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            metadata TEXT,
-            provider_id INTEGER,
-            channel_id INTEGER,
-            provider_account_id INTEGER,
-            check_type INTEGER,
-            health_status INTEGER,
-            latency_ms INTEGER,
-            http_status INTEGER,
-            error_code TEXT,
-            error_message_masked TEXT,
-            quota_snapshot TEXT,
-            checked_at TEXT
-        )"#,
         r#"CREATE TABLE ai_pricing_plan (
             id INTEGER PRIMARY KEY,
             tenant_id INTEGER,
@@ -4197,7 +4183,6 @@ async fn create_schema(pool: &SqlitePool) {
             cached_tokens INTEGER,
             total_tokens INTEGER,
             customer_charge_amount TEXT,
-            cost_amount TEXT,
             rate_multiplier TEXT,
             base_input_unit_price TEXT,
             base_output_unit_price TEXT,
@@ -4580,6 +4565,7 @@ async fn create_schema(pool: &SqlitePool) {
             tenant_id TEXT NOT NULL,
             organization_id TEXT,
             owner_user_id TEXT NOT NULL,
+            order_id TEXT,
             invoice_no TEXT NOT NULL,
             title TEXT,
             invoice_type TEXT NOT NULL,
@@ -5854,8 +5840,8 @@ async fn seed_admin_record(pool: &SqlitePool) {
             (id, uuid, tenant_id, organization_id, user_id, request_id, trace_id, status, created_at, api_key_name_snapshot, channel_group_snapshot, owner_name_snapshot, requested_model_catalog_key, requested_model, provider_model, provider_native_model, region_code, endpoint, request_path, http_status, provider_error_code, error_type, started_at, latency_ms, ttft_ms, streaming, prompt_tokens, completion_tokens, cached_tokens, reasoning_effort, client_ip_masked)
             VALUES (100, 'trace-100', 100001, 0, 30, 'req-admin-record-1', 'trace-admin-record-1', 1, '2026-04-29 09:29:59', 'Production', 'standard-group', 'owner@example.com', 'openai/gpt-4o-mini', 'gpt-4o-mini', 'gpt-4o-mini', 'gpt-4o-mini-2026-05-13', 'global', '/v1/chat/completions', '/v1/chat/completions', 200, NULL, NULL, '2026-04-29 09:30:00', 842, 120, 1, 1000, 240, 100, 'medium', '203.0.113.***')"#,
         r#"INSERT INTO ai_usage
-            (id, uuid, tenant_id, organization_id, user_id, request_id, status, created_at, owner_name_snapshot, api_key_name_snapshot, channel_group_snapshot, catalog_key, requested_model_catalog_key, model, provider_native_model, region_code, modality, request_count, prompt_tokens, completion_tokens, cached_tokens, total_tokens, customer_charge_amount, cost_amount, rate_multiplier, base_input_unit_price, base_output_unit_price, cache_read_unit_price, occurred_at)
-            VALUES (200, 'usage-200', 100001, 0, 30, 'req-admin-record-1', 1, '2026-04-29 09:30:01', 'owner@example.com', 'Production', 'standard-group', 'openai/gpt-4o-mini', 'openai/gpt-4o-mini', 'gpt-4o-mini', 'gpt-4o-mini-2026-05-13', 'global', 1, 1, 1200, 300, 128, 1628, '0.012300', '0.010000', '1.200000', '0.150000', '0.600000', '0.030000', '2026-04-29 09:30:01')"#,
+            (id, uuid, tenant_id, organization_id, user_id, request_id, status, created_at, owner_name_snapshot, api_key_name_snapshot, channel_group_snapshot, catalog_key, requested_model_catalog_key, model, provider_native_model, region_code, modality, request_count, prompt_tokens, completion_tokens, cached_tokens, total_tokens, customer_charge_amount, rate_multiplier, base_input_unit_price, base_output_unit_price, cache_read_unit_price, occurred_at)
+            VALUES (200, 'usage-200', 100001, 0, 30, 'req-admin-record-1', 1, '2026-04-29 09:30:01', 'owner@example.com', 'Production', 'standard-group', 'openai/gpt-4o-mini', 'openai/gpt-4o-mini', 'gpt-4o-mini', 'gpt-4o-mini-2026-05-13', 'global', 1, 1, 1200, 300, 128, 1628, '0.012300', '1.200000', '0.150000', '0.600000', '0.030000', '2026-04-29 09:30:01')"#,
     ] {
         sqlx::query(statement).execute(pool).await.unwrap();
     }

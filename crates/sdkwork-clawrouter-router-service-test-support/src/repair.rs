@@ -1,14 +1,14 @@
 use crate::installed::{ensure_installed_sqlite_template, installed_sqlite_template_path};
 use crate::shared::{
-    acquire_template_file_lock, copy_sqlite_template_pool, reset_sqlite_template_path,
-    sqlite_file_pool, sqlite_template_current, sqlite_template_path, SqliteTemplateKind,
-    INSTALLED_SQLITE_TEMPLATE_LOCK,
+    acquire_template_file_lock, copy_sqlite_template_pool, install_canonical_iam_test_subject,
+    reset_sqlite_template_path, sqlite_file_pool, sqlite_template_current, sqlite_template_path,
+    SqliteTemplateKind, INSTALLED_SQLITE_TEMPLATE_LOCK,
 };
 use sqlx::{query, SqlitePool};
 use std::fs;
 use std::path::Path;
 
-const REPAIR_SQLITE_TEMPLATE_REVISION: &str = "v14";
+const REPAIR_SQLITE_TEMPLATE_REVISION: &str = "canonical-v1";
 
 pub async fn repair_sqlite_pool() -> SqlitePool {
     let template_path = sqlite_template_path("repair", REPAIR_SQLITE_TEMPLATE_REVISION);
@@ -39,11 +39,10 @@ async fn ensure_repair_sqlite_template(template_path: &Path) {
         )
     });
     let pool = sqlite_file_pool(template_path).await;
-    sdkwork_clawrouter_router_service::infrastructure::sql::installer::ensure_sqlite_integration_iam_fixture(
-        &pool,
-    )
-    .await
-    .expect("ensure sqlite integration IAM fixture");
-    query("VACUUM").execute(&pool).await.unwrap();
+    install_canonical_iam_test_subject(&pool).await;
+    query("VACUUM")
+        .execute(&pool)
+        .await
+        .expect("compact canonical IAM repair template");
     pool.close().await;
 }

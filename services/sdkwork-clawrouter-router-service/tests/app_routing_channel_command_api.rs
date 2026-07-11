@@ -6,9 +6,9 @@ use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::EntityUuidGenerator;
 use sdkwork_clawrouter_router_service::domain::{DomainError, DomainResult};
 use sdkwork_clawrouter_router_service::ports::{
-    AppRoutingChannelCommandFuture, AppRoutingChannelCommandStore,
-    AppRoutingChannelDeleteOutcome, AppRoutingChannelItem, AppRoutingChannelMutationOutcome,
-    AppRoutingChannelTestOutcome, CreateAppRoutingChannelCommand, DeleteAppRoutingChannelCommand,
+    AppRoutingChannelCommandFuture, AppRoutingChannelCommandStore, AppRoutingChannelDeleteOutcome,
+    AppRoutingChannelItem, AppRoutingChannelMutationOutcome, AppRoutingChannelTestOutcome,
+    CreateAppRoutingChannelCommand, DeleteAppRoutingChannelCommand,
     SetAppRoutingChannelStatusCommand, TestAppRoutingChannelCommand,
     UpdateAppRoutingChannelCommand,
 };
@@ -117,7 +117,10 @@ impl AppRoutingChannelCommandStore for TestAppRoutingChannelCommandStore {
             assert_eq!("openai", command.provider_code);
             assert_eq!("OpenAI", command.protocol);
             assert_eq!("Standard API Key", command.access_type);
-            assert_eq!(Some("https://api.openai.com/v1".to_owned()), command.base_url);
+            assert_eq!(
+                Some("https://api.openai.com/v1".to_owned()),
+                command.base_url
+            );
             assert_eq!("vault://providers/openai/account/main", command.secret_ref);
             assert_eq!(vec!["llm".to_owned()], command.capabilities);
             assert_eq!(100, command.weight);

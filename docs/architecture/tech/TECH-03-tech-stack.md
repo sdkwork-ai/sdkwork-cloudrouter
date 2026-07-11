@@ -29,7 +29,7 @@
 | OpenAPI | `utoipa` | Rust API contract 输出和 SDK 生成衔接 |
 | Observability | `tracing`, `tracing-subscriber` | request_id、span、structured logs |
 | Local cache | `moka` | API key 摘要、模型目录、路由快照 |
-| Distributed cache | Redis client | rate limit、health snapshot、distributed lock |
+| Distributed cache | Redis client | rate limit、基于 `ai_channel` / `ai_channel_credential` 事实派生的短生命周期健康视图、distributed lock |
 | Decimal | `rust_decimal` | 金额、价格、倍率、计费单位 |
 | Error | `thiserror`, `anyhow` | domain error 和 application error 分离 |
 | Time | `time` 或 `chrono` | UTC、ISO8601、留存和分区时间 |
@@ -184,4 +184,3 @@ credential_status
 3. 不用高性能目标绕过账户、配额、审计和安全。
 4. 不在第一阶段引入无法稳定交付的复杂基础设施。
 5. 任一业务调用都能说明是 generated SDK、native provider client 还是 internal runtime call。
-

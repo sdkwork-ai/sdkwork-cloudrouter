@@ -9,4 +9,6 @@ pub use sqlite::SqliteAppGatewayTracesReadStore;
 pub use types::{
     AppGatewayTraceItem, AppGatewayTraceItems, AppGatewayTracesListPage, AppGatewayTracesListQuery,
     AppGatewayTracesReadFuture, AppGatewayTracesReadStore, AppGatewayTracesSubject,
+    DEFAULT_GATEWAY_TRACES_PAGE_SIZE, MAX_GATEWAY_TRACES_PAGE_SIZE,
+    MAX_GATEWAY_TRACES_SEARCH_LENGTH,
 };

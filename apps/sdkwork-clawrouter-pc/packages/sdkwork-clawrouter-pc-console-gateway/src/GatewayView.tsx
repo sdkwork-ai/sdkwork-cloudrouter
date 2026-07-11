@@ -1,8 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlignLeft, Activity, Server, Timer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BusinessStatePanel } from '@sdkwork/clawroutes-pc-commons';
-import { GatewayService, type GatewayTrace } from './gatewayService';
+import {
+  GatewayService,
+  type GatewayTrace,
+  type GatewayTracePageInfo,
+} from './gatewayService';
+
+const GATEWAY_TRACE_PAGE_SIZE = 20;
 
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
 
@@ -18,9 +24,6 @@ function getLoadErrorMessage(error: unknown, fallback: string, t: TranslationFun
     const message = error.message.trim();
     if (message.startsWith('console.')) {
       return t(message, fallback);
-    }
-    if (message) {
-      return message;
     }
   }
   return fallback;
@@ -46,36 +49,108 @@ function summarizeTraces(traces: GatewayTrace[]): GatewaySummary {
   );
 }
 
+function mergeUniqueTraces(current: GatewayTrace[], incoming: GatewayTrace[]): GatewayTrace[] {
+  const seen = new Set(current.map((trace) => trace.id));
+  const appended = incoming.filter((trace) => {
+    if (seen.has(trace.id)) {
+      return false;
+    }
+    seen.add(trace.id);
+    return true;
+  });
+  return appended.length === 0 ? current : [...current, ...appended];
+}
+
 export function GatewayView() {
   const { t } = useTranslation();
   const [traces, setTraces] = useState<GatewayTrace[]>([]);
+  const [pageInfo, setPageInfo] = useState<GatewayTracePageInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+  const requestGenerationRef = useRef(0);
+  const continuationTokenRef = useRef<object | null>(null);
 
   const loadTraces = useCallback(async (isActive: () => boolean = () => true) => {
+    const requestGeneration = ++requestGenerationRef.current;
+    continuationTokenRef.current = null;
     setLoading(true);
+    setLoadingMore(false);
     setLoadError(null);
+    setLoadMoreError(null);
     try {
-      const data = await GatewayService.fetchTraces();
-      if (isActive()) {
-        setTraces(data);
+      const page = await GatewayService.fetchTraces({ pageSize: GATEWAY_TRACE_PAGE_SIZE });
+      if (isActive() && requestGeneration === requestGenerationRef.current) {
+        setTraces(page.items);
+        setPageInfo(page.pageInfo);
       }
     } catch (error) {
-      if (isActive()) {
-        setLoadError(getLoadErrorMessage(error, t('console.gateway.states.loadErrorFallback', '网关追踪加载失败。'), t));
+      if (isActive() && requestGeneration === requestGenerationRef.current) {
+        setLoadError(getLoadErrorMessage(
+          error,
+          t('console.gateway.states.loadErrorFallback'),
+          t,
+        ));
       }
     } finally {
-      if (isActive()) {
+      if (isActive() && requestGeneration === requestGenerationRef.current) {
         setLoading(false);
       }
     }
   }, [t]);
+
+  const loadMoreTraces = useCallback(async () => {
+    const cursor = pageInfo?.hasMore ? pageInfo.nextCursor : null;
+    if (loading || cursor === null || continuationTokenRef.current !== null) {
+      return;
+    }
+
+    const requestGeneration = requestGenerationRef.current;
+    const continuationToken = {};
+    continuationTokenRef.current = continuationToken;
+    setLoadingMore(true);
+    setLoadMoreError(null);
+    try {
+      const page = await GatewayService.fetchTraces({
+        cursor,
+        pageSize: GATEWAY_TRACE_PAGE_SIZE,
+      });
+      if (
+        requestGeneration === requestGenerationRef.current
+        && continuationTokenRef.current === continuationToken
+      ) {
+        setTraces((current) => mergeUniqueTraces(current, page.items));
+        setPageInfo(page.pageInfo);
+      }
+    } catch (error) {
+      if (
+        requestGeneration === requestGenerationRef.current
+        && continuationTokenRef.current === continuationToken
+      ) {
+        setLoadMoreError(getLoadErrorMessage(
+          error,
+          t('console.gateway.states.loadMoreErrorFallback'),
+          t,
+        ));
+      }
+    } finally {
+      if (continuationTokenRef.current === continuationToken) {
+        continuationTokenRef.current = null;
+        if (requestGeneration === requestGenerationRef.current) {
+          setLoadingMore(false);
+        }
+      }
+    }
+  }, [loading, pageInfo, t]);
 
   useEffect(() => {
     let active = true;
     void loadTraces(() => active);
     return () => {
       active = false;
+      requestGenerationRef.current += 1;
+      continuationTokenRef.current = null;
     };
   }, [loadTraces]);
 
@@ -89,42 +164,51 @@ export function GatewayView() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white dark:bg-[#0d1117] border border-slate-200 dark:border-white/10 p-2 rounded-xl shadow-sm">
-        <SummaryItem icon={<AlignLeft className="w-4 h-4 text-blue-500" />} label={t('console.gateway.summary.traceRows', '追踪行数')} value={summary.total.toString()} />
-        <SummaryItem icon={<Activity className="w-4 h-4 text-emerald-500" />} label={t('console.gateway.summary.successful', '成功请求')} value={summary.success.toString()} />
-        <SummaryItem icon={<Timer className="w-4 h-4 text-rose-500" />} label={t('console.gateway.summary.failed', '失败请求')} value={summary.failed.toString()} />
-        <SummaryItem icon={<Server className="w-4 h-4 text-indigo-500" />} label={t('console.gateway.summary.channels', '渠道数')} value={summary.uniqueChannels.toString()} />
+        <SummaryItem icon={<AlignLeft className="w-4 h-4 text-blue-500" />} label={t('console.gateway.summary.traceRows')} value={summary.total.toString()} />
+        <SummaryItem icon={<Activity className="w-4 h-4 text-emerald-500" />} label={t('console.gateway.summary.successful')} value={summary.success.toString()} />
+        <SummaryItem icon={<Timer className="w-4 h-4 text-rose-500" />} label={t('console.gateway.summary.failed')} value={summary.failed.toString()} />
+        <SummaryItem icon={<Server className="w-4 h-4 text-indigo-500" />} label={t('console.gateway.summary.channels')} value={summary.uniqueChannels.toString()} />
       </div>
 
       <div className="space-y-4 flex flex-col items-start w-full">
         <div className="flex items-center justify-between w-full mb-2">
-          <h3 className="font-semibold text-slate-900 dark:text-white">{t('console.gateway.table.title', '请求追踪')}</h3>
-          <span className="text-xs text-slate-500 dark:text-slate-400">{t('console.gateway.table.description', '最近的网关请求历史。')}</span>
+          <h3 className="font-semibold text-slate-900 dark:text-white">{t('console.gateway.table.title')}</h3>
+          <span className="text-xs text-slate-500 dark:text-slate-400">{t('console.gateway.table.description')}</span>
         </div>
 
         <div className="bg-white dark:bg-[#0d1117] border border-slate-200 dark:border-white/10 rounded-xl shadow-sm overflow-hidden flex flex-col w-full min-h-[420px]">
           {loading ? (
             <BusinessStatePanel
               kind="loading"
-              title={t('console.gateway.states.loading', '正在加载网关追踪...')}
+              title={t('console.gateway.states.loading')}
               className="min-h-[420px] border-0 bg-transparent"
             />
           ) : loadError ? (
             <BusinessStatePanel
               kind="error"
-              title={t('console.gateway.states.loadErrorTitle', '网关追踪加载失败')}
+              title={t('console.gateway.states.loadErrorTitle')}
               description={loadError}
               onRetry={() => void loadTraces()}
+              retryLabel={t('common.actions.retry')}
               className="min-h-[420px] border-0 bg-transparent"
             />
           ) : traces.length === 0 ? (
             <BusinessStatePanel
               kind="empty"
-              title={t('console.gateway.states.emptyTitle', '暂无网关追踪')}
-              description={t('console.gateway.states.emptyDescription', '当流量到达路由器后，网关请求追踪会显示在这里。')}
+              title={t('console.gateway.states.emptyTitle')}
+              description={t('console.gateway.states.emptyDescription')}
               className="min-h-[420px] border-0 bg-transparent"
             />
           ) : (
-            <GatewayTraceTable traces={traces} />
+            <div className="flex min-h-[420px] flex-col">
+              <GatewayTraceTable traces={traces} />
+              <GatewayTracePagination
+                hasMore={pageInfo?.hasMore === true && pageInfo.nextCursor !== null}
+                loading={loadingMore}
+                error={loadMoreError}
+                onLoadMore={() => void loadMoreTraces()}
+              />
+            </div>
           )}
         </div>
       </div>
@@ -144,6 +228,42 @@ function SummaryItem({ icon, label, value }: { icon: React.ReactNode; label: str
   );
 }
 
+function GatewayTracePagination({
+  hasMore,
+  loading,
+  error,
+  onLoadMore,
+}: {
+  hasMore: boolean;
+  loading: boolean;
+  error: string | null;
+  onLoadMore: () => void;
+}) {
+  const { t } = useTranslation();
+  if (!hasMore) {
+    return null;
+  }
+
+  return (
+    <div className="mt-auto flex flex-col items-center gap-2 border-t border-slate-200 px-5 py-4 dark:border-white/10" aria-live="polite">
+      {error ? <p className="text-sm text-rose-600 dark:text-rose-400" role="alert">{error}</p> : null}
+      <button
+        type="button"
+        className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/15 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+        disabled={loading}
+        aria-busy={loading}
+        onClick={onLoadMore}
+      >
+        {loading
+          ? t('console.gateway.pagination.loadingMore')
+          : error
+            ? t('common.actions.retry')
+            : t('console.gateway.pagination.loadMore')}
+      </button>
+    </div>
+  );
+}
+
 function GatewayTraceTable({ traces }: { traces: GatewayTrace[] }) {
   const { t } = useTranslation();
   return (
@@ -151,14 +271,14 @@ function GatewayTraceTable({ traces }: { traces: GatewayTrace[] }) {
       <table className="w-full text-left text-sm whitespace-nowrap">
         <thead className="bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-white/10">
           <tr>
-            <th className="px-5 py-3 font-medium">{t('console.gateway.table.traceId', '追踪 ID')}</th>
-            <th className="px-5 py-3 font-medium">{t('console.gateway.table.timestamp', '时间')}</th>
-            <th className="px-5 py-3 font-medium">{t('console.gateway.table.clientIp', '客户端 IP')}</th>
-            <th className="px-5 py-3 font-medium">{t('console.gateway.table.method', '方法')}</th>
-            <th className="px-5 py-3 font-medium">{t('console.gateway.table.endpoint', '端点')}</th>
-            <th className="px-5 py-3 font-medium text-center">{t('console.gateway.table.status', '状态')}</th>
-            <th className="px-5 py-3 font-medium text-right">{t('console.gateway.table.duration', '耗时')}</th>
-            <th className="px-5 py-3 font-medium">{t('console.gateway.table.routedChannel', '路由渠道')}</th>
+            <th className="px-5 py-3 font-medium">{t('console.gateway.table.traceId')}</th>
+            <th className="px-5 py-3 font-medium">{t('console.gateway.table.timestamp')}</th>
+            <th className="px-5 py-3 font-medium">{t('console.gateway.table.clientIp')}</th>
+            <th className="px-5 py-3 font-medium">{t('console.gateway.table.method')}</th>
+            <th className="px-5 py-3 font-medium">{t('console.gateway.table.endpoint')}</th>
+            <th className="px-5 py-3 font-medium text-center">{t('console.gateway.table.status')}</th>
+            <th className="px-5 py-3 font-medium text-right">{t('console.gateway.table.duration')}</th>
+            <th className="px-5 py-3 font-medium">{t('console.gateway.table.routedChannel')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200 dark:divide-white/5 text-slate-700 dark:text-slate-300">

@@ -29,14 +29,38 @@ fn gateway_usage_recorder_upserts_trace_and_usage_fact_by_business_unique_keys()
 }
 
 #[test]
-fn gateway_usage_recorder_usage_uuid_is_scoped_by_usage_type() {
+fn gateway_usage_recorder_uses_versioned_stable_usage_identity() {
     for expected in [
-        "command.request_id.hash(&mut hasher)",
-        "command.usage_type.hash(&mut hasher)",
+        "usage-uuid:v1",
+        "usage-idempotency:v1",
+        "usage:v1:",
+        "Some(command.usage_type)",
+        "update_identity_component(&mut hasher, value)",
     ] {
         assert!(
             POSTGRES_GATEWAY_USAGE_RECORDER.contains(expected),
-            "Postgres usage fact uuid must include `{expected}`"
+            "Postgres usage identity must include `{expected}`"
+        );
+    }
+    assert!(
+        !POSTGRES_GATEWAY_USAGE_RECORDER.contains("DefaultHasher"),
+        "persistent usage identities must not depend on Rust's unspecified DefaultHasher"
+    );
+}
+
+#[test]
+fn gateway_usage_recorder_writes_trace_and_usage_in_one_transaction() {
+    for expected in [
+        "self.pool.begin()",
+        "upsert_trace(&mut transaction, &trace_command)",
+        "upsert_usage_fact(&mut transaction, &command)",
+        "transaction.commit()",
+        "settlement_status, idempotency_key",
+        ".bind(usage_idempotency_key(command))",
+    ] {
+        assert!(
+            POSTGRES_GATEWAY_USAGE_RECORDER.contains(expected),
+            "Postgres gateway usage transaction must include `{expected}`"
         );
     }
 }
@@ -82,7 +106,7 @@ fn gateway_usage_recorder_scopes_rows_and_projects_meter_amounts() {
         "audio_seconds, video_seconds",
         "base_input_unit_price, base_output_unit_price, cache_read_unit_price",
         "rate_multiplier, reference_multiplier, official_reference_amount",
-        "upstream_cost_amount, customer_charge_amount, cost_amount",
+        "upstream_cost_amount, customer_charge_amount",
         "pricing_snapshot",
         "pricing_plan_code",
         ".bind(&command.requested_model_catalog_key)",

@@ -2439,8 +2439,10 @@ version = "0.3.0"
 dependencies = [
  "anyhow",
  "sdkwork-claw-config",
+ "sdkwork-clawrouter-database-host",
  "sdkwork-clawrouter-router-service",
- "sdkwork-contract-service",
+ "sdkwork-database-sqlx",
+ "sdkwork-models-database-host",
  "serde",
  "serde_json",
  "sqlx",
@@ -2588,6 +2590,7 @@ dependencies = [
  "anyhow",
  "sdkwork-claw-test-support",
  "sdkwork-database-sqlx",
+ "sdkwork-models-catalog-service",
  "sdkwork-utils-rust",
  "serde",
  "sqlx",
@@ -2631,7 +2634,9 @@ dependencies = [
  "anyhow",
  "sdkwork-claw-test-support",
  "sdkwork-database-sqlx",
+ "sdkwork-utils-rust",
  "serde",
+ "serde_json",
  "sqlx",
  "tokio",
 ]
@@ -2675,6 +2680,7 @@ dependencies = [
  "sdkwork-claw-provider-adapter-registry",
  "sdkwork-claw-security",
  "sdkwork-claw-test-support",
+ "sdkwork-clawrouter-database-host",
  "sdkwork-clawrouter-router-service",
  "sdkwork-database-config",
  "sdkwork-database-sqlx",
@@ -2704,6 +2710,8 @@ dependencies = [
  "sdkwork-database-lifecycle",
  "sdkwork-database-spi",
  "sdkwork-database-sqlx",
+ "sqlx",
+ "tokio",
 ]
 
 [[package]]
@@ -2788,8 +2796,12 @@ dependencies = [
 name = "sdkwork-clawrouter-router-service-test-support"
 version = "0.3.0"
 dependencies = [
+ "sdkwork-clawrouter-database-host",
  "sdkwork-clawrouter-router-service",
- "sdkwork-iam-bootstrap",
+ "sdkwork-database-config",
+ "sdkwork-database-lifecycle",
+ "sdkwork-database-sqlx",
+ "sdkwork-models-database-host",
  "sqlx",
  "tokio",
 ]
@@ -2800,6 +2812,7 @@ version = "0.3.0"
 dependencies = [
  "anyhow",
  "sdkwork-claw-test-support",
+ "sdkwork-database-sqlx",
  "sdkwork-models-catalog-service",
  "serde",
  "serde_json",
@@ -2968,6 +2981,7 @@ dependencies = [
 name = "sdkwork-database-sqlx"
 version = "0.1.0"
 dependencies = [
+ "libsqlite3-sys",
  "sdkwork-database-config",
  "serde",
  "sqlx",
@@ -3195,6 +3209,7 @@ version = "0.1.0"
 dependencies = [
  "hex",
  "sdkwork-database-id",
+ "sdkwork-database-sqlx",
  "sdkwork-models",
  "sdkwork-models-contract-service",
  "serde",
@@ -3235,6 +3250,19 @@ dependencies = [
 [[package]]
 name = "sdkwork-models-database-bootstrap"
 version = "0.1.0"
+
+[[package]]
+name = "sdkwork-models-database-host"
+version = "0.1.0"
+dependencies = [
+ "dotenvy",
+ "sdkwork-database-config",
+ "sdkwork-database-lifecycle",
+ "sdkwork-database-spi",
+ "sdkwork-database-sqlx",
+ "sqlx",
+ "tokio",
+]
 
 [[package]]
 name = "sdkwork-order-database-host"
@@ -3500,6 +3528,7 @@ dependencies = [
  "sdkwork-claw-config",
  "sdkwork-claw-http",
  "sdkwork-claw-observability",
+ "sdkwork-clawrouter-database-host",
  "sdkwork-clawrouter-router-service",
  "sdkwork-content-documents-sdk-reference",
  "sdkwork-database-sqlx",
@@ -3537,8 +3566,10 @@ dependencies = [
  "sdkwork-claw-config",
  "sdkwork-claw-http",
  "sdkwork-claw-observability",
+ "sdkwork-clawrouter-database-host",
  "sdkwork-clawrouter-router-service",
  "sdkwork-database-config",
+ "sdkwork-database-sqlx",
  "sdkwork-iam-database-host",
  "sdkwork-iam-embedded-application-bootstrap",
  "sdkwork-iam-web-adapter",

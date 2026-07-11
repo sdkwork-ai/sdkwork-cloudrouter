@@ -3,8 +3,8 @@ use sqlx::{Row, SqlitePool};
 use crate::error::store_error;
 use crate::mapping::{require_subject, row_to_provider};
 use crate::types::{
-    AppProviderItem, AppProvidersListPage, AppProvidersListQuery, AppProvidersReadFuture,
-    AppProvidersReadStore, AppProvidersSubject,
+    AppProvidersListPage, AppProvidersListQuery, AppProvidersReadFuture, AppProvidersReadStore,
+    AppProvidersSubject,
 };
 
 const LOAD_PROVIDERS: &str = r#"

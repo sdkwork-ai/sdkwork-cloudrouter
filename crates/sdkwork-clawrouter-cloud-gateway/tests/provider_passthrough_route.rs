@@ -2240,7 +2240,7 @@ async fn gateway_database_provider_native_direct_passthrough_records_api_request
                model, channel_id, provider_native_model,
                modality, usage_type,
                billing_meter_code, billable_quantity, request_count,
-               customer_charge_amount, cost_amount, currency, pricing_plan_code,
+               customer_charge_amount, currency, pricing_plan_code,
                settlement_status
         FROM ai_usage
         WHERE trace_id = ?
@@ -2291,7 +2291,6 @@ async fn gateway_database_provider_native_direct_passthrough_records_api_request
         "0.006600000000",
         usage.get::<String, _>("customer_charge_amount")
     );
-    assert_eq!("0.006600000000", usage.get::<String, _>("cost_amount"));
     assert_eq!("USD", usage.get::<String, _>("currency"));
     assert_eq!("standard", usage.get::<String, _>("pricing_plan_code"));
     assert_eq!(0_i64, usage.get::<i64, _>("settlement_status"));
@@ -3355,7 +3354,7 @@ async fn gateway_database_route_scoped_openai_chat_passthrough_records_usage() {
                channel_group_snapshot, model, requested_model_catalog_key,
                provider_native_model, channel_id, usage_type,
                billing_meter_code, billable_quantity, prompt_tokens, completion_tokens,
-               cached_tokens, total_tokens, customer_charge_amount, cost_amount,
+               cached_tokens, total_tokens, customer_charge_amount,
                currency, pricing_plan_code, settlement_status
         FROM ai_usage
         WHERE trace_id = ?
@@ -3408,7 +3407,6 @@ async fn gateway_database_route_scoped_openai_chat_passthrough_records_usage() {
         "0.000000990000",
         usage.get::<String, _>("customer_charge_amount")
     );
-    assert_eq!("0.000000990000", usage.get::<String, _>("cost_amount"));
     assert_eq!("USD", usage.get::<String, _>("currency"));
     assert_eq!("standard", usage.get::<String, _>("pricing_plan_code"));
     assert_eq!(0_i64, usage.get::<i64, _>("settlement_status"));
@@ -3495,7 +3493,7 @@ async fn gateway_database_route_scoped_openai_legacy_completion_passthrough_reco
                channel_group_snapshot, model, requested_model_catalog_key,
                provider_native_model, channel_id, usage_type, billing_meter_code,
                billable_quantity, prompt_tokens, completion_tokens, cached_tokens,
-               total_tokens, customer_charge_amount, cost_amount, currency,
+               total_tokens, customer_charge_amount, currency,
                pricing_plan_code, settlement_status
         FROM ai_usage
         WHERE trace_id = ?
@@ -3548,7 +3546,6 @@ async fn gateway_database_route_scoped_openai_legacy_completion_passthrough_reco
         "0.000001386000",
         usage.get::<String, _>("customer_charge_amount")
     );
-    assert_eq!("0.000001386000", usage.get::<String, _>("cost_amount"));
     assert_eq!("USD", usage.get::<String, _>("currency"));
     assert_eq!("standard", usage.get::<String, _>("pricing_plan_code"));
     assert_eq!(0_i64, usage.get::<i64, _>("settlement_status"));
@@ -3636,7 +3633,7 @@ async fn gateway_database_route_scoped_openai_image_passthrough_records_image_re
         SELECT request_id, trace_id, catalog_key, model, requested_model_catalog_key,
                provider_native_model, channel_id, modality, billing_meter_code,
                billable_quantity, image_count, request_count, customer_charge_amount,
-               cost_amount, currency, pricing_plan_code, settlement_status
+               currency, pricing_plan_code, settlement_status
         FROM ai_usage
         WHERE trace_id = ?
         "#,
@@ -3676,7 +3673,6 @@ async fn gateway_database_route_scoped_openai_image_passthrough_records_image_re
         "0.132000000000",
         usage.get::<String, _>("customer_charge_amount")
     );
-    assert_eq!("0.132000000000", usage.get::<String, _>("cost_amount"));
     assert_eq!("USD", usage.get::<String, _>("currency"));
     assert_eq!("standard", usage.get::<String, _>("pricing_plan_code"));
     assert_eq!(0_i64, usage.get::<i64, _>("settlement_status"));
@@ -3756,7 +3752,7 @@ async fn gateway_database_route_scoped_openai_management_passthrough_records_api
         SELECT request_id, trace_id, tenant_id, organization_id, user_id, api_key_id,
                channel_group_snapshot, catalog_key, model, requested_model_catalog_key,
                provider_native_model, channel_id, billing_meter_code,
-               billable_quantity, request_count, customer_charge_amount, cost_amount,
+               billable_quantity, request_count, customer_charge_amount,
                currency, pricing_plan_code, settlement_status
         FROM ai_usage
         WHERE trace_id = ?
@@ -3803,7 +3799,6 @@ async fn gateway_database_route_scoped_openai_management_passthrough_records_api
         "0.001320000000",
         usage.get::<String, _>("customer_charge_amount")
     );
-    assert_eq!("0.001320000000", usage.get::<String, _>("cost_amount"));
     assert_eq!("USD", usage.get::<String, _>("currency"));
     assert_eq!("standard", usage.get::<String, _>("pricing_plan_code"));
     assert_eq!(0_i64, usage.get::<i64, _>("settlement_status"));

@@ -109,12 +109,12 @@ class SchemaQualityGateTest(unittest.TestCase):
 
     def write_architecture_docs(self, root: Path) -> None:
         docs = {
-            "02-鎶€鏈灦鏋勮璁?md": "Rust-first sdkwork-clawrouter-cloud-gateway sdkwork-clawrouter-app-api-server sdkwork-clawrouter-admin-api-server /app/v3/api /backend/v3/api /v1",
-            "03-鎶€鏈€夊瀷.md": "Rust-first axum tokio sqlx tower hyper utoipa tracing moka rust_decimal",
-            "07-鎬ц兘璁捐.md": "Rust-first Tokio Axum moka Redis streaming batch writer connection pool",
-            "09-閮ㄧ讲鏋舵瀯璁捐.md": "Rust-first Rust services desktop server docker kubernetes SDKWORK_CLAW_DEPLOYMENT_MODE SDKWORK_CLAW_GATEWAY_BIND SDKWORK_CLAW_APP_API_BIND SDKWORK_CLAW_ADMIN_API_BIND",
+            "TECH-02-architecturedesign.md": "Rust-first sdkwork-clawrouter-cloud-gateway sdkwork-clawrouter-standalone-gateway sdkwork-clawrouter-app-api-server sdkwork-clawrouter-admin-api-server /app/v3/api /backend/v3/api /v1",
+            "TECH-03-tech-stack.md": "Rust-first axum tokio sqlx tower hyper utoipa tracing moka rust_decimal",
+            "TECH-07-performancedesign.md": "Rust-first Tokio Axum moka Redis streaming batch writer connection pool",
+            "TECH-09-deploymentarchitecturedesign.md": "Rust-first Rust services desktop server docker kubernetes SDKWORK_CLAW_DEPLOYMENT_MODE SDKWORK_CLAW_GATEWAY_BIND SDKWORK_CLAW_APP_API_BIND SDKWORK_CLAW_ADMIN_API_BIND",
         }
-        docs_root = root / "docs"
+        docs_root = root / "docs" / "architecture" / "tech"
         docs_root.mkdir(parents=True, exist_ok=True)
         for filename, content in docs.items():
             (docs_root / filename).write_text(content + "\n", encoding="utf-8")
@@ -147,6 +147,7 @@ class SchemaQualityGateTest(unittest.TestCase):
 
     def write_generated_artifacts(self, root: Path, registry: Path) -> None:
         SchemaCompiler(root=root, registry_path=registry).write_postgres()
+        SchemaCompiler(root=root, registry_path=registry).write_sqlite()
         DomainTypeGenerator(root=root, registry_path=registry).write()
         SchemaManifestGenerator(root=root, registry_path=registry).write()
         OpenApiComponentGenerator(root=root, registry_path=registry).write()
@@ -903,9 +904,48 @@ class SchemaQualityGateTest(unittest.TestCase):
             self.write_app(root)
             self.write_frontend_contract(root)
 
-            result = SchemaQualityGate(root=root, registry_path=registry).run()
+            # This fixture exercises generated schema artifacts; repository topology and SDK
+            # synchronization have dedicated guardian suites with their own complete fixtures.
+            with (
+                patch("tools.schema_quality_gate.ArchitectureStandardGuardian") as architecture_guardian,
+                patch("tools.schema_quality_gate.RustBackendArchitectureGuardian") as rust_guardian,
+                patch("tools.schema_quality_gate.ClawRouterSdkGuardian") as sdk_guardian,
+            ):
+                for guardian_class in (architecture_guardian, rust_guardian, sdk_guardian):
+                    guardian_class.return_value.run.return_value = Mock(ok=True, messages=[])
+
+                result = SchemaQualityGate(root=root, registry_path=registry).run()
 
             self.assertTrue(result.ok, result.messages)
+
+    def test_quality_gate_reports_unsafe_sqlite_logical_decimal_query(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                self.valid_registry().replace(
+                    "display_name: string(128)",
+                    "display_name: string(128)\n              customer_charge_amount: decimal",
+                ),
+            )
+            self.write_generated_artifacts(root, registry)
+            self.write_app(root)
+            self.write_frontend_contract(root)
+            sqlite_query = root / "services" / "usage-repository" / "src" / "sqlite.rs"
+            sqlite_query.parent.mkdir(parents=True, exist_ok=True)
+            sqlite_query.write_text(
+                "SELECT SUM(customer_charge_amount) FROM ai_model_vendor;\n",
+                encoding="utf-8",
+            )
+
+            result = SchemaQualityGate(root=root, registry_path=registry).run()
+
+            self.assertFalse(result.ok)
+            self.assertIn(
+                "SQLite SQL services/usage-repository/src/sqlite.rs:1 uses native SUM on logical "
+                "decimal column(s) customer_charge_amount; use sdkwork_decimal_sum(...)",
+                result.messages,
+            )
 
     def test_quality_gate_reports_stale_generated_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -1146,18 +1186,22 @@ class SchemaQualityGateTest(unittest.TestCase):
             root = Path(tmp)
             registry = self.write_registry(root, self.valid_registry())
             self.write_generated_artifacts(root, registry)
-            drift = root / "docs" / "02-鎶€鏈灦鏋勮璁?md"
+            drift = root / "docs" / "architecture" / "tech" / "TECH-02-architecturedesign.md"
             drift.write_text("Spring-first with Rust/Pingora Sidecar\n", encoding="utf-8")
             self.write_app(root)
             self.write_frontend_contract(root)
 
-            result = SchemaQualityGate(root=root, registry_path=registry).run()
+            message = (
+                "architecture doc docs/architecture/tech/TECH-02-architecturedesign.md contains "
+                "forbidden Spring-first drift term: Spring-first"
+            )
+            with patch("tools.schema_quality_gate.ArchitectureStandardGuardian") as guardian_class:
+                guardian_class.return_value.run.return_value = Mock(ok=False, messages=[message])
+
+                result = SchemaQualityGate(root=root, registry_path=registry).run()
 
             self.assertFalse(result.ok)
-            self.assertIn(
-                "architecture doc docs/02-鎶€鏈灦鏋勮璁?md contains forbidden Spring-first drift term: Spring-first",
-                result.messages,
-            )
+            self.assertIn(message, result.messages)
 
     def test_quality_gate_reports_frontend_contract_gaps(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -1315,7 +1359,7 @@ class SchemaQualityGateTest(unittest.TestCase):
             self.write_generated_artifacts(root, registry)
             self.write_app(root)
             self.write_frontend_contract(root)
-            (root / "sdkwork-appbase").mkdir()
+            (root / ".sdkwork" / "dependencies" / "sdkwork-appbase").mkdir(parents=True)
 
             with patch("tools.schema_quality_gate.AppbaseCapabilityGuardian") as guardian_class:
                 guardian_class.return_value.run.return_value = Mock(ok=False, messages=["appbase capability drift"])

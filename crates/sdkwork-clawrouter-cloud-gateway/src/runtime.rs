@@ -17,6 +17,7 @@ use sdkwork_claw_http::QueryStringApiKeyPolicy;
 use sdkwork_claw_provider_adapter_contract::AdapterRouteStatus;
 use sdkwork_claw_provider_adapter_http::ProviderAdapterHttpClient;
 use sdkwork_claw_provider_adapter_registry::{ProviderAdapterRegistry, ProviderAdapterRouteConfig};
+use sdkwork_clawrouter_database_host::connect_claw_router_database;
 use sdkwork_clawrouter_router_service::api::{
     OpenAiInvocationPluginRef, OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig,
 };
@@ -47,7 +48,7 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::{
     RefreshableSqlPricingCatalog, SqlPricingCatalogSnapshotSummary,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
-    log_bootstrap_admin_report, DatabaseInstallError, DatabaseInstaller,
+    DatabaseInstallError, DatabaseInstaller,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::{
     PostgresCatalogLoadError, PostgresGatewayUsageRecorder, PostgresPricingCatalogLoader,
@@ -872,18 +873,21 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
     };
     match config.engine {
         DatabaseEngine::Sqlite => {
-            let pool =
-                sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_claw_sqlite_runtime_pool(
+            let database_pool =
+                sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_standard_database_pool(
                     &config,
                 )
                 .await
                 .map_err(gateway_sqlite_pool_error)?;
+            prepare_claw_router_database_lifecycle(database_pool.clone()).await?;
+            let pool = database_pool.as_sqlite().cloned().ok_or_else(|| {
+                GatewayRouterError::Config("expected SQLite database pool".to_owned())
+            })?;
             if startup_install_mode.should_ensure() {
-                let install_report = DatabaseInstaller::for_sqlite(pool.clone())
+                DatabaseInstaller::for_sqlite(pool.clone())
                     .with_env_options()?
-                    .ensure_installed()
+                    .ensure_bootstrap_data()
                     .await?;
-                log_bootstrap_admin_report("sdkwork-clawrouter-cloud-gateway", &install_report);
             }
             let snapshot = SqlitePricingCatalogLoader::with_api_key_secret_codec(
                 pool.clone(),
@@ -944,21 +948,25 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
             )
         }
         DatabaseEngine::Postgres => {
-            let pool =
-                sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_postgres_runtime_pool(
-                    &config.url,
-                    config.max_connections,
+            let database_pool =
+                sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_standard_database_pool(
+                    &config,
                 )
                 .await
                 .map_err(|error| {
-                    GatewayRouterError::Postgres(PostgresCatalogLoadError::Database(error))
+                    GatewayRouterError::Postgres(PostgresCatalogLoadError::Database(
+                        sqlx::Error::Configuration(error.to_string().into()),
+                    ))
                 })?;
+            prepare_claw_router_database_lifecycle(database_pool.clone()).await?;
+            let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
+                GatewayRouterError::Config("expected PostgreSQL database pool".to_owned())
+            })?;
             if startup_install_mode.should_ensure() {
-                let install_report = DatabaseInstaller::for_postgres(pool.clone())
+                DatabaseInstaller::for_postgres(pool.clone())
                     .with_env_options()?
-                    .ensure_installed()
+                    .ensure_bootstrap_data()
                     .await?;
-                log_bootstrap_admin_report("sdkwork-clawrouter-cloud-gateway", &install_report);
             }
             let snapshot = PostgresPricingCatalogLoader::with_api_key_secret_codec(
                 pool.clone(),
@@ -1515,6 +1523,9 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
                 )
                 .await
                 .map_err(|error| anyhow::Error::new(gateway_sqlite_pool_error(error)))?;
+            prepare_claw_router_database_lifecycle(database_pool.clone())
+                .await
+                .map_err(anyhow::Error::new)?;
             let pool = database_pool.as_sqlite().cloned().ok_or_else(|| {
                 anyhow::Error::new(GatewayRouterError::Sqlite(SqlCatalogLoadError::Database(
                     sqlx::Error::Configuration("expected sqlite database pool".into()),
@@ -1526,11 +1537,10 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
                     .map_err(anyhow::Error::new)?,
             );
             if startup_install_mode.should_ensure() {
-                let install_report = database_installer
-                    .ensure_installed()
+                database_installer
+                    .ensure_bootstrap_data()
                     .await
                     .map_err(anyhow::Error::new)?;
-                log_bootstrap_admin_report("sdkwork-claw-all-in-one", &install_report);
             }
             let snapshot = SqlitePricingCatalogLoader::with_api_key_secret_codec(
                 pool.clone(),
@@ -1598,6 +1608,9 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
                         )),
                     ))
                 })?;
+            prepare_claw_router_database_lifecycle(database_pool.clone())
+                .await
+                .map_err(anyhow::Error::new)?;
             let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
                 anyhow::Error::new(GatewayRouterError::Postgres(
                     PostgresCatalogLoadError::Database(sqlx::Error::Configuration(
@@ -1611,11 +1624,10 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
                     .map_err(anyhow::Error::new)?,
             );
             if startup_install_mode.should_ensure() {
-                let install_report = database_installer
-                    .ensure_installed()
+                database_installer
+                    .ensure_bootstrap_data()
                     .await
                     .map_err(anyhow::Error::new)?;
-                log_bootstrap_admin_report("sdkwork-claw-all-in-one", &install_report);
             }
             let snapshot = PostgresPricingCatalogLoader::with_api_key_secret_codec(
                 pool.clone(),
@@ -1725,6 +1737,15 @@ fn gateway_sqlite_pool_error(error: impl std::fmt::Display) -> GatewayRouterErro
     GatewayRouterError::Sqlite(SqlCatalogLoadError::Database(sqlx::Error::Configuration(
         error.to_string().into(),
     )))
+}
+
+async fn prepare_claw_router_database_lifecycle(
+    pool: DatabasePool,
+) -> Result<(), GatewayRouterError> {
+    connect_claw_router_database(pool).map_err(|error| {
+        GatewayRouterError::Installer(DatabaseInstallError::InvalidState(error))
+    })?;
+    Ok(())
 }
 
 fn sticky_store_from_shared_database_pool(pool: &DatabasePool) -> Arc<dyn StickyRouteStore> {

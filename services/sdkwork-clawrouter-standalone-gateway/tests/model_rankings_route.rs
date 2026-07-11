@@ -139,7 +139,7 @@ async fn database_config_app_startup_worker_auto_refreshes_rankings_and_records_
         INSERT INTO ai_usage
             (id, uuid, tenant_id, organization_id, user_id, request_id, status, metadata,
              catalog_key, model, modality, usage_type, billing_meter_code, request_count,
-             prompt_tokens, completion_tokens, total_tokens, billable_quantity, cost_amount,
+             prompt_tokens, completion_tokens, total_tokens, billable_quantity, customer_charge_amount,
              currency, pricing_snapshot, occurred_at)
         VALUES
             (9001, 'usage-app-startup-ranking', ?, ?, ?, 'app-startup-ranking-request', 1, '{}',

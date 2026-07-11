@@ -35,13 +35,16 @@ async fn sqlite_loader_builds_pricing_catalog_snapshot_from_schema_tables() {
             categories: Vec::new(),
             groups: Vec::new(),
             search_query: None,
-            limit: None,
+            page_size: Some(200),
             offset: None,
         })
         .unwrap();
 
-    assert_eq!(1, page.items.len());
-    let item = &page.items[0];
+    let item = page
+        .items
+        .iter()
+        .find(|item| item.catalog_key == "openai/gpt-4o-mini")
+        .expect("database-owned custom models must be merged into the public model dictionary");
     assert_eq!("gpt-4o-mini", item.model);
     assert_eq!("openai/gpt-4o-mini", item.catalog_key);
     assert!(
@@ -129,6 +132,59 @@ async fn sqlite_loader_builds_pricing_catalog_snapshot_from_schema_tables() {
         "37.500000",
         metric.usage_amount_total.unwrap().to_fixed_string(6)
     );
+}
+
+#[tokio::test]
+async fn sqlite_loader_anonymous_model_catalog_hides_tenant_upstream_prices() {
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .unwrap();
+    create_schema(&pool).await;
+    seed_catalog(&pool).await;
+
+    let snapshot = SqlitePricingCatalogLoader::new(pool)
+        .load_snapshot()
+        .await
+        .unwrap();
+    let page = ModelCatalogQueryService::new(&snapshot)
+        .list_models(ListModelCatalogQuery {
+            api_key_id: None,
+            billing_meter: BillingMeter::LlmInputToken,
+            vendor_code: Some("openai".to_owned()),
+            vendor_codes: Vec::new(),
+            modalities: Vec::new(),
+            capabilities: Vec::new(),
+            categories: Vec::new(),
+            groups: Vec::new(),
+            search_query: None,
+            page_size: Some(200),
+            offset: None,
+        })
+        .unwrap();
+    let item = page
+        .items
+        .iter()
+        .find(|item| item.catalog_key == "openai/gpt-4o-mini")
+        .expect("database-owned public model must remain listed");
+
+    assert_eq!(
+        None, item.lowest_upstream_cost_unit_price,
+        "anonymous catalog must use platform 0/0 scope and hide tenant provider/channel costs"
+    );
+    assert_eq!(
+        vec!["0.150000"],
+        item.official_reference_prices
+            .iter()
+            .filter(|price| price.billing_meter == "llm_input_token")
+            .map(|price| price.unit_price.as_str())
+            .collect::<Vec<_>>()
+    );
+    assert!(matches!(
+        item.price_availability,
+        PriceAvailability::Unavailable { .. }
+    ));
 }
 
 #[tokio::test]
@@ -484,6 +540,146 @@ async fn sqlite_loader_treats_rfc3339_effective_from_as_active_timestamp() {
 }
 
 #[tokio::test]
+async fn sqlite_loader_applies_pricing_scope_specificity_and_sql_priority() {
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .unwrap();
+    create_schema(&pool).await;
+    seed_catalog(&pool).await;
+
+    for statement in [
+        r#"
+        INSERT INTO ai_pricing_plan
+            (id, tenant_id, organization_id, plan_code, base_price_side,
+             default_multiplier, default_markup_amount, currency, status, priority)
+        VALUES
+            (20, 0, 0, 'scope-plan', 1, '1.000000', '0.000000', 'USD', 1, 100),
+            (21, 100001, 0, 'scope-plan', 1, '1.100000', '0.000000', 'USD', 1, 50),
+            (22, 100001, 20, 'scope-plan', 1, '1.200000', '0.000000', 'USD', 1, 1),
+            (23, 200002, 0, 'scope-plan', 1, '2.000000', '0.000000', 'USD', 1, 1)
+        "#,
+        r#"
+        INSERT INTO ai_model_pricing
+            (id, tenant_id, organization_id, catalog_key, model, region_code, price_side,
+             billing_meter_code, unit_price, currency, provider_code, channel_id, status, priority)
+        VALUES
+            (20, 0, 0, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'global', 1,
+             'llm_input_token', '0.100000', 'USD', NULL, NULL, 1, 100),
+            (21, 100001, 0, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'global', 1,
+             'llm_input_token', '0.200000', 'USD', NULL, NULL, 1, 50),
+            (22, 100001, 20, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'global', 1,
+             'llm_input_token', '0.300000', 'USD', NULL, NULL, 1, 1),
+            (23, 100001, 20, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'global', 1,
+             'llm_input_token', '0.310000', 'USD', NULL, NULL, 1, 10),
+            (24, 200002, 0, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'global', 1,
+             'llm_input_token', '0.400000', 'USD', NULL, NULL, 1, 1),
+            (25, 200002, 0, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'global', 2,
+             'llm_input_token', '0.010000', 'USD', 'foreign-provider', 9901, 1, 1)
+        "#,
+    ] {
+        sqlx::query(statement).execute(&pool).await.unwrap();
+    }
+
+    let snapshot = SqlitePricingCatalogLoader::new(pool)
+        .load_snapshot()
+        .await
+        .unwrap();
+
+    for (tenant_id, organization_id, expected_multiplier) in [
+        (100001, 20, "1.200000"),
+        (100001, 21, "1.100000"),
+        (200002, 9, "2.000000"),
+        (300003, 30, "1.000000"),
+    ] {
+        assert_eq!(
+            expected_multiplier,
+            snapshot
+                .find_pricing_plan_for_scope(tenant_id, organization_id, "scope-plan")
+                .expect("visible pricing plan must resolve")
+                .default_multiplier
+                .to_fixed_string(6)
+        );
+    }
+
+    for (tenant_id, organization_id, expected_price) in [
+        (100001, 20, "0.300000"),
+        (100001, 21, "0.200000"),
+        (200002, 9, "0.400000"),
+        (300003, 30, "0.150000"),
+    ] {
+        let prices = snapshot.list_model_prices_for_scope(
+            tenant_id,
+            organization_id,
+            "openai/gpt-4o-mini",
+            PriceSide::OfficialReference,
+            BillingMeter::LlmInputToken,
+        );
+        assert_eq!(1, prices.len());
+        assert_eq!(expected_price, prices[0].unit_price.to_fixed_string(6));
+    }
+    assert!(
+        snapshot
+            .list_model_prices_for_scope(
+                100001,
+                20,
+                "openai/gpt-4o-mini",
+                PriceSide::UpstreamCost,
+                BillingMeter::LlmInputToken,
+            )
+            .iter()
+            .all(|price| price.provider_code.as_deref() != Some("foreign-provider")),
+        "foreign tenant provider/channel prices must not cross the scope boundary"
+    );
+}
+
+#[tokio::test]
+async fn sqlite_loader_prefers_bundled_official_price_over_stale_platform_row() {
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .unwrap();
+    create_schema(&pool).await;
+    seed_catalog(&pool).await;
+
+    sqlx::query(
+        r#"
+        INSERT INTO ai_model_pricing
+            (id, tenant_id, organization_id, catalog_key, model, region_code, price_side,
+             billing_meter_code, unit_price, currency, status, priority)
+        VALUES
+            (30, 0, 0, 'openai/gpt-5.4-mini', 'gpt-5.4-mini', 'global', 1,
+             'llm_input_token', '0.000001', 'USD', 1, 1)
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let snapshot = SqlitePricingCatalogLoader::new(pool)
+        .load_snapshot()
+        .await
+        .unwrap();
+    let price = snapshot
+        .find_model_price(
+            "openai/gpt-5.4-mini",
+            PriceSide::OfficialReference,
+            BillingMeter::LlmInputToken,
+            None,
+            None,
+        )
+        .expect("bundled platform official price must remain available");
+
+    assert_eq!(
+        "0.750000",
+        price.unit_price.to_fixed_string(6),
+        "stale platform database imports must not shadow the bundled catalog version"
+    );
+}
+
+#[tokio::test]
 async fn sqlite_loader_redacts_copyable_key_material_when_secret_codec_is_absent() {
     let pool = SqlitePoolOptions::new()
         .max_connections(1)
@@ -577,6 +773,14 @@ async fn sqlite_loader_supplies_standard_pricing_plan_when_runtime_plan_table_is
 
     assert_eq!("standard", price.pricing_plan_code);
     assert_eq!("standard-group", price.group_code);
+    assert_eq!(
+        "0.110000",
+        price
+            .upstream_cost
+            .expect("tenant provider/channel upstream price must resolve")
+            .unit_price
+            .to_fixed_string(6)
+    );
 }
 
 #[tokio::test]
@@ -682,6 +886,250 @@ async fn sqlite_loader_derives_routes_from_vendor_resource_and_credentials_not_c
     );
     assert_eq!(1, channel_route.group_bindings.len());
     assert_eq!(10, channel_route.group_bindings[0].group_id);
+}
+
+#[tokio::test]
+async fn sqlite_loader_resolves_global_resource_id_and_prefers_specific_resource_scope() {
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .unwrap();
+    create_schema(&pool).await;
+    seed_catalog(&pool).await;
+
+    for statement in [
+        r#"
+        INSERT INTO ai_channel
+            (id, tenant_id, organization_id, provider_code, channel_code, channel_name,
+             channel_type, base_url, credential_ref, status, priority, weight)
+        VALUES
+            (4001, 100001, 20, 'inheritance-provider', 'inheritance-org', 'Inheritance Org',
+             'relay', 'http://provider-proxy.internal/inheritance',
+             'vault://providers/inheritance/channel', 1, 1, 100)
+        "#,
+        r#"
+        INSERT INTO ai_channel_credential
+            (id, tenant_id, organization_id, channel_id, provider_code, channel_code,
+             credential_name, base_url, auth_config, credential_ref, credential_hash,
+             priority, weight, health_status, status)
+        VALUES
+            (400101, 100001, 20, 4001, 'inheritance-provider', 'inheritance-org',
+             'org-account', 'http://provider-proxy.internal/inheritance', '{}',
+             'vault://providers/inheritance/org-account', 'hash:inheritance-org', 1, 100, 1, 1)
+        "#,
+        r#"
+        INSERT INTO ai_resource
+            (id, tenant_id, organization_id, resource_code, resource_type, vendor_code,
+             modality_code, api_code, catalog_key, model, provider_native_model, status)
+        VALUES
+            (9200, 0, 0, 'model.inheritance.chat', 'model_api', 'openai', 'chat',
+             'openai.chat_completions', 'openai/gpt-4o-mini', 'gpt-4o-mini', 'global-model', 1),
+            (9201, 100001, 0, 'model.inheritance.chat', 'model_api', 'openai', 'chat',
+             'openai.chat_completions', 'openai/gpt-4o-mini', 'gpt-4o-mini', 'tenant-model', 1),
+            (9202, 100001, 20, 'model.inheritance.chat', 'model_api', 'openai', 'chat',
+             'openai.chat_completions', 'openai/gpt-4o-mini', 'gpt-4o-mini', 'organization-model', 1),
+            (9203, 200002, 20, 'model.inheritance.chat', 'model_api', 'openai', 'chat',
+             'openai.chat_completions', 'openai/gpt-4o-mini', 'gpt-4o-mini', 'other-tenant-model', 1),
+            (9205, 100001, 21, 'model.inheritance.chat', 'model_api', 'openai', 'chat',
+             'openai.chat_completions', 'openai/gpt-4o-mini', 'gpt-4o-mini', 'sibling-organization-model', 1),
+            (9204, 0, 20, 'model.inheritance.chat', 'model_api', 'openai', 'chat',
+             'openai.chat_completions', 'openai/gpt-4o-mini', 'gpt-4o-mini', 'invalid-scope-model', 1)
+        "#,
+        r#"
+        INSERT INTO ai_channel_resource
+            (id, tenant_id, organization_id, channel_id, resource_id, resource_code, grant_type, status)
+        VALUES
+            (9401, 100001, 20, 4001, 9200, '', 'allow', 1)
+        "#,
+    ] {
+        sqlx::query(statement).execute(&pool).await.unwrap();
+    }
+
+    let snapshot = SqlitePricingCatalogLoader::new(pool.clone())
+        .load_snapshot()
+        .await
+        .unwrap();
+    let routes = snapshot
+        .list_provider_routes("openai/gpt-4o-mini")
+        .into_iter()
+        .filter(|route| route.channel_id == 4001)
+        .collect::<Vec<_>>();
+    assert_eq!(1, routes.len());
+    assert_eq!("organization-model", routes[0].provider_model);
+
+    sqlx::query("UPDATE ai_resource SET status = 0 WHERE id = 9202")
+        .execute(&pool)
+        .await
+        .unwrap();
+    let snapshot = SqlitePricingCatalogLoader::new(pool.clone())
+        .load_snapshot()
+        .await
+        .unwrap();
+    let routes = snapshot
+        .list_provider_routes("openai/gpt-4o-mini")
+        .into_iter()
+        .filter(|route| route.channel_id == 4001)
+        .collect::<Vec<_>>();
+    assert_eq!(1, routes.len());
+    let route = &routes[0];
+    assert_eq!("tenant-model", route.provider_model);
+
+    sqlx::query("UPDATE ai_resource SET deleted_at = '2026-07-11T00:00:00Z' WHERE id = 9201")
+        .execute(&pool)
+        .await
+        .unwrap();
+    let snapshot = SqlitePricingCatalogLoader::new(pool)
+        .load_snapshot()
+        .await
+        .unwrap();
+    let routes = snapshot
+        .list_provider_routes("openai/gpt-4o-mini")
+        .into_iter()
+        .filter(|route| route.channel_id == 4001)
+        .collect::<Vec<_>>();
+    assert_eq!(1, routes.len());
+    let route = &routes[0];
+    assert_eq!("global-model", route.provider_model);
+}
+
+#[tokio::test]
+async fn sqlite_loader_resolves_global_resource_group_id_with_tenant_override() {
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .unwrap();
+    create_schema(&pool).await;
+    seed_catalog(&pool).await;
+
+    for statement in [
+        r#"
+        INSERT INTO ai_channel
+            (id, tenant_id, organization_id, provider_code, channel_code, channel_name,
+             channel_type, base_url, credential_ref, status, priority, weight)
+        VALUES
+            (4002, 100001, 20, 'group-inheritance-provider', 'group-inheritance', 'Group Inheritance',
+             'relay', 'http://provider-proxy.internal/group-inheritance',
+             'vault://providers/group-inheritance/channel', 1, 1, 100)
+        "#,
+        r#"
+        INSERT INTO ai_channel_credential
+            (id, tenant_id, organization_id, channel_id, provider_code, channel_code,
+             credential_name, base_url, auth_config, credential_ref, credential_hash,
+             priority, weight, health_status, status)
+        VALUES
+            (400201, 100001, 20, 4002, 'group-inheritance-provider', 'group-inheritance',
+             'group-account', 'http://provider-proxy.internal/group-inheritance', '{}',
+             'vault://providers/group-inheritance/account', 'hash:group-inheritance', 1, 100, 1, 1)
+        "#,
+        r#"
+        INSERT INTO ai_resource
+            (id, tenant_id, organization_id, resource_code, resource_type, vendor_code,
+             modality_code, api_code, catalog_key, model, provider_native_model, status)
+        VALUES
+            (9210, 0, 0, 'model.group-inheritance.chat', 'model_api', 'openai', 'chat',
+             'openai.chat_completions', 'openai/gpt-4o-mini', 'gpt-4o-mini', 'global-group-model', 1),
+            (9211, 100001, 0, 'model.group-inheritance.chat', 'model_api', 'openai', 'chat',
+             'openai.chat_completions', 'openai/gpt-4o-mini', 'gpt-4o-mini', 'tenant-group-model', 1),
+            (9212, 100001, 20, 'model.group-inheritance.chat', 'model_api', 'openai', 'chat',
+             'openai.chat_completions', 'openai/gpt-4o-mini', 'gpt-4o-mini', 'organization-group-model', 1)
+        "#,
+        r#"
+        INSERT INTO ai_resource_group
+            (id, tenant_id, organization_id, group_code, group_name, group_type, status)
+        VALUES
+            (9300, 0, 0, 'group.inheritance', 'Global Inheritance Group', 'bundle', 1)
+        "#,
+        r#"
+        INSERT INTO ai_resource_group_item
+            (id, tenant_id, organization_id, resource_group_id, resource_group_code,
+             item_type, resource_id, resource_code, status)
+        VALUES
+            (9301, 0, 0, 9300, 'group.inheritance', 'resource', 9210, '', 1)
+        "#,
+        r#"
+        INSERT INTO ai_channel_resource
+            (id, tenant_id, organization_id, channel_id, resource_group_id, resource_code, grant_type, status)
+        VALUES
+            (9402, 100001, 20, 4002, 9300, '', 'allow', 1)
+        "#,
+    ] {
+        sqlx::query(statement).execute(&pool).await.unwrap();
+    }
+
+    let snapshot = SqlitePricingCatalogLoader::new(pool)
+        .load_snapshot()
+        .await
+        .unwrap();
+    let route = snapshot
+        .list_provider_routes("openai/gpt-4o-mini")
+        .into_iter()
+        .find(|route| route.channel_id == 4002)
+        .expect("global resource group id must resolve for a tenant channel");
+    assert_eq!("organization-group-model", route.provider_model);
+}
+
+#[tokio::test]
+async fn sqlite_loader_does_not_inherit_cross_tenant_resource_or_global_credentials() {
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .unwrap();
+    create_schema(&pool).await;
+    seed_catalog(&pool).await;
+
+    for statement in [
+        r#"
+        INSERT INTO ai_channel
+            (id, tenant_id, organization_id, provider_code, channel_code, channel_name,
+             channel_type, base_url, credential_ref, status, priority, weight)
+        VALUES
+            (4003, 100001, 20, 'cross-tenant-provider', 'cross-tenant', 'Cross Tenant',
+             'relay', 'http://provider-proxy.internal/cross-tenant',
+             'vault://providers/cross-tenant/channel', 1, 1, 100)
+        "#,
+        r#"
+        INSERT INTO ai_channel_credential
+            (id, tenant_id, organization_id, channel_id, provider_code, channel_code,
+             credential_name, base_url, auth_config, credential_ref, credential_hash,
+             priority, weight, health_status, status)
+        VALUES
+            (400301, 0, 0, 4003, 'cross-tenant-provider', 'cross-tenant',
+             'global-account', 'http://provider-proxy.internal/global-account', '{}',
+             'vault://providers/global/account', 'hash:global-account', 1, 100, 1, 1)
+        "#,
+        r#"
+        INSERT INTO ai_resource
+            (id, tenant_id, organization_id, resource_code, resource_type, vendor_code,
+             modality_code, api_code, catalog_key, model, provider_native_model, status)
+        VALUES
+            (9220, 200002, 20, 'model.cross-tenant.chat', 'model_api', 'openai', 'chat',
+             'openai.chat_completions', 'openai/gpt-4o-mini', 'gpt-4o-mini', 'other-tenant-model', 1)
+        "#,
+        r#"
+        INSERT INTO ai_channel_resource
+            (id, tenant_id, organization_id, channel_id, resource_id, resource_code, grant_type, status)
+        VALUES
+            (9403, 100001, 20, 4003, 9220, '', 'allow', 1)
+        "#,
+    ] {
+        sqlx::query(statement).execute(&pool).await.unwrap();
+    }
+
+    let snapshot = SqlitePricingCatalogLoader::new(pool)
+        .load_snapshot()
+        .await
+        .unwrap();
+    assert!(snapshot
+        .list_provider_routes("openai/gpt-4o-mini")
+        .into_iter()
+        .all(|route| route.channel_id != 4003));
+    assert!(snapshot
+        .list_provider_channel_routes()
+        .into_iter()
+        .all(|route| route.channel_id != 4003));
 }
 
 #[tokio::test]
@@ -1171,6 +1619,8 @@ async fn create_schema(pool: &SqlitePool) {
         )"#,
         r#"CREATE TABLE ai_pricing_plan (
             id INTEGER PRIMARY KEY,
+            tenant_id INTEGER NOT NULL DEFAULT 0,
+            organization_id INTEGER NOT NULL DEFAULT 0,
             plan_code TEXT NOT NULL,
             base_price_side INTEGER NOT NULL,
             default_multiplier TEXT NOT NULL,
@@ -1374,6 +1824,8 @@ async fn create_schema(pool: &SqlitePool) {
         )"#,
         r#"CREATE TABLE ai_model_pricing (
             id INTEGER PRIMARY KEY,
+            tenant_id INTEGER NOT NULL DEFAULT 0,
+            organization_id INTEGER NOT NULL DEFAULT 0,
             catalog_key TEXT NOT NULL,
             model TEXT NOT NULL,
             region_code TEXT NOT NULL DEFAULT 'global',
@@ -1421,7 +1873,7 @@ async fn seed_catalog(pool: &SqlitePool) {
         "INSERT INTO ai_routing_profile (id, tenant_id, organization_id, policy_id, profile_code, profile_version, status) VALUES (9101, 100001, 0, 9001, 'standard-profile', 1, 1)",
         "INSERT INTO ai_routing_policy (id, tenant_id, organization_id, policy_code, policy_scope, subject_id, default_profile_id, fallback_mode, status) VALUES (9001, 100001, 0, 'standard-group-policy', 5, 10, 9101, 1, 1)",
         "INSERT INTO ai_routing_rule (id, tenant_id, organization_id, profile_id, rule_code, priority, match_expression, target_model, candidate_channels, fallback_chain, constraints, status) VALUES (9102, 100001, 0, 9101, 'standard-group-gpt-4o-mini', 1, '{\"catalogKey\":\"openai/gpt-4o-mini\"}', 'openai/gpt-4o-mini', '[{\"channel_id\":3001,\"weight\":100}]', '[]', '{}', 1)",
-        "INSERT INTO ai_pricing_plan (id, plan_code, base_price_side, default_multiplier, default_markup_amount, currency, status, priority) VALUES (1, 'standard', 1, '1.200000', '0.000000', 'USD', 1, 1)",
+        "INSERT INTO ai_pricing_plan (id, tenant_id, organization_id, plan_code, base_price_side, default_multiplier, default_markup_amount, currency, status, priority) VALUES (1, 100001, 0, 'standard', 1, '1.200000', '0.000000', 'USD', 1, 1)",
         "INSERT INTO ai_channel_group (id, tenant_id, organization_id, group_name, group_code, pricing_plan_code, rate_multiplier, official_price_multiplier, status) VALUES (10, 100001, 0, 'Standard Group', 'standard-group', 'standard', '1.000000', '1.100000', 1)",
         "INSERT INTO ai_channel_group_member (id, tenant_id, organization_id, channel_group_id, channel_id, priority, weight, status) VALUES (600, 100001, 0, 10, 3001, 1, 100, 1)",
         "INSERT INTO ai_channel_group_resource (id, tenant_id, organization_id, channel_group_id, resource_id, resource_code, grant_type, status) VALUES (610, 100001, 0, 10, 9102, 'model.openai.gpt-4o-mini.chat', 'allow', 1)",
@@ -1431,9 +1883,9 @@ async fn seed_catalog(pool: &SqlitePool) {
         "INSERT INTO ai_quota_policy (id, quota_limit, status) VALUES (900, '1000.000000', 1)",
         "INSERT INTO ai_channel_group_metric_snapshot (id, channel_group_id, capacity_used, capacity_limit, usage_amount_total, snapshot_at, status) VALUES (800, 10, '37.500000', '1000.000000', '37.500000', '2026-04-29 00:00:00', 1)",
         "INSERT INTO iam_gateway_api_key (id, tenant_id, organization_id, user_id, channel_group_id, name, key_prefix, key_display_masked, key_hash, idempotency_key, policy_id, quota_policy_id, status) VALUES (100, 100001, 0, 30, 10, 'Production Key', 'sk-test', 'sk-test********ABCD', 'hash:sk-test', 'seed-api-key-100', 700, 900, 1)",
-        "INSERT INTO ai_model_pricing (id, catalog_key, model, region_code, price_side, billing_meter_code, unit_price, currency, status, priority) VALUES (1, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'global', 1, 'llm_input_token', '0.150000', 'USD', 1, 1)",
-        "INSERT INTO ai_model_pricing (id, catalog_key, model, region_code, price_side, billing_meter_code, unit_price, currency, provider_code, channel_id, status, priority) VALUES (2, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'global', 2, 'llm_input_token', '0.110000', 'USD', 'openrouter', 3001, 1, 1)",
-        "INSERT INTO ai_model_pricing (id, catalog_key, model, region_code, price_side, billing_meter_code, unit_price, currency, provider_code, channel_id, status, priority) VALUES (3, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'global', 2, 'llm_input_token', '0.120000', 'USD', 'azure_openai', 2001, 1, 1)",
+        "INSERT INTO ai_model_pricing (id, tenant_id, organization_id, catalog_key, model, region_code, price_side, billing_meter_code, unit_price, currency, status, priority) VALUES (1, 0, 0, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'global', 1, 'llm_input_token', '0.150000', 'USD', 1, 1)",
+        "INSERT INTO ai_model_pricing (id, tenant_id, organization_id, catalog_key, model, region_code, price_side, billing_meter_code, unit_price, currency, provider_code, channel_id, status, priority) VALUES (2, 100001, 0, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'global', 2, 'llm_input_token', '0.110000', 'USD', 'openrouter', 3001, 1, 1)",
+        "INSERT INTO ai_model_pricing (id, tenant_id, organization_id, catalog_key, model, region_code, price_side, billing_meter_code, unit_price, currency, provider_code, channel_id, status, priority) VALUES (3, 100001, 0, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'global', 2, 'llm_input_token', '0.120000', 'USD', 'azure_openai', 2001, 1, 1)",
     ] {
         sqlx::query(statement).execute(pool).await.unwrap();
     }

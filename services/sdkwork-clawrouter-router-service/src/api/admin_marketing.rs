@@ -437,9 +437,12 @@ async fn create_promotion_offer(
         };
 
     match state.store.create_promotion_offer(command).await {
-        Ok(item) => json_created_response(None, AdminMarketingItemEnvelope {
-            item: promotion_offer_item(item),
-        }),
+        Ok(item) => json_created_response(
+            None,
+            AdminMarketingItemEnvelope {
+                item: promotion_offer_item(item),
+            },
+        ),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
             marketing_system_response("promotion offer command store is unavailable", error)

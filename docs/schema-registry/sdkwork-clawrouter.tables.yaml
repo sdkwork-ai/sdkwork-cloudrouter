@@ -153,6 +153,44 @@ schema_registry:
     - deleted_at
     - deleted_by
     - metadata
+  table_profile_policies:
+    tenant_entity:
+      tenant_scope: tenant_with_global_fallback
+      soft_delete_policy: active_unique
+    relation_entity:
+      tenant_scope: tenant_with_global_fallback
+      soft_delete_policy: active_unique
+    credential_ref:
+      tenant_scope: tenant_with_global_fallback
+      soft_delete_policy: active_unique
+    pricing:
+      tenant_scope: tenant_with_global_fallback
+      soft_delete_policy: active_unique
+    quota_policy:
+      tenant_scope: tenant_with_global_fallback
+      soft_delete_policy: active_unique
+    runtime_binding:
+      tenant_scope: tenant_with_global_fallback
+      soft_delete_policy: active_unique
+    runtime_coordination:
+      tenant_scope: tenant_with_global_fallback
+      soft_delete_policy: active_unique
+    event_log:
+      tenant_scope: tenant_required
+    runtime_coordination_event:
+      tenant_scope: tenant_required
+    ledger_source_fact:
+      tenant_scope: tenant_required
+    audit_event:
+      tenant_scope: tenant_required
+    projection:
+      tenant_scope: tenant_required
+    read_model:
+      tenant_scope: tenant_required
+    operational_state:
+      tenant_scope: tenant_with_global_fallback
+    user_entity:
+      tenant_scope: tenant_required
 description: Claw Router Schema Registry. Machine-readable source of truth for Claw Router-owned runtime tables; generated
   SQL, manifests, OpenAPI snapshots, SDKs, services, and frontends must align to this contract.
 table_fragments:

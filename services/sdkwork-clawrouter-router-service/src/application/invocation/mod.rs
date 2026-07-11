@@ -42,7 +42,7 @@ pub use billing::{BillingMode, BillingQuantitySource, InvocationBilling};
 pub use billing_policy::BillingPolicyInterceptor;
 pub use body::InvocationBody;
 pub use circuit_breaker::{
-    CircuitBreakerConfig, CircuitBreakerInterceptor, CircuitBreakerStateStore,
+    CircuitBreakerConfig, CircuitBreakerInterceptor, CircuitBreakerStateStore, CircuitCallPermit,
 };
 pub use classification::{
     InvocationClassification, InvocationClassificationRequest, InvocationResourceClassifier,
@@ -53,7 +53,10 @@ pub use dispatch::{
 };
 pub use dispatch_executor::DispatchExecutor;
 pub use error::{InvocationError, InvocationErrorKind};
-pub use idempotency::{IdempotencyConfig, IdempotencyInterceptor, IdempotencyStore};
+pub use idempotency::{
+    IdempotencyConfig, IdempotencyInterceptor, IdempotencyKeyStatus, IdempotencyLockAcquisition,
+    IdempotencyStore, IdempotencyStoreEntry, IdempotencyStoreError,
+};
 pub use interceptor::{InvocationFuture, InvocationInterceptor};
 pub use invocation::{Invocation, InvocationId, InvocationRequest};
 pub use metrics_interceptor::MetricsInterceptor;

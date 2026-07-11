@@ -71,12 +71,8 @@ async fn postgres_and_sqlite_return_the_same_scoped_gateway_trace_page() -> anyh
         organization_id: 0,
         user_id: 30,
     };
-    let query = AppGatewayTracesListQuery {
-        page_no: 1,
-        page_size: 20,
-        offset: 0,
-        q: Some("trace-visible".to_owned()),
-    };
+    let query =
+        AppGatewayTracesListQuery::try_new(Some(20), None, Some("trace-visible".to_owned()))?;
     let sqlite_page = SqliteAppGatewayTracesReadStore::new(databases.sqlite_pool())
         .load_gateway_traces(Some(subject), query.clone())
         .await?;
@@ -85,7 +81,8 @@ async fn postgres_and_sqlite_return_the_same_scoped_gateway_trace_page() -> anyh
         .await?;
 
     assert_eq!(sqlite_page, postgres_page);
-    assert_eq!(1, sqlite_page.total);
+    assert!(!sqlite_page.has_more);
+    assert_eq!(None, sqlite_page.next_cursor);
     assert_eq!("trace-visible", sqlite_page.items[0].id);
     assert_eq!("gateway-a@cn-east-1", sqlite_page.items[0].channel);
 

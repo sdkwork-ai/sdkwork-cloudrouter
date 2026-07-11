@@ -293,7 +293,6 @@
         "ai_provider",
         "ai_resource",
         "ai_resource_group",
-        "integration_provider_health_snapshot",
         "ops_audit_log",
         "ops_config_snapshot"
       ],
@@ -339,7 +338,6 @@
         "ai_routing_rule",
         "ai_usage",
         "iam_gateway_api_key",
-        "integration_provider_health_snapshot",
         "ops_audit_log",
         "ops_config_snapshot"
       ],

@@ -1,3 +1,5 @@
+use sdkwork_database_sqlx::sqlite_decimal::register_decimal_functions;
+use sqlx::sqlite::SqliteConnection;
 use sqlx::{Row, SqlitePool};
 
 use crate::error::{store_error, RepositoryResult};
@@ -18,8 +20,8 @@ const MODEL_KEY_EXPR: &str = "COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''
 const REQUEST_COUNT_EXPR: &str = "COALESCE(request_count, 1)";
 const TOKEN_COUNT_EXPR: &str =
     "COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)";
-const POINTS_EXPR: &str = "COALESCE(customer_charge_amount, cost_amount, 0)";
-const UPSTREAM_COST_EXPR: &str = "COALESCE(upstream_cost_amount, cost_amount, 0)";
+const POINTS_EXPR: &str = "customer_charge_amount";
+const UPSTREAM_COST_EXPR: &str = "upstream_cost_amount";
 
 const USER_POINTS_ORDER: &str = "points_sort DESC, request_count DESC, user_name ASC";
 const USER_TOKENS_ORDER: &str = "total_tokens_sort DESC, request_count DESC, user_name ASC";
@@ -60,10 +62,28 @@ async fn load_snapshot(
     let start_time = query.start_time.as_deref();
     let end_time = query.end_time.as_deref();
     let limit = query.limit.clamp(3, 50);
+    let mut connection = pool.acquire().await.map_err(|error| {
+        store_error("failed to acquire admin analytics SQLite connection", error)
+    })?;
+    register_decimal_functions(&mut connection)
+        .await
+        .map_err(|error| {
+            store_error(
+                "failed to register admin analytics decimal functions",
+                error,
+            )
+        })?;
 
-    let summary_row = load_summary(pool, tenant_id, organization_id, start_time, end_time).await?;
+    let summary_row = load_summary(
+        &mut connection,
+        tenant_id,
+        organization_id,
+        start_time,
+        end_time,
+    )
+    .await?;
     let trend_rows = load_trend(
-        pool,
+        &mut connection,
         query.time_range,
         tenant_id,
         organization_id,
@@ -72,7 +92,7 @@ async fn load_snapshot(
     )
     .await?;
     let user_points_rows = load_user_rankings(
-        pool,
+        &mut connection,
         tenant_id,
         organization_id,
         start_time,
@@ -82,7 +102,7 @@ async fn load_snapshot(
     )
     .await?;
     let user_tokens_rows = load_user_rankings(
-        pool,
+        &mut connection,
         tenant_id,
         organization_id,
         start_time,
@@ -92,7 +112,7 @@ async fn load_snapshot(
     )
     .await?;
     let user_requests_rows = load_user_rankings(
-        pool,
+        &mut connection,
         tenant_id,
         organization_id,
         start_time,
@@ -102,7 +122,7 @@ async fn load_snapshot(
     )
     .await?;
     let model_points_rows = load_model_rankings(
-        pool,
+        &mut connection,
         tenant_id,
         organization_id,
         start_time,
@@ -112,7 +132,7 @@ async fn load_snapshot(
     )
     .await?;
     let model_tokens_rows = load_model_rankings(
-        pool,
+        &mut connection,
         tenant_id,
         organization_id,
         start_time,
@@ -122,7 +142,7 @@ async fn load_snapshot(
     )
     .await?;
     let model_requests_rows = load_model_rankings(
-        pool,
+        &mut connection,
         tenant_id,
         organization_id,
         start_time,
@@ -131,13 +151,30 @@ async fn load_snapshot(
         MODEL_REQUESTS_ORDER,
     )
     .await?;
-    let user_model_distributions =
-        load_user_model_distributions(pool, tenant_id, organization_id, start_time, end_time)
-            .await?;
-    let model_distribution_rows =
-        load_model_distribution(pool, tenant_id, organization_id, start_time, end_time).await?;
-    let modality_distribution_rows =
-        load_modality_distribution(pool, tenant_id, organization_id, start_time, end_time).await?;
+    let user_model_distributions = load_user_model_distributions(
+        &mut connection,
+        tenant_id,
+        organization_id,
+        start_time,
+        end_time,
+    )
+    .await?;
+    let model_distribution_rows = load_model_distribution(
+        &mut connection,
+        tenant_id,
+        organization_id,
+        start_time,
+        end_time,
+    )
+    .await?;
+    let modality_distribution_rows = load_modality_distribution(
+        &mut connection,
+        tenant_id,
+        organization_id,
+        start_time,
+        end_time,
+    )
+    .await?;
 
     Ok(build_snapshot(
         query.time_range,
@@ -159,7 +196,7 @@ async fn load_snapshot(
 }
 
 async fn load_summary(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     tenant_id: i64,
     organization_id: i64,
     start_time: Option<&str>,
@@ -188,8 +225,8 @@ async fn load_summary(
             CAST(COALESCE(COUNT(DISTINCT model_key), 0) AS TEXT) AS active_models,
             CAST(COALESCE(SUM(request_count), 0) AS TEXT) AS total_requests,
             CAST(COALESCE(SUM(total_tokens), 0) AS TEXT) AS total_tokens,
-            CAST(COALESCE(SUM(points), 0) AS TEXT) AS total_points,
-            CAST(COALESCE(SUM(upstream_cost), 0) AS TEXT) AS upstream_cost
+            sdkwork_decimal_sum(points) AS total_points,
+            sdkwork_decimal_sum(upstream_cost) AS upstream_cost
         FROM usage_fact
         "#,
         USER_KEY_EXPR = USER_KEY_EXPR,
@@ -204,12 +241,12 @@ async fn load_summary(
     .bind(organization_id)
     .bind(start_time)
     .bind(end_time)
-    .fetch_one(pool)
+    .fetch_one(&mut *connection)
     .await
     .map_err(|error| store_error("admin analytics query", error))?;
 
     let failed_requests =
-        load_failed_requests(pool, tenant_id, organization_id, start_time, end_time).await?;
+        load_failed_requests(connection, tenant_id, organization_id, start_time, end_time).await?;
 
     Ok(AnalyticsSummaryRow {
         total_users: integer_cell(&row, "total_users"),
@@ -224,7 +261,7 @@ async fn load_summary(
 }
 
 async fn load_failed_requests(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     tenant_id: i64,
     organization_id: i64,
     start_time: Option<&str>,
@@ -259,7 +296,7 @@ async fn load_failed_requests(
     .bind(organization_id)
     .bind(start_time)
     .bind(end_time)
-    .fetch_one(pool)
+    .fetch_one(&mut *connection)
     .await
     .map_err(|error| store_error("admin analytics query", error))?;
 
@@ -267,7 +304,7 @@ async fn load_failed_requests(
 }
 
 async fn load_trend(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     time_range: AdminAnalyticsTimeRange,
     tenant_id: i64,
     organization_id: i64,
@@ -281,7 +318,7 @@ async fn load_trend(
             period AS time_bucket,
             CAST(COALESCE(SUM(request_count), 0) AS TEXT) AS requests,
             CAST(COALESCE(SUM(total_tokens), 0) AS TEXT) AS tokens,
-            CAST(COALESCE(SUM(points), 0) AS TEXT) AS points,
+            sdkwork_decimal_sum(points) AS points,
             CAST(COALESCE(COUNT(DISTINCT user_key), 0) AS TEXT) AS users
         FROM (
             SELECT
@@ -313,7 +350,7 @@ async fn load_trend(
         .bind(organization_id)
         .bind(start_time)
         .bind(end_time)
-        .fetch_all(pool)
+        .fetch_all(&mut *connection)
         .await
         .map_err(|error| store_error("admin analytics query", error))?;
 
@@ -330,7 +367,7 @@ async fn load_trend(
 }
 
 async fn load_user_rankings(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     tenant_id: i64,
     organization_id: i64,
     start_time: Option<&str>,
@@ -346,8 +383,8 @@ async fn load_user_rankings(
             CAST(COALESCE(SUM({REQUEST_COUNT_EXPR}), 0) AS TEXT) AS request_count,
             COALESCE(SUM({TOKEN_COUNT_EXPR}), 0) AS total_tokens_sort,
             CAST(COALESCE(SUM({TOKEN_COUNT_EXPR}), 0) AS TEXT) AS total_tokens,
-            COALESCE(SUM({POINTS_EXPR}), 0) AS points_sort,
-            CAST(COALESCE(SUM({POINTS_EXPR}), 0) AS TEXT) AS points
+            sdkwork_decimal_order_key(sdkwork_decimal_sum({POINTS_EXPR})) AS points_sort,
+            sdkwork_decimal_sum({POINTS_EXPR}) AS points
         FROM ai_usage
         WHERE status = 1
           AND {usage_scope}
@@ -371,7 +408,7 @@ async fn load_user_rankings(
         .bind(start_time)
         .bind(end_time)
         .bind(limit)
-        .fetch_all(pool)
+        .fetch_all(&mut *connection)
         .await
         .map_err(|error| store_error("admin analytics query", error))?;
 
@@ -388,7 +425,7 @@ async fn load_user_rankings(
 }
 
 async fn load_model_rankings(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     tenant_id: i64,
     organization_id: i64,
     start_time: Option<&str>,
@@ -405,9 +442,9 @@ async fn load_model_rankings(
             CAST(COALESCE(SUM({REQUEST_COUNT_EXPR}), 0) AS TEXT) AS request_count,
             COALESCE(SUM({TOKEN_COUNT_EXPR}), 0) AS total_tokens_sort,
             CAST(COALESCE(SUM({TOKEN_COUNT_EXPR}), 0) AS TEXT) AS total_tokens,
-            COALESCE(SUM({POINTS_EXPR}), 0) AS points_sort,
-            CAST(COALESCE(SUM({POINTS_EXPR}), 0) AS TEXT) AS points,
-            CAST(COALESCE(SUM({UPSTREAM_COST_EXPR}), 0) AS TEXT) AS upstream_cost,
+            sdkwork_decimal_order_key(sdkwork_decimal_sum({POINTS_EXPR})) AS points_sort,
+            sdkwork_decimal_sum({POINTS_EXPR}) AS points,
+            sdkwork_decimal_sum({UPSTREAM_COST_EXPR}) AS upstream_cost,
             CAST(COALESCE(COUNT(DISTINCT {USER_ID_EXPR}), 0) AS TEXT) AS user_count,
             CAST(COALESCE(COUNT(DISTINCT CASE WHEN failed_request.request_key IS NULL THEN NULL ELSE COALESCE(NULLIF(usage.request_id, ''), CAST(usage.id AS TEXT)) END), 0) AS TEXT) AS failed_requests
         FROM ai_usage usage
@@ -463,7 +500,7 @@ async fn load_model_rankings(
         .bind(start_time)
         .bind(end_time)
         .bind(limit)
-        .fetch_all(pool)
+        .fetch_all(&mut *connection)
         .await
         .map_err(|error| store_error("admin analytics query", error))?;
 
@@ -489,7 +526,7 @@ async fn load_model_rankings(
 }
 
 async fn load_user_model_distributions(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     tenant_id: i64,
     organization_id: i64,
     start_time: Option<&str>,
@@ -501,14 +538,15 @@ async fn load_user_model_distributions(
             SELECT
                 {USER_ID_EXPR} AS user_id,
                 {MODEL_KEY_EXPR} AS name,
-                COALESCE(SUM({POINTS_EXPR}), 0) AS value
+                sdkwork_decimal_sum({POINTS_EXPR}) AS value
             FROM ai_usage
             WHERE status = 1
               AND {usage_scope}
               AND (?3 IS NULL OR occurred_at >= ?3)
               AND (?4 IS NULL OR occurred_at <= ?4)
             GROUP BY {USER_ID_EXPR}, {MODEL_KEY_EXPR}
-            HAVING COALESCE(SUM({POINTS_EXPR}), 0) > 0
+            HAVING sdkwork_decimal_order_key(sdkwork_decimal_sum({POINTS_EXPR}))
+                > sdkwork_decimal_order_key('0')
         ),
         ordered AS (
             SELECT
@@ -517,7 +555,7 @@ async fn load_user_model_distributions(
                 value,
                 ROW_NUMBER() OVER (
                     PARTITION BY user_id
-                    ORDER BY value DESC, name ASC
+                    ORDER BY sdkwork_decimal_order_key(value) DESC, name ASC
                 ) AS rn
             FROM agg
         ),
@@ -527,18 +565,19 @@ async fn load_user_model_distributions(
             WHERE rn <= {USER_MODEL_LIMIT}
         ),
         others AS (
-            SELECT user_id, 'Others' AS name, COALESCE(SUM(value), 0) AS value
+            SELECT user_id, 'Others' AS name, sdkwork_decimal_sum(value) AS value
             FROM ordered
             WHERE rn > {USER_MODEL_LIMIT}
             GROUP BY user_id
-            HAVING COALESCE(SUM(value), 0) > 0
+            HAVING sdkwork_decimal_order_key(sdkwork_decimal_sum(value))
+                > sdkwork_decimal_order_key('0')
         )
         SELECT user_id, name, CAST(value AS TEXT) AS value
         FROM top_rows
         UNION ALL
         SELECT user_id, name, CAST(value AS TEXT) AS value
         FROM others
-        ORDER BY user_id ASC, CAST(value AS REAL) DESC, name ASC
+        ORDER BY user_id ASC, sdkwork_decimal_order_key(value) DESC, name ASC
         "#,
         USER_ID_EXPR = USER_ID_EXPR,
         MODEL_KEY_EXPR = MODEL_KEY_EXPR,
@@ -551,7 +590,7 @@ async fn load_user_model_distributions(
         .bind(organization_id)
         .bind(start_time)
         .bind(end_time)
-        .fetch_all(pool)
+        .fetch_all(&mut *connection)
         .await
         .map_err(|error| store_error("admin analytics query", error))?;
 
@@ -571,7 +610,7 @@ async fn load_user_model_distributions(
 }
 
 async fn load_model_distribution(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     tenant_id: i64,
     organization_id: i64,
     start_time: Option<&str>,
@@ -621,11 +660,19 @@ async fn load_model_distribution(
         usage_scope = scope_filter("tenant_id", "organization_id", "?1", "?2"),
         PI_LIMIT = PI_LIMIT,
     );
-    load_pie_rows(pool, &sql, tenant_id, organization_id, start_time, end_time).await
+    load_pie_rows(
+        connection,
+        &sql,
+        tenant_id,
+        organization_id,
+        start_time,
+        end_time,
+    )
+    .await
 }
 
 async fn load_modality_distribution(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     tenant_id: i64,
     organization_id: i64,
     start_time: Option<&str>,
@@ -679,7 +726,7 @@ async fn load_modality_distribution(
         .bind(organization_id)
         .bind(start_time)
         .bind(end_time)
-        .fetch_all(pool)
+        .fetch_all(&mut *connection)
         .await
         .map_err(|error| store_error("admin analytics query", error))?;
 
@@ -700,7 +747,7 @@ async fn load_modality_distribution(
 }
 
 async fn load_pie_rows(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     sql: &str,
     tenant_id: i64,
     organization_id: i64,
@@ -712,7 +759,7 @@ async fn load_pie_rows(
         .bind(organization_id)
         .bind(start_time)
         .bind(end_time)
-        .fetch_all(pool)
+        .fetch_all(&mut *connection)
         .await
         .map_err(|error| store_error("admin analytics query", error))?;
 

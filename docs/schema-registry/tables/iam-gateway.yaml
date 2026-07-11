@@ -98,6 +98,12 @@ tables:
     - tenant_id
     - idempotency_key
   indexes:
+  - name: uk_iam_gateway_api_key_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
   - name: idx_iam_gateway_api_key_tenant_user_status
     columns:
     - tenant_id
@@ -152,6 +158,13 @@ tables:
       constraints: NOT NULL DEFAULT 100
     effective_from: instant
     effective_to: instant
+  required_columns:
+  - api_key_id
+  - channel_group_id
+  - binding_role
+  - routing_strategy
+  - priority
+  - weight
   unique_constraints:
   - name: uk_iam_gateway_api_key_channel_group_uuid
     columns:
@@ -163,6 +176,25 @@ tables:
     - api_key_id
     - channel_group_id
     - binding_role
+  foreign_keys:
+  - name: fk_iam_gateway_api_key_channel_group_api_key
+    columns:
+    - tenant_id
+    - organization_id
+    - api_key_id
+    references_table: iam_gateway_api_key
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_iam_gateway_api_key_channel_group_ids
+    expression: api_key_id > 0 AND channel_group_id > 0
+  - name: ck_iam_gateway_api_key_channel_group_weighting
+    expression: priority >= 0 AND weight >= 0
+  - name: ck_iam_gateway_api_key_channel_group_effective_interval
+    expression: effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from
   indexes:
   - name: idx_iam_gateway_api_key_channel_group_active
     columns:

@@ -199,9 +199,12 @@ async fn create_firewall_rule(
     };
 
     match state.store.create_firewall_rule(command).await {
-        Ok(item) => json_created_response(None, AdminFirewallRuleItemEnvelope {
-            item: to_item_response(item),
-        }),
+        Ok(item) => json_created_response(
+            None,
+            AdminFirewallRuleItemEnvelope {
+                item: to_item_response(item),
+            },
+        ),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
             firewall_rule_system_response("firewall rule command store is unavailable", error)

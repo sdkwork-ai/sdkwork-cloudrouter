@@ -301,7 +301,7 @@ POST /backend/v3/api/ai/route_explain
 }
 ```
 
-后端 explain 必须从真实 selector、store、health snapshot、entitlement 和 policy 读取，不返回 demo/synthetic success。
+后端 explain 必须从真实 selector、store、基于 `ai_channel` / `ai_channel_credential` 事实派生的运行时健康视图、entitlement 和 policy 读取，不返回 demo/synthetic success；不得把 `integration_provider_health_snapshot` 当作同步路由真值。
 
 ## P2 Platform Capabilities
 
@@ -387,4 +387,3 @@ P2 验收：
 - 支付域以独立 payment transaction state machine 接入。
 - 至少一个云服务 API 通过 provider-native signing adapter 接入。
 - 每次 invocation 都可解释路由、计量、成本、售价和错误。
-

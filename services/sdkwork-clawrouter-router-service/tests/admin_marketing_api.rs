@@ -8,8 +8,8 @@ use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::EntityUuidGenerator;
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
-    AdminExchangeRuleItem, AdminMarketingCommandFuture, AdminMarketingStore, AdminMarketingSubject,
-    AdminMarketingListPage, AdminPaymentAttemptItem, AdminRechargePackageItem,
+    AdminExchangeRuleItem, AdminMarketingCommandFuture, AdminMarketingListPage,
+    AdminMarketingStore, AdminMarketingSubject, AdminPaymentAttemptItem, AdminRechargePackageItem,
     AdminRechargeRecordItem, AdminRechargeSettingsItem, AdminReferralStatItem,
     CreateAdminRechargePackageCommand, CreatePromotionOfferCommand,
     DeleteAdminRechargePackageCommand, DeletePromotionOfferCommand,
@@ -637,11 +637,11 @@ impl AdminMarketingStore for TestAdminMarketingStore {
             assert_eq!(TEST_TENANT_ID, query.subject.tenant_id);
             Ok(test_marketing_page(
                 vec![PromotionOfferItem {
-                id: "1".to_owned(),
-                name: "Welcome credit".to_owned(),
-                discount_type: "amount".to_owned(),
-                value: "$5.00".to_owned(),
-                status: "active".to_owned(),
+                    id: "1".to_owned(),
+                    name: "Welcome credit".to_owned(),
+                    discount_type: "amount".to_owned(),
+                    value: "$5.00".to_owned(),
+                    status: "active".to_owned(),
                 }],
                 query.page_no,
                 query.page_size,
@@ -710,12 +710,12 @@ impl AdminMarketingStore for TestAdminMarketingStore {
             assert_eq!(TEST_OPERATOR_ID, query.subject.operator_id);
             Ok(test_marketing_page(
                 vec![PromotionCouponStockItem {
-                id: "11".to_owned(),
-                offer_id: "1".to_owned(),
-                name: "Welcome stock".to_owned(),
-                total_quantity: 2,
-                code_prefix: "WELCOME".to_owned(),
-                created_at: "2026-04-29 09:00:00".to_owned(),
+                    id: "11".to_owned(),
+                    offer_id: "1".to_owned(),
+                    name: "Welcome stock".to_owned(),
+                    total_quantity: 2,
+                    code_prefix: "WELCOME".to_owned(),
+                    created_at: "2026-04-29 09:00:00".to_owned(),
                 }],
                 query.page_no,
                 query.page_size,
@@ -764,22 +764,22 @@ impl AdminMarketingStore for TestAdminMarketingStore {
         Box::pin(async move {
             Ok(test_marketing_page(
                 vec![
-                PromotionCodeItem {
-                    id: "501".to_owned(),
-                    stock_id: "11".to_owned(),
-                    promotion_code: "WELCOME-0001".to_owned(),
-                    status: "available".to_owned(),
-                    used_by: None,
-                    used_at: None,
-                },
-                PromotionCodeItem {
-                    id: "502".to_owned(),
-                    stock_id: "11".to_owned(),
-                    promotion_code: "WELCOME-0002".to_owned(),
-                    status: "used".to_owned(),
-                    used_by: Some("owner@example.com".to_owned()),
-                    used_at: Some("2026-04-29 09:30:00".to_owned()),
-                },
+                    PromotionCodeItem {
+                        id: "501".to_owned(),
+                        stock_id: "11".to_owned(),
+                        promotion_code: "WELCOME-0001".to_owned(),
+                        status: "available".to_owned(),
+                        used_by: None,
+                        used_at: None,
+                    },
+                    PromotionCodeItem {
+                        id: "502".to_owned(),
+                        stock_id: "11".to_owned(),
+                        promotion_code: "WELCOME-0002".to_owned(),
+                        status: "used".to_owned(),
+                        used_by: Some("owner@example.com".to_owned()),
+                        used_at: Some("2026-04-29 09:30:00".to_owned()),
+                    },
                 ],
                 query.page_no,
                 query.page_size,
@@ -810,12 +810,12 @@ impl AdminMarketingStore for TestAdminMarketingStore {
         Box::pin(async move {
             Ok(test_marketing_page(
                 vec![PromotionCodeRedemptionItem {
-                id: "502".to_owned(),
-                owner_user_id: "30".to_owned(),
-                user: "owner@example.com".to_owned(),
-                submitted_code: "WELCOME-0002".to_owned(),
-                amount: "$5.00".to_owned(),
-                occurred_at: "2026-04-29 09:30:00".to_owned(),
+                    id: "502".to_owned(),
+                    owner_user_id: "30".to_owned(),
+                    user: "owner@example.com".to_owned(),
+                    submitted_code: "WELCOME-0002".to_owned(),
+                    amount: "$5.00".to_owned(),
+                    occurred_at: "2026-04-29 09:30:00".to_owned(),
                 }],
                 query.page_no,
                 query.page_size,
@@ -831,15 +831,15 @@ impl AdminMarketingStore for TestAdminMarketingStore {
         Box::pin(async move {
             Ok(test_marketing_page(
                 vec![AdminRechargeRecordItem {
-                id: "701".to_owned(),
-                trade_no: "recharge-100".to_owned(),
-                user_id: "30".to_owned(),
-                user: "owner@example.com".to_owned(),
-                amount: "$10.00".to_owned(),
-                usd_credited: "1000".to_owned(),
-                method: "stripe".to_owned(),
-                status: "success".to_owned(),
-                time: "2026-04-29 10:00:00".to_owned(),
+                    id: "701".to_owned(),
+                    trade_no: "recharge-100".to_owned(),
+                    user_id: "30".to_owned(),
+                    user: "owner@example.com".to_owned(),
+                    amount: "$10.00".to_owned(),
+                    usd_credited: "1000".to_owned(),
+                    method: "stripe".to_owned(),
+                    status: "success".to_owned(),
+                    time: "2026-04-29 10:00:00".to_owned(),
                 }],
                 query.page_no,
                 query.page_size,
@@ -876,17 +876,17 @@ impl AdminMarketingStore for TestAdminMarketingStore {
             assert_eq!(TEST_TENANT_ID, query.subject.tenant_id);
             Ok(test_marketing_page(
                 vec![AdminRechargePackageItem {
-                id: "100".to_owned(),
-                package_no: "RECHARGE-PACKAGE-100".to_owned(),
-                name: "Starter Recharge Pack".to_owned(),
-                sku_id: "recharge-sku-100".to_owned(),
-                price_amount: "10.00".to_owned(),
-                currency_code: "CNY".to_owned(),
-                bonus_points: 25,
-                grant_amount: 125,
-                points: 125,
-                status: "active".to_owned(),
-                updated_at: "2026-04-29 10:00:00".to_owned(),
+                    id: "100".to_owned(),
+                    package_no: "RECHARGE-PACKAGE-100".to_owned(),
+                    name: "Starter Recharge Pack".to_owned(),
+                    sku_id: "recharge-sku-100".to_owned(),
+                    price_amount: "10.00".to_owned(),
+                    currency_code: "CNY".to_owned(),
+                    bonus_points: 25,
+                    grant_amount: 125,
+                    points: 125,
+                    status: "active".to_owned(),
+                    updated_at: "2026-04-29 10:00:00".to_owned(),
                 }],
                 query.page_no,
                 query.page_size,
@@ -912,11 +912,11 @@ impl AdminMarketingStore for TestAdminMarketingStore {
             }
             Ok(test_marketing_page(
                 vec![AdminExchangeRuleItem {
-                id: "exchange-1".to_owned(),
-                source_asset_type: "POINTS".to_owned(),
-                target_asset_type: "CASH".to_owned(),
-                rate: "120".to_owned(),
-                status: "active".to_owned(),
+                    id: "exchange-1".to_owned(),
+                    source_asset_type: "POINTS".to_owned(),
+                    target_asset_type: "CASH".to_owned(),
+                    rate: "120".to_owned(),
+                    status: "active".to_owned(),
                 }],
                 query.page_no,
                 query.page_size,
@@ -1065,12 +1065,12 @@ impl AdminMarketingStore for TestAdminMarketingStore {
             assert_eq!(TEST_TENANT_ID, query.subject.tenant_id);
             Ok(test_marketing_page(
                 vec![AdminPaymentAttemptItem {
-                id: "payment-1".to_owned(),
-                order_no: "order-100".to_owned(),
-                provider: "wechat".to_owned(),
-                amount: "25.50".to_owned(),
-                status: "success".to_owned(),
-                created_at: "2026-04-29 09:10:00".to_owned(),
+                    id: "payment-1".to_owned(),
+                    order_no: "order-100".to_owned(),
+                    provider: "wechat".to_owned(),
+                    amount: "25.50".to_owned(),
+                    status: "success".to_owned(),
+                    created_at: "2026-04-29 09:10:00".to_owned(),
                 }],
                 query.page_no,
                 query.page_size,
@@ -1086,12 +1086,12 @@ impl AdminMarketingStore for TestAdminMarketingStore {
         Box::pin(async move {
             Ok(test_marketing_page(
                 vec![AdminReferralStatItem {
-                id: "801".to_owned(),
-                inviter: "Owner".to_owned(),
-                total_invited: 3,
-                total_revenue: "$120.00".to_owned(),
-                bonus_awarded: "$12.00".to_owned(),
-                link: "https://claw.local/invite/OWNER".to_owned(),
+                    id: "801".to_owned(),
+                    inviter: "Owner".to_owned(),
+                    total_invited: 3,
+                    total_revenue: "$120.00".to_owned(),
+                    bonus_awarded: "$12.00".to_owned(),
+                    link: "https://claw.local/invite/OWNER".to_owned(),
                 }],
                 query.page_no,
                 query.page_size,

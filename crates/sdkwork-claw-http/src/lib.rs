@@ -5,8 +5,8 @@ pub mod error;
 pub mod headers;
 pub mod health;
 pub mod metrics;
-pub mod readiness;
 pub mod query_string;
+pub mod readiness;
 pub mod router;
 pub mod shutdown;
 pub mod signing_service;
@@ -44,11 +44,11 @@ pub use contract_routes::{
 pub use error::{not_implemented_response, NotImplementedData};
 pub use headers::{default_security_headers, redact_http_header};
 pub use metrics::{metrics, metrics_middleware, record_readiness_check};
-pub use readiness::{combine_readiness_checks, ReadinessCheckFn};
 pub use query_string::{
     sanitize_sensitive_query, sanitize_sensitive_query_in_uri, upsert_query_parameter,
     QueryStringError,
 };
+pub use readiness::{combine_readiness_checks, ReadinessCheckFn};
 pub use router::{
     service_router, service_router_with_contract_routes,
     service_router_with_contract_routes_and_database_config, service_router_with_database_config,

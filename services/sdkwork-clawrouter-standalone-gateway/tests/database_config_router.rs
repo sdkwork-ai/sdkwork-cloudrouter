@@ -1,11 +1,7 @@
 use axum::body::Body;
-use axum::extract::State;
-use axum::http::{HeaderMap, Request, StatusCode};
-use axum::routing::post;
-use axum::{Json, Router};
-use sdkwork_claw_config::{
-    ApiKeySecurityConfig, DatabaseConfig, DeploymentMode, ProviderSecretMapConfig,
-};
+use axum::http::{Request, StatusCode};
+use axum::Router;
+use sdkwork_claw_config::{ApiKeySecurityConfig, DatabaseConfig, DeploymentMode};
 use sdkwork_claw_test_support::{
     api_key_security_config as test_api_key_security_config,
     app_session_config as test_app_session_config, app_session_dual_token_headers,
@@ -16,6 +12,10 @@ use sdkwork_clawrouter_router_service::application::{
     ApiKeySecretCodec, Pbkdf2Sha256PasswordHasher,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::RingAeadApiKeySecretCodec;
+use sdkwork_clawrouter_router_service::ports::{
+    ProviderHealthProbe, ProviderHealthProbeFuture, ProviderHealthProbeOutcome,
+    ProviderHealthProbeRequest,
+};
 use serde_json::json;
 use serde_json::Value;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};
@@ -36,8 +36,37 @@ static SQLITE_DB_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Debug, Default)]
 struct CapturedProviderHealthProbe {
-    authorization: Option<String>,
-    body: Value,
+    provider_base_url: String,
+    provider_secret_ref: String,
+    provider_secret_value: Option<String>,
+    provider_model: String,
+    provider_timeout_ms: Option<u64>,
+}
+
+#[derive(Clone)]
+struct RecordingProviderHealthProbe {
+    captured: Arc<Mutex<Vec<CapturedProviderHealthProbe>>>,
+    outcome: ProviderHealthProbeOutcome,
+}
+
+impl ProviderHealthProbe for RecordingProviderHealthProbe {
+    fn probe_provider_health<'a>(
+        &'a self,
+        request: ProviderHealthProbeRequest,
+    ) -> ProviderHealthProbeFuture<'a> {
+        let captured = Arc::clone(&self.captured);
+        let outcome = self.outcome.clone();
+        Box::pin(async move {
+            captured.lock().unwrap().push(CapturedProviderHealthProbe {
+                provider_base_url: request.provider_base_url,
+                provider_secret_ref: request.provider_secret_ref,
+                provider_secret_value: request.provider_secret_value,
+                provider_model: request.provider_model,
+                provider_timeout_ms: request.provider_timeout_ms,
+            });
+            Ok(outcome)
+        })
+    }
 }
 
 #[tokio::test]
@@ -186,7 +215,7 @@ async fn database_config_dashboard_scopes_metrics_to_app_session_subject() {
     .await;
 
     assert_eq!(StatusCode::OK, status, "{body_text}");
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"]);
     assert_eq!(7, payload["data"]["summary"]["requestCount"]);
     assert_eq!(1.25, payload["data"]["summary"]["usedCredits"]);
     assert_eq!(10, payload["data"]["summary"]["totalRequestCount"]);
@@ -420,7 +449,7 @@ async fn database_config_wallet_accounts_uses_appbase_commerce_store() {
     .await;
 
     assert_eq!(StatusCode::OK, status);
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"]);
     let accounts = payload["data"].as_array().unwrap();
     assert_eq!(2, accounts.len());
     let points_account = accounts
@@ -1509,15 +1538,11 @@ async fn database_config_app_routing_channel_commands_persist_and_scope_without_
 }
 
 #[tokio::test]
-async fn database_config_app_routing_channel_test_runs_real_provider_probe_and_records_health() {
+async fn database_config_app_routing_channel_test_uses_injected_probe_and_records_health() {
     let captured = Arc::new(Mutex::new(Vec::<CapturedProviderHealthProbe>::new()));
-    let provider = Router::new()
-        .route("/v1/chat/completions", post(capture_provider_health_probe))
-        .with_state(Arc::clone(&captured));
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr = listener.local_addr().unwrap();
-    tokio::spawn(async move {
-        axum::serve(listener, provider).await.unwrap();
+    let provider_health_probe = Arc::new(RecordingProviderHealthProbe {
+        captured: Arc::clone(&captured),
+        outcome: ProviderHealthProbeOutcome::success(19, 200),
     });
 
     let database_url = unique_sqlite_url();
@@ -1525,26 +1550,22 @@ async fn database_config_app_routing_channel_test_runs_real_provider_probe_and_r
     create_schema(&pool).await;
     seed_catalog_with_two_user_api_keys(&pool).await;
     seed_app_routing_runtime_data(&pool).await;
-    sqlx::query("UPDATE ai_channel SET base_url = ?1, last_latency_ms = NULL, consecutive_error_count = 3 WHERE id = 4003")
-        .bind(format!("http://{addr}"))
+    sqlx::query("UPDATE ai_channel SET base_url = ?1, timeout_ms = 60000, last_latency_ms = NULL, consecutive_error_count = 2 WHERE id = 4003")
+        .bind("https://api.openai.example/v1")
         .execute(&pool)
         .await
         .unwrap();
-    sqlx::query("UPDATE ai_channel SET consecutive_error_count = 2 WHERE id = 4003")
+    sqlx::query(
+        "UPDATE ai_channel_credential SET last_latency_ms = NULL, consecutive_error_count = 2 WHERE id = 400301",
+    )
         .execute(&pool)
         .await
         .unwrap();
     pool.close().await;
 
     let secret_ref = "vault://providers/openai/main";
-    let router = configured_router_with_provider_secret_map(
-        &database_url,
-        ProviderSecretMapConfig::from_json(
-            json!({secret_ref: "sk-provider-health-probe-secret"}).to_string(),
-        )
-        .unwrap(),
-    )
-    .await;
+    let router =
+        configured_router_with_provider_health_probe(&database_url, provider_health_probe).await;
 
     let (status, payload, body_text) = request_json(
         router,
@@ -1562,7 +1583,7 @@ async fn database_config_app_routing_channel_test_runs_real_provider_probe_and_r
     .await;
 
     assert_eq!(StatusCode::OK, status);
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"]);
     assert_eq!(true, payload["data"]["success"]);
     assert_eq!("4003", payload["data"]["channelId"]);
     assert_eq!("active", payload["data"]["status"]);
@@ -1580,43 +1601,39 @@ async fn database_config_app_routing_channel_test_runs_real_provider_probe_and_r
 
     let captured = captured.lock().unwrap();
     assert_eq!(1, captured.len());
-    assert_eq!(
-        Some("Bearer sk-provider-health-probe-secret".to_owned()),
-        captured[0].authorization
-    );
-    assert_eq!("gpt-4o-mini", captured[0].body["model"]);
-    assert_eq!("ping", captured[0].body["messages"][0]["content"]);
+    assert_eq!("https://api.openai.example/v1", captured[0].provider_base_url);
+    assert_eq!(secret_ref, captured[0].provider_secret_ref);
+    assert_eq!(None, captured[0].provider_secret_value);
+    assert_eq!("gpt-4o-mini", captured[0].provider_model);
+    assert_eq!(Some(60_000), captured[0].provider_timeout_ms);
     drop(captured);
 
     let verification_pool = create_sqlite_pool(&database_url).await;
-    let row = sqlx::query(
+    let audit_row = sqlx::query(
         r#"
-        SELECT request_id, health_status, latency_ms, http_status, error_code, error_message_masked
-        FROM integration_provider_health_snapshot
+        SELECT request_id, change_summary
+        FROM ops_audit_log
         WHERE tenant_id = 100001
           AND organization_id = 0
-          AND provider_id = 4001
-          AND channel_id = 4003
-          AND provider_account_id = 4003
-        ORDER BY checked_at DESC, id DESC
+          AND action = 'test_channel'
+          AND target_id = 4003
+        ORDER BY id DESC
         LIMIT 1
         "#,
     )
     .fetch_one(&verification_pool)
     .await
     .unwrap();
-    let snapshot_request_id: String = row.get("request_id");
-    assert_server_generated_request_id(&snapshot_request_id, "app-routing-channel-probe-success-1");
-    let snapshot_health: i64 = row.get("health_status");
-    let snapshot_latency: i64 = row.get("latency_ms");
-    let snapshot_http_status: i64 = row.get("http_status");
-    let snapshot_error_code: Option<String> = row.get("error_code");
-    let snapshot_error_message: Option<String> = row.get("error_message_masked");
-    assert_eq!(1, snapshot_health);
-    assert!(snapshot_latency > 0);
-    assert_eq!(200, snapshot_http_status);
-    assert_eq!(None, snapshot_error_code);
-    assert_eq!(None, snapshot_error_message);
+    let audit_request_id: String = audit_row.get("request_id");
+    assert_server_generated_request_id(&audit_request_id, "app-routing-channel-probe-success-1");
+    let audit_summary: Value =
+        serde_json::from_str(&audit_row.get::<String, _>("change_summary")).unwrap();
+    assert_eq!(true, audit_summary["success"]);
+    assert_eq!(200, audit_summary["httpStatus"]);
+    assert!(!audit_summary.to_string().contains(secret_ref));
+    assert!(!audit_summary
+        .to_string()
+        .contains("sk-provider-health-probe-secret"));
 
     let channel_state = sqlx::query(
         "SELECT health_status, last_latency_ms, consecutive_error_count FROM ai_channel WHERE id = 4003",
@@ -1630,49 +1647,44 @@ async fn database_config_app_routing_channel_test_runs_real_provider_probe_and_r
         0_i64,
         channel_state.get::<i64, _>("consecutive_error_count")
     );
-    let channel_secret_error_count: i64 =
-        sqlx::query_scalar("SELECT consecutive_error_count FROM ai_channel WHERE id = 4003")
-            .fetch_one(&verification_pool)
-            .await
-            .unwrap();
+    let credential_state = sqlx::query(
+        r#"
+        SELECT health_status, last_latency_ms, consecutive_error_count, last_verified_at
+        FROM ai_channel_credential
+        WHERE id = 400301
+          AND channel_id = 4003
+          AND tenant_id = 100001
+          AND organization_id = 0
+          AND status = 1
+          AND deleted_at IS NULL
+        "#,
+    )
+    .fetch_one(&verification_pool)
+    .await
+    .unwrap();
     verification_pool.close().await;
-    assert_eq!(0, channel_secret_error_count);
+    assert_eq!(1_i64, credential_state.get::<i64, _>("health_status"));
+    assert!(credential_state.get::<i64, _>("last_latency_ms") > 0);
+    assert_eq!(
+        0_i64,
+        credential_state.get::<i64, _>("consecutive_error_count")
+    );
+    assert!(credential_state
+        .get::<Option<String>, _>("last_verified_at")
+        .is_some());
 }
 
 #[tokio::test]
 async fn database_config_app_routing_channel_test_records_masked_provider_failure() {
     let captured = Arc::new(Mutex::new(Vec::<CapturedProviderHealthProbe>::new()));
-    let provider = Router::new()
-        .route(
-            "/v1/chat/completions",
-            post(
-                |State(captured): State<Arc<Mutex<Vec<CapturedProviderHealthProbe>>>>,
-                 headers: HeaderMap,
-                 Json(body): Json<Value>| async move {
-                    captured.lock().unwrap().push(CapturedProviderHealthProbe {
-                        authorization: headers
-                            .get("authorization")
-                            .and_then(|value| value.to_str().ok())
-                            .map(str::to_owned),
-                        body,
-                    });
-                    (
-                        StatusCode::UNAUTHORIZED,
-                        Json(json!({
-                            "error": {
-                                "code": "invalid_api_key",
-                                "message": "bad upstream key sk-provider-health-probe-secret"
-                            }
-                        })),
-                    )
-                },
-            ),
-        )
-        .with_state(Arc::clone(&captured));
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr = listener.local_addr().unwrap();
-    tokio::spawn(async move {
-        axum::serve(listener, provider).await.unwrap();
+    let provider_health_probe = Arc::new(RecordingProviderHealthProbe {
+        captured: Arc::clone(&captured),
+        outcome: ProviderHealthProbeOutcome::failure(
+            29,
+            Some(401),
+            "invalid_api_key",
+            "provider rejected health probe",
+        ),
     });
 
     let database_url = unique_sqlite_url();
@@ -1680,26 +1692,20 @@ async fn database_config_app_routing_channel_test_records_masked_provider_failur
     create_schema(&pool).await;
     seed_catalog_with_two_user_api_keys(&pool).await;
     seed_app_routing_runtime_data(&pool).await;
-    sqlx::query("UPDATE ai_channel SET base_url = ?1, consecutive_error_count = 4 WHERE id = 4003")
-        .bind(format!("http://{addr}"))
+    sqlx::query("UPDATE ai_channel SET base_url = ?1, timeout_ms = 30000, consecutive_error_count = 5 WHERE id = 4003")
+        .bind("https://api.openai.example/v1")
         .execute(&pool)
         .await
         .unwrap();
-    sqlx::query("UPDATE ai_channel SET consecutive_error_count = 5 WHERE id = 4003")
+    sqlx::query("UPDATE ai_channel_credential SET consecutive_error_count = 5 WHERE id = 400301")
         .execute(&pool)
         .await
         .unwrap();
     pool.close().await;
 
     let secret_ref = "vault://providers/openai/main";
-    let router = configured_router_with_provider_secret_map(
-        &database_url,
-        ProviderSecretMapConfig::from_json(
-            json!({secret_ref: "sk-provider-health-probe-secret"}).to_string(),
-        )
-        .unwrap(),
-    )
-    .await;
+    let router =
+        configured_router_with_provider_health_probe(&database_url, provider_health_probe).await;
 
     let (status, payload, body_text) = request_json(
         router,
@@ -1717,7 +1723,7 @@ async fn database_config_app_routing_channel_test_records_masked_provider_failur
     .await;
 
     assert_eq!(StatusCode::OK, status);
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"]);
     assert_eq!(false, payload["data"]["success"]);
     assert_eq!("4003", payload["data"]["channelId"]);
     assert_eq!("error", payload["data"]["status"]);
@@ -1727,57 +1733,77 @@ async fn database_config_app_routing_channel_test_records_masked_provider_failur
 
     let captured = captured.lock().unwrap();
     assert_eq!(1, captured.len());
-    assert_eq!(
-        Some("Bearer sk-provider-health-probe-secret".to_owned()),
-        captured[0].authorization
-    );
+    assert_eq!("https://api.openai.example/v1", captured[0].provider_base_url);
+    assert_eq!(secret_ref, captured[0].provider_secret_ref);
+    assert_eq!(None, captured[0].provider_secret_value);
+    assert_eq!("gpt-4o-mini", captured[0].provider_model);
+    assert_eq!(Some(30_000), captured[0].provider_timeout_ms);
     drop(captured);
 
     let verification_pool = create_sqlite_pool(&database_url).await;
-    let row = sqlx::query(
+    let audit_row = sqlx::query(
         r#"
-        SELECT request_id, health_status, latency_ms, http_status, error_code, error_message_masked
-        FROM integration_provider_health_snapshot
+        SELECT request_id, change_summary
+        FROM ops_audit_log
         WHERE tenant_id = 100001
           AND organization_id = 0
-          AND provider_id = 4001
-          AND channel_id = 4003
-          AND provider_account_id = 4003
-        ORDER BY checked_at DESC, id DESC
+          AND action = 'test_channel'
+          AND target_id = 4003
+        ORDER BY id DESC
         LIMIT 1
         "#,
     )
     .fetch_one(&verification_pool)
     .await
     .unwrap();
-    let snapshot_request_id: String = row.get("request_id");
-    assert_server_generated_request_id(&snapshot_request_id, "app-routing-channel-probe-failure-1");
-    assert_eq!(2_i64, row.get::<i64, _>("health_status"));
-    assert!(row.get::<i64, _>("latency_ms") > 0);
-    assert_eq!(401_i64, row.get::<i64, _>("http_status"));
-    assert_eq!(
-        Some("upstream_http_401".to_owned()),
-        row.get::<Option<String>, _>("error_code")
-    );
-    let error_message = row
-        .get::<Option<String>, _>("error_message_masked")
-        .unwrap();
-    assert!(error_message.contains("upstream health probe returned HTTP 401"));
-    assert!(!error_message.contains("sk-provider-health-probe-secret"));
+    let audit_request_id: String = audit_row.get("request_id");
+    assert_server_generated_request_id(&audit_request_id, "app-routing-channel-probe-failure-1");
+    let audit_summary: Value =
+        serde_json::from_str(&audit_row.get::<String, _>("change_summary")).unwrap();
+    assert_eq!(false, audit_summary["success"]);
+    assert_eq!(401, audit_summary["httpStatus"]);
+    assert!(!audit_summary.to_string().contains(secret_ref));
+    assert!(!audit_summary
+        .to_string()
+        .contains("sk-provider-health-probe-secret"));
 
-    let channel_errors: i64 =
-        sqlx::query_scalar("SELECT consecutive_error_count FROM ai_channel WHERE id = 4003")
-            .fetch_one(&verification_pool)
-            .await
-            .unwrap();
-    let channel_secret_error_count: i64 =
-        sqlx::query_scalar("SELECT consecutive_error_count FROM ai_channel WHERE id = 4003")
-            .fetch_one(&verification_pool)
-            .await
-            .unwrap();
+    let channel_state = sqlx::query(
+        "SELECT health_status, last_latency_ms, consecutive_error_count FROM ai_channel WHERE id = 4003",
+    )
+    .fetch_one(&verification_pool)
+    .await
+    .unwrap();
+    let credential_state = sqlx::query(
+        r#"
+        SELECT health_status, last_latency_ms, consecutive_error_count, last_verified_at
+        FROM ai_channel_credential
+        WHERE id = 400301
+          AND channel_id = 4003
+          AND tenant_id = 100001
+          AND organization_id = 0
+          AND status = 1
+          AND deleted_at IS NULL
+        "#,
+    )
+    .fetch_one(&verification_pool)
+    .await
+    .unwrap();
     verification_pool.close().await;
-    assert_eq!(6, channel_errors);
-    assert_eq!(6, channel_secret_error_count);
+    assert_eq!(2_i64, channel_state.get::<i64, _>("health_status"));
+    assert!(channel_state.get::<i64, _>("last_latency_ms") > 0);
+    assert_eq!(
+        6_i64,
+        channel_state.get::<i64, _>("consecutive_error_count")
+    );
+    assert_eq!(2_i64, credential_state.get::<i64, _>("health_status"));
+    assert!(credential_state.get::<i64, _>("last_latency_ms") > 0);
+    assert_eq!(
+        6_i64,
+        credential_state.get::<i64, _>("consecutive_error_count")
+    );
+    assert!(credential_state
+        .get::<Option<String>, _>("last_verified_at")
+        .is_some());
 }
 
 #[tokio::test]
@@ -1976,6 +2002,36 @@ async fn database_config_app_gateway_traces_require_session_scope_and_mask_clien
         .unwrap();
     assert_eq!(StatusCode::UNAUTHORIZED, unauthenticated_response.status());
 
+    let (invalid_status, invalid_payload, _) = request_json(
+        router.clone(),
+        session_request(
+            "GET",
+            "/app/v3/api/ai/gateway/traces?page=1",
+            Body::empty(),
+            TEST_SUBJECT_TENANT_ID,
+            TEST_SUBJECT_ORGANIZATION_ID,
+            TEST_SUBJECT_USER_ID,
+        ),
+    )
+    .await;
+    assert_eq!(StatusCode::BAD_REQUEST, invalid_status);
+    assert_eq!(40003, invalid_payload["code"]);
+
+    let (invalid_cursor_status, invalid_cursor_payload, _) = request_json(
+        router.clone(),
+        session_request(
+            "GET",
+            "/app/v3/api/ai/gateway/traces?cursor=not-an-opaque-cursor",
+            Body::empty(),
+            TEST_SUBJECT_TENANT_ID,
+            TEST_SUBJECT_ORGANIZATION_ID,
+            TEST_SUBJECT_USER_ID,
+        ),
+    )
+    .await;
+    assert_eq!(StatusCode::BAD_REQUEST, invalid_cursor_status);
+    assert_eq!(40003, invalid_cursor_payload["code"]);
+
     let (status, payload, body_text) = request_json(
         router,
         session_request(
@@ -1990,7 +2046,10 @@ async fn database_config_app_gateway_traces_require_session_scope_and_mask_clien
     .await;
 
     assert_eq!(StatusCode::OK, status);
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"]);
+    assert_eq!("cursor", payload["data"]["pageInfo"]["mode"]);
+    assert_eq!(20, payload["data"]["pageInfo"]["pageSize"]);
+    assert_eq!(false, payload["data"]["pageInfo"]["hasMore"]);
     assert_eq!("trace-owner-1", payload["data"]["items"][0]["id"]);
     assert_eq!("203.0.113.***", payload["data"]["items"][0]["ip"]);
     assert_eq!(
@@ -2484,11 +2543,11 @@ async fn database_config_usage_logs_require_session_filter_and_scope_logs_to_sub
     assert!(!success_body_text.contains("other-user-usage-request"));
     assert!(!success_body_text.contains("203.0.113.42"));
 
-    let (cost_only_status, cost_only_payload, cost_only_body_text) = request_json(
+    let (missing_charge_status, missing_charge_payload, missing_charge_body_text) = request_json(
         router.clone(),
         session_request(
             "GET",
-            "/app/v3/api/ai/usage/logs?status=success&q=gpt-4o-cost-only&start_time=2026-04-29T00:00:00Z&end_time=2026-04-29T23:59:59Z",
+            "/app/v3/api/ai/usage/logs?status=success&q=gpt-4o-without-charge&start_time=2026-04-29T00:00:00Z&end_time=2026-04-29T23:59:59Z",
             Body::empty(),
             TEST_SUBJECT_TENANT_ID,
             TEST_SUBJECT_ORGANIZATION_ID,
@@ -2496,17 +2555,20 @@ async fn database_config_usage_logs_require_session_filter_and_scope_logs_to_sub
         ),
     )
     .await;
-    assert_eq!(StatusCode::OK, cost_only_status, "{cost_only_body_text}");
-    assert_eq!("2000", cost_only_payload["code"]);
-    assert_eq!(1, cost_only_payload["data"]["total"]);
-    let cost_only_logs = cost_only_payload["data"]["logs"].as_array().unwrap();
-    assert_eq!(1, cost_only_logs.len());
-    assert_eq!("usage-owner-cost-only", cost_only_logs[0]["requestId"]);
-    assert_eq!("0.000000000", cost_only_logs[0]["cost"]);
-    assert!(
-        !cost_only_body_text.contains("777.123456"),
-        "app usage logs must not expose upstream cost compatibility fields"
+    assert_eq!(
+        StatusCode::OK,
+        missing_charge_status,
+        "{missing_charge_body_text}"
     );
+    assert_eq!("2000", missing_charge_payload["code"]);
+    assert_eq!(1, missing_charge_payload["data"]["total"]);
+    let missing_charge_logs = missing_charge_payload["data"]["logs"].as_array().unwrap();
+    assert_eq!(1, missing_charge_logs.len());
+    assert_eq!(
+        "usage-owner-without-charge",
+        missing_charge_logs[0]["requestId"]
+    );
+    assert_eq!("0.000000000", missing_charge_logs[0]["cost"]);
 
     let (error_status, error_payload, error_body_text) = request_json(
         router,
@@ -2539,32 +2601,6 @@ async fn database_config_usage_logs_require_session_filter_and_scope_logs_to_sub
     assert!(!error_body_text.contains("usage-owner-success"));
     assert!(!error_body_text.contains("other-user-usage-request"));
     assert!(!error_body_text.contains("203.0.113.42"));
-}
-
-async fn capture_provider_health_probe(
-    State(captured): State<Arc<Mutex<Vec<CapturedProviderHealthProbe>>>>,
-    headers: HeaderMap,
-    Json(body): Json<Value>,
-) -> Json<Value> {
-    captured.lock().unwrap().push(CapturedProviderHealthProbe {
-        authorization: headers
-            .get("authorization")
-            .and_then(|value| value.to_str().ok())
-            .map(str::to_owned),
-        body,
-    });
-    Json(json!({
-        "id": "chatcmpl-health",
-        "object": "chat.completion",
-        "model": "gpt-4o-mini",
-        "choices": [
-            {
-                "index": 0,
-                "message": {"role": "assistant", "content": "pong"},
-                "finish_reason": "stop"
-            }
-        ]
-    }))
 }
 
 static LEGACY_APP_API_INTEGRATION_ENV: Once = Once::new();
@@ -2632,20 +2668,21 @@ async fn configured_router_with_deployment_mode(
     .unwrap()
 }
 
-async fn configured_router_with_provider_secret_map(
+async fn configured_router_with_provider_health_probe(
     database_url: &str,
-    provider_secret_map_config: ProviderSecretMapConfig,
+    provider_health_probe: Arc<dyn ProviderHealthProbe + Send + Sync>,
 ) -> axum::Router {
     enable_legacy_app_api_subject_boundary_for_integration_tests();
-    let _runtime_guard = AppRuntimeWorkerEnvGuard::disabled_for_test();
-    sdkwork_clawrouter_standalone_gateway::router_with_database_config_api_key_trusted_subject_app_session_provider_secret_map_and_deployment_mode_config(
-        DatabaseConfig::from_url_with_max_connections(database_url, 1).unwrap(),
+    let pool = create_sqlite_pool(database_url).await;
+    let database_config = DatabaseConfig::from_url_with_max_connections(database_url, 1).unwrap();
+    sdkwork_clawrouter_standalone_gateway::router_with_sqlite_core_runtime_and_provider_health_probe(
+        pool,
+        database_config,
         api_key_security_config(),
         trusted_subject_config(),
         app_session_config(),
         payment_webhook_config(),
-        provider_secret_map_config,
-        DeploymentMode::Desktop,
+        provider_health_probe,
     )
     .await
     .unwrap()
@@ -3298,31 +3335,6 @@ async fn create_schema(pool: &SqlitePool) {
             last_latency_ms INTEGER,
             consecutive_error_count INTEGER,
             last_verified_at TEXT
-        )"#,        r#"CREATE TABLE integration_provider_health_snapshot (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            uuid TEXT NOT NULL,
-            tenant_id INTEGER,
-            organization_id INTEGER,
-            user_id INTEGER,
-            request_id TEXT,
-            trace_id TEXT,
-            payload_hash TEXT,
-            status INTEGER NOT NULL DEFAULT 1,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            retention_until TEXT,
-            legal_hold INTEGER DEFAULT 0,
-            metadata TEXT,
-            provider_id INTEGER,
-            channel_id INTEGER,
-            provider_account_id INTEGER,
-            check_type INTEGER,
-            health_status INTEGER,
-            latency_ms INTEGER,
-            http_status INTEGER,
-            error_code TEXT,
-            error_message_masked TEXT,
-            quota_snapshot TEXT,
-            checked_at TEXT
         )"#,
         r#"CREATE TABLE integration_proxy (
             id INTEGER PRIMARY KEY,
@@ -3733,7 +3745,6 @@ async fn create_schema(pool: &SqlitePool) {
             cached_tokens INTEGER,
             completion_tokens INTEGER,
             customer_charge_amount TEXT,
-            cost_amount TEXT,
             modality INTEGER,
             rate_multiplier TEXT,
             base_input_unit_price TEXT,
@@ -5139,17 +5150,17 @@ async fn seed_auth_settings_snapshot(pool: &SqlitePool, payload: Value) {
 async fn seed_dashboard_data(pool: &SqlitePool) {
     for statement in [
         r#"INSERT INTO ai_usage
-            (id, tenant_id, organization_id, user_id, request_id, status, request_count, total_tokens, customer_charge_amount, cost_amount, modality, occurred_at)
-            VALUES (2001, 100001, 0, 30, 'owner-text-request', 1, 5, 1000, '1.000000', '0.700000', 1, '2026-04-29 09:00:00')"#,
+            (id, tenant_id, organization_id, user_id, request_id, status, request_count, total_tokens, customer_charge_amount, modality, occurred_at)
+            VALUES (2001, 100001, 0, 30, 'owner-text-request', 1, 5, 1000, '1.000000', 1, '2026-04-29 09:00:00')"#,
         r#"INSERT INTO ai_usage
-            (id, tenant_id, organization_id, user_id, request_id, status, request_count, total_tokens, customer_charge_amount, cost_amount, modality, occurred_at)
-            VALUES (2002, 100001, 0, 30, 'owner-image-request', 1, 2, 0, '0.250000', '0.120000', 2, '2026-04-29 11:00:00')"#,
+            (id, tenant_id, organization_id, user_id, request_id, status, request_count, total_tokens, customer_charge_amount, modality, occurred_at)
+            VALUES (2002, 100001, 0, 30, 'owner-image-request', 1, 2, 0, '0.250000', 2, '2026-04-29 11:00:00')"#,
         r#"INSERT INTO ai_usage
-            (id, tenant_id, organization_id, user_id, request_id, status, request_count, total_tokens, customer_charge_amount, cost_amount, modality, occurred_at)
-            VALUES (2010, 100001, 0, 30, 'owner-history-request', 1, 3, 300, '1.750000', '1.200000', 1, '2026-03-01 08:00:00')"#,
+            (id, tenant_id, organization_id, user_id, request_id, status, request_count, total_tokens, customer_charge_amount, modality, occurred_at)
+            VALUES (2010, 100001, 0, 30, 'owner-history-request', 1, 3, 300, '1.750000', 1, '2026-03-01 08:00:00')"#,
         r#"INSERT INTO ai_usage
-            (id, tenant_id, organization_id, user_id, request_id, status, request_count, total_tokens, customer_charge_amount, cost_amount, modality, occurred_at)
-            VALUES (2003, 100001, 0, 31, 'other-user-request', 1, 99, 9900, '99.000000', '50.000000', 1, '2026-04-29 10:00:00')"#,
+            (id, tenant_id, organization_id, user_id, request_id, status, request_count, total_tokens, customer_charge_amount, modality, occurred_at)
+            VALUES (2003, 100001, 0, 31, 'other-user-request', 1, 99, 9900, '99.000000', 1, '2026-04-29 10:00:00')"#,
         r#"INSERT INTO ai_request_trace
             (id, tenant_id, organization_id, user_id, request_id, status, started_at, http_status, provider_error_code, error_type)
             VALUES (2004, 100001, 0, 30, 'owner-error-request', 1, '2026-04-29 12:00:00', 500, 'provider_500', 'provider_error')"#,
@@ -5228,6 +5239,13 @@ async fn seed_app_routing_runtime_data(pool: &SqlitePool) {
              'https://api.openai.example/v1', 'vault://providers/openai/main',
              'vault-label-openai-main', '42.50', 'USD', '["llm","vision"]',
              1, 1, 100, 1, 321, 600, 0)"#,
+        r#"INSERT INTO ai_channel_credential
+            (id, uuid, tenant_id, organization_id, channel_id, provider_code, channel_code,
+             credential_name, auth_config, credential_ref, credential_hash, masked_label,
+             priority, weight, health_status, consecutive_error_count, status)
+            VALUES (400301, 'channel-credential-openai-primary', 100001, 0, 4003,
+             'openai', 'openai-primary', 'primary', '{}', 'vault://providers/openai/main',
+             'hash:openai-primary', 'vault-label-openai-main', 1, 100, 1, 0, 1)"#,
         r#"INSERT INTO ai_channel_resource
             (id, uuid, tenant_id, organization_id, channel_id, provider_code, channel_code, resource_code, grant_type, priority, status)
             VALUES (4005, 'channel-resource-openai-primary-gpt-4o-mini', 100001, 0, 4003, 'openai', 'openai-primary', 'model.openai.gpt-4o-mini.chat', 'allow', 1, 1)"#,
@@ -5244,11 +5262,11 @@ async fn seed_app_routing_runtime_data(pool: &SqlitePool) {
              'https://other-tenant.example/v1', 'vault://providers/openai/main',
              '["llm"]', 1, 1, 100, 1, 111, 100, 0)"#,
         r#"INSERT INTO ai_usage
-            (id, tenant_id, organization_id, user_id, api_key_id, request_id, model, status, request_count, total_tokens, customer_charge_amount, cost_amount, modality, occurred_at)
-            VALUES (4014, 100001, 0, 30, 100, 'owner-runtime-request', 'gpt-4o-mini', 1, 5, 1000, '1.000000', '0.700000', 1, '2026-04-29 13:00:00')"#,
+            (id, tenant_id, organization_id, user_id, api_key_id, request_id, model, status, request_count, total_tokens, customer_charge_amount, modality, occurred_at)
+            VALUES (4014, 100001, 0, 30, 100, 'owner-runtime-request', 'gpt-4o-mini', 1, 5, 1000, '1.000000', 1, '2026-04-29 13:00:00')"#,
         r#"INSERT INTO ai_usage
-            (id, tenant_id, organization_id, user_id, api_key_id, request_id, model, status, request_count, total_tokens, customer_charge_amount, cost_amount, modality, occurred_at)
-            VALUES (4015, 100001, 0, 31, 101, 'other-user-runtime-request', 'gpt-4o-mini', 1, 77, 7700, '77.000000', '7.000000', 1, '2026-04-29 13:05:00')"#,
+            (id, tenant_id, organization_id, user_id, api_key_id, request_id, model, status, request_count, total_tokens, customer_charge_amount, modality, occurred_at)
+            VALUES (4015, 100001, 0, 31, 101, 'other-user-runtime-request', 'gpt-4o-mini', 1, 77, 7700, '77.000000', 1, '2026-04-29 13:05:00')"#,
         r#"INSERT INTO ai_request_trace
             (id, tenant_id, organization_id, user_id, request_id, trace_id, status, created_at, channel_name_snapshot, requested_model, provider_model, started_at, http_status, provider_error_code, error_type, latency_ms, total_tokens, client_ip_masked, request_path, endpoint, http_method)
             VALUES (4005, 100001, 0, 30, 'owner-runtime-request', 'trace-owner-routing', 1, '2026-04-29 13:00:00', 'OpenAI Primary', 'gpt-4o-mini', 'gpt-4o-mini', '2026-04-29 13:00:00', 200, NULL, NULL, 321, 1000, '203.0.113.***', '/v1/chat/completions', '/v1/chat/completions', 'POST')"#,
@@ -5446,20 +5464,20 @@ async fn seed_settings_runtime_data(pool: &SqlitePool) {
 async fn seed_usage_logs_runtime_data(pool: &SqlitePool) {
     for statement in [
         r#"INSERT INTO ai_usage
-            (id, tenant_id, organization_id, user_id, api_key_id, request_id, model, status, request_count, total_tokens, prompt_tokens, cached_tokens, completion_tokens, customer_charge_amount, cost_amount, modality, rate_multiplier, base_input_unit_price, base_output_unit_price, cache_read_unit_price, occurred_at)
-            VALUES (6401, 100001, 0, 30, 100, 'usage-owner-success', 'gpt-4o-mini', 1, 1, 160, 100, 10, 50, '0.012345', '0.010000', 1, '1.250000', '0.150000', '0.600000', '0.050000', '2026-04-29 10:15:00')"#,
+            (id, tenant_id, organization_id, user_id, api_key_id, request_id, model, status, request_count, total_tokens, prompt_tokens, cached_tokens, completion_tokens, customer_charge_amount, modality, rate_multiplier, base_input_unit_price, base_output_unit_price, cache_read_unit_price, occurred_at)
+            VALUES (6401, 100001, 0, 30, 100, 'usage-owner-success', 'gpt-4o-mini', 1, 1, 160, 100, 10, 50, '0.012345', 1, '1.250000', '0.150000', '0.600000', '0.050000', '2026-04-29 10:15:00')"#,
         r#"INSERT INTO ai_request_trace
             (id, tenant_id, organization_id, user_id, request_id, trace_id, status, created_at, api_key_name_snapshot, channel_group_snapshot, channel_name_snapshot, requested_model, provider_model, started_at, http_status, provider_error_code, error_type, latency_ms, ttft_ms, streaming, prompt_tokens, cached_tokens, completion_tokens, reasoning_effort, total_tokens, client_ip_masked, request_path, endpoint, http_method)
             VALUES (6402, 100001, 0, 30, 'usage-owner-success', 'trace-usage-owner-success', 1, '2026-04-29 10:15:00', 'Owner Usage Key', 'standard-group', 'OpenAI Primary', 'gpt-4o-mini', 'gpt-4o-mini', '2026-04-29 10:15:00', 200, NULL, NULL, 345, 120, 1, 90, 5, 45, 'medium', 160, '203.0.113.***', '/v1/chat/completions', '/v1/chat/completions', 'POST')"#,
         r#"INSERT INTO ai_usage
-            (id, tenant_id, organization_id, user_id, api_key_id, request_id, model, status, request_count, total_tokens, prompt_tokens, cached_tokens, completion_tokens, customer_charge_amount, cost_amount, modality, rate_multiplier, base_input_unit_price, base_output_unit_price, cache_read_unit_price, occurred_at)
-            VALUES (6403, 100001, 0, 30, 100, 'usage-owner-error', 'gpt-4o-mini', 1, 1, 25, 20, 0, 5, '0.004000', '0.003000', 1, '1.000000', '0.150000', '0.600000', '0.050000', '2026-04-29 11:15:00')"#,
+            (id, tenant_id, organization_id, user_id, api_key_id, request_id, model, status, request_count, total_tokens, prompt_tokens, cached_tokens, completion_tokens, customer_charge_amount, modality, rate_multiplier, base_input_unit_price, base_output_unit_price, cache_read_unit_price, occurred_at)
+            VALUES (6403, 100001, 0, 30, 100, 'usage-owner-error', 'gpt-4o-mini', 1, 1, 25, 20, 0, 5, '0.004000', 1, '1.000000', '0.150000', '0.600000', '0.050000', '2026-04-29 11:15:00')"#,
         r#"INSERT INTO ai_request_trace
             (id, tenant_id, organization_id, user_id, request_id, trace_id, status, created_at, api_key_name_snapshot, channel_group_snapshot, channel_name_snapshot, requested_model, provider_model, started_at, http_status, provider_error_code, error_type, error_message_masked, latency_ms, ttft_ms, streaming, prompt_tokens, cached_tokens, completion_tokens, reasoning_effort, total_tokens, client_ip_masked, request_path, endpoint, http_method)
             VALUES (6404, 100001, 0, 30, 'usage-owner-error', 'trace-usage-owner-error', 1, '2026-04-29 11:15:00', 'Owner Usage Key', 'standard-group', 'OpenAI Primary', 'gpt-4o-mini', 'gpt-4o-mini', '2026-04-29 11:15:00', 502, 'upstream_502', 'provider_error', 'provider timed out before completion', NULL, 0, 0, 20, 0, 5, 'provider_error', 25, '203.0.113.***', '/v1/chat/completions', '/v1/chat/completions', 'POST')"#,
         r#"INSERT INTO ai_usage
-            (id, tenant_id, organization_id, user_id, api_key_id, request_id, model, status, request_count, total_tokens, prompt_tokens, cached_tokens, completion_tokens, customer_charge_amount, cost_amount, modality, rate_multiplier, base_input_unit_price, base_output_unit_price, cache_read_unit_price, occurred_at)
-            VALUES (6405, 100001, 0, 31, 101, 'other-user-usage-request', 'gpt-4o-mini', 1, 1, 999, 900, 0, 99, '9.999999', '8.000000', 1, '2.000000', '0.150000', '0.600000', '0.050000', '2026-04-29 10:30:00')"#,
+            (id, tenant_id, organization_id, user_id, api_key_id, request_id, model, status, request_count, total_tokens, prompt_tokens, cached_tokens, completion_tokens, customer_charge_amount, modality, rate_multiplier, base_input_unit_price, base_output_unit_price, cache_read_unit_price, occurred_at)
+            VALUES (6405, 100001, 0, 31, 101, 'other-user-usage-request', 'gpt-4o-mini', 1, 1, 999, 900, 0, 99, '9.999999', 1, '2.000000', '0.150000', '0.600000', '0.050000', '2026-04-29 10:30:00')"#,
         r#"INSERT INTO ai_request_trace
             (id, tenant_id, organization_id, user_id, request_id, trace_id, status, created_at, api_key_name_snapshot, channel_group_snapshot, channel_name_snapshot, requested_model, provider_model, started_at, http_status, provider_error_code, error_type, latency_ms, ttft_ms, streaming, prompt_tokens, cached_tokens, completion_tokens, reasoning_effort, total_tokens, client_ip_masked, request_path, endpoint, http_method)
             VALUES (6406, 100001, 0, 31, 'other-user-usage-request', 'trace-other-user-usage', 1, '2026-04-29 10:30:00', 'Other Usage Key', 'standard-group', 'Other User Channel', 'gpt-4o-mini', 'gpt-4o-mini', '2026-04-29 10:30:00', 200, NULL, NULL, 111, 22, 1, 900, 0, 99, 'high', 999, '203.0.113.42', '/v1/chat/completions', '/v1/chat/completions', 'POST')"#,
@@ -5467,11 +5485,11 @@ async fn seed_usage_logs_runtime_data(pool: &SqlitePool) {
             (id, tenant_id, organization_id, user_id, request_id, status, created_at, requested_model, resolved_model, selected_channel_id)
             VALUES (6407, 100001, 0, 30, 'usage-owner-success', 1, '2026-04-29 10:15:00', 'gpt-4o-mini', 'gpt-4o-mini', 4003)"#,
         r#"INSERT INTO ai_usage
-            (id, tenant_id, organization_id, user_id, api_key_id, request_id, model, status, request_count, total_tokens, prompt_tokens, cached_tokens, completion_tokens, customer_charge_amount, cost_amount, modality, rate_multiplier, base_input_unit_price, base_output_unit_price, cache_read_unit_price, occurred_at)
-            VALUES (6408, 100001, 0, 30, 100, 'usage-owner-cost-only', 'gpt-4o-cost-only', 1, 1, 16, 10, 0, 6, NULL, '777.123456', 1, '1.000000', '0.150000', '0.600000', '0.050000', '2026-04-29 12:15:00')"#,
+            (id, tenant_id, organization_id, user_id, api_key_id, request_id, model, status, request_count, total_tokens, prompt_tokens, cached_tokens, completion_tokens, customer_charge_amount, modality, rate_multiplier, base_input_unit_price, base_output_unit_price, cache_read_unit_price, occurred_at)
+            VALUES (6408, 100001, 0, 30, 100, 'usage-owner-without-charge', 'gpt-4o-without-charge', 1, 1, 16, 10, 0, 6, NULL, 1, '1.000000', '0.150000', '0.600000', '0.050000', '2026-04-29 12:15:00')"#,
         r#"INSERT INTO ai_request_trace
             (id, tenant_id, organization_id, user_id, request_id, trace_id, status, created_at, api_key_name_snapshot, channel_group_snapshot, channel_name_snapshot, requested_model, provider_model, started_at, http_status, provider_error_code, error_type, latency_ms, ttft_ms, streaming, prompt_tokens, cached_tokens, completion_tokens, reasoning_effort, total_tokens, client_ip_masked, request_path, endpoint, http_method)
-            VALUES (6409, 100001, 0, 30, 'usage-owner-cost-only', 'trace-usage-owner-cost-only', 1, '2026-04-29 12:15:00', 'Owner Usage Key', 'standard-group', 'OpenAI Primary', 'gpt-4o-cost-only', 'gpt-4o-cost-only', '2026-04-29 12:15:00', 200, NULL, NULL, 87, 30, 0, 10, 0, 6, 'low', 16, '203.0.113.***', '/v1/chat/completions', '/v1/chat/completions', 'POST')"#,
+            VALUES (6409, 100001, 0, 30, 'usage-owner-without-charge', 'trace-usage-owner-without-charge', 1, '2026-04-29 12:15:00', 'Owner Usage Key', 'standard-group', 'OpenAI Primary', 'gpt-4o-without-charge', 'gpt-4o-without-charge', '2026-04-29 12:15:00', 200, NULL, NULL, 87, 30, 0, 10, 0, 6, 'low', 16, '203.0.113.***', '/v1/chat/completions', '/v1/chat/completions', 'POST')"#,
     ] {
         sqlx::query(statement).execute(pool).await.unwrap();
     }

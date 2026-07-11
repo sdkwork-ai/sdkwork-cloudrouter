@@ -1,3 +1,5 @@
+use sdkwork_database_sqlx::sqlite_decimal::register_decimal_functions;
+use sqlx::sqlite::SqliteConnection;
 use sqlx::{Row, SqlitePool};
 
 use crate::domain::DomainError;
@@ -14,7 +16,7 @@ const LOAD_USAGE_SUMMARY: &str = r#"
 SELECT
     CAST(COALESCE(SUM(COALESCE(request_count, 0)), 0) AS TEXT) AS request_count,
     CAST(COALESCE(SUM(COALESCE(total_tokens, 0)), 0) AS TEXT) AS total_tokens,
-    CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS used_credits,
+    sdkwork_decimal_sum(customer_charge_amount) AS used_credits,
     CAST(COALESCE(SUM(CASE WHEN modality = 2 THEN COALESCE(request_count, 0) ELSE 0 END), 0) AS TEXT) AS image_requests,
     CAST(COALESCE(SUM(CASE WHEN modality = 5 THEN COALESCE(request_count, 0) ELSE 0 END), 0) AS TEXT) AS video_requests,
     CAST(COALESCE(SUM(CASE WHEN modality = 3 THEN COALESCE(request_count, 0) ELSE 0 END), 0) AS TEXT) AS audio_requests,
@@ -48,7 +50,7 @@ WHERE status = 1
 const LOAD_USAGE_TOTALS: &str = r#"
 SELECT
     CAST(COALESCE(SUM(COALESCE(request_count, 0)), 0) AS TEXT) AS total_request_count,
-    CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS total_used_credits
+    sdkwork_decimal_sum(customer_charge_amount) AS total_used_credits
 FROM ai_usage
 WHERE status = 1
   AND tenant_id = ?1
@@ -195,12 +197,17 @@ impl DashboardOverviewReadStore for SqliteDashboardOverviewReadStore {
             let subject = subject.ok_or_else(|| {
                 DomainError::new("trusted request subject is required for dashboard overview")
             })?;
-            let mut summary = load_summary(&self.pool, &query, subject).await?;
-            let chart_data = load_chart_data(&self.pool, &query, subject).await?;
-            let top_models = load_top_models(&self.pool, subject).await?;
-            let announcements = load_announcements(&self.pool, subject).await?;
-            let performance_sparkline = load_performance_sparkline(&self.pool, subject).await?;
-            let configuration_domains = load_configuration_nodes(&self.pool, subject).await?;
+            let mut connection = self.pool.acquire().await.map_err(sql_error)?;
+            register_decimal_functions(&mut connection)
+                .await
+                .map_err(sql_error)?;
+            let mut summary = load_summary(&mut connection, &query, subject).await?;
+            let chart_data = load_chart_data(&mut connection, &query, subject).await?;
+            let top_models = load_top_models(&mut connection, subject).await?;
+            let announcements = load_announcements(&mut connection, subject).await?;
+            let performance_sparkline =
+                load_performance_sparkline(&mut connection, subject).await?;
+            let configuration_domains = load_configuration_nodes(&mut connection, subject).await?;
 
             if summary.request_count == 0 {
                 summary.request_count = chart_data
@@ -231,7 +238,7 @@ impl DashboardOverviewReadStore for SqliteDashboardOverviewReadStore {
 }
 
 async fn load_summary(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     query: &DashboardOverviewQuery,
     subject: DashboardOverviewSubject,
 ) -> Result<DashboardOverviewSummary, DomainError> {
@@ -241,15 +248,15 @@ async fn load_summary(
         .bind(subject.user_id)
         .bind(query.start_time.as_deref())
         .bind(query.end_time.as_deref())
-        .fetch_one(pool)
+        .fetch_one(&mut *connection)
         .await
         .map_err(sql_error)?;
 
     let request_count = integer_cell(&row, "request_count");
     let total_tokens = decimal_cell(&row, "total_tokens");
     let (rpm, tpm) = derive_dashboard_summary_rates(query, request_count, total_tokens);
-    let error_count = load_error_count(pool, query, subject).await?;
-    let (total_request_count, total_used_credits) = load_usage_totals(pool, subject).await?;
+    let error_count = load_error_count(connection, query, subject).await?;
+    let (total_request_count, total_used_credits) = load_usage_totals(connection, subject).await?;
 
     Ok(DashboardOverviewSummary {
         available_credits: 0.0,
@@ -268,7 +275,7 @@ async fn load_summary(
 }
 
 async fn load_error_count(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     query: &DashboardOverviewQuery,
     subject: DashboardOverviewSubject,
 ) -> Result<i64, DomainError> {
@@ -278,7 +285,7 @@ async fn load_error_count(
         .bind(subject.user_id)
         .bind(query.start_time.as_deref())
         .bind(query.end_time.as_deref())
-        .fetch_one(pool)
+        .fetch_one(&mut *connection)
         .await
         .map_err(sql_error)?;
 
@@ -286,14 +293,14 @@ async fn load_error_count(
 }
 
 async fn load_usage_totals(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     subject: DashboardOverviewSubject,
 ) -> Result<(i64, f64), DomainError> {
     let row = sqlx::query(LOAD_USAGE_TOTALS)
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(subject.user_id)
-        .fetch_one(pool)
+        .fetch_one(&mut *connection)
         .await
         .map_err(sql_error)?;
 
@@ -304,7 +311,7 @@ async fn load_usage_totals(
 }
 
 async fn load_chart_data(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     query: &DashboardOverviewQuery,
     subject: DashboardOverviewSubject,
 ) -> Result<Vec<DashboardChartPoint>, DomainError> {
@@ -316,7 +323,7 @@ async fn load_chart_data(
         .bind(query.start_time.as_deref())
         .bind(query.end_time.as_deref())
         .bind(period_length)
-        .fetch_all(pool)
+        .fetch_all(&mut *connection)
         .await
         .map_err(sql_error)?;
 
@@ -334,13 +341,13 @@ async fn load_chart_data(
 }
 
 async fn load_top_models(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     subject: DashboardOverviewSubject,
 ) -> Result<Vec<DashboardTopModel>, DomainError> {
     let rows = sqlx::query(LOAD_TOP_MODELS)
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
-        .fetch_all(pool)
+        .fetch_all(&mut *connection)
         .await
         .map_err(sql_error)?;
 
@@ -366,13 +373,13 @@ async fn load_top_models(
 }
 
 async fn load_announcements(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     subject: DashboardOverviewSubject,
 ) -> Result<Vec<DashboardAnnouncement>, DomainError> {
     let rows = sqlx::query(LOAD_ANNOUNCEMENTS)
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
-        .fetch_all(pool)
+        .fetch_all(&mut *connection)
         .await
         .map_err(sql_error)?;
 
@@ -388,13 +395,13 @@ async fn load_announcements(
 }
 
 async fn load_performance_sparkline(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     subject: DashboardOverviewSubject,
 ) -> Result<Vec<DashboardSparklinePoint>, DomainError> {
     let rows = sqlx::query(LOAD_PERFORMANCE_SPARKLINE)
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
-        .fetch_all(pool)
+        .fetch_all(&mut *connection)
         .await
         .map_err(sql_error)?;
 
@@ -409,13 +416,13 @@ async fn load_performance_sparkline(
 }
 
 async fn load_configuration_nodes(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     subject: DashboardOverviewSubject,
 ) -> Result<Vec<DashboardConfigurationDomain>, DomainError> {
     let rows = sqlx::query(LOAD_CONFIGURATION_NODES)
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
-        .fetch_all(pool)
+        .fetch_all(&mut *connection)
         .await
         .map_err(sql_error)?;
 

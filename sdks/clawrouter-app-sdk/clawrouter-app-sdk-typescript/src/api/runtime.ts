@@ -76,7 +76,7 @@ export class RuntimeInvocationsApi {
     return this.client.get<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}`));
   }
 
-/** Create */
+/** Complete */
   async complete(invocationId: string): Promise<Record<string, never>> {
     return this.client.post<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/complete`));
   }

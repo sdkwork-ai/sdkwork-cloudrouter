@@ -125,7 +125,7 @@ async fn postgres_gateway_usage_recorder_preserves_non_pending_usage_fact_on_dup
         UPDATE ai_usage
         SET settlement_status = 3,
             customer_charge_amount = 7.722000,
-            cost_amount = 4.290000,
+            upstream_cost_amount = 4.290000,
             total_tokens = 18
         WHERE request_id = 'pg-usage-settlement-failed'
         "#,
@@ -146,7 +146,7 @@ async fn postgres_gateway_usage_recorder_preserves_non_pending_usage_fact_on_dup
         r#"
         SELECT total_tokens,
                customer_charge_amount::text AS customer_charge_amount,
-               cost_amount::text AS cost_amount,
+               upstream_cost_amount::text AS upstream_cost_amount,
                settlement_status
         FROM ai_usage
         WHERE request_id = 'pg-usage-settlement-failed'
@@ -157,7 +157,7 @@ async fn postgres_gateway_usage_recorder_preserves_non_pending_usage_fact_on_dup
     .unwrap();
     assert_eq!(18_i64, usage.get::<i64, _>("total_tokens"));
     assert_eq!("7.722000", usage.get::<String, _>("customer_charge_amount"));
-    assert_eq!("4.290000", usage.get::<String, _>("cost_amount"));
+    assert_eq!("4.290000", usage.get::<String, _>("upstream_cost_amount"));
     assert_eq!(
         3_i64,
         usage.get::<i64, _>("settlement_status"),
@@ -490,6 +490,7 @@ async fn create_schema(pool: &PgPool) {
             request_id VARCHAR(128),
             trace_id VARCHAR(128),
             payload_hash VARCHAR(128),
+            idempotency_key VARCHAR(128) NOT NULL,
             status INTEGER NOT NULL DEFAULT 1,
             created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
             retention_until TIMESTAMPTZ,
@@ -534,7 +535,6 @@ async fn create_schema(pool: &PgPool) {
             video_seconds NUMERIC(38, 12),
             storage_byte_hours NUMERIC(38, 12),
             bandwidth_bytes BIGINT,
-            unit_price_snapshot NUMERIC(38, 12),
             base_input_unit_price NUMERIC(38, 12),
             base_output_unit_price NUMERIC(38, 12),
             cache_read_unit_price NUMERIC(38, 12),
@@ -543,7 +543,6 @@ async fn create_schema(pool: &PgPool) {
             official_reference_amount NUMERIC(38, 12),
             upstream_cost_amount NUMERIC(38, 12),
             customer_charge_amount NUMERIC(38, 12),
-            cost_amount NUMERIC(38, 12),
             currency VARCHAR(10),
             pricing_id BIGINT,
             pricing_plan_id BIGINT,
@@ -555,6 +554,7 @@ async fn create_schema(pool: &PgPool) {
             occurred_at TIMESTAMPTZ,
             settlement_status INTEGER,
             settlement_id BIGINT,
+            CONSTRAINT uk_ai_usage_idempotency UNIQUE (tenant_id, organization_id, idempotency_key),
             CONSTRAINT uk_ai_usage_request_type UNIQUE (tenant_id, organization_id, request_id, usage_type)
         )"#,
     ] {

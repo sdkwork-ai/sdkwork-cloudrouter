@@ -1,6 +1,6 @@
 use axum::http::{header, HeaderMap, HeaderName, HeaderValue};
-use sdkwork_claw_provider_adapter_contract::AdapterInvocationShape;
 use sdkwork_claw_http::{sanitize_sensitive_query, upsert_query_parameter};
+use sdkwork_claw_provider_adapter_contract::AdapterInvocationShape;
 use serde_json::{json, Value};
 
 use super::multipart_form::{request_content_type_is_multipart_form, rewrite_multipart_model};

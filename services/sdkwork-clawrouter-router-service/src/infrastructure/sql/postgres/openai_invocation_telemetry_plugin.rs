@@ -1,5 +1,3 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-
 use sqlx::PgPool;
 
 use crate::api::{
@@ -8,12 +6,10 @@ use crate::api::{
     OpenAiProviderRoute,
 };
 use crate::domain::{DomainError, DomainResult, ProviderCircuitBreakerPolicy};
-use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 
 const HEALTHY: i64 = 1;
 const UNHEALTHY: i64 = 2;
-const CHECK_TYPE_RUNTIME_INVOCATION: i64 = 2;
 
 #[derive(Debug, Clone)]
 pub struct PostgresOpenAiInvocationTelemetryPlugin {
@@ -73,25 +69,11 @@ async fn record_fault(
     route: &OpenAiProviderRoute,
     fault: &OpenAiInvocationFault,
 ) -> DomainResult<()> {
-    let health_status = match fault.kind {
-        OpenAiInvocationFaultKind::UsageRecording => HEALTHY,
-        OpenAiInvocationFaultKind::RelayHttpStatus if !fault.is_retryable() => HEALTHY,
-        _ => {
-            let outcome = record_channel_fault(pool, context, route, fault.latency_ms).await?;
-            outcome.health_status
-        }
-    };
-    insert_snapshot(
-        pool,
-        context,
-        route,
-        health_status,
-        fault.latency_ms,
-        fault.health_http_status(),
-        Some(fault.error_code.as_str()),
-        Some(masked_message(fault.message.as_str()).as_str()),
-    )
-    .await
+    match fault.kind {
+        OpenAiInvocationFaultKind::UsageRecording => Ok(()),
+        OpenAiInvocationFaultKind::RelayHttpStatus if !fault.is_retryable() => Ok(()),
+        _ => record_channel_fault(pool, context, route, fault.latency_ms).await,
+    }
 }
 
 async fn record_success(
@@ -100,22 +82,7 @@ async fn record_success(
     route: &OpenAiProviderRoute,
     outcome: &OpenAiInvocationRelayOutcome,
 ) -> DomainResult<()> {
-    record_channel_success(pool, context, route, outcome.latency_ms).await?;
-    insert_snapshot(
-        pool,
-        context,
-        route,
-        HEALTHY,
-        outcome.latency_ms,
-        Some(i32::from(outcome.status_code)),
-        None,
-        None,
-    )
-    .await
-}
-
-struct ChannelFaultOutcome {
-    health_status: i64,
+    record_channel_success(pool, context, route, outcome.latency_ms).await
 }
 
 async fn record_channel_fault(
@@ -123,9 +90,9 @@ async fn record_channel_fault(
     context: &OpenAiInvocationContext,
     route: &OpenAiProviderRoute,
     latency_ms: Option<i64>,
-) -> DomainResult<ChannelFaultOutcome> {
+) -> DomainResult<()> {
     let state = load_channel_fault_state(pool, context, route).await?;
-    let row = sqlx::query(
+    let result = sqlx::query(
         r#"
         UPDATE ai_channel
         SET updated_at = CURRENT_TIMESTAMP,
@@ -140,7 +107,6 @@ async fn record_channel_fault(
           AND tenant_id = $6
           AND organization_id = $7
           AND deleted_at IS NULL
-        RETURNING health_status
         "#,
     )
     .bind(latency_ms)
@@ -152,18 +118,18 @@ async fn record_channel_fault(
     .bind(route.channel_id)
     .bind(context.api_key_context.tenant_id)
     .bind(context.api_key_context.organization_id)
-    .fetch_optional(pool)
+    .execute(pool)
     .await
     .map_err(|error| {
         store_error(
             "failed to update OpenAI invocation channel telemetry",
             error,
         )
-    })?
-    .ok_or_else(|| DomainError::new("OpenAI invocation channel was not found"))?;
-    let health_status = sqlx::Row::try_get::<i64, _>(&row, "health_status")
-        .map_err(|error| DomainError::new(format!("invalid channel health status: {error}")))?;
-    Ok(ChannelFaultOutcome { health_status })
+    })?;
+    if result.rows_affected() == 0 {
+        return Err(DomainError::new("OpenAI invocation channel was not found"));
+    }
+    Ok(())
 }
 
 async fn record_channel_success(
@@ -258,91 +224,6 @@ fn parse_channel_failure_threshold(value: Option<&str>, channel_id: i64) -> usiz
             );
             ProviderCircuitBreakerPolicy::default().failure_threshold
         }
-    }
-}
-
-#[allow(clippy::too_many_arguments)]
-async fn insert_snapshot(
-    pool: &PgPool,
-    context: &OpenAiInvocationContext,
-    route: &OpenAiProviderRoute,
-    health_status: i64,
-    latency_ms: Option<i64>,
-    http_status: Option<i32>,
-    error_code: Option<&str>,
-    error_message: Option<&str>,
-) -> DomainResult<()> {
-    let metadata = serde_json::json!({
-        "source": "openai_runtime_invocation",
-        "endpoint": format!("{:?}", context.endpoint),
-        "providerModel": route.provider_model,
-        "catalogKey": route.catalog_key,
-        "policyId": route.policy_id,
-        "ruleId": route.rule_id,
-        "streaming": context.stream
-    })
-    .to_string();
-    sqlx::query(
-        r#"
-        INSERT INTO integration_provider_health_snapshot
-            (id, uuid, tenant_id, organization_id, user_id, request_id, trace_id, status, created_at, metadata, provider_id, channel_id, provider_account_id, check_type, health_status, latency_ms, http_status, error_code, error_message_masked, checked_at)
-        SELECT
-            $1, $2, c.tenant_id, c.organization_id, $3, $4, $5, 1, CURRENT_TIMESTAMP, $6::jsonb, c.provider_id, c.id, c.id, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP
-        FROM ai_channel c
-        WHERE c.id = $13
-          AND c.tenant_id = $14
-          AND c.organization_id = $15
-          AND c.deleted_at IS NULL
-        "#,
-    )
-    .bind(next_claw_runtime_id("integration_provider_health_snapshot")?)
-    .bind(snapshot_uuid(context, route, health_status))
-    .bind(context.api_key_context.user_id)
-    .bind(request_id(context))
-    .bind(context.trace_id.as_deref())
-    .bind(metadata)
-    .bind(CHECK_TYPE_RUNTIME_INVOCATION)
-    .bind(health_status)
-    .bind(latency_ms)
-    .bind(http_status)
-    .bind(error_code)
-    .bind(error_message)
-    .bind(route.channel_id)
-    .bind(context.api_key_context.tenant_id)
-    .bind(context.api_key_context.organization_id)
-    .execute(pool)
-    .await
-    .map_err(|error| store_error("failed to insert OpenAI invocation health snapshot", error))?;
-    Ok(())
-}
-
-fn request_id(context: &OpenAiInvocationContext) -> String {
-    context.request_id.clone()
-}
-
-fn snapshot_uuid(
-    context: &OpenAiInvocationContext,
-    route: &OpenAiProviderRoute,
-    health_status: i64,
-) -> String {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_nanos())
-        .unwrap_or_default();
-    format!(
-        "openai-runtime-{}-{}-{}-{nanos}",
-        request_id(context),
-        route.channel_id,
-        health_status
-    )
-}
-
-fn masked_message(message: &str) -> String {
-    let trimmed = message.trim();
-    if trimmed.chars().count() <= 512 {
-        trimmed.to_owned()
-    } else {
-        trimmed.chars().take(512).collect()
     }
 }
 

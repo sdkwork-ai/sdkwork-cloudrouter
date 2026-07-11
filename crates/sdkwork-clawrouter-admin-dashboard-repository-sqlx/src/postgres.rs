@@ -16,14 +16,14 @@ const COLORS: [&str; 10] = [
 const LOAD_USER_CONSUMPTION: &str = r#"
 SELECT
     COALESCE(NULLIF(owner_name_snapshot, ''), NULLIF(CAST(user_id AS TEXT), ''), '-') AS name,
-    CAST(COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS TEXT) AS value
+    CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS value
 FROM ai_usage
 WHERE status = 1
   AND tenant_id = $1
   AND organization_id = $2
 GROUP BY COALESCE(NULLIF(owner_name_snapshot, ''), NULLIF(CAST(user_id AS TEXT), ''), '-')
-HAVING COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) > 0
-ORDER BY COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) DESC, name ASC
+HAVING COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) > 0
+ORDER BY COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) DESC, name ASC
 LIMIT 8
 "#;
 
@@ -46,7 +46,7 @@ SELECT
     substr(CAST(occurred_at AS TEXT), 1, 10) AS period,
     CAST(COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS TEXT) AS tokens,
     CAST(COALESCE(SUM(COALESCE(request_count, 1)), 0) AS TEXT) AS requests,
-    CAST(COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS TEXT) AS cost
+        CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS cost
 FROM ai_usage
 WHERE status = 1
   AND tenant_id = $1
@@ -101,7 +101,7 @@ usage_by_request AS (
         CAST(COALESCE(SUM(COALESCE(prompt_tokens, 0)), 0) AS TEXT) AS prompt_tokens,
         CAST(COALESCE(SUM(COALESCE(completion_tokens, 0)), 0) AS TEXT) AS completion_tokens,
         CAST(COALESCE(SUM(COALESCE(request_count, 1)), 0) AS TEXT) AS request_count,
-        CAST(COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS TEXT) AS cost_amount
+        CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS customer_charge_amount
     FROM ai_usage
     WHERE status = 1
       AND tenant_id = $1
@@ -125,7 +125,7 @@ SELECT
           OR NULLIF(t.provider_error_code, '') IS NOT NULL THEN 'failed'
         ELSE 'success'
     END AS usage_status,
-    COALESCE(u.cost_amount, '0') AS cost_amount
+    COALESCE(u.customer_charge_amount, '0') AS customer_charge_amount
 FROM selected_trace t
 LEFT JOIN usage_by_request u
   ON u.tenant_id = t.tenant_id
@@ -349,7 +349,12 @@ fn recent_usage_item(
         )?),
         time: required_string_cell(&row, "started_at", "admin dashboard recent usage time")?,
         status: required_string_cell(&row, "usage_status", "admin dashboard recent usage status")?,
-        cost: decimal_string_cell(&row, "cost_amount", 6, "admin dashboard recent usage cost")?,
+        cost: decimal_string_cell(
+            &row,
+            "customer_charge_amount",
+            6,
+            "admin dashboard recent usage customer charge",
+        )?,
     })
 }
 

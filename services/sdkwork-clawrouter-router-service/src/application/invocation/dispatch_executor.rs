@@ -8,7 +8,7 @@ use super::{
     InvocationInterceptor, InvocationRouteAttempt, InvocationRouteCandidate, InvocationShape,
     InvocationSurface, ResolvedProviderSecret,
 };
-use crate::domain::AiRouteFailureStrategy;
+use crate::domain::{AiRouteFailureStrategy, AiRouteStrategy};
 use crate::ports::{
     InvocationDispatchError, InvocationDispatcher, ProviderAdapterRouteResolver,
     ProviderSecretResolver,
@@ -99,6 +99,7 @@ impl InvocationInterceptor for DispatchExecutor {
                         &account,
                         self.secret_resolver.as_deref(),
                     ) {
+                        last_response = None;
                         invocation.routing.attempted_routes.push(failed_attempt(
                             candidate,
                             index,
@@ -151,6 +152,7 @@ impl InvocationInterceptor for DispatchExecutor {
                             }
                         }
                         Err(error) => {
+                            last_response = None;
                             let retryable = retryable_dispatch_error(candidate, &error);
                             invocation.routing.attempted_routes.push(failed_attempt(
                                 candidate,
@@ -298,18 +300,15 @@ fn resolve_provider_secret(
 
 /// Maximum dispatch attempts for a candidate.
 ///
-/// Defaults to 2 (H-5) when a candidate has no explicit retry policy, so a
-/// single transient upstream failure does not fail the whole invocation. The
-/// default is overridden to 1 for streaming requests: once SSE bytes have been
-/// sent to the client a retry cannot safely replay the response, so only
-/// idempotent non-streaming endpoints (e.g. `chat/completions` with
-/// `stream=false`) are eligible for retry.
+/// A missing retry policy means one attempt. Configured retry budgets are
+/// honored only for replay-safe requests; streaming and non-idempotent writes
+/// without an idempotency key are always single-attempt.
 fn max_attempts(invocation: &Invocation, candidate: &InvocationRouteCandidate) -> usize {
     let is_streaming = matches!(
         invocation.dispatch.invocation_shape,
         InvocationShape::SseStream | InvocationShape::ByteStream
     );
-    if is_streaming {
+    if is_streaming || !request_allows_replay(invocation) {
         // Streaming responses cannot be safely replayed once dispatched.
         return 1;
     }
@@ -317,7 +316,32 @@ fn max_attempts(invocation: &Invocation, candidate: &InvocationRouteCandidate) -
         .retry_policy
         .as_ref()
         .map(|policy| policy.max_attempts.max(1))
-        .unwrap_or(2)
+        .unwrap_or(1)
+}
+
+fn request_allows_replay(invocation: &Invocation) -> bool {
+    if matches!(
+        invocation.routing.strategy,
+        AiRouteStrategy::StatelessFailover | AiRouteStrategy::StatelessFailClosed
+    ) {
+        return true;
+    }
+    if matches!(
+        invocation.request.method,
+        axum::http::Method::GET
+            | axum::http::Method::HEAD
+            | axum::http::Method::OPTIONS
+            | axum::http::Method::PUT
+            | axum::http::Method::DELETE
+    ) {
+        return true;
+    }
+    invocation
+        .request
+        .idempotency_key
+        .as_deref()
+        .map(str::trim)
+        .is_some_and(|key| !key.is_empty())
 }
 
 fn account_from_candidate(

@@ -7,7 +7,9 @@ use crate::domain::{
     DomainError, DomainResult, DEFAULT_PROVIDER_CIRCUIT_BREAKER_RECOVERY_WINDOW_SECONDS,
 };
 use crate::infrastructure::sql::catalog::{PricingCatalogRows, SqlPricingCatalogSnapshot};
-use crate::infrastructure::sql::model_catalog_import::runtime_pricing_dictionary_rows;
+use crate::infrastructure::sql::model_catalog_import::{
+    merge_runtime_pricing_dictionary_rows, runtime_pricing_dictionary_rows,
+};
 use crate::infrastructure::sql::routing_config_change::AI_ROUTING_CONFIG_SCOPE;
 use crate::infrastructure::sql::rows::GatewayApiKeyRow;
 use crate::infrastructure::sql::sqlite::error::SqlCatalogLoadError;
@@ -66,9 +68,21 @@ impl SqlitePricingCatalogLoader {
             .await
             .map_err(|source| sqlite_query_error("BEGIN_TX", source))?;
         let api_keys = self.load_api_key_rows(&mut *tx).await?;
+        let database_rows = merge_runtime_pricing_dictionary_rows(
+            dictionary,
+            row_mapping::load_vendors(&mut *tx, queries::LOAD_VENDORS)
+                .await
+                .map_err(|source| sqlite_query_error("LOAD_VENDORS", source))?,
+            row_mapping::load_models(&mut *tx, queries::LOAD_MODELS)
+                .await
+                .map_err(|source| sqlite_query_error("LOAD_MODELS", source))?,
+            row_mapping::load_prices(&mut *tx, queries::LOAD_PRICES)
+                .await
+                .map_err(|source| sqlite_query_error("LOAD_PRICES", source))?,
+        );
         let rows = PricingCatalogRows {
-            vendors: dictionary.vendors,
-            models: dictionary.models,
+            vendors: database_rows.vendors,
+            models: database_rows.models,
             provider_routes: row_mapping::load_provider_routes(
                 &mut *tx,
                 queries::LOAD_PROVIDER_ROUTES,
@@ -132,7 +146,7 @@ impl SqlitePricingCatalogLoader {
             )
             .await
             .map_err(|source| sqlite_query_error("LOAD_API_KEY_GROUP_METRIC_SNAPSHOTS", source))?,
-            prices: dictionary.prices,
+            prices: database_rows.prices,
         };
         tx.commit()
             .await

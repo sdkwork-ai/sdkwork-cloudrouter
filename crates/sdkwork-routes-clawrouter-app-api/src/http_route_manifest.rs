@@ -4,7 +4,7 @@ use sdkwork_web_contract::{HttpMethod, HttpRoute};
 use sdkwork_web_core::HttpRouteManifest;
 
 const HTTP_ROUTES: &[HttpRoute] = &[
-HttpRoute::credential_entry_public(
+    HttpRoute::credential_entry_public(
         HttpMethod::Post,
         "/app/v3/api/auth/sessions",
         "auth",
@@ -1133,12 +1133,7 @@ HttpRoute::credential_entry_public(
         "shipments",
         "shipments.trackingEvents.list",
     ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/shops",
-        "system",
-        "shops.list",
-    ),
+    HttpRoute::dual_token(HttpMethod::Get, "/app/v3/api/shops", "system", "shops.list"),
     HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/shops/current",
@@ -1622,7 +1617,11 @@ mod tests {
         let route = manifest
             .match_route(method, path)
             .unwrap_or_else(|| panic!("{method} {path} must be registered"));
-        assert_eq!(RouteAuth::Public, route.auth, "{method} {path} must be public");
+        assert_eq!(
+            RouteAuth::Public,
+            route.auth,
+            "{method} {path} must be public"
+        );
         assert!(
             resolve_public_path(
                 method,
@@ -1649,4 +1648,3 @@ mod tests {
         assert_public_route("GET", "/app/v3/api/system/iam/runtime");
     }
 }
-

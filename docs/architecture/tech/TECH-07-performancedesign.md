@@ -18,7 +18,7 @@
 ## 2. 鐑矾寰勫師鍒?
 Gateway 鐑矾寰勫彧鍋氬繀瑕佸伐浣滐細
 
-1. request_id銆乼race span銆乥ody/header limit銆?2. API key hash 鏍￠獙鍜?subject context 鍔犺浇銆?3. quota/rate limit fast path銆?4. model alias銆乧apability銆乸ricing snapshot 鏌ヨ銆?5. routing profile compiled snapshot 鏌ヨ銆?6. provider health snapshot 鏌ヨ銆?7. route decision銆?8. provider adapter 鎵ц銆?9. usage/decision/attempt 杞婚噺鍐欏叆鎴?outbox enqueue銆?
+1. request identity and trace span; 2. API key and subject context; 3. quota/rate-limit fast path; 4. model/capability/pricing lookup; 5. compiled routing profile; 6. bounded in-memory or Redis health view derived from canonical `ai_channel` / `ai_channel_credential` facts; 7. route decision; 8. provider adapter execution; 9. bounded usage/decision/attempt writes or outbox enqueue. The hot path never reads or writes `integration_provider_health_snapshot`.
 涓嶅緱杩涘叆鐑矾寰勶細
 
 - dashboard 鑱氬悎鏌ヨ銆?- 璐㈠姟瀵硅处銆?- 闀垮懆鏈熺粨绠椼€?- provider onboarding銆?- 澶у璞℃壂鎻忋€?- 绠＄悊绔鏉傛潈闄愬垪琛ㄦ煡璇€?- 鍚屾鎶ヨ〃鐢熸垚銆?

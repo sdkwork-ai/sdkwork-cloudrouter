@@ -254,9 +254,12 @@ async fn create_site(
         Err(error) => return command_build_error_response(error),
     };
     match state.store.create_site(command).await {
-        Ok(item) => json_created_response(None, SiteEnvelope {
-            item: to_site_response(item),
-        }),
+        Ok(item) => json_created_response(
+            None,
+            SiteEnvelope {
+                item: to_site_response(item),
+            },
+        ),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => system_response("Site command store is unavailable", error),
     }

@@ -468,10 +468,7 @@ async fn create_api_key(
     };
 
     match state.store.create_api_key(command).await {
-        Ok(key) => json_created_response(None, AdminUserApiKeyCreateResponse {
-            key,
-            raw_key,
-        }),
+        Ok(key) => json_created_response(None, AdminUserApiKeyCreateResponse { key, raw_key }),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) if error.is_not_found() => not_found_response(&error.to_string()),
         Err(error) => {
@@ -598,10 +595,13 @@ async fn create_backend_api_key(
     };
 
     match state.command_store.create_gateway_api_key(command).await {
-        Ok(created) => json_created_response(None, AdminUserApiKeyCreateResponse {
-            key: admin_api_key_item_from_gateway(created.api_key),
-            raw_key,
-        }),
+        Ok(created) => json_created_response(
+            None,
+            AdminUserApiKeyCreateResponse {
+                key: admin_api_key_item_from_gateway(created.api_key),
+                raw_key,
+            },
+        ),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
             admin_user_system_response("admin api key command store is unavailable", error)

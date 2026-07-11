@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "@sdkwork/clawrouter-app-sdk"
   },
-  "changeFingerprint": "a982e42f2a4e516c20358480c637fe323324c90c6a0c5b20aa76d45aab5060f9",
+  "changeFingerprint": "16a04e0db99610e931c142d7ab38f8d9daea202465dd3a88e90f86cbae4237cf",
   "changes": {
     "createdGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -38,6 +38,8 @@
       "src/sdk.ts",
       "src/types/common.ts",
       "src/types/field-error.ts",
+      "src/types/gateway-trace.ts",
+      "src/types/gateway-traces-page.ts",
       "src/types/index.ts",
       "src/types/json-null.ts",
       "src/types/json-object.ts",
@@ -94,6 +96,8 @@
         "paths": [
           "src/types/common.ts",
           "src/types/field-error.ts",
+          "src/types/gateway-trace.ts",
+          "src/types/gateway-traces-page.ts",
           "src/types/index.ts",
           "src/types/json-null.ts",
           "src/types/json-object.ts",

@@ -2,8 +2,6 @@
   "language": "typescript",
   "sdkType": "app",
   "name": "clawrouter-app-sdk",
-  "packageName": "clawrouter-app-sdk-generated-typescript",
-  "version": "0.1.0",
-  "transportPackageName": "clawrouter-app-sdk-generated-typescript",
-  "consumerPackageName": "@sdkwork/clawrouter-app-sdk"
+  "packageName": "sdkwork-clawrouter-app-sdk-generated-typescript",
+  "version": "0.1.0"
 }

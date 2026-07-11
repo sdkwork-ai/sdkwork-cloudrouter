@@ -405,7 +405,7 @@ async fn insert_usage_fact_for_model(pool: &sqlx::SqlitePool, model: &InstalledM
         INSERT INTO ai_usage
             (id, uuid, tenant_id, organization_id, user_id, request_id, status, metadata,
              catalog_key, model, modality, usage_type, billing_meter_code, request_count,
-             prompt_tokens, completion_tokens, total_tokens, billable_quantity, cost_amount,
+             prompt_tokens, completion_tokens, total_tokens, billable_quantity, customer_charge_amount,
              currency, pricing_snapshot, occurred_at)
         VALUES
             (9001, 'usage-model-ranking-e2e', 100001, 0, 30, 'model-ranking-e2e-request', 1, '{}',

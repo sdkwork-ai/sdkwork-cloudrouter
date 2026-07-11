@@ -1,3 +1,6 @@
+use sdkwork_database_sqlx::sqlite_decimal::register_decimal_functions;
+use sdkwork_models_catalog_service::domain::DecimalValue;
+use sqlx::sqlite::SqliteConnection;
 use sqlx::{Row, SqlitePool};
 
 use crate::error::{store_error, RepositoryError, RepositoryResult};
@@ -16,14 +19,15 @@ const COLORS: [&str; 10] = [
 const LOAD_USER_CONSUMPTION: &str = r#"
 SELECT
     COALESCE(NULLIF(owner_name_snapshot, ''), NULLIF(CAST(user_id AS TEXT), ''), '-') AS name,
-    CAST(COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS TEXT) AS value
+    sdkwork_decimal_sum(customer_charge_amount) AS value
 FROM ai_usage
 WHERE status = 1
   AND tenant_id = ?1
   AND organization_id = ?2
 GROUP BY COALESCE(NULLIF(owner_name_snapshot, ''), NULLIF(CAST(user_id AS TEXT), ''), '-')
-HAVING COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) > 0
-ORDER BY COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) DESC, name ASC
+HAVING sdkwork_decimal_order_key(sdkwork_decimal_sum(customer_charge_amount))
+    > sdkwork_decimal_order_key('0')
+ORDER BY sdkwork_decimal_order_key(sdkwork_decimal_sum(customer_charge_amount)) DESC, name ASC
 LIMIT 8
 "#;
 
@@ -46,7 +50,7 @@ SELECT
     substr(CAST(occurred_at AS TEXT), 1, 10) AS period,
     CAST(COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS TEXT) AS tokens,
     CAST(COALESCE(SUM(COALESCE(request_count, 1)), 0) AS TEXT) AS requests,
-    CAST(COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS TEXT) AS cost
+    sdkwork_decimal_sum(customer_charge_amount) AS cost
 FROM ai_usage
 WHERE status = 1
   AND tenant_id = ?1
@@ -101,7 +105,7 @@ usage_by_request AS (
         CAST(COALESCE(SUM(COALESCE(prompt_tokens, 0)), 0) AS TEXT) AS prompt_tokens,
         CAST(COALESCE(SUM(COALESCE(completion_tokens, 0)), 0) AS TEXT) AS completion_tokens,
         CAST(COALESCE(SUM(COALESCE(request_count, 1)), 0) AS TEXT) AS request_count,
-        CAST(COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS TEXT) AS cost_amount
+        sdkwork_decimal_sum(customer_charge_amount) AS customer_charge_amount
     FROM ai_usage
     WHERE status = 1
       AND tenant_id = ?1
@@ -125,7 +129,7 @@ SELECT
           OR NULLIF(t.provider_error_code, '') IS NOT NULL THEN 'failed'
         ELSE 'success'
     END AS usage_status,
-    COALESCE(u.cost_amount, '0') AS cost_amount
+    COALESCE(u.customer_charge_amount, '0') AS customer_charge_amount
 FROM selected_trace t
 LEFT JOIN usage_by_request u
   ON u.tenant_id = t.tenant_id
@@ -167,20 +171,37 @@ impl AdminDashboardReadStore for SqliteAdminDashboardReadStore {
     fn load_dashboard<'a>(&'a self, query: AdminDashboardQuery) -> AdminDashboardReadFuture<'a> {
         Box::pin(async move {
             let subject = query.subject;
+            let mut connection = self.pool.acquire().await.map_err(|error| {
+                store_error("failed to acquire admin dashboard SQLite connection", error)
+            })?;
+            register_decimal_functions(&mut connection)
+                .await
+                .map_err(|error| {
+                    store_error(
+                        "failed to register admin dashboard decimal functions",
+                        error,
+                    )
+                })?;
             let active_users =
-                load_active_users(&self.pool, subject.tenant_id, subject.organization_id).await?;
+                load_active_users(&mut connection, subject.tenant_id, subject.organization_id)
+                    .await?;
             let user_consumption =
-                load_user_consumption(&self.pool, subject.tenant_id, subject.organization_id)
+                load_user_consumption(&mut connection, subject.tenant_id, subject.organization_id)
                     .await?;
             let multimodal =
-                load_multimodal(&self.pool, subject.tenant_id, subject.organization_id).await?;
-            let traffic =
-                load_traffic(&self.pool, subject.tenant_id, subject.organization_id).await?;
-            let model_distribution =
-                load_model_distribution(&self.pool, subject.tenant_id, subject.organization_id)
+                load_multimodal(&mut connection, subject.tenant_id, subject.organization_id)
                     .await?;
+            let traffic =
+                load_traffic(&mut connection, subject.tenant_id, subject.organization_id).await?;
+            let model_distribution = load_model_distribution(
+                &mut connection,
+                subject.tenant_id,
+                subject.organization_id,
+            )
+            .await?;
             let recent_usage =
-                load_recent_usage(&self.pool, subject.tenant_id, subject.organization_id).await?;
+                load_recent_usage(&mut connection, subject.tenant_id, subject.organization_id)
+                    .await?;
 
             Ok(AdminDashboardSnapshot {
                 active_users,
@@ -195,27 +216,27 @@ impl AdminDashboardReadStore for SqliteAdminDashboardReadStore {
 }
 
 async fn load_active_users(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     tenant_id: i64,
     organization_id: i64,
 ) -> Result<i64, RepositoryError> {
     sqlx::query_scalar::<_, i64>(LOAD_ACTIVE_USERS)
         .bind(tenant_id)
         .bind(organization_id)
-        .fetch_one(pool)
+        .fetch_one(&mut *connection)
         .await
         .map_err(|error| store_error("failed to load admin dashboard active users", error))
 }
 
 async fn load_user_consumption(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     tenant_id: i64,
     organization_id: i64,
 ) -> Result<Vec<AdminPieChartItem>, RepositoryError> {
     let rows = sqlx::query(LOAD_USER_CONSUMPTION)
         .bind(tenant_id)
         .bind(organization_id)
-        .fetch_all(pool)
+        .fetch_all(&mut *connection)
         .await
         .map_err(|error| store_error("failed to load admin dashboard user consumption", error))?;
     rows.into_iter()
@@ -225,14 +246,14 @@ async fn load_user_consumption(
 }
 
 async fn load_multimodal(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     tenant_id: i64,
     organization_id: i64,
 ) -> Result<Vec<AdminPieChartItem>, RepositoryError> {
     let rows = sqlx::query(LOAD_MULTIMODAL)
         .bind(tenant_id)
         .bind(organization_id)
-        .fetch_all(pool)
+        .fetch_all(&mut *connection)
         .await
         .map_err(|error| store_error("failed to load admin dashboard multimodal usage", error))?;
     rows.into_iter()
@@ -248,14 +269,14 @@ async fn load_multimodal(
 }
 
 async fn load_traffic(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     tenant_id: i64,
     organization_id: i64,
 ) -> Result<Vec<AdminDashboardTrafficItem>, RepositoryError> {
     let rows = sqlx::query(LOAD_TRAFFIC)
         .bind(tenant_id)
         .bind(organization_id)
-        .fetch_all(pool)
+        .fetch_all(&mut *connection)
         .await
         .map_err(|error| store_error("failed to load admin dashboard traffic", error))?;
     rows.into_iter()
@@ -279,14 +300,14 @@ async fn load_traffic(
 }
 
 async fn load_model_distribution(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     tenant_id: i64,
     organization_id: i64,
 ) -> Result<Vec<AdminPieChartItem>, RepositoryError> {
     let rows = sqlx::query(LOAD_MODEL_DISTRIBUTION)
         .bind(tenant_id)
         .bind(organization_id)
-        .fetch_all(pool)
+        .fetch_all(&mut *connection)
         .await
         .map_err(|error| store_error("failed to load admin dashboard model distribution", error))?;
     rows.into_iter()
@@ -296,14 +317,14 @@ async fn load_model_distribution(
 }
 
 async fn load_recent_usage(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     tenant_id: i64,
     organization_id: i64,
 ) -> Result<Vec<AdminDashboardRecentUsageItem>, RepositoryError> {
     let rows = sqlx::query(LOAD_RECENT_USAGE)
         .bind(tenant_id)
         .bind(organization_id)
-        .fetch_all(pool)
+        .fetch_all(&mut *connection)
         .await
         .map_err(|error| store_error("failed to load admin dashboard recent usage", error))?;
     rows.into_iter().map(recent_usage_item).collect()
@@ -349,7 +370,12 @@ fn recent_usage_item(
         )?),
         time: required_string_cell(&row, "started_at", "admin dashboard recent usage time")?,
         status: required_string_cell(&row, "usage_status", "admin dashboard recent usage status")?,
-        cost: decimal_string_cell(&row, "cost_amount", 6, "admin dashboard recent usage cost")?,
+        cost: decimal_string_cell(
+            &row,
+            "customer_charge_amount",
+            6,
+            "admin dashboard recent usage customer charge",
+        )?,
     })
 }
 
@@ -433,12 +459,7 @@ fn decimal_string_cell(
 }
 
 fn format_decimal_fixed(value: &str, digits: u32) -> RepositoryResult<String> {
-    let trimmed = value.trim();
-    let parsed: f64 = trimmed
-        .parse()
-        .map_err(|_| RepositoryError::new(format!("invalid decimal: {value}")))?;
-    if !parsed.is_finite() {
-        return Err(RepositoryError::new(format!("invalid decimal: {value}")));
-    }
-    Ok(format!("{parsed:.prec$}", prec = digits as usize))
+    DecimalValue::parse(value)
+        .map(|decimal| decimal.to_fixed_string(digits))
+        .map_err(|_| RepositoryError::new(format!("invalid decimal: {value}")))
 }

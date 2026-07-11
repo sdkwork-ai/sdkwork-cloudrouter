@@ -297,8 +297,8 @@ fn add_group_policy_rule_for_group(
 fn authenticated_context() -> AuthenticatedApiKeyContext {
     AuthenticatedApiKeyContext {
         api_key_id: 100,
-        tenant_id: 100001,
-        organization_id: 0,
+        tenant_id: 10,
+        organization_id: 20,
         user_id: 30,
         api_key_name_snapshot: "sk-test".to_owned(),
         group_id: 10,
@@ -391,6 +391,134 @@ fn selector_prefers_channel_group_policy_over_global_policy() {
     assert_eq!(3002, selection.route.channel_id);
     assert_eq!(Some(2), selection.policy_id);
     assert_eq!(Some(202), selection.rule_id);
+}
+
+#[test]
+fn selector_rejects_authenticated_context_that_does_not_match_api_key_owner() {
+    let catalog = base_catalog();
+    let mut query = select_query();
+    query.context.tenant_id = 99;
+
+    let error = ProviderRouteSelector::new(&catalog)
+        .select(query)
+        .expect_err("cross-tenant api key context must fail closed");
+
+    assert_eq!(
+        ProviderRouteSelectionErrorKind::ProviderRouteUnavailable,
+        error.kind()
+    );
+    assert!(error
+        .to_string()
+        .contains("authenticated api key context does not match catalog ownership"));
+}
+
+#[test]
+fn selector_ignores_tenant_owned_policy_misclassified_as_global() {
+    let mut catalog = base_catalog();
+    add_callable_route(
+        &mut catalog,
+        3001,
+        "cross-tenant-route",
+        "gpt-4o-mini-cross-tenant",
+        "0.110000",
+    );
+    add_callable_route(
+        &mut catalog,
+        3002,
+        "global-route",
+        "gpt-4o-mini-global",
+        "0.120000",
+    );
+    catalog.add_routing_policy(RoutingPolicy::new(
+        1,
+        99,
+        88,
+        "misclassified-global-policy",
+        RoutingPolicyScope::Global,
+        None,
+        Some(101),
+    ));
+    catalog.add_routing_rule(
+        RoutingRule::new(
+            102,
+            0,
+            0,
+            101,
+            "cross-tenant-global-rule",
+            1,
+            r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
+            "openai/gpt-4o-mini",
+        )
+        .with_candidate_channels(vec![RouteCandidate::new(3001, 100)]),
+    );
+    catalog.add_routing_policy(RoutingPolicy::new(
+        2,
+        0,
+        0,
+        "canonical-global-policy",
+        RoutingPolicyScope::Global,
+        None,
+        Some(201),
+    ));
+    catalog.add_routing_rule(
+        RoutingRule::new(
+            202,
+            0,
+            0,
+            201,
+            "canonical-global-rule",
+            1,
+            r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
+            "openai/gpt-4o-mini",
+        )
+        .with_candidate_channels(vec![RouteCandidate::new(3002, 100)]),
+    );
+
+    let selection = ProviderRouteSelector::new(&catalog)
+        .select(select_query())
+        .expect("canonical global policy should remain available");
+
+    assert_eq!(3002, selection.route.channel_id);
+    assert_eq!(Some(2), selection.policy_id);
+    assert_eq!(Some(202), selection.rule_id);
+}
+
+#[test]
+fn selector_orders_minimum_candidate_weight_without_integer_overflow() {
+    let mut catalog = base_catalog();
+    add_callable_route(
+        &mut catalog,
+        3001,
+        "minimum-weight-route",
+        "gpt-4o-mini-minimum-weight",
+        "0.110000",
+    );
+    add_callable_route(
+        &mut catalog,
+        3002,
+        "normal-weight-route",
+        "gpt-4o-mini-normal-weight",
+        "0.120000",
+    );
+    add_group_policy_rule(
+        &mut catalog,
+        2,
+        201,
+        202,
+        r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
+        "openai/gpt-4o-mini",
+        vec![
+            RouteCandidate::new(3001, i64::MIN),
+            RouteCandidate::new(3002, 0),
+        ],
+        vec![],
+    );
+
+    let selection = ProviderRouteSelector::new(&catalog)
+        .select(select_query())
+        .expect("minimum route weight must not panic selection");
+
+    assert_eq!(3002, selection.route.channel_id);
 }
 
 #[test]
@@ -801,6 +929,51 @@ fn selector_round_robins_same_channel_credentials_between_requests() {
 }
 
 #[test]
+fn selector_round_robin_starts_with_highest_priority_credential() {
+    let mut catalog = base_catalog();
+    add_callable_credential_route(
+        &mut catalog,
+        93_001,
+        931_001,
+        "round-robin-priority",
+        "gpt-4o-mini-priority",
+        "round_robin",
+        1,
+        100,
+        "0.110000",
+    );
+    add_callable_credential_route(
+        &mut catalog,
+        93_001,
+        931_002,
+        "round-robin-priority",
+        "gpt-4o-mini-priority",
+        "round_robin",
+        2,
+        100,
+        "0.110000",
+    );
+    add_group_policy_rule(
+        &mut catalog,
+        93_001,
+        93_011,
+        93_012,
+        r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
+        "openai/gpt-4o-mini",
+        vec![RouteCandidate::new(93_001, 100)],
+        vec![],
+    );
+
+    let selected = ProviderRouteSelector::new(&catalog)
+        .select(select_query())
+        .expect("round robin route")
+        .route
+        .credential_id;
+
+    assert_eq!(Some(931_001), selected);
+}
+
+#[test]
 fn selector_weighted_round_robin_repeats_credentials_by_weight() {
     let mut catalog = base_catalog();
     add_callable_credential_route(
@@ -851,6 +1024,55 @@ fn selector_weighted_round_robin_repeats_credentials_by_weight() {
     let secondary_count = selected.iter().filter(|id| **id == 300102).count();
     assert_eq!(3, primary_count, "{selected:?}");
     assert_eq!(1, secondary_count, "{selected:?}");
+}
+
+#[test]
+fn selector_weighted_round_robin_never_selects_zero_weight_credential() {
+    let mut catalog = base_catalog();
+    add_callable_credential_route(
+        &mut catalog,
+        93_002,
+        932_001,
+        "weighted-zero",
+        "gpt-4o-mini-weighted",
+        "weighted_round_robin",
+        1,
+        100,
+        "0.110000",
+    );
+    add_callable_credential_route(
+        &mut catalog,
+        93_002,
+        932_002,
+        "weighted-zero",
+        "gpt-4o-mini-weighted",
+        "weighted_round_robin",
+        1,
+        0,
+        "0.110000",
+    );
+    add_group_policy_rule(
+        &mut catalog,
+        93_002,
+        93_021,
+        93_022,
+        r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
+        "openai/gpt-4o-mini",
+        vec![RouteCandidate::new(93_002, 100)],
+        vec![],
+    );
+
+    let selected = (0..16)
+        .map(|_| {
+            ProviderRouteSelector::new(&catalog)
+                .select(select_query())
+                .expect("weighted route")
+                .route
+                .credential_id
+        })
+        .collect::<Vec<_>>();
+
+    assert!(selected.iter().all(|value| *value == Some(932_001)));
 }
 
 #[test]

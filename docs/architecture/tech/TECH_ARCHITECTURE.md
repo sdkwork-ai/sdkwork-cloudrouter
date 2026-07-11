@@ -234,7 +234,24 @@ imports from `@sdkwork/clawrouter-*-sdk` only, never raw `fetch`/`axios`.
 | `ops_*` | router-service | ops workers (heartbeat, audit, metrics, jobs) | admin-api |
 | `integration_*` | router-service | provider integration | admin-api |
 | `analytics_*` | router-service | analytics rollup worker | admin-api |
-| `system_*` | router-service installer | clawrouterctl | all (schema migration state) |
+
+Runtime provider health has a narrower ownership boundary than the prefix-level
+summary:
+
+- `ai_channel` and `ai_channel_credential` are the canonical runtime health
+  facts. Health probes update their health status, latency, consecutive error
+  count, and verification time atomically in the owning channel transaction.
+- `ai_request_trace` and `ai_routing_decision_log` are append-only route and
+  provider-attempt facts. They are valid asynchronous inputs for operational
+  health analysis, but they do not replace the current channel facts.
+- `integration_provider_health_snapshot` is a rebuildable operational
+  projection. Only the external `ops-worker` projection pipeline may write it;
+  gateway, app, and admin routing repositories must not own or synchronously
+  maintain it.
+- `ops_schema_migration_history`, `ops_seed_history`, and
+  `ops_database_installation_state` are maintained by the canonical
+  `sdkwork-database` lifecycle. Application bootstrap and catalog import code
+  must not repair, rewrite, or delete lifecycle history.
 
 Schema registry: `database/contract/table-registry.json` +
 `database/contract/prefix-registry.json` are the single source of truth

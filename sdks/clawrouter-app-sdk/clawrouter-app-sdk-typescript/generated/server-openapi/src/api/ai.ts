@@ -1,6 +1,6 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
-import type { ModelCatalogPage, ModelRankingsPage } from '../types';
+import type { GatewayTracesPage, ModelCatalogPage, ModelRankingsPage } from '../types';
 export class AiUsageLogsApi {
   private client: HttpClient;
 
@@ -179,6 +179,12 @@ export class AiModelRankingsApi {
   }
 }
 
+export interface AiGatewayTracesListParams {
+  cursor?: string;
+  pageSize?: number;
+  q?: string;
+}
+
 export class AiGatewayTracesApi {
   private client: HttpClient;
 
@@ -188,8 +194,13 @@ export class AiGatewayTracesApi {
 
 
 /** List */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/ai/gateway/traces`));
+  async list(params?: AiGatewayTracesListParams): Promise<GatewayTracesPage> {
+    const query = buildQueryString([
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<GatewayTracesPage>(appendQueryString(appApiPath(`/ai/gateway/traces`), query));
   }
 }
 

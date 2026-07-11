@@ -69,7 +69,7 @@ class UsageRuntimeStandardTest(unittest.TestCase):
         for store in [sqlite_store, postgres_store]:
             compact_store = " ".join(store.split())
             self.assertIn("DecimalValue", store)
-            self.assertIn('decimal_string_cell(&row, "cost_amount", 6, "usage log cost")?', compact_store)
+            self.assertIn('"customer_charge_amount", USAGE_SPEND_DECIMAL_DIGITS, "usage log cost",', compact_store)
             self.assertIn('decimal_string_cell(&row, "rate_multiplier", 6, "usage log rate multiplier")?', compact_store)
             self.assertIn('"base_input_unit_price"', compact_store)
             self.assertIn('"usage log base input price"', compact_store)
@@ -90,7 +90,7 @@ class UsageRuntimeStandardTest(unittest.TestCase):
         for store in [sqlite_admin_record_store, postgres_admin_record_store]:
             compact_store = " ".join(store.split())
             self.assertIn("DecimalValue", store)
-            self.assertIn('cost: decimal_string_cell(&row, "cost_amount", 6, "admin record cost")?', compact_store)
+            self.assertIn('"customer_charge_amount", 6, "admin record customer charge",', compact_store)
             self.assertIn("multiplier: decimal_string_cell(", compact_store)
             self.assertIn('"rate_multiplier"', compact_store)
             self.assertIn('"admin record rate multiplier"', compact_store)

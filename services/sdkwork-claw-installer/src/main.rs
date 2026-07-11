@@ -1,18 +1,14 @@
 use sdkwork_claw_config::{DatabaseConfig, DatabaseEngine, DeploymentMode, RuntimeConfigProfile};
+use sdkwork_clawrouter_database_host::connect_claw_router_database;
 use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
-    BootstrapAdminReport, CatalogRefreshOptions, CatalogRefreshReport, DatabaseInstallError,
-    DatabaseInstaller, InstallationReport, InstallationStatus, ResetAdminPasswordReport,
+    CatalogRefreshOptions, CatalogRefreshReport, DatabaseInstallError, DatabaseInstaller,
+    InstallationReport, InstallationStatus,
 };
+use sdkwork_models_database_host::connect_models_database;
 use serde::Serialize;
-use sqlx::postgres::PgPoolOptions;
-use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::process::ExitCode;
-use std::str::FromStr;
-use std::time::Duration;
-
-const POSTGRES_INSTALLER_POOL_ACQUIRE_TIMEOUT_SECONDS: u64 = 10;
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -46,11 +42,12 @@ async fn run() -> anyhow::Result<()> {
 }
 
 async fn run_sqlite(config: DatabaseConfig, command: InstallerCommand) -> anyhow::Result<()> {
-    let options = SqliteConnectOptions::from_str(config.url.as_str())?.create_if_missing(true);
-    let pool = SqlitePoolOptions::new()
-        .max_connections(config.max_connections)
-        .connect_with(options)
-        .await?;
+    let database_pool = connect_installer_database_pool(&config).await?;
+    apply_explicit_schema_lifecycle_if_required(&database_pool, &command).await?;
+    let pool = database_pool
+        .as_sqlite()
+        .cloned()
+        .ok_or_else(|| InstallerCliError::DatabaseConnection("expected SQLite pool".to_owned()))?;
     run_command(
         DatabaseInstaller::for_sqlite(pool).with_env_options()?,
         command,
@@ -59,16 +56,11 @@ async fn run_sqlite(config: DatabaseConfig, command: InstallerCommand) -> anyhow
 }
 
 async fn run_postgres(config: DatabaseConfig, command: InstallerCommand) -> anyhow::Result<()> {
-    let pool = postgres_installer_pool_options(config.max_connections)
-        .connect(&config.url)
-        .await
-        .map_err(|error| {
-            InstallerCliError::DatabaseConnection(database_connection_error_message(
-                DatabaseEngine::Postgres,
-                &config.url,
-                error,
-            ))
-        })?;
+    let database_pool = connect_installer_database_pool(&config).await?;
+    apply_explicit_schema_lifecycle_if_required(&database_pool, &command).await?;
+    let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
+        InstallerCliError::DatabaseConnection("expected PostgreSQL pool".to_owned())
+    })?;
     run_command(
         DatabaseInstaller::for_postgres(pool).with_env_options()?,
         command,
@@ -76,24 +68,52 @@ async fn run_postgres(config: DatabaseConfig, command: InstallerCommand) -> anyh
     .await
 }
 
-fn postgres_installer_pool_options(max_connections: u32) -> PgPoolOptions {
-    PgPoolOptions::new()
-        .max_connections(max_connections)
-        .acquire_timeout(Duration::from_secs(
-            POSTGRES_INSTALLER_POOL_ACQUIRE_TIMEOUT_SECONDS,
+async fn connect_installer_database_pool(
+    config: &DatabaseConfig,
+) -> anyhow::Result<sdkwork_database_sqlx::DatabasePool> {
+    sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_standard_database_pool(
+        config,
+    )
+    .await
+    .map_err(|error| {
+        InstallerCliError::DatabaseConnection(database_connection_error_message(
+            config.engine,
+            &config.url,
+            error,
         ))
+        .into()
+    })
+}
+
+async fn apply_explicit_schema_lifecycle_if_required(
+    pool: &sdkwork_database_sqlx::DatabasePool,
+    command: &InstallerCommand,
+) -> anyhow::Result<()> {
+    if !command.requires_schema_migration() {
+        return Ok(());
+    }
+    let models_host = connect_models_database(pool.clone()).map_err(anyhow::Error::msg)?;
+    models_host
+        .migrate("clawrouterctl:models")
+        .await
+        .map_err(anyhow::Error::msg)?;
+    let host = connect_claw_router_database(pool.clone()).map_err(anyhow::Error::msg)?;
+    host.migrate("clawrouterctl")
+        .await
+        .map_err(anyhow::Error::msg)?;
+    Ok(())
 }
 
 fn database_connection_error_message(
     engine: DatabaseEngine,
     database_url: &str,
-    error: sqlx::Error,
+    error: impl std::fmt::Display,
 ) -> String {
     match engine {
         DatabaseEngine::Postgres => format!(
             "PostgreSQL database is not reachable for SDKWORK_CLAW_DATABASE_URL ({}) within {} seconds: {error}. Start the configured PostgreSQL service, fix the host/port/credentials, or run a SQLite dev profile such as pnpm dev:sqlite.",
             redact_database_url(database_url),
-            POSTGRES_INSTALLER_POOL_ACQUIRE_TIMEOUT_SECONDS
+            sdkwork_clawrouter_router_service::infrastructure::sql::pool::POSTGRES_POOL_ACQUIRE_TIMEOUT_SECONDS
         ),
         DatabaseEngine::Sqlite => format!(
             "SQLite database is not reachable for SDKWORK_CLAW_DATABASE_URL ({}): {error}. Verify the database file path and directory permissions.",
@@ -139,11 +159,11 @@ async fn run_command(
                 print_json(&InstallationStatusOutput::from(report))?;
                 return Ok(());
             }
-            let report = installer.ensure_installed().await?;
+            let report = installer.ensure_bootstrap_data().await?;
             print_json(&InstallationStatusOutput::from(report))?;
         }
         InstallerCommand::Upgrade | InstallerCommand::Ensure => {
-            let report = installer.ensure_installed().await?;
+            let report = installer.ensure_bootstrap_data().await?;
             print_json(&InstallationStatusOutput::from(report))?;
         }
         InstallerCommand::RefreshCatalog(options) => {
@@ -152,17 +172,6 @@ async fn run_command(
                 .status_report_for_refresh_options(&options)
                 .await?;
             print_json(&CatalogRefreshOutput::from_reports(report, status_report))?;
-        }
-        InstallerCommand::ResetAdmin(options) => {
-            let report = installer
-                .reset_admin_password(
-                    options.username,
-                    options.display_name,
-                    options.email,
-                    options.password,
-                )
-                .await?;
-            print_json(&ResetAdminOutput::from(report))?;
         }
     }
     Ok(())
@@ -175,15 +184,6 @@ enum InstallerCommand {
     Upgrade,
     Ensure,
     RefreshCatalog(CatalogRefreshOptions),
-    ResetAdmin(ResetAdminOptions),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct ResetAdminOptions {
-    username: String,
-    display_name: String,
-    email: String,
-    password: String,
 }
 
 fn parse_cli_command<I>(args: I) -> anyhow::Result<InstallerCommand>
@@ -210,10 +210,9 @@ where
             InstallerCommand::Ensure
         }
         "refresh-catalog" => InstallerCommand::RefreshCatalog(parse_refresh_options(args)?),
-        "reset-admin" => InstallerCommand::ResetAdmin(parse_reset_admin_options(args)?),
         other => {
             return Err(InstallerCliError::InvalidArgument(format!(
-                "unsupported installer command: {other}. Use status, install, upgrade, ensure, refresh-catalog, or reset-admin"
+                "unsupported installer command: {other}. Use status, install, upgrade, ensure, or refresh-catalog"
             ))
             .into());
         }
@@ -289,48 +288,6 @@ where
     Ok(options)
 }
 
-fn parse_reset_admin_options<I>(args: I) -> anyhow::Result<ResetAdminOptions>
-where
-    I: IntoIterator<Item = String>,
-{
-    let mut username = "admin".to_owned();
-    let mut display_name = "Administrator".to_owned();
-    let mut email = "admin@sdkwork.com".to_owned();
-    let mut password = std::env::var("SDKWORK_CLAW_ADMIN_RESET_PASSWORD")
-        .ok()
-        .map(|value| value.trim().to_owned())
-        .filter(|value| !value.is_empty());
-
-    let mut args = args.into_iter().peekable();
-    while let Some(arg) = args.next() {
-        match arg.as_str() {
-            "--username" => username = next_arg(&mut args, "--username")?,
-            "--display-name" => display_name = next_arg(&mut args, "--display-name")?,
-            "--email" => email = next_arg(&mut args, "--email")?,
-            "--password" => password = Some(next_arg(&mut args, "--password")?),
-            other => {
-                return Err(InstallerCliError::InvalidArgument(format!(
-                    "unsupported reset-admin option: {other}"
-                ))
-                .into());
-            }
-        }
-    }
-
-    let password = password.ok_or_else(|| {
-        InstallerCliError::InvalidArgument(
-            "reset-admin requires --password or SDKWORK_CLAW_ADMIN_RESET_PASSWORD".to_owned(),
-        )
-    })?;
-
-    Ok(ResetAdminOptions {
-        username,
-        display_name,
-        email,
-        password,
-    })
-}
-
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct InstallationStatusOutput {
@@ -343,8 +300,6 @@ struct InstallationStatusOutput {
     environment: String,
     seed_profile: String,
     changed: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    bootstrap_admin: Option<BootstrapAdminOutput>,
 }
 
 impl From<InstallationReport> for InstallationStatusOutput {
@@ -359,65 +314,6 @@ impl From<InstallationReport> for InstallationStatusOutput {
             environment: report.environment,
             seed_profile: report.seed_profile,
             changed: report.changed,
-            bootstrap_admin: report.bootstrap_admin.map(BootstrapAdminOutput::from),
-        }
-    }
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct BootstrapAdminOutput {
-    status: String,
-    tenant_id: String,
-    organization_id: String,
-    user_id: String,
-    username: String,
-    display_name: String,
-    email: String,
-    initial_password: String,
-    generated_password: bool,
-}
-
-impl From<BootstrapAdminReport> for BootstrapAdminOutput {
-    fn from(report: BootstrapAdminReport) -> Self {
-        Self {
-            status: report.status,
-            tenant_id: report.tenant_id,
-            organization_id: report.organization_id,
-            user_id: report.user_id,
-            username: report.username,
-            display_name: report.display_name,
-            email: report.email,
-            initial_password: report.initial_password,
-            generated_password: report.generated_password,
-        }
-    }
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct ResetAdminOutput {
-    status: &'static str,
-    tenant_id: String,
-    organization_id: String,
-    user_id: String,
-    username: String,
-    display_name: String,
-    email: String,
-    password_changed: bool,
-}
-
-impl From<ResetAdminPasswordReport> for ResetAdminOutput {
-    fn from(report: ResetAdminPasswordReport) -> Self {
-        Self {
-            status: "reset_admin",
-            tenant_id: report.tenant_id,
-            organization_id: report.organization_id,
-            user_id: report.user_id,
-            username: report.username,
-            display_name: report.display_name,
-            email: report.email,
-            password_changed: report.status == "reset",
         }
     }
 }
@@ -446,8 +342,6 @@ struct CatalogRefreshOutput {
     snapshot_id: Option<String>,
     sync_run_id: Option<String>,
     last_catalog_refresh_status: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    bootstrap_admin: Option<BootstrapAdminOutput>,
 }
 
 #[derive(Debug, Serialize)]
@@ -481,7 +375,6 @@ fn installer_error_code(error: &(dyn std::error::Error + 'static), message: &str
         return match installer_error {
             DatabaseInstallError::Database(_) => "database_error",
             DatabaseInstallError::Catalog(_) => "catalog_error",
-            DatabaseInstallError::Commerce(_) => "commerce_error",
             DatabaseInstallError::InvalidState(_) => "invalid_state",
         };
     }
@@ -543,6 +436,12 @@ fn runtime_config_profile_from_deployment_mode() -> RuntimeConfigProfile {
     }
 }
 
+impl InstallerCommand {
+    fn requires_schema_migration(&self) -> bool {
+        matches!(self, Self::Install | Self::Upgrade | Self::Ensure)
+    }
+}
+
 impl CatalogRefreshOutput {
     fn from_reports(refresh: CatalogRefreshReport, status_report: InstallationReport) -> Self {
         Self {
@@ -571,7 +470,6 @@ impl CatalogRefreshOutput {
             snapshot_id: refresh.snapshot_id,
             sync_run_id: refresh.sync_run_id,
             last_catalog_refresh_status: status_report.last_catalog_refresh_status,
-            bootstrap_admin: refresh.bootstrap_admin.map(BootstrapAdminOutput::from),
         }
     }
 }
@@ -714,19 +612,6 @@ fn status_code(status: &InstallationStatus) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sdkwork_contract_service::CommerceServiceError;
-
-    #[test]
-    fn installer_error_code_maps_commerce_bootstrap_errors() {
-        let error = DatabaseInstallError::Commerce(CommerceServiceError::storage(
-            "failed to seed commerce experience",
-        ));
-
-        assert_eq!(
-            "commerce_error",
-            installer_error_code(&error, &error.to_string())
-        );
-    }
 
     #[test]
     fn installer_error_code_maps_sqlx_pool_timeout_as_database_error() {
@@ -739,13 +624,14 @@ mod tests {
     }
 
     #[test]
-    fn postgres_installer_pool_options_use_bounded_acquire_timeout() {
-        let options = postgres_installer_pool_options(10);
-
-        assert_eq!(10, options.get_max_connections());
-        assert_eq!(
-            std::time::Duration::from_secs(POSTGRES_INSTALLER_POOL_ACQUIRE_TIMEOUT_SECONDS),
-            options.get_acquire_timeout()
+    fn only_schema_lifecycle_commands_run_explicit_migrations() {
+        assert!(InstallerCommand::Install.requires_schema_migration());
+        assert!(InstallerCommand::Upgrade.requires_schema_migration());
+        assert!(InstallerCommand::Ensure.requires_schema_migration());
+        assert!(!InstallerCommand::Status.requires_schema_migration());
+        assert!(
+            !InstallerCommand::RefreshCatalog(CatalogRefreshOptions::default())
+                .requires_schema_migration()
         );
     }
 

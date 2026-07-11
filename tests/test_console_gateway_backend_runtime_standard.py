@@ -24,10 +24,12 @@ class ConsoleGatewayBackendRuntimeStandardTest(unittest.TestCase):
         self.assertIn("app_gateway_traces_router", product_api_mod)
         self.assertIn("app_gateway_traces_router_with_read_store", product_api_mod)
         self.assertIn("/app/v3/api/ai/gateway/traces", app_gateway)
-        self.assertIn("TrustedRequestSubject", app_gateway)
-        self.assertIn("map_optional_app_user_subject", app_gateway)
+        self.assertIn("ResolvedAppSqlScopedSubject", app_gateway)
+        self.assertIn("map_optional_app_sql_subject", app_gateway)
         self.assertIn("AppGatewayTracesReadStore", app_gateway)
         self.assertIn("EmptyAppGatewayTracesReadStore", app_gateway)
+        self.assertIn("cursor_window_page_info", app_gateway)
+        self.assertIn("SdkWorkResultCode::InvalidParameter", app_gateway)
         self.assertIn("problem_from_wire_code", app_gateway)
         self.assertNotIn("PlusApiResult", app_gateway)
         self.assertIn('"5000"', app_gateway)
@@ -71,6 +73,8 @@ class ConsoleGatewayBackendRuntimeStandardTest(unittest.TestCase):
         for export_name in [
             "AppGatewayTraceItem",
             "AppGatewayTraceItems",
+            "AppGatewayTracesListPage",
+            "AppGatewayTracesListQuery",
             "AppGatewayTracesReadFuture",
             "AppGatewayTracesReadStore",
             "AppGatewayTracesSubject",
@@ -137,6 +141,12 @@ class ConsoleGatewayBackendRuntimeStandardTest(unittest.TestCase):
             self.assertIn("gateway_channel_label", store)
             self.assertIn("LIMIT", store)
             self.assertIn("SELECT", store)
+            self.assertIn("cursor_started_at", store)
+            self.assertIn("cursor_id", store)
+            self.assertIn("ESCAPE '\\'", store)
+            self.assertIn("ORDER BY t.started_at DESC, t.id DESC", store)
+            self.assertNotIn("COUNT(*) OVER()", store)
+            self.assertNotIn(" OFFSET ", store)
             self.assertNotIn("SELECT *", store)
             for sensitive_column in [
                 "request_payload_hash",
@@ -148,7 +158,7 @@ class ConsoleGatewayBackendRuntimeStandardTest(unittest.TestCase):
             ]:
                 self.assertNotIn(sensitive_column, store)
 
-    def test_console_gateway_read_models_reject_missing_trace_status_and_latency(self) -> None:
+    def test_console_gateway_read_models_require_status_and_bound_nullable_latency(self) -> None:
         for relative in [
             "crates/sdkwork-clawrouter-app-gateway-traces-repository-sqlx/src/sqlite.rs",
             "crates/sdkwork-clawrouter-app-gateway-traces-repository-sqlx/src/postgres.rs",
@@ -164,7 +174,10 @@ class ConsoleGatewayBackendRuntimeStandardTest(unittest.TestCase):
                     compact_store,
                 )
                 self.assertIn('required_integer_cell(&row, "status")?', compact_store)
-                self.assertIn('required_integer_cell(&row, "latency_ms")?', compact_store)
+                self.assertIn(
+                    'optional_integer_cell(&row, "latency_ms").unwrap_or(0)',
+                    compact_store,
+                )
                 self.assertIn("missing gateway trace {column} from database row", store)
                 self.assertIn("invalid gateway trace status from database row", store)
                 self.assertIn("invalid gateway trace latency_ms from database row", store)
@@ -210,17 +223,22 @@ class ConsoleGatewayBackendRuntimeStandardTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
         operation_marker = "api_path: /app/v3/api/ai/gateway/traces"
         operation_index = contract.index(operation_marker)
-        schema_index = contract.index("name: GatewayTracesResponse", operation_index)
+        schema_index = contract.index("name: GatewayTracesPage", operation_index)
         self.assertLess(schema_index - operation_index, 1200)
 
         for marker in [
             "name: GatewayTrace",
             "items:",
-            "enum: [GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD]",
+            "$ref: '#/components/schemas/PageInfo'",
+            "- name: cursor",
+            "- name: page_size",
+            "- name: q",
+            "- GET",
+            "- HEAD",
             "description: Masked client IP address.",
             "description: HTTP latency display value, for example 128ms.",
         ]:
-            self.assertIn(marker, contract[schema_index : schema_index + 2600])
+            self.assertIn(marker, contract[schema_index : schema_index + 4000])
 
     def test_console_gateway_generated_sdk_and_frontend_use_precise_trace_type(self) -> None:
         openapi = (
@@ -229,14 +247,14 @@ class ConsoleGatewayBackendRuntimeStandardTest(unittest.TestCase):
         sdk_ai = (
             ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "api" / "ai.ts"
         ).read_text(encoding="utf-8")
-        gateway_response_path = (
+        gateway_page_path = (
             ROOT
             / "sdks"
             / "clawrouter-app-sdk"
             / "clawrouter-app-sdk-typescript"
             / "src"
             / "types"
-            / "gateway-traces-response.ts"
+            / "gateway-traces-page.ts"
         )
         gateway_trace_path = (
             ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "types" / "gateway-trace.ts"
@@ -253,25 +271,38 @@ class ConsoleGatewayBackendRuntimeStandardTest(unittest.TestCase):
 
         self.assertIn('"GatewayTrace"', openapi)
         self.assertIn('"$ref": "#/components/schemas/GatewayTrace"', openapi)
-        self.assertTrue(gateway_response_path.exists())
+        self.assertTrue(gateway_page_path.exists())
         self.assertTrue(gateway_trace_path.exists())
 
-        gateway_response = gateway_response_path.read_text(encoding="utf-8")
+        gateway_page = gateway_page_path.read_text(encoding="utf-8")
         gateway_trace = gateway_trace_path.read_text(encoding="utf-8")
-        self.assertIn("import type { GatewayTrace } from './gateway-trace';", gateway_response)
-        self.assertIn("items: GatewayTrace[];", gateway_response)
+        self.assertIn("import type { GatewayTrace } from './gateway-trace';", gateway_page)
+        self.assertIn("items: GatewayTrace[];", gateway_page)
+        self.assertIn("pageInfo: PageInfo;", gateway_page)
         self.assertIn("export interface GatewayTrace", gateway_trace)
         self.assertIn("method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS' | 'HEAD';", gateway_trace)
         self.assertIn("status: number;", gateway_trace)
-        self.assertIn("async list(): Promise<GatewayTracesListResult>", sdk_ai)
+        self.assertIn("export interface AiGatewayTracesListParams", sdk_ai)
+        self.assertIn("cursor?: string;", sdk_ai)
+        self.assertIn("pageSize?: number;", sdk_ai)
+        self.assertIn("q?: string;", sdk_ai)
+        self.assertIn(
+            "async list(params?: AiGatewayTracesListParams): Promise<GatewayTracesPage>",
+            sdk_ai,
+        )
+        self.assertIn("{ name: 'cursor', value: params?.cursor", sdk_ai)
+        self.assertIn("{ name: 'page_size', value: params?.pageSize", sdk_ai)
         self.assertIn("appApiPath(`/ai/gateway/traces`)", sdk_ai)
-        self.assertIn("getClawRouterAppSdkClient().ai.gateway.traces.list()", frontend)
+        self.assertIn("getClawRouterAppSdkClient().ai.gateway.traces.list(options)", frontend)
 
         self.assertIn("GatewayTrace as SdkGatewayTrace", frontend)
         self.assertIn("export interface GatewayTrace", frontend)
         self.assertIn("id: SdkGatewayTrace['id'];", frontend)
         self.assertIn("method: SdkGatewayTrace['method'];", frontend)
-        self.assertIn("Promise<GatewayTrace[]>", frontend)
+        self.assertIn("export interface GatewayTracePage", frontend)
+        self.assertIn("pageInfo: GatewayTracePageInfo;", frontend)
+        self.assertIn("Promise<GatewayTracePage>", frontend)
+        self.assertIn("readGatewayTracePage(result, options.cursor)", frontend)
         self.assertNotIn("normalizeGatewayTrace", frontend)
 
     def test_console_gateway_ui_is_read_only_until_command_contract_exists(self) -> None:
@@ -296,17 +327,25 @@ class ConsoleGatewayBackendRuntimeStandardTest(unittest.TestCase):
         contract = (
             ROOT / "docs" / "schema-registry" / "frontend-field-contracts.yaml"
         ).read_text(encoding="utf-8")
-        gateway_operation_marker = (
-            "  - route: /console/gateway\n"
-            "    source: apps/sdkwork-clawrouter-pc/packages/"
-            "sdkwork-clawrouter-pc-console-gateway/src/gatewayService.ts\n"
-            "    operation: fetchTraces"
-        )
+        gateway_operation_marker = "- route: /console/ai/gateway/traces\n"
         gateway_operation_start = contract.index(gateway_operation_marker)
-        next_operation_start = contract.index("\n  - route:", gateway_operation_start + 1)
+        next_operation_start = contract.index("\n- route:", gateway_operation_start + 1)
         gateway_operation_contract = contract[gateway_operation_start:next_operation_start]
 
-        self.assertIn("GatewayService.fetchTraces()", gateway_view)
+        self.assertIn(
+            "GatewayService.fetchTraces({ pageSize: GATEWAY_TRACE_PAGE_SIZE })",
+            gateway_view,
+        )
+        self.assertIn("pageInfo?.hasMore", gateway_view)
+        self.assertIn("pageInfo.nextCursor", gateway_view)
+        self.assertIn("continuationTokenRef", gateway_view)
+        self.assertIn("mergeUniqueTraces", gateway_view)
+        self.assertIn("cursor,", gateway_view)
+        self.assertNotIn(".slice(", gateway_view)
+        self.assertNotIn("listAll", gateway_view + gateway_service)
+        self.assertNotIn("fetchAll", gateway_view + gateway_service)
+        self.assertNotIn("fetch(", gateway_view + gateway_service)
+        self.assertNotIn("axios", gateway_view + gateway_service)
         self.assertNotIn("readOnlyGatewayActions", gateway_view)
         self.assertNotIn("Read-only", gateway_view)
         self.assertNotIn("read-only", gateway_view)
@@ -343,7 +382,8 @@ class ConsoleGatewayBackendRuntimeStandardTest(unittest.TestCase):
         self.assertNotIn("static async updateLimits", gateway_service)
         self.assertNotIn("static async updateCompatibility", gateway_service)
         self.assertNotIn("static async fetchPayload", gateway_service)
-        self.assertIn("operation: fetchTraces", gateway_operation_contract)
+        self.assertIn("operation: list", gateway_operation_contract)
+        self.assertIn("operation_id: gateway.traces.list", gateway_operation_contract)
         self.assertNotIn("operation: updateLimits", gateway_operation_contract)
         self.assertNotIn("operation: updateCompatibility", gateway_operation_contract)
         self.assertNotIn("operation: replayTrace", gateway_operation_contract)
@@ -375,7 +415,18 @@ class ConsoleGatewayBackendRuntimeStandardTest(unittest.TestCase):
             / "packages"
             / "sdkwork-clawrouter-pc-i18n"
             / "src"
-            / "index.ts"
+            / "resources"
+            / "console"
+            / "gateway.ts"
+        ).read_text(encoding="utf-8")
+        i18n_registry = (
+            ROOT
+            / "apps"
+            / "sdkwork-clawrouter-pc"
+            / "packages"
+            / "sdkwork-clawrouter-pc-i18n"
+            / "src"
+            / "console-gateway-i18n-key-registry.ts"
         ).read_text(encoding="utf-8")
 
         for marker in [
@@ -398,10 +449,13 @@ class ConsoleGatewayBackendRuntimeStandardTest(unittest.TestCase):
             "console.gateway.states.loading",
             "console.gateway.states.loadErrorTitle",
             "console.gateway.states.loadErrorFallback",
+            "console.gateway.states.loadMoreErrorFallback",
             "console.gateway.states.emptyTitle",
             "console.gateway.states.emptyDescription",
+            "console.gateway.pagination.loadMore",
+            "console.gateway.pagination.loadingMore",
         ]:
-            self.assertIn(marker, gateway_view + gateway_service + i18n)
+            self.assertIn(marker, gateway_view + gateway_service + i18n + i18n_registry)
             self.assertGreaterEqual(i18n.count(f'"{marker}"'), 2)
 
         for hardcoded_copy in [

@@ -22,10 +22,9 @@ const TEST_OPERATOR_ID: i64 = 30;
 #[tokio::test]
 async fn admin_transaction_center_provider_accounts_use_standard_list_create_delete_semantics() {
     let store = Arc::new(TestAdminTransactionCenterStore::default());
-    let router =
-        sdkwork_clawrouter_router_service::api::admin_transaction_center_router_with_store(
-            store.clone(),
-        );
+    let router = sdkwork_clawrouter_router_service::api::admin_transaction_center_router_with_store(
+        store.clone(),
+    );
 
     let accounts = request_json(
         router.clone(),
@@ -125,7 +124,14 @@ impl AdminTransactionCenterStore for TestAdminTransactionCenterStore {
         &'a self,
         query: ListAdminTransactionRecordsQuery,
     ) -> AdminTransactionCenterFuture<'a, AdminTransactionCollection> {
-        Box::pin(async move { Ok(test_page(Vec::new(), query.page_no, query.page_size, query.offset)) })
+        Box::pin(async move {
+            Ok(test_page(
+                Vec::new(),
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
+        })
     }
 
     fn load_order<'a>(
@@ -139,14 +145,28 @@ impl AdminTransactionCenterStore for TestAdminTransactionCenterStore {
         &'a self,
         query: ListAdminTransactionChildRecordsQuery,
     ) -> AdminTransactionCenterFuture<'a, AdminTransactionCollection> {
-        Box::pin(async move { Ok(test_page(Vec::new(), query.page_no, query.page_size, query.offset)) })
+        Box::pin(async move {
+            Ok(test_page(
+                Vec::new(),
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
+        })
     }
 
     fn list_refunds<'a>(
         &'a self,
         query: ListAdminTransactionRecordsQuery,
     ) -> AdminTransactionCenterFuture<'a, AdminTransactionCollection> {
-        Box::pin(async move { Ok(test_page(Vec::new(), query.page_no, query.page_size, query.offset)) })
+        Box::pin(async move {
+            Ok(test_page(
+                Vec::new(),
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
+        })
     }
 
     fn load_refund<'a>(
@@ -160,28 +180,56 @@ impl AdminTransactionCenterStore for TestAdminTransactionCenterStore {
         &'a self,
         query: ListAdminTransactionRecordsQuery,
     ) -> AdminTransactionCenterFuture<'a, AdminTransactionCollection> {
-        Box::pin(async move { Ok(test_page(Vec::new(), query.page_no, query.page_size, query.offset)) })
+        Box::pin(async move {
+            Ok(test_page(
+                Vec::new(),
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
+        })
     }
 
     fn list_shipments<'a>(
         &'a self,
         query: ListAdminTransactionRecordsQuery,
     ) -> AdminTransactionCenterFuture<'a, AdminTransactionCollection> {
-        Box::pin(async move { Ok(test_page(Vec::new(), query.page_no, query.page_size, query.offset)) })
+        Box::pin(async move {
+            Ok(test_page(
+                Vec::new(),
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
+        })
     }
 
     fn list_shipment_tracking_events<'a>(
         &'a self,
         query: ListAdminTransactionChildRecordsQuery,
     ) -> AdminTransactionCenterFuture<'a, AdminTransactionCollection> {
-        Box::pin(async move { Ok(test_page(Vec::new(), query.page_no, query.page_size, query.offset)) })
+        Box::pin(async move {
+            Ok(test_page(
+                Vec::new(),
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
+        })
     }
 
     fn list_payment_providers<'a>(
         &'a self,
         query: ListAdminTransactionRecordsQuery,
     ) -> AdminTransactionCenterFuture<'a, AdminTransactionCollection> {
-        Box::pin(async move { Ok(test_page(Vec::new(), query.page_no, query.page_size, query.offset)) })
+        Box::pin(async move {
+            Ok(test_page(
+                Vec::new(),
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
+        })
     }
 
     fn list_payment_provider_accounts<'a>(
@@ -223,7 +271,10 @@ impl AdminTransactionCenterStore for TestAdminTransactionCenterStore {
             assert_eq!(TEST_TENANT_ID, command.subject.tenant_id);
             assert_eq!(TEST_ORGANIZATION_ID, command.subject.organization_id);
             assert_eq!(TEST_OPERATOR_ID, command.subject.operator_id);
-            assert_eq!("transaction-center-test-idempotency-key", command.idempotency_key);
+            assert_eq!(
+                "transaction-center-test-idempotency-key",
+                command.idempotency_key
+            );
             assert_eq!("stripe", command.provider_code);
             assert_eq!(Some("merchant".to_owned()), command.account_role);
             assert_eq!("merchant-1", command.merchant_id);
@@ -277,49 +328,98 @@ impl AdminTransactionCenterStore for TestAdminTransactionCenterStore {
         &'a self,
         query: ListAdminTransactionRecordsQuery,
     ) -> AdminTransactionCenterFuture<'a, AdminTransactionCollection> {
-        Box::pin(async move { Ok(test_page(Vec::new(), query.page_no, query.page_size, query.offset)) })
+        Box::pin(async move {
+            Ok(test_page(
+                Vec::new(),
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
+        })
     }
 
     fn list_payment_channels<'a>(
         &'a self,
         query: ListAdminTransactionRecordsQuery,
     ) -> AdminTransactionCenterFuture<'a, AdminTransactionCollection> {
-        Box::pin(async move { Ok(test_page(Vec::new(), query.page_no, query.page_size, query.offset)) })
+        Box::pin(async move {
+            Ok(test_page(
+                Vec::new(),
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
+        })
     }
 
     fn list_payment_route_rules<'a>(
         &'a self,
         query: ListAdminTransactionRecordsQuery,
     ) -> AdminTransactionCenterFuture<'a, AdminTransactionCollection> {
-        Box::pin(async move { Ok(test_page(Vec::new(), query.page_no, query.page_size, query.offset)) })
+        Box::pin(async move {
+            Ok(test_page(
+                Vec::new(),
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
+        })
     }
 
     fn list_payment_intents<'a>(
         &'a self,
         query: ListAdminTransactionRecordsQuery,
     ) -> AdminTransactionCenterFuture<'a, AdminTransactionCollection> {
-        Box::pin(async move { Ok(test_page(Vec::new(), query.page_no, query.page_size, query.offset)) })
+        Box::pin(async move {
+            Ok(test_page(
+                Vec::new(),
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
+        })
     }
 
     fn list_payment_attempts<'a>(
         &'a self,
         query: ListAdminTransactionRecordsQuery,
     ) -> AdminTransactionCenterFuture<'a, AdminTransactionCollection> {
-        Box::pin(async move { Ok(test_page(Vec::new(), query.page_no, query.page_size, query.offset)) })
+        Box::pin(async move {
+            Ok(test_page(
+                Vec::new(),
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
+        })
     }
 
     fn list_payment_webhook_events<'a>(
         &'a self,
         query: ListAdminTransactionRecordsQuery,
     ) -> AdminTransactionCenterFuture<'a, AdminTransactionCollection> {
-        Box::pin(async move { Ok(test_page(Vec::new(), query.page_no, query.page_size, query.offset)) })
+        Box::pin(async move {
+            Ok(test_page(
+                Vec::new(),
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
+        })
     }
 
     fn list_payment_reconciliation_runs<'a>(
         &'a self,
         query: ListAdminTransactionRecordsQuery,
     ) -> AdminTransactionCenterFuture<'a, AdminTransactionCollection> {
-        Box::pin(async move { Ok(test_page(Vec::new(), query.page_no, query.page_size, query.offset)) })
+        Box::pin(async move {
+            Ok(test_page(
+                Vec::new(),
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
+        })
     }
 }
 

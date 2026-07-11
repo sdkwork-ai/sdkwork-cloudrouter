@@ -29,12 +29,12 @@ async fn sqlite_model_ranking_refresh_store_generates_rank_snapshot_from_usage_f
     sqlx::query(
         r#"
         INSERT INTO ai_usage
-            (id, tenant_id, organization_id, status, catalog_key, model, modality, request_count, total_tokens, customer_charge_amount, cost_amount, currency, occurred_at)
+            (id, tenant_id, organization_id, status, catalog_key, model, modality, request_count, total_tokens, customer_charge_amount, currency, occurred_at)
         VALUES
-            (1, 0, 0, 1, 'openai/alpha', 'alpha', 1, 5, 5000, '2.500000', '250.000000', 'USD', '2026-05-07T10:00:00Z'),
-            (2, 0, 0, 1, 'openai/alpha', 'alpha', 1, 7, 9000, '3.000000', '300.000000', 'USD', '2026-05-07T11:00:00Z'),
-            (3, 0, 0, 1, 'anthropic/beta', 'beta', 1, 4, 2000, '1.000000', '100.000000', 'USD', '2026-05-07T12:00:00Z'),
-            (4, 0, 0, 1, 'openai/alpha', 'alpha', 1, 99, 99000, '9.900000', '990.000000', 'USD', '2026-04-01T00:00:00Z')
+            (1, 0, 0, 1, 'openai/alpha', 'alpha', 1, 5, 5000, '2.500000', 'USD', '2026-05-07T10:00:00Z'),
+            (2, 0, 0, 1, 'openai/alpha', 'alpha', 1, 7, 9000, '3.000000', 'USD', '2026-05-07T11:00:00Z'),
+            (3, 0, 0, 1, 'anthropic/beta', 'beta', 1, 4, 2000, '1.000000', 'USD', '2026-05-07T12:00:00Z'),
+            (4, 0, 0, 1, 'openai/alpha', 'alpha', 1, 99, 99000, '9.900000', 'USD', '2026-04-01T00:00:00Z')
         "#,
     )
     .execute(&pool)
@@ -92,14 +92,146 @@ async fn sqlite_model_ranking_refresh_store_generates_rank_snapshot_from_usage_f
     assert_eq!(3, rows[0].get::<i64, _>("previous_rank_no"));
     assert_eq!(12, rows[0].get::<i64, _>("request_count"));
     assert_eq!(14000, rows[0].get::<i64, _>("token_count"));
-    assert_eq!("5.5", rows[0].get::<String, _>("cost_amount"));
+    assert_eq!("5.500000000000", rows[0].get::<String, _>("cost_amount"));
     let metadata = rows[0].get::<String, _>("metadata");
     assert!(metadata.contains("\"windowStart\":\"2026-05-07T00:00:00Z\""));
     assert!(metadata.contains("\"refreshIntervalSeconds\":3600"));
 }
 
 #[tokio::test]
-async fn sqlite_model_ranking_refresh_store_uses_cost_amount_when_customer_charge_is_missing() {
+async fn sqlite_model_ranking_refresh_preserves_exact_cost_beyond_f64_precision() {
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .unwrap();
+    create_tables(&pool).await;
+
+    sqlx::query(
+        r#"
+        INSERT INTO ai_model
+            (id, tenant_id, organization_id, status, catalog_key, model, display_name, vendor_code, region_code, vendor_name_snapshot, capability, color_token, license_type, context_tokens, rank_score)
+        VALUES
+            (1, 0, 0, 1, 'openai/precise', 'precise', 'Precise', 'openai', 'global', 'OpenAI', 1, '#111111', 2, 128000, '100')
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        r#"
+        INSERT INTO ai_usage
+            (id, tenant_id, organization_id, status, catalog_key, model, modality, request_count, total_tokens, customer_charge_amount, currency, occurred_at)
+        VALUES
+            (1, 0, 0, 1, 'openai/precise', 'precise', 1, 1, 1, '9007199254740992.000000000001', 'USD', '2026-05-07T10:00:00Z'),
+            (2, 0, 0, 1, 'openai/precise', 'precise', 1, 1, 1, '0.000000000009', 'USD', '2026-05-07T11:00:00Z')
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    SqliteModelRankingRefreshStore::new(pool.clone())
+        .refresh_model_rankings(ModelRankingRefreshCommand {
+            tenant_id: 0,
+            organization_id: 0,
+            rank_scope: "commercial-default".to_owned(),
+            snapshot_date: "2026-05-08".to_owned(),
+            snapshot_period: "daily".to_owned(),
+            window_start: "2026-05-07T00:00:00Z".to_owned(),
+            window_end: "2026-05-08T00:00:00Z".to_owned(),
+            requested_at: "2026-05-08 00:05:00".to_owned(),
+            limit: 200,
+            refresh_interval_seconds: 3600,
+            cache_max_age_seconds: 60,
+            trigger_type: 1,
+        })
+        .await
+        .unwrap();
+
+    let cost_amount: String = sqlx::query_scalar(
+        r#"
+        SELECT cost_amount
+        FROM ai_model_rank_snapshot
+        WHERE snapshot_date = '2026-05-08'
+          AND catalog_key = 'openai/precise'
+        "#,
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+
+    assert_eq!("9007199254740992.000000000010", cost_amount);
+}
+
+#[tokio::test]
+async fn sqlite_model_ranking_refresh_prefers_exact_decimal_rank_score_beyond_f64_precision() {
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .unwrap();
+    create_tables(&pool).await;
+
+    sqlx::query(
+        r#"
+        INSERT INTO ai_model
+            (id, tenant_id, organization_id, status, catalog_key, model, display_name, vendor_code, region_code, vendor_name_snapshot, capability, color_token, license_type, context_tokens, rank_score)
+        VALUES
+            (1, 0, 0, 1, 'openai/precise-rank', 'precise-rank', 'Exact Decimal Winner', 'openai', 'global', 'OpenAI', 1, '#111111', 2, 128000, '9007199254740992.000000000001'),
+            (2, 0, 0, 1, 'openai/precise-rank', 'precise-rank', 'Binary Float Tie Loser', 'openai', 'global', 'OpenAI', 1, '#222222', 2, 128000, '9007199254740992.000000000000')
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        r#"
+        INSERT INTO ai_usage
+            (id, tenant_id, organization_id, status, catalog_key, model, modality, request_count, total_tokens, customer_charge_amount, currency, occurred_at)
+        VALUES
+            (1, 0, 0, 1, 'openai/precise-rank', 'precise-rank', 1, 1, 1, '1.000000', 'USD', '2026-05-07T10:00:00Z')
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    SqliteModelRankingRefreshStore::new(pool.clone())
+        .refresh_model_rankings(ModelRankingRefreshCommand {
+            tenant_id: 0,
+            organization_id: 0,
+            rank_scope: "commercial-default".to_owned(),
+            snapshot_date: "2026-05-08".to_owned(),
+            snapshot_period: "daily".to_owned(),
+            window_start: "2026-05-07T00:00:00Z".to_owned(),
+            window_end: "2026-05-08T00:00:00Z".to_owned(),
+            requested_at: "2026-05-08 00:05:00".to_owned(),
+            limit: 200,
+            refresh_interval_seconds: 3600,
+            cache_max_age_seconds: 60,
+            trigger_type: 1,
+        })
+        .await
+        .unwrap();
+
+    let model_id: i64 = sqlx::query_scalar(
+        r#"
+        SELECT model_id
+        FROM ai_model_rank_snapshot
+        WHERE snapshot_date = '2026-05-08'
+          AND catalog_key = 'openai/precise-rank'
+        "#,
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+
+    assert_eq!(1, model_id);
+}
+
+#[tokio::test]
+async fn sqlite_model_ranking_refresh_store_treats_missing_customer_charge_as_zero() {
     let pool = SqlitePoolOptions::new()
         .max_connections(1)
         .connect("sqlite::memory:")
@@ -121,10 +253,10 @@ async fn sqlite_model_ranking_refresh_store_uses_cost_amount_when_customer_charg
     sqlx::query(
         r#"
         INSERT INTO ai_usage
-            (id, tenant_id, organization_id, status, catalog_key, model, modality, request_count, total_tokens, customer_charge_amount, cost_amount, currency, occurred_at)
+            (id, tenant_id, organization_id, status, catalog_key, model, modality, request_count, total_tokens, customer_charge_amount, currency, occurred_at)
         VALUES
-            (1, 0, 0, 1, 'openai/alpha', 'alpha', 1, 5, 5000, NULL, '1.250000', 'USD', '2026-05-07T10:00:00Z'),
-            (2, 0, 0, 1, 'openai/alpha', 'alpha', 1, 2, 2000, '', '0.750000', 'USD', '2026-05-07T11:00:00Z')
+            (1, 0, 0, 1, 'openai/alpha', 'alpha', 1, 5, 5000, NULL, 'USD', '2026-05-07T10:00:00Z'),
+            (2, 0, 0, 1, 'openai/alpha', 'alpha', 1, 2, 2000, NULL, 'USD', '2026-05-07T11:00:00Z')
         "#,
     )
     .execute(&pool)
@@ -164,12 +296,11 @@ async fn sqlite_model_ranking_refresh_store_uses_cost_amount_when_customer_charg
     .await
     .unwrap();
 
-    assert_eq!("2", cost_amount);
+    assert_eq!("0.000000000000", cost_amount);
 }
 
 #[tokio::test]
-async fn sqlite_model_ranking_refresh_store_uses_legacy_cost_amount_when_customer_charge_defaults_to_zero(
-) {
+async fn sqlite_model_ranking_refresh_store_treats_zero_customer_charge_as_zero() {
     let pool = SqlitePoolOptions::new()
         .max_connections(1)
         .connect("sqlite::memory:")
@@ -191,9 +322,9 @@ async fn sqlite_model_ranking_refresh_store_uses_legacy_cost_amount_when_custome
     sqlx::query(
         r#"
         INSERT INTO ai_usage
-            (id, tenant_id, organization_id, status, catalog_key, model, modality, request_count, total_tokens, customer_charge_amount, cost_amount, currency, occurred_at)
+            (id, tenant_id, organization_id, status, catalog_key, model, modality, request_count, total_tokens, customer_charge_amount, currency, occurred_at)
         VALUES
-            (1, 0, 0, 1, 'openai/alpha', 'alpha', 1, 7, 1000, '0', '1.250000', 'USD', '2026-05-07T10:00:00Z')
+            (1, 0, 0, 1, 'openai/alpha', 'alpha', 1, 7, 1000, '0', 'USD', '2026-05-07T10:00:00Z')
         "#,
     )
     .execute(&pool)
@@ -233,7 +364,7 @@ async fn sqlite_model_ranking_refresh_store_uses_legacy_cost_amount_when_custome
     .await
     .unwrap();
 
-    assert_eq!("1.25", cost_amount);
+    assert_eq!("0.000000000000", cost_amount);
 }
 
 #[tokio::test]
@@ -259,9 +390,9 @@ async fn sqlite_model_ranking_refresh_store_rejects_regional_catalog_key_compati
     sqlx::query(
         r#"
         INSERT INTO ai_usage
-            (id, tenant_id, organization_id, status, catalog_key, model, modality, request_count, total_tokens, customer_charge_amount, cost_amount, currency, occurred_at)
+            (id, tenant_id, organization_id, status, catalog_key, model, modality, request_count, total_tokens, customer_charge_amount, currency, occurred_at)
         VALUES
-            (1, 0, 0, 1, 'openai/global/alpha', 'alpha', 1, 5, 5000, '2.500000', '2.500000', 'USD', '2026-05-07T10:00:00Z')
+            (1, 0, 0, 1, 'openai/global/alpha', 'alpha', 1, 5, 5000, '2.500000', 'USD', '2026-05-07T10:00:00Z')
         "#,
     )
     .execute(&pool)
@@ -329,12 +460,12 @@ async fn sqlite_model_ranking_refresh_store_excludes_deprecated_hidden_and_catal
     sqlx::query(
         r#"
         INSERT INTO ai_usage
-            (id, tenant_id, organization_id, status, catalog_key, model, modality, request_count, total_tokens, customer_charge_amount, cost_amount, currency, occurred_at)
+            (id, tenant_id, organization_id, status, catalog_key, model, modality, request_count, total_tokens, customer_charge_amount, currency, occurred_at)
         VALUES
-            (1, 0, 0, 1, 'openai/deprecated-alpha', 'deprecated-alpha', 1, 50, 50000, '50.000000', '50.000000', 'USD', '2026-05-07T10:00:00Z'),
-            (2, 0, 0, 1, 'openai/hidden-alpha', 'hidden-alpha', 1, 40, 40000, '40.000000', '40.000000', 'USD', '2026-05-07T10:00:00Z'),
-            (3, 0, 0, 1, 'openai/catalog-only-alpha', 'catalog-only-alpha', 1, 30, 30000, '30.000000', '30.000000', 'USD', '2026-05-07T10:00:00Z'),
-            (4, 0, 0, 1, 'openai/alpha', 'alpha', 1, 5, 5000, '5.000000', '5.000000', 'USD', '2026-05-07T10:00:00Z')
+            (1, 0, 0, 1, 'openai/deprecated-alpha', 'deprecated-alpha', 1, 50, 50000, '50.000000', 'USD', '2026-05-07T10:00:00Z'),
+            (2, 0, 0, 1, 'openai/hidden-alpha', 'hidden-alpha', 1, 40, 40000, '40.000000', 'USD', '2026-05-07T10:00:00Z'),
+            (3, 0, 0, 1, 'openai/catalog-only-alpha', 'catalog-only-alpha', 1, 30, 30000, '30.000000', 'USD', '2026-05-07T10:00:00Z'),
+            (4, 0, 0, 1, 'openai/alpha', 'alpha', 1, 5, 5000, '5.000000', 'USD', '2026-05-07T10:00:00Z')
         "#,
     )
     .execute(&pool)
@@ -468,9 +599,9 @@ async fn sqlite_model_ranking_refresh_store_normalizes_invalid_global_organizati
     sqlx::query(
         r#"
         INSERT INTO ai_usage
-            (id, tenant_id, organization_id, status, catalog_key, model, modality, request_count, total_tokens, customer_charge_amount, cost_amount, currency, occurred_at)
+            (id, tenant_id, organization_id, status, catalog_key, model, modality, request_count, total_tokens, customer_charge_amount, currency, occurred_at)
         VALUES
-            (1, 0, 0, 1, 'openai/alpha', 'alpha', 1, 5, 5000, '2.500000', '2.500000', 'USD', '2026-05-07T10:00:00Z')
+            (1, 0, 0, 1, 'openai/alpha', 'alpha', 1, 5, 5000, '2.500000', 'USD', '2026-05-07T10:00:00Z')
         "#,
     )
     .execute(&pool)
@@ -536,9 +667,9 @@ async fn sqlite_model_ranking_refresh_store_normalizes_snapshot_scope_and_period
     sqlx::query(
         r#"
         INSERT INTO ai_usage
-            (id, tenant_id, organization_id, status, catalog_key, model, modality, request_count, total_tokens, customer_charge_amount, cost_amount, currency, occurred_at)
+            (id, tenant_id, organization_id, status, catalog_key, model, modality, request_count, total_tokens, customer_charge_amount, currency, occurred_at)
         VALUES
-            (1, 0, 0, 1, 'openai/alpha', 'alpha', 1, 5, 5000, '2.500000', '2.500000', 'USD', '2026-05-07T10:00:00Z')
+            (1, 0, 0, 1, 'openai/alpha', 'alpha', 1, 5, 5000, '2.500000', 'USD', '2026-05-07T10:00:00Z')
         "#,
     )
     .execute(&pool)
@@ -625,7 +756,6 @@ async fn create_tables(pool: &SqlitePool) {
             request_count INTEGER,
             total_tokens INTEGER,
             customer_charge_amount TEXT,
-            cost_amount TEXT,
             currency TEXT,
             occurred_at TEXT
         )

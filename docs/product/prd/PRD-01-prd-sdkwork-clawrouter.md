@@ -95,7 +95,7 @@ Gateway 面保持行业兼容：
 ### 4.1 统一 API Router
 
 1. 支持 API Key 鉴权，兼容 `Authorization: Bearer`、`x-api-key`、`x-goog-api-key`、`?key=`。
-2. 支持模型别名、能力族识别、Provider 候选集、路由策略、健康快照、fallback。
+2. 支持模型别名、能力族识别、Provider 候选集、路由策略、渠道/凭证运行时健康事实、派生健康视图和 fallback；运行时真值写入 `ai_channel` / `ai_channel_credential`，运营快照由 `ops-worker` 异步投影。
 3. 支持流式和非流式请求，流式链路保留 request_id、usage finalize 和失败状态。
 4. 支持请求明细、路由决策日志、用量事实、计费事件、审计日志。
 5. 支持本地轻量 relay 和服务端完整 stateful 运行两种执行语义。
@@ -156,4 +156,3 @@ Gateway 面保持行业兼容：
 7. 同一套前端构建产物可以在本地桌面、私有化 Server、Docker、K8S 与统一 Rust app-api/backend-api 之间自由切换，不修改 API 路径和 DTO。
 8. 前端实现接入真实 API/SDK 后，视觉表现与 `apps/sdkwork-clawrouter-pc` 当前用户设计保持一致；如需调整视觉、布局、导航、色彩、字体、间距或组件形态，必须先获得用户明确确认。
 9. 发布前有单元测试、API 契约测试、数据库契约检查、基础压测和安全检查证据。
-

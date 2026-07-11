@@ -255,7 +255,10 @@ impl fmt::Display for ApiKeyIdentityError {
             }
             Self::EmptyCredential(_) => write!(formatter, "api key credential must not be empty"),
             Self::AmbiguousCredentialSources => {
-                write!(formatter, "multiple API key credential sources are not allowed")
+                write!(
+                    formatter,
+                    "multiple API key credential sources are not allowed"
+                )
             }
             Self::QueryKeyNotAllowed => {
                 write!(
@@ -1534,7 +1537,8 @@ fn parse_credential(
     }
 
     if authorization_count == 1 {
-        return parse_authorization_bearer(required_header_value(headers, AUTHORIZATION)?).map(Some);
+        return parse_authorization_bearer(required_header_value(headers, AUTHORIZATION)?)
+            .map(Some);
     }
     if api_key_header_count == 1 {
         return credential(

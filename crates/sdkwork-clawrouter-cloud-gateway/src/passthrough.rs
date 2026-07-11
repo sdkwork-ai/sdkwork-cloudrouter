@@ -167,7 +167,9 @@ where
     )
 }
 
-pub(crate) fn authenticated_gateway_passthrough_router_with_adapter_config_and_query_string_api_key_policy<C>(
+pub(crate) fn authenticated_gateway_passthrough_router_with_adapter_config_and_query_string_api_key_policy<
+    C,
+>(
     config: ProviderRelayConfig,
     catalog: Arc<C>,
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
@@ -217,7 +219,9 @@ where
     )
 }
 
-pub(crate) fn authenticated_provider_native_passthrough_router_with_adapter_config_and_query_string_api_key_policy<C>(
+pub(crate) fn authenticated_provider_native_passthrough_router_with_adapter_config_and_query_string_api_key_policy<
+    C,
+>(
     config: Option<ProviderRelayConfig>,
     catalog: Arc<C>,
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,

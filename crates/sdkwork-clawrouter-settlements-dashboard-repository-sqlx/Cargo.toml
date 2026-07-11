@@ -12,6 +12,7 @@ path = "src/lib.rs"
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 sqlx = { workspace = true }
+sdkwork-database-sqlx.workspace = true
 sdkwork_models_catalog_service.workspace = true
 
 [dev-dependencies]

@@ -1,3 +1,4 @@
+use sdkwork_database_sqlx::sqlite_decimal::register_decimal_functions;
 use sqlx::{Row, SqlitePool};
 
 use crate::domain::{DecimalValue, DomainError};
@@ -42,7 +43,7 @@ usage_by_request AS (
         CAST(COALESCE(SUM(COALESCE(prompt_tokens, 0)), 0) AS TEXT) AS prompt_tokens,
         CAST(COALESCE(SUM(COALESCE(cached_tokens, 0)), 0) AS TEXT) AS cached_tokens,
         CAST(COALESCE(SUM(COALESCE(completion_tokens, 0)), 0) AS TEXT) AS completion_tokens,
-        CAST(COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS TEXT) AS cost_amount,
+        sdkwork_decimal_sum(customer_charge_amount) AS customer_charge_amount,
         CAST(COALESCE(MAX(COALESCE(rate_multiplier, 1)), 1) AS TEXT) AS rate_multiplier,
         CAST(COALESCE(MAX(COALESCE(base_input_unit_price, 0)), 0) AS TEXT) AS base_input_unit_price,
         CAST(COALESCE(MAX(COALESCE(base_output_unit_price, 0)), 0) AS TEXT) AS base_output_unit_price,
@@ -106,7 +107,7 @@ SELECT
     COALESCE(u.prompt_tokens, CAST(COALESCE(t.prompt_tokens, 0) AS TEXT)) AS prompt_tokens,
     COALESCE(u.cached_tokens, CAST(COALESCE(t.cached_tokens, 0) AS TEXT)) AS cached_tokens,
     COALESCE(u.completion_tokens, CAST(COALESCE(t.completion_tokens, 0) AS TEXT)) AS completion_tokens,
-    COALESCE(u.cost_amount, '0') AS cost_amount,
+    COALESCE(u.customer_charge_amount, '0') AS customer_charge_amount,
     COALESCE(u.rate_multiplier, '1') AS rate_multiplier,
     COALESCE(u.base_input_unit_price, '0') AS base_input_unit_price,
     COALESCE(u.base_output_unit_price, '0') AS base_output_unit_price,
@@ -176,6 +177,10 @@ impl AdminRecordStore for SqliteAdminRecordStore {
         query: ListAdminRecordLogsQuery,
     ) -> AdminRecordReadFuture<'a, AdminRecordListPage> {
         Box::pin(async move {
+            let mut connection = self.pool.acquire().await.map_err(sql_error)?;
+            register_decimal_functions(&mut connection)
+                .await
+                .map_err(sql_error)?;
             let rows = sqlx::query(LIST_ADMIN_RECORD_LOGS)
                 .bind(query.subject.tenant_id)
                 .bind(query.subject.organization_id)
@@ -184,7 +189,7 @@ impl AdminRecordStore for SqliteAdminRecordStore {
                 .bind(like_filter(query.model.as_deref()))
                 .bind(query.page_size)
                 .bind(query.offset)
-                .fetch_all(&self.pool)
+                .fetch_all(&mut *connection)
                 .await
                 .map_err(sql_error)?;
 
@@ -230,7 +235,12 @@ fn row_to_log(row: sqlx::sqlite::SqliteRow) -> Result<AdminRecordLogItem, Domain
         input_tokens: integer_cell(&row, "prompt_tokens"),
         cache_read_tokens: integer_cell(&row, "cached_tokens"),
         output_tokens: integer_cell(&row, "completion_tokens"),
-        cost: decimal_string_cell(&row, "cost_amount", 6, "admin record cost")?,
+        cost: decimal_string_cell(
+            &row,
+            "customer_charge_amount",
+            6,
+            "admin record customer charge",
+        )?,
         multiplier: decimal_string_cell(
             &row,
             "rate_multiplier",

@@ -1,5 +1,6 @@
 use sdkwork_clawrouter_router_service::application::{
-    ListModelCatalogQuery, ModelCatalogQueryService, PriceAvailability,
+    ListModelCatalogQuery, ModelCatalogQueryService, PriceAvailability, PricingResolver,
+    ResolveModelPriceQuery,
 };
 use sdkwork_clawrouter_router_service::domain::{
     ensure_canonical_model_catalog_key, parse_model_catalog_identity, provider_native_model_id,
@@ -296,6 +297,41 @@ fn sql_queries_project_stable_codes_instead_of_enum_ordinals() {
 }
 
 #[test]
+fn pricing_queries_project_explicit_tenant_and_organization_scope() {
+    for (query_name, sql) in [
+        (
+            "postgres pricing plans",
+            PricingCatalogSql::load_pricing_plans(),
+        ),
+        ("postgres prices", PricingCatalogSql::load_prices()),
+    ] {
+        assert!(
+            sql.contains("tenant_id") && sql.contains("organization_id"),
+            "{query_name} must project tenant_id and organization_id for scope-aware row mapping"
+        );
+    }
+
+    let sqlite_source = include_str!("../src/infrastructure/sql/sqlite/queries.rs");
+    for (query_name, marker) in [
+        (
+            "sqlite pricing plans",
+            "pub const LOAD_PRICING_PLANS: &str = r#\"",
+        ),
+        ("sqlite prices", "pub const LOAD_PRICES: &str = r#\""),
+    ] {
+        let sql = sqlite_source
+            .split(marker)
+            .nth(1)
+            .and_then(|value| value.split("\"#;").next())
+            .expect("sqlite pricing query must be present");
+        assert!(
+            sql.contains("tenant_id") && sql.contains("organization_id"),
+            "{query_name} must project tenant_id and organization_id for scope-aware row mapping"
+        );
+    }
+}
+
+#[test]
 fn provider_route_queries_use_explicit_region_context_not_catalog_key_segments() {
     let postgres_sql = PricingCatalogSql::load_provider_routes();
     assert!(postgres_sql.contains("AS region_code"));
@@ -580,7 +616,7 @@ fn snapshot_load_queries_are_parameterless_and_cover_every_catalog_row_set() {
     );
     assert!(
         PricingCatalogSql::load_provider_routes().contains("FROM channel_resource_scope scope")
-            && PricingCatalogSql::load_provider_routes().contains("JOIN ai_resource r"),
+            && PricingCatalogSql::load_provider_routes().contains("JOIN ai_resource resource"),
         "provider route snapshot query must drive model-scoped routing from gateway-owned resources without sdkwork-models SoR tables"
     );
     assert!(
@@ -687,7 +723,8 @@ fn snapshot_load_queries_are_parameterless_and_cover_every_catalog_row_set() {
     );
     assert!(
         PricingCatalogSql::load_provider_channel_routes().contains("resource_group_tree")
-            && PricingCatalogSql::load_provider_channel_routes().contains("resource_group_leaf")
+            && PricingCatalogSql::load_provider_channel_routes()
+                .contains("routing_resource_reference")
             && PricingCatalogSql::load_provider_channel_routes()
                 .contains("child_resource_group_code"),
         "channel group snapshot query must recursively expand reusable resource groups"
@@ -781,6 +818,145 @@ fn snapshot_load_queries_are_parameterless_and_cover_every_catalog_row_set() {
 }
 
 #[test]
+fn provider_route_queries_inherit_only_resource_definitions_by_scope_specificity() {
+    let sqlite_source = include_str!("../src/infrastructure/sql/sqlite/queries.rs");
+    let sqlite_query = |constant: &str| {
+        sqlite_source
+            .split(constant)
+            .nth(1)
+            .and_then(|value| value.split("\"#;").next())
+            .expect("sqlite routing query must be present")
+    };
+    let sqlite_provider_routes = sqlite_query("pub const LOAD_PROVIDER_ROUTES: &str = r#\"");
+    let sqlite_provider_channel_routes =
+        sqlite_query("pub const LOAD_PROVIDER_CHANNEL_ROUTES: &str = r#\"");
+
+    for (query_name, sql) in [
+        (
+            "postgres provider route snapshot",
+            PricingCatalogSql::load_provider_routes(),
+        ),
+        (
+            "postgres provider channel route snapshot",
+            PricingCatalogSql::load_provider_channel_routes(),
+        ),
+        (
+            "postgres provider route list",
+            PricingCatalogSql::list_provider_routes(),
+        ),
+        (
+            "postgres provider route lookup",
+            PricingCatalogSql::find_provider_route(),
+        ),
+        ("sqlite provider route snapshot", sqlite_provider_routes),
+        (
+            "sqlite provider channel route snapshot",
+            sqlite_provider_channel_routes,
+        ),
+    ] {
+        for required_cte in [
+            "routing_scope_owner AS (",
+            "resource_group_candidate AS (",
+            "effective_resource_group AS (",
+            "resource_group_tree AS (",
+            "resource_reference_target AS (",
+            "resource_candidate AS (",
+        ] {
+            assert!(
+                sql.contains(required_cte),
+                "{query_name} must contain {required_cte}"
+            );
+        }
+        assert!(
+            sql.contains("active_channel_resource AS (")
+                || sql.contains("active_routing_resource_binding AS ("),
+            "{query_name} must start from active exact-scope routing bindings"
+        );
+        assert!(
+            sql.contains("ROW_NUMBER() OVER (") && sql.contains("WHERE candidate_rank = 1"),
+            "{query_name} must keep only the most specific definition for each stable code"
+        );
+        assert!(
+            sql.contains("resource_group.tenant_id = owner.tenant_id AND resource_group.organization_id = owner.organization_id")
+                && sql.contains("owner.tenant_id > 0 AND resource_group.tenant_id = owner.tenant_id AND resource_group.organization_id = 0")
+                && sql.contains("resource_group.tenant_id = 0 AND resource_group.organization_id = 0"),
+            "{query_name} must resolve resource groups through exact organization, tenant, then platform scope"
+        );
+        assert!(
+            sql.contains("resource.tenant_id = reference.scope_tenant_id AND resource.organization_id = reference.scope_organization_id")
+                && sql.contains("reference.scope_tenant_id > 0")
+                && sql.contains("resource.tenant_id = reference.scope_tenant_id")
+                && sql.contains("resource.organization_id = 0")
+                && sql.contains("resource.tenant_id = 0 AND resource.organization_id = 0"),
+            "{query_name} must resolve resources through exact organization, tenant, then platform scope"
+        );
+        assert!(
+            sql.contains("(resource_group.tenant_id > 0 OR resource_group.organization_id = 0)")
+                && sql.contains("(resource.tenant_id > 0 OR resource.organization_id = 0)"),
+            "{query_name} must reject invalid platform-tenant organization definitions"
+        );
+        assert!(
+            (sql.contains("referenced_group.resource_group_id = cr.resource_group_id")
+                || sql.contains(
+                    "referenced_group.resource_group_id = binding.resource_group_id"
+                ))
+                && sql.contains("referenced_resource.id = reference.resource_id"),
+            "{query_name} must resolve explicit visible resource and resource-group IDs to stable codes"
+        );
+        for active_filter in [
+            "resource_group.deleted_at IS NULL",
+            "resource_group.status = 1",
+            "item.deleted_at IS NULL",
+            "item.status = 1",
+            "referenced_resource.deleted_at IS NULL",
+            "referenced_resource.status = 1",
+            "resource.deleted_at IS NULL",
+            "resource.status = 1",
+        ] {
+            assert!(
+                sql.contains(active_filter),
+                "{query_name} must enforce {active_filter}"
+            );
+        }
+        assert!(
+            sql.contains("cr.tenant_id AS scope_tenant_id")
+                && sql.contains("cr.organization_id AS scope_organization_id")
+                && sql.contains("scope_tenant_id AS tenant_id")
+                && sql.contains("scope_organization_id AS organization_id"),
+            "{query_name} must preserve the exact binding owner after definition inheritance"
+        );
+    }
+
+    for (query_name, sql) in [
+        (
+            "postgres provider route snapshot",
+            PricingCatalogSql::load_provider_routes(),
+        ),
+        (
+            "postgres provider channel route snapshot",
+            PricingCatalogSql::load_provider_channel_routes(),
+        ),
+        ("sqlite provider route snapshot", sqlite_provider_routes),
+        (
+            "sqlite provider channel route snapshot",
+            sqlite_provider_channel_routes,
+        ),
+    ] {
+        assert!(
+            sql.contains("cc.tenant_id = c.tenant_id")
+                && sql.contains("cc.organization_id = c.organization_id")
+                && sql.contains("cc.channel_id = c.id"),
+            "{query_name} must keep credentials exact to the channel owner"
+        );
+        assert!(
+            sql.contains("p.tenant_id = c.tenant_id")
+                && sql.contains("p.organization_id = c.organization_id"),
+            "{query_name} must keep provider metadata exact to the channel owner"
+        );
+    }
+}
+
+#[test]
 fn provider_route_snapshot_derives_model_routes_from_normalized_channel_facts() {
     let sql = PricingCatalogSql::load_provider_routes();
 
@@ -789,7 +965,6 @@ fn provider_route_snapshot_derives_model_routes_from_normalized_channel_facts() 
         "provider route snapshot must not depend on the precomputed route candidate projection; it would grow as channel_group x api x model data"
     );
     for required_table in [
-        "ai_model",
         "ai_channel_resource",
         "ai_resource",
         "ai_channel",
@@ -801,7 +976,9 @@ fn provider_route_snapshot_derives_model_routes_from_normalized_channel_facts() 
         );
     }
     assert!(
-        sql.contains("m.catalog_key AS catalog_key")
+        sql.contains(
+            "COALESCE(NULLIF(scope.catalog_key, ''), NULLIF(scope.model, '')) AS catalog_key"
+        )
             && sql.contains("COALESCE(NULLIF(c.region_code, ''), 'global') AS region_code"),
         "provider route snapshot must keep model identity region-free and resolve region only from account context"
     );
@@ -1035,6 +1212,8 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
     );
 
     let plan = PricingPlanRow {
+        tenant_id: 0,
+        organization_id: 0,
         plan_code: "standard".to_owned(),
         base_price_side_code: "official_reference".to_owned(),
         default_multiplier: "1.300000".to_owned(),
@@ -1046,6 +1225,8 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
     assert_eq!(PriceSide::OfficialReference, plan.base_price_side);
 
     let price = ModelPriceRow {
+        tenant_id: 100001,
+        organization_id: 0,
         catalog_key: "openai/gpt-4o-mini".to_owned(),
         model: "gpt-4o-mini".to_owned(),
         region_code: "global".to_owned(),
@@ -1130,6 +1311,8 @@ fn row_mappers_reject_invalid_decimal_and_unknown_price_side() {
     assert!(invalid_group.try_into_domain().is_err());
 
     let invalid_price = ModelPriceRow {
+        tenant_id: 0,
+        organization_id: 0,
         catalog_key: "openai/gpt-4o-mini".to_owned(),
         model: "gpt-4o-mini".to_owned(),
         region_code: "global".to_owned(),
@@ -1266,7 +1449,7 @@ fn sql_catalog_snapshot_implements_pricing_catalog_from_database_rows() {
             categories: Vec::new(),
             groups: Vec::new(),
             search_query: None,
-            limit: None,
+            page_size: None,
             offset: None,
         })
         .unwrap();
@@ -1292,6 +1475,52 @@ fn sql_catalog_snapshot_implements_pricing_catalog_from_database_rows() {
         }
     }
 
+    let resolved = PricingResolver::new(&snapshot)
+        .resolve(ResolveModelPriceQuery {
+            api_key_id: 100,
+            channel_group_id: None,
+            model: "openai/gpt-4o-mini".to_owned(),
+            billing_meter: BillingMeter::LlmInputToken,
+            provider_code: Some("openrouter".to_owned()),
+            channel_id: Some(3001),
+            region_code: None,
+        })
+        .expect("tenant-scoped provider/channel upstream price must resolve");
+    assert_eq!(
+        "0.110000",
+        resolved
+            .upstream_cost
+            .as_ref()
+            .expect("tenant upstream price must be retained")
+            .unit_price
+            .to_fixed_string(6)
+    );
+
+    let public_page = service
+        .list_models(ListModelCatalogQuery {
+            api_key_id: None,
+            billing_meter: BillingMeter::LlmInputToken,
+            vendor_code: Some("openai".to_owned()),
+            vendor_codes: Vec::new(),
+            modalities: Vec::new(),
+            capabilities: Vec::new(),
+            categories: Vec::new(),
+            groups: Vec::new(),
+            search_query: None,
+            page_size: None,
+            offset: None,
+        })
+        .unwrap();
+    let public_item = &public_page.items[0];
+    assert_eq!(
+        None, public_item.lowest_upstream_cost_unit_price,
+        "anonymous model catalog must not expose tenant upstream costs"
+    );
+    assert!(matches!(
+        public_item.price_availability,
+        PriceAvailability::Unavailable { .. }
+    ));
+
     let policies = snapshot.list_routing_policies();
     assert_eq!(1, policies.len());
     assert_eq!(RoutingPolicyScope::ChannelGroup, policies[0].policy_scope);
@@ -1310,6 +1539,105 @@ fn sql_catalog_snapshot_implements_pricing_catalog_from_database_rows() {
     assert_eq!(
         Some("vault://providers/openrouter/account/main"),
         channel_routes[0].secret_ref.as_deref()
+    );
+}
+
+#[test]
+fn sql_catalog_snapshot_isolates_pricing_scope_and_prefers_specific_rows() {
+    let mut rows = priced_catalog_rows();
+    rows.pricing_plans = vec![
+        scoped_pricing_plan_row(0, 0, "shared", "1.000000"),
+        scoped_pricing_plan_row(100001, 0, "shared", "1.100000"),
+        scoped_pricing_plan_row(100001, 20, "shared", "1.200000"),
+        scoped_pricing_plan_row(200002, 0, "shared", "2.000000"),
+    ];
+    rows.prices = vec![
+        scoped_model_price_row(0, 0, "official_reference", "0.100000", None, None),
+        scoped_model_price_row(100001, 0, "official_reference", "0.200000", None, None),
+        scoped_model_price_row(100001, 20, "official_reference", "0.300000", None, None),
+        scoped_model_price_row(100001, 20, "official_reference", "0.310000", None, None),
+        scoped_model_price_row(200002, 0, "official_reference", "0.400000", None, None),
+        scoped_model_price_row(
+            200002,
+            0,
+            "upstream_cost",
+            "0.010000",
+            Some("foreign-provider"),
+            Some(9901),
+        ),
+    ];
+
+    let snapshot = SqlPricingCatalogSnapshot::from_rows(rows).unwrap();
+
+    for (tenant_id, organization_id, expected_multiplier) in [
+        (100001, 20, "1.200000"),
+        (100001, 21, "1.100000"),
+        (200002, 99, "2.000000"),
+        (300003, 30, "1.000000"),
+    ] {
+        let plan = snapshot
+            .find_pricing_plan_for_scope(tenant_id, organization_id, "shared")
+            .expect("visible pricing plan must resolve");
+        assert_eq!(
+            DecimalValue::parse(expected_multiplier).unwrap(),
+            plan.default_multiplier,
+            "pricing plan resolution must use exact organization, tenant-global, then platform scope"
+        );
+    }
+    assert_eq!(
+        DecimalValue::parse("1.000000").unwrap(),
+        snapshot
+            .find_pricing_plan("shared")
+            .expect("legacy plan lookup must expose only platform scope")
+            .default_multiplier
+    );
+
+    for (tenant_id, organization_id, expected_price) in [
+        (100001, 20, "0.300000"),
+        (100001, 21, "0.200000"),
+        (200002, 99, "0.400000"),
+        (300003, 30, "0.100000"),
+    ] {
+        let prices = snapshot.list_model_prices_for_scope(
+            tenant_id,
+            organization_id,
+            "openai/gpt-4o-mini",
+            PriceSide::OfficialReference,
+            BillingMeter::LlmInputToken,
+        );
+        assert_eq!(
+            1,
+            prices.len(),
+            "one business price identity must remain after scope selection and ordered-row deduplication"
+        );
+        assert_eq!(expected_price, prices[0].unit_price.to_fixed_string(6));
+    }
+
+    assert!(
+        snapshot
+            .list_model_prices_for_scope(
+                100001,
+                20,
+                "openai/gpt-4o-mini",
+                PriceSide::UpstreamCost,
+                BillingMeter::LlmInputToken,
+            )
+            .is_empty(),
+        "another tenant's provider/channel price must never be visible"
+    );
+    assert_eq!(
+        "0.100000",
+        snapshot
+            .find_model_price(
+                "openai/gpt-4o-mini",
+                PriceSide::OfficialReference,
+                BillingMeter::LlmInputToken,
+                None,
+                None,
+            )
+            .expect("legacy price lookup must expose platform scope")
+            .unit_price
+            .to_fixed_string(6)
     );
 }
 
@@ -1509,6 +1837,8 @@ fn sql_catalog_snapshot_rejects_regional_model_mapping_catalog_keys() {
 fn sql_catalog_snapshot_rejects_invalid_rows_before_serving_catalog() {
     let mut rows = priced_catalog_rows();
     rows.prices.push(ModelPriceRow {
+        tenant_id: 0,
+        organization_id: 0,
         catalog_key: "openai/gpt-4o-mini".to_owned(),
         model: "gpt-4o-mini".to_owned(),
         region_code: "global".to_owned(),
@@ -1759,6 +2089,8 @@ fn priced_catalog_rows() -> PricingCatalogRows {
         }],
         model_mappings: Vec::<ModelMappingRuleRow>::new(),
         pricing_plans: vec![PricingPlanRow {
+            tenant_id: 100001,
+            organization_id: 0,
             plan_code: "standard".to_owned(),
             base_price_side_code: "official_reference".to_owned(),
             default_multiplier: "1.200000".to_owned(),
@@ -1816,6 +2148,8 @@ fn priced_catalog_rows() -> PricingCatalogRows {
         }],
         prices: vec![
             ModelPriceRow {
+                tenant_id: 0,
+                organization_id: 0,
                 catalog_key: "openai/gpt-4o-mini".to_owned(),
                 model: "gpt-4o-mini".to_owned(),
                 region_code: "global".to_owned(),
@@ -1828,6 +2162,8 @@ fn priced_catalog_rows() -> PricingCatalogRows {
                 pricing_plan_code: None,
             },
             ModelPriceRow {
+                tenant_id: 100001,
+                organization_id: 0,
                 catalog_key: "openai/gpt-4o-mini".to_owned(),
                 model: "gpt-4o-mini".to_owned(),
                 region_code: "global".to_owned(),
@@ -1840,6 +2176,8 @@ fn priced_catalog_rows() -> PricingCatalogRows {
                 pricing_plan_code: None,
             },
             ModelPriceRow {
+                tenant_id: 100001,
+                organization_id: 0,
                 catalog_key: "openai/gpt-4o-mini".to_owned(),
                 model: "gpt-4o-mini".to_owned(),
                 region_code: "global".to_owned(),
@@ -1852,5 +2190,46 @@ fn priced_catalog_rows() -> PricingCatalogRows {
                 pricing_plan_code: None,
             },
         ],
+    }
+}
+
+fn scoped_pricing_plan_row(
+    tenant_id: i64,
+    organization_id: i64,
+    plan_code: &str,
+    default_multiplier: &str,
+) -> PricingPlanRow {
+    PricingPlanRow {
+        tenant_id,
+        organization_id,
+        plan_code: plan_code.to_owned(),
+        base_price_side_code: "official_reference".to_owned(),
+        default_multiplier: default_multiplier.to_owned(),
+        default_markup_amount: "0.000000".to_owned(),
+        currency: "USD".to_owned(),
+    }
+}
+
+fn scoped_model_price_row(
+    tenant_id: i64,
+    organization_id: i64,
+    price_side_code: &str,
+    unit_price: &str,
+    provider_code: Option<&str>,
+    channel_id: Option<i64>,
+) -> ModelPriceRow {
+    ModelPriceRow {
+        tenant_id,
+        organization_id,
+        catalog_key: "openai/gpt-4o-mini".to_owned(),
+        model: "gpt-4o-mini".to_owned(),
+        region_code: "global".to_owned(),
+        price_side_code: price_side_code.to_owned(),
+        billing_meter_code: "llm_input_token".to_owned(),
+        unit_price: unit_price.to_owned(),
+        currency: "USD".to_owned(),
+        provider_code: provider_code.map(str::to_owned),
+        channel_id,
+        pricing_plan_code: None,
     }
 }

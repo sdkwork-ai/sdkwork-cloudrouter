@@ -132,7 +132,6 @@ async fn create_schema(pool: &sqlx::SqlitePool) {
             request_count INTEGER,
             total_tokens INTEGER,
             customer_charge_amount TEXT,
-            cost_amount TEXT,
             modality INTEGER,
             occurred_at TEXT
         )

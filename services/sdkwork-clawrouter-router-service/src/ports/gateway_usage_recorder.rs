@@ -54,6 +54,26 @@ pub struct GatewayRequestTraceCommand {
     pub error_message_masked: Option<String>,
 }
 
+impl GatewayRequestTraceCommand {
+    pub fn validate(&self) -> DomainResult<()> {
+        positive_i64("tenant_id", self.tenant_id)?;
+        non_negative_i64("organization_id", self.organization_id)?;
+        required_text("request_id", &self.request_id, 128)?;
+        validate_http_status(self.http_status)?;
+        for (field, value) in [
+            ("prompt_tokens", self.prompt_tokens),
+            ("completion_tokens", self.completion_tokens),
+            ("cached_tokens", self.cached_tokens),
+            ("total_tokens", self.total_tokens),
+        ] {
+            non_negative_i64(field, value)?;
+        }
+        validate_optional_non_negative_i64("latency_ms", self.latency_ms)?;
+        validate_optional_non_negative_i64("ttft_ms", self.ttft_ms)?;
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GatewayUsageRecordCommand {
     pub request_id: String,
@@ -288,6 +308,63 @@ impl GatewayUsageQuantity {
 }
 
 impl GatewayUsageRecordCommand {
+    pub fn validate(&self) -> DomainResult<()> {
+        self.trace_command().validate()?;
+        non_negative_i64("modality", self.modality)?;
+        non_negative_i64("usage_type", self.usage_type)?;
+        required_text("billing_meter_code", &self.billing_meter_code, 64)?;
+        required_text("currency", &self.currency, 10)?;
+        if self.currency.len() < 3 {
+            return Err(DomainError::new(
+                "currency must contain at least three characters".to_owned(),
+            ));
+        }
+
+        for (field, value) in [
+            ("request_count", self.request_count),
+            ("result_count", self.result_count),
+            ("item_count", self.item_count),
+            ("character_count", self.character_count),
+            ("image_count", self.image_count),
+        ] {
+            non_negative_i64(field, value)?;
+        }
+
+        for (field, value) in [
+            ("billable_quantity", self.billable_quantity.as_str()),
+            ("base_input_unit_price", self.base_input_unit_price.as_str()),
+            (
+                "base_output_unit_price",
+                self.base_output_unit_price.as_str(),
+            ),
+            ("cache_read_unit_price", self.cache_read_unit_price.as_str()),
+            ("rate_multiplier", self.rate_multiplier.as_str()),
+            ("reference_multiplier", self.reference_multiplier.as_str()),
+            (
+                "official_reference_amount",
+                self.official_reference_amount.as_str(),
+            ),
+            (
+                "customer_charge_amount",
+                self.customer_charge_amount.as_str(),
+            ),
+            ("upstream_cost_amount", self.upstream_cost_amount.as_str()),
+        ] {
+            non_negative_decimal(field, value)?;
+        }
+        validate_optional_non_negative_decimal("audio_seconds", self.audio_seconds.as_deref())?;
+        validate_optional_non_negative_decimal("video_seconds", self.video_seconds.as_deref())?;
+
+        let pricing_snapshot: serde_json::Value = serde_json::from_str(&self.pricing_snapshot)
+            .map_err(|_| DomainError::new("pricing_snapshot must be valid JSON".to_owned()))?;
+        if !pricing_snapshot.is_object() {
+            return Err(DomainError::new(
+                "pricing_snapshot must be a JSON object".to_owned(),
+            ));
+        }
+        Ok(())
+    }
+
     pub fn apply_quantity(&mut self, quantity: GatewayUsageQuantity) {
         self.billable_quantity = quantity.billable_quantity;
         self.request_count = quantity.request_count;
@@ -344,6 +421,59 @@ impl GatewayUsageRecordCommand {
 fn non_negative_i64(field: &str, value: i64) -> DomainResult<()> {
     if value < 0 {
         return Err(DomainError::new(format!("{field} must be non-negative")));
+    }
+    Ok(())
+}
+
+fn validate_optional_non_negative_i64(field: &str, value: Option<i64>) -> DomainResult<()> {
+    if let Some(value) = value {
+        non_negative_i64(field, value)?;
+    }
+    Ok(())
+}
+
+fn validate_http_status(value: Option<u16>) -> DomainResult<()> {
+    if let Some(value) = value {
+        if !(100..=599).contains(&value) {
+            return Err(DomainError::new(
+                "http_status must be between 100 and 599".to_owned(),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn required_text(field: &str, value: &str, max_characters: usize) -> DomainResult<()> {
+    if value.is_empty() || value.trim() != value {
+        return Err(DomainError::new(format!(
+            "{field} must be non-empty and must not contain surrounding whitespace"
+        )));
+    }
+    if value.chars().count() > max_characters {
+        return Err(DomainError::new(format!(
+            "{field} must not exceed {max_characters} characters"
+        )));
+    }
+    Ok(())
+}
+
+fn non_negative_decimal(field: &str, value: &str) -> DomainResult<()> {
+    let decimal = DecimalValue::parse(value).map_err(|error| {
+        DomainError::new(format!(
+            "{field} must be a non-negative decimal value: {error}"
+        ))
+    })?;
+    if decimal < DecimalValue::ZERO {
+        return Err(DomainError::new(format!(
+            "{field} must be a non-negative decimal value"
+        )));
+    }
+    Ok(())
+}
+
+fn validate_optional_non_negative_decimal(field: &str, value: Option<&str>) -> DomainResult<()> {
+    if let Some(value) = value {
+        non_negative_decimal(field, value)?;
     }
     Ok(())
 }

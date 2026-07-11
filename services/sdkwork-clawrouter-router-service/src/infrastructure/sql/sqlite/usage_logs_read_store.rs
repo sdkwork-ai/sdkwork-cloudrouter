@@ -1,3 +1,5 @@
+use sdkwork_database_sqlx::sqlite_decimal::register_decimal_functions;
+use sqlx::sqlite::SqliteConnection;
 use sqlx::{Row, SqlitePool};
 
 use crate::domain::{DecimalValue, DomainError};
@@ -44,7 +46,7 @@ usage_by_request AS (
         CAST(COALESCE(SUM(COALESCE(prompt_tokens, 0)), 0) AS TEXT) AS prompt_tokens,
         CAST(COALESCE(SUM(COALESCE(cached_tokens, 0)), 0) AS TEXT) AS cached_tokens,
         CAST(COALESCE(SUM(COALESCE(completion_tokens, 0)), 0) AS TEXT) AS completion_tokens,
-        CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS cost_amount,
+        sdkwork_decimal_sum(customer_charge_amount) AS customer_charge_amount,
         CAST(COALESCE(MAX(COALESCE(rate_multiplier, 1)), 1) AS TEXT) AS rate_multiplier,
         CAST(COALESCE(MAX(COALESCE(base_input_unit_price, 0)), 0) AS TEXT) AS base_input_unit_price,
         CAST(COALESCE(MAX(COALESCE(base_output_unit_price, 0)), 0) AS TEXT) AS base_output_unit_price,
@@ -107,7 +109,7 @@ SELECT
     COALESCE(u.prompt_tokens, CAST(COALESCE(t.prompt_tokens, 0) AS TEXT)) AS prompt_tokens,
     COALESCE(u.cached_tokens, CAST(COALESCE(t.cached_tokens, 0) AS TEXT)) AS cached_tokens,
     COALESCE(u.completion_tokens, CAST(COALESCE(t.completion_tokens, 0) AS TEXT)) AS completion_tokens,
-    COALESCE(u.cost_amount, '0') AS cost_amount,
+    COALESCE(u.customer_charge_amount, '0') AS customer_charge_amount,
     COALESCE(u.rate_multiplier, '1') AS rate_multiplier,
     COALESCE(u.base_input_unit_price, '0') AS base_input_unit_price,
     COALESCE(u.base_output_unit_price, '0') AS base_output_unit_price,
@@ -257,7 +259,11 @@ impl UsageLogsReadStore for SqliteUsageLogsReadStore {
             let subject = subject.ok_or_else(|| {
                 DomainError::new("trusted request subject is required for usage logs")
             })?;
-            let total = load_usage_logs_total(&self.pool, &query, subject).await?;
+            let mut connection = self.pool.acquire().await.map_err(sql_error)?;
+            register_decimal_functions(&mut connection)
+                .await
+                .map_err(sql_error)?;
+            let total = load_usage_logs_total(&mut connection, &query, subject).await?;
             let rows = sqlx::query(LOAD_USAGE_LOGS)
                 .bind(subject.tenant_id)
                 .bind(subject.organization_id)
@@ -268,7 +274,7 @@ impl UsageLogsReadStore for SqliteUsageLogsReadStore {
                 .bind(status_code(query.status))
                 .bind(query.page_size)
                 .bind(query.offset)
-                .fetch_all(&self.pool)
+                .fetch_all(&mut *connection)
                 .await
                 .map_err(sql_error)?;
 
@@ -286,7 +292,7 @@ impl UsageLogsReadStore for SqliteUsageLogsReadStore {
 }
 
 async fn load_usage_logs_total(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     query: &UsageLogsQuery,
     subject: UsageLogsSubject,
 ) -> Result<i64, DomainError> {
@@ -298,7 +304,7 @@ async fn load_usage_logs_total(
         .bind(query.end_time.as_deref())
         .bind(keyword_like(query.keyword.as_deref()))
         .bind(status_code(query.status))
-        .fetch_one(pool)
+        .fetch_one(connection)
         .await
         .map_err(sql_error)?;
     Ok(integer_cell(&row, "total"))
@@ -329,7 +335,7 @@ fn row_to_usage_log(row: sqlx::sqlite::SqliteRow) -> Result<UsageLogItem, Domain
         output_tokens: integer_cell(&row, "completion_tokens"),
         cost: decimal_string_cell(
             &row,
-            "cost_amount",
+            "customer_charge_amount",
             USAGE_SPEND_DECIMAL_DIGITS,
             "usage log cost",
         )?,

@@ -42,9 +42,7 @@ impl DialectTestContext {
             .connect(&postgres_database_url)
             .await
             .with_context(|| {
-                format!(
-                    "connect PostgreSQL parity database from {POSTGRES_TEST_DATABASE_URL}"
-                )
+                format!("connect PostgreSQL parity database from {POSTGRES_TEST_DATABASE_URL}")
             })?;
         sqlx::query(&format!("CREATE SCHEMA {quoted_schema}"))
             .execute(&admin_pool)
@@ -59,12 +57,9 @@ impl DialectTestContext {
             .after_connect(move |connection, _metadata| {
                 let schema = schema_for_connections.clone();
                 Box::pin(async move {
-                    sqlx::query(&format!(
-                        "SET search_path TO {}",
-                        quote_identifier(&schema)
-                    ))
-                    .execute(&mut *connection)
-                    .await?;
+                    sqlx::query(&format!("SET search_path TO {}", quote_identifier(&schema)))
+                        .execute(&mut *connection)
+                        .await?;
                     Ok(())
                 })
             })

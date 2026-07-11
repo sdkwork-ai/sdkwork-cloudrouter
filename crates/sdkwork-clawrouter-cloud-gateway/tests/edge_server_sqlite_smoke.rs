@@ -22,7 +22,7 @@ use sdkwork_clawrouter_router_service::application::{
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::RefreshableSqlPricingCatalog;
 use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
-    DatabaseInstallOptions, DatabaseInstaller,
+    DatabaseInstallOptions, DatabaseInstaller, InstallationStatus,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::SqlitePricingCatalogLoader;
 use sdkwork_clawrouter_router_service::infrastructure::AppRuntimeGatewayHttpClient;
@@ -114,9 +114,9 @@ async fn ensure_seeded_installed_gateway_template(template_path: &Path) {
     let source_path = sqlite_path_from_database_url(source_catalog.database_url()).unwrap();
     let pool = source_catalog.open_pool().await.unwrap();
     DatabaseInstaller::for_sqlite(pool.clone())
-        .with_options(DatabaseInstallOptions::new("test", "commercial").unwrap())
+        .with_options(DatabaseInstallOptions::new("test", "standard").unwrap())
         .unwrap()
-        .ensure_installed()
+        .ensure_bootstrap_data()
         .await
         .unwrap();
     sqlx::query("VACUUM").execute(&pool).await.unwrap();
@@ -141,13 +141,12 @@ async fn seeded_installed_gateway_template_current(template_path: &Path) -> bool
         Ok(pool) => pool,
         Err(_) => return false,
     };
-    let installed_status = sqlx::query_scalar::<_, String>(
-        "SELECT status FROM system_installation_state WHERE id = 1",
-    )
-    .fetch_optional(&pool)
-    .await
-    .ok()
-    .flatten();
+    let installed_status = DatabaseInstaller::for_sqlite(pool.clone())
+        .with_options(DatabaseInstallOptions::new("test", "standard").unwrap())
+        .unwrap()
+        .status()
+        .await
+        .ok();
     let installed_model_count = sqlx::query_scalar::<_, i64>(
         r#"
         SELECT COUNT(1)
@@ -161,7 +160,7 @@ async fn seeded_installed_gateway_template_current(template_path: &Path) -> bool
     .unwrap_or_default();
     pool.close().await;
 
-    matches!(installed_status.as_deref(), Some("installed")) && installed_model_count > 0
+    matches!(installed_status, Some(InstallationStatus::Installed)) && installed_model_count > 0
 }
 
 fn acquire_template_file_lock(template_path: &Path) -> anyhow::Result<TemplateFileLock> {

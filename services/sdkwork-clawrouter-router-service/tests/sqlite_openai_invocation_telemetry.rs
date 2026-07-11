@@ -7,13 +7,12 @@ use sdkwork_clawrouter_router_service::api::{
 use sdkwork_clawrouter_router_service::application::AuthenticatedApiKeyContext;
 use sdkwork_clawrouter_router_service::domain::ProviderAuthProfile;
 use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::SqliteOpenAiInvocationTelemetryPlugin;
-use sqlx::sqlite::SqlitePoolOptions;
+use sdkwork_clawrouter_router_service_test_support::schema_sqlite_pool;
 use sqlx::{Row, SqlitePool};
 
 #[tokio::test]
 async fn sqlite_openai_invocation_telemetry_records_faults_and_recovers_on_success() {
-    let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
-    install_schema(&pool).await;
+    let pool = schema_sqlite_pool().await;
     seed_channel(&pool).await;
 
     let plugin = SqliteOpenAiInvocationTelemetryPlugin::new(pool.clone());
@@ -38,22 +37,6 @@ async fn sqlite_openai_invocation_telemetry_records_faults_and_recovers_on_succe
     assert_eq!(2_i64, channel.get::<i64, _>("health_status"));
     assert_eq!(1_i64, channel.get::<i64, _>("consecutive_error_count"));
 
-    let fault_snapshot = sqlx::query(
-        "SELECT health_status, error_code, provider_account_id FROM integration_provider_health_snapshot WHERE channel_id = 3001 ORDER BY id DESC LIMIT 1",
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
-    assert_eq!(2_i64, fault_snapshot.get::<i64, _>("health_status"));
-    assert_eq!(
-        "provider_relay_failed",
-        fault_snapshot.get::<String, _>("error_code")
-    );
-    assert_eq!(
-        3001_i64,
-        fault_snapshot.get::<i64, _>("provider_account_id")
-    );
-
     plugin
         .on_route_success(
             &context,
@@ -72,19 +55,12 @@ async fn sqlite_openai_invocation_telemetry_records_faults_and_recovers_on_succe
     assert_eq!(1_i64, channel.get::<i64, _>("health_status"));
     assert_eq!(0_i64, channel.get::<i64, _>("consecutive_error_count"));
 
-    let snapshot_count: i64 =
-        sqlx::query("SELECT COUNT(*) AS count FROM integration_provider_health_snapshot")
-            .fetch_one(&pool)
-            .await
-            .unwrap()
-            .get("count");
-    assert_eq!(2, snapshot_count);
+    assert_projection_table_absent(&pool).await;
 }
 
 #[tokio::test]
 async fn sqlite_openai_invocation_telemetry_honors_channel_circuit_breaker_threshold() {
-    let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
-    install_schema(&pool).await;
+    let pool = schema_sqlite_pool().await;
     seed_channel_with_circuit_breaker_policy(&pool, r#"{"failure_threshold":2}"#).await;
 
     let plugin = SqliteOpenAiInvocationTelemetryPlugin::new(pool.clone());
@@ -109,18 +85,6 @@ async fn sqlite_openai_invocation_telemetry_honors_channel_circuit_breaker_thres
     assert_eq!(1_i64, channel.get::<i64, _>("health_status"));
     assert_eq!(1_i64, channel.get::<i64, _>("consecutive_error_count"));
 
-    let first_fault_snapshot = sqlx::query(
-        "SELECT health_status, error_code FROM integration_provider_health_snapshot WHERE channel_id = 3001 ORDER BY id DESC LIMIT 1",
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
-    assert_eq!(1_i64, first_fault_snapshot.get::<i64, _>("health_status"));
-    assert_eq!(
-        "provider_relay_failed",
-        first_fault_snapshot.get::<String, _>("error_code")
-    );
-
     plugin
         .on_route_fault(
             &context,
@@ -142,12 +106,7 @@ async fn sqlite_openai_invocation_telemetry_honors_channel_circuit_breaker_thres
 
 #[tokio::test]
 async fn sqlite_openai_invocation_telemetry_counts_concurrent_faults_atomically() {
-    let pool = SqlitePoolOptions::new()
-        .max_connections(4)
-        .connect("sqlite::memory:")
-        .await
-        .unwrap();
-    install_schema(&pool).await;
+    let pool = schema_sqlite_pool().await;
     seed_channel_with_circuit_breaker_policy(&pool, r#"{"failure_threshold":3}"#).await;
 
     let plugin = SqliteOpenAiInvocationTelemetryPlugin::new(pool.clone());
@@ -182,19 +141,12 @@ async fn sqlite_openai_invocation_telemetry_counts_concurrent_faults_atomically(
     assert_eq!(2_i64, channel.get::<i64, _>("health_status"));
     assert_eq!(8_i64, channel.get::<i64, _>("consecutive_error_count"));
 
-    let snapshot_count: i64 =
-        sqlx::query("SELECT COUNT(*) AS count FROM integration_provider_health_snapshot")
-            .fetch_one(&pool)
-            .await
-            .unwrap()
-            .get("count");
-    assert_eq!(8, snapshot_count);
+    assert_projection_table_absent(&pool).await;
 }
 
 #[tokio::test]
 async fn sqlite_openai_invocation_telemetry_uses_default_threshold_when_policy_is_malformed() {
-    let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
-    install_schema(&pool).await;
+    let pool = schema_sqlite_pool().await;
     seed_channel_with_circuit_breaker_policy(&pool, r#"{"failureThreshold":2}"#).await;
 
     let plugin = SqliteOpenAiInvocationTelemetryPlugin::new(pool.clone());
@@ -218,25 +170,12 @@ async fn sqlite_openai_invocation_telemetry_uses_default_threshold_when_policy_i
     .unwrap();
     assert_eq!(2_i64, channel.get::<i64, _>("health_status"));
     assert_eq!(1_i64, channel.get::<i64, _>("consecutive_error_count"));
-
-    let fault_snapshot = sqlx::query(
-        "SELECT health_status, error_code FROM integration_provider_health_snapshot WHERE channel_id = 3001 ORDER BY id DESC LIMIT 1",
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
-    assert_eq!(2_i64, fault_snapshot.get::<i64, _>("health_status"));
-    assert_eq!(
-        "provider_relay_failed",
-        fault_snapshot.get::<String, _>("error_code")
-    );
 }
 
 #[tokio::test]
 async fn sqlite_openai_invocation_telemetry_does_not_trip_provider_health_for_non_retryable_http_statuses(
 ) {
-    let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
-    install_schema(&pool).await;
+    let pool = schema_sqlite_pool().await;
     seed_channel_with_circuit_breaker_policy(&pool, r#"{"failure_threshold":1}"#).await;
 
     let plugin = SqliteOpenAiInvocationTelemetryPlugin::new(pool.clone());
@@ -265,24 +204,12 @@ async fn sqlite_openai_invocation_telemetry_does_not_trip_provider_health_for_no
     assert_eq!(1_i64, channel.get::<i64, _>("health_status"));
     assert_eq!(0_i64, channel.get::<i64, _>("consecutive_error_count"));
 
-    let fault_snapshot = sqlx::query(
-        "SELECT health_status, http_status, error_code FROM integration_provider_health_snapshot WHERE channel_id = 3001 ORDER BY id DESC LIMIT 1",
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
-    assert_eq!(1_i64, fault_snapshot.get::<i64, _>("health_status"));
-    assert_eq!(400_i64, fault_snapshot.get::<i64, _>("http_status"));
-    assert_eq!(
-        "upstream_http_400",
-        fault_snapshot.get::<String, _>("error_code")
-    );
+    assert_projection_table_absent(&pool).await;
 }
 
 #[tokio::test]
 async fn sqlite_openai_invocation_telemetry_does_not_trip_provider_health_for_usage_failures() {
-    let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
-    install_schema(&pool).await;
+    let pool = schema_sqlite_pool().await;
     seed_channel(&pool).await;
 
     let plugin = SqliteOpenAiInvocationTelemetryPlugin::new(pool.clone());
@@ -307,23 +234,49 @@ async fn sqlite_openai_invocation_telemetry_does_not_trip_provider_health_for_us
     assert_eq!(1_i64, channel.get::<i64, _>("health_status"));
     assert_eq!(0_i64, channel.get::<i64, _>("consecutive_error_count"));
 
-    let usage_fault_snapshot = sqlx::query(
-        "SELECT health_status, error_code FROM integration_provider_health_snapshot WHERE channel_id = 3001 ORDER BY id DESC LIMIT 1",
+    assert_projection_table_absent(&pool).await;
+}
+
+#[tokio::test]
+async fn sqlite_openai_invocation_telemetry_cannot_update_a_foreign_tenant_channel() {
+    let pool = schema_sqlite_pool().await;
+    seed_channel(&pool).await;
+
+    let plugin = SqliteOpenAiInvocationTelemetryPlugin::new(pool.clone());
+    let context = invocation_context_for_scope(200002, 0);
+    let route = provider_route();
+
+    plugin
+        .on_route_fault(
+            &context,
+            &route,
+            &OpenAiInvocationFault::relay_transport("foreign tenant fault"),
+        )
+        .await
+        .unwrap();
+    plugin
+        .on_route_success(
+            &context,
+            &route,
+            &OpenAiInvocationRelayOutcome::json(200, serde_json::json!({})),
+        )
+        .await
+        .unwrap();
+
+    let channel = sqlx::query(
+        "SELECT health_status, consecutive_error_count, last_latency_ms FROM ai_channel WHERE id = 3001",
     )
     .fetch_one(&pool)
     .await
     .unwrap();
-    assert_eq!(1_i64, usage_fault_snapshot.get::<i64, _>("health_status"));
-    assert_eq!(
-        "provider_usage_record_failed",
-        usage_fault_snapshot.get::<String, _>("error_code")
-    );
+    assert_eq!(1_i64, channel.get::<i64, _>("health_status"));
+    assert_eq!(0_i64, channel.get::<i64, _>("consecutive_error_count"));
+    assert_eq!(None, channel.get::<Option<i64>, _>("last_latency_ms"));
 }
 
 #[tokio::test]
 async fn sqlite_openai_invocation_telemetry_records_route_latency_on_fault_and_success() {
-    let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
-    install_schema(&pool).await;
+    let pool = schema_sqlite_pool().await;
     seed_channel(&pool).await;
 
     let plugin = SqliteOpenAiInvocationTelemetryPlugin::new(pool.clone());
@@ -339,14 +292,6 @@ async fn sqlite_openai_invocation_telemetry_records_route_latency_on_fault_and_s
         )
         .await
         .unwrap();
-
-    let fault_snapshot = sqlx::query(
-        "SELECT latency_ms FROM integration_provider_health_snapshot WHERE channel_id = 3001 ORDER BY id DESC LIMIT 1",
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
-    assert_eq!(37_i64, fault_snapshot.get::<i64, _>("latency_ms"));
 
     let channel_latency: i64 =
         sqlx::query("SELECT last_latency_ms FROM ai_channel WHERE id = 3001")
@@ -369,14 +314,6 @@ async fn sqlite_openai_invocation_telemetry_records_route_latency_on_fault_and_s
         .await
         .unwrap();
 
-    let success_snapshot = sqlx::query(
-        "SELECT latency_ms FROM integration_provider_health_snapshot WHERE channel_id = 3001 ORDER BY id DESC LIMIT 1",
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
-    assert_eq!(19_i64, success_snapshot.get::<i64, _>("latency_ms"));
-
     let channel_latency: i64 =
         sqlx::query("SELECT last_latency_ms FROM ai_channel WHERE id = 3001")
             .fetch_one(&pool)
@@ -384,61 +321,6 @@ async fn sqlite_openai_invocation_telemetry_records_route_latency_on_fault_and_s
             .unwrap()
             .get("last_latency_ms");
     assert_eq!(19, channel_latency);
-}
-
-async fn install_schema(pool: &SqlitePool) {
-    sqlx::query(
-        r#"
-        CREATE TABLE ai_channel (
-            id INTEGER PRIMARY KEY,
-            uuid TEXT NOT NULL,
-            tenant_id INTEGER NOT NULL,
-            organization_id INTEGER NOT NULL,
-            status INTEGER NOT NULL,
-            updated_at TEXT,
-            version INTEGER,
-            deleted_at TEXT,
-            provider_id INTEGER,
-            provider_code TEXT,
-            health_status INTEGER,
-            last_latency_ms INTEGER,
-            circuit_breaker_policy TEXT,
-            consecutive_error_count INTEGER
-        )
-        "#,
-    )
-    .execute(pool)
-    .await
-    .unwrap();
-    sqlx::query(
-        r#"
-        CREATE TABLE integration_provider_health_snapshot (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            uuid TEXT NOT NULL,
-            tenant_id INTEGER NOT NULL,
-            organization_id INTEGER NOT NULL,
-            user_id INTEGER,
-            request_id TEXT,
-            trace_id TEXT,
-            status INTEGER NOT NULL,
-            created_at TEXT NOT NULL,
-            metadata TEXT NOT NULL,
-            provider_id INTEGER,
-            channel_id INTEGER,
-            provider_account_id INTEGER,
-            check_type INTEGER,
-            health_status INTEGER,
-            latency_ms INTEGER,
-            http_status INTEGER,
-            error_code TEXT,
-            error_message_masked TEXT,
-            checked_at TEXT
-        )
-        "#,
-    )
-    .execute(pool)
-    .await
-    .unwrap();
 }
 
 async fn seed_channel(pool: &SqlitePool) {
@@ -456,9 +338,9 @@ async fn seed_channel_with_optional_circuit_breaker_policy(
     sqlx::query(
         r#"
         INSERT INTO ai_channel
-            (id, uuid, tenant_id, organization_id, status, provider_id, provider_code, health_status, circuit_breaker_policy, consecutive_error_count)
+            (id, uuid, tenant_id, organization_id, channel_code, channel_name, channel_type, status, provider_id, provider_code, health_status, circuit_breaker_policy, consecutive_error_count)
         VALUES
-            (3001, 'channel-3001', 100001, 0, 1, 7001, 'openrouter', 1, ?, 0)
+            (3001, 'channel-3001', 100001, 0, 'openrouter-main', 'OpenRouter Main', 'relay', 1, 7001, 'openrouter', 1, ?, 0)
         "#,
     )
     .bind(policy_json)
@@ -467,15 +349,29 @@ async fn seed_channel_with_optional_circuit_breaker_policy(
     .unwrap();
 }
 
+async fn assert_projection_table_absent(pool: &SqlitePool) {
+    let table_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'integration_provider_health_snapshot'",
+    )
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    assert_eq!(0, table_count);
+}
+
 fn invocation_context() -> OpenAiInvocationContext {
+    invocation_context_for_scope(100001, 0)
+}
+
+fn invocation_context_for_scope(tenant_id: i64, organization_id: i64) -> OpenAiInvocationContext {
     let headers = HeaderMap::new();
     let uri: Uri = "/v1/chat/completions".parse().unwrap();
     OpenAiInvocationContext::new(
         OpenAiInvocationEndpoint::ChatCompletions,
         AuthenticatedApiKeyContext {
             api_key_id: 101,
-            tenant_id: 100001,
-            organization_id: 0,
+            tenant_id,
+            organization_id,
             user_id: 30,
             api_key_name_snapshot: "sk-live".to_owned(),
             group_id: 10,

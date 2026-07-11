@@ -304,7 +304,9 @@ where
     )
 }
 
-pub(crate) fn invocation_router_with_full_pipeline_provider_adapter_tenant_inflight_and_query_string_api_key_policy<C>(
+pub(crate) fn invocation_router_with_full_pipeline_provider_adapter_tenant_inflight_and_query_string_api_key_policy<
+    C,
+>(
     catalog: Arc<C>,
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
     dispatcher: Arc<dyn InvocationDispatcher>,

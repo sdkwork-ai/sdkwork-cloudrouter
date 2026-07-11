@@ -56,7 +56,7 @@ fn postgres_admin_analytics_read_store_keeps_sqlite_aligned_usage_fact_fallbacks
         "COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown') AS user_id",
         "COALESCE(NULLIF(owner_name_snapshot, ''), CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), 'unknown') AS user_name",
         "COUNT(DISTINCT COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown')) AS user_count",
-        "CAST(COALESCE(SUM(COALESCE(upstream_cost_amount, cost_amount, 0)), 0) AS TEXT) AS upstream_cost",
+        "CAST(COALESCE(SUM(COALESCE(upstream_cost_amount, 0)), 0) AS TEXT) AS upstream_cost",
         "COALESCE(modality, 0) AS modality",
         "GROUP BY COALESCE(modality, 0)",
     ] {

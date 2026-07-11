@@ -300,7 +300,7 @@ POST /backend/v3/api/ai/route_explain
 }
 ```
 
-后端 explain 必须从真实 selector、store、health snapshot、entitlement 和 policy 读取，不返回 demo/synthetic success。
+后端 explain 必须从真实 selector、store、基于 `ai_channel` / `ai_channel_credential` 事实派生的运行时健康视图、entitlement 和 policy 读取，不返回 demo/synthetic success；不得把 `integration_provider_health_snapshot` 当作同步路由真值。
 
 ## P2 Platform Capabilities
 

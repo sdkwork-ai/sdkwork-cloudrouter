@@ -3,10 +3,10 @@ use sdkwork_claw_provider_adapter_contract::AdapterInvocationShape;
 use sdkwork_clawrouter_router_service::application::{
     AuthenticatedApiKeyContext, DispatchExecutor, DispatchMode, Invocation, InvocationAccount,
     InvocationAdapterTarget, InvocationBilling, InvocationBody, InvocationDispatch,
-    InvocationDispatchResponse, InvocationInterceptor, InvocationProviderRequest,
-    InvocationRequest, InvocationResource, InvocationRouteCandidate, InvocationRouteCandidateKind,
-    InvocationRoutePlan, InvocationRouting, InvocationShape, InvocationSubject,
-    ResolvedProviderSecret,
+    InvocationDispatchResponse, InvocationErrorKind, InvocationInterceptor,
+    InvocationProviderRequest, InvocationRequest, InvocationResource, InvocationRouteCandidate,
+    InvocationRouteCandidateKind, InvocationRoutePlan, InvocationRouting, InvocationShape,
+    InvocationSubject, ResolvedProviderSecret,
 };
 use sdkwork_clawrouter_router_service::domain::{
     AiRouteModelRequirement, AiRouteStrategy, BillingMeter, DomainError, DomainResult,
@@ -73,11 +73,16 @@ fn candidate(provider_code: &str, channel_id: i64) -> InvocationRouteCandidate {
         credential_id: None,
         credential_rotation: None,
         base_url: Some(format!("https://provider.example/{provider_code}")),
-        secret_ref: Some(format!("vault://provider/{provider_code}")),
+        secret_ref: None,
         auth_profile: ProviderAuthProfile::default(),
         timeout_ms: None,
         retry_policy: None,
     }
+}
+
+fn with_secret_ref(mut candidate: InvocationRouteCandidate) -> InvocationRouteCandidate {
+    candidate.secret_ref = Some(format!("vault://provider/{}", candidate.provider_code));
+    candidate
 }
 
 fn with_retry_attempts(
@@ -538,7 +543,7 @@ async fn failover_rewrites_query_model_for_selected_candidate() {
             .and_then(|request| request.query.as_deref())
     );
     assert_eq!(
-        Some("https://provider.example/fallback/v1/models?model=fallback-model&limit=10"),
+        Some("https://provider.example/fallback/v1/models?model=fallback-model&page_size=10"),
         provider_requests[1]
             .as_ref()
             .and_then(|request| request.url.as_deref())
@@ -617,6 +622,8 @@ async fn failover_refreshes_adapter_target_for_selected_candidate() {
     );
     invocation.dispatch.mode = DispatchMode::InternalProviderAdapter;
     invocation.dispatch.adapter_target = Some(adapter_target());
+    invocation.resource.surface =
+        sdkwork_clawrouter_router_service::application::InvocationSurface::ProviderNative;
     invocation.request = InvocationRequest::new(Method::POST, "/v1/videos/text2video")
         .with_request_id("req-dispatch-adapter-refresh")
         .with_body(InvocationBody::json(json!({"prompt": "make video"})));
@@ -770,7 +777,10 @@ async fn failover_resolves_candidate_secret_and_auth_per_attempt() {
     });
     let mut invocation = invocation_with_plan(
         AiRouteStrategy::StatelessFailover,
-        vec![candidate("primary", 3001), candidate("fallback", 3002)],
+        vec![
+            with_secret_ref(candidate("primary", 3001)),
+            with_secret_ref(candidate("fallback", 3002)),
+        ],
     );
 
     DispatchExecutor::with_secret_resolver(Arc::new(dispatcher.clone()), secret_resolver)
@@ -815,7 +825,10 @@ async fn failover_skips_candidate_when_provider_request_preparation_fails() {
     });
     let mut invocation = invocation_with_plan(
         AiRouteStrategy::StatelessFailover,
-        vec![candidate("primary", 3001), candidate("fallback", 3002)],
+        vec![
+            with_secret_ref(candidate("primary", 3001)),
+            with_secret_ref(candidate("fallback", 3002)),
+        ],
     );
 
     DispatchExecutor::with_secret_resolver(Arc::new(dispatcher.clone()), secret_resolver)
@@ -855,7 +868,7 @@ async fn dispatch_executor_preserves_pre_resolved_matching_secret_without_resolv
     let dispatcher = FakeDispatcher::new(vec![ok(200, json!({"id": "ok"}))]);
     let mut invocation = invocation_with_plan(
         AiRouteStrategy::StatelessFailover,
-        vec![candidate("primary", 3001)],
+        vec![with_secret_ref(candidate("primary", 3001))],
     );
     invocation.dispatch.resolved_secret = Some(ResolvedProviderSecret {
         secret_ref: "vault://provider/primary".to_owned(),
@@ -943,7 +956,7 @@ async fn retries_rebuild_provider_request_and_secret_for_each_attempt() {
     let mut invocation = invocation_with_plan(
         AiRouteStrategy::StatelessFailover,
         vec![with_retry_attempts(
-            candidate("primary", 3001),
+            with_secret_ref(candidate("primary", 3001)),
             2,
             vec![503],
         )],
@@ -1004,6 +1017,33 @@ async fn failover_runs_after_same_candidate_retries_are_exhausted() {
 }
 
 #[tokio::test]
+async fn final_fallback_transport_error_does_not_return_stale_primary_response() {
+    let dispatcher = FakeDispatcher::new(vec![
+        ok(503, json!({"error": "primary unavailable"})),
+        dispatch_err("fallback_transport_failed", false),
+    ]);
+    let mut invocation = invocation_with_plan(
+        AiRouteStrategy::StatelessFailover,
+        vec![
+            with_retry_attempts(candidate("primary", 3001), 1, vec![503]),
+            with_retry_attempts(candidate("fallback", 3002), 1, vec![]),
+        ],
+    );
+
+    let error = DispatchExecutor::new(Arc::new(dispatcher.clone()))
+        .before(&mut invocation)
+        .await
+        .expect_err("latest fallback transport error must win over stale primary response");
+
+    assert_eq!(vec!["primary", "fallback"], dispatcher.providers());
+    assert_eq!(InvocationErrorKind::Dispatch, error.kind);
+    assert!(error.message.contains("fallback_transport_failed"));
+    assert!(invocation.dispatch.response.is_none());
+    assert_eq!(2, invocation.routing.attempted_routes.len());
+    assert_eq!(1, invocation.routing.route_plan.unwrap().selected_index);
+}
+
+#[tokio::test]
 async fn retries_same_candidate_after_retryable_dispatch_error() {
     let dispatcher = FakeDispatcher::new(vec![
         dispatch_err("provider_http_timeout", true),
@@ -1059,4 +1099,62 @@ async fn fail_closed_stops_after_first_retryable_failure() {
             .as_ref()
             .map(|response| response.status_code)
     );
+}
+
+#[tokio::test]
+async fn non_idempotent_sticky_create_ignores_explicit_retry_budget_without_key() {
+    let dispatcher = FakeDispatcher::new(vec![
+        ok(503, json!({"error": "retry later"})),
+        ok(200, json!({"id": "duplicate-must-not-run"})),
+    ]);
+    let mut invocation = invocation_with_plan(
+        AiRouteStrategy::CreateThenSticky,
+        vec![with_retry_attempts(
+            candidate("primary", 3001),
+            3,
+            vec![503],
+        )],
+    );
+
+    DispatchExecutor::new(Arc::new(dispatcher.clone()))
+        .before(&mut invocation)
+        .await
+        .expect("provider status remains the final response");
+
+    assert_eq!(vec!["primary"], dispatcher.providers());
+    assert_eq!(1, invocation.routing.attempted_routes.len());
+    assert_eq!(
+        Some(503),
+        invocation
+            .dispatch
+            .response
+            .as_ref()
+            .map(|response| response.status_code)
+    );
+}
+
+#[tokio::test]
+async fn sticky_create_with_idempotency_key_can_use_explicit_retry_budget() {
+    let dispatcher = FakeDispatcher::new(vec![
+        ok(503, json!({"error": "retry later"})),
+        ok(200, json!({"id": "created-on-retry"})),
+    ]);
+    let mut invocation = invocation_with_plan(
+        AiRouteStrategy::CreateThenSticky,
+        vec![with_retry_attempts(
+            candidate("primary", 3001),
+            2,
+            vec![503],
+        )],
+    );
+    invocation.request.idempotency_key = Some("create-idempotency-key".to_owned());
+
+    DispatchExecutor::new(Arc::new(dispatcher.clone()))
+        .before(&mut invocation)
+        .await
+        .expect("idempotency-protected retry");
+
+    assert_eq!(vec!["primary", "primary"], dispatcher.providers());
+    assert_eq!(2, invocation.routing.attempted_routes.len());
+    assert!(invocation.routing.attempted_routes[1].success);
 }

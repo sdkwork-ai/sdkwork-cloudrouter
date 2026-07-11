@@ -19,8 +19,11 @@ export const consoleGatewayI18nKeyRegistry = {
     "console.gateway.states.loading",
     "console.gateway.states.loadErrorTitle",
     "console.gateway.states.loadErrorFallback",
+    "console.gateway.states.loadMoreErrorFallback",
     "console.gateway.states.emptyTitle",
     "console.gateway.states.emptyDescription",
+    "console.gateway.pagination.loadMore",
+    "console.gateway.pagination.loadingMore",
   ],
   zh: [
     "console.gateway.title",
@@ -42,7 +45,10 @@ export const consoleGatewayI18nKeyRegistry = {
     "console.gateway.states.loading",
     "console.gateway.states.loadErrorTitle",
     "console.gateway.states.loadErrorFallback",
+    "console.gateway.states.loadMoreErrorFallback",
     "console.gateway.states.emptyTitle",
     "console.gateway.states.emptyDescription",
+    "console.gateway.pagination.loadMore",
+    "console.gateway.pagination.loadingMore",
   ],
 } as const;

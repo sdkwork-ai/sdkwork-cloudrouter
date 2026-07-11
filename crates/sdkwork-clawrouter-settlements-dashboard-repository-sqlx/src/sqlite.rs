@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use sdkwork_database_sqlx::sqlite_decimal::register_decimal_functions;
+use sqlx::sqlite::SqliteConnection;
 use sqlx::SqlitePool;
 
 use crate::error::{store_error, RepositoryResult};
@@ -93,11 +95,11 @@ ORDER BY s.period_end DESC, i.statement_id DESC, i.item_type ASC, i.model ASC
 const LOAD_SETTLEMENT_CHART: &str = r#"
 SELECT
     substr(CAST(occurred_at AS TEXT), 1, 10) AS day,
-    CAST(COALESCE(SUM(CASE WHEN modality = 1 THEN COALESCE(customer_charge_amount, 0) ELSE 0 END), 0) AS TEXT) AS text_cost,
-    CAST(COALESCE(SUM(CASE WHEN modality = 2 THEN COALESCE(customer_charge_amount, 0) ELSE 0 END), 0) AS TEXT) AS image_cost,
-    CAST(COALESCE(SUM(CASE WHEN modality = 5 THEN COALESCE(customer_charge_amount, 0) ELSE 0 END), 0) AS TEXT) AS video_cost,
-    CAST(COALESCE(SUM(CASE WHEN modality = 3 THEN COALESCE(customer_charge_amount, 0) ELSE 0 END), 0) AS TEXT) AS audio_cost,
-    CAST(COALESCE(SUM(CASE WHEN modality = 4 THEN COALESCE(customer_charge_amount, 0) ELSE 0 END), 0) AS TEXT) AS music_cost
+    sdkwork_decimal_sum(CASE WHEN modality = 1 THEN customer_charge_amount END) AS text_cost,
+    sdkwork_decimal_sum(CASE WHEN modality = 2 THEN customer_charge_amount END) AS image_cost,
+    sdkwork_decimal_sum(CASE WHEN modality = 5 THEN customer_charge_amount END) AS video_cost,
+    sdkwork_decimal_sum(CASE WHEN modality = 3 THEN customer_charge_amount END) AS audio_cost,
+    sdkwork_decimal_sum(CASE WHEN modality = 4 THEN customer_charge_amount END) AS music_cost
 FROM ai_usage
 WHERE status = 1
   AND tenant_id = ?1
@@ -129,8 +131,19 @@ impl SettlementsDashboardReadStore for SqliteSettlementsDashboardReadStore {
     ) -> SettlementsDashboardReadFuture<'a> {
         Box::pin(async move {
             let subject = require_subject(subject)?;
-            let bills = load_settlement_bills(&self.pool, &query, subject).await?;
-            let chart_data = load_settlement_chart(&self.pool, &query, subject).await?;
+            let mut connection = self.pool.acquire().await.map_err(|error| {
+                store_error(
+                    "failed to acquire settlements dashboard SQLite connection",
+                    error,
+                )
+            })?;
+            register_decimal_functions(&mut connection)
+                .await
+                .map_err(|error| {
+                    store_error("failed to register settlements decimal functions", error)
+                })?;
+            let bills = load_settlement_bills(&mut connection, &query, subject).await?;
+            let chart_data = load_settlement_chart(&mut connection, &query, subject).await?;
 
             Ok(SettlementsDashboardSnapshot { chart_data, bills })
         })
@@ -138,7 +151,7 @@ impl SettlementsDashboardReadStore for SqliteSettlementsDashboardReadStore {
 }
 
 async fn load_settlement_bills(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     query: &SettlementsDashboardQuery,
     subject: SettlementsDashboardSubject,
 ) -> RepositoryResult<Vec<SettlementBill>> {
@@ -148,7 +161,7 @@ async fn load_settlement_bills(
         .bind(subject.organization_id)
         .bind(subject.user_id)
         .bind(year.as_deref())
-        .fetch_all(pool)
+        .fetch_all(&mut *connection)
         .await
         .map_err(|error| store_error("settlements dashboard query", error))?;
 
@@ -165,7 +178,7 @@ async fn load_settlement_bills(
         .bind(subject.organization_id)
         .bind(subject.user_id)
         .bind(year.as_deref())
-        .fetch_all(pool)
+        .fetch_all(&mut *connection)
         .await
         .map_err(|error| store_error("settlements dashboard query", error))?;
 
@@ -180,7 +193,7 @@ async fn load_settlement_bills(
 }
 
 async fn load_settlement_chart(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     query: &SettlementsDashboardQuery,
     subject: SettlementsDashboardSubject,
 ) -> RepositoryResult<Vec<SettlementChartPoint>> {
@@ -190,7 +203,7 @@ async fn load_settlement_chart(
         .bind(subject.organization_id)
         .bind(subject.user_id)
         .bind(year.as_deref())
-        .fetch_all(pool)
+        .fetch_all(&mut *connection)
         .await
         .map_err(|error| store_error("settlements dashboard query", error))?;
 

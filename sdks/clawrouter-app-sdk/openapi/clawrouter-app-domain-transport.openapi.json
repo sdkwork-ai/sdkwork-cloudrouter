@@ -2527,14 +2527,14 @@
         "description": "Promotions user coupons wallet retrieve result schema exposed by Claw Router.",
         "x-operation-id": "promotions.userCoupons.wallet.retrieve"
       },
-      "RechargesOrdersCancellationsCreateResult": {
+      "RechargesOrdersCancelResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by recharges orders cancellations create result.",
+            "description": "Object schema used by recharges orders cancel result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -2551,8 +2551,8 @@
             "type": "object"
           }
         ],
-        "description": "Recharges orders cancellations create result schema exposed by Claw Router.",
-        "x-operation-id": "recharges.orders.cancellations.create"
+        "description": "Recharges orders cancel result schema exposed by Claw Router.",
+        "x-operation-id": "recharges.orders.cancel"
       },
       "RechargesOrdersCreateResult": {
         "allOf": [
@@ -11681,7 +11681,7 @@
     "/app/v3/api/recharges/orders/{orderId}/cancellations": {
       "post": {
         "description": "Cancel. Reads commerce. Writes ops_audit_log. File targets none.",
-        "operationId": "recharges.orders.cancellations.create",
+        "operationId": "recharges.orders.cancel",
         "parameters": [
           {
             "description": "Order id path parameter.",
@@ -11694,15 +11694,15 @@
           }
         ],
         "responses": {
-          "201": {
+          "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RechargesOrdersCancellationsCreateResult"
+                  "$ref": "#/components/schemas/RechargesOrdersCancelResult"
                 }
               }
             },
-            "description": "Created"
+            "description": "OK"
           },
           "400": {
             "content": {
@@ -11763,7 +11763,7 @@
         "x-route-scope": "console",
         "x-sdk-domain": "commerce",
         "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "recharges.orders.cancellations",
+        "x-sdkwork-resource": "recharges.orders",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"

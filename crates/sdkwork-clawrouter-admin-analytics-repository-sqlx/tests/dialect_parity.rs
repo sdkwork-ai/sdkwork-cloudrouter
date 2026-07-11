@@ -29,7 +29,6 @@ async fn postgres_and_sqlite_return_the_same_scoped_analytics_snapshot() -> anyh
             total_tokens BIGINT,
             customer_charge_amount NUMERIC,
             upstream_cost_amount NUMERIC,
-            cost_amount NUMERIC,
             occurred_at TEXT
         )
         "#,
@@ -51,14 +50,14 @@ async fn postgres_and_sqlite_return_the_same_scoped_analytics_snapshot() -> anyh
             id, tenant_id, organization_id, user_id, owner_type, owner_id, request_id,
             status, owner_name_snapshot, catalog_key, model, modality, request_count,
             prompt_tokens, completion_tokens, cached_tokens, total_tokens,
-            customer_charge_amount, upstream_cost_amount, cost_amount, occurred_at
+            customer_charge_amount, upstream_cost_amount, occurred_at
         ) VALUES
             (1, 100001, 0, 101, 1, 101, 'req-1', 1, 'Alice',
-             'openai/gpt-4o', 'gpt-4o', 1, 3, 100, 200, 0, 300, 12.0, 6.0, 6.0,
+             'openai/gpt-4o', 'gpt-4o', 1, 3, 100, 200, 0, 300, 12.0, 6.0,
              '2026-05-01 10:00:00'),
             (2, 100002, 0, 999, 1, 999, 'req-other', 1, 'Other',
              'openai/gpt-4o', 'gpt-4o', 1, 50, 5000, 5000, 0, 10000, 999.0, 999.0,
-             999.0, '2026-05-01 10:00:00')
+             '2026-05-01 10:00:00')
         "#,
         r#"
         INSERT INTO ai_request_trace (

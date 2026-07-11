@@ -16,6 +16,7 @@ use sdkwork_claw_config::{
     StartupInstallMode, TrustedSubjectConfig,
 };
 use sdkwork_claw_http::TrustedRequestSubject;
+use sdkwork_clawrouter_database_host::connect_claw_router_database;
 use sdkwork_clawrouter_router_service::application::{
     default_desktop_cache_manager, default_service_cache_manager,
     AiRoutingCacheInvalidatingAdminAiResourceStore,
@@ -34,9 +35,9 @@ use sdkwork_clawrouter_router_service::infrastructure::provider::{
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::RefreshableSqlPricingCatalog;
 use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
-    log_bootstrap_admin_report, DatabaseInstallError, DatabaseInstaller,
+    DatabaseInstallError, DatabaseInstaller,
 };
-use sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_claw_sqlite_runtime_pool;
+use sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_standard_database_pool;
 use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::{
     PostgresAdminAnalyticsReadStore, PostgresAdminAnnouncementStore,
     PostgresAdminApiKeyRateLimitStore, PostgresAdminAuthSettingsStore, PostgresAdminCatalogStore,
@@ -72,6 +73,7 @@ use sdkwork_clawrouter_router_service::ports::{
     PricingCatalog, ProviderHealthProbe, RuntimeRegionSettingsStore, SiteSettingsStore,
     UnconfiguredProviderHealthProbe,
 };
+use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_models_catalog_repository_sqlx::{
     PostgresAdminAiResourceStore as CatalogPostgresAdminAiResourceStore,
     PostgresModelCatalogAdminStore, PostgresModelRankingRefreshStore,
@@ -1161,6 +1163,33 @@ pub async fn router_with_database_api_key_trusted_subject_app_session_provider_s
     .await
 }
 
+/// Builds the admin gateway with an explicitly supplied health probe.
+///
+/// The production entry points construct the probe from the provider secret
+/// map.  Keeping this dependency injectable lets framework/integration tests
+/// exercise the complete channel command path without weakening the relay's
+/// HTTPS and SSRF protections.
+pub async fn router_with_database_api_key_trusted_subject_app_session_provider_health_probe_and_startup_install_mode(
+    config: DatabaseConfig,
+    api_key_config: ApiKeySecurityConfig,
+    trusted_subject_config: TrustedSubjectConfig,
+    app_session_config: AppSessionConfig,
+    provider_health_probe: Arc<dyn ProviderHealthProbe + Send + Sync>,
+    startup_install_mode: StartupInstallMode,
+) -> Result<Router, ProductCatalogRouterError> {
+    router_with_database_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode_with_probe(
+        config,
+        Some(api_key_config),
+        Some(trusted_subject_config),
+        Some(app_session_config),
+        None,
+        startup_install_mode,
+        None,
+        Some(provider_health_probe),
+    )
+    .await
+}
+
 async fn router_with_database_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config(
     config: DatabaseConfig,
     api_key_config: Option<ApiKeySecurityConfig>,
@@ -1168,13 +1197,14 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_optional_p
     app_session_config: Option<AppSessionConfig>,
     provider_secret_map_config: Option<ProviderSecretMapConfig>,
 ) -> Result<Router, ProductCatalogRouterError> {
-    router_with_database_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode(
+    router_with_database_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode_with_probe(
         config,
         api_key_config,
         trusted_subject_config,
         app_session_config,
         provider_secret_map_config,
         StartupInstallMode::Ensure,
+        None,
         None,
     )
     .await
@@ -1189,6 +1219,29 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_optional_p
     startup_install_mode: StartupInstallMode,
     runtime_toml: Option<&RuntimeTomlConfig>,
 ) -> Result<Router, ProductCatalogRouterError> {
+    router_with_database_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode_with_probe(
+        config,
+        api_key_config,
+        trusted_subject_config,
+        app_session_config,
+        provider_secret_map_config,
+        startup_install_mode,
+        runtime_toml,
+        None,
+    )
+    .await
+}
+
+async fn router_with_database_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode_with_probe(
+    config: DatabaseConfig,
+    api_key_config: Option<ApiKeySecurityConfig>,
+    trusted_subject_config: Option<TrustedSubjectConfig>,
+    app_session_config: Option<AppSessionConfig>,
+    provider_secret_map_config: Option<ProviderSecretMapConfig>,
+    startup_install_mode: StartupInstallMode,
+    runtime_toml: Option<&RuntimeTomlConfig>,
+    provider_health_probe_override: Option<ProviderHealthProbeRuntime>,
+) -> Result<Router, ProductCatalogRouterError> {
     sdkwork_claw_http::materialize_federated_database_env_from_claw_config(&config);
     let request_limits_config = RequestLimitsConfig::from_env_or_runtime_toml(runtime_toml)
         .map_err(ProductCatalogRouterError::Config)?;
@@ -1200,22 +1253,27 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_optional_p
     let api_key_secret_codec = api_key_secret_codec_from_config(&api_key_security_config)?;
     let trusted_subject_config = require_trusted_subject_config(trusted_subject_config)?;
     let app_session_config = require_app_session_config(app_session_config)?;
-    let provider_health_probe =
-        build_provider_health_probe(provider_secret_map_config, runtime_toml)?;
+    let provider_health_probe = match provider_health_probe_override {
+        Some(provider_health_probe) => provider_health_probe,
+        None => build_provider_health_probe(provider_secret_map_config, runtime_toml)?,
+    };
     match config.engine {
         DatabaseEngine::Sqlite => {
-            let pool = connect_claw_sqlite_runtime_pool(&config)
+            let database_pool = connect_standard_database_pool(&config)
                 .await
                 .map_err(|error| {
                     ProductCatalogRouterError::Sqlite(SqlCatalogLoadError::Database(
                         sqlx::Error::Configuration(error.to_string().into()),
                     ))
                 })?;
+            prepare_claw_router_database_lifecycle(database_pool.clone()).await?;
+            let pool = database_pool.as_sqlite().cloned().ok_or_else(|| {
+                ProductCatalogRouterError::Config("expected SQLite database pool".to_owned())
+            })?;
             let database_installer =
                 Arc::new(DatabaseInstaller::for_sqlite(pool.clone()).with_env_options()?);
             if startup_install_mode.should_ensure() {
-                let install_report = database_installer.ensure_installed().await?;
-                log_bootstrap_admin_report(SERVICE_NAME, &install_report);
+                database_installer.ensure_bootstrap_data().await?;
             }
             let snapshot = SqlitePricingCatalogLoader::with_api_key_secret_codec(
                 pool.clone(),
@@ -1346,20 +1404,21 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_optional_p
             .await
         }
         DatabaseEngine::Postgres => {
-            let pool =
-                sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_postgres_runtime_pool(
-                    &config.url,
-                    config.max_connections,
-                )
+            let database_pool = connect_standard_database_pool(&config)
                 .await
                 .map_err(|error| {
-                    ProductCatalogRouterError::Postgres(PostgresCatalogLoadError::Database(error))
+                    ProductCatalogRouterError::Postgres(PostgresCatalogLoadError::Database(
+                        sqlx::Error::Configuration(error.to_string().into()),
+                    ))
                 })?;
+            prepare_claw_router_database_lifecycle(database_pool.clone()).await?;
+            let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
+                ProductCatalogRouterError::Config("expected PostgreSQL database pool".to_owned())
+            })?;
             let database_installer =
                 Arc::new(DatabaseInstaller::for_postgres(pool.clone()).with_env_options()?);
             if startup_install_mode.should_ensure() {
-                let install_report = database_installer.ensure_installed().await?;
-                log_bootstrap_admin_report(SERVICE_NAME, &install_report);
+                database_installer.ensure_bootstrap_data().await?;
             }
             let snapshot = PostgresPricingCatalogLoader::with_api_key_secret_codec(
                 pool.clone(),
@@ -1928,6 +1987,15 @@ fn require_app_session_config(
             AppSessionConfig::ENV_APP_SESSION_SECRET
         ))
     })
+}
+
+async fn prepare_claw_router_database_lifecycle(
+    pool: DatabasePool,
+) -> Result<(), ProductCatalogRouterError> {
+    connect_claw_router_database(pool).map_err(|error| {
+        ProductCatalogRouterError::Installer(DatabaseInstallError::InvalidState(error))
+    })?;
+    Ok(())
 }
 
 #[derive(Debug)]

@@ -10,22 +10,12 @@
     "sqlite"
   ],
   "defaultEngine": "postgres",
-  "tablePrefix": "ai_",
-  "contractVersion": "1.0.0",
+  "contractVersion": "0.3.0",
   "baselineStrategy": "baseline-plus-migrations",
-  "modules": [
-    "sdkwork-models",
-    "iam"
-  ],
-  "composeDependencies": [
-    {
-      "moduleId": "sdkwork-models",
-      "ownership": "compose_at_install",
-      "enabled": true
-    }
-  ],
+  "baselineAnchorTable": "ai_channel",
+  "modules": [],
   "lifecycle": {
-    "autoMigrate": true,
+    "autoMigrate": false,
     "seedOnBoot": false,
     "defaultSeedLocale": "zh-CN",
     "defaultSeedProfile": "standard",
@@ -52,5 +42,56 @@
   "spi": {
     "provider": "default",
     "hooks": []
-  }
+  },
+  "tablePrefixes": [
+    "ai_",
+    "iam_gateway_",
+    "ops_"
+  ],
+  "materializedTableCount": 43,
+  "materializedTables": [
+    "ai_channel",
+    "ai_channel_credential",
+    "ai_channel_group",
+    "ai_channel_group_member",
+    "ai_channel_group_metric_snapshot",
+    "ai_channel_group_resource",
+    "ai_channel_resource",
+    "ai_config_change_event",
+    "ai_config_version",
+    "ai_model_mapping_rule",
+    "ai_model_mapping_rule_binding",
+    "ai_model_mapping_rule_item",
+    "ai_pricing_import_snapshot",
+    "ai_pricing_plan",
+    "ai_pricing_plan_binding",
+    "ai_pricing_rule",
+    "ai_pricing_tier",
+    "ai_provider",
+    "ai_provider_object_route",
+    "ai_quota_policy",
+    "ai_request_trace",
+    "ai_routing_decision_log",
+    "ai_routing_policy",
+    "ai_routing_profile",
+    "ai_routing_rule",
+    "ai_site",
+    "ai_site_service",
+    "ai_usage",
+    "ai_usage_service_provider_edge",
+    "iam_gateway_access_policy",
+    "iam_gateway_api_key",
+    "iam_gateway_api_key_channel_group",
+    "iam_gateway_risk_rule",
+    "ops_alert_event",
+    "ops_audit_log",
+    "ops_config_snapshot",
+    "ops_gateway_heartbeat",
+    "ops_gateway_instance",
+    "ops_job_execution",
+    "ops_metric_snapshot",
+    "ops_notification_delivery",
+    "ops_notification_message",
+    "ops_notification_recipient"
+  ]
 }

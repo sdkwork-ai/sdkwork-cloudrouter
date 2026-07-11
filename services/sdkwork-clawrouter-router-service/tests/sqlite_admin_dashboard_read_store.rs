@@ -53,7 +53,6 @@ async fn create_schema(pool: &SqlitePool) {
             total_tokens INTEGER,
             request_count INTEGER,
             customer_charge_amount TEXT,
-            cost_amount TEXT,
             occurred_at TEXT
         )
         "#,

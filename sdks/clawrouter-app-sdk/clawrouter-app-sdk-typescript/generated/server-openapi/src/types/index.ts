@@ -1,6 +1,9 @@
 export * from './common';
 
 export type { FieldError } from './field-error';
+export type { GatewayTrace } from './gateway-trace';
+
+export type { GatewayTracesPage } from './gateway-traces-page';
 
 export type { JsonNull } from './json-null';
 export type { JsonObject } from './json-object';

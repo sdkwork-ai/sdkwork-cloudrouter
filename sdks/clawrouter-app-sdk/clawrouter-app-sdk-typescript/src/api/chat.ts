@@ -9,8 +9,8 @@ export class ChatTurnResponsesApi {
   }
 
 
-/** Create */
-  async create(conversationId: string, turnId: string): Promise<Record<string, never>> {
+/** Complete */
+  async complete(conversationId: string, turnId: string): Promise<Record<string, never>> {
     return this.client.post<Record<string, never>>(appApiPath(`/chat/conversations/${serializePathParameter(conversationId, { name: 'conversationId', style: 'simple', explode: false })}/turns/${serializePathParameter(turnId, { name: 'turnId', style: 'simple', explode: false })}/response`));
   }
 }

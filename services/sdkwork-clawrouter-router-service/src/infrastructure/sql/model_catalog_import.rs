@@ -1488,6 +1488,82 @@ pub(crate) struct BundledPricingDictionaryRows {
     pub prices: Vec<crate::infrastructure::sql::rows::ModelPriceRow>,
 }
 
+/// Merge the portable sdkwork-models dictionary with database-owned facts.
+///
+/// The bundled dictionary owns public catalog identities and official prices,
+/// while the database may contain tenant-owned models, provider/channel costs,
+/// customer prices, and other runtime overrides.  Keeping both sources in the
+/// immutable snapshot is required for custom routes and margin calculation;
+/// duplicate public facts are retained from the dictionary so a stale database
+/// import cannot shadow the selected catalog version.
+pub(crate) fn merge_runtime_pricing_dictionary_rows(
+    mut dictionary: BundledPricingDictionaryRows,
+    database_vendors: Vec<crate::infrastructure::sql::rows::ModelVendorRow>,
+    database_models: Vec<crate::infrastructure::sql::rows::AiModelRow>,
+    database_prices: Vec<crate::infrastructure::sql::rows::ModelPriceRow>,
+) -> BundledPricingDictionaryRows {
+    let mut vendor_codes = dictionary
+        .vendors
+        .iter()
+        .map(|row| row.vendor_code.clone())
+        .collect::<BTreeSet<_>>();
+    dictionary.vendors.extend(
+        database_vendors
+            .into_iter()
+            .filter(|row| vendor_codes.insert(row.vendor_code.clone())),
+    );
+
+    let mut model_keys = dictionary
+        .models
+        .iter()
+        .map(|row| row.catalog_key.clone())
+        .collect::<BTreeSet<_>>();
+    dictionary.models.extend(
+        database_models
+            .into_iter()
+            .filter(|row| model_keys.insert(row.catalog_key.clone())),
+    );
+
+    let mut price_keys = dictionary
+        .prices
+        .iter()
+        .map(model_price_row_identity)
+        .collect::<BTreeSet<_>>();
+    dictionary.prices.extend(
+        database_prices
+            .into_iter()
+            .filter(|row| price_keys.insert(model_price_row_identity(row))),
+    );
+
+    dictionary
+}
+
+fn model_price_row_identity(
+    row: &crate::infrastructure::sql::rows::ModelPriceRow,
+) -> (
+    i64,
+    i64,
+    String,
+    String,
+    String,
+    String,
+    Option<String>,
+    Option<i64>,
+    Option<String>,
+) {
+    (
+        row.tenant_id,
+        row.organization_id,
+        row.catalog_key.clone(),
+        row.region_code.clone(),
+        row.price_side_code.clone(),
+        row.billing_meter_code.clone(),
+        row.provider_code.clone(),
+        row.channel_id,
+        row.pricing_plan_code.clone(),
+    )
+}
+
 pub(crate) fn bundled_pricing_dictionary_rows(
     catalog: &ModelCatalog,
 ) -> BundledPricingDictionaryRows {
@@ -1546,6 +1622,8 @@ pub(crate) fn bundled_pricing_dictionary_rows(
             let pricing_catalog_key = pricing_catalog_key(&pricing.vendor_code, &pricing.model_id);
             for price in &pricing.prices {
                 prices.push(crate::infrastructure::sql::rows::ModelPriceRow {
+                    tenant_id: 0,
+                    organization_id: 0,
                     catalog_key: pricing_catalog_key.clone(),
                     model: pricing.model_id.clone(),
                     region_code: pricing.region_code.clone(),

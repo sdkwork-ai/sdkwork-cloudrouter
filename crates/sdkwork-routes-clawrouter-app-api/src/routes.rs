@@ -9,6 +9,7 @@ use sdkwork_claw_config::{
     RuntimeConfigProfile, RuntimeTomlConfig, StartupInstallMode, TrustedSubjectConfig,
 };
 use sdkwork_claw_http::AppSubjectBoundaryConfig;
+use sdkwork_clawrouter_database_host::connect_claw_router_database;
 use sdkwork_clawrouter_router_service::application::{
     bootstrap_payment_provider_registry, payment_runtime_environment, ApiKeySecretCodec,
     ApiKeySecretHasher, EntityUuidGenerator, InMemoryRuntimeStreamBus, ModelRankingRefreshWorker,
@@ -26,10 +27,10 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::{
     RefreshableSqlPricingCatalog, SqlPricingCatalogSnapshotSummary,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
-    log_bootstrap_admin_report, DatabaseInstallError, DatabaseInstaller,
+    DatabaseInstallError, DatabaseInstaller,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::pool::{
-    connect_claw_sqlite_runtime_pool, effective_sqlite_runtime_pool_max_connections,
+    connect_standard_database_pool, effective_sqlite_runtime_pool_max_connections,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::{
     PostgresAdminTransactionCenterStore, PostgresAppChatStore, PostgresAppGatewayTracesReadStore,
@@ -66,6 +67,7 @@ use sdkwork_clawrouter_router_service::ports::{
     UnconfiguredProviderHealthProbe, UsageLogsReadStore,
 };
 use sdkwork_content_documents_sdk_reference::app_sdk_reference_router;
+use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_routes_models_catalog_app_api::{
     app_model_catalog_router, app_model_rankings_router, app_model_rankings_router_with_read_store,
 };
@@ -589,6 +591,57 @@ pub async fn router_with_sqlite_product_catalog(
     app_session_config: AppSessionConfig,
     payment_webhook_config: PaymentWebhookConfig,
 ) -> Result<Router, ProductCatalogRouterError> {
+    router_with_sqlite_product_catalog_runtime(
+        pool,
+        database_config,
+        api_key_security_config,
+        trusted_subject_config,
+        app_session_config,
+        payment_webhook_config,
+        Arc::new(UnconfiguredProviderHealthProbe),
+        true,
+    )
+    .await
+}
+
+/// Builds only the Claw Router-owned app runtime around an existing SQLite
+/// pool, with an explicitly injected provider health probe.
+///
+/// Federated commerce capabilities are intentionally excluded so embedded
+/// runtimes and focused integration tests do not bootstrap schemas owned by
+/// other SDKWork applications.
+pub async fn router_with_sqlite_core_runtime_and_provider_health_probe(
+    pool: SqlitePool,
+    database_config: DatabaseConfig,
+    api_key_security_config: ApiKeySecurityConfig,
+    trusted_subject_config: TrustedSubjectConfig,
+    app_session_config: AppSessionConfig,
+    payment_webhook_config: PaymentWebhookConfig,
+    provider_health_probe: Arc<dyn ProviderHealthProbe + Send + Sync>,
+) -> Result<Router, ProductCatalogRouterError> {
+    router_with_sqlite_product_catalog_runtime(
+        pool,
+        database_config,
+        api_key_security_config,
+        trusted_subject_config,
+        app_session_config,
+        payment_webhook_config,
+        provider_health_probe,
+        false,
+    )
+    .await
+}
+
+async fn router_with_sqlite_product_catalog_runtime(
+    pool: SqlitePool,
+    database_config: DatabaseConfig,
+    api_key_security_config: ApiKeySecurityConfig,
+    trusted_subject_config: TrustedSubjectConfig,
+    app_session_config: AppSessionConfig,
+    payment_webhook_config: PaymentWebhookConfig,
+    provider_health_probe: Arc<dyn ProviderHealthProbe + Send + Sync>,
+    include_federated_capabilities: bool,
+) -> Result<Router, ProductCatalogRouterError> {
     let deployment_mode = DeploymentMode::from_env().map_err(ProductCatalogRouterError::Config)?;
     let api_key_secret_codec = api_key_secret_codec_from_config(&api_key_security_config)?;
     let read_store = Arc::new(SqlitePricingCatalogLoader::with_api_key_secret_codec(
@@ -624,8 +677,12 @@ pub async fn router_with_sqlite_product_catalog(
         api_key_secret_codec.clone(),
     ));
     let app_routing_strategy_store = Arc::new(SqliteAppRoutingStrategyStore::new(pool.clone()));
-    let app_routing_channel_command_store =
-        Arc::new(SqliteAppRoutingChannelCommandStore::new(pool.clone()));
+    let app_routing_channel_command_store = Arc::new(
+        SqliteAppRoutingChannelCommandStore::with_provider_health_probe(
+            pool.clone(),
+            provider_health_probe,
+        ),
+    );
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
     let app_site_settings_store = Arc::new(SqliteSiteSettingsStore::new(pool.clone()));
     let api_key_runtime = Some(app_api_key_runtime_deps_for_sqlite(
@@ -635,6 +692,7 @@ pub async fn router_with_sqlite_product_catalog(
     )?);
     let subject_boundary_config =
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
+    let federated_database_config = include_federated_capabilities.then_some(&database_config);
     finalize_product_router_with_federated_capabilities(
         router_with_runtime_stores_and_database_status(
             Some(app_site_settings_store),
@@ -669,7 +727,7 @@ pub async fn router_with_sqlite_product_catalog(
             deployment_mode,
         ),
         subject_boundary_config,
-        Some(&database_config),
+        federated_database_config,
     )
     .await
 }
@@ -1088,6 +1146,36 @@ pub async fn router_with_database_config_api_key_trusted_subject_app_session_pro
     .await
 }
 
+/// Builds the app gateway with an explicitly supplied health probe.
+///
+/// Production entry points resolve provider secrets and use the hardened
+/// HTTPS/SSRF-protected relay.  Tests can inject a deterministic probe here to
+/// verify routing-channel persistence without introducing a network bypass.
+pub async fn router_with_database_config_api_key_trusted_subject_app_session_provider_health_probe_deployment_mode_and_startup_install_mode(
+    config: DatabaseConfig,
+    api_key_security_config: ApiKeySecurityConfig,
+    trusted_subject_config: TrustedSubjectConfig,
+    app_session_config: AppSessionConfig,
+    payment_webhook_config: PaymentWebhookConfig,
+    provider_health_probe: Arc<dyn ProviderHealthProbe + Send + Sync>,
+    deployment_mode: DeploymentMode,
+    startup_install_mode: StartupInstallMode,
+) -> Result<Router, ProductCatalogRouterError> {
+    router_with_database_config_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode_with_probe(
+        config,
+        api_key_security_config,
+        trusted_subject_config,
+        app_session_config,
+        payment_webhook_config,
+        None,
+        deployment_mode,
+        startup_install_mode,
+        None,
+        Some(provider_health_probe),
+    )
+    .await
+}
+
 async fn router_with_database_config_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config(
     config: DatabaseConfig,
     api_key_security_config: ApiKeySecurityConfig,
@@ -1097,7 +1185,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
     provider_secret_map_config: Option<ProviderSecretMapConfig>,
     deployment_mode: DeploymentMode,
 ) -> Result<Router, ProductCatalogRouterError> {
-    router_with_database_config_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode(
+    router_with_database_config_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode_with_probe(
         config,
         api_key_security_config,
         trusted_subject_config,
@@ -1106,6 +1194,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
         provider_secret_map_config,
         deployment_mode,
         StartupInstallMode::Ensure,
+        None,
         None,
     )
     .await
@@ -1122,6 +1211,33 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
     startup_install_mode: StartupInstallMode,
     runtime_toml: Option<&RuntimeTomlConfig>,
 ) -> Result<Router, ProductCatalogRouterError> {
+    router_with_database_config_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode_with_probe(
+        config,
+        api_key_security_config,
+        trusted_subject_config,
+        app_session_config,
+        payment_webhook_config,
+        provider_secret_map_config,
+        deployment_mode,
+        startup_install_mode,
+        runtime_toml,
+        None,
+    )
+    .await
+}
+
+async fn router_with_database_config_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode_with_probe(
+    config: DatabaseConfig,
+    api_key_security_config: ApiKeySecurityConfig,
+    trusted_subject_config: TrustedSubjectConfig,
+    app_session_config: AppSessionConfig,
+    payment_webhook_config: PaymentWebhookConfig,
+    provider_secret_map_config: Option<ProviderSecretMapConfig>,
+    deployment_mode: DeploymentMode,
+    startup_install_mode: StartupInstallMode,
+    runtime_toml: Option<&RuntimeTomlConfig>,
+    provider_health_probe_override: Option<ProviderHealthProbeRuntime>,
+) -> Result<Router, ProductCatalogRouterError> {
     sdkwork_claw_http::materialize_federated_database_env_from_claw_config(&config);
     let subject_boundary_config =
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
@@ -1135,8 +1251,10 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
     let app_runtime_catalog_refresh_interval =
         app_runtime_catalog_refresh_interval_from_env_or_toml(runtime_toml)
             .map_err(ProductCatalogRouterError::Config)?;
-    let provider_health_probe =
-        build_provider_health_probe(provider_secret_map_config, runtime_toml)?;
+    let provider_health_probe = match provider_health_probe_override {
+        Some(provider_health_probe) => provider_health_probe,
+        None => build_provider_health_probe(provider_secret_map_config, runtime_toml)?,
+    };
     match config.engine {
         DatabaseEngine::Sqlite => {
             let sqlite_pool_max_connections =
@@ -1148,19 +1266,22 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
                     "SQLite runtime database pool max_connections was raised to protect app runtime streams and background refresh tasks"
                 );
             }
-            let pool = connect_claw_sqlite_runtime_pool(&config)
+            let database_pool = connect_standard_database_pool(&config)
                 .await
                 .map_err(|error| {
                     ProductCatalogRouterError::Sqlite(SqlCatalogLoadError::Database(
                         sqlx::Error::Configuration(error.to_string().into()),
                     ))
                 })?;
+            prepare_claw_router_database_lifecycle(database_pool.clone()).await?;
+            let pool = database_pool.as_sqlite().cloned().ok_or_else(|| {
+                ProductCatalogRouterError::Config("expected SQLite database pool".to_owned())
+            })?;
             if startup_install_mode.should_ensure() {
-                let install_report = DatabaseInstaller::for_sqlite(pool.clone())
+                DatabaseInstaller::for_sqlite(pool.clone())
                     .with_env_options()?
-                    .ensure_installed()
+                    .ensure_bootstrap_data()
                     .await?;
-                log_bootstrap_admin_report(SERVICE_NAME, &install_report);
             }
             let read_store = Arc::new(SqlitePricingCatalogLoader::with_api_key_secret_codec(
                 pool.clone(),
@@ -1281,21 +1402,22 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
             .await
         }
         DatabaseEngine::Postgres => {
-            let pool =
-                sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_postgres_runtime_pool(
-                    &config.url,
-                    config.max_connections,
-                )
+            let database_pool = connect_standard_database_pool(&config)
                 .await
                 .map_err(|error| {
-                    ProductCatalogRouterError::Postgres(PostgresCatalogLoadError::Database(error))
+                    ProductCatalogRouterError::Postgres(PostgresCatalogLoadError::Database(
+                        sqlx::Error::Configuration(error.to_string().into()),
+                    ))
                 })?;
+            prepare_claw_router_database_lifecycle(database_pool.clone()).await?;
+            let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
+                ProductCatalogRouterError::Config("expected PostgreSQL database pool".to_owned())
+            })?;
             if startup_install_mode.should_ensure() {
-                let install_report = DatabaseInstaller::for_postgres(pool.clone())
+                DatabaseInstaller::for_postgres(pool.clone())
                     .with_env_options()?
-                    .ensure_installed()
+                    .ensure_bootstrap_data()
                     .await?;
-                log_bootstrap_admin_report(SERVICE_NAME, &install_report);
             }
             let read_store = Arc::new(PostgresPricingCatalogLoader::with_api_key_secret_codec(
                 pool.clone(),
@@ -1945,7 +2067,7 @@ async fn sqlite_model_ranking_schema_ready(pool: &SqlitePool) -> Result<bool, sq
         r#"
         SELECT COUNT(1)
         FROM pragma_table_info('ai_usage')
-        WHERE name IN ('catalog_key', 'request_count', 'total_tokens', 'cost_amount', 'occurred_at')
+        WHERE name IN ('catalog_key', 'request_count', 'total_tokens', 'customer_charge_amount', 'occurred_at')
         "#,
     )
     .fetch_one(pool)
@@ -2003,7 +2125,7 @@ async fn postgres_model_ranking_schema_ready(pool: &PgPool) -> Result<bool, sqlx
         FROM information_schema.columns
         WHERE table_schema = current_schema()
           AND table_name = 'ai_usage'
-          AND column_name IN ('catalog_key', 'request_count', 'total_tokens', 'cost_amount', 'occurred_at')
+          AND column_name IN ('catalog_key', 'request_count', 'total_tokens', 'customer_charge_amount', 'occurred_at')
         "#,
     )
     .fetch_one(pool)
@@ -2310,6 +2432,15 @@ fn deployment_mode_from_env_or_toml(
     runtime_toml: Option<&RuntimeTomlConfig>,
 ) -> Result<DeploymentMode, String> {
     Ok(sdkwork_claw_config::DeploymentRuntime::resolve(runtime_toml)?.mode)
+}
+
+async fn prepare_claw_router_database_lifecycle(
+    pool: DatabasePool,
+) -> Result<(), ProductCatalogRouterError> {
+    connect_claw_router_database(pool).map_err(|error| {
+        ProductCatalogRouterError::Installer(DatabaseInstallError::InvalidState(error))
+    })?;
+    Ok(())
 }
 
 #[derive(Debug)]
@@ -2725,7 +2856,7 @@ mod tests {
                 catalog_key TEXT,
                 request_count INTEGER,
                 total_tokens INTEGER,
-                cost_amount REAL,
+                customer_charge_amount REAL,
                 occurred_at TEXT
             )
             "#,

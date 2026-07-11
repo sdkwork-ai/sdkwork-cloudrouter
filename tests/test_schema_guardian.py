@@ -3,7 +3,7 @@ import textwrap
 import unittest
 from pathlib import Path
 
-from tools.schema_guardian import APPBASE_COMMERCE_LEGACY_ALIASES, SchemaGuardian
+from tools.schema_guardian import SchemaGuardian
 
 
 class SchemaGuardianTest(unittest.TestCase):
@@ -12,6 +12,12 @@ class SchemaGuardianTest(unittest.TestCase):
         registry.parent.mkdir(parents=True, exist_ok=True)
         registry.write_text(textwrap.dedent(content).strip() + "\n", encoding="utf-8")
         return registry
+
+    def write_generated_schema(self, root: Path, dialect: str, content: str) -> Path:
+        schema = root / "generated" / "schema" / dialect / "schema.sql"
+        schema.parent.mkdir(parents=True, exist_ok=True)
+        schema.write_text(textwrap.dedent(content).strip() + "\n", encoding="utf-8")
+        return schema
 
     def test_rejects_forbidden_synonym_table(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -59,6 +65,350 @@ class SchemaGuardianTest(unittest.TestCase):
                 f"schema registry contains mojibake text near line 7: zh_name: {mojibake}",
                 result.messages,
             )
+
+    def test_rejects_native_sqlite_logical_decimal_operations(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                """
+                schema_registry:
+                  legacy_compatibility_guardrails:
+                    forbidden_synonym_tables: []
+                tables:
+                  - table: ai_usage
+                    domain: ai
+                    columns:
+                      customer_charge_amount: decimal
+                      upstream_cost_amount: { type: decimal }
+                      rank_score: decimal(38,12)
+                      request_count: int64
+                """,
+            )
+            sqlite_query = root / "services" / "usage-repository" / "src" / "sqlite" / "unsafe.sql"
+            sqlite_query.parent.mkdir(parents=True, exist_ok=True)
+            sqlite_query.write_text(
+                "SELECT SUM(COALESCE(customer_charge_amount, '0')) FROM ai_usage;\n"
+                "SELECT AVG(upstream_cost_amount) FROM ai_usage;\n"
+                "SELECT rank_score FROM ai_usage ORDER BY CAST(COALESCE(rank_score, '0') AS REAL);\n",
+                encoding="utf-8",
+            )
+
+            result = SchemaGuardian(root=root, registry_path=registry).run()
+
+            self.assertFalse(result.ok)
+            self.assertIn(
+                "SQLite SQL services/usage-repository/src/sqlite/unsafe.sql:1 uses native SUM on "
+                "logical decimal column(s) customer_charge_amount; use sdkwork_decimal_sum(...)",
+                result.messages,
+            )
+            self.assertIn(
+                "SQLite SQL services/usage-repository/src/sqlite/unsafe.sql:2 uses native AVG on "
+                "logical decimal column(s) upstream_cost_amount; use sdkwork_decimal_sum(...) "
+                "with exact decimal division",
+                result.messages,
+            )
+            self.assertIn(
+                "SQLite SQL services/usage-repository/src/sqlite/unsafe.sql:3 casts logical decimal "
+                "column(s) rank_score AS REAL; use sdkwork_decimal_order_key(...)",
+                result.messages,
+            )
+
+    def test_accepts_exact_sqlite_decimal_functions_and_postgres_numeric_aggregates(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                """
+                schema_registry:
+                  legacy_compatibility_guardrails:
+                    forbidden_synonym_tables: []
+                tables:
+                  - table: ai_usage
+                    domain: ai
+                    columns:
+                      customer_charge_amount: decimal
+                      upstream_cost_amount: decimal
+                      rank_score: decimal
+                      request_count: int64
+                      latency_ms: int32
+                """,
+            )
+            sqlite_query = root / "services" / "usage-repository" / "src" / "sqlite.rs"
+            sqlite_query.parent.mkdir(parents=True, exist_ok=True)
+            sqlite_query.write_text(
+                "SELECT sdkwork_decimal_sum(customer_charge_amount) FROM ai_usage;\n"
+                "SELECT rank_score FROM ai_usage "
+                "ORDER BY sdkwork_decimal_order_key(rank_score);\n"
+                "SELECT SUM(request_count), AVG(latency_ms) FROM ai_usage;\n",
+                encoding="utf-8",
+            )
+            postgres_query = root / "services" / "usage-repository" / "src" / "postgres.rs"
+            postgres_query.write_text(
+                "SELECT SUM(customer_charge_amount), AVG(upstream_cost_amount) FROM ai_usage;\n",
+                encoding="utf-8",
+            )
+            test_fixture = root / "services" / "usage-repository" / "tests" / "sqlite_precision.rs"
+            test_fixture.parent.mkdir(parents=True, exist_ok=True)
+            test_fixture.write_text(
+                'const FORBIDDEN_EXAMPLE: &str = "SELECT SUM(customer_charge_amount) FROM ai_usage";\n',
+                encoding="utf-8",
+            )
+
+            result = SchemaGuardian(root=root, registry_path=registry).run()
+
+            self.assertTrue(result.ok, result.messages)
+
+    def test_rejects_on_conflict_target_without_same_table_unique_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                """
+                schema_registry:
+                  legacy_compatibility_guardrails:
+                    forbidden_synonym_tables: []
+                tables:
+                  - table: ai_usage
+                    domain: ai
+                    columns:
+                      id: int64
+                      tenant_id: int64
+                      request_id: string(64)
+                  - table: ops_audit_log
+                    domain: ops
+                    columns:
+                      id: int64
+                      tenant_id: int64
+                      request_id: string(64)
+                """,
+            )
+            self.write_generated_schema(
+                root,
+                "sqlite",
+                """
+                CREATE TABLE IF NOT EXISTS ai_usage (
+                    id INTEGER NOT NULL PRIMARY KEY,
+                    tenant_id INTEGER NOT NULL,
+                    request_id TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS ops_audit_log (
+                    id INTEGER NOT NULL PRIMARY KEY,
+                    tenant_id INTEGER NOT NULL,
+                    request_id TEXT NOT NULL
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_audit_request
+                    ON ops_audit_log (tenant_id, request_id);
+                """,
+            )
+            query = root / "services" / "usage-repository" / "src" / "sqlite" / "upsert.sql"
+            query.parent.mkdir(parents=True, exist_ok=True)
+            query.write_text(
+                "INSERT INTO ai_usage (id, tenant_id, request_id) VALUES (?, ?, ?)\n"
+                "ON CONFLICT (tenant_id, request_id) DO UPDATE SET request_id = excluded.request_id;\n",
+                encoding="utf-8",
+            )
+
+            result = SchemaGuardian(root=root, registry_path=registry).run()
+
+            self.assertFalse(result.ok)
+            self.assertIn(
+                "repository SQL services/usage-repository/src/sqlite/upsert.sql:2 ON CONFLICT "
+                "target ai_usage(tenant_id, request_id) is not backed by a same-table PRIMARY KEY "
+                "or UNIQUE index in generated SQLite schema",
+                result.messages,
+            )
+
+    def test_rejects_partial_unique_without_explicit_matching_conflict_predicate(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                """
+                schema_registry:
+                  legacy_compatibility_guardrails:
+                    forbidden_synonym_tables: []
+                tables:
+                  - table: ai_provider_object_route
+                    domain: ai
+                    columns:
+                      id: int64
+                      tenant_id: int64
+                      organization_id: int64
+                      object_type: string(64)
+                      object_id: string(128)
+                      deleted_at: instant
+                """,
+            )
+            self.write_generated_schema(
+                root,
+                "postgres",
+                """
+                CREATE TABLE IF NOT EXISTS ai_provider_object_route (
+                    id BIGINT NOT NULL PRIMARY KEY,
+                    tenant_id BIGINT NOT NULL,
+                    organization_id BIGINT NOT NULL,
+                    object_type VARCHAR(64) NOT NULL,
+                    object_id VARCHAR(128) NOT NULL,
+                    deleted_at TIMESTAMPTZ
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_provider_object_route_object
+                    ON ai_provider_object_route
+                    (tenant_id, organization_id, object_type, object_id)
+                    WHERE deleted_at IS NULL;
+                """,
+            )
+            query = root / "crates" / "gateway" / "src" / "postgres" / "sticky.sql"
+            query.parent.mkdir(parents=True, exist_ok=True)
+            query.write_text(
+                "INSERT INTO ai_provider_object_route "
+                "(id, tenant_id, organization_id, object_type, object_id) "
+                "VALUES ($1, $2, $3, $4, $5)\n"
+                "ON CONFLICT (tenant_id, organization_id, object_type, object_id) "
+                "DO UPDATE SET object_id = EXCLUDED.object_id;\n",
+                encoding="utf-8",
+            )
+
+            result = SchemaGuardian(root=root, registry_path=registry).run()
+
+            self.assertFalse(result.ok)
+            self.assertIn(
+                "repository SQL crates/gateway/src/postgres/sticky.sql:2 ON CONFLICT target "
+                "ai_provider_object_route(tenant_id, organization_id, object_type, object_id) "
+                "does not explicitly match generated PostgreSQL partial UNIQUE predicate(s): "
+                "deleted_at is null",
+                result.messages,
+            )
+
+    def test_accepts_primary_key_non_partial_unique_and_matching_partial_targets(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                """
+                schema_registry:
+                  legacy_compatibility_guardrails:
+                    forbidden_synonym_tables: []
+                tables:
+                  - table: ai_usage
+                    domain: ai
+                    columns:
+                      id: int64
+                      tenant_id: int64
+                      request_id: string(64)
+                  - table: ai_provider_object_route
+                    domain: ai
+                    columns:
+                      id: int64
+                      tenant_id: int64
+                      object_id: string(128)
+                      deleted_at: instant
+                  - table: imported_usage
+                    domain: external
+                    generated_by_this_project: false
+                    columns:
+                      id: int64
+                      request_id: string(64)
+                """,
+            )
+            ddl = """
+                CREATE TABLE IF NOT EXISTS ai_usage (
+                    id BIGINT NOT NULL PRIMARY KEY,
+                    tenant_id BIGINT NOT NULL,
+                    request_id VARCHAR(64) NOT NULL
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_usage_request
+                    ON ai_usage (tenant_id, request_id);
+                CREATE TABLE IF NOT EXISTS ai_provider_object_route (
+                    id BIGINT NOT NULL PRIMARY KEY,
+                    tenant_id BIGINT NOT NULL,
+                    object_id VARCHAR(128) NOT NULL,
+                    deleted_at TIMESTAMP
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_provider_object_route_object
+                    ON ai_provider_object_route (tenant_id, object_id)
+                    WHERE deleted_at IS NULL;
+            """
+            self.write_generated_schema(root, "postgres", ddl)
+            self.write_generated_schema(root, "sqlite", ddl)
+            sqlite_query = root / "services" / "usage-repository" / "src" / "sqlite.rs"
+            sqlite_query.parent.mkdir(parents=True, exist_ok=True)
+            sqlite_query.write_text(
+                "INSERT INTO ai_usage (id, tenant_id, request_id) VALUES (?, ?, ?) "
+                "ON CONFLICT (request_id, tenant_id) DO NOTHING;\n"
+                "INSERT INTO ai_usage (id, tenant_id, request_id) VALUES (?, ?, ?) "
+                "ON CONFLICT (id) DO UPDATE SET request_id = excluded.request_id;\n"
+                "INSERT INTO ai_provider_object_route (id, tenant_id, object_id) VALUES (?, ?, ?) "
+                "ON CONFLICT (object_id, tenant_id) WHERE (\"deleted_at\" IS NULL) "
+                "DO UPDATE SET object_id = excluded.object_id;\n"
+                "INSERT INTO imported_usage (id, request_id) VALUES (?, ?) "
+                "ON CONFLICT (request_id) DO NOTHING;\n",
+                encoding="utf-8",
+            )
+            postgres_query = root / "services" / "usage-repository" / "src" / "postgres.rs"
+            postgres_query.write_text(
+                "INSERT INTO ai_usage (id, tenant_id, request_id) VALUES ($1, $2, $3) "
+                "ON CONFLICT (tenant_id, request_id) DO NOTHING;\n",
+                encoding="utf-8",
+            )
+
+            result = SchemaGuardian(root=root, registry_path=registry).run()
+
+            self.assertTrue(result.ok, result.messages)
+
+    def test_uses_repository_path_to_select_generated_dialect(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                """
+                schema_registry:
+                  legacy_compatibility_guardrails:
+                    forbidden_synonym_tables: []
+                tables:
+                  - table: ai_usage
+                    domain: ai
+                    columns:
+                      id: int64
+                      tenant_id: int64
+                      request_id: string(64)
+                """,
+            )
+            self.write_generated_schema(
+                root,
+                "sqlite",
+                """
+                CREATE TABLE IF NOT EXISTS ai_usage (
+                    id INTEGER NOT NULL PRIMARY KEY,
+                    tenant_id INTEGER NOT NULL,
+                    request_id TEXT NOT NULL
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_usage_request
+                    ON ai_usage (tenant_id, request_id);
+                """,
+            )
+            self.write_generated_schema(
+                root,
+                "postgres",
+                """
+                CREATE TABLE IF NOT EXISTS ai_usage (
+                    id BIGINT NOT NULL PRIMARY KEY,
+                    tenant_id BIGINT NOT NULL,
+                    request_id VARCHAR(64) NOT NULL
+                );
+                """,
+            )
+            query = root / "services" / "usage-repository" / "src" / "sqlite.rs"
+            query.parent.mkdir(parents=True, exist_ok=True)
+            query.write_text(
+                "INSERT INTO ai_usage (id, tenant_id, request_id) VALUES (1, 1, 'request-1') "
+                "ON CONFLICT (tenant_id, request_id) DO NOTHING;\n",
+                encoding="utf-8",
+            )
+
+            result = SchemaGuardian(root=root, registry_path=registry).run()
+
+            self.assertTrue(result.ok, result.messages)
 
     def test_rejects_legacy_identity_tables_and_user_foreign_keys(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -949,6 +1299,135 @@ class SchemaGuardianTest(unittest.TestCase):
             self.assertFalse(result.ok)
             self.assertIn("ops_metric_snapshot source_tables references unregistered table missing_fact", result.messages)
             self.assertIn("ops_referral_stat_snapshot projection table must declare source_tables or source_refs", result.messages)
+
+    def test_requires_projection_ownership_and_complete_lineage(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                """
+                schema_registry:
+                  legacy_compatibility_guardrails:
+                    forbidden_synonym_tables: []
+                tables:
+                  - table: ai_usage
+                    domain: ai
+                  - table: ops_metric_snapshot
+                    domain: ops
+                    profile: read_model
+                    system_of_record: true
+                    write_owner: ''
+                    source_tables: [ai_usage]
+                    semantic_contracts:
+                      projection_lineage:
+                        watermark: { field: period_start }
+                        source_version: {}
+                        algorithm_version: ''
+                        freshness: { target_seconds: 0, max_staleness_seconds: 0 }
+                        rebuild: { strategy: full_recompute }
+                        aggregation_grain: []
+                """,
+            )
+
+            result = SchemaGuardian(root=root, registry_path=registry).run()
+
+            self.assertFalse(result.ok)
+            self.assertIn(
+                "ops_metric_snapshot projection table must set system_of_record: false",
+                result.messages,
+            )
+            self.assertIn("ops_metric_snapshot projection table must declare write_owner", result.messages)
+            self.assertIn(
+                "ops_metric_snapshot projection_lineage.watermark must declare field and strategy",
+                result.messages,
+            )
+            self.assertIn(
+                "ops_metric_snapshot projection_lineage.source_version must declare field",
+                result.messages,
+            )
+            self.assertIn(
+                "ops_metric_snapshot projection_lineage.algorithm_version must be a non-empty string",
+                result.messages,
+            )
+            self.assertIn(
+                "ops_metric_snapshot projection_lineage.freshness must declare positive "
+                "target_seconds and max_staleness_seconds",
+                result.messages,
+            )
+            self.assertIn(
+                "ops_metric_snapshot projection_lineage.rebuild must declare strategy and owner",
+                result.messages,
+            )
+            self.assertIn(
+                "ops_metric_snapshot projection_lineage.aggregation_grain must be a non-empty string list",
+                result.messages,
+            )
+
+    def test_accepts_complete_projection_lineage_with_structured_source_ref(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                """
+                schema_registry:
+                  legacy_compatibility_guardrails:
+                    forbidden_synonym_tables: []
+                tables:
+                  - table: ops_metric_snapshot
+                    domain: ops
+                    profile: read_model
+                    system_of_record: false
+                    write_owner: metrics-worker
+                    source_refs:
+                      - module_id: telemetry-core
+                        table: runtime_metric_event
+                    semantic_contracts:
+                      projection_lineage:
+                        watermark:
+                          field: period_start
+                          strategy: high_watermark
+                        source_version:
+                          field: source_version
+                        algorithm_version: ops-metric-snapshot-v1
+                        freshness:
+                          target_seconds: 60
+                          max_staleness_seconds: 300
+                        rebuild:
+                          strategy: full_recompute
+                          owner: metrics-worker
+                        aggregation_grain: [tenant_id, metric_name, period_start]
+                """,
+            )
+
+            result = SchemaGuardian(root=root, registry_path=registry).run()
+
+            self.assertTrue(result.ok, result.messages)
+
+    def test_does_not_require_local_lineage_shape_for_imported_projection(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                """
+                schema_registry:
+                  legacy_compatibility_guardrails:
+                    forbidden_synonym_tables: []
+                tables:
+                  - table: ops_metric_event
+                    domain: ops
+                  - table: ai_model_rank_snapshot
+                    domain: ai
+                    profile: projection
+                    system_of_record: false
+                    write_owner: sdkwork-models-platform
+                    generated_by_this_project: false
+                    source_tables: [ops_metric_event]
+                """,
+            )
+
+            result = SchemaGuardian(root=root, registry_path=registry).run()
+
+            self.assertTrue(result.ok, result.messages)
 
     def test_requires_projection_over_legacy_tables_to_declare_non_replacement_policy(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

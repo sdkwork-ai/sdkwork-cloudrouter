@@ -216,7 +216,9 @@ async fn strips_inbound_query_credentials_before_provider_query_auth() {
     let mut invocation = invocation_with_auth(ProviderAuthProfile::query("api_key"));
     invocation.request = InvocationRequest::new(Method::GET, "/v1/models")
         .with_request_id("req-query-auth")
-        .with_query("api_key=sk-client-gateway&model=gpt-4o-mini&page_size=10&key=sk-google-client");
+        .with_query(
+            "api_key=sk-client-gateway&model=gpt-4o-mini&page_size=10&key=sk-google-client",
+        );
 
     SecretResolutionInterceptor::new(resolver())
         .before(&mut invocation)

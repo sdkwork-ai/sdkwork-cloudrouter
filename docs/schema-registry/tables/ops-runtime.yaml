@@ -104,7 +104,7 @@ tables:
     - organization_id
     - request_id
   lifecycle:
-    partition_by: created_at_month
+    storage_strategy: indexed_append_only
 - table: ops_config_snapshot
   domain: ops
   profile: audit_event
@@ -171,7 +171,7 @@ tables:
     - heartbeat_at
     - id
   lifecycle:
-    partition_by: created_at_month
+    storage_strategy: indexed_append_only
 - table: ops_gateway_instance
   domain: ops
   profile: operational_state
@@ -320,7 +320,7 @@ tables:
   domain: ops
   profile: read_model
   compliance_level: L2
-  system_of_record: true
+  system_of_record: false
   write_owner: clawrouter-ops-runtime
   common_columns: projection
   api_surfaces:
@@ -338,15 +338,58 @@ tables:
     metric_value: decimal
     metric_unit: string(64)
     payload: json
+  required_columns:
+  - metric_scope
+  - metric_name
+  - metric_period
+  - period_start
+  - dimension_key
+  - dimension_value
+  - metric_value
+  - source_version
+  source_tables:
+  - ai_usage
+  - ai_request_trace
+  - ops_gateway_instance
+  - ops_gateway_heartbeat
   unique_constraints:
   - name: uk_ops_metric_snapshot
     columns:
+    - tenant_id
+    - organization_id
     - metric_scope
     - metric_name
     - metric_period
     - period_start
     - dimension_key
     - dimension_value
+  check_constraints:
+  - name: ck_ops_metric_snapshot_period_interval
+    expression: period_end IS NULL OR period_end > period_start
+  semantic_contracts:
+    projection_lineage:
+      watermark:
+        field: period_start
+        strategy: high_watermark
+      source_version:
+        field: source_version
+        strategy: max_source_version
+      algorithm_version: ops-metric-snapshot-v1
+      freshness:
+        target_seconds: 60
+        max_staleness_seconds: 300
+      rebuild:
+        strategy: full_recompute
+        owner: clawrouter-ops-runtime
+      aggregation_grain:
+      - tenant_id
+      - organization_id
+      - metric_scope
+      - metric_name
+      - metric_period
+      - period_start
+      - dimension_key
+      - dimension_value
 - table: ops_notification_message
   domain: ops
   profile: operational_state
@@ -379,6 +422,12 @@ tables:
     published_at: instant
     expire_at: instant
   indexes:
+  - name: uk_ops_notification_message_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
   - name: idx_ops_notification_message_scope
     columns:
     - tenant_id
@@ -417,6 +466,18 @@ tables:
     recipient_value: string(256)
     recipient_user_id: int64
     recipient_role_code: string(128)
+  foreign_keys:
+  - name: fk_ops_notification_recipient_message
+    columns:
+    - tenant_id
+    - organization_id
+    - message_id
+    references_table: ops_notification_message
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
   indexes:
   - name: idx_ops_notification_recipient_message
     columns:
@@ -503,6 +564,8 @@ tables:
     retry_count:
       type: int32
       constraints: NOT NULL DEFAULT 0
+  required_columns:
+  - delivery_channel
   unique_constraints:
   - name: uk_ops_notification_delivery_user_message_app
     columns:
@@ -512,6 +575,21 @@ tables:
     - user_id
     - app_id
     - delivery_channel
+  foreign_keys:
+  - name: fk_ops_notification_delivery_message
+    columns:
+    - tenant_id
+    - organization_id
+    - message_id
+    references_table: ops_notification_message
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ops_notification_delivery_retry_count
+    expression: retry_count >= 0
   indexes:
   - name: idx_ops_notification_delivery_user_read
     columns:

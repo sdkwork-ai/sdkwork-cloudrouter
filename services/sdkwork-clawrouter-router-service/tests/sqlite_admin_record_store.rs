@@ -108,7 +108,6 @@ async fn create_tables(pool: &SqlitePool) {
             cached_tokens INTEGER,
             completion_tokens INTEGER,
             customer_charge_amount TEXT,
-            cost_amount TEXT,
             rate_multiplier TEXT,
             base_input_unit_price TEXT,
             base_output_unit_price TEXT,

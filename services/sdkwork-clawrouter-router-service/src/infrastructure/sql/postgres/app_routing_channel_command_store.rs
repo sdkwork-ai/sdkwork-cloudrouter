@@ -998,17 +998,27 @@ async fn resolve_resource(
         r#"
         SELECT id, resource_code
         FROM ai_resource
-        WHERE tenant_id = $1
-          AND organization_id = $2
-          AND resource_code = $3
+        WHERE resource_code = $1
           AND deleted_at IS NULL
           AND status = 1
+          AND (
+              (tenant_id = $2 AND organization_id = $3)
+              OR ($3 > 0 AND tenant_id = $2 AND organization_id = 0)
+              OR (tenant_id = 0 AND organization_id = 0)
+          )
+        ORDER BY CASE
+            WHEN tenant_id = $2 AND organization_id = $3 THEN 0
+            WHEN $3 > 0 AND tenant_id = $2 AND organization_id = 0 THEN 1
+            WHEN tenant_id = 0 AND organization_id = 0 THEN 2
+            ELSE 3
+          END,
+          id ASC
         LIMIT 1
         "#,
     )
+    .bind(resource_code)
     .bind(tenant_id)
     .bind(organization_id)
-    .bind(resource_code)
     .fetch_optional(&mut **tx)
     .await
     .map_err(|error| store_error("failed to resolve routing channel resource", error))?;
@@ -1137,9 +1147,7 @@ async fn soft_delete_channel(
 
 #[derive(Debug, Clone)]
 struct ChannelHealthProbeTarget {
-    provider_id: Option<i64>,
-    channel_id: i64,
-    provider_account_id: i64,
+    credential_id: i64,
     provider_base_url: String,
     provider_secret_ref: String,
     provider_model: String,
@@ -1153,15 +1161,13 @@ async fn load_channel_probe_target(
     let row = sqlx::query(
         r#"
         SELECT
-            c.id AS channel_id,
-            c.provider_id,
-            COALESCE(cc.id, c.id) AS provider_account_id,
+            cc.id AS credential_id,
             COALESCE(NULLIF(cc.base_url, ''), NULLIF(c.base_url, ''), NULLIF(p.base_url, ''), '') AS provider_base_url,
-            COALESCE(NULLIF(cc.credential_ref, ''), NULLIF(c.credential_ref, ''), '') AS provider_secret_ref,
+            COALESCE(NULLIF(cc.credential_ref, ''), '') AS provider_secret_ref,
             COALESCE(NULLIF(r.provider_native_model, ''), NULLIF(r.model, ''), 'gpt-4o-mini') AS provider_model,
             c.timeout_ms
         FROM ai_channel c
-        LEFT JOIN ai_channel_credential cc
+        JOIN ai_channel_credential cc
           ON cc.channel_id = c.id
          AND cc.tenant_id = c.tenant_id
          AND cc.organization_id = c.organization_id
@@ -1229,9 +1235,7 @@ async fn load_channel_probe_target(
         ));
     }
     Ok(Some(ChannelHealthProbeTarget {
-        provider_id: optional_integer_cell(&row, "provider_id"),
-        channel_id: integer_cell(&row, "channel_id"),
-        provider_account_id: integer_cell(&row, "provider_account_id"),
+        credential_id: integer_cell(&row, "credential_id"),
         provider_base_url,
         provider_secret_ref,
         provider_model,
@@ -1276,50 +1280,53 @@ async fn record_channel_health_test(
     if result.rows_affected() == 0 {
         return Ok(false);
     }
-    insert_provider_health_snapshot(tx, command, target, outcome, health_status).await?;
+    update_channel_credential_health(tx, command, target, outcome, health_status).await?;
     Ok(true)
 }
 
-async fn insert_provider_health_snapshot(
+async fn update_channel_credential_health(
     tx: &mut Transaction<'_, Postgres>,
     command: &TestAppRoutingChannelCommand,
     target: &ChannelHealthProbeTarget,
     outcome: &ProviderHealthProbeOutcome,
     health_status: i32,
 ) -> DomainResult<()> {
-    let metadata = serde_json::json!({
-        "source": "app_routing_channel_test",
-        "providerModel": target.provider_model
-    })
-    .to_string();
-    sqlx::query(
+    let result = sqlx::query(
         r#"
-        INSERT INTO integration_provider_health_snapshot
-            (id, uuid, tenant_id, organization_id, user_id, request_id, status, created_at, metadata, provider_id, channel_id, provider_account_id, check_type, health_status, latency_ms, http_status, error_code, error_message_masked, checked_at)
-        VALUES
-            ($1, $2, $3, $4, $5, $6, 1, $7::timestamptz, $8::jsonb, $9, $10, $11, 1, $12, $13, $14, $15, $16, $17::timestamptz)
+        UPDATE ai_channel_credential
+        SET updated_at = $1::timestamptz,
+            health_status = $2,
+            last_latency_ms = $3,
+            last_verified_at = $4::timestamptz,
+            consecutive_error_count = CASE
+                WHEN $5 = 1 THEN 0
+                ELSE COALESCE(consecutive_error_count, 0) + 1
+            END,
+            version = COALESCE(version, 0) + 1
+        WHERE id = $6
+          AND channel_id = $7
+          AND tenant_id = $8
+          AND organization_id = $9
+          AND deleted_at IS NULL
         "#,
     )
-    .bind(next_claw_runtime_id("integration_provider_health_snapshot")?)
-    .bind(format!("health-{}", command.config_snapshot_uuid))
-    .bind(command.subject.tenant_id)
-    .bind(command.subject.organization_id)
-    .bind(command.subject.user_id)
-    .bind(&command.request_id)
     .bind(&command.requested_at)
-    .bind(metadata)
-    .bind(target.provider_id)
-    .bind(target.channel_id)
-    .bind(target.provider_account_id)
     .bind(health_status)
     .bind(outcome.latency_ms)
-    .bind(outcome.http_status)
-    .bind(outcome.error_code.as_deref())
-    .bind(outcome.error_message_masked.as_deref())
     .bind(&command.requested_at)
+    .bind(health_status)
+    .bind(target.credential_id)
+    .bind(command.channel_id)
+    .bind(command.subject.tenant_id)
+    .bind(command.subject.organization_id)
     .execute(&mut **tx)
     .await
-    .map_err(|error| store_error("failed to write routing channel health snapshot", error))?;
+    .map_err(|error| store_error("failed to update routing channel credential health", error))?;
+    if result.rows_affected() != 1 {
+        return Err(DomainError::new(
+            "routing channel credential changed while its health probe was running",
+        ));
+    }
     Ok(())
 }
 
@@ -1735,19 +1742,6 @@ fn integer_cell(row: &sqlx::postgres::PgRow, column: &str) -> i64 {
         })
         .or_else(|| string_cell(row, column).parse::<i64>().ok())
         .unwrap_or_default()
-}
-
-fn optional_integer_cell(row: &sqlx::postgres::PgRow, column: &str) -> Option<i64> {
-    row.try_get::<Option<i64>, _>(column)
-        .ok()
-        .flatten()
-        .or_else(|| {
-            row.try_get::<Option<i32>, _>(column)
-                .ok()
-                .flatten()
-                .map(i64::from)
-        })
-        .or_else(|| string_cell(row, column).parse::<i64>().ok())
 }
 
 fn required_integer_cell(row: &sqlx::postgres::PgRow, column: &str) -> DomainResult<i64> {

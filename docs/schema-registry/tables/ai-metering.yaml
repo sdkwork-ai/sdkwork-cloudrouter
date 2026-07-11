@@ -51,7 +51,6 @@ tables:
     video_seconds: decimal
     storage_byte_hours: decimal
     bandwidth_bytes: int64
-    unit_price_snapshot: decimal
     base_input_unit_price: decimal
     base_output_unit_price: decimal
     cache_read_unit_price: decimal
@@ -60,7 +59,6 @@ tables:
     official_reference_amount: decimal
     upstream_cost_amount: decimal
     customer_charge_amount: decimal
-    cost_amount: decimal
     currency: string(10)
     pricing_id: int64
     pricing_plan_id: int64
@@ -72,13 +70,53 @@ tables:
     occurred_at: instant
     settlement_status: int32
     settlement_id: int64
+  required_columns:
+  - request_id
+  - idempotency_key
+  - usage_type
+  - billing_meter_code
+  - billable_quantity
+  - currency
+  - occurred_at
+  - settlement_status
   unique_constraints:
+  - name: uk_ai_usage_scope_id
+    columns:
+    - tenant_id
+    - organization_id
+    - id
+  - name: uk_ai_usage_idempotency
+    columns:
+    - tenant_id
+    - organization_id
+    - idempotency_key
   - name: uk_ai_usage_request
     columns:
     - tenant_id
     - organization_id
     - request_id
     - usage_type
+  check_constraints:
+  - name: ck_ai_usage_non_negative_counts
+    expression: (prompt_tokens IS NULL OR prompt_tokens >= 0)
+      AND (completion_tokens IS NULL OR completion_tokens >= 0)
+      AND (cached_tokens IS NULL OR cached_tokens >= 0)
+      AND (total_tokens IS NULL OR total_tokens >= 0)
+      AND (request_count IS NULL OR request_count >= 0)
+      AND (result_count IS NULL OR result_count >= 0)
+      AND (item_count IS NULL OR item_count >= 0)
+      AND (character_count IS NULL OR character_count >= 0)
+      AND (image_count IS NULL OR image_count >= 0)
+  - name: ck_ai_usage_non_negative_amounts
+    expression: billable_quantity >= 0
+      AND (audio_seconds IS NULL OR audio_seconds >= 0)
+      AND (video_seconds IS NULL OR video_seconds >= 0)
+      AND (storage_byte_hours IS NULL OR storage_byte_hours >= 0)
+      AND (official_reference_amount IS NULL OR official_reference_amount >= 0)
+      AND (upstream_cost_amount IS NULL OR upstream_cost_amount >= 0)
+      AND (customer_charge_amount IS NULL OR customer_charge_amount >= 0)
+  - name: ck_ai_usage_currency
+    expression: length(trim(currency)) BETWEEN 3 AND 10
   indexes:
   - name: idx_ai_usage_tenant_owner_occurred
     columns:
@@ -124,7 +162,7 @@ tables:
     - occurred_at
     - id
   lifecycle:
-    partition_by: created_at_month
+    storage_strategy: indexed_append_only
   semantic_contracts:
     ranking_refresh_source_fact:
       time_field: occurred_at
@@ -172,6 +210,15 @@ tables:
     price_snapshot: json
     occurred_at: instant
     settlement_status: int32
+  required_columns:
+  - usage_fact_id
+  - edge_id
+  - edge_depth
+  - amount_role
+  - billable_quantity
+  - charge_amount
+  - currency
+  - occurred_at
   unique_constraints:
   - name: uk_ai_usage_service_provider_edge_usage_depth
     columns:
@@ -180,6 +227,24 @@ tables:
     - usage_fact_id
     - edge_depth
     - amount_role
+  foreign_keys:
+  - name: fk_ai_usage_service_provider_edge_usage
+    columns:
+    - tenant_id
+    - organization_id
+    - usage_fact_id
+    references_table: ai_usage
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_usage_service_provider_edge_depth
+    expression: edge_depth >= 0
+  - name: ck_ai_usage_service_provider_edge_amounts
+    expression: billable_quantity >= 0 AND charge_amount >= 0
+      AND (converted_charge_amount IS NULL OR converted_charge_amount >= 0)
   indexes:
   - name: idx_ai_usage_service_provider_edge_seller_time
     columns:
@@ -196,7 +261,7 @@ tables:
     - occurred_at
     - id
   lifecycle:
-    partition_by: created_at_month
+    storage_strategy: indexed_append_only
 - table: ai_request_trace
   domain: ai
   profile: event_log
@@ -252,6 +317,10 @@ tables:
     client_ip_masked: string(64)
     client_ip_region: string(128)
     user_agent_hash: string(128)
+  required_columns:
+  - request_id
+  - attempt_no
+  - started_at
   unique_constraints:
   - name: uk_ai_request_trace_request_attempt
     columns:
@@ -259,6 +328,18 @@ tables:
     - organization_id
     - request_id
     - attempt_no
+  check_constraints:
+  - name: ck_ai_request_trace_attempt
+    expression: attempt_no >= 1
+  - name: ck_ai_request_trace_http_status
+    expression: http_status IS NULL OR http_status BETWEEN 100 AND 599
+  - name: ck_ai_request_trace_non_negative_metrics
+    expression: (latency_ms IS NULL OR latency_ms >= 0)
+      AND (ttft_ms IS NULL OR ttft_ms >= 0)
+      AND (prompt_tokens IS NULL OR prompt_tokens >= 0)
+      AND (completion_tokens IS NULL OR completion_tokens >= 0)
+      AND (cached_tokens IS NULL OR cached_tokens >= 0)
+      AND (total_tokens IS NULL OR total_tokens >= 0)
   indexes:
   - name: idx_ai_request_trace_tenant_trace
     columns:
@@ -286,5 +367,13 @@ tables:
     - status
     - started_at
     - id
+  - name: idx_ai_request_trace_user_status_started
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - status
+    - started_at
+    - id
   lifecycle:
-    partition_by: created_at_month
+    storage_strategy: indexed_append_only

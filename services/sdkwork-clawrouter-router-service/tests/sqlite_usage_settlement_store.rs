@@ -568,11 +568,9 @@ async fn create_schema(pool: &SqlitePool) {
             cached_tokens INTEGER,
             total_tokens INTEGER,
             request_count INTEGER,
-            unit_price_snapshot TEXT,
             base_input_unit_price TEXT,
             base_output_unit_price TEXT,
             customer_charge_amount TEXT,
-            cost_amount TEXT,
             currency TEXT,
             pricing_plan_code TEXT,
             pricing_snapshot TEXT,
@@ -680,14 +678,14 @@ async fn seed_usage_fact(
              api_key_id, api_key_name_snapshot, channel_group_id, channel_group_snapshot,
              owner_type, owner_id, owner_name_snapshot, model, provider_id, channel_id, modality,
              usage_type, billing_meter_code, billable_quantity, prompt_tokens, cached_tokens,
-             completion_tokens, total_tokens, request_count, unit_price_snapshot,
-             base_input_unit_price, base_output_unit_price, customer_charge_amount, cost_amount,
+             completion_tokens, total_tokens, request_count,
+             base_input_unit_price, base_output_unit_price, customer_charge_amount,
              currency, pricing_plan_code, pricing_snapshot, occurred_at, settlement_status)
         VALUES
             (?, ?, 100001, 0, 30, ?, ?, 1, 101, 'Owner Usage Key', 10, 'standard-group',
              1, 30, 'Demo User', 'gpt-4o-mini', 9001, 3001, 1, 1, 'llm_input_token',
-             ?, 11, 2, 7, ?, 1, '0.198000', '0.198000', '0.792000',
-             ?, '4.290000', 'USD', 'standard', '{}', '2026-04-30T11:58:00Z', ?)
+             ?, 11, 2, 7, ?, 1, '0.198000', '0.792000',
+             ?, 'USD', 'standard', '{}', '2026-04-30T11:58:00Z', ?)
         "#,
     )
     .bind(usage_fact_id)

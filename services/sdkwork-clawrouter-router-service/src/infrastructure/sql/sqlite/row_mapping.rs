@@ -125,14 +125,18 @@ pub async fn load_provider_channel_routes(
             credential_health_status: row.try_get("credential_health_status")?,
         })
     });
-    sqlx::query(mapper.sql)
+    let rows = sqlx::query(mapper.sql)
         .bind(circuit_breaker_recovery_window_seconds)
         .bind(circuit_breaker_recovery_window_seconds)
         .fetch_all(executor)
         .await?
         .into_iter()
         .map(mapper.mapper)
-        .collect()
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(rows
+        .into_iter()
+        .filter(|row| row.channel_health_status == 1 && row.credential_health_status == 1)
+        .collect())
 }
 
 pub async fn load_routing_policies(
@@ -210,6 +214,8 @@ pub async fn load_pricing_plans(
 ) -> Result<Vec<PricingPlanRow>, sqlx::Error> {
     map_query(sql, |row| {
         Ok(PricingPlanRow {
+            tenant_id: row.try_get("tenant_id")?,
+            organization_id: row.try_get("organization_id")?,
             plan_code: row.try_get("plan_code")?,
             base_price_side_code: row.try_get("base_price_side_code")?,
             default_multiplier: row.try_get("default_multiplier")?,
@@ -354,6 +360,8 @@ pub async fn load_prices(
 ) -> Result<Vec<ModelPriceRow>, sqlx::Error> {
     map_query(sql, |row| {
         Ok(ModelPriceRow {
+            tenant_id: row.try_get("tenant_id")?,
+            organization_id: row.try_get("organization_id")?,
             catalog_key: row.try_get("catalog_key")?,
             model: row.try_get("model")?,
             region_code: row.try_get("region_code")?,

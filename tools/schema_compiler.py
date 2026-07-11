@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import re
 from collections import OrderedDict
 from dataclasses import dataclass
@@ -87,9 +89,29 @@ SCALAR_TYPE_MAP = {
     "date": "DATE",
 }
 
+SQLITE_SCALAR_TYPE_MAP = {
+    "text": "TEXT",
+    "json": "TEXT",
+    "bool": "INTEGER",
+    "int32": "INTEGER",
+    "enum_int32": "INTEGER",
+    "int64": "INTEGER",
+    # NUMERIC affinity coerces decimal strings to INTEGER/REAL and silently
+    # loses precision. SQLite therefore stores the canonical decimal wire
+    # representation as exact text; arithmetic stays behind DecimalValue.
+    "decimal": "TEXT",
+    "instant": "TEXT",
+    "date": "TEXT",
+}
+
 
 class SchemaCompiler:
-    """Compile Schema Registry table contracts into deterministic PostgreSQL DDL."""
+    """Compile the effective registry into deterministic engine-specific DDL.
+
+    The registry is the authored semantic contract.  PostgreSQL and SQLite are
+    rendered independently so one engine's type syntax can never leak into the
+    other engine's baseline.
+    """
 
     def __init__(self, root: Path, registry_path: Path | None = None) -> None:
         self.root = Path(root).resolve()
@@ -100,17 +122,38 @@ class SchemaCompiler:
         )
 
     def compile_postgres(self) -> str:
+        return self._compile("postgres")
+
+    def compile_sqlite(self) -> str:
+        return self._compile("sqlite")
+
+    def _compile(self, dialect: str) -> str:
+        if dialect not in {"postgres", "sqlite"}:
+            raise SchemaCompileError(f"unsupported SQL dialect: {dialect}")
         registry = self._load_registry()
         tables = registry.get("tables", [])
         if not isinstance(tables, list):
             raise SchemaCompileError("tables must be a list")
 
-        common_column_groups = registry.get("schema_registry", {}).get("common_column_groups", {})
+        schema_registry = registry.get("schema_registry", {})
+        if not isinstance(schema_registry, dict):
+            schema_registry = {}
+        common_column_groups = schema_registry.get("common_column_groups", {})
         if not isinstance(common_column_groups, dict):
             common_column_groups = {}
+        profile_policies = schema_registry.get("table_profile_policies", {})
+        if not isinstance(profile_policies, dict):
+            profile_policies = {}
 
+        registry_version = schema_registry.get("version", "unknown")
+        registry_payload = json.dumps(registry, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        registry_hash = hashlib.sha256(registry_payload.encode("utf-8")).hexdigest()
         statements: list[str] = [
             "-- Generated from docs/schema-registry/sdkwork-clawrouter.tables.yaml.\n"
+            f"-- Registry version: {registry_version}.\n"
+            f"-- Registry SHA-256: {registry_hash}.\n"
+            f"-- Dialect: {dialect}.\n"
+            "-- Materialize: python -B -m tools.schema_compiler --dialect all --materialize.\n"
             "-- Do not edit by hand; update Schema Registry and regenerate."
         ]
 
@@ -121,9 +164,11 @@ class SchemaCompiler:
             if table.get("generated_by_this_project") is False:
                 continue
 
-            statements.append(self._compile_table(table, common_column_groups))
+            policy = self.resolve_table_policy(table, profile_policies)
+            columns = self._collect_columns(table, common_column_groups, dialect)
+            statements.append(self._compile_table(table, dialect, policy, columns))
             generated_table_count += 1
-            index_sql = self._compile_indexes(table)
+            index_sql = self._compile_indexes(table, dialect, policy, set(columns))
             if index_sql:
                 statements.append(index_sql)
 
@@ -136,45 +181,108 @@ class SchemaCompiler:
         return "\n\n".join(statement for statement in statements if statement).rstrip() + "\n"
 
     def write_postgres(self, output_path: Path | None = None) -> Path:
+        return self.write_dialect("postgres", output_path)
+
+    def write_sqlite(self, output_path: Path | None = None) -> Path:
+        return self.write_dialect("sqlite", output_path)
+
+    def write_dialect(self, dialect: str, output_path: Path | None = None) -> Path:
         target = (
             Path(output_path)
             if output_path is not None
-            else self.root / "generated" / "schema" / "postgres" / "schema.sql"
+            else self.root / "generated" / "schema" / dialect / "schema.sql"
         )
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(self.compile_postgres(), encoding="utf-8")
+        target.write_text(self._compile(dialect), encoding="utf-8")
         return target
 
+    def write_baseline(self, dialect: str) -> Path:
+        target = (
+            self.root
+            / "database"
+            / "ddl"
+            / "baseline"
+            / dialect
+            / "0001_clawrouter_baseline.sql"
+        )
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(self._compile(dialect), encoding="utf-8")
+        return target
+
+    def materialize(self, dialect: str) -> tuple[Path, Path]:
+        return self.write_dialect(dialect), self.write_baseline(dialect)
+
     def check_postgres(self, output_path: Path | None = None) -> SchemaCompileCheckResult:
+        return self.check_dialect("postgres", output_path)
+
+    def check_sqlite(self, output_path: Path | None = None) -> SchemaCompileCheckResult:
+        return self.check_dialect("sqlite", output_path)
+
+    def check_dialect(self, dialect: str, output_path: Path | None = None) -> SchemaCompileCheckResult:
         target = (
             Path(output_path)
             if output_path is not None
-            else self.root / "generated" / "schema" / "postgres" / "schema.sql"
+            else self.root / "generated" / "schema" / dialect / "schema.sql"
         )
-        expected = self.compile_postgres()
+        expected = self._compile(dialect)
         if not target.exists():
-            return SchemaCompileCheckResult(ok=False, messages=[f"postgres schema is missing: {target}"])
+            return SchemaCompileCheckResult(ok=False, messages=[f"{dialect} schema is missing: {target}"])
 
         actual = target.read_text(encoding="utf-8")
         if actual != expected:
-            return SchemaCompileCheckResult(ok=False, messages=[f"postgres schema is stale: {target}"])
+            return SchemaCompileCheckResult(ok=False, messages=[f"{dialect} schema is stale: {target}"])
 
+        return SchemaCompileCheckResult(ok=True, messages=[])
+
+    def check_baseline(self, dialect: str) -> SchemaCompileCheckResult:
+        target = (
+            self.root
+            / "database"
+            / "ddl"
+            / "baseline"
+            / dialect
+            / "0001_clawrouter_baseline.sql"
+        )
+        expected = self._compile(dialect)
+        if not target.exists():
+            return SchemaCompileCheckResult(
+                ok=False,
+                messages=[f"{dialect} baseline is missing: {target}"],
+            )
+        if target.read_text(encoding="utf-8") != expected:
+            return SchemaCompileCheckResult(
+                ok=False,
+                messages=[f"{dialect} baseline is stale: {target}"],
+            )
         return SchemaCompileCheckResult(ok=True, messages=[])
 
     def _load_registry(self) -> dict[str, Any]:
         return load_schema_registry(self.registry_path)
 
-    def _compile_table(self, table: dict[str, Any], common_column_groups: dict[str, Any]) -> str:
+    def _compile_table(
+        self,
+        table: dict[str, Any],
+        dialect: str,
+        policy: dict[str, Any],
+        columns: OrderedDict[str, ColumnDefinition],
+    ) -> str:
         table_name = self._require_identifier(table.get("table"), "table")
-        columns = self._collect_columns(table, common_column_groups)
+        lifecycle = table.get("lifecycle")
+        lifecycle_partition = lifecycle.get("partition_by") if isinstance(lifecycle, dict) else None
+        if table.get("partition_by") or lifecycle_partition:
+            raise SchemaCompileError(
+                f"{table_name}.partition_by is not supported in the portable baseline; "
+                "model partitioning in a reviewed engine-specific migration"
+            )
         if not columns:
             raise SchemaCompileError(f"{table_name} must define at least one column")
 
-        rendered_columns = [column.render() for column in columns.values()]
+        rendered_entries = [column.render() for column in columns.values()]
+        rendered_entries.extend(self._compile_table_constraints(table, dialect, policy, set(columns)))
         lines = [f"CREATE TABLE IF NOT EXISTS {table_name} ("]
-        for index, column_sql in enumerate(rendered_columns):
-            suffix = "," if index < len(rendered_columns) - 1 else ""
-            lines.append(f"    {column_sql}{suffix}")
+        for index, entry_sql in enumerate(rendered_entries):
+            suffix = "," if index < len(rendered_entries) - 1 else ""
+            lines.append(f"    {entry_sql}{suffix}")
         lines.append(");")
         return "\n".join(lines)
 
@@ -182,6 +290,7 @@ class SchemaCompiler:
         self,
         table: dict[str, Any],
         common_column_groups: dict[str, Any],
+        dialect: str,
     ) -> OrderedDict[str, ColumnDefinition]:
         table_name = self._require_identifier(table.get("table"), "table")
         collected: OrderedDict[str, ColumnDefinition] = OrderedDict()
@@ -196,7 +305,7 @@ class SchemaCompiler:
             for column_name in group_columns:
                 if not isinstance(column_name, str):
                     raise SchemaCompileError(f"{table_name}.{group_name} contains a non-string common column")
-                definition = COMMON_COLUMN_DEFINITIONS.get(column_name)
+                definition = self._common_column_definition(column_name, dialect)
                 if definition is None:
                     raise SchemaCompileError(f"unsupported common column for {table_name}: {column_name}")
                 collected[column_name] = definition
@@ -208,7 +317,7 @@ class SchemaCompiler:
             raise SchemaCompileError(f"{table_name}.columns must be a mapping")
 
         for column_name, registry_type in explicit_columns.items():
-            column = self._compile_column(table_name, column_name, registry_type)
+            column = self._compile_column(table_name, column_name, registry_type, dialect)
             if column.name in collected:
                 raise SchemaCompileError(
                     f"{table_name}.{column.name} duplicates common column from {group_name}; "
@@ -231,16 +340,22 @@ class SchemaCompiler:
 
         return collected
 
-    def _compile_column(self, table_name: str, column_name: Any, registry_type: Any) -> ColumnDefinition:
+    def _compile_column(
+        self,
+        table_name: str,
+        column_name: Any,
+        registry_type: Any,
+        dialect: str,
+    ) -> ColumnDefinition:
         name = self._require_identifier(column_name, f"{table_name}.column")
         constraints = ""
         if isinstance(registry_type, dict):
-            constraints = self._compile_column_constraints(table_name, name, registry_type)
+            constraints = self._compile_column_constraints(table_name, name, registry_type, dialect)
             registry_type = registry_type.get("type")
         if not isinstance(registry_type, str):
             raise SchemaCompileError(f"{table_name}.{name} type must be a string")
 
-        sql_type = self._map_type(table_name, name, registry_type)
+        sql_type = self._map_type(table_name, name, registry_type, dialect)
         return ColumnDefinition(name=name, sql_type=sql_type, constraints=constraints)
 
     def _compile_column_constraints(
@@ -248,6 +363,7 @@ class SchemaCompiler:
         table_name: str,
         column_name: str,
         column: dict[str, Any],
+        dialect: str,
     ) -> str:
         allowed_keys = {"type", "constraints"}
         unknown_keys = sorted(set(column.keys()) - allowed_keys)
@@ -268,9 +384,12 @@ class SchemaCompiler:
             flags=re.IGNORECASE,
         ):
             constraints = f"NOT NULL {constraints}"
-        return constraints
+        if dialect == "sqlite":
+            constraints = re.sub(r"::jsonb\b", "", constraints, flags=re.IGNORECASE)
+            constraints = re.sub(r"::json\b", "", constraints, flags=re.IGNORECASE)
+        return constraints.strip()
 
-    def _map_type(self, table_name: str, column_name: str, registry_type: str) -> str:
+    def _map_type(self, table_name: str, column_name: str, registry_type: str, dialect: str) -> str:
         string_match = STRING_TYPE_PATTERN.match(registry_type)
         if string_match:
             length = int(string_match.group(1))
@@ -278,7 +397,8 @@ class SchemaCompiler:
                 raise SchemaCompileError(f"invalid string length for {table_name}.{column_name}: {registry_type}")
             return f"VARCHAR({length})"
 
-        mapped = SCALAR_TYPE_MAP.get(registry_type)
+        scalar_map = SCALAR_TYPE_MAP if dialect == "postgres" else SQLITE_SCALAR_TYPE_MAP
+        mapped = scalar_map.get(registry_type)
         if mapped is None:
             raise SchemaCompileError(f"unsupported column type for {table_name}.{column_name}: {registry_type}")
         return mapped
@@ -300,8 +420,10 @@ class SchemaCompiler:
         raw_primary_key = table.get("primary_key")
         if raw_primary_key is None:
             return None
+        if isinstance(raw_primary_key, list):
+            return None
         if not isinstance(raw_primary_key, str):
-            raise SchemaCompileError(f"{table_name}.primary_key must be a string")
+            raise SchemaCompileError(f"{table_name}.primary_key must be a string or list")
         return self._require_identifier(raw_primary_key, f"{table_name}.primary_key")
 
     def _with_not_null(self, column: ColumnDefinition) -> ColumnDefinition:
@@ -329,8 +451,20 @@ class SchemaCompiler:
         updated_constraints = re.sub(r"\s+", " ", updated_constraints)
         return ColumnDefinition(column.name, column.sql_type, updated_constraints)
 
-    def _compile_indexes(self, table: dict[str, Any]) -> str:
+    def _compile_indexes(
+        self,
+        table: dict[str, Any],
+        dialect: str,
+        policy: dict[str, Any],
+        column_names: set[str],
+    ) -> str:
         table_name = self._require_identifier(table.get("table"), "table")
+        soft_delete_policy = policy.get("soft_delete_policy")
+        if soft_delete_policy not in {None, "active_unique", "full_lifecycle_unique"}:
+            raise SchemaCompileError(
+                f"{table_name}.soft_delete_policy must be active_unique or "
+                "full_lifecycle_unique"
+            )
         indexes = table.get("indexes", [])
         if indexes is None:
             return ""
@@ -341,8 +475,16 @@ class SchemaCompiler:
         for constraint in self._unique_constraints(table_name, table):
             index_name = constraint["name"]
             rendered_columns = constraint["columns"]
+            if constraint.get("where") is None and soft_delete_policy == "active_unique":
+                if "deleted_at" not in column_names:
+                    raise SchemaCompileError(
+                        f"{table_name} uses active_unique but does not define deleted_at"
+                    )
+                constraint["where"] = "deleted_at IS NULL"
+            where = self._index_where(constraint, table_name, index_name)
             statements.append(
-                f"CREATE UNIQUE INDEX IF NOT EXISTS {index_name} ON {table_name} ({', '.join(rendered_columns)});"
+                f"CREATE UNIQUE INDEX IF NOT EXISTS {index_name} ON {table_name} "
+                f"({', '.join(rendered_columns)}){where};"
             )
 
         for item in indexes:
@@ -354,10 +496,192 @@ class SchemaCompiler:
                 raise SchemaCompileError(f"{table_name}.{index_name} must include columns")
             rendered_columns = [self._require_identifier(column, f"{table_name}.{index_name}.column") for column in columns]
             unique = "UNIQUE " if item.get("unique") is True else ""
+            where = self._index_where(item, table_name, index_name)
             statements.append(
-                f"CREATE {unique}INDEX IF NOT EXISTS {index_name} ON {table_name} ({', '.join(rendered_columns)});"
+                f"CREATE {unique}INDEX IF NOT EXISTS {index_name} ON {table_name} "
+                f"({', '.join(rendered_columns)}){where};"
             )
         return "\n".join(statements)
+
+    def _compile_table_constraints(
+        self,
+        table: dict[str, Any],
+        dialect: str,
+        policy: dict[str, Any],
+        column_names: set[str],
+    ) -> list[str]:
+        table_name = self._require_identifier(table.get("table"), "table")
+        constraints: list[str] = []
+        primary_key = table.get("primary_key")
+        if isinstance(primary_key, list):
+            columns = [self._require_identifier(column, f"{table_name}.primary_key.column") for column in primary_key]
+            if not columns:
+                raise SchemaCompileError(f"{table_name}.primary_key must include columns")
+            constraints.append(f"PRIMARY KEY ({', '.join(columns)})")
+        elif primary_key is not None and not isinstance(primary_key, str):
+            raise SchemaCompileError(f"{table_name}.primary_key must be a string or list")
+
+        tenant_scope = policy.get("tenant_scope")
+        if "tenant_id" in column_names and "organization_id" in column_names:
+            if tenant_scope == "tenant_required":
+                constraints.append(
+                    f"CONSTRAINT ck_{table_name}_tenant_scope "
+                    "CHECK (tenant_id > 0 AND organization_id >= 0)"
+                )
+            elif tenant_scope in {"tenant_with_global_fallback", "tenant_optional"}:
+                constraints.append(
+                    f"CONSTRAINT ck_{table_name}_tenant_scope "
+                    "CHECK (tenant_id >= 0 AND organization_id >= 0 "
+                    "AND (tenant_id > 0 OR organization_id = 0))"
+                )
+            elif tenant_scope is not None:
+                raise SchemaCompileError(f"unsupported tenant_scope for {table_name}: {tenant_scope}")
+
+        if dialect == "sqlite":
+            for column_name in self._decimal_columns(table_name, table):
+                if column_name not in column_names:
+                    raise SchemaCompileError(
+                        f"{table_name} decimal contract references unknown column: {column_name}"
+                    )
+                unsigned_value = f"ltrim({column_name}, '-')"
+                digit_count = f"length(replace(replace({column_name}, '-', ''), '.', ''))"
+                decimal_point_count = (
+                    f"length({column_name}) - length(replace({column_name}, '.', ''))"
+                )
+                fractional_digits = (
+                    f"CASE WHEN instr({column_name}, '.') = 0 THEN 0 "
+                    f"ELSE length({column_name}) - instr({column_name}, '.') END"
+                )
+                constraints.append(
+                    f"CONSTRAINT ck_{table_name}_{column_name}_decimal CHECK ("
+                    f"{column_name} IS NULL OR ("
+                    f"typeof({column_name}) = 'text' "
+                    f"AND length({column_name}) BETWEEN 1 AND 40 "
+                    f"AND {column_name} NOT GLOB '*[^0-9.-]*' "
+                    f"AND {column_name} GLOB '*[0-9]*' "
+                    f"AND (instr({column_name}, '-') = 0 OR "
+                    f"(substr({column_name}, 1, 1) = '-' "
+                    f"AND instr(substr({column_name}, 2), '-') = 0)) "
+                    f"AND {decimal_point_count} <= 1 "
+                    f"AND substr({unsigned_value}, 1, 1) <> '.' "
+                    f"AND substr({column_name}, -1, 1) <> '.' "
+                    f"AND {digit_count} <= 38 "
+                    f"AND {fractional_digits} <= 12 "
+                    f"AND (length({unsigned_value}) = 1 "
+                    f"OR substr({unsigned_value}, 1, 1) <> '0' "
+                    f"OR substr({unsigned_value}, 2, 1) = '.')"
+                    f"))"
+                )
+
+        for item in table.get("foreign_keys", []) or []:
+            if not isinstance(item, dict):
+                raise SchemaCompileError(f"{table_name}.foreign_keys must contain mappings")
+            name = self._require_identifier(item.get("name"), f"{table_name}.foreign_key.name")
+            columns = item.get("columns")
+            references_columns = item.get("references_columns")
+            if not isinstance(columns, list) or not columns:
+                raise SchemaCompileError(f"{table_name}.{name} must include columns")
+            if not isinstance(references_columns, list) or len(references_columns) != len(columns):
+                raise SchemaCompileError(f"{table_name}.{name} references_columns must match columns")
+            reference_table = self._require_identifier(item.get("references_table"), f"{table_name}.{name}.references_table")
+            rendered_columns = [self._require_identifier(column, f"{table_name}.{name}.column") for column in columns]
+            rendered_references = [self._require_identifier(column, f"{table_name}.{name}.references_column") for column in references_columns]
+            on_delete = self._foreign_key_action(item.get("on_delete"), f"{table_name}.{name}.on_delete")
+            on_update = self._foreign_key_action(item.get("on_update"), f"{table_name}.{name}.on_update")
+            statement = (
+                f"CONSTRAINT {name} FOREIGN KEY ({', '.join(rendered_columns)}) "
+                f"REFERENCES {reference_table} ({', '.join(rendered_references)})"
+            )
+            if on_delete:
+                statement += f" ON DELETE {on_delete}"
+            if on_update:
+                statement += f" ON UPDATE {on_update}"
+            constraints.append(statement)
+
+        for item in table.get("check_constraints", []) or []:
+            if not isinstance(item, dict):
+                raise SchemaCompileError(f"{table_name}.check_constraints must contain mappings")
+            name = self._require_identifier(item.get("name"), f"{table_name}.check.name")
+            expression = item.get("expression")
+            if not isinstance(expression, str) or not expression.strip():
+                raise SchemaCompileError(f"{table_name}.{name}.expression must be a non-empty string")
+            expression = expression.strip()
+            if ";" in expression or "--" in expression or "/*" in expression or "*/" in expression:
+                raise SchemaCompileError(f"{table_name}.{name}.expression contains unsafe SQL")
+            constraints.append(f"CONSTRAINT {name} CHECK ({expression})")
+        return constraints
+
+    def _decimal_columns(self, table_name: str, table: dict[str, Any]) -> list[str]:
+        columns = table.get("columns", {}) or {}
+        if not isinstance(columns, dict):
+            raise SchemaCompileError(f"{table_name}.columns must be a mapping")
+        decimal_columns: list[str] = []
+        for column_name, registry_type in columns.items():
+            if isinstance(registry_type, dict):
+                registry_type = registry_type.get("type")
+            if registry_type == "decimal":
+                decimal_columns.append(
+                    self._require_identifier(column_name, f"{table_name}.decimal_column")
+                )
+        return decimal_columns
+
+    @staticmethod
+    def resolve_table_policy(
+        table: dict[str, Any],
+        profile_policies: dict[str, Any],
+    ) -> dict[str, Any]:
+        policy: dict[str, Any] = {}
+        profile = table.get("profile")
+        if isinstance(profile, str):
+            profile_policy = profile_policies.get(profile)
+            if isinstance(profile_policy, dict):
+                policy.update(profile_policy)
+        for key in ("tenant_scope", "soft_delete_policy"):
+            if key in table:
+                policy[key] = table[key]
+        return policy
+
+    @staticmethod
+    def _foreign_key_action(value: Any, context: str) -> str:
+        if value is None:
+            return ""
+        if not isinstance(value, str) or value.upper() not in {"RESTRICT", "CASCADE", "SET NULL", "SET DEFAULT", "NO ACTION"}:
+            raise SchemaCompileError(f"invalid foreign key action for {context}: {value}")
+        return value.upper()
+
+    @staticmethod
+    def _index_where(item: dict[str, Any], table_name: str, index_name: str) -> str:
+        value = item.get("where")
+        if value is None:
+            return ""
+        if not isinstance(value, str) or not value.strip():
+            raise SchemaCompileError(f"{table_name}.{index_name}.where must be a non-empty string")
+        value = value.strip()
+        if ";" in value or "--" in value or "/*" in value or "*/" in value:
+            raise SchemaCompileError(f"{table_name}.{index_name}.where contains unsafe SQL")
+        return f" WHERE {value}"
+
+    @staticmethod
+    def _common_column_definition(column_name: str, dialect: str) -> ColumnDefinition | None:
+        definition = COMMON_COLUMN_DEFINITIONS.get(column_name)
+        if definition is None:
+            return None
+        if dialect == "postgres":
+            return definition
+        sqlite_types = {
+            "BIGINT": "INTEGER",
+            "INTEGER": "INTEGER",
+            "VARCHAR(64)": "TEXT",
+            "VARCHAR(128)": "TEXT",
+            "TIMESTAMPTZ": "TEXT",
+            "JSONB": "TEXT",
+            "BOOLEAN": "INTEGER",
+        }
+        sql_type = sqlite_types.get(definition.sql_type, definition.sql_type)
+        constraints = definition.constraints
+        constraints = re.sub(r"::jsonb\b", "", constraints, flags=re.IGNORECASE)
+        constraints = re.sub(r"::json\b", "", constraints, flags=re.IGNORECASE)
+        return ColumnDefinition(definition.name, sql_type, constraints.strip())
 
     def _unique_constraints(self, table_name: str, table: dict[str, Any]) -> list[dict[str, Any]]:
         constraints = table.get("unique_constraints", [])
@@ -383,7 +707,13 @@ class SchemaCompiler:
                 if raw_name is not None
                 else self._generated_unique_constraint_name(table_name, rendered_columns)
             )
-            compiled.append({"name": index_name, "columns": rendered_columns})
+            compiled.append(
+                {
+                    "name": index_name,
+                    "columns": rendered_columns,
+                    "where": item.get("where"),
+                }
+            )
         return compiled
 
     def _generated_unique_constraint_name(self, table_name: str, columns: list[str]) -> str:
@@ -396,30 +726,58 @@ class SchemaCompiler:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Compile sdkwork-clawrouter Schema Registry to PostgreSQL DDL.")
+    parser = argparse.ArgumentParser(
+        description="Compile sdkwork-clawrouter Schema Registry to engine-specific DDL."
+    )
     parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
     parser.add_argument("--registry", type=Path, default=None, help="schema registry YAML path")
     parser.add_argument(
         "--output",
         type=Path,
         default=None,
-        help="output SQL path; defaults to generated/schema/postgres/schema.sql",
+        help="output SQL path; valid only for one dialect",
     )
-    parser.add_argument("--check", action="store_true", help="validate that the generated SQL file is current")
+    parser.add_argument(
+        "--dialect",
+        choices=("postgres", "sqlite", "all"),
+        default="postgres",
+        help="SQL dialect to render; default is postgres",
+    )
+    parser.add_argument(
+        "--materialize",
+        action="store_true",
+        help="write or check both generated schema and canonical baseline",
+    )
+    parser.add_argument("--check", action="store_true", help="validate that generated SQL files are current")
     args = parser.parse_args()
 
     compiler = SchemaCompiler(root=args.root, registry_path=args.registry)
-    if args.check:
-        result = compiler.check_postgres(args.output)
-        if result.ok:
-            print("PostgreSQL schema is current")
-            return 0
-        for message in result.messages:
-            print(message)
-        return 1
+    if args.output is not None and (args.dialect == "all" or args.materialize):
+        parser.error("--output cannot be combined with --dialect all or --materialize")
 
-    output = compiler.write_postgres(args.output)
-    print(f"Wrote PostgreSQL schema to {output}")
+    dialects = ("postgres", "sqlite") if args.dialect == "all" else (args.dialect,)
+    if args.check:
+        messages: list[str] = []
+        for dialect in dialects:
+            result = compiler.check_dialect(dialect, args.output)
+            messages.extend(result.messages)
+            if args.materialize:
+                messages.extend(compiler.check_baseline(dialect).messages)
+        if messages:
+            for message in messages:
+                print(message)
+            return 1
+        print(f"{', '.join(dialects)} schema is current")
+        return 0
+
+    for dialect in dialects:
+        if args.materialize:
+            generated, baseline = compiler.materialize(dialect)
+            print(f"Wrote {dialect} schema to {generated}")
+            print(f"Wrote {dialect} baseline to {baseline}")
+        else:
+            output = compiler.write_dialect(dialect, args.output)
+            print(f"Wrote {dialect} schema to {output}")
     return 0
 
 

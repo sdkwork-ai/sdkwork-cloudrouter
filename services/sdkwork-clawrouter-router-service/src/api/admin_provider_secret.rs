@@ -224,9 +224,12 @@ async fn create_provider_secret(
     };
 
     match state.store.create_provider_secret(command).await {
-        Ok(item) => json_created_response(None, AdminProviderSecretItemEnvelope {
-            item: to_item_response(item),
-        }),
+        Ok(item) => json_created_response(
+            None,
+            AdminProviderSecretItemEnvelope {
+                item: to_item_response(item),
+            },
+        ),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
             provider_secret_system_response("provider secret command store is unavailable", error)

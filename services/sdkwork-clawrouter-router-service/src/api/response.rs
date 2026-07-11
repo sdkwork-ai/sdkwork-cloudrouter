@@ -464,7 +464,9 @@ mod tests {
             .get(HeaderName::from_static("x-sdkwork-trace-id"))
             .and_then(|value| value.to_str().ok())
             .map(str::to_owned);
-        assert!(trace_header.as_deref().is_some_and(|value| !value.is_empty()));
+        assert!(trace_header
+            .as_deref()
+            .is_some_and(|value| !value.is_empty()));
 
         let rt = tokio::runtime::Builder::new_current_thread()
             .enable_all()
@@ -483,10 +485,7 @@ mod tests {
     fn no_content_response_uses_204_with_no_json_body() {
         let response = no_content_response(None);
         assert_eq!(StatusCode::NO_CONTENT, response.status());
-        assert!(response
-            .headers()
-            .get(header::CONTENT_TYPE)
-            .is_none());
+        assert!(response.headers().get(header::CONTENT_TYPE).is_none());
         assert!(response
             .headers()
             .get(HeaderName::from_static("x-sdkwork-trace-id"))

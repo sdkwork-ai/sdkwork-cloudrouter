@@ -29,7 +29,6 @@ rules:
     - "ops_audit_log_default.*"
     - "ops_gateway_heartbeat_default.*"
     - "iam_user_login_event_default.*"
-    - "integration_provider_health_snapshot_default.*"
 
   # Indexes excluded from drift comparison (auto-created by query planner).
   ignoreIndexes: []

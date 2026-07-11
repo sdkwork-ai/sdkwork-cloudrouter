@@ -1322,6 +1322,15 @@
           "columns": [
             "tenant_id",
             "organization_id",
+            "id"
+          ],
+          "name": "uk_ai_channel_scope_id",
+          "unique": true
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
             "provider_code",
             "channel_type",
             "status",
@@ -1942,6 +1951,15 @@
           "columns": [
             "tenant_id",
             "organization_id",
+            "id"
+          ],
+          "name": "uk_ai_channel_group_scope_id",
+          "unique": true
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
             "provider_code",
             "status",
             "updated_at",
@@ -2194,7 +2212,36 @@
       ],
       "compliance_level": "L2",
       "domain": "ai",
-      "foreign_keys": [],
+      "foreign_keys": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "channel_group_id"
+          ],
+          "name": "fk_ai_channel_group_member_group",
+          "references_columns": [
+            "tenant_id",
+            "organization_id",
+            "id"
+          ],
+          "references_table": "ai_channel_group"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "channel_id"
+          ],
+          "name": "fk_ai_channel_group_member_channel",
+          "references_columns": [
+            "tenant_id",
+            "organization_id",
+            "id"
+          ],
+          "references_table": "ai_channel"
+        }
+      ],
       "frontend_routes": [],
       "generated_by_this_project": true,
       "indexes": [
@@ -2520,9 +2567,41 @@
       "profile": "projection",
       "projection_policy": null,
       "security": null,
+      "semantic_contracts": {
+        "projection_lineage": {
+          "aggregation_grain": [
+            "tenant_id",
+            "organization_id",
+            "channel_group_id",
+            "snapshot_at"
+          ],
+          "algorithm_version": "channel-group-metric-v1",
+          "freshness": {
+            "max_staleness_seconds": 900,
+            "target_seconds": 300
+          },
+          "rebuild": {
+            "owner": "ai-routing-service",
+            "strategy": "full_recompute"
+          },
+          "source_version": {
+            "field": "source_version",
+            "strategy": "max_source_version"
+          },
+          "watermark": {
+            "field": "snapshot_at",
+            "strategy": "high_watermark"
+          }
+        }
+      },
       "source_refs": [],
-      "source_tables": [],
-      "system_of_record": true,
+      "source_tables": [
+        "ai_channel_group",
+        "ai_channel_group_member",
+        "ai_channel",
+        "ai_usage"
+      ],
+      "system_of_record": false,
       "table": "ai_channel_group_metric_snapshot",
       "unique_constraints": [
         {
@@ -9187,6 +9266,15 @@
           "columns": [
             "tenant_id",
             "organization_id",
+            "id"
+          ],
+          "name": "uk_ai_pricing_plan_scope_id",
+          "unique": true
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
             "plan_scope",
             "status",
             "priority",
@@ -9907,10 +9995,34 @@
       ],
       "compliance_level": "L2",
       "domain": "ai",
-      "foreign_keys": [],
+      "foreign_keys": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "pricing_plan_id"
+          ],
+          "name": "fk_ai_pricing_rule_plan",
+          "references_columns": [
+            "tenant_id",
+            "organization_id",
+            "id"
+          ],
+          "references_table": "ai_pricing_plan"
+        }
+      ],
       "frontend_routes": [],
       "generated_by_this_project": true,
       "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "id"
+          ],
+          "name": "uk_ai_pricing_rule_scope_id",
+          "unique": true
+        },
         {
           "columns": [
             "tenant_id",
@@ -10287,7 +10399,22 @@
       ],
       "compliance_level": "L2",
       "domain": "ai",
-      "foreign_keys": [],
+      "foreign_keys": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "pricing_rule_id"
+          ],
+          "name": "fk_ai_pricing_tier_rule",
+          "references_columns": [
+            "tenant_id",
+            "organization_id",
+            "id"
+          ],
+          "references_table": "ai_pricing_rule"
+        }
+      ],
       "frontend_routes": [],
       "generated_by_this_project": true,
       "indexes": [
@@ -11715,10 +11842,22 @@
           ],
           "name": "idx_ai_request_trace_tenant_status_started",
           "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "status",
+            "started_at",
+            "id"
+          ],
+          "name": "idx_ai_request_trace_user_status_started",
+          "unique": false
         }
       ],
       "lifecycle": {
-        "partition_by": "created_at_month"
+        "storage_strategy": "indexed_append_only"
       },
       "not_null_columns": [],
       "physical_columns": null,
@@ -12847,7 +12986,7 @@
         }
       ],
       "lifecycle": {
-        "partition_by": "created_at_month"
+        "storage_strategy": "indexed_append_only"
       },
       "not_null_columns": [],
       "physical_columns": null,
@@ -13085,7 +13224,17 @@
       "foreign_keys": [],
       "frontend_routes": [],
       "generated_by_this_project": true,
-      "indexes": [],
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "id"
+          ],
+          "name": "uk_ai_routing_policy_scope_id",
+          "unique": true
+        }
+      ],
       "lifecycle": null,
       "not_null_columns": [],
       "physical_columns": null,
@@ -13310,10 +13459,35 @@
       ],
       "compliance_level": "L2",
       "domain": "ai",
-      "foreign_keys": [],
+      "foreign_keys": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "policy_id"
+          ],
+          "name": "fk_ai_routing_profile_policy",
+          "references_columns": [
+            "tenant_id",
+            "organization_id",
+            "id"
+          ],
+          "references_table": "ai_routing_policy"
+        }
+      ],
       "frontend_routes": [],
       "generated_by_this_project": true,
-      "indexes": [],
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "id"
+          ],
+          "name": "uk_ai_routing_profile_scope_id",
+          "unique": true
+        }
+      ],
       "lifecycle": null,
       "not_null_columns": [],
       "physical_columns": null,
@@ -13547,7 +13721,22 @@
       ],
       "compliance_level": "L2",
       "domain": "ai",
-      "foreign_keys": [],
+      "foreign_keys": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "profile_id"
+          ],
+          "name": "fk_ai_routing_rule_profile",
+          "references_columns": [
+            "tenant_id",
+            "organization_id",
+            "id"
+          ],
+          "references_table": "ai_routing_profile"
+        }
+      ],
       "frontend_routes": [],
       "generated_by_this_project": true,
       "indexes": [
@@ -14513,11 +14702,6 @@
           "type": "int64"
         },
         {
-          "name": "unit_price_snapshot",
-          "source": "explicit",
-          "type": "decimal"
-        },
-        {
           "name": "base_input_unit_price",
           "source": "explicit",
           "type": "decimal"
@@ -14554,11 +14738,6 @@
         },
         {
           "name": "customer_charge_amount",
-          "source": "explicit",
-          "type": "decimal"
-        },
-        {
-          "name": "cost_amount",
           "source": "explicit",
           "type": "decimal"
         },
@@ -14779,7 +14958,7 @@
         }
       ],
       "lifecycle": {
-        "partition_by": "created_at_month"
+        "storage_strategy": "indexed_append_only"
       },
       "not_null_columns": [],
       "physical_columns": null,
@@ -14802,6 +14981,22 @@
       "system_of_record": true,
       "table": "ai_usage",
       "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "id"
+          ],
+          "name": "uk_ai_usage_scope_id"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "idempotency_key"
+          ],
+          "name": "uk_ai_usage_idempotency"
+        },
         {
           "columns": [
             "tenant_id",
@@ -15110,7 +15305,22 @@
       ],
       "compliance_level": "L2",
       "domain": "ai",
-      "foreign_keys": [],
+      "foreign_keys": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "usage_fact_id"
+          ],
+          "name": "fk_ai_usage_service_provider_edge_usage",
+          "references_columns": [
+            "tenant_id",
+            "organization_id",
+            "id"
+          ],
+          "references_table": "ai_usage"
+        }
+      ],
       "frontend_routes": [],
       "generated_by_this_project": true,
       "indexes": [
@@ -15138,7 +15348,7 @@
         }
       ],
       "lifecycle": {
-        "partition_by": "created_at_month"
+        "storage_strategy": "indexed_append_only"
       },
       "not_null_columns": [],
       "physical_columns": null,
@@ -16233,6 +16443,15 @@
           "columns": [
             "tenant_id",
             "organization_id",
+            "id"
+          ],
+          "name": "uk_iam_gateway_api_key_scope_id",
+          "unique": true
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
             "user_id",
             "status",
             "updated_at",
@@ -16504,7 +16723,22 @@
       ],
       "compliance_level": "L2",
       "domain": "iam_gateway",
-      "foreign_keys": [],
+      "foreign_keys": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "api_key_id"
+          ],
+          "name": "fk_iam_gateway_api_key_channel_group_api_key",
+          "references_columns": [
+            "tenant_id",
+            "organization_id",
+            "id"
+          ],
+          "references_table": "iam_gateway_api_key"
+        }
+      ],
       "frontend_routes": [],
       "generated_by_this_project": true,
       "indexes": [
@@ -17319,7 +17553,7 @@
         }
       ],
       "lifecycle": {
-        "partition_by": "created_at_month"
+        "storage_strategy": "indexed_append_only"
       },
       "not_null_columns": [],
       "physical_columns": null,
@@ -17833,7 +18067,7 @@
         }
       ],
       "lifecycle": {
-        "partition_by": "created_at_month"
+        "storage_strategy": "indexed_append_only"
       },
       "not_null_columns": [],
       "physical_columns": null,
@@ -18700,13 +18934,51 @@
       "profile": "read_model",
       "projection_policy": null,
       "security": null,
+      "semantic_contracts": {
+        "projection_lineage": {
+          "aggregation_grain": [
+            "tenant_id",
+            "organization_id",
+            "metric_scope",
+            "metric_name",
+            "metric_period",
+            "period_start",
+            "dimension_key",
+            "dimension_value"
+          ],
+          "algorithm_version": "ops-metric-snapshot-v1",
+          "freshness": {
+            "max_staleness_seconds": 300,
+            "target_seconds": 60
+          },
+          "rebuild": {
+            "owner": "clawrouter-ops-runtime",
+            "strategy": "full_recompute"
+          },
+          "source_version": {
+            "field": "source_version",
+            "strategy": "max_source_version"
+          },
+          "watermark": {
+            "field": "period_start",
+            "strategy": "high_watermark"
+          }
+        }
+      },
       "source_refs": [],
-      "source_tables": [],
-      "system_of_record": true,
+      "source_tables": [
+        "ai_usage",
+        "ai_request_trace",
+        "ops_gateway_instance",
+        "ops_gateway_heartbeat"
+      ],
+      "system_of_record": false,
       "table": "ops_metric_snapshot",
       "unique_constraints": [
         {
           "columns": [
+            "tenant_id",
+            "organization_id",
             "metric_scope",
             "metric_name",
             "metric_period",
@@ -18846,7 +19118,22 @@
       "common_columns": [],
       "compliance_level": "L2",
       "domain": "ops",
-      "foreign_keys": [],
+      "foreign_keys": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "message_id"
+          ],
+          "name": "fk_ops_notification_delivery_message",
+          "references_columns": [
+            "tenant_id",
+            "organization_id",
+            "id"
+          ],
+          "references_table": "ops_notification_message"
+        }
+      ],
       "frontend_routes": [],
       "generated_by_this_project": true,
       "indexes": [
@@ -19131,6 +19418,15 @@
           "columns": [
             "tenant_id",
             "organization_id",
+            "id"
+          ],
+          "name": "uk_ops_notification_message_scope_id",
+          "unique": true
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
             "app_id",
             "scope_type",
             "status",
@@ -19352,7 +19648,22 @@
       ],
       "compliance_level": "L2",
       "domain": "ops",
-      "foreign_keys": [],
+      "foreign_keys": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "message_id"
+          ],
+          "name": "fk_ops_notification_recipient_message",
+          "references_columns": [
+            "tenant_id",
+            "organization_id",
+            "id"
+          ],
+          "references_table": "ops_notification_message"
+        }
+      ],
       "frontend_routes": [],
       "generated_by_this_project": true,
       "indexes": [

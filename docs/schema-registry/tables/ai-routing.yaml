@@ -2,6 +2,7 @@ tables:
 - table: ai_channel
   domain: ai
   profile: credential_ref
+  soft_delete_policy: full_lifecycle_unique
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
@@ -80,6 +81,12 @@ tables:
     - organization_id
     - channel_code
   indexes:
+  - name: uk_ai_channel_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
   - name: idx_ai_channel_provider_type_status
     columns:
     - tenant_id
@@ -124,6 +131,7 @@ tables:
 - table: ai_channel_credential
   domain: ai
   profile: credential_ref
+  soft_delete_policy: full_lifecycle_unique
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
@@ -191,6 +199,7 @@ tables:
 - table: ai_channel_group
   domain: ai
   profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
@@ -231,6 +240,12 @@ tables:
     - organization_id
     - group_code
   indexes:
+  - name: uk_ai_channel_group_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
   - name: idx_ai_channel_group_provider_status
     columns:
     - tenant_id
@@ -257,6 +272,7 @@ tables:
 - table: ai_channel_group_member
   domain: ai
   profile: relation_entity
+  soft_delete_policy: full_lifecycle_unique
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
@@ -293,6 +309,34 @@ tables:
     - organization_id
     - channel_group_id
     - channel_id
+  foreign_keys:
+  - name: fk_ai_channel_group_member_group
+    columns:
+    - tenant_id
+    - organization_id
+    - channel_group_id
+    references_table: ai_channel_group
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  - name: fk_ai_channel_group_member_channel
+    columns:
+    - tenant_id
+    - organization_id
+    - channel_id
+    references_table: ai_channel
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_channel_group_member_non_negative_weighting
+    expression: priority >= 0 AND weight >= 0
+  - name: ck_ai_channel_group_member_effective_interval
+    expression: effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from
   indexes:
   - name: idx_ai_channel_group_member_status
     columns:
@@ -322,7 +366,7 @@ tables:
   domain: ai
   profile: projection
   compliance_level: L2
-  system_of_record: true
+  system_of_record: false
   write_owner: ai-routing-service
   common_columns: projection
   api_surfaces:
@@ -343,6 +387,15 @@ tables:
     usage_amount_total: decimal
     health_status: int32
     snapshot_at: instant
+  required_columns:
+  - channel_group_id
+  - snapshot_at
+  - source_version
+  source_tables:
+  - ai_channel_group
+  - ai_channel_group_member
+  - ai_channel
+  - ai_usage
   unique_constraints:
   - name: uk_ai_channel_group_metric_snapshot_uuid
     columns:
@@ -353,6 +406,17 @@ tables:
     - organization_id
     - channel_group_id
     - snapshot_at
+  check_constraints:
+  - name: ck_ai_channel_group_metric_snapshot_non_negative_counts
+    expression: (channel_available_count IS NULL OR channel_available_count >= 0)
+      AND (channel_total_count IS NULL OR channel_total_count >= 0)
+      AND (request_count_today IS NULL OR request_count_today >= 0)
+      AND (request_count_total IS NULL OR request_count_total >= 0)
+  - name: ck_ai_channel_group_metric_snapshot_non_negative_amounts
+    expression: (capacity_used IS NULL OR capacity_used >= 0)
+      AND (capacity_limit IS NULL OR capacity_limit >= 0)
+      AND (usage_amount_today IS NULL OR usage_amount_today >= 0)
+      AND (usage_amount_total IS NULL OR usage_amount_total >= 0)
   indexes:
   - name: idx_ai_channel_group_metric_tenant_status
     columns:
@@ -369,9 +433,30 @@ tables:
     - health_status
     - snapshot_at
     - id
+  semantic_contracts:
+    projection_lineage:
+      watermark:
+        field: snapshot_at
+        strategy: high_watermark
+      source_version:
+        field: source_version
+        strategy: max_source_version
+      algorithm_version: channel-group-metric-v1
+      freshness:
+        target_seconds: 300
+        max_staleness_seconds: 900
+      rebuild:
+        strategy: full_recompute
+        owner: ai-routing-service
+      aggregation_grain:
+      - tenant_id
+      - organization_id
+      - channel_group_id
+      - snapshot_at
 - table: ai_channel_group_resource
   domain: ai
   profile: relation_entity
+  soft_delete_policy: full_lifecycle_unique
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
@@ -433,6 +518,7 @@ tables:
 - table: ai_channel_resource
   domain: ai
   profile: relation_entity
+  soft_delete_policy: full_lifecycle_unique
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
@@ -490,6 +576,7 @@ tables:
 - table: ai_config_version
   domain: ai
   profile: runtime_coordination
+  soft_delete_policy: full_lifecycle_unique
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
@@ -1013,10 +1100,11 @@ tables:
     - created_at
     - id
   lifecycle:
-    partition_by: created_at_month
+    storage_strategy: indexed_append_only
 - table: ai_routing_policy
   domain: ai
   profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
@@ -1037,13 +1125,25 @@ tables:
     slo_success_rate: decimal
     cost_ceiling: decimal
     currency: string(10)
+  required_columns:
+  - policy_code
   unique_constraints:
   - name: uk_ai_routing_policy_tenant_code
     columns:
     - tenant_id
     - organization_id
     - policy_code
-  indexes: []
+  check_constraints:
+  - name: ck_ai_routing_policy_non_negative_limits
+    expression: (slo_latency_ms IS NULL OR slo_latency_ms >= 0)
+      AND (cost_ceiling IS NULL OR cost_ceiling >= 0)
+  indexes:
+  - name: uk_ai_routing_policy_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
 - table: ai_routing_profile
   domain: ai
   profile: tenant_entity
@@ -1065,12 +1165,36 @@ tables:
     published_at: instant
     published_by: int64
     rollback_from_profile_id: int64
+  required_columns:
+  - policy_id
+  - profile_version
   unique_constraints:
   - name: uk_ai_routing_profile_policy_version
     columns:
     - policy_id
     - profile_version
-  indexes: []
+  foreign_keys:
+  - name: fk_ai_routing_profile_policy
+    columns:
+    - tenant_id
+    - organization_id
+    - policy_id
+    references_table: ai_routing_policy
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_routing_profile_version
+    expression: profile_version > 0
+  indexes:
+  - name: uk_ai_routing_profile_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
 - table: ai_routing_rule
   domain: ai
   profile: tenant_entity
@@ -1094,11 +1218,31 @@ tables:
     rate_limit_policy_id: int64
     effective_from: instant
     effective_to: instant
+  required_columns:
+  - profile_id
+  - rule_code
   unique_constraints:
   - name: uk_ai_routing_rule_profile_code
     columns:
     - profile_id
     - rule_code
+  foreign_keys:
+  - name: fk_ai_routing_rule_profile
+    columns:
+    - tenant_id
+    - organization_id
+    - profile_id
+    references_table: ai_routing_profile
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_routing_rule_priority
+    expression: priority IS NULL OR priority >= 0
+  - name: ck_ai_routing_rule_effective_interval
+    expression: effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from
   indexes:
   - name: idx_ai_routing_rule_tenant_profile_priority
     columns:

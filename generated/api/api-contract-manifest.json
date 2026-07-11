@@ -6092,7 +6092,42 @@
       "operation": "list",
       "operation_id": "gateway.traces.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "description": "Opaque continuation cursor from the previous page.",
+          "in": "query",
+          "name": "cursor",
+          "required": false,
+          "schema": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        {
+          "description": "Number of gateway traces returned in the current page.",
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Free-text search over trace identity, endpoint, and channel.",
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 256,
+            "type": "string"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai"
@@ -6100,11 +6135,89 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "GatewayTracesPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "GatewayTracesPage",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "GatewayTrace",
+                "properties": {
+                  "channel": {
+                    "description": "Routed channel or gateway node display label.",
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "duration": {
+                    "description": "HTTP latency display value, for example 128ms.",
+                    "pattern": "^[0-9]+ms$",
+                    "type": "string"
+                  },
+                  "endpoint": {
+                    "description": "Requested gateway endpoint path.",
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "Stable trace identifier displayed to the current user.",
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "ip": {
+                    "description": "Masked client IP address.",
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "method": {
+                    "description": "Normalized HTTP method.",
+                    "enum": [
+                      "GET",
+                      "POST",
+                      "PUT",
+                      "PATCH",
+                      "DELETE",
+                      "OPTIONS",
+                      "HEAD"
+                    ],
+                    "type": "string"
+                  },
+                  "status": {
+                    "description": "HTTP response status code.",
+                    "format": "int32",
+                    "maximum": 599,
+                    "minimum": 100,
+                    "type": "integer"
+                  },
+                  "time": {
+                    "description": "Request start time in UTC.",
+                    "format": "date-time",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "time",
+                  "ip",
+                  "endpoint",
+                  "method",
+                  "status",
+                  "duration",
+                  "channel"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },

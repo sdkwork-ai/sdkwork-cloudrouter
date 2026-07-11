@@ -1,14 +1,14 @@
 use crate::shared::{
-    acquire_template_file_lock, copy_sqlite_template_pool, reset_sqlite_template_path,
-    sqlite_file_pool, sqlite_template_current, sqlite_template_path, test_database_installer,
-    SqliteTemplateKind, INSTALLED_SQLITE_TEMPLATE_LOCK,
+    acquire_template_file_lock, copy_sqlite_template_pool, migrate_canonical_test_schema,
+    reset_sqlite_template_path, sqlite_file_pool, sqlite_template_current, sqlite_template_path,
+    test_database_installer, SqliteTemplateKind, INSTALLED_SQLITE_TEMPLATE_LOCK,
 };
 use sqlx::{query, SqlitePool};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-const INSTALLED_SQLITE_TEMPLATE_REVISION: &str = "v13";
+const INSTALLED_SQLITE_TEMPLATE_REVISION: &str = "canonical-v1";
 
 pub async fn installed_sqlite_pool() -> SqlitePool {
     let template_path = installed_sqlite_template_path();
@@ -60,11 +60,15 @@ pub(crate) async fn ensure_installed_sqlite_template(template_path: &Path) {
     }
     reset_sqlite_template_path(template_path);
     let pool = sqlite_file_pool(template_path).await;
+    migrate_canonical_test_schema(&pool).await;
     test_database_installer(pool.clone())
-        .ensure_installed()
+        .ensure_bootstrap_data()
         .await
-        .unwrap();
-    query("VACUUM").execute(&pool).await.unwrap();
+        .expect("bootstrap canonical model catalog and routing seed");
+    query("VACUUM")
+        .execute(&pool)
+        .await
+        .expect("compact canonical installed template");
     pool.close().await;
 }
 
@@ -87,33 +91,31 @@ fn installed_sqlite_catalog_copy_path() -> PathBuf {
 
 #[cfg(test)]
 mod tests {
-    use sqlx::Row;
+    use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
+        DatabaseInstaller, InstallationStatus,
+    };
 
     #[tokio::test]
     async fn installed_sqlite_catalog_copy_reopens_installed_catalog_state() {
         let database = super::installed_sqlite_catalog_copy().await;
         let pool = database.open_pool().await;
 
-        let model = sqlx::query(
-            r#"
-            SELECT model, display_name
-            FROM ai_model
-            WHERE model = 'gpt-5.5-pro'
-            LIMIT 1
-            "#,
+        assert_eq!(
+            InstallationStatus::Installed,
+            DatabaseInstaller::for_sqlite(pool.clone())
+                .with_options(crate::shared::test_database_install_options())
+                .expect("canonical test options")
+                .status()
+                .await
+                .expect("read canonical install status")
+        );
+        let retired_table_count: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name IN ('system_installation_state', 'system_schema_migration')",
         )
         .fetch_one(&pool)
         .await
-        .unwrap();
-        assert_eq!("gpt-5.5-pro", model.get::<String, _>("model"));
-        assert_eq!("GPT-5.5 Pro", model.get::<String, _>("display_name"));
-
-        let status: String =
-            sqlx::query_scalar("SELECT status FROM system_installation_state WHERE id = 1")
-                .fetch_one(&pool)
-                .await
-                .unwrap();
-        assert_eq!("installed", status);
+        .expect("inspect retired installer tables");
+        assert_eq!(0, retired_table_count);
         pool.close().await;
     }
 }

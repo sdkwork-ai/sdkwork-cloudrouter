@@ -26,7 +26,6 @@ async fn postgres_and_sqlite_return_the_same_scoped_dashboard() -> anyhow::Resul
             total_tokens BIGINT,
             request_count BIGINT,
             customer_charge_amount NUMERIC,
-            cost_amount NUMERIC,
             occurred_at TEXT
         )
         "#,

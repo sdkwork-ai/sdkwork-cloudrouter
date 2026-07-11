@@ -1,6 +1,6 @@
 use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::SqliteAppGatewayTracesReadStore;
 use sdkwork_clawrouter_router_service::ports::{
-    AppGatewayTracesReadStore, AppGatewayTracesSubject,
+    AppGatewayTracesListQuery, AppGatewayTracesReadStore, AppGatewayTracesSubject,
 };
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::SqlitePool;
@@ -14,7 +14,7 @@ async fn sqlite_gateway_traces_rejects_gateway_instance_without_deployment_mode(
 
     let store = SqliteAppGatewayTracesReadStore::new(pool);
     let error = store
-        .load_gateway_traces(Some(owner_subject()))
+        .load_gateway_traces(Some(owner_subject()), default_query())
         .await
         .unwrap_err();
 
@@ -34,13 +34,17 @@ async fn sqlite_gateway_traces_tolerates_missing_trace_latency() {
 
     let store = SqliteAppGatewayTracesReadStore::new(pool);
     let traces = store
-        .load_gateway_traces(Some(owner_subject()))
+        .load_gateway_traces(Some(owner_subject()), default_query())
         .await
         .unwrap();
 
-    assert_eq!(1, traces.len());
-    assert_eq!("trace-gateway-1", traces[0].id);
-    assert_eq!("0ms", traces[0].duration);
+    assert_eq!(1, traces.items.len());
+    assert_eq!("trace-gateway-1", traces.items[0].id);
+    assert_eq!("0ms", traces.items[0].duration);
+}
+
+fn default_query() -> AppGatewayTracesListQuery {
+    AppGatewayTracesListQuery::try_new(None, None, None).unwrap()
 }
 
 async fn sqlite_pool() -> SqlitePool {

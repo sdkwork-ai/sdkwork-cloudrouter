@@ -13,9 +13,9 @@ anyhow.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sdkwork-claw-config.workspace = true
+sdkwork-clawrouter-database-host.workspace = true
 sdkwork-clawrouter-router-service.workspace = true
+sdkwork-database-sqlx.workspace = true
+sdkwork-models-database-host.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
-
-[dev-dependencies]
-sdkwork_contract_service.workspace = true

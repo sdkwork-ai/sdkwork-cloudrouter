@@ -225,6 +225,51 @@ async fn sqlite_admin_channel_store_encrypts_channel_api_key_material() {
 }
 
 #[tokio::test]
+async fn sqlite_admin_channel_store_resolves_visible_resources_without_cross_tenant_leakage() {
+    let pool = schema_sqlite_pool().await;
+    for statement in [
+        "INSERT INTO ai_model_vendor (id, uuid, tenant_id, organization_id, vendor_code, display_name, status) VALUES (991000, 'vendor-openai-visible-resource-test', 100001, 0, 'openai', 'OpenAI', 1)",
+        "INSERT INTO ai_resource (id, uuid, tenant_id, organization_id, status, resource_code, resource_type, display_name, vendor_code) VALUES (991001, 'global-vendor-openai-visible-resource-test', 0, 0, 1, 'vendor.openai', 'vendor', 'Global OpenAI', 'openai')",
+        "INSERT INTO ai_resource (id, uuid, tenant_id, organization_id, status, resource_code, resource_type, display_name, modality_code) VALUES (991002, 'global-modality-llm-visible-resource-test', 0, 0, 1, 'modality.llm', 'modality', 'Global LLM', 'llm')",
+        "INSERT INTO ai_resource (id, uuid, tenant_id, organization_id, status, resource_code, resource_type, display_name, vendor_code) VALUES (991003, 'foreign-vendor-openai-visible-resource-test', 200002, 0, 1, 'vendor.openai', 'vendor', 'Foreign OpenAI', 'openai')",
+        "INSERT INTO ai_resource (id, uuid, tenant_id, organization_id, status, resource_code, resource_type, display_name, vendor_code) VALUES (991004, 'tenant-vendor-openai-visible-resource-test', 100001, 0, 1, 'vendor.openai', 'vendor', 'Tenant OpenAI', 'openai')",
+    ] {
+        sqlx::query(statement).execute(&pool).await.unwrap();
+    }
+    let codec = Arc::new(RingAeadApiKeySecretCodec::new("test-pepper").unwrap());
+    let store = SqliteAdminChannelStore::with_api_key_secret_codec(pool.clone(), codec);
+    let command =
+        duplicate_secret_channel_command("visible-global-resources", "2026-05-18 12:02:00");
+
+    let created = store.create_channel(command).await.unwrap();
+    let bindings = sqlx::query_as::<_, (String, Option<i64>)>(
+        r#"
+        SELECT resource_code, resource_id
+        FROM ai_channel_resource
+        WHERE tenant_id = 100001
+          AND organization_id = 0
+          AND channel_id = ?
+          AND status = 1
+          AND deleted_at IS NULL
+        ORDER BY resource_code ASC
+        "#,
+    )
+    .bind(created.id)
+    .fetch_all(&pool)
+    .await
+    .unwrap();
+
+    assert_eq!(
+        vec![
+            ("modality.llm".to_owned(), Some(991002)),
+            ("vendor.openai".to_owned(), Some(991004)),
+        ],
+        bindings,
+        "tenant resources must override platform resources while foreign tenant resources remain invisible"
+    );
+}
+
+#[tokio::test]
 async fn sqlite_admin_channel_store_does_not_bind_models_to_accounts() {
     let pool = schema_sqlite_pool().await;
     seed_channel_capability_prerequisites(&pool).await;

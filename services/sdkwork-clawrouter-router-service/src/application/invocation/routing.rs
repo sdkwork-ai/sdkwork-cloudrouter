@@ -146,6 +146,8 @@ pub struct InvocationRouting {
     pub sticky_route: Option<StickyRouteConstraint>,
     pub route_plan: Option<InvocationRoutePlan>,
     pub attempted_routes: Vec<InvocationRouteAttempt>,
+    pub(crate) circuit_half_open_probe_channels: Vec<i64>,
+    pub(crate) circuit_breaker_finalized: bool,
     pub policy_id: Option<i64>,
     pub rule_id: Option<i64>,
 }
@@ -159,6 +161,8 @@ impl InvocationRouting {
             sticky_route: None,
             route_plan: None,
             attempted_routes: Vec::new(),
+            circuit_half_open_probe_channels: Vec::new(),
+            circuit_breaker_finalized: false,
             policy_id: None,
             rule_id: None,
         }

@@ -157,9 +157,12 @@ async fn create_model_rate_limit(
     };
 
     match state.store.create_model_rate_limit(command).await {
-        Ok(item) => json_created_response(None, AdminModelRateLimitItemEnvelope {
-            item: to_item_response(item),
-        }),
+        Ok(item) => json_created_response(
+            None,
+            AdminModelRateLimitItemEnvelope {
+                item: to_item_response(item),
+            },
+        ),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) if error.to_string().contains(CHANNEL_GROUP_NOT_FOUND) => {
             bad_request("channelGroup must identify an existing ai channel group".to_owned())

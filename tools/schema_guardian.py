@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 import re
@@ -274,6 +275,87 @@ MOJIBAKE_MARKER_CODEPOINTS: tuple[int, ...] = (
 # Keep bad-glyph samples as code points so this source file stays readable.
 MOJIBAKE_MARKERS: tuple[str, ...] = tuple(chr(codepoint) for codepoint in MOJIBAKE_MARKER_CODEPOINTS)
 
+SQLITE_SQL_SCAN_ROOTS: tuple[str, ...] = (
+    "crates",
+    "data",
+    "database",
+    "jobs",
+    "packages",
+    "services",
+)
+
+SQLITE_SQL_SCAN_SKIP_DIRECTORIES: frozenset[str] = frozenset(
+    {
+        ".git",
+        ".sdkwork",
+        "build",
+        "dist",
+        "fixtures",
+        "generated",
+        "node_modules",
+        "target",
+        "test",
+        "tests",
+        "vendor",
+    }
+)
+
+SQLITE_SQL_SOURCE_SUFFIXES: frozenset[str] = frozenset({".rs", ".sql"})
+
+SQL_PRECISION_FUNCTION_RE = re.compile(r"\b(?P<name>SUM|AVG|CAST)\s*\(", re.IGNORECASE)
+SQL_IDENTIFIER_RE = re.compile(r"(?<![A-Za-z0-9_])[A-Za-z_][A-Za-z0-9_]*(?![A-Za-z0-9_])")
+SQL_CAST_AS_REAL_RE = re.compile(r"\bAS\s+REAL\b", re.IGNORECASE)
+
+GENERATED_SCHEMA_PATHS: dict[str, str] = {
+    "postgres": "generated/schema/postgres/schema.sql",
+    "sqlite": "generated/schema/sqlite/schema.sql",
+}
+
+INSERT_INTO_RE = re.compile(
+    r"\bINSERT\s+INTO\s+(?:(?:[A-Za-z_][A-Za-z0-9_]*|\"[A-Za-z_][A-Za-z0-9_]*\")\s*\.\s*)?"
+    r"[\"`\[]?(?P<table>[A-Za-z_][A-Za-z0-9_]*)[\"`\]]?",
+    re.IGNORECASE,
+)
+
+ON_CONFLICT_TARGET_RE = re.compile(
+    r"\bON\s+CONFLICT\s*\((?P<columns>[^)]*)\)"
+    r"(?:\s+WHERE\s+(?P<where>.*?))?\s+DO\s+(?:UPDATE|NOTHING)\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+CREATE_TABLE_RE = re.compile(
+    r"\bCREATE\s+TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+"
+    r"[\"`\[]?(?P<table>[A-Za-z_][A-Za-z0-9_]*)[\"`\]]?\s*"
+    r"\((?P<body>.*?)\n\);",
+    re.IGNORECASE | re.DOTALL,
+)
+
+CREATE_UNIQUE_INDEX_RE = re.compile(
+    r"\bCREATE\s+UNIQUE\s+INDEX(?:\s+IF\s+NOT\s+EXISTS)?\s+"
+    r"[\"`\[]?[A-Za-z_][A-Za-z0-9_]*[\"`\]]?\s+ON\s+"
+    r"[\"`\[]?(?P<table>[A-Za-z_][A-Za-z0-9_]*)[\"`\]]?\s*"
+    r"\((?P<columns>[^)]*)\)"
+    r"(?:\s+WHERE\s+(?P<where>[^;]+))?\s*;",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TABLE_PRIMARY_KEY_RE = re.compile(
+    r"(?:\bCONSTRAINT\s+[\"`\[]?[A-Za-z_][A-Za-z0-9_]*[\"`\]]?\s+)?"
+    r"\bPRIMARY\s+KEY\s*\((?P<columns>[^)]*)\)",
+    re.IGNORECASE,
+)
+
+TABLE_UNIQUE_RE = re.compile(
+    r"(?:\bCONSTRAINT\s+[\"`\[]?[A-Za-z_][A-Za-z0-9_]*[\"`\]]?\s+)?"
+    r"\bUNIQUE\s*\((?P<columns>[^)]*)\)",
+    re.IGNORECASE,
+)
+
+INLINE_PRIMARY_KEY_RE = re.compile(
+    r"^\s*[\"`\[]?(?P<column>[A-Za-z_][A-Za-z0-9_]*)[\"`\]]?\s+.*\bPRIMARY\s+KEY\b",
+    re.IGNORECASE | re.MULTILINE,
+)
+
 BARE_MEDIA_DB_COLUMN_NAMES = {
     "asset_url",
     "artifact_url",
@@ -429,6 +511,12 @@ class SchemaGuardianResult:
     messages: list[str]
 
 
+@dataclass(frozen=True)
+class GeneratedUniqueTarget:
+    columns: tuple[str, ...]
+    where: str | None
+
+
 class SchemaGuardian:
     """Executable guardrails for the Claw Router schema registry."""
 
@@ -472,6 +560,8 @@ class SchemaGuardian:
         messages.extend(self._check_skills_hub_tables(by_table))
         messages.extend(self._check_domain_names(data, by_table))
         messages.extend(self._check_pricing_and_billing_contracts(by_table))
+        messages.extend(self._check_repository_on_conflict_targets(by_table))
+        messages.extend(self._check_sqlite_logical_decimal_queries(by_table))
         messages.extend(self._check_messaging_delivery_standard(by_table))
         messages.extend(self._check_projection_source_contracts(by_table))
         messages.extend(self._check_api_prefixes(data))
@@ -983,6 +1073,387 @@ class SchemaGuardian:
 
         return messages
 
+    def _check_repository_on_conflict_targets(
+        self,
+        by_table: dict[str, dict[str, Any]],
+    ) -> list[str]:
+        generated_targets = self._generated_unique_targets()
+        if not generated_targets:
+            return []
+
+        local_tables = {
+            table.casefold()
+            for table, metadata in by_table.items()
+            if metadata.get("generated_by_this_project") is not False
+        }
+        messages: list[str] = []
+        for path in self._repository_sql_source_paths():
+            text = path.read_text(encoding="utf-8", errors="replace")
+            inserts = list(INSERT_INTO_RE.finditer(text))
+            if not inserts:
+                continue
+
+            insert_index = 0
+            last_insert: re.Match[str] | None = None
+            for conflict in ON_CONFLICT_TARGET_RE.finditer(text):
+                while insert_index < len(inserts) and inserts[insert_index].start() < conflict.start():
+                    last_insert = inserts[insert_index]
+                    insert_index += 1
+                if last_insert is None:
+                    continue
+
+                table = last_insert.group("table").casefold()
+                if table not in local_tables:
+                    continue
+
+                columns = self._parse_sql_identifier_list(conflict.group("columns"))
+                relative_path = path.relative_to(self.root).as_posix()
+                line_number = text.count("\n", 0, conflict.start()) + 1
+                if columns is None:
+                    messages.append(
+                        f"repository SQL {relative_path}:{line_number} ON CONFLICT target for "
+                        f"local table {table} must contain plain column identifiers"
+                    )
+                    continue
+
+                target_where = self._normalize_sql_predicate(conflict.group("where"))
+                statement_prefix = text[last_insert.start() : conflict.start()]
+                for dialect in self._repository_statement_dialects(
+                    path,
+                    statement_prefix,
+                    generated_targets,
+                ):
+                    table_targets = generated_targets[dialect].get(table, ())
+                    matching_columns = [
+                        target
+                        for target in table_targets
+                        if self._same_column_target(columns, target.columns)
+                    ]
+                    if any(
+                        target.where is None or target.where == target_where
+                        for target in matching_columns
+                    ):
+                        continue
+
+                    dialect_name = "PostgreSQL" if dialect == "postgres" else "SQLite"
+                    rendered_columns = ", ".join(columns)
+                    if matching_columns:
+                        predicates = sorted(
+                            {
+                                target.where
+                                for target in matching_columns
+                                if target.where is not None
+                            }
+                        )
+                        rendered_predicates = ", ".join(predicates)
+                        messages.append(
+                            f"repository SQL {relative_path}:{line_number} ON CONFLICT target "
+                            f"{table}({rendered_columns}) does not explicitly match generated "
+                            f"{dialect_name} partial UNIQUE predicate(s): {rendered_predicates}"
+                        )
+                        continue
+
+                    messages.append(
+                        f"repository SQL {relative_path}:{line_number} ON CONFLICT target "
+                        f"{table}({rendered_columns}) is not backed by a same-table PRIMARY KEY "
+                        f"or UNIQUE index in generated {dialect_name} schema"
+                    )
+
+        return messages
+
+    def _generated_unique_targets(
+        self,
+    ) -> dict[str, dict[str, tuple[GeneratedUniqueTarget, ...]]]:
+        targets_by_dialect: dict[str, dict[str, tuple[GeneratedUniqueTarget, ...]]] = {}
+        for dialect, relative_path in GENERATED_SCHEMA_PATHS.items():
+            path = self.root / relative_path
+            if not path.exists():
+                continue
+            targets_by_dialect[dialect] = self._parse_generated_unique_targets(
+                path.read_text(encoding="utf-8", errors="replace")
+            )
+        return targets_by_dialect
+
+    def _parse_generated_unique_targets(
+        self,
+        ddl: str,
+    ) -> dict[str, tuple[GeneratedUniqueTarget, ...]]:
+        mutable_targets: dict[str, list[GeneratedUniqueTarget]] = {}
+
+        for table_match in CREATE_TABLE_RE.finditer(ddl):
+            table = table_match.group("table").casefold()
+            body = table_match.group("body")
+            for inline_primary_key in INLINE_PRIMARY_KEY_RE.finditer(body):
+                self._append_unique_target(
+                    mutable_targets,
+                    table,
+                    (inline_primary_key.group("column").casefold(),),
+                    where=None,
+                )
+            for pattern in (TABLE_PRIMARY_KEY_RE, TABLE_UNIQUE_RE):
+                for table_constraint in pattern.finditer(body):
+                    columns = self._parse_sql_identifier_list(table_constraint.group("columns"))
+                    if columns is not None:
+                        self._append_unique_target(
+                            mutable_targets,
+                            table,
+                            columns,
+                            where=None,
+                        )
+
+        for index_match in CREATE_UNIQUE_INDEX_RE.finditer(ddl):
+            columns = self._parse_sql_identifier_list(index_match.group("columns"))
+            if columns is None:
+                continue
+            self._append_unique_target(
+                mutable_targets,
+                index_match.group("table").casefold(),
+                columns,
+                where=self._normalize_sql_predicate(index_match.group("where")),
+            )
+
+        return {
+            table: tuple(targets)
+            for table, targets in mutable_targets.items()
+        }
+
+    @staticmethod
+    def _append_unique_target(
+        targets: dict[str, list[GeneratedUniqueTarget]],
+        table: str,
+        columns: tuple[str, ...],
+        *,
+        where: str | None,
+    ) -> None:
+        target = GeneratedUniqueTarget(columns=columns, where=where)
+        table_targets = targets.setdefault(table, [])
+        if target not in table_targets:
+            table_targets.append(target)
+
+    @staticmethod
+    def _parse_sql_identifier_list(value: str) -> tuple[str, ...] | None:
+        columns: list[str] = []
+        for raw_column in value.split(","):
+            column = raw_column.strip()
+            match = re.fullmatch(
+                r"[\"`\[]?(?P<column>[A-Za-z_][A-Za-z0-9_]*)[\"`\]]?",
+                column,
+            )
+            if match is None:
+                return None
+            columns.append(match.group("column").casefold())
+        if not columns or len(set(columns)) != len(columns):
+            return None
+        return tuple(columns)
+
+    @staticmethod
+    def _normalize_sql_predicate(value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        while (
+            normalized.startswith("(")
+            and SchemaGuardian._matching_parenthesis(normalized, 0) == len(normalized) - 1
+        ):
+            normalized = normalized[1:-1].strip()
+        normalized = re.sub(
+            r"[\"`\[]([A-Za-z_][A-Za-z0-9_]*)[\"`\]]",
+            r"\1",
+            normalized,
+        )
+        normalized = re.sub(r"\s+", " ", normalized).strip().casefold()
+        return normalized or None
+
+    @staticmethod
+    def _same_column_target(left: tuple[str, ...], right: tuple[str, ...]) -> bool:
+        return len(left) == len(right) and set(left) == set(right)
+
+    def _repository_statement_dialects(
+        self,
+        path: Path,
+        statement_prefix: str,
+        generated_targets: dict[str, dict[str, tuple[GeneratedUniqueTarget, ...]]],
+    ) -> tuple[str, ...]:
+        relative = path.relative_to(self.root)
+        path_tokens = {part.casefold() for part in relative.parts}
+        stem = path.stem.casefold()
+        if "sqlite" in path_tokens or stem == "sqlite" or stem.startswith("sqlite_"):
+            return ("sqlite",) if "sqlite" in generated_targets else ()
+        if (
+            "postgres" in path_tokens
+            or "postgresql" in path_tokens
+            or stem in {"postgres", "postgresql"}
+            or stem.startswith(("postgres_", "postgresql_"))
+        ):
+            return ("postgres",) if "postgres" in generated_targets else ()
+
+        has_postgres_placeholders = re.search(r"\$[1-9][0-9]*\b", statement_prefix) is not None
+        has_sqlite_placeholders = "?" in statement_prefix
+        if has_postgres_placeholders and not has_sqlite_placeholders:
+            return ("postgres",) if "postgres" in generated_targets else ()
+        if has_sqlite_placeholders and not has_postgres_placeholders:
+            return ("sqlite",) if "sqlite" in generated_targets else ()
+        return tuple(sorted(generated_targets))
+
+    def _repository_sql_source_paths(self) -> Iterator[Path]:
+        for relative_root in SQLITE_SQL_SCAN_ROOTS:
+            root = self.root / relative_root
+            if not root.exists():
+                continue
+            yield from self._walk_repository_sql_sources(root)
+
+    def _walk_repository_sql_sources(self, root: Path) -> Iterator[Path]:
+        for path in sorted(root.iterdir(), key=lambda candidate: candidate.name.casefold()):
+            if path.is_dir():
+                if path.name.casefold() in SQLITE_SQL_SCAN_SKIP_DIRECTORIES or path.is_symlink():
+                    continue
+                yield from self._walk_repository_sql_sources(path)
+                continue
+            if path.is_file() and path.suffix.casefold() in SQLITE_SQL_SOURCE_SUFFIXES:
+                yield path
+
+    def _check_sqlite_logical_decimal_queries(
+        self,
+        by_table: dict[str, dict[str, Any]],
+    ) -> list[str]:
+        decimal_columns = self._logical_decimal_columns(by_table)
+        if not decimal_columns:
+            return []
+
+        messages: list[str] = []
+        for path in self._sqlite_sql_source_paths():
+            text = path.read_text(encoding="utf-8", errors="replace")
+            relative_path = path.relative_to(self.root).as_posix()
+            for function_name, start, expression in self._sql_precision_function_calls(text):
+                referenced_columns = sorted(
+                    decimal_columns.intersection(
+                        identifier.casefold()
+                        for identifier in SQL_IDENTIFIER_RE.findall(expression)
+                    )
+                )
+                if not referenced_columns:
+                    continue
+
+                line_number = text.count("\n", 0, start) + 1
+                columns = ", ".join(referenced_columns)
+                if function_name in {"sum", "avg"}:
+                    replacement = "sdkwork_decimal_sum(...)"
+                    if function_name == "avg":
+                        replacement += " with exact decimal division"
+                    messages.append(
+                        f"SQLite SQL {relative_path}:{line_number} uses native "
+                        f"{function_name.upper()} on logical decimal column(s) {columns}; "
+                        f"use {replacement}"
+                    )
+                    continue
+
+                if SQL_CAST_AS_REAL_RE.search(expression):
+                    messages.append(
+                        f"SQLite SQL {relative_path}:{line_number} casts logical decimal "
+                        f"column(s) {columns} AS REAL; use sdkwork_decimal_order_key(...)"
+                    )
+
+        return messages
+
+    @staticmethod
+    def _logical_decimal_columns(by_table: dict[str, dict[str, Any]]) -> set[str]:
+        columns: set[str] = set()
+        for metadata in by_table.values():
+            table_columns = metadata.get("columns")
+            if not isinstance(table_columns, dict):
+                continue
+            for column, logical_type in table_columns.items():
+                if (
+                    isinstance(column, str)
+                    and column.strip()
+                    and SchemaGuardian._is_logical_decimal_type(logical_type)
+                ):
+                    columns.add(column.strip().casefold())
+        return columns
+
+    @staticmethod
+    def _is_logical_decimal_type(logical_type: Any) -> bool:
+        if isinstance(logical_type, dict):
+            logical_type = logical_type.get("type", logical_type.get("logical_type"))
+        if not isinstance(logical_type, str):
+            return False
+        normalized = logical_type.strip().casefold()
+        return normalized == "decimal" or normalized.startswith("decimal(")
+
+    def _sqlite_sql_source_paths(self) -> Iterator[Path]:
+        for relative_root in SQLITE_SQL_SCAN_ROOTS:
+            root = self.root / relative_root
+            if not root.exists():
+                continue
+            yield from self._walk_sqlite_sql_sources(root)
+
+    def _walk_sqlite_sql_sources(self, root: Path) -> Iterator[Path]:
+        for path in sorted(root.iterdir(), key=lambda candidate: candidate.name.casefold()):
+            if path.is_dir():
+                if path.name.casefold() in SQLITE_SQL_SCAN_SKIP_DIRECTORIES or path.is_symlink():
+                    continue
+                yield from self._walk_sqlite_sql_sources(path)
+                continue
+            if not path.is_file() or path.suffix.casefold() not in SQLITE_SQL_SOURCE_SUFFIXES:
+                continue
+            if self._is_sqlite_sql_source(path):
+                yield path
+
+    def _is_sqlite_sql_source(self, path: Path) -> bool:
+        relative = path.relative_to(self.root)
+        directory_parts = {part.casefold() for part in relative.parts[:-1]}
+        stem = path.stem.casefold()
+        return (
+            "sqlite" in directory_parts
+            or stem == "sqlite"
+            or stem.startswith("sqlite_")
+            or stem.endswith("_sqlite")
+        )
+
+    @staticmethod
+    def _sql_precision_function_calls(text: str) -> Iterator[tuple[str, int, str]]:
+        for match in SQL_PRECISION_FUNCTION_RE.finditer(text):
+            opening_parenthesis = match.end() - 1
+            closing_parenthesis = SchemaGuardian._matching_parenthesis(text, opening_parenthesis)
+            if closing_parenthesis is None:
+                continue
+            yield (
+                match.group("name").casefold(),
+                match.start(),
+                text[opening_parenthesis + 1 : closing_parenthesis],
+            )
+
+    @staticmethod
+    def _matching_parenthesis(text: str, opening_parenthesis: int) -> int | None:
+        depth = 0
+        quote: str | None = None
+        index = opening_parenthesis
+        while index < len(text):
+            character = text[index]
+            if quote is not None:
+                if character == "\\":
+                    index += 2
+                    continue
+                if character == quote:
+                    if index + 1 < len(text) and text[index + 1] == quote:
+                        index += 2
+                        continue
+                    quote = None
+                index += 1
+                continue
+
+            if character in {"'", '"'}:
+                quote = character
+            elif character == "(":
+                depth += 1
+            elif character == ")":
+                depth -= 1
+                if depth == 0:
+                    return index
+            index += 1
+
+        return None
+
     def _check_messaging_delivery_standard(self, by_table: dict[str, dict[str, Any]]) -> list[str]:
         messages: list[str] = []
         has_messaging_table = False
@@ -1018,6 +1489,13 @@ class SchemaGuardian:
             if not self._is_projection_table(metadata):
                 continue
 
+            if metadata.get("system_of_record") is not False:
+                messages.append(f"{table} projection table must set system_of_record: false")
+
+            write_owner = metadata.get("write_owner")
+            if not isinstance(write_owner, str) or not write_owner.strip():
+                messages.append(f"{table} projection table must declare write_owner")
+
             source_tables = metadata.get("source_tables", [])
             source_refs = metadata.get("source_refs", [])
             if not isinstance(source_tables, list):
@@ -1027,8 +1505,29 @@ class SchemaGuardian:
                 messages.append(f"{table} source_refs must be a list")
                 source_refs = []
 
-            source_table_names = [source for source in source_tables if isinstance(source, str)]
-            source_ref_names = [source for source in source_refs if isinstance(source, str)]
+            source_table_names = [
+                source.strip()
+                for source in source_tables
+                if isinstance(source, str) and source.strip()
+            ]
+            source_ref_names: list[str] = []
+            for source_ref in source_refs:
+                if isinstance(source_ref, str) and source_ref.strip():
+                    source_ref_names.append(source_ref.strip())
+                    continue
+                if isinstance(source_ref, dict):
+                    module_id = source_ref.get("module_id")
+                    source_table = source_ref.get("table")
+                    if (
+                        isinstance(module_id, str)
+                        and module_id.strip()
+                        and isinstance(source_table, str)
+                        and source_table.strip()
+                    ):
+                        source_ref_names.append(f"{module_id.strip()}:{source_table.strip()}")
+                        continue
+                messages.append(f"{table} source_refs entries must declare module_id and table")
+
             if not source_table_names and not source_ref_names:
                 messages.append(f"{table} projection table must declare source_tables or source_refs")
 
@@ -1041,10 +1540,85 @@ class SchemaGuardian:
                         f"{table} projection over legacy table {source} must declare projection_policy.does_not_replace"
                     )
 
+            if metadata.get("imported") is True or metadata.get("generated_by_this_project") is False:
+                continue
+
+            semantic_contracts = metadata.get("semantic_contracts")
+            lineage = (
+                semantic_contracts.get("projection_lineage")
+                if isinstance(semantic_contracts, dict)
+                else None
+            )
+            if not isinstance(lineage, dict):
+                messages.append(f"{table} projection table must declare semantic_contracts.projection_lineage")
+                continue
+
+            watermark = lineage.get("watermark")
+            if not self._has_non_empty_string_fields(watermark, "field", "strategy"):
+                messages.append(
+                    f"{table} projection_lineage.watermark must declare field and strategy"
+                )
+
+            source_version = lineage.get("source_version")
+            if not self._has_non_empty_string_fields(source_version, "field"):
+                messages.append(f"{table} projection_lineage.source_version must declare field")
+
+            algorithm_version = lineage.get("algorithm_version")
+            if not isinstance(algorithm_version, str) or not algorithm_version.strip():
+                messages.append(
+                    f"{table} projection_lineage.algorithm_version must be a non-empty string"
+                )
+
+            freshness = lineage.get("freshness")
+            target_seconds = freshness.get("target_seconds") if isinstance(freshness, dict) else None
+            max_staleness_seconds = (
+                freshness.get("max_staleness_seconds") if isinstance(freshness, dict) else None
+            )
+            if (
+                not isinstance(target_seconds, int)
+                or isinstance(target_seconds, bool)
+                or target_seconds <= 0
+                or not isinstance(max_staleness_seconds, int)
+                or isinstance(max_staleness_seconds, bool)
+                or max_staleness_seconds <= 0
+            ):
+                messages.append(
+                    f"{table} projection_lineage.freshness must declare positive "
+                    "target_seconds and max_staleness_seconds"
+                )
+            elif max_staleness_seconds < target_seconds:
+                messages.append(
+                    f"{table} projection_lineage.freshness max_staleness_seconds must be "
+                    "greater than or equal to target_seconds"
+                )
+
+            rebuild = lineage.get("rebuild")
+            if not self._has_non_empty_string_fields(rebuild, "strategy", "owner"):
+                messages.append(f"{table} projection_lineage.rebuild must declare strategy and owner")
+
+            aggregation_grain = lineage.get("aggregation_grain")
+            if (
+                not isinstance(aggregation_grain, list)
+                or not aggregation_grain
+                or any(not isinstance(column, str) or not column.strip() for column in aggregation_grain)
+            ):
+                messages.append(
+                    f"{table} projection_lineage.aggregation_grain must be a non-empty string list"
+                )
+
         return messages
 
     def _is_projection_table(self, metadata: dict[str, Any]) -> bool:
-        return metadata.get("profile") == "projection" or metadata.get("common_columns") == "projection"
+        return metadata.get("profile") in {"projection", "read_model", "search_index"} or metadata.get(
+            "common_columns"
+        ) == "projection"
+
+    @staticmethod
+    def _has_non_empty_string_fields(value: Any, *fields: str) -> bool:
+        return isinstance(value, dict) and all(
+            isinstance(value.get(field), str) and value[field].strip()
+            for field in fields
+        )
 
     def _declares_non_replacement(self, metadata: dict[str, Any], source: str) -> bool:
         policy = metadata.get("projection_policy")

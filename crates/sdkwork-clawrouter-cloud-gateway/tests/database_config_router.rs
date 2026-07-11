@@ -307,7 +307,7 @@ async fn database_config_router_records_non_stream_chat_usage_when_provider_succ
         r#"
         SELECT request_id, api_key_id, model, channel_id, usage_type, billing_meter_code,
                billable_quantity, prompt_tokens, completion_tokens, total_tokens,
-               customer_charge_amount, cost_amount, currency, pricing_plan_code, settlement_status
+               customer_charge_amount, currency, pricing_plan_code, settlement_status
         FROM ai_usage
         WHERE request_id = ?
         "#,
@@ -338,7 +338,6 @@ async fn database_config_router_records_non_stream_chat_usage_when_provider_succ
         "0.000000990000",
         usage.get::<String, _>("customer_charge_amount")
     );
-    assert_eq!("0.000000990000", usage.get::<String, _>("cost_amount"));
     assert_eq!("USD", usage.get::<String, _>("currency"));
     assert_eq!("standard", usage.get::<String, _>("pricing_plan_code"));
     assert_eq!(0_i64, usage.get::<i64, _>("settlement_status"));
@@ -463,7 +462,7 @@ async fn database_config_router_applies_database_retry_policy_without_duplicate_
     let usage = sqlx::query(
         r#"
         SELECT request_id, channel_id, billing_meter_code, billable_quantity, prompt_tokens,
-               completion_tokens, total_tokens, customer_charge_amount, cost_amount,
+               completion_tokens, total_tokens, customer_charge_amount,
                settlement_status
         FROM ai_usage
         WHERE request_id = ?
@@ -487,7 +486,6 @@ async fn database_config_router_applies_database_retry_policy_without_duplicate_
         "0.000002772000",
         usage.get::<String, _>("customer_charge_amount")
     );
-    assert_eq!("0.000002772000", usage.get::<String, _>("cost_amount"));
     assert_eq!(0_i64, usage.get::<i64, _>("settlement_status"));
 
     let trace_count: i64 =
@@ -811,7 +809,7 @@ async fn database_config_router_uses_provider_relay_config_for_streaming_chat_co
     let usage = sqlx::query(
         r#"
         SELECT request_id, prompt_tokens, completion_tokens, total_tokens,
-               customer_charge_amount, cost_amount, settlement_status
+               customer_charge_amount, settlement_status
         FROM ai_usage
         WHERE request_id = ?
         "#,
@@ -832,7 +830,6 @@ async fn database_config_router_uses_provider_relay_config_for_streaming_chat_co
         "0.000000990000",
         usage.get::<String, _>("customer_charge_amount")
     );
-    assert_eq!("0.000000990000", usage.get::<String, _>("cost_amount"));
     assert_eq!(0_i64, usage.get::<i64, _>("settlement_status"));
     read_pool.close().await;
 }

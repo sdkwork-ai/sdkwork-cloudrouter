@@ -153,6 +153,44 @@ schema_registry:
     - deleted_at
     - deleted_by
     - metadata
+  table_profile_policies:
+    tenant_entity:
+      tenant_scope: tenant_with_global_fallback
+      soft_delete_policy: active_unique
+    relation_entity:
+      tenant_scope: tenant_with_global_fallback
+      soft_delete_policy: active_unique
+    credential_ref:
+      tenant_scope: tenant_with_global_fallback
+      soft_delete_policy: active_unique
+    pricing:
+      tenant_scope: tenant_with_global_fallback
+      soft_delete_policy: active_unique
+    quota_policy:
+      tenant_scope: tenant_with_global_fallback
+      soft_delete_policy: active_unique
+    runtime_binding:
+      tenant_scope: tenant_with_global_fallback
+      soft_delete_policy: active_unique
+    runtime_coordination:
+      tenant_scope: tenant_with_global_fallback
+      soft_delete_policy: active_unique
+    event_log:
+      tenant_scope: tenant_required
+    runtime_coordination_event:
+      tenant_scope: tenant_required
+    ledger_source_fact:
+      tenant_scope: tenant_required
+    audit_event:
+      tenant_scope: tenant_required
+    projection:
+      tenant_scope: tenant_required
+    read_model:
+      tenant_scope: tenant_required
+    operational_state:
+      tenant_scope: tenant_with_global_fallback
+    user_entity:
+      tenant_scope: tenant_required
 description: Claw Router Schema Registry. Machine-readable source of truth for Claw
   Router-owned runtime tables; generated SQL, manifests, OpenAPI snapshots, SDKs,
   services, and frontends must align to this contract.
@@ -441,6 +479,7 @@ tables:
 - table: ai_channel
   domain: ai
   profile: credential_ref
+  soft_delete_policy: full_lifecycle_unique
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
@@ -519,6 +558,12 @@ tables:
     - organization_id
     - channel_code
   indexes:
+  - name: uk_ai_channel_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
   - name: idx_ai_channel_provider_type_status
     columns:
     - tenant_id
@@ -564,6 +609,7 @@ tables:
 - table: ai_channel_credential
   domain: ai
   profile: credential_ref
+  soft_delete_policy: full_lifecycle_unique
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
@@ -632,6 +678,7 @@ tables:
 - table: ai_channel_group
   domain: ai
   profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
@@ -672,6 +719,12 @@ tables:
     - organization_id
     - group_code
   indexes:
+  - name: uk_ai_channel_group_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
   - name: idx_ai_channel_group_provider_status
     columns:
     - tenant_id
@@ -699,6 +752,7 @@ tables:
 - table: ai_channel_group_member
   domain: ai
   profile: relation_entity
+  soft_delete_policy: full_lifecycle_unique
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
@@ -735,6 +789,34 @@ tables:
     - organization_id
     - channel_group_id
     - channel_id
+  foreign_keys:
+  - name: fk_ai_channel_group_member_group
+    columns:
+    - tenant_id
+    - organization_id
+    - channel_group_id
+    references_table: ai_channel_group
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  - name: fk_ai_channel_group_member_channel
+    columns:
+    - tenant_id
+    - organization_id
+    - channel_id
+    references_table: ai_channel
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_channel_group_member_non_negative_weighting
+    expression: priority >= 0 AND weight >= 0
+  - name: ck_ai_channel_group_member_effective_interval
+    expression: effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from
   indexes:
   - name: idx_ai_channel_group_member_status
     columns:
@@ -765,7 +847,7 @@ tables:
   domain: ai
   profile: projection
   compliance_level: L2
-  system_of_record: true
+  system_of_record: false
   write_owner: ai-routing-service
   common_columns: projection
   api_surfaces:
@@ -786,6 +868,15 @@ tables:
     usage_amount_total: decimal
     health_status: int32
     snapshot_at: instant
+  required_columns:
+  - channel_group_id
+  - snapshot_at
+  - source_version
+  source_tables:
+  - ai_channel_group
+  - ai_channel_group_member
+  - ai_channel
+  - ai_usage
   unique_constraints:
   - name: uk_ai_channel_group_metric_snapshot_uuid
     columns:
@@ -796,6 +887,16 @@ tables:
     - organization_id
     - channel_group_id
     - snapshot_at
+  check_constraints:
+  - name: ck_ai_channel_group_metric_snapshot_non_negative_counts
+    expression: (channel_available_count IS NULL OR channel_available_count >= 0)
+      AND (channel_total_count IS NULL OR channel_total_count >= 0) AND (request_count_today
+      IS NULL OR request_count_today >= 0) AND (request_count_total IS NULL OR request_count_total
+      >= 0)
+  - name: ck_ai_channel_group_metric_snapshot_non_negative_amounts
+    expression: (capacity_used IS NULL OR capacity_used >= 0) AND (capacity_limit
+      IS NULL OR capacity_limit >= 0) AND (usage_amount_today IS NULL OR usage_amount_today
+      >= 0) AND (usage_amount_total IS NULL OR usage_amount_total >= 0)
   indexes:
   - name: idx_ai_channel_group_metric_tenant_status
     columns:
@@ -812,10 +913,31 @@ tables:
     - health_status
     - snapshot_at
     - id
+  semantic_contracts:
+    projection_lineage:
+      watermark:
+        field: snapshot_at
+        strategy: high_watermark
+      source_version:
+        field: source_version
+        strategy: max_source_version
+      algorithm_version: channel-group-metric-v1
+      freshness:
+        target_seconds: 300
+        max_staleness_seconds: 900
+      rebuild:
+        strategy: full_recompute
+        owner: ai-routing-service
+      aggregation_grain:
+      - tenant_id
+      - organization_id
+      - channel_group_id
+      - snapshot_at
   imported: false
 - table: ai_channel_group_resource
   domain: ai
   profile: relation_entity
+  soft_delete_policy: full_lifecycle_unique
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
@@ -878,6 +1000,7 @@ tables:
 - table: ai_channel_resource
   domain: ai
   profile: relation_entity
+  soft_delete_policy: full_lifecycle_unique
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
@@ -985,6 +1108,7 @@ tables:
 - table: ai_config_version
   domain: ai
   profile: runtime_coordination
+  soft_delete_policy: full_lifecycle_unique
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
@@ -2476,7 +2600,20 @@ tables:
     - tenant_id
     - organization_id
     - plan_code
+  check_constraints:
+  - name: ck_ai_pricing_plan_non_negative_amounts
+    expression: (default_multiplier IS NULL OR default_multiplier >= 0) AND (default_markup_amount
+      IS NULL OR default_markup_amount >= 0) AND (min_charge_amount IS NULL OR min_charge_amount
+      >= 0)
+  - name: ck_ai_pricing_plan_effective_interval
+    expression: effective_to IS NULL OR effective_to > effective_from
   indexes:
+  - name: uk_ai_pricing_plan_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
   - name: idx_ai_pricing_plan_scope_status
     columns:
     - tenant_id
@@ -2633,6 +2770,13 @@ tables:
       type: instant
       constraints: NOT NULL
     effective_to: instant
+  required_columns:
+  - pricing_plan_id
+  - rule_code
+  - billing_meter_code
+  - formula_mode
+  - priority
+  - effective_from
   unique_constraints:
   - name: uk_ai_pricing_rule_uuid
     columns:
@@ -2643,7 +2787,36 @@ tables:
     - organization_id
     - pricing_plan_id
     - rule_code
+  foreign_keys:
+  - name: fk_ai_pricing_rule_plan
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_plan_id
+    references_table: ai_pricing_plan
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_pricing_rule_positive_units
+    expression: (unit_size IS NULL OR unit_size > 0) AND (minimum_quantity IS NULL
+      OR minimum_quantity >= 0) AND (quantity_step IS NULL OR quantity_step > 0) AND
+      (included_quantity IS NULL OR included_quantity >= 0)
+  - name: ck_ai_pricing_rule_non_negative_amounts
+    expression: (multiplier IS NULL OR multiplier >= 0) AND (markup_amount IS NULL
+      OR markup_amount >= 0) AND (unit_price_override IS NULL OR unit_price_override
+      >= 0)
+  - name: ck_ai_pricing_rule_effective_interval
+    expression: effective_to IS NULL OR effective_to > effective_from
   indexes:
+  - name: uk_ai_pricing_rule_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
   - name: idx_ai_pricing_rule_tenant_status_priority
     columns:
     - tenant_id
@@ -2730,6 +2903,12 @@ tables:
       type: instant
       constraints: NOT NULL
     effective_to: instant
+  required_columns:
+  - pricing_rule_id
+  - tier_code
+  - billing_meter_code
+  - sort_order
+  - effective_from
   unique_constraints:
   - name: uk_ai_pricing_tier_uuid
     columns:
@@ -2740,6 +2919,34 @@ tables:
     - organization_id
     - pricing_rule_id
     - tier_code
+  foreign_keys:
+  - name: fk_ai_pricing_tier_rule
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_rule_id
+    references_table: ai_pricing_rule
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_pricing_tier_quantity_range
+    expression: (min_quantity IS NULL OR min_quantity >= 0) AND (max_quantity IS NULL
+      OR max_quantity >= 0) AND (min_quantity IS NULL OR max_quantity IS NULL OR max_quantity
+      >= min_quantity) AND (quantity_step IS NULL OR quantity_step > 0) AND (included_quantity
+      IS NULL OR included_quantity >= 0)
+  - name: ck_ai_pricing_tier_non_negative_amounts
+    expression: (input_unit_price IS NULL OR input_unit_price >= 0) AND (output_unit_price
+      IS NULL OR output_unit_price >= 0) AND (cache_write_unit_price IS NULL OR cache_write_unit_price
+      >= 0) AND (cache_read_unit_price IS NULL OR cache_read_unit_price >= 0) AND
+      (image_unit_price IS NULL OR image_unit_price >= 0) AND (audio_unit_price IS
+      NULL OR audio_unit_price >= 0) AND (video_unit_price IS NULL OR video_unit_price
+      >= 0) AND (per_request_price IS NULL OR per_request_price >= 0) AND (multiplier
+      IS NULL OR multiplier >= 0)
+  - name: ck_ai_pricing_tier_effective_interval
+    expression: effective_to IS NULL OR effective_to > effective_from
   indexes:
   - name: idx_ai_pricing_tier_tenant_status_effective
     columns:
@@ -3012,6 +3219,10 @@ tables:
     client_ip_masked: string(64)
     client_ip_region: string(128)
     user_agent_hash: string(128)
+  required_columns:
+  - request_id
+  - attempt_no
+  - started_at
   unique_constraints:
   - name: uk_ai_request_trace_request_attempt
     columns:
@@ -3019,6 +3230,16 @@ tables:
     - organization_id
     - request_id
     - attempt_no
+  check_constraints:
+  - name: ck_ai_request_trace_attempt
+    expression: attempt_no >= 1
+  - name: ck_ai_request_trace_http_status
+    expression: http_status IS NULL OR http_status BETWEEN 100 AND 599
+  - name: ck_ai_request_trace_non_negative_metrics
+    expression: (latency_ms IS NULL OR latency_ms >= 0) AND (ttft_ms IS NULL OR ttft_ms
+      >= 0) AND (prompt_tokens IS NULL OR prompt_tokens >= 0) AND (completion_tokens
+      IS NULL OR completion_tokens >= 0) AND (cached_tokens IS NULL OR cached_tokens
+      >= 0) AND (total_tokens IS NULL OR total_tokens >= 0)
   indexes:
   - name: idx_ai_request_trace_tenant_trace
     columns:
@@ -3046,8 +3267,16 @@ tables:
     - status
     - started_at
     - id
+  - name: idx_ai_request_trace_user_status_started
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - status
+    - started_at
+    - id
   lifecycle:
-    partition_by: created_at_month
+    storage_strategy: indexed_append_only
   imported: false
 - table: ai_resource
   domain: ai
@@ -3291,11 +3520,12 @@ tables:
     - created_at
     - id
   lifecycle:
-    partition_by: created_at_month
+    storage_strategy: indexed_append_only
   imported: false
 - table: ai_routing_policy
   domain: ai
   profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
@@ -3316,13 +3546,25 @@ tables:
     slo_success_rate: decimal
     cost_ceiling: decimal
     currency: string(10)
+  required_columns:
+  - policy_code
   unique_constraints:
   - name: uk_ai_routing_policy_tenant_code
     columns:
     - tenant_id
     - organization_id
     - policy_code
-  indexes: []
+  check_constraints:
+  - name: ck_ai_routing_policy_non_negative_limits
+    expression: (slo_latency_ms IS NULL OR slo_latency_ms >= 0) AND (cost_ceiling
+      IS NULL OR cost_ceiling >= 0)
+  indexes:
+  - name: uk_ai_routing_policy_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
   imported: false
 - table: ai_routing_profile
   domain: ai
@@ -3345,12 +3587,36 @@ tables:
     published_at: instant
     published_by: int64
     rollback_from_profile_id: int64
+  required_columns:
+  - policy_id
+  - profile_version
   unique_constraints:
   - name: uk_ai_routing_profile_policy_version
     columns:
     - policy_id
     - profile_version
-  indexes: []
+  foreign_keys:
+  - name: fk_ai_routing_profile_policy
+    columns:
+    - tenant_id
+    - organization_id
+    - policy_id
+    references_table: ai_routing_policy
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_routing_profile_version
+    expression: profile_version > 0
+  indexes:
+  - name: uk_ai_routing_profile_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
   imported: false
 - table: ai_routing_rule
   domain: ai
@@ -3375,11 +3641,31 @@ tables:
     rate_limit_policy_id: int64
     effective_from: instant
     effective_to: instant
+  required_columns:
+  - profile_id
+  - rule_code
   unique_constraints:
   - name: uk_ai_routing_rule_profile_code
     columns:
     - profile_id
     - rule_code
+  foreign_keys:
+  - name: fk_ai_routing_rule_profile
+    columns:
+    - tenant_id
+    - organization_id
+    - profile_id
+    references_table: ai_routing_profile
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_routing_rule_priority
+    expression: priority IS NULL OR priority >= 0
+  - name: ck_ai_routing_rule_effective_interval
+    expression: effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from
   indexes:
   - name: idx_ai_routing_rule_tenant_profile_priority
     columns:
@@ -3607,7 +3893,6 @@ tables:
     video_seconds: decimal
     storage_byte_hours: decimal
     bandwidth_bytes: int64
-    unit_price_snapshot: decimal
     base_input_unit_price: decimal
     base_output_unit_price: decimal
     cache_read_unit_price: decimal
@@ -3616,7 +3901,6 @@ tables:
     official_reference_amount: decimal
     upstream_cost_amount: decimal
     customer_charge_amount: decimal
-    cost_amount: decimal
     currency: string(10)
     pricing_id: int64
     pricing_plan_id: int64
@@ -3628,13 +3912,48 @@ tables:
     occurred_at: instant
     settlement_status: int32
     settlement_id: int64
+  required_columns:
+  - request_id
+  - idempotency_key
+  - usage_type
+  - billing_meter_code
+  - billable_quantity
+  - currency
+  - occurred_at
+  - settlement_status
   unique_constraints:
+  - name: uk_ai_usage_scope_id
+    columns:
+    - tenant_id
+    - organization_id
+    - id
+  - name: uk_ai_usage_idempotency
+    columns:
+    - tenant_id
+    - organization_id
+    - idempotency_key
   - name: uk_ai_usage_request
     columns:
     - tenant_id
     - organization_id
     - request_id
     - usage_type
+  check_constraints:
+  - name: ck_ai_usage_non_negative_counts
+    expression: (prompt_tokens IS NULL OR prompt_tokens >= 0) AND (completion_tokens
+      IS NULL OR completion_tokens >= 0) AND (cached_tokens IS NULL OR cached_tokens
+      >= 0) AND (total_tokens IS NULL OR total_tokens >= 0) AND (request_count IS
+      NULL OR request_count >= 0) AND (result_count IS NULL OR result_count >= 0)
+      AND (item_count IS NULL OR item_count >= 0) AND (character_count IS NULL OR
+      character_count >= 0) AND (image_count IS NULL OR image_count >= 0)
+  - name: ck_ai_usage_non_negative_amounts
+    expression: billable_quantity >= 0 AND (audio_seconds IS NULL OR audio_seconds
+      >= 0) AND (video_seconds IS NULL OR video_seconds >= 0) AND (storage_byte_hours
+      IS NULL OR storage_byte_hours >= 0) AND (official_reference_amount IS NULL OR
+      official_reference_amount >= 0) AND (upstream_cost_amount IS NULL OR upstream_cost_amount
+      >= 0) AND (customer_charge_amount IS NULL OR customer_charge_amount >= 0)
+  - name: ck_ai_usage_currency
+    expression: length(trim(currency)) BETWEEN 3 AND 10
   indexes:
   - name: idx_ai_usage_tenant_owner_occurred
     columns:
@@ -3680,7 +3999,7 @@ tables:
     - occurred_at
     - id
   lifecycle:
-    partition_by: created_at_month
+    storage_strategy: indexed_append_only
   semantic_contracts:
     ranking_refresh_source_fact:
       time_field: occurred_at
@@ -3729,6 +4048,15 @@ tables:
     price_snapshot: json
     occurred_at: instant
     settlement_status: int32
+  required_columns:
+  - usage_fact_id
+  - edge_id
+  - edge_depth
+  - amount_role
+  - billable_quantity
+  - charge_amount
+  - currency
+  - occurred_at
   unique_constraints:
   - name: uk_ai_usage_service_provider_edge_usage_depth
     columns:
@@ -3737,6 +4065,24 @@ tables:
     - usage_fact_id
     - edge_depth
     - amount_role
+  foreign_keys:
+  - name: fk_ai_usage_service_provider_edge_usage
+    columns:
+    - tenant_id
+    - organization_id
+    - usage_fact_id
+    references_table: ai_usage
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_usage_service_provider_edge_depth
+    expression: edge_depth >= 0
+  - name: ck_ai_usage_service_provider_edge_amounts
+    expression: billable_quantity >= 0 AND charge_amount >= 0 AND (converted_charge_amount
+      IS NULL OR converted_charge_amount >= 0)
   indexes:
   - name: idx_ai_usage_service_provider_edge_seller_time
     columns:
@@ -3753,7 +4099,7 @@ tables:
     - occurred_at
     - id
   lifecycle:
-    partition_by: created_at_month
+    storage_strategy: indexed_append_only
   imported: false
 - table: ai_vendor_api_endpoint
   domain: ai
@@ -3957,6 +4303,12 @@ tables:
     - tenant_id
     - idempotency_key
   indexes:
+  - name: uk_iam_gateway_api_key_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
   - name: idx_iam_gateway_api_key_tenant_user_status
     columns:
     - tenant_id
@@ -4012,6 +4364,13 @@ tables:
       constraints: NOT NULL DEFAULT 100
     effective_from: instant
     effective_to: instant
+  required_columns:
+  - api_key_id
+  - channel_group_id
+  - binding_role
+  - routing_strategy
+  - priority
+  - weight
   unique_constraints:
   - name: uk_iam_gateway_api_key_channel_group_uuid
     columns:
@@ -4023,6 +4382,25 @@ tables:
     - api_key_id
     - channel_group_id
     - binding_role
+  foreign_keys:
+  - name: fk_iam_gateway_api_key_channel_group_api_key
+    columns:
+    - tenant_id
+    - organization_id
+    - api_key_id
+    references_table: iam_gateway_api_key
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_iam_gateway_api_key_channel_group_ids
+    expression: api_key_id > 0 AND channel_group_id > 0
+  - name: ck_iam_gateway_api_key_channel_group_weighting
+    expression: priority >= 0 AND weight >= 0
+  - name: ck_iam_gateway_api_key_channel_group_effective_interval
+    expression: effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from
   indexes:
   - name: idx_iam_gateway_api_key_channel_group_active
     columns:
@@ -4210,7 +4588,7 @@ tables:
     - organization_id
     - request_id
   lifecycle:
-    partition_by: created_at_month
+    storage_strategy: indexed_append_only
   imported: false
 - table: ops_config_snapshot
   domain: ops
@@ -4279,7 +4657,7 @@ tables:
     - heartbeat_at
     - id
   lifecycle:
-    partition_by: created_at_month
+    storage_strategy: indexed_append_only
   imported: false
 - table: ops_gateway_instance
   domain: ops
@@ -4431,7 +4809,7 @@ tables:
   domain: ops
   profile: read_model
   compliance_level: L2
-  system_of_record: true
+  system_of_record: false
   write_owner: clawrouter-ops-runtime
   common_columns: projection
   api_surfaces:
@@ -4449,15 +4827,58 @@ tables:
     metric_value: decimal
     metric_unit: string(64)
     payload: json
+  required_columns:
+  - metric_scope
+  - metric_name
+  - metric_period
+  - period_start
+  - dimension_key
+  - dimension_value
+  - metric_value
+  - source_version
+  source_tables:
+  - ai_usage
+  - ai_request_trace
+  - ops_gateway_instance
+  - ops_gateway_heartbeat
   unique_constraints:
   - name: uk_ops_metric_snapshot
     columns:
+    - tenant_id
+    - organization_id
     - metric_scope
     - metric_name
     - metric_period
     - period_start
     - dimension_key
     - dimension_value
+  check_constraints:
+  - name: ck_ops_metric_snapshot_period_interval
+    expression: period_end IS NULL OR period_end > period_start
+  semantic_contracts:
+    projection_lineage:
+      watermark:
+        field: period_start
+        strategy: high_watermark
+      source_version:
+        field: source_version
+        strategy: max_source_version
+      algorithm_version: ops-metric-snapshot-v1
+      freshness:
+        target_seconds: 60
+        max_staleness_seconds: 300
+      rebuild:
+        strategy: full_recompute
+        owner: clawrouter-ops-runtime
+      aggregation_grain:
+      - tenant_id
+      - organization_id
+      - metric_scope
+      - metric_name
+      - metric_period
+      - period_start
+      - dimension_key
+      - dimension_value
   imported: false
 - table: ops_notification_delivery
   domain: ops
@@ -4521,6 +4942,8 @@ tables:
     retry_count:
       type: int32
       constraints: NOT NULL DEFAULT 0
+  required_columns:
+  - delivery_channel
   unique_constraints:
   - name: uk_ops_notification_delivery_user_message_app
     columns:
@@ -4530,6 +4953,21 @@ tables:
     - user_id
     - app_id
     - delivery_channel
+  foreign_keys:
+  - name: fk_ops_notification_delivery_message
+    columns:
+    - tenant_id
+    - organization_id
+    - message_id
+    references_table: ops_notification_message
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ops_notification_delivery_retry_count
+    expression: retry_count >= 0
   indexes:
   - name: idx_ops_notification_delivery_user_read
     columns:
@@ -4581,6 +5019,12 @@ tables:
     published_at: instant
     expire_at: instant
   indexes:
+  - name: uk_ops_notification_message_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
   - name: idx_ops_notification_message_scope
     columns:
     - tenant_id
@@ -4620,6 +5064,18 @@ tables:
     recipient_value: string(256)
     recipient_user_id: int64
     recipient_role_code: string(128)
+  foreign_keys:
+  - name: fk_ops_notification_recipient_message
+    columns:
+    - tenant_id
+    - organization_id
+    - message_id
+    references_table: ops_notification_message
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
   indexes:
   - name: idx_ops_notification_recipient_message
     columns:

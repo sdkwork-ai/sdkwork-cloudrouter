@@ -124,6 +124,7 @@ impl StickyRouteStore for InvocationStickyObjectRouteStore {
                         VALUES
                             (?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                         ON CONFLICT(tenant_id, organization_id, object_type, object_id)
+                        WHERE deleted_at IS NULL
                         DO UPDATE SET
                             status = 1,
                             api_key_id = excluded.api_key_id,
@@ -178,6 +179,7 @@ impl StickyRouteStore for InvocationStickyObjectRouteStore {
                             ($1, $2, $3, 1, $4, $5, $6, $7, $8, $9, $10,
                              $11, $12, $13, $14, $15, $16, $17, $18, CURRENT_TIMESTAMP)
                         ON CONFLICT(tenant_id, organization_id, object_type, object_id)
+                        WHERE deleted_at IS NULL
                         DO UPDATE SET
                             status = 1,
                             api_key_id = EXCLUDED.api_key_id,
@@ -267,7 +269,16 @@ fn sticky_binding_from_postgres_row(row: sqlx::postgres::PgRow) -> StickyObjectR
 }
 
 fn sticky_store_error(error: sqlx::Error) -> DomainError {
-    DomainError::new(format!("sticky route store failed: {error}"))
+    if let sqlx::Error::Database(database_error) = &error {
+        if database_error
+            .code()
+            .map(|code| code == "23505")
+            .unwrap_or(false)
+        {
+            return DomainError::conflict("sticky route store failed: resource already exists");
+        }
+    }
+    DomainError::new("sticky route store failed: database operation failed")
 }
 
 fn sticky_object_key_hash(
@@ -285,4 +296,21 @@ fn sticky_object_key_hash(
     hasher.update(b":");
     hasher.update(object_id.trim().as_bytes());
     hex::encode(hasher.finalize())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::sticky_store_error;
+
+    #[test]
+    fn sticky_store_error_redacts_sqlx_details() {
+        let error = sticky_store_error(sqlx::Error::Configuration(
+            "postgres://operator:secret@database.internal/clawrouter".into(),
+        ));
+
+        assert_eq!(
+            error.to_string(),
+            "sticky route store failed: database operation failed"
+        );
+    }
 }

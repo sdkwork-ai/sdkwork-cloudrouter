@@ -122,14 +122,12 @@ async fn postgres_and_sqlite_return_the_same_scoped_settlement_snapshot() -> any
         user_id: 30,
     };
     let query = SettlementsDashboardQuery { year: Some(2026) };
-    let sqlite_snapshot =
-        SqliteSettlementsDashboardReadStore::new(databases.sqlite_pool())
-            .load_settlements_dashboard(query.clone(), Some(subject))
-            .await?;
-    let postgres_snapshot =
-        PostgresSettlementsDashboardReadStore::new(databases.postgres_pool())
-            .load_settlements_dashboard(query, Some(subject))
-            .await?;
+    let sqlite_snapshot = SqliteSettlementsDashboardReadStore::new(databases.sqlite_pool())
+        .load_settlements_dashboard(query.clone(), Some(subject))
+        .await?;
+    let postgres_snapshot = PostgresSettlementsDashboardReadStore::new(databases.postgres_pool())
+        .load_settlements_dashboard(query, Some(subject))
+        .await?;
 
     assert_eq!(sqlite_snapshot, postgres_snapshot);
     assert_eq!(1, sqlite_snapshot.bills.len());

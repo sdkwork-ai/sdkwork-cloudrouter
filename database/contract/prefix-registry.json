@@ -8,47 +8,12 @@
       "domain": "clawrouter"
     },
     {
-      "prefix": "analytics_",
-      "owner": "claw-router-platform",
-      "domain": "clawrouter"
-    },
-    {
-      "prefix": "c_",
-      "owner": "claw-router-platform",
-      "domain": "clawrouter"
-    },
-    {
-      "prefix": "integration_",
-      "owner": "claw-router-platform",
-      "domain": "clawrouter"
-    },
-    {
-      "prefix": "ops_",
-      "owner": "claw-router-platform",
-      "domain": "clawrouter"
-    },
-    {
-      "prefix": "system_",
-      "owner": "claw-router-platform",
-      "domain": "clawrouter"
-    },
-    {
       "prefix": "iam_gateway_",
       "owner": "claw-router-platform",
       "domain": "clawrouter"
     },
     {
-      "prefix": "iam_user_",
-      "owner": "claw-router-platform",
-      "domain": "clawrouter"
-    },
-    {
-      "prefix": "commerce_usage_",
-      "owner": "claw-router-platform",
-      "domain": "clawrouter"
-    },
-    {
-      "prefix": "commerce_service_provider_exposure_",
+      "prefix": "ops_",
       "owner": "claw-router-platform",
       "domain": "clawrouter"
     }

@@ -19,8 +19,8 @@ SELECT
     COALESCE(SUM(COALESCE(request_count, 1)), 0) AS total_requests,
     COUNT(DISTINCT CASE WHEN failed_request.request_id IS NULL THEN NULL ELSE usage.request_id END) AS failed_requests,
     CAST(COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS TEXT) AS total_tokens,
-    CAST(COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS TEXT) AS total_points,
-    CAST(COALESCE(SUM(COALESCE(upstream_cost_amount, cost_amount, 0)), 0) AS TEXT) AS upstream_cost
+    CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS total_points,
+    CAST(COALESCE(SUM(COALESCE(upstream_cost_amount, 0)), 0) AS TEXT) AS upstream_cost
 FROM ai_usage usage
 LEFT JOIN (
     SELECT DISTINCT tenant_id, organization_id, request_id
@@ -63,7 +63,7 @@ WITH agg AS (
     SELECT
         COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown') AS user_id,
         COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), 'unknown') AS name,
-        COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS value
+        COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS value
     FROM ai_usage
     WHERE status = 1
       AND tenant_id = $1
@@ -71,7 +71,7 @@ WITH agg AS (
       AND ($3::text IS NULL OR occurred_at >= $3::timestamptz)
       AND ($4::text IS NULL OR occurred_at <= $4::timestamptz)
     GROUP BY COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown'), COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), 'unknown')
-    HAVING COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) > 0
+    HAVING COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) > 0
 ),
 ordered AS (
     SELECT
@@ -371,7 +371,7 @@ async fn load_trend(
             {period_expr} AS time_bucket,
             CAST(COALESCE(SUM(COALESCE(request_count, 1)), 0) AS TEXT) AS requests,
             CAST(COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS TEXT) AS tokens,
-            CAST(COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS TEXT) AS points,
+            CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS points,
             COUNT(DISTINCT COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown')) AS users
         FROM ai_usage
         WHERE status = 1
@@ -435,8 +435,8 @@ async fn load_user_rankings(
             COALESCE(SUM(COALESCE(request_count, 1)), 0) AS request_count,
             COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS total_tokens_sort,
             CAST(COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS TEXT) AS total_tokens,
-            COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS points_sort,
-            CAST(COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS TEXT) AS points
+            COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS points_sort,
+            CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS points
         FROM ai_usage
         WHERE status = 1
           AND tenant_id = $1
@@ -489,9 +489,9 @@ async fn load_model_rankings(
             COALESCE(SUM(COALESCE(request_count, 1)), 0) AS request_count,
             COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS total_tokens_sort,
             CAST(COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS TEXT) AS total_tokens,
-            COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS points_sort,
-            CAST(COALESCE(SUM(COALESCE(customer_charge_amount, cost_amount, 0)), 0) AS TEXT) AS points,
-            CAST(COALESCE(SUM(COALESCE(upstream_cost_amount, cost_amount, 0)), 0) AS TEXT) AS upstream_cost,
+            COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS points_sort,
+            CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS points,
+            CAST(COALESCE(SUM(COALESCE(upstream_cost_amount, 0)), 0) AS TEXT) AS upstream_cost,
             COUNT(DISTINCT COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown')) AS user_count,
             COUNT(DISTINCT CASE WHEN failed_request.request_id IS NULL THEN NULL ELSE usage.request_id END) AS failed_requests
         FROM ai_usage usage

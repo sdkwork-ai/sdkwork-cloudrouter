@@ -285,7 +285,6 @@ async fn create_analytics_tables(pool: &SqlitePool) {
             total_tokens INTEGER,
             customer_charge_amount TEXT,
             upstream_cost_amount TEXT,
-            cost_amount TEXT,
             occurred_at TEXT
         )
         "#,
@@ -501,10 +500,10 @@ async fn seed_default_scope_usage(pool: &SqlitePool) {
             id, tenant_id, organization_id, user_id, owner_type, owner_id, request_id, status,
             owner_name_snapshot, catalog_key, model, modality, request_count,
             prompt_tokens, completion_tokens, cached_tokens, total_tokens,
-            customer_charge_amount, upstream_cost_amount, cost_amount, occurred_at
+            customer_charge_amount, upstream_cost_amount, occurred_at
         )
         VALUES
-            (1, 100001, 0, 0, 1, 0, 'req-default-1', 1, 'Default Org User', 'openai/gpt-4o', 'gpt-4o', 1, 2, 1, 0, 0, 2, '1.0', '0.5', '1.0', '2026-05-02 09:00:00')
+            (1, 100001, 0, 0, 1, 0, 'req-default-1', 1, 'Default Org User', 'openai/gpt-4o', 'gpt-4o', 1, 2, 1, 0, 0, 2, '1.0', '0.5', '2026-05-02 09:00:00')
         "#,
     )
     .execute(pool)

@@ -35,6 +35,7 @@ sdkwork-claw-provider-adapter-contract.workspace = true
 sdkwork-claw-provider-adapter-http.workspace = true
 sdkwork-claw-provider-adapter-registry.workspace = true
 sdkwork-clawrouter-router-service.workspace = true
+sdkwork-clawrouter-database-host.workspace = true
 sdkwork-database-config.workspace = true
 sdkwork-database-sqlx.workspace = true
 sdkwork-routes-clawrouter-app-api.workspace = true

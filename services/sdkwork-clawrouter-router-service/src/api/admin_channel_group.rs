@@ -476,9 +476,12 @@ async fn create_channel_group(
     };
 
     match state.store.create_channel_group(command).await {
-        Ok(item) => json_created_response(None, AdminChannelGroupItemEnvelope {
-            item: to_item_response(item),
-        }),
+        Ok(item) => json_created_response(
+            None,
+            AdminChannelGroupItemEnvelope {
+                item: to_item_response(item),
+            },
+        ),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
             channel_group_system_response("channel group command store is unavailable", error)

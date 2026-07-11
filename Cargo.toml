@@ -45,6 +45,7 @@ members = [
     "crates/sdkwork-clawrouter-app-gateway-traces-repository-sqlx",
     "data/sdkwork-models/sdks/sdkwork-models-sdk/sdkwork-models-sdk-rust",
     "data/sdkwork-models/crates/sdkwork-models-contract-service",
+    "data/sdkwork-models/crates/sdkwork-models-database-host",
     "data/sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx",
     "data/sdkwork-models/crates/sdkwork-models-catalog-service",
     "data/sdkwork-models/crates/sdkwork-routes-catalog-backend-api",
@@ -88,6 +89,7 @@ default-members = [
     "services/sdkwork-claw-provider-adapter",
     "crates/sdkwork-clawrouter-database-host",
     "data/sdkwork-models/sdks/sdkwork-models-sdk/sdkwork-models-sdk-rust",
+    "data/sdkwork-models/crates/sdkwork-models-database-host",
 ]
 resolver = "2"
 
@@ -179,6 +181,7 @@ sdkwork-provider-adapter-alicloud = { path = "crates/provider-adapters/alicloud"
 sdkwork-provider-adapter-tencent-cloud = { path = "crates/provider-adapters/tencent-cloud" }
 sdkwork-models = { path = "data/sdkwork-models/sdks/sdkwork-models-sdk/sdkwork-models-sdk-rust" }
 sdkwork_models_contract_service = { package = "sdkwork-models-contract-service", path = "data/sdkwork-models/crates/sdkwork-models-contract-service" }
+sdkwork-models-database-host = { path = "data/sdkwork-models/crates/sdkwork-models-database-host" }
 sdkwork_models_database_bootstrap = { package = "sdkwork-models-database-bootstrap", path = "data/sdkwork-models/crates/sdkwork-models-database-bootstrap" }
 sdkwork_models_catalog_repository_sqlx = { package = "sdkwork-models-catalog-repository-sqlx", path = "data/sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx" }
 sdkwork_models_catalog_service = { package = "sdkwork-models-catalog-service", path = "data/sdkwork-models/crates/sdkwork-models-catalog-service" }

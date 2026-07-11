@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -56,6 +57,20 @@ class SchemaQualityGate:
 
         compiler = SchemaCompiler(root=self.root, registry_path=self.registry_path).check_postgres()
         messages.extend(compiler.messages)
+
+        sqlite_compiler = SchemaCompiler(
+            root=self.root,
+            registry_path=self.registry_path,
+        )
+        messages.extend(sqlite_compiler.check_sqlite().messages)
+        try:
+            connection = sqlite3.connect(":memory:")
+            try:
+                connection.executescript(sqlite_compiler.compile_sqlite())
+            finally:
+                connection.close()
+        except sqlite3.Error as error:
+            messages.append(f"sqlite schema execution failed: {error}")
 
         domain_types = DomainTypeGenerator(root=self.root, registry_path=self.registry_path).check()
         messages.extend(domain_types.messages)

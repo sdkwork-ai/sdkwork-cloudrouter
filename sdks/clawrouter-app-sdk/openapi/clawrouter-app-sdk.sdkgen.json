@@ -531,6 +531,73 @@
         ],
         "type": "object"
       },
+      "GatewayTrace": {
+        "additionalProperties": false,
+        "description": "Gateway trace schema exposed by Claw Router.",
+        "properties": {
+          "channel": {
+            "description": "Routed channel or gateway node display label.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "duration": {
+            "description": "HTTP latency display value, for example 128ms.",
+            "pattern": "^[0-9]+ms$",
+            "type": "string"
+          },
+          "endpoint": {
+            "description": "Requested gateway endpoint path.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "id": {
+            "description": "Stable trace identifier displayed to the current user.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "ip": {
+            "description": "Masked client IP address.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "method": {
+            "description": "Normalized HTTP method.",
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE",
+              "OPTIONS",
+              "HEAD"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "description": "HTTP response status code.",
+            "format": "int32",
+            "maximum": 599,
+            "minimum": 100,
+            "type": "integer"
+          },
+          "time": {
+            "description": "Request start time in UTC.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "time",
+          "ip",
+          "endpoint",
+          "method",
+          "status",
+          "duration",
+          "channel"
+        ],
+        "type": "object"
+      },
       "GatewayTracesListResult": {
         "allOf": [
           {
@@ -543,10 +610,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/GatewayTracesPage"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on gateway traces list result."
               }
             },
             "required": [
@@ -557,6 +624,33 @@
         ],
         "description": "Gateway traces list result schema exposed by Claw Router.",
         "x-operation-id": "gateway.traces.list"
+      },
+      "GatewayTracesPage": {
+        "additionalProperties": false,
+        "description": "Gateway traces page schema exposed by Claw Router.",
+        "name": "GatewayTracesPage",
+        "properties": {
+          "items": {
+            "description": "Items field on gateway traces page.",
+            "items": {
+              "$ref": "#/components/schemas/GatewayTrace"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on gateway traces page."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
       },
       "InvocationEventStreamsListResult": {
         "allOf": [
@@ -2645,14 +2739,14 @@
         "description": "Site runtime retrieve result schema exposed by Claw Router.",
         "x-operation-id": "site.runtime.retrieve"
       },
-      "TurnResponsesCreateResult": {
+      "TurnResponsesCompleteResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by turn responses create result.",
+            "description": "Object schema used by turn responses complete result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -2669,8 +2763,8 @@
             "type": "object"
           }
         ],
-        "description": "Turn responses create result schema exposed by Claw Router.",
-        "x-operation-id": "turnResponses.create"
+        "description": "Turn responses complete result schema exposed by Claw Router.",
+        "x-operation-id": "turnResponses.complete"
       },
       "TurnsCreateResult": {
         "allOf": [
@@ -3328,7 +3422,42 @@
       "get": {
         "description": "List. Reads ai. Writes none. File targets none.",
         "operationId": "gateway.traces.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Opaque continuation cursor from the previous page.",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 2048,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Number of gateway traces returned in the current page.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Free-text search over trace identity, endpoint, and channel.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 256,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -4658,8 +4787,8 @@
     },
     "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response": {
       "post": {
-        "description": "Create. Reads chat. Writes ops_audit_log. File targets none.",
-        "operationId": "turnResponses.create",
+        "description": "Complete. Reads chat. Writes ops_audit_log. File targets none.",
+        "operationId": "turnResponses.complete",
         "parameters": [
           {
             "description": "Conversation id path parameter.",
@@ -4681,15 +4810,15 @@
           }
         ],
         "responses": {
-          "201": {
+          "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TurnResponsesCreateResult"
+                  "$ref": "#/components/schemas/TurnResponsesCompleteResult"
                 }
               }
             },
-            "description": "Created"
+            "description": "OK"
           },
           "400": {
             "content": {
@@ -4738,11 +4867,11 @@
             "AuthToken": []
           }
         ],
-        "summary": "Create",
+        "summary": "Complete",
         "tags": [
           "chat"
         ],
-        "x-contract-kind": "create",
+        "x-contract-kind": "action",
         "x-file-targets": [],
         "x-read-sources": [
           "chat"
@@ -5978,7 +6107,7 @@
     },
     "/app/v3/api/runtime/invocations/{invocationId}/complete": {
       "post": {
-        "description": "Create. Reads runtime. Writes ops_audit_log. File targets none.",
+        "description": "Complete. Reads runtime. Writes ops_audit_log. File targets none.",
         "operationId": "invocations.complete",
         "parameters": [
           {
@@ -6049,11 +6178,11 @@
             "AuthToken": []
           }
         ],
-        "summary": "Create",
+        "summary": "Complete",
         "tags": [
           "runtime"
         ],
-        "x-contract-kind": "create",
+        "x-contract-kind": "action",
         "x-file-targets": [],
         "x-read-sources": [
           "runtime"

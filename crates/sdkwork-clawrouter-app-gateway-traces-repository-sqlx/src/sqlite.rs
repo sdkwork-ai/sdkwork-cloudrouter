@@ -2,8 +2,9 @@ use sqlx::{Row, SqlitePool};
 
 use crate::error::{sql_error, RepositoryError, RepositoryResult};
 use crate::types::{
-    AppGatewayTraceItem, AppGatewayTracesListPage, AppGatewayTracesListQuery,
-    AppGatewayTracesReadFuture, AppGatewayTracesReadStore, AppGatewayTracesSubject,
+    encode_cursor, validate_subject, AppGatewayTraceItem, AppGatewayTracesListPage,
+    AppGatewayTracesListQuery, AppGatewayTracesReadFuture, AppGatewayTracesReadStore,
+    AppGatewayTracesSubject,
 };
 
 fn gateway_traces_select_sql() -> &'static str {
@@ -42,7 +43,8 @@ SELECT
     COALESCE(NULLIF(cg.node_name, ''), '') AS node_name,
     cg.health_status AS health_status,
     CAST(cg.last_heartbeat_at AS TEXT) AS last_heartbeat_at,
-    COUNT(*) OVER() AS total
+    CAST(t.started_at AS TEXT) AS cursor_started_at,
+    t.id AS cursor_id
 FROM ai_request_trace t
 LEFT JOIN current_gateway cg ON 1 = 1
 WHERE t.status = 1
@@ -50,11 +52,13 @@ WHERE t.status = 1
   AND t.organization_id = ?2
   AND t.user_id = ?3
   AND t.started_at IS NOT NULL
-  AND (?4 IS NULL OR lower(COALESCE(t.trace_id, t.request_id, CAST(t.id AS TEXT), '')) LIKE lower(?4)
-       OR lower(COALESCE(t.request_path, t.endpoint, '')) LIKE lower(?4)
-       OR lower(COALESCE(t.channel_name_snapshot, '')) LIKE lower(?4))
+  AND (?4 IS NULL
+       OR lower(COALESCE(NULLIF(t.trace_id, ''), NULLIF(t.request_id, ''), CAST(t.id AS TEXT))) LIKE lower(?4) ESCAPE '\'
+       OR lower(COALESCE(NULLIF(t.request_path, ''), NULLIF(t.endpoint, ''), '')) LIKE lower(?4) ESCAPE '\'
+       OR lower(COALESCE(t.channel_name_snapshot, '')) LIKE lower(?4) ESCAPE '\')
+  AND (?5 IS NULL OR t.started_at < ?5 OR (t.started_at = ?5 AND t.id < ?6))
 ORDER BY t.started_at DESC, t.id DESC
-LIMIT ?5 OFFSET ?6
+LIMIT ?7
 "#
 }
 
@@ -85,63 +89,89 @@ async fn load_gateway_traces(
     query: AppGatewayTracesListQuery,
 ) -> RepositoryResult<AppGatewayTracesListPage> {
     let subject = require_subject(subject)?;
-    let search = query.q.as_deref().map(|value| format!("%{value}%"));
-    let rows = sqlx::query(gateway_traces_select_sql())
+    let search = query.search_pattern();
+    let (cursor_started_at, cursor_id) = query
+        .cursor_key()
+        .map(|(started_at, id)| (Some(started_at), Some(id)))
+        .unwrap_or((None, None));
+    let page_size = query.page_size();
+    let mut rows = sqlx::query(gateway_traces_select_sql())
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(subject.user_id)
         .bind(search)
-        .bind(query.page_size.max(1))
-        .bind(query.offset.max(0))
+        .bind(cursor_started_at)
+        .bind(cursor_id)
+        .bind(page_size + 1)
         .fetch_all(pool)
         .await
         .map_err(sql_error)?;
-    let total = rows
-        .first()
-        .and_then(|row| optional_integer_cell(row, "total"))
-        .unwrap_or(0);
-    let items = rows
+
+    let has_more = rows.len() > page_size as usize;
+    if has_more {
+        rows.truncate(page_size as usize);
+    }
+    let rows = rows
         .into_iter()
         .map(row_to_gateway_trace)
         .collect::<RepositoryResult<Vec<_>>>()?;
+    let next_cursor = if has_more {
+        rows.last()
+            .map(|row| encode_cursor(&row.cursor_started_at, row.cursor_id))
+            .transpose()?
+    } else {
+        None
+    };
     Ok(AppGatewayTracesListPage {
-        items,
-        total,
-        page_no: query.page_no,
-        page_size: query.page_size,
+        items: rows.into_iter().map(|row| row.item).collect(),
+        page_size,
+        next_cursor,
+        has_more,
     })
 }
 
-fn row_to_gateway_trace(row: sqlx::sqlite::SqliteRow) -> RepositoryResult<AppGatewayTraceItem> {
+struct AppGatewayTraceRow {
+    item: AppGatewayTraceItem,
+    cursor_started_at: String,
+    cursor_id: i64,
+}
+
+fn row_to_gateway_trace(row: sqlx::sqlite::SqliteRow) -> RepositoryResult<AppGatewayTraceRow> {
     let status = gateway_http_status(required_integer_cell(&row, "status")?)?;
-    let latency_ms = gateway_latency_ms(required_integer_cell(&row, "latency_ms")?)?;
+    let latency_ms = gateway_latency_ms(optional_integer_cell(&row, "latency_ms").unwrap_or(0))?;
     let health_status = gateway_health_status(&row)?;
     let deployment_mode = gateway_deployment_mode(&row)?;
-    Ok(AppGatewayTraceItem {
-        id: string_cell(&row, "id"),
-        time: string_cell(&row, "time"),
-        ip: string_cell(&row, "ip"),
-        endpoint: string_cell(&row, "endpoint"),
-        method: http_method_label(&string_cell(&row, "method")),
-        status,
-        duration: latency_label(latency_ms),
-        channel: gateway_channel_label(
-            &string_cell(&row, "channel_name_snapshot"),
-            &string_cell(&row, "node_name"),
-            &string_cell(&row, "region"),
-            deployment_mode,
-            health_status,
-            &string_cell(&row, "last_heartbeat_at"),
-        ),
+    Ok(AppGatewayTraceRow {
+        item: AppGatewayTraceItem {
+            id: string_cell(&row, "id"),
+            time: string_cell(&row, "time"),
+            ip: string_cell(&row, "ip"),
+            endpoint: string_cell(&row, "endpoint"),
+            method: http_method_label(&string_cell(&row, "method")),
+            status,
+            duration: latency_label(latency_ms),
+            channel: gateway_channel_label(
+                &string_cell(&row, "channel_name_snapshot"),
+                &string_cell(&row, "node_name"),
+                &string_cell(&row, "region"),
+                deployment_mode,
+                health_status,
+                &string_cell(&row, "last_heartbeat_at"),
+            ),
+        },
+        cursor_started_at: string_cell(&row, "cursor_started_at"),
+        cursor_id: required_integer_cell(&row, "cursor_id")?,
     })
 }
 
 fn require_subject(
     subject: Option<AppGatewayTracesSubject>,
 ) -> RepositoryResult<AppGatewayTracesSubject> {
-    subject.ok_or_else(|| {
+    let subject = subject.ok_or_else(|| {
         RepositoryError::new("trusted request subject is required for app gateway traces")
-    })
+    })?;
+    validate_subject(&subject)?;
+    Ok(subject)
 }
 
 fn http_method_label(value: &str) -> String {

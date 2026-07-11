@@ -93,9 +93,9 @@ async fn seed_app_routing_resource_catalog(pool: &sqlx::SqlitePool) {
         "#,
         r#"
         INSERT INTO ai_resource
-            (id, uuid, tenant_id, organization_id, resource_code, resource_type, display_name, vendor_id, vendor_code, status, sort_order)
+            (id, uuid, tenant_id, organization_id, resource_code, resource_type, display_name, vendor_code, status, sort_order)
         VALUES
-            (42011, 'app-routing-resource-vendor-openai', 100001, 0, 'vendor.openai', 'vendor', 'OpenAI', 42001, 'openai', 1, 1)
+            (42011, 'app-routing-resource-vendor-openai', 0, 0, 'vendor.openai', 'vendor', 'OpenAI', 'openai', 1, 1)
         ON CONFLICT(tenant_id, organization_id, resource_code) DO UPDATE SET
             status = 1,
             deleted_at = NULL,
@@ -103,9 +103,9 @@ async fn seed_app_routing_resource_catalog(pool: &sqlx::SqlitePool) {
         "#,
         r#"
         INSERT INTO ai_resource
-            (id, uuid, tenant_id, organization_id, resource_code, resource_type, display_name, vendor_id, vendor_code, modality_code, catalog_key, model, provider_native_model, status, sort_order)
+            (id, uuid, tenant_id, organization_id, resource_code, resource_type, display_name, vendor_code, modality_code, catalog_key, model, provider_native_model, status, sort_order)
         VALUES
-            (42012, 'app-routing-resource-openai-gpt-4o-mini-chat', 100001, 0, 'model.openai.gpt-4o-mini.chat', 'model_api', 'GPT-4o mini Chat', 42001, 'openai', 'chat', 'openai/gpt-4o-mini', 'gpt-4o-mini', 'gpt-4o-mini', 1, 2)
+            (42012, 'app-routing-resource-openai-gpt-4o-mini-chat', 0, 0, 'model.openai.gpt-4o-mini.chat', 'model_api', 'GPT-4o mini Chat', 'openai', 'chat', 'openai/gpt-4o-mini', 'gpt-4o-mini', 'gpt-4o-mini', 1, 2)
         ON CONFLICT(tenant_id, organization_id, resource_code) DO UPDATE SET
             status = 1,
             deleted_at = NULL,
@@ -115,7 +115,7 @@ async fn seed_app_routing_resource_catalog(pool: &sqlx::SqlitePool) {
         INSERT INTO ai_resource
             (id, uuid, tenant_id, organization_id, resource_code, resource_type, display_name, modality_code, status, sort_order)
         VALUES
-            (42013, 'app-routing-resource-modality-llm', 100001, 0, 'modality.llm', 'modality', 'LLM', 'llm', 1, 3)
+            (42013, 'app-routing-resource-modality-llm', 0, 0, 'modality.llm', 'modality', 'LLM', 'llm', 1, 3)
         ON CONFLICT(tenant_id, organization_id, resource_code) DO UPDATE SET
             status = 1,
             deleted_at = NULL,

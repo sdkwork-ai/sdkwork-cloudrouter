@@ -104,7 +104,20 @@ tables:
     - tenant_id
     - organization_id
     - plan_code
+  check_constraints:
+  - name: ck_ai_pricing_plan_non_negative_amounts
+    expression: (default_multiplier IS NULL OR default_multiplier >= 0)
+      AND (default_markup_amount IS NULL OR default_markup_amount >= 0)
+      AND (min_charge_amount IS NULL OR min_charge_amount >= 0)
+  - name: ck_ai_pricing_plan_effective_interval
+    expression: effective_to IS NULL OR effective_to > effective_from
   indexes:
+  - name: uk_ai_pricing_plan_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
   - name: idx_ai_pricing_plan_scope_status
     columns:
     - tenant_id
@@ -259,6 +272,13 @@ tables:
       type: instant
       constraints: NOT NULL
     effective_to: instant
+  required_columns:
+  - pricing_plan_id
+  - rule_code
+  - billing_meter_code
+  - formula_mode
+  - priority
+  - effective_from
   unique_constraints:
   - name: uk_ai_pricing_rule_uuid
     columns:
@@ -269,7 +289,37 @@ tables:
     - organization_id
     - pricing_plan_id
     - rule_code
+  foreign_keys:
+  - name: fk_ai_pricing_rule_plan
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_plan_id
+    references_table: ai_pricing_plan
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_pricing_rule_positive_units
+    expression: (unit_size IS NULL OR unit_size > 0)
+      AND (minimum_quantity IS NULL OR minimum_quantity >= 0)
+      AND (quantity_step IS NULL OR quantity_step > 0)
+      AND (included_quantity IS NULL OR included_quantity >= 0)
+  - name: ck_ai_pricing_rule_non_negative_amounts
+    expression: (multiplier IS NULL OR multiplier >= 0)
+      AND (markup_amount IS NULL OR markup_amount >= 0)
+      AND (unit_price_override IS NULL OR unit_price_override >= 0)
+  - name: ck_ai_pricing_rule_effective_interval
+    expression: effective_to IS NULL OR effective_to > effective_from
   indexes:
+  - name: uk_ai_pricing_rule_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
   - name: idx_ai_pricing_rule_tenant_status_priority
     columns:
     - tenant_id
@@ -355,6 +405,12 @@ tables:
       type: instant
       constraints: NOT NULL
     effective_to: instant
+  required_columns:
+  - pricing_rule_id
+  - tier_code
+  - billing_meter_code
+  - sort_order
+  - effective_from
   unique_constraints:
   - name: uk_ai_pricing_tier_uuid
     columns:
@@ -365,6 +421,37 @@ tables:
     - organization_id
     - pricing_rule_id
     - tier_code
+  foreign_keys:
+  - name: fk_ai_pricing_tier_rule
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_rule_id
+    references_table: ai_pricing_rule
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_pricing_tier_quantity_range
+    expression: (min_quantity IS NULL OR min_quantity >= 0)
+      AND (max_quantity IS NULL OR max_quantity >= 0)
+      AND (min_quantity IS NULL OR max_quantity IS NULL OR max_quantity >= min_quantity)
+      AND (quantity_step IS NULL OR quantity_step > 0)
+      AND (included_quantity IS NULL OR included_quantity >= 0)
+  - name: ck_ai_pricing_tier_non_negative_amounts
+    expression: (input_unit_price IS NULL OR input_unit_price >= 0)
+      AND (output_unit_price IS NULL OR output_unit_price >= 0)
+      AND (cache_write_unit_price IS NULL OR cache_write_unit_price >= 0)
+      AND (cache_read_unit_price IS NULL OR cache_read_unit_price >= 0)
+      AND (image_unit_price IS NULL OR image_unit_price >= 0)
+      AND (audio_unit_price IS NULL OR audio_unit_price >= 0)
+      AND (video_unit_price IS NULL OR video_unit_price >= 0)
+      AND (per_request_price IS NULL OR per_request_price >= 0)
+      AND (multiplier IS NULL OR multiplier >= 0)
+  - name: ck_ai_pricing_tier_effective_interval
+    expression: effective_to IS NULL OR effective_to > effective_from
   indexes:
   - name: idx_ai_pricing_tier_tenant_status_effective
     columns:

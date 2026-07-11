@@ -1114,7 +1114,6 @@
 | `video_seconds` | decimal_string | 锟?| 瑙嗛绉掓暟 |
 | `storage_byte_hours` | decimal_string | 锟?| 瀛樺偍 byte-hour |
 | `bandwidth_bytes` | int64 | 锟?| 缃戠粶娴侀噺瀛楄妭 |
-| `unit_price_snapshot` | decimal_string | 锟?| 鍗曚环蹇収 |
 | `base_input_unit_price` | decimal_string | 锟?| 杈撳叆鍩虹鍗曚环 |
 | `base_output_unit_price` | decimal_string | 锟?| 杈撳嚭鍩虹鍗曚环 |
 | `cache_read_unit_price` | decimal_string | 锟?| 缂撳瓨鍛戒腑鍗曚环 |
@@ -1123,7 +1122,6 @@
 | `official_reference_amount` | decimal_string | 锟?| 瀹樻柟鍙傝€冮噾锟?|
 | `upstream_cost_amount` | decimal_string | 锟?| 涓婃父鎴愭湰閲戦 |
 | `customer_charge_amount` | decimal_string | 锟?| 瀹㈡埛鏀惰垂閲戦 |
-| `cost_amount` | decimal_string | 锟?| 鎴愭湰鎴栧簲鎵ｉ噾锟?|
 | `currency` | string(10) | 锟?| 甯佺 |
 | `pricing_id` | int64 | 锟?| `ai_model_pricing.id` |
 | `pricing_plan_id` | int64 | 锟?| `ai_pricing_plan.id` |
@@ -1147,8 +1145,12 @@
 - `idx_ai_usage_meter_occurred(tenant_id, organization_id, billing_meter_code, occurred_at, id)`
 - `idx_ai_usage_settlement_status(tenant_id, organization_id, settlement_status, occurred_at, id)`
 
-缁撶畻瑕佹眰锟?
-- `cost_amount` 鍜屾墍鏈夐噾棰濆瓧娈靛繀椤绘槸 decimal锛屼笉鍏佽 float/double锟?- 鍚屼竴 `request_id + usage_type` 鐨勭敤閲忎簨瀹炲繀椤诲箓绛夛拷?- 缁撶畻澶辫触涓嶈兘鍒犻櫎浜嬪疄锛屽彧鑳芥洿鏂扮姸鎬佹垨鐢熸垚琛ュ伩璁板綍锟?- 缁撶畻锟?`commerce_account_ledger_entry` 鍚庯紝蹇呴』鎶婅处鎴锋祦锟?ID 璁板綍锟?`commerce_usage_settlement.account_ledger_entry_id`锟?
+结算要求：
+
+- `official_reference_amount`、`upstream_cost_amount`、`customer_charge_amount` 及其他金额字段必须使用 decimal，不允许使用 float/double。
+- 同一 `request_id + usage_type` 的用量事实必须保持幂等。
+- 结算失败不得删除用量事实，只能更新结算状态或生成补偿记录。
+- 写入 `commerce_account_ledger_entry` 后，必须将账本记录 ID 写入 `commerce_usage_settlement.account_ledger_entry_id`。
 ### 8.11 Playground 鐢熸垚璧勪骇濂戠害
 
 `ai_generation_session/job/asset/action` 鏀拺 Playground 鐨勫妯℃€佸巻鍙层€侀瑙堛€佹敹钘忋€佷笅杞藉拰鍒嗕韩銆俙ai_generation_job` 淇濆瓨鐢熸垚浠诲姟鍜屽弬鏁板揩鐓э紝`ai_generation_asset` 淇濆瓨璧勪骇鎶曞奖锛宍ai_generation_asset_action` 淇濆瓨涓嬭浇銆佸垎浜€佹敹钘忋€侀噸缁樸€佹墿鍥俱€侀珮娓呯瓑琛屼负浜嬪疄锟?
