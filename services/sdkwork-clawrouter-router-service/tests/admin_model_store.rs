@@ -1,5 +1,5 @@
 use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
-    CatalogRefreshOptions, DatabaseInstallOptions, DatabaseInstaller,
+    CatalogRefreshOptions, DatabaseInstaller,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::SqliteAdminModelStore;
 use sdkwork_clawrouter_router_service::ports::{
@@ -8,6 +8,9 @@ use sdkwork_clawrouter_router_service::ports::{
     CreateAdminAiModelCommand, CreateAdminModelMappingCommand, ListAdminAiModelsQuery,
     ListAdminModelMappingsQuery, ListAdminModelVendorsQuery, ResolveAdminModelMappingQuery,
     SyncAdminModelCatalogCommand, UpdateAdminAiModelCommand, UpdateAdminModelMappingCommand,
+};
+use sdkwork_clawrouter_router_service_test_support::{
+    schema_sqlite_pool, test_database_install_options,
 };
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::Row;
@@ -33,15 +36,11 @@ fn sdkwork_models_pinned_catalog_version() -> String {
 
 #[tokio::test]
 async fn sqlite_admin_model_store_creates_region_pricing_catalog_rows() {
-    let pool = SqlitePoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .unwrap();
+    let pool = schema_sqlite_pool().await;
     install_admin_model_catalog(&pool, &["openai"]).await;
     let store = SqliteAdminModelStore::new(pool.clone());
     let subject = AdminModelSubject {
-        tenant_id: 0,
+        tenant_id: 100001,
         organization_id: 0,
         operator_id: 99,
         operator_type: 1,
@@ -204,16 +203,12 @@ async fn sqlite_admin_model_store_creates_region_pricing_catalog_rows() {
 
 #[tokio::test]
 async fn sqlite_admin_model_store_lists_catalog_region_prices_for_dual_region_vendors() {
-    let pool = SqlitePoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .unwrap();
+    let pool = schema_sqlite_pool().await;
     install_admin_model_catalog(&pool, &["deepseek", "minimax", "moonshot"]).await;
 
     let models = SqliteAdminModelStore::new(pool.clone())
         .list_models(list_all_admin_models_query(AdminModelSubject {
-            tenant_id: 0,
+            tenant_id: 100001,
             organization_id: 0,
             operator_id: 99,
             operator_type: 1,
@@ -237,16 +232,12 @@ async fn sqlite_admin_model_store_lists_catalog_region_prices_for_dual_region_ve
 
 #[tokio::test]
 async fn sqlite_admin_model_store_lists_catalog_prices_for_latest_media_meters() {
-    let pool = SqlitePoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .unwrap();
+    let pool = schema_sqlite_pool().await;
     install_admin_model_catalog(&pool, &["black_forest_labs", "kuaishou", "openai"]).await;
 
     let models = SqliteAdminModelStore::new(pool.clone())
         .list_models(list_all_admin_models_query(AdminModelSubject {
-            tenant_id: 0,
+            tenant_id: 100001,
             organization_id: 0,
             operator_id: 99,
             operator_type: 1,
@@ -283,11 +274,7 @@ async fn sqlite_admin_model_store_lists_catalog_prices_for_latest_media_meters()
 
 #[tokio::test]
 async fn sqlite_admin_model_store_updates_installed_model_graph() {
-    let pool = SqlitePoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .unwrap();
+    let pool = schema_sqlite_pool().await;
     install_admin_model_catalog(&pool, &["openai"]).await;
     let model_id: i64 = sqlx::query_scalar("SELECT id FROM ai_model WHERE model = 'gpt-image-1.5'")
         .fetch_one(&pool)
@@ -299,7 +286,7 @@ async fn sqlite_admin_model_store_updates_installed_model_graph() {
     let item = SqliteAdminModelStore::new(pool.clone())
         .update_model(UpdateAdminAiModelCommand {
             subject: AdminModelSubject {
-                tenant_id: 0,
+                tenant_id: 100001,
                 organization_id: 0,
                 operator_id: 99,
                 operator_type: 1,
@@ -476,11 +463,7 @@ async fn sqlite_admin_model_store_updates_installed_model_graph() {
 
 #[tokio::test]
 async fn sqlite_admin_model_store_replaces_region_prices_when_explicit() {
-    let pool = SqlitePoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .unwrap();
+    let pool = schema_sqlite_pool().await;
     install_admin_model_catalog(&pool, &["minimax"]).await;
 
     let model_id: i64 = sqlx::query_scalar("SELECT id FROM ai_model WHERE model = 'MiniMax-M2.7'")
@@ -489,7 +472,7 @@ async fn sqlite_admin_model_store_replaces_region_prices_when_explicit() {
         .unwrap();
     let store = SqliteAdminModelStore::new(pool.clone());
     let subject = AdminModelSubject {
-        tenant_id: 0,
+        tenant_id: 100001,
         organization_id: 0,
         operator_id: 99,
         operator_type: 1,
@@ -799,11 +782,7 @@ async fn sqlite_admin_model_store_does_not_use_global_tenant_organization_rankin
 #[tokio::test]
 async fn sqlite_admin_model_store_sync_catalog_reapplies_sdkwork_models_catalog() {
     let catalog_version = sdkwork_models_pinned_catalog_version();
-    let pool = SqlitePoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .unwrap();
+    let pool = schema_sqlite_pool().await;
     prepare_admin_model_schema(&pool).await;
 
     sqlx::query(
@@ -819,7 +798,7 @@ async fn sqlite_admin_model_store_sync_catalog_reapplies_sdkwork_models_catalog(
     let synced = SqliteAdminModelStore::new(pool.clone())
         .sync_catalog(SyncAdminModelCatalogCommand {
             subject: AdminModelSubject {
-                tenant_id: 0,
+                tenant_id: 100001,
                 organization_id: 0,
                 operator_id: 99,
                 operator_type: 1,
@@ -854,7 +833,7 @@ async fn sqlite_admin_model_store_sync_catalog_reapplies_sdkwork_models_catalog(
         .any(|model| model.model == "qwen3.6-max-preview"));
     let store = SqliteAdminModelStore::new(pool.clone());
     let admin_subject = AdminModelSubject {
-        tenant_id: 0,
+        tenant_id: 100001,
         organization_id: 0,
         operator_id: 99,
         operator_type: 1,
@@ -1007,15 +986,11 @@ async fn sqlite_admin_model_store_sync_catalog_reapplies_sdkwork_models_catalog(
 
 #[tokio::test]
 async fn sqlite_admin_model_store_sync_catalog_reactivates_soft_deleted_catalog_source() {
-    let pool = SqlitePoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .unwrap();
+    let pool = schema_sqlite_pool().await;
     prepare_admin_model_schema(&pool).await;
     let store = SqliteAdminModelStore::new(pool.clone());
     let subject = AdminModelSubject {
-        tenant_id: 0,
+        tenant_id: 100001,
         organization_id: 0,
         operator_id: 99,
         operator_type: 1,
@@ -1044,7 +1019,7 @@ async fn sqlite_admin_model_store_sync_catalog_reactivates_soft_deleted_catalog_
         SET status = 0,
             deleted_at = '2099-01-01T00:00:00Z',
             deleted_by = 9001
-        WHERE tenant_id = 0
+        WHERE tenant_id = 100001
           AND organization_id = 0
           AND source_code = 'official_docs'
         "#,
@@ -1074,7 +1049,7 @@ async fn sqlite_admin_model_store_sync_catalog_reactivates_soft_deleted_catalog_
         r#"
         SELECT COUNT(1)
         FROM ai_model_catalog_source
-        WHERE tenant_id = 0
+        WHERE tenant_id = 100001
           AND organization_id = 0
           AND source_code = 'official_docs'
           AND status = 1
@@ -1093,15 +1068,11 @@ async fn sqlite_admin_model_store_sync_catalog_reactivates_soft_deleted_catalog_
 
 #[tokio::test]
 async fn sqlite_admin_model_store_sync_catalog_source_uuid_is_tenant_scoped() {
-    let pool = SqlitePoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .unwrap();
+    let pool = schema_sqlite_pool().await;
     prepare_admin_model_schema(&pool).await;
     let store = SqliteAdminModelStore::new(pool.clone());
 
-    for (tenant_id, organization_id, suffix) in [(0, 0, "system"), (10, 20, "tenant")] {
+    for (tenant_id, organization_id, suffix) in [(100001, 0, "primary"), (100002, 20, "tenant")] {
         let synced = store
             .sync_catalog(SyncAdminModelCatalogCommand {
                 subject: AdminModelSubject {
@@ -1151,11 +1122,7 @@ async fn sqlite_admin_model_store_sync_catalog_source_uuid_is_tenant_scoped() {
 
 #[tokio::test]
 async fn sqlite_admin_model_store_vendor_refresh_only_imports_selected_vendor() {
-    let pool = SqlitePoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .unwrap();
+    let pool = schema_sqlite_pool().await;
     prepare_admin_model_schema(&pool).await;
 
     sqlx::query(
@@ -1171,7 +1138,7 @@ async fn sqlite_admin_model_store_vendor_refresh_only_imports_selected_vendor() 
     let synced = SqliteAdminModelStore::new(pool.clone())
         .sync_catalog(SyncAdminModelCatalogCommand {
             subject: AdminModelSubject {
-                tenant_id: 0,
+                tenant_id: 100001,
                 organization_id: 0,
                 operator_id: 99,
                 operator_type: 1,
@@ -1217,11 +1184,7 @@ async fn sqlite_admin_model_store_vendor_refresh_only_imports_selected_vendor() 
 
 #[tokio::test]
 async fn sqlite_admin_model_store_dry_run_reports_catalog_scope_without_importing() {
-    let pool = SqlitePoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .unwrap();
+    let pool = schema_sqlite_pool().await;
     prepare_admin_model_schema(&pool).await;
 
     sqlx::query("DELETE FROM ai_model WHERE model = 'qwen3.6-max-preview'")
@@ -1232,7 +1195,7 @@ async fn sqlite_admin_model_store_dry_run_reports_catalog_scope_without_importin
     let dry_run = SqliteAdminModelStore::new(pool.clone())
         .sync_catalog(SyncAdminModelCatalogCommand {
             subject: AdminModelSubject {
-                tenant_id: 0,
+                tenant_id: 100001,
                 organization_id: 0,
                 operator_id: 99,
                 operator_type: 1,
@@ -1310,15 +1273,11 @@ async fn sqlite_admin_model_store_dry_run_reports_catalog_scope_without_importin
 
 #[tokio::test]
 async fn sqlite_admin_model_store_dry_run_preserves_existing_catalog_source_success_state() {
-    let pool = SqlitePoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .unwrap();
+    let pool = schema_sqlite_pool().await;
     prepare_admin_model_schema(&pool).await;
     let store = SqliteAdminModelStore::new(pool.clone());
     let subject = AdminModelSubject {
-        tenant_id: 0,
+        tenant_id: 100001,
         organization_id: 0,
         operator_id: 99,
         operator_type: 1,
@@ -1434,15 +1393,11 @@ async fn sqlite_admin_model_store_dry_run_preserves_existing_catalog_source_succ
 
 #[tokio::test]
 async fn sqlite_admin_model_store_sync_catalog_source_hash_is_content_stable() {
-    let pool = SqlitePoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .unwrap();
+    let pool = schema_sqlite_pool().await;
     prepare_admin_model_schema(&pool).await;
     let store = SqliteAdminModelStore::new(pool.clone());
     let subject = AdminModelSubject {
-        tenant_id: 0,
+        tenant_id: 100001,
         organization_id: 0,
         operator_id: 99,
         operator_type: 1,
@@ -1509,15 +1464,11 @@ async fn sqlite_admin_model_store_sync_catalog_source_hash_is_content_stable() {
 
 #[tokio::test]
 async fn sqlite_admin_model_store_persists_mapping_rule_children_and_resolves_item() {
-    let pool = SqlitePoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .unwrap();
+    let pool = schema_sqlite_pool().await;
     prepare_admin_model_schema(&pool).await;
     let store = SqliteAdminModelStore::new(pool.clone());
     let subject = AdminModelSubject {
-        tenant_id: 0,
+        tenant_id: 100001,
         organization_id: 0,
         operator_id: 99,
         operator_type: 1,
@@ -1660,11 +1611,14 @@ async fn sqlite_admin_model_store_persists_mapping_rule_children_and_resolves_it
             channel_id: None,
             channel_code: None,
             q: Some("gpt-5".to_owned()),
+            page_size: None,
+            offset: None,
         })
         .await
         .unwrap();
-    assert_eq!(1, listed.len());
-    assert_eq!(created.id, listed[0].id);
+    assert_eq!(1, listed.items.len());
+    assert_eq!(1, listed.total_count);
+    assert_eq!(created.id, listed.items[0].id);
 
     let resolved = store
         .resolve_model_mapping(ResolveAdminModelMappingQuery {
@@ -1778,7 +1732,7 @@ async fn create_admin_model_tables(pool: &sqlx::SqlitePool) {
 
 async fn prepare_admin_model_schema(pool: &sqlx::SqlitePool) {
     DatabaseInstaller::for_sqlite(pool.clone())
-        .with_options(DatabaseInstallOptions::new("test", "commercial").unwrap())
+        .with_options(test_database_install_options())
         .unwrap()
         .refresh_catalog(CatalogRefreshOptions {
             source: "admin_model_store_schema_fixture".to_owned(),
@@ -1794,7 +1748,7 @@ async fn prepare_admin_model_schema(pool: &sqlx::SqlitePool) {
 
 async fn install_admin_model_catalog(pool: &sqlx::SqlitePool, vendor_codes: &[&str]) {
     DatabaseInstaller::for_sqlite(pool.clone())
-        .with_options(DatabaseInstallOptions::new("test", "commercial").unwrap())
+        .with_options(test_database_install_options())
         .unwrap()
         .refresh_catalog(CatalogRefreshOptions {
             source: "admin_model_store_catalog_fixture".to_owned(),
@@ -1894,7 +1848,7 @@ fn list_all_admin_models_query(subject: AdminModelSubject) -> ListAdminAiModelsQ
         vendor_code: None,
         q: None,
         model_types: None,
-        limit: None,
+        page_size: None,
         offset: None,
     }
 }

@@ -486,6 +486,7 @@ async fn settlement_produces_usage_commands_for_each_usage_line() {
     assert_eq!("12", input.billable_quantity);
     assert_eq!(12, input.prompt_tokens);
     assert_eq!(0, input.completion_tokens);
+    assert_eq!(1, input.request_count);
     assert_eq!("0.150000", input.base_input_unit_price);
     assert_eq!("0.000001800000", input.customer_charge_amount);
 
@@ -494,8 +495,171 @@ async fn settlement_produces_usage_commands_for_each_usage_line() {
     assert_eq!("8", output.billable_quantity);
     assert_eq!(0, output.prompt_tokens);
     assert_eq!(8, output.completion_tokens);
+    assert_eq!(0, output.request_count);
     assert_eq!("0.600000", output.base_output_unit_price);
     assert_eq!("0.000004800000", output.customer_charge_amount);
+}
+
+#[tokio::test]
+async fn settlement_assigns_unique_usage_types_to_same_request_usage_lines() {
+    let catalog = Arc::new(catalog_with_chat_prices());
+    let mut invocation = chat_invocation();
+    PricingPreflightInterceptor::new(catalog)
+        .before(&mut invocation)
+        .await
+        .expect("pricing");
+    let input_quote = invocation
+        .usage
+        .quote_for_meter(&BillingMeter::LlmInputToken)
+        .expect("input quote")
+        .clone();
+    let output_quote = invocation
+        .usage
+        .quote_for_meter(&BillingMeter::LlmOutputToken)
+        .expect("output quote")
+        .clone();
+    invocation.usage.add_line(
+        sdkwork_clawrouter_router_service::application::InvocationUsageLine::new(
+            BillingMeter::LlmInputToken,
+            GatewayUsageQuantity::tokens(12).unwrap(),
+        )
+        .with_pricing_quote(input_quote.clone()),
+    );
+    invocation.usage.add_line(
+        sdkwork_clawrouter_router_service::application::InvocationUsageLine::new(
+            BillingMeter::LlmReasoningToken,
+            GatewayUsageQuantity::tokens(3).unwrap(),
+        )
+        .with_pricing_quote(input_quote.clone()),
+    );
+    invocation.usage.add_line(
+        sdkwork_clawrouter_router_service::application::InvocationUsageLine::new(
+            BillingMeter::LlmCacheReadToken,
+            GatewayUsageQuantity::tokens(2).unwrap(),
+        )
+        .with_pricing_quote(input_quote),
+    );
+    invocation.usage.add_line(
+        sdkwork_clawrouter_router_service::application::InvocationUsageLine::new(
+            BillingMeter::LlmOutputToken,
+            GatewayUsageQuantity::tokens(8).unwrap(),
+        )
+        .with_pricing_quote(output_quote),
+    );
+
+    PricingSettlementInterceptor::default()
+        .after(&mut invocation)
+        .await
+        .expect("settlement");
+
+    let commands = &invocation.usage.settlement_commands;
+    assert_eq!(4, commands.len());
+    assert_eq!(
+        vec![
+            "llm_input_token",
+            "llm_reasoning_token",
+            "llm_cache_read_token",
+            "llm_output_token",
+        ],
+        commands
+            .iter()
+            .map(|command| command.billing_meter_code.as_str())
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        vec![1, 3_020_001, 3, 2],
+        commands
+            .iter()
+            .map(|command| command.usage_type)
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        vec![12, 3, 0, 0],
+        commands
+            .iter()
+            .map(|command| command.prompt_tokens)
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        vec![0, 0, 2, 0],
+        commands
+            .iter()
+            .map(|command| command.cached_tokens)
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        vec![0, 0, 0, 8],
+        commands
+            .iter()
+            .map(|command| command.completion_tokens)
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        vec![12, 3, 2, 8],
+        commands
+            .iter()
+            .map(|command| command.total_tokens)
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        25,
+        commands
+            .iter()
+            .map(|command| command.total_tokens)
+            .sum::<i64>()
+    );
+    assert_eq!(
+        1,
+        commands
+            .iter()
+            .map(|command| command.request_count)
+            .sum::<i64>(),
+        "one invocation must contribute one request to aggregate analytics"
+    );
+    let mut unique_usage_types = commands
+        .iter()
+        .map(|command| command.usage_type)
+        .collect::<Vec<_>>();
+    unique_usage_types.sort_unstable();
+    unique_usage_types.dedup();
+    assert_eq!(commands.len(), unique_usage_types.len());
+}
+
+#[tokio::test]
+async fn settlement_charges_embedding_images_per_image_without_token_projection() {
+    let catalog = Arc::new(catalog_with_chat_prices());
+    let mut invocation = chat_invocation();
+    PricingPreflightInterceptor::new(catalog)
+        .before(&mut invocation)
+        .await
+        .expect("pricing");
+    let mut image_quote = invocation
+        .usage
+        .quote_for_meter(&BillingMeter::LlmInputToken)
+        .expect("input quote")
+        .clone();
+    image_quote.meter = BillingMeter::EmbeddingImage;
+    invocation.usage.add_line(
+        sdkwork_clawrouter_router_service::application::InvocationUsageLine::new(
+            BillingMeter::EmbeddingImage,
+            GatewayUsageQuantity::images(2).unwrap(),
+        )
+        .with_pricing_quote(image_quote),
+    );
+
+    PricingSettlementInterceptor::default()
+        .after(&mut invocation)
+        .await
+        .expect("settlement");
+
+    let command = invocation.usage.settlement_commands.first().unwrap();
+    assert_eq!("embedding_image", command.billing_meter_code);
+    assert_eq!(2, command.image_count);
+    assert_eq!(0, command.prompt_tokens);
+    assert_eq!(0, command.completion_tokens);
+    assert_eq!(0, command.total_tokens);
+    assert_eq!(1, command.request_count);
+    assert_eq!("0.300000000000", command.customer_charge_amount);
 }
 
 #[tokio::test]

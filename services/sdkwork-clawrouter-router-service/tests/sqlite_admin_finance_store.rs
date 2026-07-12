@@ -28,9 +28,12 @@ async fn sqlite_admin_finance_transaction_statuses_are_resolved_from_appbase_com
         .await
         .unwrap();
 
-    assert_eq!(1, failed.len());
-    assert_eq!("ledger-payment-failed", failed[0].id);
-    assert_eq!("failed", failed[0].status);
+    assert_eq!(1, failed.items.len());
+    assert_eq!(1, failed.total);
+    assert_eq!(1, failed.page_no);
+    assert_eq!(10, failed.page_size);
+    assert_eq!("ledger-payment-failed", failed.items[0].id);
+    assert_eq!("failed", failed.items[0].status);
 
     let all = store
         .list_transactions(ListAdminTransactionsQuery {
@@ -45,10 +48,13 @@ async fn sqlite_admin_finance_transaction_statuses_are_resolved_from_appbase_com
         .await
         .unwrap();
 
-    assert_eq!(3, all.len());
-    assert_eq!("pending", all[0].status);
-    assert_eq!("failed", all[1].status);
-    assert_eq!("success", all[2].status);
+    assert_eq!(3, all.items.len());
+    assert_eq!(3, all.total);
+    assert_eq!(1, all.page_no);
+    assert_eq!(10, all.page_size);
+    assert_eq!("pending", all.items[0].status);
+    assert_eq!("failed", all.items[1].status);
+    assert_eq!("success", all.items[2].status);
 }
 
 #[tokio::test]

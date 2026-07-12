@@ -3,9 +3,8 @@ use sdkwork_clawrouter_router_service::ports::{
     AdminMarketingStore, AdminMarketingSubject, ListAdminExchangeRulesQuery,
     UpdateAdminExchangeRuleCommand,
 };
-use sdkwork_promotion_repository_sqlx::{
-    AppCommerceExchangeRuleQuery, AppCommerceSubject, SqliteCommerceExchangeStore,
-};
+use sdkwork_promotion_repository_sqlx::SqliteCommerceExchangeStore;
+use sdkwork_promotion_service::{AppCommerceExchangeRuleQuery, AppCommerceSubject};
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::Row;
 
@@ -32,7 +31,7 @@ async fn sqlite_admin_marketing_upserts_exchange_rule_into_appbase_commerce_rule
 
     let item = store.update_exchange_rule(command.clone()).await.unwrap();
 
-    assert_eq!("exchange-rule-10-20-points-cash", item.id);
+    assert_eq!("exchange-rule-100001-0-points-cash", item.id);
     assert_eq!("POINTS", item.source_asset_type);
     assert_eq!("CASH", item.target_asset_type);
     assert_eq!("250", item.rate);
@@ -43,7 +42,7 @@ async fn sqlite_admin_marketing_upserts_exchange_rule_into_appbase_commerce_rule
         SELECT id, tenant_id, organization_id, rule_no, source_asset_type, target_asset_type,
                rate, status, remark, request_no, idempotency_key, created_at, updated_at
         FROM commerce_exchange_rule
-        WHERE id = 'exchange-rule-10-20-points-cash'
+        WHERE id = 'exchange-rule-100001-0-points-cash'
         "#,
     )
     .fetch_one(&pool)
@@ -70,7 +69,7 @@ async fn sqlite_admin_marketing_upserts_exchange_rule_into_appbase_commerce_rule
     assert_eq!(75, integer_cell(&audit, "target_type"));
     assert_eq!(None, optional_integer_cell(&audit, "target_id"));
     assert_eq!(
-        "exchange-rule-10-20-points-cash",
+        "exchange-rule-100001-0-points-cash",
         string_cell(&audit, "target_uuid")
     );
     assert_eq!("req-exchange-rule", string_cell(&audit, "request_id"));
@@ -84,7 +83,7 @@ async fn sqlite_admin_marketing_upserts_exchange_rule_into_appbase_commerce_rule
         })
         .await
         .unwrap();
-    assert_eq!("exchange-rule-10-20-points-cash", updated.id);
+    assert_eq!("exchange-rule-100001-0-points-cash", updated.id);
     assert_eq!("300.5", updated.rate);
 
     let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM commerce_exchange_rule")
@@ -93,7 +92,7 @@ async fn sqlite_admin_marketing_upserts_exchange_rule_into_appbase_commerce_rule
         .unwrap();
     assert_eq!(1, count);
     let stored_rate: String = sqlx::query_scalar(
-        "SELECT rate FROM commerce_exchange_rule WHERE id = 'exchange-rule-10-20-points-cash'",
+        "SELECT rate FROM commerce_exchange_rule WHERE id = 'exchange-rule-100001-0-points-cash'",
     )
     .fetch_one(&pool)
     .await
@@ -112,7 +111,7 @@ async fn sqlite_app_exchange_store_reads_subject_rule_before_global_rule() {
     seed_exchange_rule(
         &pool,
         "exchange-rule-global",
-        "0",
+        "100001",
         Some("0"),
         "120.000000",
         "2026-05-18T09:00:00Z",
@@ -121,7 +120,7 @@ async fn sqlite_app_exchange_store_reads_subject_rule_before_global_rule() {
     seed_exchange_rule(
         &pool,
         "exchange-rule-tenant",
-        "100001",
+        "200002",
         Some("0"),
         "250.000000",
         "2026-05-18T10:00:00Z",
@@ -132,7 +131,7 @@ async fn sqlite_app_exchange_store_reads_subject_rule_before_global_rule() {
     let item = store
         .load_points_exchange_rate(AppCommerceExchangeRuleQuery {
             subject: Some(AppCommerceSubject {
-                tenant_id: "100001".to_owned(),
+                tenant_id: "200002".to_owned(),
                 organization_id: Some("0".to_owned()),
                 user_id: "30".to_owned(),
             }),
@@ -164,7 +163,7 @@ async fn sqlite_app_exchange_store_reads_subject_rule_before_global_rule() {
     let rules = store
         .list_exchange_rules(AppCommerceExchangeRuleQuery {
             subject: Some(AppCommerceSubject {
-                tenant_id: "100001".to_owned(),
+                tenant_id: "200002".to_owned(),
                 organization_id: Some("0".to_owned()),
                 user_id: "30".to_owned(),
             }),
@@ -202,16 +201,24 @@ async fn sqlite_admin_marketing_lists_exchange_rules_from_appbase_commerce_table
             source_asset_type: Some("POINTS".to_owned()),
             target_asset_type: Some("CASH".to_owned()),
             status: Some("active".to_owned()),
+            page_no: 1,
+            page_size: 20,
+            offset: 0,
         })
         .await
         .unwrap();
 
-    assert_eq!(1, rules.len());
-    assert_eq!("exchange-rule-tenant", rules[0].id);
-    assert_eq!("POINTS", rules[0].source_asset_type);
-    assert_eq!("CASH", rules[0].target_asset_type);
-    assert_eq!("250", rules[0].rate);
-    assert_eq!("active", rules[0].status);
+    assert_eq!(1, rules.items.len());
+    assert_eq!(1, rules.total);
+    assert_eq!(1, rules.page_no);
+    assert_eq!(20, rules.page_size);
+
+    let rule = &rules.items[0];
+    assert_eq!("exchange-rule-tenant", rule.id);
+    assert_eq!("POINTS", rule.source_asset_type);
+    assert_eq!("CASH", rule.target_asset_type);
+    assert_eq!("250", rule.rate);
+    assert_eq!("active", rule.status);
 }
 
 async fn create_exchange_schema(pool: &sqlx::SqlitePool) {

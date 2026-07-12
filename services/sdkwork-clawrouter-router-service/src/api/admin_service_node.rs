@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use crate::api::response::{
     json_created_response, json_success_list_response, no_content_response,
     normalize_list_search_query, offset_page_info, parse_offset_list_query, problem_from_wire_code,
-    success_envelope,
+    success_envelope, validation_problem,
 };
 use crate::api::subject::admin_operator_fields;
 use crate::ports::{
@@ -374,7 +374,7 @@ fn required_visible_text(
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    problem_from_wire_code("4000", message.into()).into_response()
+    validation_problem(message).into_response()
 }
 
 fn system_error(context: &str, error: crate::domain::DomainError) -> Response {

@@ -33,10 +33,10 @@ python -B -m tools.frontend_operation_audit --check
 | CI 安全扫描 | 已对齐 | `.github/workflows/verify.yml`：`cargo audit`、`cargo deny`、Trivy、gitleaks、`pnpm audit`；postgres service + browser/edge smoke opt-in |
 | SBOM cargo 覆盖 | 已对齐 | `scripts/generate-release-sbom.mjs` 通过 `cargo metadata` 生成 cargo SBOM 与依赖边 |
 | SBOM npm 覆盖 | 已对齐 | `collectPnpmPackages()` 解析根 lockfile 与 transitive deps；`collectDirectDeps()` 生成 SPDX DEPENDS_ON |
-| 数据库迁移链（postgres） | 已对齐 | `database/migrations/postgres/0001_initial_schema.{up,down}.sql` baseline-plus-migrations |
-| 数据库迁移链（sqlite） | 已对齐 | `database/migrations/sqlite/0001_initial_schema.{up,down}.sql` baseline-plus-migrations |
-| 表计数三方一致 | 已对齐 | claw-router-owned 表：DDL(69) / table-registry.json(69) / schema.yaml(69) 一致 |
-| 高流量表分区 | 已对齐 | `ai_request_trace` 等 4 张表 `PARTITION BY RANGE (created_at)` + default partition |
+| 数据库迁移链（postgres） | 已对齐 | `database/ddl/baseline/postgres/0001_clawrouter_baseline.sql` + 成对增量 migration；当前处于 pre-GA baseline 初始化阶段 |
+| 数据库迁移链（sqlite） | 已对齐 | `database/ddl/baseline/sqlite/0001_clawrouter_baseline.sql` + 成对增量 migration；当前处于 pre-GA baseline 初始化阶段 |
+| 表计数三方一致 | 已对齐 | claw-router-owned 表：DDL(43) / table-registry.json(43) / schema.yaml(43) 一致 |
+| 高流量表分区 | **待完成 (P0)** | portable baseline 不直接声明分区；需通过评审后的 PostgreSQL engine-specific migration 完成并保留 default partition |
 | 熔断器实现 | 已对齐 | router-service `circuit_breaker.rs`：Closed/Open/HalfOpen + Redis HA store |
 | 幂等实现 | 已对齐 | router-service `idempotency.rs`：Redis SETEX + 流式排除 + SyntheticLocalResponse |
 | Provider adapter 流式 | 已对齐 | cloud-gateway `invocation_dispatcher.rs` SSE passthrough；provider passthrough transport |

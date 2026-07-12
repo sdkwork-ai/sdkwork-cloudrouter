@@ -1,5 +1,7 @@
 const POSTGRES_GATEWAY_USAGE_RECORDER: &str =
     include_str!("../src/infrastructure/sql/postgres/gateway_usage_recorder.rs");
+const SQLITE_GATEWAY_USAGE_RECORDER: &str =
+    include_str!("../src/infrastructure/sql/sqlite/gateway_usage_recorder.rs");
 
 fn compact_sql(value: &str) -> String {
     value.split_whitespace().collect::<Vec<_>>().join(" ")
@@ -14,6 +16,38 @@ fn assert_sql_contains(sql: &str, expected: &str) {
     );
 }
 
+fn function_block<'a>(source: &'a str, start: &str, end: &str) -> &'a str {
+    source
+        .split_once(start)
+        .unwrap_or_else(|| panic!("missing function marker: {start}"))
+        .1
+        .split_once(end)
+        .unwrap_or_else(|| panic!("missing function marker: {end}"))
+        .0
+}
+
+fn numbered_placeholders(source: &str, marker: char) -> std::collections::BTreeSet<usize> {
+    let mut placeholders = std::collections::BTreeSet::new();
+    let bytes = source.as_bytes();
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] as char != marker {
+            index += 1;
+            continue;
+        }
+        let start = index + 1;
+        let mut end = start;
+        while end < bytes.len() && bytes[end].is_ascii_digit() {
+            end += 1;
+        }
+        if end > start {
+            placeholders.insert(source[start..end].parse::<usize>().unwrap());
+        }
+        index = end.max(index + 1);
+    }
+    placeholders
+}
+
 #[test]
 fn gateway_usage_recorder_upserts_trace_and_usage_fact_by_business_unique_keys() {
     for expected in [
@@ -21,10 +55,109 @@ fn gateway_usage_recorder_upserts_trace_and_usage_fact_by_business_unique_keys()
         "ON CONFLICT (tenant_id, organization_id, request_id, attempt_no) DO UPDATE SET",
         "INSERT INTO ai_usage",
         "ON CONFLICT (tenant_id, organization_id, request_id, usage_type) DO UPDATE SET",
-        "ended_at = CURRENT_TIMESTAMP",
-        "occurred_at = CURRENT_TIMESTAMP",
+        "to_timestamp($29::double precision / 1000.0)",
+        "to_timestamp($30::double precision / 1000.0)",
+        "to_timestamp($46::double precision / 1000.0)",
     ] {
         assert_sql_contains(POSTGRES_GATEWAY_USAGE_RECORDER, expected);
+    }
+}
+
+#[test]
+fn gateway_trace_upsert_placeholder_order_matches_all_bindings_in_both_dialects() {
+    let postgres_sql = function_block(
+        POSTGRES_GATEWAY_USAGE_RECORDER,
+        "const UPSERT_TRACE: &str = r#\"",
+        "const UPSERT_USAGE_FACT",
+    );
+    let postgres_bindings = function_block(
+        POSTGRES_GATEWAY_USAGE_RECORDER,
+        "async fn upsert_trace(",
+        "async fn upsert_usage_fact(",
+    );
+    assert_eq!(
+        (1..=42).collect::<std::collections::BTreeSet<_>>(),
+        numbered_placeholders(postgres_sql, '$')
+    );
+    assert_eq!(42, postgres_bindings.matches(".bind(").count());
+    assert_sql_contains(
+        postgres_sql,
+        "$28, to_timestamp($29::double precision / 1000.0), to_timestamp($30::double precision / 1000.0), $31",
+    );
+
+    let sqlite_upsert = function_block(
+        SQLITE_GATEWAY_USAGE_RECORDER,
+        "async fn upsert_trace(",
+        "async fn upsert_usage_fact(",
+    );
+    assert_eq!(
+        (1..=42).collect::<std::collections::BTreeSet<_>>(),
+        numbered_placeholders(sqlite_upsert, '?')
+    );
+    assert_eq!(42, sqlite_upsert.matches(".bind(").count());
+    assert_sql_contains(
+        sqlite_upsert,
+        "?28, strftime('%Y-%m-%dT%H:%M:%fZ', ?29 / 1000.0, 'unixepoch'), strftime('%Y-%m-%dT%H:%M:%fZ', ?30 / 1000.0, 'unixepoch'), ?31",
+    );
+}
+
+#[test]
+fn gateway_usage_upsert_placeholder_order_matches_all_bindings_in_both_dialects() {
+    let postgres_sql = function_block(
+        POSTGRES_GATEWAY_USAGE_RECORDER,
+        "const UPSERT_USAGE_FACT: &str = r#\"",
+        "#[derive(Debug, Clone)]",
+    );
+    let postgres_bindings = function_block(
+        POSTGRES_GATEWAY_USAGE_RECORDER,
+        "async fn upsert_usage_fact(",
+        "fn trace_uuid(",
+    );
+    assert_eq!(
+        (1..=48).collect::<std::collections::BTreeSet<_>>(),
+        numbered_placeholders(postgres_sql, '$')
+    );
+    assert_eq!(48, postgres_bindings.matches(".bind(").count());
+    assert_sql_contains(
+        postgres_sql,
+        "$43, $44, $45::jsonb, to_timestamp($46::double precision / 1000.0), $47, $48",
+    );
+
+    let sqlite_upsert = function_block(
+        SQLITE_GATEWAY_USAGE_RECORDER,
+        "async fn upsert_usage_fact(",
+        "fn trace_uuid(",
+    );
+    let sqlite_sql = sqlite_upsert
+        .split_once("r#\"")
+        .expect("missing SQLite usage SQL start")
+        .1
+        .split_once("\"#,")
+        .expect("missing SQLite usage SQL end")
+        .0;
+    assert_eq!(48, sqlite_sql.matches('?').count());
+    assert_eq!(48, sqlite_upsert.matches(".bind(").count());
+    assert_sql_contains(
+        sqlite_sql,
+        "?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', ? / 1000.0, 'unixepoch'), ?, ?",
+    );
+}
+
+#[test]
+fn gateway_trace_upsert_preserves_text_error_types_and_never_persists_raw_user_agent() {
+    for source in [
+        POSTGRES_GATEWAY_USAGE_RECORDER,
+        SQLITE_GATEWAY_USAGE_RECORDER,
+    ] {
+        let upsert = function_block(
+            source,
+            "async fn upsert_trace(",
+            "async fn upsert_usage_fact(",
+        );
+        assert!(upsert.contains(".bind(command.error_type.as_deref())"));
+        assert!(upsert.contains(".bind(context.user_agent_hash.as_deref())"));
+        assert!(!source.contains("error_type_code"));
+        assert!(!source.contains("json!({ \"userAgent\""));
     }
 }
 
@@ -52,8 +185,8 @@ fn gateway_usage_recorder_uses_versioned_stable_usage_identity() {
 fn gateway_usage_recorder_writes_trace_and_usage_in_one_transaction() {
     for expected in [
         "self.pool.begin()",
-        "upsert_trace(&mut transaction, &trace_command)",
-        "upsert_usage_fact(&mut transaction, &command)",
+        "upsert_trace(&mut transaction, &trace_command, &context)",
+        "upsert_usage_fact(&mut transaction, &command, &context)",
         "transaction.commit()",
         "settlement_status, idempotency_key",
         ".bind(usage_idempotency_key(command))",

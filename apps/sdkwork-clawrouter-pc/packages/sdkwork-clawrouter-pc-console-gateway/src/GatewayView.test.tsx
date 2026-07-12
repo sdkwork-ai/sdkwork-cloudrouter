@@ -2,7 +2,7 @@
 
 import '@testing-library/jest-dom/vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GatewayView } from './GatewayView';
 import {
   GatewayService,
@@ -37,6 +37,12 @@ vi.mock('@sdkwork/clawroutes-pc-commons', () => ({
       {onRetry ? <button type="button" onClick={onRetry}>{retryLabel}</button> : null}
     </div>
   ),
+}));
+
+vi.mock('./gatewayService', () => ({
+  GatewayService: {
+    fetchTraces: vi.fn(),
+  },
 }));
 
 type Deferred<T> = {
@@ -89,8 +95,12 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+beforeEach(() => {
+  vi.mocked(GatewayService.fetchTraces).mockReset();
+});
+
 describe('GatewayView cursor pagination', () => {
-  it('keeps the current page visible, prevents duplicate continuation requests, and appends unique rows', async () => {
+  it('keeps the current page visible, prevents duplicate continuation requests, and preserves repeated trace identifiers', async () => {
     const firstRequest = deferred<GatewayTracePage>();
     const continuationRequest = deferred<GatewayTracePage>();
     const fetchTraces = vi.spyOn(GatewayService, 'fetchTraces')
@@ -131,7 +141,7 @@ describe('GatewayView cursor pagination', () => {
     });
 
     expect(await screen.findByText('trace-2')).toBeTruthy();
-    expect(screen.getAllByText('trace-1')).toHaveLength(1);
+    expect(screen.getAllByText('trace-1')).toHaveLength(2);
     expect(screen.queryByRole('button', {
       name: 'console.gateway.pagination.loadMore',
     })).toBeNull();

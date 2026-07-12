@@ -7,8 +7,8 @@ use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::EntityUuidGenerator;
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
-    AdminIpRateLimitCommandFuture, AdminIpRateLimitItem, AdminIpRateLimitStore,
-    CreateAdminIpRateLimitCommand, ListAdminIpRateLimitsQuery,
+    AdminIpRateLimitCommandFuture, AdminIpRateLimitItem, AdminIpRateLimitListPage,
+    AdminIpRateLimitStore, CreateAdminIpRateLimitCommand, ListAdminIpRateLimitsQuery,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -38,7 +38,7 @@ async fn admin_ip_rate_limit_route_creates_and_lists_ip_rules() {
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, create_response.status());
+    assert_eq!(StatusCode::CREATED, create_response.status());
     let create_payload = json_payload(create_response).await;
     assert_eq!(0, create_payload["code"].as_i64().unwrap());
     assert_eq!(
@@ -146,9 +146,10 @@ impl AdminIpRateLimitStore for TestIpRateLimitStore {
     fn list_ip_rate_limits<'a>(
         &'a self,
         query: ListAdminIpRateLimitsQuery,
-    ) -> AdminIpRateLimitCommandFuture<'a, Vec<AdminIpRateLimitItem>> {
+    ) -> AdminIpRateLimitCommandFuture<'a, AdminIpRateLimitListPage> {
         Box::pin(async move {
-            Ok(self
+            let q = query.q.as_deref().map(str::to_ascii_lowercase);
+            let items = self
                 .items
                 .lock()
                 .unwrap()
@@ -157,9 +158,25 @@ impl AdminIpRateLimitStore for TestIpRateLimitStore {
                     item.tenant_id == query.subject.tenant_id
                         && item.organization_id == query.subject.organization_id
                         && item.deleted_at.is_none()
+                        && q.as_ref().map_or(true, |q| {
+                            item.rule_name.to_ascii_lowercase().contains(q)
+                                || item.target_ip.to_ascii_lowercase().contains(q)
+                        })
                 })
                 .cloned()
-                .collect())
+                .collect::<Vec<_>>();
+            let total = i64::try_from(items.len()).unwrap_or(i64::MAX);
+            let items = items
+                .into_iter()
+                .skip(query.offset.max(0) as usize)
+                .take(query.page_size.max(0) as usize)
+                .collect();
+            Ok(AdminIpRateLimitListPage {
+                items,
+                total,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
         })
     }
 

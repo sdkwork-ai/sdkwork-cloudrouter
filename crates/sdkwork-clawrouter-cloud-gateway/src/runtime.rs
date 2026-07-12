@@ -23,8 +23,9 @@ use sdkwork_clawrouter_router_service::api::{
 };
 use sdkwork_clawrouter_router_service::application::{
     resolve_usage_settlement_worker_config, ApiKeySecretCodec, ApiKeySecretHasher,
-    RuntimeCacheManager, RuntimeStreamBus, TenantInflightConfig, UsageSettlementWorker,
-    UsageSettlementWorkerConfig,
+    GatewayAccountingRetryHealth, GatewayAccountingRetryWorker,
+    GatewayAccountingRetryWorkerConfig, RetryingGatewayUsageRecorder, RuntimeCacheManager,
+    RuntimeStreamBus, TenantInflightConfig, UsageSettlementWorker, UsageSettlementWorkerConfig,
 };
 use sdkwork_clawrouter_router_service::domain::{
     ProviderRetryPolicy, DEFAULT_PROVIDER_CIRCUIT_BREAKER_RECOVERY_WINDOW_SECONDS,
@@ -44,6 +45,9 @@ use sdkwork_clawrouter_router_service::infrastructure::provider::{
     DEFAULT_PROVIDER_RESPONSE_MAX_BYTES, DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS,
     DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS,
 };
+use sdkwork_clawrouter_router_service::infrastructure::{
+    RedisGatewayAccountingRetryQueue, SqliteGatewayAccountingRetryQueue,
+};
 use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::{
     RefreshableSqlPricingCatalog, SqlPricingCatalogSnapshotSummary,
 };
@@ -59,10 +63,11 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::{
     SqliteUsageSettlementStore,
 };
 use sdkwork_clawrouter_router_service::ports::{
-    ChatCompletionRelay, ChatCompletionStreamRelay, EmbeddingsRelay, GatewayRequestTraceCommand,
-    GatewayUsageRecordCommand, GatewayUsageRecordFuture, GatewayUsageRecorder, PricingCatalog,
-    ProviderHealthProbe, ProviderSecretResolver, ResponsesRelay, StickyRouteStore,
-    UsageSettlementStore,
+    ChatCompletionRelay, ChatCompletionStreamRelay, EmbeddingsRelay,
+    GatewayAccountingRecordContext, GatewayAccountingRetryQueue, GatewayRequestTraceCommand,
+    GatewayTraceAttribution, GatewayUsageRecordCommand, GatewayUsageRecordFuture,
+    GatewayUsageRecorder, PricingCatalog, ProviderHealthProbe, ProviderSecretResolver,
+    ResponsesRelay, StickyRouteStore, UsageSettlementStore,
 };
 use sqlx::sqlite::SqlitePool;
 use sqlx::PgPool;
@@ -83,10 +88,75 @@ type ChatStreamRelay = Arc<dyn ChatCompletionStreamRelay + Send + Sync>;
 type EmbeddingRelay = Arc<dyn EmbeddingsRelay + Send + Sync>;
 type ResponseRelay = Arc<dyn ResponsesRelay + Send + Sync>;
 type UsageRecorder = Arc<dyn GatewayUsageRecorder + Send + Sync>;
+type AccountingRetryQueue = Arc<dyn GatewayAccountingRetryQueue + Send + Sync>;
 type SettlementStore = Arc<dyn UsageSettlementStore + Send + Sync>;
 
 const CLAW_ROUTER_APP_API_SERVICE_ID: &str = "sdkwork-clawrouter-app-api";
 const CLAW_ROUTER_BACKEND_API_SERVICE_ID: &str = "sdkwork-clawrouter-backend-api";
+const CLAW_ROUTER_GATEWAY_INSTANCE_ID_ENV: &str = "SDKWORK_CLAW_ROUTER_GATEWAY_INSTANCE_ID";
+const CLAW_ROUTER_GATEWAY_INSTANCE_CODE_ENV: &str = "SDKWORK_CLAW_ROUTER_GATEWAY_INSTANCE_CODE";
+const CLAW_ROUTER_GATEWAY_NODE_NAME_ENV: &str = "SDKWORK_CLAW_ROUTER_GATEWAY_NODE_NAME";
+const CLAW_ROUTER_REGION_CODE_ENV: &str = "SDKWORK_CLAW_ROUTER_REGION_CODE";
+
+fn gateway_trace_attribution() -> GatewayTraceAttribution {
+    let instance_code = first_runtime_identity(
+        &[
+            CLAW_ROUTER_GATEWAY_INSTANCE_CODE_ENV,
+            "HOSTNAME",
+            "COMPUTERNAME",
+        ],
+        128,
+    );
+    let node_name = first_runtime_identity(
+        &[
+            CLAW_ROUTER_GATEWAY_NODE_NAME_ENV,
+            "K8S_NODE_NAME",
+            "NODE_NAME",
+        ],
+        128,
+    )
+    .or_else(|| instance_code.clone());
+    let attribution = GatewayTraceAttribution {
+        gateway_instance_id: positive_runtime_i64(CLAW_ROUTER_GATEWAY_INSTANCE_ID_ENV),
+        gateway_instance_code_snapshot: instance_code,
+        gateway_region_code_snapshot: first_runtime_identity(&[CLAW_ROUTER_REGION_CODE_ENV], 64),
+        gateway_node_name_snapshot: node_name,
+    };
+    if attribution.gateway_instance_code_snapshot.is_none() {
+        static WARNED: std::sync::OnceLock<()> = std::sync::OnceLock::new();
+        if WARNED.set(()).is_ok() {
+            tracing::warn!(
+                instance_code_env = CLAW_ROUTER_GATEWAY_INSTANCE_CODE_ENV,
+                instance_id_env = CLAW_ROUTER_GATEWAY_INSTANCE_ID_ENV,
+                node_name_env = CLAW_ROUTER_GATEWAY_NODE_NAME_ENV,
+                region_code_env = CLAW_ROUTER_REGION_CODE_ENV,
+                "gateway runtime identity is unavailable; new traces will keep nullable gateway attribution fields"
+            );
+        }
+    }
+    attribution
+}
+
+fn first_runtime_identity(keys: &[&str], max_characters: usize) -> Option<String> {
+    keys.iter().find_map(|key| {
+        let value = std::env::var(key).ok()?;
+        bounded_runtime_identity(&value, max_characters)
+    })
+}
+
+fn bounded_runtime_identity(value: &str, max_characters: usize) -> Option<String> {
+    let value = value.trim();
+    if value.is_empty() {
+        return None;
+    }
+    Some(value.chars().take(max_characters).collect())
+}
+
+fn positive_runtime_i64(key: &str) -> Option<i64> {
+    let value = std::env::var(key).ok()?;
+    let value = value.trim().parse::<i64>().ok()?;
+    (value > 0).then_some(value)
+}
 
 fn router_with_invocation_runtime_routes<C>(
     base_router: Router,
@@ -279,6 +349,29 @@ impl GatewayUsageRecorder for NotifyingGatewayUsageRecorder {
     ) -> GatewayUsageRecordFuture<'a> {
         Box::pin(async move {
             self.inner.record_gateway_usage(command).await?;
+            self.usage_settlement_wakeup.notify_one();
+            Ok(())
+        })
+    }
+
+    fn record_gateway_trace_with_context<'a>(
+        &'a self,
+        command: GatewayRequestTraceCommand,
+        context: GatewayAccountingRecordContext,
+    ) -> GatewayUsageRecordFuture<'a> {
+        self.inner
+            .record_gateway_trace_with_context(command, context)
+    }
+
+    fn record_gateway_usage_with_context<'a>(
+        &'a self,
+        command: GatewayUsageRecordCommand,
+        context: GatewayAccountingRecordContext,
+    ) -> GatewayUsageRecordFuture<'a> {
+        Box::pin(async move {
+            self.inner
+                .record_gateway_usage_with_context(command, context)
+                .await?;
             self.usage_settlement_wakeup.notify_one();
             Ok(())
         })
@@ -907,10 +1000,20 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
             let usage_settlement_wakeup =
                 maybe_spawn_sqlite_usage_settlement_worker(&pool, usage_settlement_worker_config)
                     .await?;
-            let usage_recorder = wrap_usage_recorder_with_settlement_wakeup(
-                Arc::new(SqliteGatewayUsageRecorder::new(pool.clone())),
+            let primary_usage_recorder = wrap_usage_recorder_with_settlement_wakeup(
+                Arc::new(SqliteGatewayUsageRecorder::new_with_attribution(
+                    pool.clone(),
+                    gateway_trace_attribution(),
+                )),
                 usage_settlement_wakeup,
             );
+            let (usage_recorder, accounting_retry_health) =
+                wrap_usage_recorder_with_durable_accounting_retry(
+                    primary_usage_recorder,
+                    gateway_trace_attribution(),
+                    runtime_toml,
+                )
+                .await?;
             spawn_sqlite_catalog_refresh_worker(
                 &pool,
                 Arc::clone(&catalog),
@@ -928,6 +1031,8 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
                     runtime_toml,
                     usage_settlement_worker_config,
                 );
+            let readiness_check =
+                combine_accounting_retry_readiness(readiness_check, accounting_retry_health);
             router_with_database_runtime_routes(
                 router_with_database_status_and_passthrough_placeholder(
                     Some(&config),
@@ -986,10 +1091,20 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
             let usage_settlement_wakeup =
                 maybe_spawn_postgres_usage_settlement_worker(&pool, usage_settlement_worker_config)
                     .await?;
-            let usage_recorder = wrap_usage_recorder_with_settlement_wakeup(
-                Arc::new(PostgresGatewayUsageRecorder::new(pool.clone())),
+            let primary_usage_recorder = wrap_usage_recorder_with_settlement_wakeup(
+                Arc::new(PostgresGatewayUsageRecorder::new_with_attribution(
+                    pool.clone(),
+                    gateway_trace_attribution(),
+                )),
                 usage_settlement_wakeup,
             );
+            let (usage_recorder, accounting_retry_health) =
+                wrap_usage_recorder_with_durable_accounting_retry(
+                    primary_usage_recorder,
+                    gateway_trace_attribution(),
+                    runtime_toml,
+                )
+                .await?;
             spawn_postgres_catalog_refresh_worker(
                 &pool,
                 Arc::clone(&catalog),
@@ -1007,6 +1122,8 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
                     runtime_toml,
                     usage_settlement_worker_config,
                 );
+            let readiness_check =
+                combine_accounting_retry_readiness(readiness_check, accounting_retry_health);
             router_with_database_runtime_routes(
                 router_with_database_status_and_passthrough_placeholder(
                     Some(&config),
@@ -1155,7 +1272,7 @@ async fn finalize_all_in_one_route_surfaces(
 
 pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeInProcessUpstreams> {
     let context = all_in_one_runtime_context_from_env().await?;
-    let gateway_router = build_gateway_router_from_all_in_one_context(&context)?;
+    let gateway_router = build_gateway_router_from_all_in_one_context(&context).await?;
     let (backend_router, app_router) = match &context.database_pool {
         DatabasePool::Sqlite(pool, _) => {
             let backend_router =
@@ -1685,23 +1802,39 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
     }
 }
 
-fn build_gateway_router_from_all_in_one_context(
+async fn build_gateway_router_from_all_in_one_context(
     context: &AllInOneRuntimeContext,
 ) -> anyhow::Result<Router> {
     let api_key_hasher =
         build_api_key_hasher(&context.api_key_security_config).map_err(anyhow::Error::new)?;
     let usage_recorder: UsageRecorder = match &context.database_pool {
-        DatabasePool::Sqlite(pool, _) => Arc::new(SqliteGatewayUsageRecorder::new(pool.clone())),
+        DatabasePool::Sqlite(pool, _) => {
+            Arc::new(SqliteGatewayUsageRecorder::new_with_attribution(
+                pool.clone(),
+                gateway_trace_attribution(),
+            ))
+        }
         DatabasePool::Postgres(pool, _) => {
-            Arc::new(PostgresGatewayUsageRecorder::new(pool.clone()))
+            Arc::new(PostgresGatewayUsageRecorder::new_with_attribution(
+                pool.clone(),
+                gateway_trace_attribution(),
+            ))
         }
     };
-    let usage_recorder = wrap_usage_recorder_with_settlement_wakeup(
+    let primary_usage_recorder = wrap_usage_recorder_with_settlement_wakeup(
         usage_recorder,
         context.usage_settlement_wakeup.clone(),
     );
 
     let runtime_toml = RuntimeTomlConfig::from_env_config_file().map_err(anyhow::Error::msg)?;
+    let (usage_recorder, accounting_retry_health) =
+        wrap_usage_recorder_with_durable_accounting_retry(
+            primary_usage_recorder,
+            gateway_trace_attribution(),
+            runtime_toml.as_ref(),
+        )
+        .await
+        .map_err(anyhow::Error::new)?;
     let settlement_config = resolve_usage_settlement_worker_config(runtime_toml.as_ref());
     let readiness_check =
         sdkwork_clawrouter_router_service::infrastructure::sql::pool::runtime_readiness_check(
@@ -1709,6 +1842,8 @@ fn build_gateway_router_from_all_in_one_context(
             runtime_toml.as_ref(),
             settlement_config,
         );
+    let readiness_check =
+        combine_accounting_retry_readiness(readiness_check, accounting_retry_health);
 
     router_with_database_runtime_routes(
         router_with_database_status_and_passthrough_placeholder(
@@ -1837,6 +1972,116 @@ fn wrap_usage_recorder_with_settlement_wakeup(
         )),
         None => usage_recorder,
     }
+}
+
+async fn wrap_usage_recorder_with_durable_accounting_retry(
+    primary: UsageRecorder,
+    attribution: GatewayTraceAttribution,
+    runtime_toml: Option<&RuntimeTomlConfig>,
+) -> Result<(UsageRecorder, GatewayAccountingRetryHealth), GatewayRouterError> {
+    let retry_queue: AccountingRetryQueue =
+        if let Some(redis_config) = sdkwork_claw_config::RedisConfig::from_env_or_runtime_toml(
+            runtime_toml,
+        )
+        .map_err(GatewayRouterError::Config)?
+        {
+            Arc::new(
+                RedisGatewayAccountingRetryQueue::new(
+                    redis_config.url(),
+                    redis_config.key_prefix().unwrap_or("clawrouter"),
+                )
+                .map_err(|error| GatewayRouterError::Config(error.to_string()))?,
+            )
+        } else {
+            let profile = RuntimeConfigProfile::from_env_or_runtime_toml(runtime_toml)
+                .map_err(GatewayRouterError::Config)?;
+            let location = DatabaseConfig::runtime_config_location_from_env(profile);
+            std::fs::create_dir_all(&location.data_directory).map_err(|error| {
+                GatewayRouterError::Config(format!(
+                    "create durable accounting retry data directory {} failed: {error}",
+                    location.data_directory.display()
+                ))
+            })?;
+            let queue_path = location
+                .data_directory
+                .join("gateway-accounting-retry.sqlite3");
+            Arc::new(
+                SqliteGatewayAccountingRetryQueue::connect(&queue_path)
+                    .await
+                    .map_err(|error| GatewayRouterError::Config(error.to_string()))?,
+            )
+        };
+
+    let health = GatewayAccountingRetryHealth::default();
+    let primary_for_worker = Arc::clone(&primary);
+    let queue_for_worker = Arc::clone(&retry_queue);
+    let consumer_id = attribution
+        .gateway_instance_code_snapshot
+        .clone()
+        .unwrap_or_else(|| "clawrouter-gateway".to_owned());
+    spawn_gateway_accounting_retry_worker(
+        primary_for_worker,
+        queue_for_worker,
+        health.clone(),
+        format!("{consumer_id}-{}", std::process::id()),
+    );
+    let recorder: UsageRecorder = Arc::new(RetryingGatewayUsageRecorder::new_with_attribution(
+        primary,
+        retry_queue,
+        health.clone(),
+        attribution,
+    ));
+    Ok((recorder, health))
+}
+
+fn spawn_gateway_accounting_retry_worker(
+    primary: UsageRecorder,
+    retry_queue: AccountingRetryQueue,
+    health: GatewayAccountingRetryHealth,
+    consumer_id: String,
+) {
+    let worker = Arc::new(GatewayAccountingRetryWorker::new(
+        primary,
+        retry_queue,
+        health,
+        consumer_id,
+        GatewayAccountingRetryWorkerConfig::default(),
+    ));
+    let poll_interval = worker.config().poll_interval;
+    let mut shutdown_rx = sdkwork_claw_http::subscribe_shutdown_signal();
+    tokio::spawn(async move {
+        loop {
+            let result = tokio::select! {
+                _ = shutdown_rx.recv() => break,
+                result = worker.run_once() => result,
+            };
+            match result {
+                Ok(0) => {}
+                Ok(processed) => {
+                    tracing::debug!(processed, "gateway accounting retry worker processed deliveries");
+                }
+                Err(error) => {
+                    tracing::warn!(error = %error, "gateway accounting retry worker run failed");
+                }
+            }
+            tokio::select! {
+                _ = shutdown_rx.recv() => break,
+                _ = tokio::time::sleep(poll_interval) => {}
+            }
+        }
+    });
+}
+
+fn combine_accounting_retry_readiness(
+    database_readiness: Option<sdkwork_claw_http::ReadinessCheckFn>,
+    health: GatewayAccountingRetryHealth,
+) -> Option<sdkwork_claw_http::ReadinessCheckFn> {
+    let mut checks = Vec::new();
+    if let Some(check) = database_readiness {
+        checks.push(check);
+    }
+    checks.push(health.readiness_check());
+    sdkwork_claw_http::combine_readiness_checks(checks)
 }
 
 fn spawn_usage_settlement_worker(

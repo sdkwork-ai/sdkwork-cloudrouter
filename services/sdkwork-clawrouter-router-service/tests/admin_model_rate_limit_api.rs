@@ -7,8 +7,8 @@ use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::EntityUuidGenerator;
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
-    AdminModelRateLimitCommandFuture, AdminModelRateLimitItem, AdminModelRateLimitStore,
-    CreateAdminModelRateLimitCommand, ListAdminModelRateLimitsQuery,
+    AdminModelRateLimitCommandFuture, AdminModelRateLimitItem, AdminModelRateLimitListPage,
+    AdminModelRateLimitStore, CreateAdminModelRateLimitCommand, ListAdminModelRateLimitsQuery,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -201,9 +201,10 @@ impl AdminModelRateLimitStore for TestModelRateLimitStore {
     fn list_model_rate_limits<'a>(
         &'a self,
         query: ListAdminModelRateLimitsQuery,
-    ) -> AdminModelRateLimitCommandFuture<'a, Vec<AdminModelRateLimitItem>> {
+    ) -> AdminModelRateLimitCommandFuture<'a, AdminModelRateLimitListPage> {
         Box::pin(async move {
-            Ok(self
+            let q = query.q.as_deref().map(str::to_ascii_lowercase);
+            let items = self
                 .items
                 .lock()
                 .unwrap()
@@ -212,9 +213,25 @@ impl AdminModelRateLimitStore for TestModelRateLimitStore {
                     item.tenant_id == query.subject.tenant_id
                         && item.organization_id == query.subject.organization_id
                         && item.deleted_at.is_none()
+                        && q.as_ref().map_or(true, |q| {
+                            item.model.to_ascii_lowercase().contains(q)
+                                || item.channel_group.to_ascii_lowercase().contains(q)
+                        })
                 })
                 .cloned()
-                .collect())
+                .collect::<Vec<_>>();
+            let total = items.len() as i64;
+            let items = items
+                .into_iter()
+                .skip(query.offset.max(0) as usize)
+                .take(query.page_size.max(0) as usize)
+                .collect();
+            Ok(AdminModelRateLimitListPage {
+                items,
+                total,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
         })
     }
 

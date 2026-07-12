@@ -17,6 +17,9 @@ pub struct CatalogScopeCountSnapshot {
     pub capability_count: i64,
     pub price_count: i64,
     pub ranking_count: i64,
+    pub voice_count: i64,
+    pub voice_binding_count: i64,
+    pub video_profile_count: i64,
 }
 
 #[doc(hidden)]
@@ -32,6 +35,9 @@ pub fn catalog_scope_count_snapshot(
         capability_count: counts.capability_count as i64,
         price_count: counts.price_count as i64,
         ranking_count: counts.ranking_count as i64,
+        voice_count: counts.voice_count as i64,
+        voice_binding_count: counts.voice_binding_count as i64,
+        video_profile_count: counts.video_profile_count as i64,
     }
 }
 

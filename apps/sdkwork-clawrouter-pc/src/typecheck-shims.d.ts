@@ -814,7 +814,7 @@ declare module '@sdkwork/memory-app-sdk' {
     tokenManager?: unknown;
   }
 
-  export class SdkworkMemoryAppClient {
+  export class SdkworkAppClient {
     memory: {
       spaces: {
         list(params?: { pageSize?: number }): Promise<unknown>;
@@ -830,7 +830,7 @@ declare module '@sdkwork/memory-app-sdk' {
     setTokenManager(manager: unknown): this;
   }
 
-  export function createClient(config: SdkworkAppConfig): SdkworkMemoryAppClient;
+  export function createClient(config: SdkworkAppConfig): SdkworkAppClient;
 }
 
 declare module '@sdkwork/agents-app-sdk' {

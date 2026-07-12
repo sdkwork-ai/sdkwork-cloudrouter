@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-clawrouter.tables.yaml.
 -- Registry version: 0.3.0.
--- Registry SHA-256: ee1fee765634f3721de4c9a16102900dab8ecf540ac189a3295e1fab890fd82a.
+-- Registry SHA-256: e488b562ba6285144585ad352ade6bca9b3c5699af75a79e591c61f24b391cfb.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect all --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -311,6 +311,7 @@ CREATE TABLE IF NOT EXISTS ai_config_change_event (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_config_change_event_uuid ON ai_config_change_event (uuid);
 CREATE INDEX IF NOT EXISTS idx_ai_config_change_event_pending ON ai_config_change_event (tenant_id, organization_id, event_status, created_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_config_change_event_scope_version ON ai_config_change_event (tenant_id, organization_id, config_scope, config_version, id);
+CREATE INDEX IF NOT EXISTS idx_ai_config_change_event_retention ON ai_config_change_event (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ai_config_version (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -466,6 +467,7 @@ CREATE TABLE IF NOT EXISTS ai_pricing_import_snapshot (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_pricing_import_snapshot_uuid ON ai_pricing_import_snapshot (uuid);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_pricing_import_snapshot_hash ON ai_pricing_import_snapshot (tenant_id, organization_id, import_source, source_hash);
 CREATE INDEX IF NOT EXISTS idx_ai_pricing_import_snapshot_tenant_latest ON ai_pricing_import_snapshot (tenant_id, organization_id, status, import_source, observed_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_pricing_import_snapshot_retention ON ai_pricing_import_snapshot (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ai_pricing_plan (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -819,13 +821,17 @@ CREATE TABLE IF NOT EXISTS ai_request_trace (
     requested_model_catalog_key VARCHAR(256),
     provider_model VARCHAR(256),
     provider_native_model VARCHAR(256),
+    gateway_instance_id BIGINT,
+    gateway_instance_code_snapshot VARCHAR(128),
+    gateway_region_code_snapshot VARCHAR(64),
+    gateway_node_name_snapshot VARCHAR(128),
     region_code VARCHAR(64),
     endpoint VARCHAR(256),
     request_path VARCHAR(256),
     http_method VARCHAR(16),
     http_status INTEGER,
     provider_error_code VARCHAR(128),
-    error_type INTEGER,
+    error_type VARCHAR(128),
     started_at TIMESTAMPTZ NOT NULL,
     ended_at TIMESTAMPTZ,
     latency_ms INTEGER,
@@ -857,6 +863,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_request_trace_api_key_started ON ai_request_tr
 CREATE INDEX IF NOT EXISTS idx_ai_request_trace_model_started ON ai_request_trace (tenant_id, organization_id, requested_model, started_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_request_trace_tenant_status_started ON ai_request_trace (tenant_id, organization_id, status, started_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_request_trace_user_status_started ON ai_request_trace (tenant_id, organization_id, user_id, status, started_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_request_trace_retention ON ai_request_trace (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ai_routing_decision_log (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -893,6 +900,7 @@ CREATE TABLE IF NOT EXISTS ai_routing_decision_log (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_decision_log_request ON ai_routing_decision_log (tenant_id, organization_id, request_id);
 CREATE INDEX IF NOT EXISTS idx_ai_routing_decision_tenant_model_created ON ai_routing_decision_log (tenant_id, organization_id, requested_model, created_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_routing_decision_log_retention ON ai_routing_decision_log (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ai_routing_policy (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -1160,6 +1168,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_usage_model_occurred ON ai_usage (tenant_id, o
 CREATE INDEX IF NOT EXISTS idx_ai_usage_pricing_plan_occurred ON ai_usage (tenant_id, organization_id, pricing_plan_id, occurred_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_usage_meter_occurred ON ai_usage (tenant_id, organization_id, billing_meter_code, occurred_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_usage_settlement_status ON ai_usage (tenant_id, organization_id, settlement_status, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_retention ON ai_usage (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ai_usage_service_provider_edge (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -1208,6 +1217,7 @@ CREATE TABLE IF NOT EXISTS ai_usage_service_provider_edge (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_usage_service_provider_edge_usage_depth ON ai_usage_service_provider_edge (tenant_id, organization_id, usage_fact_id, edge_depth, amount_role);
 CREATE INDEX IF NOT EXISTS idx_ai_usage_service_provider_edge_seller_time ON ai_usage_service_provider_edge (tenant_id, organization_id, seller_provider_id, occurred_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_usage_service_provider_edge_buyer_time ON ai_usage_service_provider_edge (tenant_id, organization_id, buyer_provider_id, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_service_provider_edge_retention ON ai_usage_service_provider_edge (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS iam_gateway_access_policy (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -1404,7 +1414,8 @@ CREATE TABLE IF NOT EXISTS ops_alert_event (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_alert_event_no ON ops_alert_event (alert_no);
-CREATE INDEX IF NOT EXISTS idx_ops_alert_event_status_severity ON ops_alert_event (alert_status, severity, last_seen_at, id);
+CREATE INDEX IF NOT EXISTS idx_ops_alert_event_tenant_status_latest ON ops_alert_event (tenant_id, organization_id, status, last_seen_at, id);
+CREATE INDEX IF NOT EXISTS idx_ops_alert_event_retention ON ops_alert_event (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ops_audit_log (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -1437,6 +1448,7 @@ CREATE TABLE IF NOT EXISTS ops_audit_log (
 CREATE INDEX IF NOT EXISTS idx_ops_audit_log_tenant_operator_created ON ops_audit_log (tenant_id, organization_id, operator_type, operator_id, created_at, id);
 CREATE INDEX IF NOT EXISTS idx_ops_audit_log_tenant_target_created ON ops_audit_log (tenant_id, organization_id, target_type, target_id, created_at, id);
 CREATE INDEX IF NOT EXISTS idx_ops_audit_log_request ON ops_audit_log (tenant_id, organization_id, request_id);
+CREATE INDEX IF NOT EXISTS idx_ops_audit_log_retention ON ops_audit_log (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ops_config_snapshot (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -1467,6 +1479,7 @@ CREATE TABLE IF NOT EXISTS ops_config_snapshot (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_config_snapshot_no ON ops_config_snapshot (snapshot_no);
 CREATE INDEX IF NOT EXISTS idx_ops_config_snapshot_tenant_scope ON ops_config_snapshot (tenant_id, organization_id, config_scope, config_type, created_at, id);
+CREATE INDEX IF NOT EXISTS idx_ops_config_snapshot_retention ON ops_config_snapshot (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ops_gateway_heartbeat (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -1497,7 +1510,8 @@ CREATE TABLE IF NOT EXISTS ops_gateway_heartbeat (
     CONSTRAINT ck_ops_gateway_heartbeat_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
 );
 
-CREATE INDEX IF NOT EXISTS idx_ops_gateway_heartbeat_instance_time ON ops_gateway_heartbeat (instance_id, heartbeat_at, id);
+CREATE INDEX IF NOT EXISTS idx_ops_gateway_heartbeat_instance_status_time ON ops_gateway_heartbeat (instance_id, status, heartbeat_at, id);
+CREATE INDEX IF NOT EXISTS idx_ops_gateway_heartbeat_retention ON ops_gateway_heartbeat (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ops_gateway_instance (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -1534,7 +1548,7 @@ CREATE TABLE IF NOT EXISTS ops_gateway_instance (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_gateway_instance_code ON ops_gateway_instance (instance_code);
-CREATE INDEX IF NOT EXISTS idx_ops_gateway_instance_region_status ON ops_gateway_instance (region, cell, health_status, last_heartbeat_at);
+CREATE INDEX IF NOT EXISTS idx_ops_gateway_instance_tenant_status_heartbeat ON ops_gateway_instance (tenant_id, organization_id, status, deleted_at, last_heartbeat_at, updated_at, id);
 
 CREATE TABLE IF NOT EXISTS ops_job_execution (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -1568,6 +1582,7 @@ CREATE TABLE IF NOT EXISTS ops_job_execution (
 CREATE INDEX IF NOT EXISTS idx_ops_job_execution_name_started ON ops_job_execution (job_name, started_at, id);
 CREATE INDEX IF NOT EXISTS idx_ops_job_execution_status_started ON ops_job_execution (execution_status, started_at, id);
 CREATE INDEX IF NOT EXISTS idx_ops_job_execution_model_ranking_scope_started ON ops_job_execution (tenant_id, organization_id, status, job_type, job_name, started_at, id);
+CREATE INDEX IF NOT EXISTS idx_ops_job_execution_retention ON ops_job_execution (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ops_metric_snapshot (
     id BIGINT NOT NULL PRIMARY KEY,

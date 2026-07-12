@@ -10,6 +10,7 @@
 //   node scripts/refresh-standard-alignment-audit.mjs            // writes JSON + prints summary
 //   node scripts/refresh-standard-alignment-audit.mjs --check    // exits non-zero if JSON would change
 //   node scripts/refresh-standard-alignment-audit.mjs --strict   // exits non-zero if any P0 fact is unresolved
+//   node scripts/refresh-standard-alignment-audit.mjs --help     // prints usage without collecting or writing facts
 //
 // This script does NOT modify `docs/standard-alignment-audit.md` directly.
 // The markdown audit is curated prose; the JSON is the machine-checkable
@@ -99,13 +100,22 @@ function collectCiSecurityFacts() {
 function collectMigrationsFacts() {
   const pgDir = "database/migrations/postgres";
   const sqliteDir = "database/migrations/sqlite";
-  const pgFiles = listDir(pgDir).filter((f) => f.endsWith(".sql"));
-  const sqliteFiles = listDir(sqliteDir).filter((f) => f.endsWith(".sql"));
+  const pgFiles = listDir(pgDir).filter((f) => f.endsWith(".sql")).sort();
+  const sqliteFiles = listDir(sqliteDir).filter((f) => f.endsWith(".sql")).sort();
+  const paired = (files) => {
+    const up = new Set(files.filter((file) => file.endsWith(".up.sql")).map((file) => file.slice(0, -7)));
+    const down = new Set(files.filter((file) => file.endsWith(".down.sql")).map((file) => file.slice(0, -9)));
+    const missingDown = [...up].filter((id) => !down.has(id)).sort();
+    const missingUp = [...down].filter((id) => !up.has(id)).sort();
+    return { complete: missingDown.length === 0 && missingUp.length === 0, missingDown, missingUp };
+  };
   return {
     postgresMigrationFiles: pgFiles,
-    postgresHasInitialSchema: pgFiles.some((f) => f.startsWith("0001_")),
+    postgresBaselineExists: fileExists("database/ddl/baseline/postgres/0001_clawrouter_baseline.sql"),
+    postgresPairs: paired(pgFiles),
     sqliteMigrationFiles: sqliteFiles,
-    sqliteHasInitialSchema: sqliteFiles.some((f) => f.startsWith("0001_")),
+    sqliteBaselineExists: fileExists("database/ddl/baseline/sqlite/0001_clawrouter_baseline.sql"),
+    sqlitePairs: paired(sqliteFiles),
   };
 }
 
@@ -420,7 +430,7 @@ function collectTableConsistencyFacts() {
   let schemaYamlCount = 0;
   if (fileExists(schemaYamlPath)) {
     const yaml = readText(schemaYamlPath);
-    schemaYamlCount = (yaml.match(/^\s*- name:\s+\w+/gm) || []).length;
+    schemaYamlCount = (yaml.match(/^- name:\s+[a-z][a-z0-9_]*\s*$/gm) || []).length;
   }
 
   const counts = { ddl: ddlCount, registry: registryCount, schemaYaml: schemaYamlCount };
@@ -435,16 +445,33 @@ function collectTableConsistencyFacts() {
 }
 
 function collectTablePartitionFacts() {
-  // High-traffic tables that must be range-partitioned by created_at.
+  // Engine-specific partitioning is applied through reviewed PostgreSQL migrations.
   const ddlPath = "database/ddl/baseline/postgres/0001_clawrouter_baseline.sql";
+  const migrationDir = "database/migrations/postgres";
+  const strategyPath = "docs/architecture/tech/TECH-35-high-volume-ledger-evolution.md";
   const requiredTables = [
     "ai_request_trace",
     "ai_routing_decision_log",
     "ai_usage",
     "ai_usage_service_provider_edge",
   ];
-  if (!fileExists(ddlPath)) return { exists: false, allPartitioned: false, tables: [] };
-  const ddl = readText(ddlPath);
+  const strategyDocumented = fileExists(strategyPath);
+  if (!fileExists(ddlPath)) {
+    return {
+      exists: false,
+      allPartitioned: false,
+      strategyDocumented,
+      strategyPath,
+      reviewRequired: true,
+      tables: [],
+    };
+  }
+  const migrationSql = listDir(migrationDir)
+    .filter((file) => file.endsWith(".up.sql"))
+    .sort()
+    .map((file) => readText(`${migrationDir}/${file}`))
+    .join("\n");
+  const ddl = `${readText(ddlPath)}\n${migrationSql}`;
   const tables = requiredTables.map((name) => {
     // Parent table has PARTITION BY RANGE (created_at); child has PARTITION OF <name> DEFAULT
     const hasPartitionBy = new RegExp(
@@ -459,6 +486,12 @@ function collectTablePartitionFacts() {
     exists: true,
     tables,
     allPartitioned: tables.every((t) => t.partitioned),
+    strategyDocumented,
+    strategyPath,
+    reviewRequired: !tables.every((t) => t.partitioned),
+    note: tables.every((t) => t.partitioned)
+      ? "reviewed PostgreSQL partition migration detected"
+      : "direct time partitioning is intentionally blocked until business-key idempotency, archive reconciliation, and rollback gates in TECH-35 pass",
   };
 }
 
@@ -488,9 +521,16 @@ function buildP0Status(facts) {
 
   items.push({
     id: "p0-sqlite-migration-chain",
-    title: "SQLite initial migration chain",
-    status: facts.migrations.sqliteHasInitialSchema ? "done" : "pending",
-    evidence: { sqliteFiles: facts.migrations.sqliteMigrationFiles },
+    title: "SQLite baseline and paired migration chain",
+    status:
+      facts.migrations.sqliteBaselineExists && facts.migrations.sqlitePairs.complete
+        ? "done"
+        : "pending",
+    evidence: {
+      baselineExists: facts.migrations.sqliteBaselineExists,
+      sqliteFiles: facts.migrations.sqliteMigrationFiles,
+      pairs: facts.migrations.sqlitePairs,
+    },
   });
 
   items.push({
@@ -619,6 +659,13 @@ function collectAllFacts() {
 
 function main() {
   const args = process.argv.slice(2);
+  if (args.includes("--help")) {
+    console.log("Usage: node scripts/refresh-standard-alignment-audit.mjs [--check] [--strict] [--help]");
+    console.log("  --check   Compare generated facts without writing files");
+    console.log("  --strict  Exit non-zero while any P0 fact remains pending");
+    console.log("  --help    Print this help without collecting or writing facts");
+    return;
+  }
   const checkMode = args.includes("--check");
   const strictMode = args.includes("--strict");
 

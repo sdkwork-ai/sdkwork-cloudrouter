@@ -12,6 +12,12 @@ use crate::ports::{GatewayUsageQuantity, GatewayUsageRecordCommand};
 
 const TOKEN_BILLING_UNIT_SIZE: i64 = 1_000_000;
 const USAGE_AMOUNT_DECIMAL_DIGITS: u32 = 12;
+// 10_000.. is reserved for provider-adapter usage lines. Keep the first
+// occurrence of each legacy role at 1..5 for compatibility, and place
+// additional lines in a disjoint deterministic range so request-scoped
+// `(request_id, usage_type)` idempotency keys cannot overwrite one another.
+const SETTLEMENT_UNIQUE_USAGE_TYPE_BASE: i64 = 20_000;
+const SETTLEMENT_UNIQUE_USAGE_TYPE_STRIDE: i64 = 1_000_000;
 
 #[derive(Debug, Clone, Default)]
 pub struct PricingSettlementInterceptor;
@@ -32,7 +38,9 @@ impl InvocationInterceptor for PricingSettlementInterceptor {
 
             invocation.usage.settlement_commands.clear();
             let mut commands = Vec::new();
-            for line in invocation.usage.lines.clone() {
+            let request_count_line_index = request_count_line_index(&invocation.usage.lines);
+            let mut seen_legacy_usage_types = [false; 6];
+            for (line_index, line) in invocation.usage.lines.clone().into_iter().enumerate() {
                 let Some(quote) = line
                     .pricing_quote
                     .clone()
@@ -46,12 +54,57 @@ impl InvocationInterceptor for PricingSettlementInterceptor {
                         line.meter.code()
                     )));
                 };
-                commands.push(command_for_line(invocation, &line, &quote)?);
+                let legacy_usage_type = legacy_usage_type_for_line(&line);
+                let legacy_usage_type_index = usize::try_from(legacy_usage_type)
+                    .unwrap_or_default()
+                    .min(seen_legacy_usage_types.len() - 1);
+                let duplicate_role = seen_legacy_usage_types[legacy_usage_type_index];
+                seen_legacy_usage_types[legacy_usage_type_index] = true;
+                let mut command = command_for_line(
+                    invocation,
+                    &line,
+                    &quote,
+                    usage_type_for_line(&line, line_index, duplicate_role),
+                )?;
+                command.request_count = settlement_request_count(
+                    invocation,
+                    &line,
+                    line_index,
+                    request_count_line_index,
+                );
+                commands.push(command);
             }
             invocation.usage.settlement_commands = commands;
             Ok(())
         })
     }
+}
+
+fn request_count_line_index(lines: &[InvocationUsageLine]) -> Option<usize> {
+    lines
+        .iter()
+        .position(|line| line.role == InvocationUsageLineRole::Request)
+        .or_else(|| {
+            lines
+                .iter()
+                .position(|line| line.quantity.request_count > 0)
+        })
+        .or_else(|| (!lines.is_empty()).then_some(0))
+}
+
+fn settlement_request_count(
+    invocation: &Invocation,
+    line: &InvocationUsageLine,
+    line_index: usize,
+    request_count_line_index: Option<usize>,
+) -> i64 {
+    if request_count_line_index != Some(line_index) {
+        return 0;
+    }
+    if invocation.usage.request_count > 0 {
+        return invocation.usage.request_count;
+    }
+    line.quantity.request_count.max(1)
 }
 
 fn skippable_without_quote(meter: &BillingMeter, mode: BillingMode) -> bool {
@@ -68,6 +121,7 @@ fn command_for_line(
     invocation: &Invocation,
     line: &InvocationUsageLine,
     quote: &InvocationPricingQuote,
+    usage_type: i64,
 ) -> Result<GatewayUsageRecordCommand, InvocationError> {
     let account = invocation
         .account
@@ -93,9 +147,8 @@ fn command_for_line(
     };
     let (base_input_unit_price, base_output_unit_price, cache_read_unit_price) =
         unit_price_columns(line, quote);
-    let token_totals = aggregate_billing_token_totals(invocation);
     let (prompt_tokens, completion_tokens, cached_tokens, total_tokens) =
-        token_columns(line, &quantity, &token_totals);
+        token_columns(line, &quantity);
 
     Ok(GatewayUsageRecordCommand {
         request_id: invocation.request.request_id.clone(),
@@ -148,7 +201,7 @@ fn command_for_line(
             super::InvocationShape::SseStream
         ),
         modality: modality_for_invocation(invocation, &line.meter),
-        usage_type: usage_type_for_line(line),
+        usage_type,
         billing_meter_code: line.meter.code().to_owned(),
         billable_quantity: quantity.billable_quantity.clone(),
         prompt_tokens,
@@ -223,68 +276,21 @@ fn unit_price_columns(
 fn token_columns(
     line: &InvocationUsageLine,
     quantity: &GatewayUsageQuantity,
-    totals: &BillingTokenTotals,
 ) -> (i64, i64, i64, i64) {
     if !is_token_meter(&line.meter) {
         return (0, 0, 0, 0);
     }
+    let tokens = quantity
+        .billable_quantity
+        .parse::<i64>()
+        .unwrap_or_default();
     match line.role {
-        InvocationUsageLineRole::Output => {
-            (0, totals.completion_tokens, 0, totals.completion_tokens)
-        }
-        InvocationUsageLineRole::CacheRead => (0, 0, totals.cached_tokens, totals.cached_tokens),
+        InvocationUsageLineRole::Output => (0, tokens, 0, tokens),
+        InvocationUsageLineRole::CacheRead => (0, 0, tokens, tokens),
         InvocationUsageLineRole::Input
         | InvocationUsageLineRole::Request
-        | InvocationUsageLineRole::CacheWrite => (
-            totals.prompt_tokens,
-            totals.completion_tokens,
-            totals.cached_tokens,
-            totals.total_tokens,
-        ),
-        InvocationUsageLineRole::Result | InvocationUsageLineRole::Adapter => {
-            let tokens = quantity
-                .billable_quantity
-                .parse::<i64>()
-                .unwrap_or_default();
-            (0, 0, 0, tokens)
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-struct BillingTokenTotals {
-    prompt_tokens: i64,
-    completion_tokens: i64,
-    cached_tokens: i64,
-    total_tokens: i64,
-}
-
-fn aggregate_billing_token_totals(invocation: &Invocation) -> BillingTokenTotals {
-    let mut billable_input = 0_i64;
-    let mut completion_tokens = 0_i64;
-    let mut cached_tokens = 0_i64;
-    for line in &invocation.usage.lines {
-        if !is_token_meter(&line.meter) {
-            continue;
-        }
-        let Ok(tokens) = line.quantity.billable_quantity.parse::<i64>() else {
-            continue;
-        };
-        match line.role {
-            InvocationUsageLineRole::Output => completion_tokens += tokens,
-            InvocationUsageLineRole::CacheRead => cached_tokens += tokens,
-            InvocationUsageLineRole::Input
-            | InvocationUsageLineRole::Request
-            | InvocationUsageLineRole::CacheWrite => billable_input += tokens,
-            InvocationUsageLineRole::Result | InvocationUsageLineRole::Adapter => {}
-        }
-    }
-    let prompt_tokens = billable_input + cached_tokens;
-    BillingTokenTotals {
-        prompt_tokens,
-        completion_tokens,
-        cached_tokens,
-        total_tokens: prompt_tokens + completion_tokens,
+        | InvocationUsageLineRole::CacheWrite => (tokens, 0, 0, tokens),
+        InvocationUsageLineRole::Result | InvocationUsageLineRole::Adapter => (0, 0, 0, tokens),
     }
 }
 
@@ -297,7 +303,6 @@ fn is_token_meter(meter: &BillingMeter) -> bool {
             | BillingMeter::LlmCacheWriteToken
             | BillingMeter::LlmCacheReadToken
             | BillingMeter::EmbeddingInputToken
-            | BillingMeter::EmbeddingImage
             | BillingMeter::ImageInputToken
             | BillingMeter::ImageOutputToken
             | BillingMeter::AudioInputToken
@@ -374,13 +379,72 @@ fn modality_for_meter(meter: &BillingMeter) -> i64 {
     }
 }
 
-fn usage_type_for_line(line: &InvocationUsageLine) -> i64 {
+fn legacy_usage_type_for_line(line: &InvocationUsageLine) -> i64 {
     match line.role {
         InvocationUsageLineRole::Output | InvocationUsageLineRole::Result => 2,
         InvocationUsageLineRole::CacheRead => 3,
         InvocationUsageLineRole::CacheWrite => 4,
         InvocationUsageLineRole::Adapter => 5,
         InvocationUsageLineRole::Request | InvocationUsageLineRole::Input => 1,
+    }
+}
+
+fn usage_type_for_line(line: &InvocationUsageLine, line_index: usize, duplicate_role: bool) -> i64 {
+    let legacy_usage_type = legacy_usage_type_for_line(line);
+    if !duplicate_role {
+        return legacy_usage_type;
+    }
+    SETTLEMENT_UNIQUE_USAGE_TYPE_BASE
+        .saturating_add(
+            billing_meter_ordinal(&line.meter).saturating_mul(SETTLEMENT_UNIQUE_USAGE_TYPE_STRIDE),
+        )
+        .saturating_add(i64::try_from(line_index).unwrap_or(i64::MAX))
+}
+
+fn billing_meter_ordinal(meter: &BillingMeter) -> i64 {
+    match meter {
+        BillingMeter::LlmInputToken => 1,
+        BillingMeter::LlmOutputToken => 2,
+        BillingMeter::LlmReasoningToken => 3,
+        BillingMeter::LlmCacheWriteToken => 4,
+        BillingMeter::LlmCacheReadToken => 5,
+        BillingMeter::LlmCacheStorageTokenHour => 6,
+        BillingMeter::EmbeddingInputToken => 7,
+        BillingMeter::EmbeddingImage => 8,
+        BillingMeter::ImageInputToken => 9,
+        BillingMeter::ImageOutputToken => 10,
+        BillingMeter::ImageResult => 11,
+        BillingMeter::ImagePixel => 12,
+        BillingMeter::ImageMegapixel => 13,
+        BillingMeter::AudioInputToken => 14,
+        BillingMeter::AudioOutputToken => 15,
+        BillingMeter::AudioInputSecond => 16,
+        BillingMeter::AudioOutputSecond => 17,
+        BillingMeter::AudioInputMinute => 18,
+        BillingMeter::AudioOutputMinute => 19,
+        BillingMeter::TtsInputCharacter => 20,
+        BillingMeter::SpeechCharacter => 21,
+        BillingMeter::SttAudioMinute => 22,
+        BillingMeter::VideoInputToken => 23,
+        BillingMeter::VideoOutputToken => 24,
+        BillingMeter::VideoInputSecond => 25,
+        BillingMeter::VideoOutputSecond => 26,
+        BillingMeter::VideoResult => 27,
+        BillingMeter::MusicOutputSecond => 28,
+        BillingMeter::SfxResult => 29,
+        BillingMeter::RerankSearch => 30,
+        BillingMeter::RerankDocument => 31,
+        BillingMeter::ApiRequest => 32,
+        BillingMeter::ApiResult => 33,
+        BillingMeter::ApiItem => 34,
+        BillingMeter::ToolCall => 35,
+        BillingMeter::WebSearchCall => 36,
+        BillingMeter::FileSearchCall => 37,
+        BillingMeter::CodeInterpreterSession => 38,
+        BillingMeter::ContainerSession => 39,
+        BillingMeter::StorageGbDay => 40,
+        BillingMeter::BandwidthGb => 41,
+        BillingMeter::Unknown => 99,
     }
 }
 
@@ -490,6 +554,31 @@ fn adapter_usage_pricing_snapshot(
         }
     })
     .to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn usage_line(meter: BillingMeter) -> InvocationUsageLine {
+        InvocationUsageLine::new(
+            meter,
+            GatewayUsageQuantity::tokens(1).expect("valid test quantity"),
+        )
+    }
+
+    #[test]
+    fn duplicate_usage_type_ranges_remain_disjoint_for_large_line_indexes() {
+        let high_index =
+            usage_type_for_line(&usage_line(BillingMeter::LlmReasoningToken), 999_999, true);
+        let next_meter =
+            usage_type_for_line(&usage_line(BillingMeter::LlmCacheWriteToken), 0, true);
+
+        assert_eq!(4_019_999, high_index);
+        assert_eq!(4_020_000, next_meter);
+        assert_ne!(high_index, next_meter);
+        assert!(next_meter <= i64::from(i32::MAX));
+    }
 }
 
 fn effective_invocation_dispatch_status_code(invocation: &Invocation) -> Option<u16> {

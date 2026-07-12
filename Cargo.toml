@@ -130,7 +130,7 @@ hyper-rustls = { version = "0.27.9", default-features = false, features = ["http
 hyper-util = { version = "0.1.20", features = ["client-legacy", "http1", "tokio"] }
 hex = "0.4.3"
 ring = "0.17.14"
-redis = { version = "1.2.1", default-features = false, features = ["tokio-comp", "connection-manager", "script"] }
+redis = { version = "1.2.1", default-features = false, features = ["tokio-comp", "connection-manager", "script", "streams"] }
 sha2 = "0.10.9"
 sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio", "sqlite", "postgres"] }
 tokio = { version = "1.51", features = ["macros", "rt-multi-thread", "net", "time", "test-util", "fs", "io-util"] }

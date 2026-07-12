@@ -138,7 +138,7 @@ async fn openai_models_route_rejects_missing_api_key() {
 
     assert_eq!(
         "invalid_api_key",
-        payload["error"]["code"].as_i64().unwrap()
+        payload["error"]["code"].as_str().unwrap()
     );
     assert_eq!("invalid_request_error", payload["error"]["type"]);
 }

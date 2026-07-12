@@ -201,12 +201,18 @@ async fn postgres_admin_ai_resource_read_models_decode_int4_status_columns() {
     };
 
     let resources = store
-        .list_ai_resources(ListAdminAiResourcesQuery { subject })
+        .list_ai_resources(ListAdminAiResourcesQuery {
+            subject,
+            q: None,
+            limit: None,
+            offset: None,
+        })
         .await
         .unwrap();
-    assert_eq!(1, resources.len());
-    assert_eq!("active", resources[0].status);
-    assert_eq!(Some(4), resources[0].sort_order);
+    assert_eq!(1, resources.items.len());
+    assert_eq!(1, resources.total_count);
+    assert_eq!("active", resources.items[0].status);
+    assert_eq!(Some(4), resources.items[0].sort_order);
 
     let groups = store
         .list_ai_resource_groups(ListAdminAiResourceGroupsQuery { subject })
@@ -220,12 +226,16 @@ async fn postgres_admin_ai_resource_read_models_decode_int4_status_columns() {
         .list_ai_resource_group_resources(ListAdminAiResourceGroupResourcesQuery {
             subject,
             group_id_or_code: "bundle.openrouter.openai.standard".to_owned(),
+            q: None,
+            limit: None,
+            offset: None,
         })
         .await
         .unwrap();
-    assert_eq!(1, group_resources.len());
-    assert_eq!("active", group_resources[0].status);
-    assert_eq!(Some(1), group_resources[0].sort_order);
+    assert_eq!(1, group_resources.items.len());
+    assert_eq!(1, group_resources.total_count);
+    assert_eq!("active", group_resources.items[0].status);
+    assert_eq!(Some(1), group_resources.items[0].sort_order);
 
     ctx.cleanup().await;
 }
@@ -453,13 +463,17 @@ async fn create_schema(pool: &PgPool) {
             requested_model_catalog_key VARCHAR(256),
             provider_model VARCHAR(128),
             provider_native_model VARCHAR(256),
+            gateway_instance_id BIGINT,
+            gateway_instance_code_snapshot VARCHAR(128),
+            gateway_region_code_snapshot VARCHAR(64),
+            gateway_node_name_snapshot VARCHAR(128),
             region_code VARCHAR(64),
             endpoint VARCHAR(256),
             request_path VARCHAR(256),
             http_method VARCHAR(16),
             http_status INTEGER,
             provider_error_code VARCHAR(128),
-            error_type INTEGER,
+            error_type VARCHAR(128),
             started_at TIMESTAMPTZ,
             ended_at TIMESTAMPTZ,
             latency_ms INTEGER,

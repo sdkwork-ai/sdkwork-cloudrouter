@@ -14,7 +14,7 @@ import {
   type SdkworkGenerationsAppSdkConfig as SdkworkGenerationsAppConfig,
 } from '@sdkwork/clawrouter-pc-core/sdk';
 import {
-  SdkworkMemoryAppClient,
+  SdkworkAppClient as SdkworkMemoryAppClient,
   type SdkworkAppConfig as SdkworkMemoryAppConfig,
 } from '@sdkwork/memory-app-sdk';
 import {

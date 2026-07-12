@@ -15,12 +15,12 @@ async fn sqlite_admin_record_logs_show_user_display_name_or_email_instead_of_num
     let page = store.list_logs(query(None)).await.unwrap();
 
     assert_eq!(2, page.total);
-    assert_eq!("email-only@example.com", page.logs[0].user);
+    assert_eq!("email-only@example.com", page.items[0].user);
     assert_eq!(
         "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) Version/17.5 Mobile/15E148 Safari/604.1",
-        page.logs[0].user_agent
+        page.items[0].user_agent
     );
-    assert_eq!("Ada Lovelace", page.logs[1].user);
+    assert_eq!("Ada Lovelace", page.items[1].user);
 
     let email_search_page = store
         .list_logs(query(Some("ada@example.com")))
@@ -28,7 +28,7 @@ async fn sqlite_admin_record_logs_show_user_display_name_or_email_instead_of_num
         .unwrap();
 
     assert_eq!(1, email_search_page.total);
-    assert_eq!("Ada Lovelace", email_search_page.logs[0].user);
+    assert_eq!("Ada Lovelace", email_search_page.items[0].user);
 }
 
 async fn sqlite_pool() -> SqlitePool {
@@ -75,7 +75,7 @@ async fn create_tables(pool: &SqlitePool) {
             http_status INTEGER,
             http_method TEXT,
             provider_error_code TEXT,
-            error_type INTEGER,
+            error_type VARCHAR(128),
             error_message_masked TEXT,
             metadata TEXT NOT NULL DEFAULT '{}',
             latency_ms INTEGER,

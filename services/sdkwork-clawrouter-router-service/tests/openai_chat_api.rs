@@ -494,7 +494,7 @@ async fn openai_chat_completions_authenticates_and_returns_honest_relay_not_impl
 
     assert_eq!(
         "provider_relay_not_configured",
-        payload["error"]["code"].as_i64().unwrap()
+        payload["error"]["code"].as_str().unwrap()
     );
     assert_eq!("server_error", payload["error"]["type"]);
     assert!(!body.contains("sk-live-secret"));
@@ -539,7 +539,7 @@ async fn openai_chat_completions_rejects_api_key_without_billing_subject_before_
 
     assert_eq!(
         "billing_subject_missing",
-        payload["error"]["code"].as_i64().unwrap()
+        payload["error"]["code"].as_str().unwrap()
     );
     assert_eq!("server_error", payload["error"]["type"]);
     let message = payload["error"]["message"].as_str().unwrap();
@@ -583,7 +583,7 @@ async fn openai_chat_completions_rejects_unknown_model_after_authentication() {
 
     assert_eq!(
         "model_not_found",
-        payload["error"]["code"].as_i64().unwrap()
+        payload["error"]["code"].as_str().unwrap()
     );
 }
 
@@ -620,7 +620,7 @@ async fn openai_chat_completions_accepts_official_model_id_when_model_is_not_reg
 
     assert_eq!(
         "provider_relay_not_configured",
-        payload["error"]["code"].as_i64().unwrap()
+        payload["error"]["code"].as_str().unwrap()
     );
 }
 
@@ -657,7 +657,7 @@ async fn openai_chat_completions_accepts_base_catalog_key_for_region_scoped_pric
 
     assert_eq!(
         "provider_relay_not_configured",
-        payload["error"]["code"].as_i64().unwrap()
+        payload["error"]["code"].as_str().unwrap()
     );
 }
 
@@ -1518,7 +1518,7 @@ async fn openai_chat_completions_sanitizes_empty_route_snapshot_errors() {
 
     assert_eq!(
         "provider_route_snapshot_empty",
-        payload["error"]["code"].as_i64().unwrap()
+        payload["error"]["code"].as_str().unwrap()
     );
     assert!(message.contains("provider route snapshot is empty for model"));
     assert!(!message.contains("route diagnostics"), "{message}");
@@ -1591,7 +1591,7 @@ async fn openai_chat_completions_rejects_misconfigured_group_channel_route_witho
 
     assert_eq!(
         "provider_route_not_available",
-        payload["error"]["code"].as_i64().unwrap()
+        payload["error"]["code"].as_str().unwrap()
     );
     assert!(payload["error"]["message"]
         .as_str()
@@ -1686,7 +1686,7 @@ async fn openai_chat_completions_reports_pricing_unavailable_for_callable_route_
 
     assert_eq!(
         "pricing_unavailable",
-        payload["error"]["code"].as_i64().unwrap()
+        payload["error"]["code"].as_str().unwrap()
     );
     assert!(payload["error"]["message"]
         .as_str()
@@ -1810,7 +1810,7 @@ async fn openai_chat_completions_rejects_group_policy_missing_chat_capability_wi
 
     assert_eq!(
         "provider_route_not_available",
-        payload["error"]["code"].as_i64().unwrap()
+        payload["error"]["code"].as_str().unwrap()
     );
     assert!(payload["error"]["message"]
         .as_str()
@@ -1879,7 +1879,7 @@ async fn openai_chat_completions_rejects_configured_group_policy_without_matchin
 
     assert_eq!(
         "provider_route_not_available",
-        payload["error"]["code"].as_i64().unwrap()
+        payload["error"]["code"].as_str().unwrap()
     );
     assert!(payload["error"]["message"]
         .as_str()
@@ -3166,7 +3166,7 @@ async fn openai_chat_invocation_plugin_can_short_circuit_before_relay_without_ca
         .await
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
-    assert_eq!("quota_exceeded", payload["error"]["code"].as_i64().unwrap());
+    assert_eq!("quota_exceeded", payload["error"]["code"].as_str().unwrap());
     assert_eq!(
         vec!["blocked_before_relay:openrouter"],
         *events.lock().unwrap()
@@ -3581,7 +3581,7 @@ async fn openai_chat_completions_rejects_usage_recording_when_success_response_o
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(
         "provider_usage_record_failed",
-        payload["error"]["code"].as_i64().unwrap()
+        payload["error"]["code"].as_str().unwrap()
     );
     assert!(usage_captured.lock().unwrap().is_empty());
 }

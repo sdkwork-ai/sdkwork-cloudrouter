@@ -16,7 +16,7 @@ import {
   readRequiredString,
   readString,
   type ApiRecord,
-} from '@sdkwork/clawroutes-pc-commons/api-result';
+} from '@sdkwork/clawroutes-pc-commons/runtime';
 import type {
   CreateApiKeyRequest,
   AppApiKeyListResponse as SdkAppApiKeyListResponse,

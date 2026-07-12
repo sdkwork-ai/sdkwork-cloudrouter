@@ -1,6 +1,9 @@
 use std::future::Future;
 use std::pin::Pin;
 
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+
 use crate::domain::{BillingMeter, DecimalValue, DomainError, DomainResult};
 
 pub type GatewayUsageRecordFuture<'a> = Pin<Box<dyn Future<Output = DomainResult<()>> + Send + 'a>>;
@@ -17,9 +20,121 @@ pub trait GatewayUsageRecorder {
         &'a self,
         command: GatewayUsageRecordCommand,
     ) -> GatewayUsageRecordFuture<'a>;
+
+    fn record_gateway_trace_with_context<'a>(
+        &'a self,
+        command: GatewayRequestTraceCommand,
+        _context: GatewayAccountingRecordContext,
+    ) -> GatewayUsageRecordFuture<'a> {
+        self.record_gateway_trace(command)
+    }
+
+    fn record_gateway_usage_with_context<'a>(
+        &'a self,
+        command: GatewayUsageRecordCommand,
+        _context: GatewayAccountingRecordContext,
+    ) -> GatewayUsageRecordFuture<'a> {
+        self.record_gateway_usage(command)
+    }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// Immutable identity captured by the process that handled a gateway request.
+///
+/// Every field is optional so an old deployment can continue recording traces
+/// during the expand phase. Once a non-null snapshot has been stored, SQL
+/// upserts preserve it instead of replacing history with a later process
+/// identity.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GatewayTraceAttribution {
+    pub gateway_instance_id: Option<i64>,
+    pub gateway_instance_code_snapshot: Option<String>,
+    pub gateway_region_code_snapshot: Option<String>,
+    pub gateway_node_name_snapshot: Option<String>,
+}
+
+/// Immutable persistence context captured by the gateway that handled the
+/// provider request. Durable retries must replay this context instead of using
+/// the retry worker's clock or node identity.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GatewayAccountingRecordContext {
+    pub attribution: GatewayTraceAttribution,
+    pub started_at_epoch_millis: i64,
+    pub ended_at_epoch_millis: i64,
+    pub user_agent_hash: Option<String>,
+}
+
+impl GatewayAccountingRecordContext {
+    pub fn from_trace(
+        command: &GatewayRequestTraceCommand,
+        attribution: GatewayTraceAttribution,
+        ended_at_epoch_millis: i64,
+    ) -> DomainResult<Self> {
+        let latency_millis = command.latency_ms.unwrap_or_default().max(0);
+        let context = Self {
+            attribution,
+            started_at_epoch_millis: ended_at_epoch_millis.saturating_sub(latency_millis),
+            ended_at_epoch_millis,
+            user_agent_hash: hash_optional_text(command.user_agent.as_deref()),
+        };
+        context.validate()?;
+        Ok(context)
+    }
+
+    pub fn from_usage(
+        command: &GatewayUsageRecordCommand,
+        attribution: GatewayTraceAttribution,
+        ended_at_epoch_millis: i64,
+    ) -> DomainResult<Self> {
+        Self::from_trace(&command.trace_command(), attribution, ended_at_epoch_millis)
+    }
+
+    pub fn validate(&self) -> DomainResult<()> {
+        self.attribution.validate()?;
+        if self.started_at_epoch_millis < 0 || self.ended_at_epoch_millis < 0 {
+            return Err(DomainError::new(
+                "gateway accounting timestamps must be non-negative",
+            ));
+        }
+        if self.ended_at_epoch_millis < self.started_at_epoch_millis {
+            return Err(DomainError::new(
+                "gateway accounting ended_at must not precede started_at",
+            ));
+        }
+        if self.user_agent_hash.as_ref().is_some_and(|value| {
+            value.len() != 64 || !value.bytes().all(|byte| byte.is_ascii_hexdigit())
+        }) {
+            return Err(DomainError::new(
+                "gateway accounting user_agent_hash must be a SHA-256 hex digest",
+            ));
+        }
+        Ok(())
+    }
+}
+
+impl GatewayTraceAttribution {
+    pub fn validate(&self) -> DomainResult<()> {
+        if let Some(gateway_instance_id) = self.gateway_instance_id {
+            positive_i64("gateway_instance_id", gateway_instance_id)?;
+        }
+        validate_optional_snapshot_text(
+            "gateway_instance_code_snapshot",
+            self.gateway_instance_code_snapshot.as_deref(),
+            128,
+        )?;
+        validate_optional_snapshot_text(
+            "gateway_region_code_snapshot",
+            self.gateway_region_code_snapshot.as_deref(),
+            64,
+        )?;
+        validate_optional_snapshot_text(
+            "gateway_node_name_snapshot",
+            self.gateway_node_name_snapshot.as_deref(),
+            128,
+        )
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct GatewayRequestTraceCommand {
     pub request_id: String,
     pub trace_id: Option<String>,
@@ -68,13 +183,13 @@ impl GatewayRequestTraceCommand {
         ] {
             non_negative_i64(field, value)?;
         }
-        validate_optional_non_negative_i64("latency_ms", self.latency_ms)?;
-        validate_optional_non_negative_i64("ttft_ms", self.ttft_ms)?;
+        validate_optional_non_negative_i32("latency_ms", self.latency_ms)?;
+        validate_optional_non_negative_i32("ttft_ms", self.ttft_ms)?;
         Ok(())
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct GatewayUsageRecordCommand {
     pub request_id: String,
     pub trace_id: Option<String>,
@@ -131,7 +246,7 @@ pub struct GatewayUsageRecordCommand {
     pub pricing_snapshot: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct GatewayUsageQuantity {
     pub billable_quantity: String,
     pub request_count: i64,
@@ -310,8 +425,8 @@ impl GatewayUsageQuantity {
 impl GatewayUsageRecordCommand {
     pub fn validate(&self) -> DomainResult<()> {
         self.trace_command().validate()?;
-        non_negative_i64("modality", self.modality)?;
-        non_negative_i64("usage_type", self.usage_type)?;
+        non_negative_i32("modality", self.modality)?;
+        non_negative_i32("usage_type", self.usage_type)?;
         required_text("billing_meter_code", &self.billing_meter_code, 64)?;
         required_text("currency", &self.currency, 10)?;
         if self.currency.len() < 3 {
@@ -432,6 +547,24 @@ fn validate_optional_non_negative_i64(field: &str, value: Option<i64>) -> Domain
     Ok(())
 }
 
+fn non_negative_i32(field: &str, value: i64) -> DomainResult<()> {
+    non_negative_i64(field, value)?;
+    if value > i64::from(i32::MAX) {
+        return Err(DomainError::new(format!(
+            "{field} must not exceed {}",
+            i32::MAX
+        )));
+    }
+    Ok(())
+}
+
+fn validate_optional_non_negative_i32(field: &str, value: Option<i64>) -> DomainResult<()> {
+    if let Some(value) = value {
+        non_negative_i32(field, value)?;
+    }
+    Ok(())
+}
+
 fn validate_http_status(value: Option<u16>) -> DomainResult<()> {
     if let Some(value) = value {
         if !(100..=599).contains(&value) {
@@ -455,6 +588,24 @@ fn required_text(field: &str, value: &str, max_characters: usize) -> DomainResul
         )));
     }
     Ok(())
+}
+
+fn validate_optional_snapshot_text(
+    field: &str,
+    value: Option<&str>,
+    max_characters: usize,
+) -> DomainResult<()> {
+    let Some(value) = value else {
+        return Ok(());
+    };
+    required_text(field, value, max_characters)
+}
+
+pub fn hash_optional_text(value: Option<&str>) -> Option<String> {
+    let value = value?.as_bytes();
+    let mut hasher = Sha256::new();
+    hasher.update(value);
+    Some(hex::encode(hasher.finalize()))
 }
 
 fn non_negative_decimal(field: &str, value: &str) -> DomainResult<()> {

@@ -3389,9 +3389,73 @@
           ],
           "name": "idx_ai_config_change_event_scope_version",
           "unique": false
+        },
+        {
+          "columns": [
+            "retention_until",
+            "id"
+          ],
+          "name": "idx_ai_config_change_event_retention",
+          "unique": false
         }
       ],
-      "lifecycle": null,
+      "lifecycle": {
+        "cleanup": {
+          "archive_before_delete": true,
+          "authorization": {
+            "audit_required": true,
+            "mode": "service_identity",
+            "service": "ai-routing-service"
+          },
+          "batch_size": 1000,
+          "candidate_recheck": {
+            "key_columns": [
+              "tenant_id",
+              "organization_id",
+              "id"
+            ],
+            "operations": [
+              "archive",
+              "delete"
+            ],
+            "required": true
+          },
+          "dry_run": {
+            "default": true,
+            "supported": true
+          },
+          "monitoring": {
+            "alerts": [
+              "retention_lag",
+              "retry_exhausted"
+            ],
+            "metrics": [
+              "cleanup_candidates",
+              "cleanup_archived",
+              "cleanup_deleted",
+              "cleanup_skipped_legal_hold",
+              "cleanup_failures"
+            ]
+          },
+          "owner": "ai-routing-service",
+          "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
+          "retry": {
+            "backoff": {
+              "initial": "1s",
+              "maximum": "5m",
+              "strategy": "exponential"
+            },
+            "max_attempts": 5
+          },
+          "scope": "platform_cross_tenant"
+        },
+        "retention": {
+          "archive_retention": "5y",
+          "grace_period": "24h",
+          "online_retention": "12mo"
+        },
+        "storage_strategy": "indexed_append_only"
+      },
       "not_null_columns": [],
       "physical_columns": null,
       "profile": "runtime_coordination_event",
@@ -8980,9 +9044,73 @@
           ],
           "name": "idx_ai_pricing_import_snapshot_tenant_latest",
           "unique": false
+        },
+        {
+          "columns": [
+            "retention_until",
+            "id"
+          ],
+          "name": "idx_ai_pricing_import_snapshot_retention",
+          "unique": false
         }
       ],
-      "lifecycle": null,
+      "lifecycle": {
+        "cleanup": {
+          "archive_before_delete": true,
+          "authorization": {
+            "audit_required": true,
+            "mode": "service_identity",
+            "service": "ai-pricing-service"
+          },
+          "batch_size": 1000,
+          "candidate_recheck": {
+            "key_columns": [
+              "tenant_id",
+              "organization_id",
+              "id"
+            ],
+            "operations": [
+              "archive",
+              "delete"
+            ],
+            "required": true
+          },
+          "dry_run": {
+            "default": true,
+            "supported": true
+          },
+          "monitoring": {
+            "alerts": [
+              "retention_lag",
+              "retry_exhausted"
+            ],
+            "metrics": [
+              "cleanup_candidates",
+              "cleanup_archived",
+              "cleanup_deleted",
+              "cleanup_skipped_legal_hold",
+              "cleanup_failures"
+            ]
+          },
+          "owner": "ai-pricing-service",
+          "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
+          "retry": {
+            "backoff": {
+              "initial": "1s",
+              "maximum": "5m",
+              "strategy": "exponential"
+            },
+            "max_attempts": 5
+          },
+          "scope": "platform_cross_tenant"
+        },
+        "retention": {
+          "archive_retention": "5y",
+          "grace_period": "24h",
+          "online_retention": "12mo"
+        },
+        "storage_strategy": "indexed_append_only"
+      },
       "not_null_columns": [],
       "physical_columns": null,
       "profile": "event_log",
@@ -11585,6 +11713,26 @@
           "type": "string(256)"
         },
         {
+          "name": "gateway_instance_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "gateway_instance_code_snapshot",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "gateway_region_code_snapshot",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "gateway_node_name_snapshot",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
           "name": "region_code",
           "source": "explicit",
           "type": "string(64)"
@@ -11617,7 +11765,7 @@
         {
           "name": "error_type",
           "source": "explicit",
-          "type": "int32"
+          "type": "string(128)"
         },
         {
           "name": "started_at",
@@ -11854,9 +12002,71 @@
           ],
           "name": "idx_ai_request_trace_user_status_started",
           "unique": false
+        },
+        {
+          "columns": [
+            "retention_until",
+            "id"
+          ],
+          "name": "idx_ai_request_trace_retention",
+          "unique": false
         }
       ],
       "lifecycle": {
+        "cleanup": {
+          "archive_before_delete": true,
+          "authorization": {
+            "audit_required": true,
+            "mode": "service_identity",
+            "service": "router-service"
+          },
+          "batch_size": 1000,
+          "candidate_recheck": {
+            "key_columns": [
+              "tenant_id",
+              "organization_id",
+              "id"
+            ],
+            "operations": [
+              "archive",
+              "delete"
+            ],
+            "required": true
+          },
+          "dry_run": {
+            "default": true,
+            "supported": true
+          },
+          "monitoring": {
+            "alerts": [
+              "retention_lag",
+              "retry_exhausted"
+            ],
+            "metrics": [
+              "cleanup_candidates",
+              "cleanup_archived",
+              "cleanup_deleted",
+              "cleanup_skipped_legal_hold",
+              "cleanup_failures"
+            ]
+          },
+          "owner": "router-service",
+          "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
+          "retry": {
+            "backoff": {
+              "initial": "1s",
+              "maximum": "5m",
+              "strategy": "exponential"
+            },
+            "max_attempts": 5
+          },
+          "scope": "platform_cross_tenant"
+        },
+        "retention": {
+          "archive_retention": "5y",
+          "grace_period": "24h",
+          "online_retention": "12mo"
+        },
         "storage_strategy": "indexed_append_only"
       },
       "not_null_columns": [],
@@ -12983,9 +13193,71 @@
           ],
           "name": "idx_ai_routing_decision_tenant_model_created",
           "unique": false
+        },
+        {
+          "columns": [
+            "retention_until",
+            "id"
+          ],
+          "name": "idx_ai_routing_decision_log_retention",
+          "unique": false
         }
       ],
       "lifecycle": {
+        "cleanup": {
+          "archive_before_delete": true,
+          "authorization": {
+            "audit_required": true,
+            "mode": "service_identity",
+            "service": "ai-routing-service"
+          },
+          "batch_size": 1000,
+          "candidate_recheck": {
+            "key_columns": [
+              "tenant_id",
+              "organization_id",
+              "id"
+            ],
+            "operations": [
+              "archive",
+              "delete"
+            ],
+            "required": true
+          },
+          "dry_run": {
+            "default": true,
+            "supported": true
+          },
+          "monitoring": {
+            "alerts": [
+              "retention_lag",
+              "retry_exhausted"
+            ],
+            "metrics": [
+              "cleanup_candidates",
+              "cleanup_archived",
+              "cleanup_deleted",
+              "cleanup_skipped_legal_hold",
+              "cleanup_failures"
+            ]
+          },
+          "owner": "ai-routing-service",
+          "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
+          "retry": {
+            "backoff": {
+              "initial": "1s",
+              "maximum": "5m",
+              "strategy": "exponential"
+            },
+            "max_attempts": 5
+          },
+          "scope": "platform_cross_tenant"
+        },
+        "retention": {
+          "archive_retention": "5y",
+          "grace_period": "24h",
+          "online_retention": "12mo"
+        },
         "storage_strategy": "indexed_append_only"
       },
       "not_null_columns": [],
@@ -14955,9 +15227,71 @@
           ],
           "name": "idx_ai_usage_settlement_status",
           "unique": false
+        },
+        {
+          "columns": [
+            "retention_until",
+            "id"
+          ],
+          "name": "idx_ai_usage_retention",
+          "unique": false
         }
       ],
       "lifecycle": {
+        "cleanup": {
+          "archive_before_delete": true,
+          "authorization": {
+            "audit_required": true,
+            "mode": "service_identity",
+            "service": "router-service"
+          },
+          "batch_size": 1000,
+          "candidate_recheck": {
+            "key_columns": [
+              "tenant_id",
+              "organization_id",
+              "id"
+            ],
+            "operations": [
+              "archive",
+              "delete"
+            ],
+            "required": true
+          },
+          "dry_run": {
+            "default": true,
+            "supported": true
+          },
+          "monitoring": {
+            "alerts": [
+              "retention_lag",
+              "retry_exhausted"
+            ],
+            "metrics": [
+              "cleanup_candidates",
+              "cleanup_archived",
+              "cleanup_deleted",
+              "cleanup_skipped_legal_hold",
+              "cleanup_failures"
+            ]
+          },
+          "owner": "router-service",
+          "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
+          "retry": {
+            "backoff": {
+              "initial": "1s",
+              "maximum": "5m",
+              "strategy": "exponential"
+            },
+            "max_attempts": 5
+          },
+          "scope": "platform_cross_tenant"
+        },
+        "retention": {
+          "archive_retention": "5y",
+          "grace_period": "24h",
+          "online_retention": "12mo"
+        },
         "storage_strategy": "indexed_append_only"
       },
       "not_null_columns": [],
@@ -15345,9 +15679,71 @@
           ],
           "name": "idx_ai_usage_service_provider_edge_buyer_time",
           "unique": false
+        },
+        {
+          "columns": [
+            "retention_until",
+            "id"
+          ],
+          "name": "idx_ai_usage_service_provider_edge_retention",
+          "unique": false
         }
       ],
       "lifecycle": {
+        "cleanup": {
+          "archive_before_delete": true,
+          "authorization": {
+            "audit_required": true,
+            "mode": "service_identity",
+            "service": "router-service"
+          },
+          "batch_size": 1000,
+          "candidate_recheck": {
+            "key_columns": [
+              "tenant_id",
+              "organization_id",
+              "id"
+            ],
+            "operations": [
+              "archive",
+              "delete"
+            ],
+            "required": true
+          },
+          "dry_run": {
+            "default": true,
+            "supported": true
+          },
+          "monitoring": {
+            "alerts": [
+              "retention_lag",
+              "retry_exhausted"
+            ],
+            "metrics": [
+              "cleanup_candidates",
+              "cleanup_archived",
+              "cleanup_deleted",
+              "cleanup_skipped_legal_hold",
+              "cleanup_failures"
+            ]
+          },
+          "owner": "router-service",
+          "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
+          "retry": {
+            "backoff": {
+              "initial": "1s",
+              "maximum": "5m",
+              "strategy": "exponential"
+            },
+            "max_attempts": 5
+          },
+          "scope": "platform_cross_tenant"
+        },
+        "retention": {
+          "archive_retention": "5y",
+          "grace_period": "24h",
+          "online_retention": "12mo"
+        },
         "storage_strategy": "indexed_append_only"
       },
       "not_null_columns": [],
@@ -17353,16 +17749,81 @@
       "indexes": [
         {
           "columns": [
-            "alert_status",
-            "severity",
+            "tenant_id",
+            "organization_id",
+            "status",
             "last_seen_at",
             "id"
           ],
-          "name": "idx_ops_alert_event_status_severity",
+          "name": "idx_ops_alert_event_tenant_status_latest",
+          "unique": false
+        },
+        {
+          "columns": [
+            "retention_until",
+            "id"
+          ],
+          "name": "idx_ops_alert_event_retention",
           "unique": false
         }
       ],
-      "lifecycle": null,
+      "lifecycle": {
+        "cleanup": {
+          "archive_before_delete": true,
+          "authorization": {
+            "audit_required": true,
+            "mode": "service_identity",
+            "service": "clawrouter-ops-runtime"
+          },
+          "batch_size": 1000,
+          "candidate_recheck": {
+            "key_columns": [
+              "tenant_id",
+              "organization_id",
+              "id"
+            ],
+            "operations": [
+              "archive",
+              "delete"
+            ],
+            "required": true
+          },
+          "dry_run": {
+            "default": true,
+            "supported": true
+          },
+          "monitoring": {
+            "alerts": [
+              "retention_lag",
+              "retry_exhausted"
+            ],
+            "metrics": [
+              "cleanup_candidates",
+              "cleanup_archived",
+              "cleanup_deleted",
+              "cleanup_skipped_legal_hold",
+              "cleanup_failures"
+            ]
+          },
+          "owner": "clawrouter-ops-runtime",
+          "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
+          "retry": {
+            "backoff": {
+              "initial": "1s",
+              "maximum": "5m",
+              "strategy": "exponential"
+            },
+            "max_attempts": 5
+          },
+          "scope": "platform_cross_tenant"
+        },
+        "retention": {
+          "archive_retention": "5y",
+          "grace_period": "24h",
+          "online_retention": "12mo"
+        },
+        "storage_strategy": "indexed_append_only"
+      },
       "not_null_columns": [],
       "physical_columns": null,
       "profile": "audit_event",
@@ -17550,9 +18011,71 @@
           ],
           "name": "idx_ops_audit_log_request",
           "unique": false
+        },
+        {
+          "columns": [
+            "retention_until",
+            "id"
+          ],
+          "name": "idx_ops_audit_log_retention",
+          "unique": false
         }
       ],
       "lifecycle": {
+        "cleanup": {
+          "archive_before_delete": true,
+          "authorization": {
+            "audit_required": true,
+            "mode": "service_identity",
+            "service": "clawrouter-ops-runtime"
+          },
+          "batch_size": 1000,
+          "candidate_recheck": {
+            "key_columns": [
+              "tenant_id",
+              "organization_id",
+              "id"
+            ],
+            "operations": [
+              "archive",
+              "delete"
+            ],
+            "required": true
+          },
+          "dry_run": {
+            "default": true,
+            "supported": true
+          },
+          "monitoring": {
+            "alerts": [
+              "retention_lag",
+              "retry_exhausted"
+            ],
+            "metrics": [
+              "cleanup_candidates",
+              "cleanup_archived",
+              "cleanup_deleted",
+              "cleanup_skipped_legal_hold",
+              "cleanup_failures"
+            ]
+          },
+          "owner": "clawrouter-ops-runtime",
+          "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
+          "retry": {
+            "backoff": {
+              "initial": "1s",
+              "maximum": "5m",
+              "strategy": "exponential"
+            },
+            "max_attempts": 5
+          },
+          "scope": "platform_cross_tenant"
+        },
+        "retention": {
+          "archive_retention": "5y",
+          "grace_period": "24h",
+          "online_retention": "12mo"
+        },
         "storage_strategy": "indexed_append_only"
       },
       "not_null_columns": [],
@@ -17801,9 +18324,73 @@
           ],
           "name": "idx_ops_config_snapshot_tenant_scope",
           "unique": false
+        },
+        {
+          "columns": [
+            "retention_until",
+            "id"
+          ],
+          "name": "idx_ops_config_snapshot_retention",
+          "unique": false
         }
       ],
-      "lifecycle": null,
+      "lifecycle": {
+        "cleanup": {
+          "archive_before_delete": true,
+          "authorization": {
+            "audit_required": true,
+            "mode": "service_identity",
+            "service": "clawrouter-ops-runtime"
+          },
+          "batch_size": 1000,
+          "candidate_recheck": {
+            "key_columns": [
+              "tenant_id",
+              "organization_id",
+              "id"
+            ],
+            "operations": [
+              "archive",
+              "delete"
+            ],
+            "required": true
+          },
+          "dry_run": {
+            "default": true,
+            "supported": true
+          },
+          "monitoring": {
+            "alerts": [
+              "retention_lag",
+              "retry_exhausted"
+            ],
+            "metrics": [
+              "cleanup_candidates",
+              "cleanup_archived",
+              "cleanup_deleted",
+              "cleanup_skipped_legal_hold",
+              "cleanup_failures"
+            ]
+          },
+          "owner": "clawrouter-ops-runtime",
+          "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
+          "retry": {
+            "backoff": {
+              "initial": "1s",
+              "maximum": "5m",
+              "strategy": "exponential"
+            },
+            "max_attempts": 5
+          },
+          "scope": "platform_cross_tenant"
+        },
+        "retention": {
+          "archive_retention": "5y",
+          "grace_period": "24h",
+          "online_retention": "12mo"
+        },
+        "storage_strategy": "indexed_append_only"
+      },
       "not_null_columns": [],
       "physical_columns": null,
       "profile": "audit_event",
@@ -18059,14 +18646,77 @@
         {
           "columns": [
             "instance_id",
+            "status",
             "heartbeat_at",
             "id"
           ],
-          "name": "idx_ops_gateway_heartbeat_instance_time",
+          "name": "idx_ops_gateway_heartbeat_instance_status_time",
+          "unique": false
+        },
+        {
+          "columns": [
+            "retention_until",
+            "id"
+          ],
+          "name": "idx_ops_gateway_heartbeat_retention",
           "unique": false
         }
       ],
       "lifecycle": {
+        "cleanup": {
+          "archive_before_delete": true,
+          "authorization": {
+            "audit_required": true,
+            "mode": "service_identity",
+            "service": "clawrouter-ops-runtime"
+          },
+          "batch_size": 1000,
+          "candidate_recheck": {
+            "key_columns": [
+              "tenant_id",
+              "organization_id",
+              "id"
+            ],
+            "operations": [
+              "archive",
+              "delete"
+            ],
+            "required": true
+          },
+          "dry_run": {
+            "default": true,
+            "supported": true
+          },
+          "monitoring": {
+            "alerts": [
+              "retention_lag",
+              "retry_exhausted"
+            ],
+            "metrics": [
+              "cleanup_candidates",
+              "cleanup_archived",
+              "cleanup_deleted",
+              "cleanup_skipped_legal_hold",
+              "cleanup_failures"
+            ]
+          },
+          "owner": "clawrouter-ops-runtime",
+          "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
+          "retry": {
+            "backoff": {
+              "initial": "1s",
+              "maximum": "5m",
+              "strategy": "exponential"
+            },
+            "max_attempts": 5
+          },
+          "scope": "platform_cross_tenant"
+        },
+        "retention": {
+          "archive_retention": "5y",
+          "grace_period": "24h",
+          "online_retention": "12mo"
+        },
         "storage_strategy": "indexed_append_only"
       },
       "not_null_columns": [],
@@ -18334,12 +18984,15 @@
       "indexes": [
         {
           "columns": [
-            "region",
-            "cell",
-            "health_status",
-            "last_heartbeat_at"
+            "tenant_id",
+            "organization_id",
+            "status",
+            "deleted_at",
+            "last_heartbeat_at",
+            "updated_at",
+            "id"
           ],
-          "name": "idx_ops_gateway_instance_region_status",
+          "name": "idx_ops_gateway_instance_tenant_status_heartbeat",
           "unique": false
         }
       ],
@@ -18626,9 +19279,73 @@
           ],
           "name": "idx_ops_job_execution_model_ranking_scope_started",
           "unique": false
+        },
+        {
+          "columns": [
+            "retention_until",
+            "id"
+          ],
+          "name": "idx_ops_job_execution_retention",
+          "unique": false
         }
       ],
-      "lifecycle": null,
+      "lifecycle": {
+        "cleanup": {
+          "archive_before_delete": true,
+          "authorization": {
+            "audit_required": true,
+            "mode": "service_identity",
+            "service": "clawrouter-ops-runtime"
+          },
+          "batch_size": 1000,
+          "candidate_recheck": {
+            "key_columns": [
+              "tenant_id",
+              "organization_id",
+              "id"
+            ],
+            "operations": [
+              "archive",
+              "delete"
+            ],
+            "required": true
+          },
+          "dry_run": {
+            "default": true,
+            "supported": true
+          },
+          "monitoring": {
+            "alerts": [
+              "retention_lag",
+              "retry_exhausted"
+            ],
+            "metrics": [
+              "cleanup_candidates",
+              "cleanup_archived",
+              "cleanup_deleted",
+              "cleanup_skipped_legal_hold",
+              "cleanup_failures"
+            ]
+          },
+          "owner": "clawrouter-ops-runtime",
+          "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
+          "retry": {
+            "backoff": {
+              "initial": "1s",
+              "maximum": "5m",
+              "strategy": "exponential"
+            },
+            "max_attempts": 5
+          },
+          "scope": "platform_cross_tenant"
+        },
+        "retention": {
+          "archive_retention": "5y",
+          "grace_period": "24h",
+          "online_retention": "12mo"
+        },
+        "storage_strategy": "indexed_append_only"
+      },
       "not_null_columns": [],
       "physical_columns": null,
       "profile": "operational_state",

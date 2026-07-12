@@ -5,8 +5,8 @@ use std::sync::Arc;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::ports::{
-    AdminBillingRecordItem, AdminFinanceReadFuture, AdminFinanceStore, AdminTransactionRecordItem,
-    ListAdminBillingRecordsQuery, ListAdminTransactionsQuery,
+    AdminBillingRecordItem, AdminFinanceCollection, AdminFinanceReadFuture, AdminFinanceStore,
+    AdminTransactionRecordItem, ListAdminBillingRecordsQuery, ListAdminTransactionsQuery,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -107,11 +107,11 @@ impl AdminFinanceStore for TestAdminFinanceStore {
     fn list_transactions<'a>(
         &'a self,
         query: ListAdminTransactionsQuery,
-    ) -> AdminFinanceReadFuture<'a, Vec<AdminTransactionRecordItem>> {
+    ) -> AdminFinanceReadFuture<'a, AdminFinanceCollection<AdminTransactionRecordItem>> {
         Box::pin(async move {
-            assert_eq!(10, query.subject.tenant_id);
-            assert_eq!(20, query.subject.organization_id);
-            Ok(vec![AdminTransactionRecordItem {
+            assert_eq!(100001, query.subject.tenant_id);
+            assert_eq!(0, query.subject.organization_id);
+            let items = vec![AdminTransactionRecordItem {
                 id: "ledger-100".to_owned(),
                 time: "2026-04-29 09:10:00".to_owned(),
                 user_id: "30".to_owned(),
@@ -120,17 +120,18 @@ impl AdminFinanceStore for TestAdminFinanceStore {
                 balance: "125.50".to_owned(),
                 description: "Payment success".to_owned(),
                 status: "success".to_owned(),
-            }])
+            }];
+            Ok(finance_page(items, query.page_no, query.page_size))
         })
     }
 
     fn list_billing_records<'a>(
         &'a self,
         query: ListAdminBillingRecordsQuery,
-    ) -> AdminFinanceReadFuture<'a, Vec<AdminBillingRecordItem>> {
+    ) -> AdminFinanceReadFuture<'a, AdminFinanceCollection<AdminBillingRecordItem>> {
         Box::pin(async move {
             assert_eq!(30, query.subject.operator_id);
-            Ok(vec![AdminBillingRecordItem {
+            let items = vec![AdminBillingRecordItem {
                 id: "stmt-202604".to_owned(),
                 user_id: "30".to_owned(),
                 period: "2026-04".to_owned(),
@@ -138,7 +139,24 @@ impl AdminFinanceStore for TestAdminFinanceStore {
                 total_cost: "88.25".to_owned(),
                 status: "unpaid".to_owned(),
                 due_date: "2026-05-10 00:00:00".to_owned(),
-            }])
+            }];
+            Ok(finance_page(items, query.page_no, query.page_size))
         })
+    }
+}
+
+fn finance_page<T>(items: Vec<T>, page_no: i64, page_size: i64) -> AdminFinanceCollection<T> {
+    let total = items.len() as i64;
+    let offset = page_no.saturating_sub(1).saturating_mul(page_size).max(0) as usize;
+    let items = items
+        .into_iter()
+        .skip(offset)
+        .take(page_size.max(0) as usize)
+        .collect();
+    AdminFinanceCollection {
+        items,
+        total,
+        page_no,
+        page_size,
     }
 }

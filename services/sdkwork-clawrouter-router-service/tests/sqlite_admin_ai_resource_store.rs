@@ -22,9 +22,13 @@ async fn sqlite_admin_ai_resource_store_lists_resources_with_composition_members
                 operator_id: 30,
                 operator_type: 1,
             },
+            q: None,
+            limit: None,
+            offset: None,
         })
         .await
-        .unwrap();
+        .unwrap()
+        .items;
 
     let openai_vendor = items
         .iter()
@@ -60,9 +64,15 @@ async fn sqlite_admin_ai_resource_store_lists_system_seeded_resources_for_admin_
     let store = SqliteAdminAiResourceStore::new(pool);
 
     let items = store
-        .list_ai_resources(ListAdminAiResourcesQuery { subject: subject() })
+        .list_ai_resources(ListAdminAiResourcesQuery {
+            subject: subject(),
+            q: None,
+            limit: None,
+            offset: None,
+        })
         .await
-        .unwrap();
+        .unwrap()
+        .items;
     let codes = items
         .iter()
         .map(|item| item.resource_code.as_str())
@@ -352,9 +362,15 @@ async fn sqlite_admin_ai_resource_store_prefers_child_resource_group_members() {
     );
 
     let items = store
-        .list_ai_resources(ListAdminAiResourcesQuery { subject: subject() })
+        .list_ai_resources(ListAdminAiResourcesQuery {
+            subject: subject(),
+            q: None,
+            limit: None,
+            offset: None,
+        })
         .await
-        .unwrap();
+        .unwrap()
+        .items;
     let reloaded = items
         .iter()
         .find(|item| item.id == created.id)
@@ -568,9 +584,13 @@ async fn sqlite_admin_ai_resource_store_treats_api_all_all_mode_as_static_member
         .list_ai_resource_group_resources(ListAdminAiResourceGroupResourcesQuery {
             subject: subject(),
             group_id_or_code: "api.all".to_owned(),
+            q: None,
+            limit: None,
+            offset: None,
         })
         .await
-        .unwrap();
+        .unwrap()
+        .items;
     assert_eq!(
         vec!["api.test.chat".to_owned()],
         resources
@@ -617,9 +637,13 @@ async fn sqlite_admin_ai_resource_store_lists_system_seeded_api_groups_for_admin
         .list_ai_resource_group_resources(ListAdminAiResourceGroupResourcesQuery {
             subject: subject(),
             group_id_or_code: "api.all".to_owned(),
+            q: None,
+            limit: None,
+            offset: None,
         })
         .await
-        .unwrap();
+        .unwrap()
+        .items;
     assert_eq!(
         vec![
             "api.test.system.chat".to_owned(),
@@ -673,9 +697,13 @@ async fn sqlite_admin_ai_resource_store_creates_admin_group_with_system_seeded_a
         .list_ai_resource_group_resources(ListAdminAiResourceGroupResourcesQuery {
             subject: subject(),
             group_id_or_code: "api.custom.system.chat".to_owned(),
+            q: None,
+            limit: None,
+            offset: None,
         })
         .await
-        .unwrap();
+        .unwrap()
+        .items;
     assert_eq!(
         vec!["api.test.system.chat".to_owned()],
         resources

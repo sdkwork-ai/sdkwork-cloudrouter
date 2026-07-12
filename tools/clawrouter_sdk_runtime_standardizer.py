@@ -50,6 +50,20 @@ SDK_PACKAGE_NAMES = {
     "clawrouter-backend-sdk": "@sdkwork/clawrouter-backend-sdk",
     "clawrouter-open-sdk": "@sdkwork/clawrouter-open-sdk",
 }
+SDK_DOMAIN_TRANSPORT_PACKAGE_NAMES = {
+    "clawrouter-app-sdk": "sdkwork-clawrouter-app-sdk-domains-generated-typescript",
+    "clawrouter-backend-sdk": "sdkwork-clawrouter-backend-sdk-domains-generated-typescript",
+}
+SDK_DOMAIN_TRANSPORT_DESCRIPTIONS = {
+    "clawrouter-app-sdk": (
+        "Generator-owned TypeScript transport for federated app domains on "
+        "sdkwork-clawrouter-app-sdk."
+    ),
+    "clawrouter-backend-sdk": (
+        "Generator-owned TypeScript transport for federated backend domains on "
+        "sdkwork-clawrouter-backend-sdk."
+    ),
+}
 SDK_LANGUAGE_PACKAGE_NAMES = {
     "clawrouter-app-sdk": {
         "typescript": "@sdkwork/clawrouter-app-sdk",
@@ -637,6 +651,66 @@ class SdkRuntimeStandardizer:
                 raise FileNotFoundError(f"generated SDK directory is missing: {generated_base}")
             updated.extend(self._standardize_sdk_family(sdk_family, family, typescript_base))
             updated.extend(self._standardize_sdk(sdk_family, typescript_base))
+        updated.extend(self.repair_domain_transport_package_manifests())
+        return updated
+
+    def repair_domain_transport_package_manifests(self) -> list[Path]:
+        updated: list[Path] = []
+        for sdk_family in self.sdk_directories:
+            package_name = SDK_DOMAIN_TRANSPORT_PACKAGE_NAMES.get(sdk_family)
+            if package_name is None:
+                continue
+            package_root = (
+                self.root
+                / "sdks"
+                / sdk_family
+                / SDK_TYPESCRIPT_DIRECTORIES[sdk_family]
+                / "generated"
+                / "domains"
+                / "server-openapi"
+            )
+            if not package_root.is_dir():
+                continue
+            package_path = package_root / "package.json"
+            package = self._read_json_or_none(package_path)
+            if package:
+                continue
+            self._write_json(
+                package_path,
+                {
+                    "name": package_name,
+                    "version": "0.1.0",
+                    "private": True,
+                    "description": SDK_DOMAIN_TRANSPORT_DESCRIPTIONS[sdk_family],
+                    "author": "SDKWork Team",
+                    "license": "MIT",
+                    "type": "module",
+                    "main": "./dist/index.cjs",
+                    "module": "./dist/index.js",
+                    "types": "./dist/index.d.ts",
+                    "files": ["dist"],
+                    "exports": {
+                        ".": {
+                            "types": "./dist/index.d.ts",
+                            "import": "./dist/index.js",
+                            "require": "./dist/index.cjs",
+                        }
+                    },
+                    "scripts": {
+                        "build": "node custom/build-runtime.mjs",
+                        "dev": "node custom/build-runtime.mjs",
+                        "prepublishOnly": "npm run build",
+                    },
+                    "dependencies": {"@sdkwork/sdk-common": SDK_COMMON_VERSION},
+                    "devDependencies": {
+                        "@types/node": SDK_TYPES_NODE_VERSION,
+                        "typescript": SDK_TYPESCRIPT_VERSION,
+                        "rollup": SDK_ROLLUP_VERSION,
+                    },
+                    "keywords": ["sdk", "api", SDK_TYPES[sdk_family], "sdkwork"],
+                },
+            )
+            updated.append(package_path)
         return updated
 
     def sync_openapi_snapshots(self) -> list[Path]:

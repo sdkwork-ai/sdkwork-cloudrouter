@@ -148,7 +148,7 @@ class SchemaCompilerTest(unittest.TestCase):
             sql = SchemaCompiler(root=root, registry_path=registry).compile_sqlite()
 
             self.assertIn("-- Dialect: sqlite.", sql)
-            self.assertIn("    id INTEGER NOT NULL PRIMARY KEY,", sql)
+            self.assertIn("    id BIGINT NOT NULL PRIMARY KEY,", sql)
             self.assertIn("    uuid TEXT NOT NULL,", sql)
             self.assertIn("    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,", sql)
             self.assertIn("    metadata TEXT NOT NULL DEFAULT '{}',", sql)
@@ -165,6 +165,11 @@ class SchemaCompilerTest(unittest.TestCase):
 
             connection = sqlite3.connect(":memory:")
             connection.executescript(sql)
+            with self.assertRaises(sqlite3.IntegrityError):
+                connection.execute(
+                    "INSERT INTO ai_model_vendor (uuid, unit_price) VALUES (?, ?)",
+                    ("missing-explicit-id", "0.000000000001"),
+                )
             connection.execute(
                 "INSERT INTO ai_model_vendor (id, uuid, unit_price) VALUES (?, ?, ?)",
                 (1, "vendor-1", "0.000000000001"),

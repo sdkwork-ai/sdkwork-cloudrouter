@@ -1,8 +1,8 @@
 use sdkwork_clawrouter_router_service::domain::BillingMeter;
 use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::SqliteGatewayUsageRecorder;
 use sdkwork_clawrouter_router_service::ports::{
-    GatewayRequestTraceCommand, GatewayUsageQuantity, GatewayUsageRecordCommand,
-    GatewayUsageRecorder,
+    GatewayRequestTraceCommand, GatewayTraceAttribution, GatewayUsageQuantity,
+    GatewayUsageRecordCommand, GatewayUsageRecorder,
 };
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::Row;
@@ -15,7 +15,29 @@ async fn sqlite_gateway_usage_recorder_upserts_trace_and_usage_fact_without_dupl
         .await
         .unwrap();
     create_usage_tables(&pool).await;
-    let recorder = SqliteGatewayUsageRecorder::new(pool.clone());
+    sqlx::query(
+        r#"
+        INSERT INTO ops_gateway_instance (
+            id, uuid, tenant_id, organization_id, status, instance_code, node_name,
+            region, last_heartbeat_at
+        ) VALUES (
+            9001, 'gateway-9001', 100001, 0, 1, 'gateway-a', 'node-a',
+            'cn-east-1', '2026-07-12T00:00:00Z'
+        )
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    let recorder = SqliteGatewayUsageRecorder::new_with_attribution(
+        pool.clone(),
+        GatewayTraceAttribution {
+            gateway_instance_id: None,
+            gateway_instance_code_snapshot: Some("gateway-a".to_owned()),
+            gateway_region_code_snapshot: Some("cn-east-1".to_owned()),
+            gateway_node_name_snapshot: Some("node-a".to_owned()),
+        },
+    );
     let command = usage_command("req-chat-usage-sqlite", 200);
 
     recorder
@@ -25,7 +47,7 @@ async fn sqlite_gateway_usage_recorder_upserts_trace_and_usage_fact_without_dupl
     recorder.record_gateway_usage(command).await.unwrap();
 
     let trace = sqlx::query(
-        "SELECT request_id, trace_id, tenant_id, organization_id, user_id, api_key_id, channel_group_snapshot, requested_model, requested_model_catalog_key, provider_model, provider_native_model, region_code, http_status, streaming, prompt_tokens, completion_tokens, total_tokens, metadata, user_agent_hash FROM ai_request_trace",
+        "SELECT request_id, trace_id, tenant_id, organization_id, user_id, api_key_id, channel_group_snapshot, requested_model, requested_model_catalog_key, provider_model, provider_native_model, gateway_instance_id, gateway_instance_code_snapshot, gateway_region_code_snapshot, gateway_node_name_snapshot, region_code, http_status, streaming, prompt_tokens, completion_tokens, total_tokens, metadata, user_agent_hash FROM ai_request_trace",
     )
     .fetch_one(&pool)
     .await
@@ -56,6 +78,19 @@ async fn sqlite_gateway_usage_recorder_upserts_trace_and_usage_fact_without_dupl
         "gpt-4o-mini",
         trace.get::<String, _>("provider_native_model")
     );
+    assert_eq!(9001_i64, trace.get::<i64, _>("gateway_instance_id"));
+    assert_eq!(
+        "gateway-a",
+        trace.get::<String, _>("gateway_instance_code_snapshot")
+    );
+    assert_eq!(
+        "cn-east-1",
+        trace.get::<String, _>("gateway_region_code_snapshot")
+    );
+    assert_eq!(
+        "node-a",
+        trace.get::<String, _>("gateway_node_name_snapshot")
+    );
     assert_eq!("global", trace.get::<String, _>("region_code"));
     assert_eq!(200_i64, trace.get::<i64, _>("http_status"));
     assert_eq!(0_i64, trace.get::<i64, _>("streaming"));
@@ -64,10 +99,7 @@ async fn sqlite_gateway_usage_recorder_upserts_trace_and_usage_fact_without_dupl
     assert_eq!(18_i64, trace.get::<i64, _>("total_tokens"));
     let trace_metadata: serde_json::Value =
         serde_json::from_str(&trace.get::<String, _>("metadata")).unwrap();
-    assert_eq!(
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126.0.0.0",
-        trace_metadata["userAgent"]
-    );
+    assert_eq!(serde_json::json!({}), trace_metadata);
     let user_agent_hash = trace.get::<String, _>("user_agent_hash");
     assert_eq!(64, user_agent_hash.len());
     assert!(user_agent_hash.chars().all(|ch| ch.is_ascii_hexdigit()));
@@ -290,6 +322,66 @@ async fn sqlite_gateway_usage_recorder_records_failed_trace_without_usage_fact()
         0, usage_count,
         "failed gateway requests must not create billable usage facts"
     );
+}
+
+#[tokio::test]
+async fn sqlite_gateway_usage_recorder_keeps_the_first_non_null_gateway_snapshot() {
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .unwrap();
+    create_usage_tables(&pool).await;
+    let first = SqliteGatewayUsageRecorder::new_with_attribution(
+        pool.clone(),
+        GatewayTraceAttribution {
+            gateway_instance_id: Some(9001),
+            gateway_instance_code_snapshot: Some("gateway-first".to_owned()),
+            gateway_region_code_snapshot: Some("cn-east-1".to_owned()),
+            gateway_node_name_snapshot: Some("node-first".to_owned()),
+        },
+    );
+    let retry = SqliteGatewayUsageRecorder::new_with_attribution(
+        pool.clone(),
+        GatewayTraceAttribution {
+            gateway_instance_id: Some(9002),
+            gateway_instance_code_snapshot: Some("gateway-retry".to_owned()),
+            gateway_region_code_snapshot: Some("us-west-1".to_owned()),
+            gateway_node_name_snapshot: Some("node-retry".to_owned()),
+        },
+    );
+    let command = failed_trace_command("req-immutable-gateway-snapshot");
+
+    first.record_gateway_trace(command.clone()).await.unwrap();
+    retry.record_gateway_trace(command).await.unwrap();
+
+    let row = sqlx::query(
+        r#"
+        SELECT gateway_instance_id, gateway_instance_code_snapshot,
+               gateway_region_code_snapshot, gateway_node_name_snapshot,
+               error_type, metadata
+        FROM ai_request_trace
+        WHERE request_id = 'req-immutable-gateway-snapshot'
+        "#,
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(9001_i64, row.get::<i64, _>("gateway_instance_id"));
+    assert_eq!(
+        "gateway-first",
+        row.get::<String, _>("gateway_instance_code_snapshot")
+    );
+    assert_eq!(
+        "cn-east-1",
+        row.get::<String, _>("gateway_region_code_snapshot")
+    );
+    assert_eq!(
+        "node-first",
+        row.get::<String, _>("gateway_node_name_snapshot")
+    );
+    assert_eq!("provider_error", row.get::<String, _>("error_type"));
+    assert_eq!("{}", row.get::<String, _>("metadata"));
 }
 
 #[tokio::test]

@@ -9,6 +9,11 @@ use crate::error::{RepositoryError, RepositoryResult};
 pub const DEFAULT_GATEWAY_TRACES_PAGE_SIZE: i64 = 20;
 pub const MAX_GATEWAY_TRACES_PAGE_SIZE: i64 = 200;
 pub const MAX_GATEWAY_TRACES_SEARCH_LENGTH: usize = 256;
+/// Fuzzy gateway trace searches are deliberately bounded to avoid turning a
+/// tenant-scoped list endpoint into an unbounded substring scan. Exact trace
+/// and request identifiers use a separate indexed fast path in each store.
+pub const MIN_GATEWAY_TRACES_FUZZY_SEARCH_LENGTH: usize = 3;
+pub const GATEWAY_TRACES_FUZZY_SEARCH_WINDOW_DAYS: u32 = 7;
 const MAX_GATEWAY_TRACES_CURSOR_LENGTH: usize = 2_048;
 const GATEWAY_TRACES_CURSOR_VERSION: u8 = 1;
 
@@ -57,6 +62,10 @@ impl AppGatewayTracesListQuery {
         self.cursor
             .as_ref()
             .map(|cursor| (cursor.started_at.as_str(), cursor.id))
+    }
+
+    pub(crate) fn search_query(&self) -> Option<&str> {
+        self.q.as_deref()
     }
 
     pub(crate) fn search_pattern(&self) -> Option<String> {
@@ -194,6 +203,11 @@ fn normalize_search_query(value: Option<String>) -> RepositoryResult<Option<Stri
             "q must be at most {MAX_GATEWAY_TRACES_SEARCH_LENGTH} characters"
         )));
     }
+    if value.chars().count() < MIN_GATEWAY_TRACES_FUZZY_SEARCH_LENGTH {
+        return Err(RepositoryError::new(format!(
+            "q must contain at least {MIN_GATEWAY_TRACES_FUZZY_SEARCH_LENGTH} characters"
+        )));
+    }
     Ok(Some(value.to_owned()))
 }
 
@@ -231,6 +245,12 @@ mod tests {
         assert!(error
             .to_string()
             .contains("q must be at most 256 characters"));
+
+        let error = AppGatewayTracesListQuery::try_new(None, None, Some("ab".to_owned()))
+            .expect_err("short fuzzy searches must fail");
+        assert!(error
+            .to_string()
+            .contains("q must contain at least 3 characters"));
     }
 
     #[test]

@@ -1,5 +1,7 @@
 use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::SqliteAppProvidersReadStore;
-use sdkwork_clawrouter_router_service::ports::{AppProvidersReadStore, AppProvidersSubject};
+use sdkwork_clawrouter_router_service::ports::{
+    AppProvidersListQuery, AppProvidersReadStore, AppProvidersSubject,
+};
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::SqlitePool;
 
@@ -10,7 +12,14 @@ async fn sqlite_app_providers_loads_provider_family_and_canonical_integration_ty
     seed_providers(&pool).await;
 
     let store = SqliteAppProvidersReadStore::new(pool);
-    let items = store.load_providers(Some(owner_subject())).await.unwrap();
+    let page = store
+        .load_providers(Some(owner_subject()), list_query())
+        .await
+        .unwrap();
+    assert_eq!(2, page.total);
+    assert_eq!(1, page.page_no);
+    assert_eq!(20, page.page_size);
+    let items = page.items;
 
     assert_eq!(2, items.len());
 
@@ -38,7 +47,12 @@ async fn sqlite_app_providers_counts_model_resources_as_active() {
     seed_provider_with_type(&pool, 2).await;
 
     let store = SqliteAppProvidersReadStore::new(pool);
-    let items = store.load_providers(Some(owner_subject())).await.unwrap();
+    let page = store
+        .load_providers(Some(owner_subject()), list_query())
+        .await
+        .unwrap();
+    assert_eq!(1, page.total);
+    let items = page.items;
 
     assert_eq!(1, items.len());
     assert_eq!("active", items[0].status);
@@ -53,7 +67,7 @@ async fn sqlite_app_providers_rejects_unknown_integration_type_code() {
 
     let store = SqliteAppProvidersReadStore::new(pool);
     let error = store
-        .load_providers(Some(owner_subject()))
+        .load_providers(Some(owner_subject()), list_query())
         .await
         .unwrap_err();
 
@@ -78,6 +92,15 @@ fn owner_subject() -> AppProvidersSubject {
         tenant_id: 100001,
         organization_id: 0,
         user_id: 30,
+    }
+}
+
+fn list_query() -> AppProvidersListQuery {
+    AppProvidersListQuery {
+        page_no: 1,
+        page_size: 20,
+        offset: 0,
+        q: None,
     }
 }
 

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-30T07:05:57.485Z",
+  "generatedAt": "2026-07-12T06:34:41.080Z",
   "facts": {
-    "generatedAt": "2026-06-30T07:05:57.485Z",
+    "generatedAt": "2026-07-12T06:34:41.080Z",
     "identity": {
       "appKey": "sdkwork-clawrouter",
       "version": "0.3.0",
@@ -41,25 +41,37 @@
     },
     "migrations": {
       "postgresMigrationFiles": [
-        "0001_initial_schema.down.sql",
-        "0001_initial_schema.up.sql"
+        "0002_ai_request_trace_gateway_attribution.down.sql",
+        "0002_ai_request_trace_gateway_attribution.up.sql"
       ],
-      "postgresHasInitialSchema": true,
+      "postgresBaselineExists": true,
+      "postgresPairs": {
+        "complete": true,
+        "missingDown": [],
+        "missingUp": []
+      },
       "sqliteMigrationFiles": [
-        "0001_initial_schema.down.sql",
-        "0001_initial_schema.up.sql"
+        "0002_ai_request_trace_gateway_attribution.down.sql",
+        "0002_ai_request_trace_gateway_attribution.up.sql"
       ],
-      "sqliteHasInitialSchema": true
+      "sqliteBaselineExists": true,
+      "sqlitePairs": {
+        "complete": true,
+        "missingDown": [],
+        "missingUp": []
+      }
     },
     "kubernetes": {
       "manifests": [
         "claw-router-admin-api.yaml",
         "claw-router-app-api.yaml",
         "claw-router-edge.yaml",
+        "claw-router-egress-gateway.yaml",
         "claw-router-gateway.yaml",
         "claw-router-ingress.yaml",
         "claw-router-migration-job.yaml",
         "claw-router-network-policy.yaml",
+        "claw-router-redis-external-secret.example.yaml",
         "claw-router-redis.yaml"
       ],
       "expectedPresent": [
@@ -102,7 +114,7 @@
     "circuitBreaker": {
       "exists": true,
       "implemented": true,
-      "lineCount": 995,
+      "lineCount": 1226,
       "hasStateMachine": true,
       "hasRedisDistributedStore": true,
       "hasChannelIdScope": true
@@ -110,7 +122,7 @@
     "idempotency": {
       "exists": true,
       "implemented": true,
-      "lineCount": 742,
+      "lineCount": 1434,
       "hasRedisStore": true,
       "hasStreamingExclusion": true,
       "hasSyntheticLocalResponse": true
@@ -130,7 +142,7 @@
       "alicloud": {
         "isStub": false,
         "endpointsEmpty": false,
-        "resolveEndpointNone": false,
+        "resolveEndpointNone": true,
         "signerStub": false,
         "hasHttpClientDep": true
       },
@@ -158,21 +170,21 @@
     },
     "techArch": {
       "exists": true,
-      "lineCount": 553,
+      "lineCount": 574,
       "emptySections": [],
       "isOnlyIndex": false
     },
     "metrics": {
       "exists": true,
-      "lineCount": 134,
+      "lineCount": 159,
       "hasOnlyAtomicU64Counters": false,
       "hasLabelVec": true
     },
     "tableConsistency": {
       "counts": {
-        "ddl": 69,
-        "registry": 69,
-        "schemaYaml": 69
+        "ddl": 43,
+        "registry": 43,
+        "schemaYaml": 43
       },
       "consistent": true,
       "note": "claw-router-owned tables consistent across DDL, table-registry.json, and schema.yaml"
@@ -182,30 +194,34 @@
       "tables": [
         {
           "name": "ai_request_trace",
-          "hasPartitionBy": true,
-          "hasDefaultPartition": true,
-          "partitioned": true
+          "hasPartitionBy": false,
+          "hasDefaultPartition": false,
+          "partitioned": false
         },
         {
           "name": "ai_routing_decision_log",
-          "hasPartitionBy": true,
-          "hasDefaultPartition": true,
-          "partitioned": true
+          "hasPartitionBy": false,
+          "hasDefaultPartition": false,
+          "partitioned": false
         },
         {
           "name": "ai_usage",
-          "hasPartitionBy": true,
-          "hasDefaultPartition": true,
-          "partitioned": true
+          "hasPartitionBy": false,
+          "hasDefaultPartition": false,
+          "partitioned": false
         },
         {
           "name": "ai_usage_service_provider_edge",
-          "hasPartitionBy": true,
-          "hasDefaultPartition": true,
-          "partitioned": true
+          "hasPartitionBy": false,
+          "hasDefaultPartition": false,
+          "partitioned": false
         }
       ],
-      "allPartitioned": true
+      "allPartitioned": false,
+      "strategyDocumented": true,
+      "strategyPath": "docs/architecture/tech/TECH-35-high-volume-ledger-evolution.md",
+      "reviewRequired": true,
+      "note": "direct time partitioning is intentionally blocked until business-key idempotency, archive reconciliation, and rollback gates in TECH-35 pass"
     },
     "vendorWorkspace": {
       "trackedCount": 0,
@@ -247,13 +263,19 @@
     },
     {
       "id": "p0-sqlite-migration-chain",
-      "title": "SQLite initial migration chain",
+      "title": "SQLite baseline and paired migration chain",
       "status": "done",
       "evidence": {
+        "baselineExists": true,
         "sqliteFiles": [
-          "0001_initial_schema.down.sql",
-          "0001_initial_schema.up.sql"
-        ]
+          "0002_ai_request_trace_gateway_attribution.down.sql",
+          "0002_ai_request_trace_gateway_attribution.up.sql"
+        ],
+        "pairs": {
+          "complete": true,
+          "missingDown": [],
+          "missingUp": []
+        }
       }
     },
     {
@@ -269,7 +291,7 @@
       "title": "Prometheus histogram + OTLP metrics",
       "status": "done",
       "evidence": {
-        "lineCount": 134,
+        "lineCount": 159,
         "hasOnlyAtomicU64Counters": false
       }
     },
@@ -295,7 +317,7 @@
       "evidence": {
         "isStub": false,
         "endpointsEmpty": false,
-        "resolveEndpointNone": false,
+        "resolveEndpointNone": true,
         "signerStub": false,
         "hasHttpClientDep": true
       }
@@ -314,7 +336,7 @@
       "status": "done",
       "evidence": {
         "emptySections": [],
-        "lineCount": 553
+        "lineCount": 574
       }
     },
     {
@@ -323,9 +345,9 @@
       "status": "done",
       "evidence": {
         "counts": {
-          "ddl": 69,
-          "registry": 69,
-          "schemaYaml": 69
+          "ddl": 43,
+          "registry": 43,
+          "schemaYaml": 43
         },
         "consistent": true,
         "note": "claw-router-owned tables consistent across DDL, table-registry.json, and schema.yaml"
@@ -334,42 +356,46 @@
     {
       "id": "p0-high-traffic-table-partition",
       "title": "High-traffic table partitioning (ai_request_trace / ai_routing_decision_log / ai_usage / ai_usage_service_provider_edge)",
-      "status": "done",
+      "status": "pending",
       "evidence": {
         "exists": true,
         "tables": [
           {
             "name": "ai_request_trace",
-            "hasPartitionBy": true,
-            "hasDefaultPartition": true,
-            "partitioned": true
+            "hasPartitionBy": false,
+            "hasDefaultPartition": false,
+            "partitioned": false
           },
           {
             "name": "ai_routing_decision_log",
-            "hasPartitionBy": true,
-            "hasDefaultPartition": true,
-            "partitioned": true
+            "hasPartitionBy": false,
+            "hasDefaultPartition": false,
+            "partitioned": false
           },
           {
             "name": "ai_usage",
-            "hasPartitionBy": true,
-            "hasDefaultPartition": true,
-            "partitioned": true
+            "hasPartitionBy": false,
+            "hasDefaultPartition": false,
+            "partitioned": false
           },
           {
             "name": "ai_usage_service_provider_edge",
-            "hasPartitionBy": true,
-            "hasDefaultPartition": true,
-            "partitioned": true
+            "hasPartitionBy": false,
+            "hasDefaultPartition": false,
+            "partitioned": false
           }
         ],
-        "allPartitioned": true
+        "allPartitioned": false,
+        "strategyDocumented": true,
+        "strategyPath": "docs/architecture/tech/TECH-35-high-volume-ledger-evolution.md",
+        "reviewRequired": true,
+        "note": "direct time partitioning is intentionally blocked until business-key idempotency, archive reconciliation, and rollback gates in TECH-35 pass"
       }
     }
   ],
   "summary": {
     "total": 11,
-    "done": 11,
-    "pending": 0
+    "done": 10,
+    "pending": 1
   }
 }

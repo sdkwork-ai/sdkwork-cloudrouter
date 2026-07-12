@@ -215,7 +215,7 @@ async fn openai_embeddings_authenticates_validates_price_and_returns_honest_not_
 
     assert_eq!(
         "embedding_relay_not_configured",
-        payload["error"]["code"].as_i64().unwrap()
+        payload["error"]["code"].as_str().unwrap()
     );
     assert_eq!("server_error", payload["error"]["type"]);
     assert!(!body.contains("sk-live-secret"));
@@ -260,7 +260,7 @@ async fn openai_embeddings_rejects_api_key_without_billing_subject_before_relay(
 
     assert_eq!(
         "billing_subject_missing",
-        payload["error"]["code"].as_i64().unwrap()
+        payload["error"]["code"].as_str().unwrap()
     );
     assert_eq!("server_error", payload["error"]["type"]);
     let message = payload["error"]["message"].as_str().unwrap();
@@ -304,7 +304,7 @@ async fn openai_embeddings_rejects_unknown_model_after_authentication() {
 
     assert_eq!(
         "model_not_found",
-        payload["error"]["code"].as_i64().unwrap()
+        payload["error"]["code"].as_str().unwrap()
     );
 }
 
@@ -809,7 +809,7 @@ async fn openai_embeddings_rejects_usage_recording_when_success_response_omits_u
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(
         "provider_usage_record_failed",
-        payload["error"]["code"].as_i64().unwrap()
+        payload["error"]["code"].as_str().unwrap()
     );
     assert!(usage_captured.lock().unwrap().is_empty());
 }
@@ -866,6 +866,6 @@ async fn openai_embeddings_rejects_chat_only_model_before_fake_success() {
 
     assert_eq!(
         "model_capability_not_supported",
-        payload["error"]["code"].as_i64().unwrap()
+        payload["error"]["code"].as_str().unwrap()
     );
 }

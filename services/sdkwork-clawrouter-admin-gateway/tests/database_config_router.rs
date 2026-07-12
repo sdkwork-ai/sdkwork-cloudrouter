@@ -4141,7 +4141,7 @@ async fn create_schema(pool: &SqlitePool) {
             http_status INTEGER,
             provider_error_code TEXT,
             error_message_masked TEXT,
-            error_type INTEGER,
+            error_type VARCHAR(128),
             started_at TEXT,
             latency_ms INTEGER,
             ttft_ms INTEGER,

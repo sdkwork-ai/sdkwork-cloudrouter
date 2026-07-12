@@ -40,7 +40,7 @@ async fn postgres_and_sqlite_return_the_same_scoped_analytics_snapshot() -> anyh
             request_id TEXT,
             status BIGINT NOT NULL,
             http_status BIGINT,
-            error_type BIGINT,
+            error_type VARCHAR(128),
             provider_error_code TEXT,
             started_at TEXT
         )
@@ -65,7 +65,7 @@ async fn postgres_and_sqlite_return_the_same_scoped_analytics_snapshot() -> anyh
             error_type, provider_error_code, started_at
         ) VALUES
             (10, 100001, 0, 'req-1', 1, 200, NULL, NULL, '2026-05-01 10:00:00'),
-            (11, 100002, 0, 'req-other', 1, 500, 1, 'upstream_error', '2026-05-01 10:00:00')
+            (11, 100002, 0, 'req-other', 1, 500, 'provider_error', 'upstream_error', '2026-05-01 10:00:00')
         "#,
     ] {
         databases.execute_both(statement).await?;

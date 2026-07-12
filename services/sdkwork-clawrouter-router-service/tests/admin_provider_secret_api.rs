@@ -12,7 +12,8 @@ use sdkwork_clawrouter_router_service::application::{
 };
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
-    AdminProviderSecretCommandFuture, AdminProviderSecretItem, AdminProviderSecretStore,
+    AdminProviderSecretCommandFuture, AdminProviderSecretItem, AdminProviderSecretListPage,
+    AdminProviderSecretStore,
     CreateAdminProviderSecretCommand, DeleteAdminProviderSecretCommand,
     ListAdminProviderSecretsQuery, UpdateAdminProviderSecretCommand,
 };
@@ -393,9 +394,9 @@ impl AdminProviderSecretStore for TestProviderSecretStore {
     fn list_provider_secrets<'a>(
         &'a self,
         query: ListAdminProviderSecretsQuery,
-    ) -> AdminProviderSecretCommandFuture<'a, Vec<AdminProviderSecretItem>> {
+    ) -> AdminProviderSecretCommandFuture<'a, AdminProviderSecretListPage> {
         Box::pin(async move {
-            Ok(self
+            let items = self
                 .items
                 .lock()
                 .unwrap()
@@ -412,8 +413,34 @@ impl AdminProviderSecretStore for TestProviderSecretStore {
                         .map(|provider_code| item.provider_code == *provider_code)
                         .unwrap_or(true)
                 })
+                .filter(|item| {
+                    query
+                        .status
+                        .as_ref()
+                        .map(|status| item.status == *status)
+                        .unwrap_or(true)
+                })
+                .filter(|item| {
+                    query.q.as_ref().is_none_or(|q| {
+                        item.provider_code.contains(q)
+                            || item.account_code.contains(q)
+                            || item.name.contains(q)
+                    })
+                })
                 .cloned()
-                .collect())
+                .collect::<Vec<_>>();
+            let total = i64::try_from(items.len()).unwrap_or(i64::MAX);
+            let items = items
+                .into_iter()
+                .skip(usize::try_from(query.offset).unwrap_or(usize::MAX))
+                .take(usize::try_from(query.page_size).unwrap_or_default())
+                .collect();
+            Ok(AdminProviderSecretListPage {
+                items,
+                total,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
         })
     }
 

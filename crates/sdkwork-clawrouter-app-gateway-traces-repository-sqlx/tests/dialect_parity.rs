@@ -25,42 +25,29 @@ async fn postgres_and_sqlite_return_the_same_scoped_gateway_trace_page() -> anyh
             http_method TEXT,
             http_status BIGINT,
             latency_ms BIGINT,
-            channel_name_snapshot TEXT
-        )
-        "#,
-        r#"
-        CREATE TABLE ops_gateway_instance (
-            id BIGINT NOT NULL PRIMARY KEY,
-            tenant_id BIGINT,
-            organization_id BIGINT,
-            status BIGINT NOT NULL,
-            deleted_at TEXT,
-            deployment_mode BIGINT,
-            region TEXT,
-            node_name TEXT,
-            health_status BIGINT,
-            last_heartbeat_at TEXT
+            channel_name_snapshot TEXT,
+            gateway_instance_id BIGINT,
+            gateway_instance_code_snapshot TEXT,
+            gateway_region_code_snapshot TEXT,
+            gateway_node_name_snapshot TEXT
         )
         "#,
         r#"
         INSERT INTO ai_request_trace (
             id, tenant_id, organization_id, user_id, request_id, trace_id, status,
             created_at, started_at, client_ip_masked, request_path, endpoint, http_method,
-            http_status, latency_ms, channel_name_snapshot
+            http_status, latency_ms, channel_name_snapshot, gateway_instance_id,
+            gateway_instance_code_snapshot, gateway_region_code_snapshot,
+            gateway_node_name_snapshot
         ) VALUES
             (1, 100001, 0, 30, 'req-1', 'trace-visible', 1,
              '2026-05-05T10:00:00Z', '2026-05-05T10:00:00Z', '203.0.113.10',
-             '/v1/chat/completions', '/v1/chat/completions', 'POST', 200, 128, ''),
+             '/v1/chat/completions', '/v1/chat/completions', 'POST', 200, 128, '',
+             9001, 'gateway-a', 'cn-east-1', 'node-a'),
             (2, 100002, 0, 30, 'req-2', 'trace-other-tenant', 1,
              '2026-05-05T10:01:00Z', '2026-05-05T10:01:00Z', '203.0.113.11',
-             '/v1/responses', '/v1/responses', 'POST', 200, 64, '')
-        "#,
-        r#"
-        INSERT INTO ops_gateway_instance (
-            id, tenant_id, organization_id, status, deleted_at, deployment_mode,
-            region, node_name, health_status, last_heartbeat_at
-        ) VALUES (9001, 100001, 0, 1, NULL, 2, 'cn-east-1', 'gateway-a', 1,
-                  '2026-05-05T10:00:01Z')
+             '/v1/responses', '/v1/responses', 'POST', 200, 64, '',
+             9002, 'gateway-other', 'us-west-1', 'node-other')
         "#,
     ] {
         databases.execute_both(statement).await?;

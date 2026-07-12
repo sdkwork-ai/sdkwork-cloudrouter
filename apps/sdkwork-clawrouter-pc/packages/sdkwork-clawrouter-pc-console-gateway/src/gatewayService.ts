@@ -68,7 +68,6 @@ function readGatewayTracePage(value: unknown, requestedCursor: string | undefine
     throw new Error('Gateway traces next cursor must advance');
   }
   const items = page.items.map(readGatewayTrace);
-  assertUniqueTraceIds(items);
   return {
     items,
     pageInfo: {
@@ -145,16 +144,6 @@ function readHttpStatus(value: unknown): number {
     throw new Error('Gateway trace status is required');
   }
   return value;
-}
-
-function assertUniqueTraceIds(items: GatewayTrace[]): void {
-  const ids = new Set<string>();
-  for (const item of items) {
-    if (ids.has(item.id)) {
-      throw new Error('Gateway trace page contains duplicate ids');
-    }
-    ids.add(item.id);
-  }
 }
 
 function readHttpMethod(value: unknown): GatewayTrace['method'] {

@@ -145,6 +145,39 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
             }
             self.assertEqual(set(), touched)
 
+    def test_repairs_empty_federated_domain_transport_package_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            base = self.write_minimal_typescript_sdk(
+                root,
+                "clawrouter-backend-sdk",
+                "@sdkwork/clawrouter-backend-sdk",
+            )
+            domain_transport = base / "generated" / "domains" / "server-openapi"
+            domain_transport.mkdir(parents=True)
+            package_path = domain_transport / "package.json"
+            package_path.write_text("", encoding="utf-8")
+
+            updated = self.standardizer(
+                root,
+                sdk_directories=("clawrouter-backend-sdk",),
+            ).repair_domain_transport_package_manifests()
+
+            self.assertEqual([package_path], updated)
+            package = json.loads(package_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                "sdkwork-clawrouter-backend-sdk-domains-generated-typescript",
+                package["name"],
+            )
+            self.assertEqual("module", package["type"])
+            self.assertEqual("node custom/build-runtime.mjs", package["scripts"]["build"])
+
+            second_run = self.standardizer(
+                root,
+                sdk_directories=("clawrouter-backend-sdk",),
+            ).repair_domain_transport_package_manifests()
+            self.assertEqual([], second_run)
+
     def test_syncs_typescript_package_root_from_generated_server_openapi(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

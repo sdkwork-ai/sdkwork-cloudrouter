@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::sync::OnceLock;
 
 use serde_json::Value;
 
@@ -32,20 +33,26 @@ impl InvocationInterceptor for UsageRecordingInterceptor {
     fn after<'a>(&'a self, invocation: &'a mut Invocation) -> InvocationFuture<'a, ()> {
         Box::pin(async move {
             if invocation.usage.settlement_commands.is_empty() {
-                return self.record_trace_only(invocation, None).await;
+                if let Err(error) = self.record_trace_only(invocation, None).await {
+                    observe_recording_failure(invocation, "trace", &error);
+                }
+                return Ok(());
             }
 
             for command in invocation.usage.settlement_commands.clone() {
-                self.recorder
-                    .record_gateway_usage(command)
-                    .await
-                    .map_err(|error| {
-                        InvocationError::new(
+                match self.recorder.record_gateway_usage(command).await {
+                    Ok(()) => {}
+                    Err(error) => {
+                        let error = InvocationError::new(
                             InvocationErrorKind::Telemetry,
                             format!("failed to record invocation usage: {error}"),
-                        )
-                    })?;
-                invocation.usage.trace_recorded = true;
+                        );
+                        observe_recording_failure(invocation, "usage", &error);
+                    }
+                }
+            }
+            if let Err(error) = self.record_trace_only(invocation, None).await {
+                observe_recording_failure(invocation, "trace", &error);
             }
             Ok(())
         })
@@ -56,8 +63,55 @@ impl InvocationInterceptor for UsageRecordingInterceptor {
         invocation: &'a mut Invocation,
         error: &'a InvocationError,
     ) -> InvocationFuture<'a, ()> {
-        Box::pin(async move { self.record_trace_only(invocation, Some(error)).await })
+        Box::pin(async move {
+            if let Err(recording_error) = self.record_trace_only(invocation, Some(error)).await {
+                observe_recording_failure(invocation, "trace", &recording_error);
+            }
+            Ok(())
+        })
     }
+}
+
+fn observe_recording_failure(
+    invocation: &mut Invocation,
+    record_type: &'static str,
+    error: &InvocationError,
+) {
+    invocation.usage.recording_failure_count =
+        invocation.usage.recording_failure_count.saturating_add(1);
+    usage_recording_failure_counter()
+        .with_label_values(&[record_type])
+        .inc();
+    tracing::error!(
+        tenant_id = invocation.subject.tenant_id,
+        organization_id = invocation.subject.organization_id,
+        user_id = invocation.subject.user_id,
+        request_id = %invocation.request.request_id,
+        trace_id = invocation.request.trace_id.as_deref().unwrap_or_default(),
+        record_type,
+        reconciliation_required = true,
+        error = %error,
+        "gateway accounting persistence failed after invocation processing"
+    );
+}
+
+fn usage_recording_failure_counter() -> prometheus::IntCounterVec {
+    static METRIC: OnceLock<prometheus::IntCounterVec> = OnceLock::new();
+    METRIC
+        .get_or_init(|| {
+            let metric = prometheus::IntCounterVec::new(
+                prometheus::Opts::new(
+                    "gateway_accounting_persistence_failures_total",
+                    "Gateway trace or usage persistence failures that require reconciliation.",
+                )
+                .namespace("clawrouter"),
+                &["record_type"],
+            )
+            .expect("gateway accounting persistence failure metric");
+            let _ = prometheus::register(Box::new(metric.clone()));
+            metric
+        })
+        .clone()
 }
 
 impl UsageRecordingInterceptor {
@@ -281,7 +335,6 @@ fn is_token_meter(meter: &BillingMeter) -> bool {
             | BillingMeter::LlmCacheWriteToken
             | BillingMeter::LlmCacheReadToken
             | BillingMeter::EmbeddingInputToken
-            | BillingMeter::EmbeddingImage
             | BillingMeter::ImageInputToken
             | BillingMeter::ImageOutputToken
             | BillingMeter::AudioInputToken

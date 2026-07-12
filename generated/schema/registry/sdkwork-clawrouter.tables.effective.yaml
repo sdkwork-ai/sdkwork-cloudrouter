@@ -223,7 +223,7 @@ modules:
     - ai_routing_rule
     - ai_site
     - ai_site_service
-    ddl_location: database/migrations/ai-routing.sql
+    ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
   ai-metering:
     owner: claw-router-platform
     description: AI usage facts, service-provider usage edges, and request traces.
@@ -233,7 +233,7 @@ modules:
     - ai_usage
     - ai_usage_service_provider_edge
     - ai_request_trace
-    ddl_location: database/migrations/ai-metering.sql
+    ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
   ai-pricing:
     owner: claw-router-platform
     description: AI pricing plans, bindings, rules, tiers, and import snapshots.
@@ -245,7 +245,7 @@ modules:
     - ai_pricing_plan_binding
     - ai_pricing_rule
     - ai_pricing_tier
-    ddl_location: database/migrations/ai-pricing.sql
+    ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
   iam-gateway:
     owner: claw-router-platform
     description: Gateway-owned IAM API key, access policy, channel-group binding,
@@ -257,7 +257,7 @@ modules:
     - iam_gateway_api_key
     - iam_gateway_api_key_channel_group
     - iam_gateway_risk_rule
-    ddl_location: database/migrations/iam-gateway.sql
+    ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
   ops-runtime:
     owner: claw-router-platform
     description: Claw Router-owned operational runtime tables for audit logs, job
@@ -276,7 +276,7 @@ modules:
     - ops_notification_message
     - ops_notification_recipient
     - ops_notification_delivery
-    ddl_location: database/migrations/ops-runtime.sql
+    ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
 data_flow:
   usage_to_account:
     description: 用量推送到账户模块
@@ -1104,6 +1104,55 @@ tables:
     - config_scope
     - config_version
     - id
+  - name: idx_ai_config_change_event_retention
+    columns:
+    - retention_until
+    - id
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: ai-routing-service
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: ai-routing-service
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
+        = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   imported: false
 - table: ai_config_version
   domain: ai
@@ -2550,6 +2599,55 @@ tables:
     - import_source
     - observed_at
     - id
+  - name: idx_ai_pricing_import_snapshot_retention
+    columns:
+    - retention_until
+    - id
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: ai-pricing-service
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: ai-pricing-service
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
+        = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   imported: false
 - table: ai_pricing_plan
   domain: ai
@@ -3193,13 +3291,17 @@ tables:
     requested_model_catalog_key: string(256)
     provider_model: string(256)
     provider_native_model: string(256)
+    gateway_instance_id: int64
+    gateway_instance_code_snapshot: string(128)
+    gateway_region_code_snapshot: string(64)
+    gateway_node_name_snapshot: string(128)
     region_code: string(64)
     endpoint: string(256)
     request_path: string(256)
     http_method: string(16)
     http_status: int32
     provider_error_code: string(128)
-    error_type: int32
+    error_type: string(128)
     started_at: instant
     ended_at: instant
     latency_ms: int32
@@ -3275,8 +3377,55 @@ tables:
     - status
     - started_at
     - id
+  - name: idx_ai_request_trace_retention
+    columns:
+    - retention_until
+    - id
   lifecycle:
     storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: router-service
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: router-service
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
+        = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   imported: false
 - table: ai_resource
   domain: ai
@@ -3519,8 +3668,55 @@ tables:
     - requested_model
     - created_at
     - id
+  - name: idx_ai_routing_decision_log_retention
+    columns:
+    - retention_until
+    - id
   lifecycle:
     storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: ai-routing-service
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: ai-routing-service
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
+        = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   imported: false
 - table: ai_routing_policy
   domain: ai
@@ -3998,8 +4194,55 @@ tables:
     - settlement_status
     - occurred_at
     - id
+  - name: idx_ai_usage_retention
+    columns:
+    - retention_until
+    - id
   lifecycle:
     storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: router-service
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: router-service
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
+        = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   semantic_contracts:
     ranking_refresh_source_fact:
       time_field: occurred_at
@@ -4098,8 +4341,55 @@ tables:
     - buyer_provider_id
     - occurred_at
     - id
+  - name: idx_ai_usage_service_provider_edge_retention
+    columns:
+    - retention_until
+    - id
   lifecycle:
     storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: router-service
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: router-service
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
+        = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   imported: false
 - table: ai_vendor_api_endpoint
   domain: ai
@@ -4509,12 +4799,62 @@ tables:
     columns:
     - alert_no
   indexes:
-  - name: idx_ops_alert_event_status_severity
+  - name: idx_ops_alert_event_tenant_status_latest
     columns:
-    - alert_status
-    - severity
+    - tenant_id
+    - organization_id
+    - status
     - last_seen_at
     - id
+  - name: idx_ops_alert_event_retention
+    columns:
+    - retention_until
+    - id
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: clawrouter-ops-runtime
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: clawrouter-ops-runtime
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
+        = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   imported: false
 - table: ops_audit_log
   domain: ops
@@ -4587,8 +4927,55 @@ tables:
     - tenant_id
     - organization_id
     - request_id
+  - name: idx_ops_audit_log_retention
+    columns:
+    - retention_until
+    - id
   lifecycle:
     storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: clawrouter-ops-runtime
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: clawrouter-ops-runtime
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
+        = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   imported: false
 - table: ops_config_snapshot
   domain: ops
@@ -4625,6 +5012,55 @@ tables:
     - config_type
     - created_at
     - id
+  - name: idx_ops_config_snapshot_retention
+    columns:
+    - retention_until
+    - id
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: clawrouter-ops-runtime
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: clawrouter-ops-runtime
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
+        = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   imported: false
 - table: ops_gateway_heartbeat
   domain: ops
@@ -4651,13 +5087,61 @@ tables:
     thread_count: int64
     payload: json
   indexes:
-  - name: idx_ops_gateway_heartbeat_instance_time
+  - name: idx_ops_gateway_heartbeat_instance_status_time
     columns:
     - instance_id
+    - status
     - heartbeat_at
+    - id
+  - name: idx_ops_gateway_heartbeat_retention
+    columns:
+    - retention_until
     - id
   lifecycle:
     storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: clawrouter-ops-runtime
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: clawrouter-ops-runtime
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
+        = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   imported: false
 - table: ops_gateway_instance
   domain: ops
@@ -4694,12 +5178,15 @@ tables:
     columns:
     - instance_code
   indexes:
-  - name: idx_ops_gateway_instance_region_status
+  - name: idx_ops_gateway_instance_tenant_status_heartbeat
     columns:
-    - region
-    - cell
-    - health_status
+    - tenant_id
+    - organization_id
+    - status
+    - deleted_at
     - last_heartbeat_at
+    - updated_at
+    - id
   imported: false
 - table: ops_job_execution
   domain: ops
@@ -4804,6 +5291,55 @@ tables:
     - job_name
     - started_at
     - id
+  - name: idx_ops_job_execution_retention
+    columns:
+    - retention_until
+    - id
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: clawrouter-ops-runtime
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: clawrouter-ops-runtime
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
+        = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   imported: false
 - table: ops_metric_snapshot
   domain: ops

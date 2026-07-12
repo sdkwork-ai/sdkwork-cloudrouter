@@ -732,20 +732,20 @@ API锟?
 瀛楁锛歚instance_code`銆乣deployment_mode`銆乣region`銆乣cell`銆乣version_name`銆乣host_name`銆乣ip_address_hash`銆乣ip_address_masked`銆乣node_name`銆乣pod_name`銆乣container_id_hash`銆乣desktop_device_hash`銆乣runtime_type`銆乣orchestrator`銆乣started_at`銆乣last_heartbeat_at`銆乣health_status`銆乣config_hash`锟?
 绱㈠紩锟?
 - `uk_ops_gateway_instance_code(instance_code)`
-- `idx_ops_gateway_instance_region_status(region, cell, health_status, last_heartbeat_at)`
+- `idx_ops_gateway_instance_tenant_status_heartbeat(tenant_id, organization_id, status, deleted_at, last_heartbeat_at, updated_at, id)`
 
 ### 10.58 `ops_gateway_heartbeat`
 
 瀛楁锛歚instance_id`銆乣heartbeat_at`銆乣cpu_percent`銆乣memory_percent`銆乣disk_percent`銆乣network_in_bytes`銆乣network_out_bytes`銆乣active_connections`銆乣uptime_seconds`銆乣open_file_count`銆乣thread_count`銆乣payload`锟?
 绱㈠紩锟?
-- `idx_ops_gateway_heartbeat_instance_time(instance_id, heartbeat_at, id)`
+- `idx_ops_gateway_heartbeat_instance_status_time(instance_id, status, heartbeat_at, id)`
 
 ### 10.59 `ops_alert_event`
 
 瀛楁锛歚alert_no`銆乣severity`銆乣source`銆乣title`銆乣message`銆乣alert_status`銆乣first_seen_at`銆乣last_seen_at`銆乣resolved_at`銆乣resolved_by`锟?
 绱㈠紩锟?
 - `uk_ops_alert_event_no(alert_no)`
-- `idx_ops_alert_event_status_severity(alert_status, severity, last_seen_at, id)`
+- `idx_ops_alert_event_tenant_status_latest(tenant_id, organization_id, status, last_seen_at, id)`
 
 ### 10.60 `integration_provider_health_snapshot`
 

@@ -6,24 +6,19 @@ use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::SqlitePool;
 
 #[tokio::test]
-async fn sqlite_gateway_traces_rejects_gateway_instance_without_deployment_mode() {
+async fn sqlite_gateway_traces_ignores_unrelated_current_gateway_for_legacy_rows() {
     let pool = sqlite_pool().await;
     create_gateway_trace_tables(&pool).await;
     insert_trace(&pool).await;
     insert_gateway_instance(&pool, None).await;
 
     let store = SqliteAppGatewayTracesReadStore::new(pool);
-    let error = store
+    let traces = store
         .load_gateway_traces(Some(owner_subject()), default_query())
         .await
-        .unwrap_err();
+        .unwrap();
 
-    assert!(
-        error
-            .to_string()
-            .contains("missing gateway trace deployment_mode from database row"),
-        "unexpected error: {error}"
-    );
+    assert_eq!("unknown", traces.items[0].channel);
 }
 
 #[tokio::test]
@@ -82,7 +77,11 @@ async fn create_gateway_trace_tables(pool: &SqlitePool) {
             http_method TEXT,
             http_status INTEGER,
             latency_ms INTEGER,
-            channel_name_snapshot TEXT
+            channel_name_snapshot TEXT,
+            gateway_instance_id INTEGER,
+            gateway_instance_code_snapshot TEXT,
+            gateway_region_code_snapshot TEXT,
+            gateway_node_name_snapshot TEXT
         )
         "#,
         r#"

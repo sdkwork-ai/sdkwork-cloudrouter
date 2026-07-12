@@ -6,11 +6,12 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::{ApiKeySecretGenerator, ApiKeySecretHasher};
 use sdkwork_clawrouter_router_service::domain::{
-    ChannelGroup, DecimalValue, DomainError, DomainResult, GatewayApiKey, QuotaPolicy,
+    ChannelGroup, DomainError, DomainResult, GatewayApiKey,
 };
 use sdkwork_clawrouter_router_service::ports::{
-    AdjustAdminUserBalanceCommand, AdminUserApiKeyItem, AdminUserCommandFuture, AdminUserItem,
-    AdminUserStore, ApiKeyCommandStoreFuture, CreateAdminUserApiKeyCommand, CreateAdminUserCommand,
+    AdjustAdminUserBalanceCommand, AdminUserApiKeyItem, AdminUserApiKeyListPage,
+    AdminUserCommandFuture, AdminUserItem, AdminUserListPage, AdminUserStore,
+    ApiKeyCommandStoreFuture, CreateAdminUserApiKeyCommand, CreateAdminUserCommand,
     CreateGatewayApiKeyCommand, CreatedGatewayApiKey, DeleteAdminUserApiKeyCommand,
     DeleteGatewayApiKeyCommand, DeleteGatewayApiKeyForOrganizationCommand,
     EnsureDefaultChannelGroupCommand, GatewayApiKeyCommandStore, ListAdminUserApiKeysQuery,
@@ -43,6 +44,10 @@ async fn admin_user_route_lists_users_and_api_keys_by_user() {
     );
     assert_eq!("standard", users_payload["data"]["items"][0]["group"]);
     assert_eq!("$25.50", users_payload["data"]["items"][0]["balance"]);
+    assert_eq!("offset", users_payload["data"]["pageInfo"]["mode"]);
+    assert_eq!(1, users_payload["data"]["pageInfo"]["page"]);
+    assert_eq!(20, users_payload["data"]["pageInfo"]["pageSize"]);
+    assert_eq!("1", users_payload["data"]["pageInfo"]["totalItems"]);
 
     let api_keys_response = router
         .oneshot(signed_request("POST", "/backend/v3/api/apikey/list", "{}"))
@@ -51,8 +56,15 @@ async fn admin_user_route_lists_users_and_api_keys_by_user() {
     assert_eq!(StatusCode::OK, api_keys_response.status());
     let api_keys_payload = json_payload(api_keys_response).await;
     assert_eq!(0, api_keys_payload["code"].as_i64().unwrap());
-    assert_eq!("Production", api_keys_payload["data"]["30"][0]["name"]);
-    assert_eq!("sk-live********", api_keys_payload["data"]["30"][0]["key"]);
+    assert_eq!("Production", api_keys_payload["data"]["items"][0]["name"]);
+    assert_eq!(
+        "sk-live********",
+        api_keys_payload["data"]["items"][0]["key"]
+    );
+    assert_eq!("offset", api_keys_payload["data"]["pageInfo"]["mode"]);
+    assert_eq!(1, api_keys_payload["data"]["pageInfo"]["page"]);
+    assert_eq!(20, api_keys_payload["data"]["pageInfo"]["pageSize"]);
+    assert_eq!("1", api_keys_payload["data"]["pageInfo"]["totalItems"]);
 }
 
 #[tokio::test]
@@ -101,7 +113,7 @@ async fn admin_user_api_key_command_route_serves_backend_iam_api_key_commands() 
         ))
         .await
         .unwrap();
-    assert_eq!(StatusCode::OK, create_key_response.status());
+    assert_eq!(StatusCode::CREATED, create_key_response.status());
     let create_key_payload = json_payload(create_key_response).await;
     assert_eq!("sk-claw-test-secret", create_key_payload["data"]["rawKey"]);
 
@@ -113,7 +125,7 @@ async fn admin_user_api_key_command_route_serves_backend_iam_api_key_commands() 
         ))
         .await
         .unwrap();
-    assert_eq!(StatusCode::OK, delete_key_response.status());
+    assert_eq!(StatusCode::NO_CONTENT, delete_key_response.status());
 
     assert_eq!(1, store.commands.lock().unwrap().len());
     assert_eq!(1, store.delete_org_commands.lock().unwrap().len());
@@ -206,7 +218,7 @@ async fn admin_user_route_creates_updates_adjusts_and_deletes() {
         ))
         .await
         .unwrap();
-    assert_eq!(StatusCode::OK, create_key_response.status());
+    assert_eq!(StatusCode::CREATED, create_key_response.status());
     let create_key_payload = json_payload(create_key_response).await;
     assert_eq!("sk-claw-test-secret", create_key_payload["data"]["rawKey"]);
     assert_eq!("Console Key", create_key_payload["data"]["key"]["name"]);
@@ -219,9 +231,7 @@ async fn admin_user_route_creates_updates_adjusts_and_deletes() {
         .oneshot(signed_request("DELETE", "/backend/v3/api/apikey/100", ""))
         .await
         .unwrap();
-    assert_eq!(StatusCode::OK, delete_key_response.status());
-    let delete_key_payload = json_payload(delete_key_response).await;
-    assert_eq!(true, delete_key_payload["data"]["deleted"]);
+    assert_eq!(StatusCode::NO_CONTENT, delete_key_response.status());
     assert_eq!(
         vec![
             "create_user",
@@ -400,28 +410,42 @@ impl AdminUserStore for TestAdminUserStore {
     fn list_users<'a>(
         &'a self,
         query: ListAdminUsersQuery,
-    ) -> AdminUserCommandFuture<'a, Vec<AdminUserItem>> {
+    ) -> AdminUserCommandFuture<'a, AdminUserListPage> {
         Box::pin(async move {
-            assert_eq!(10, query.subject.tenant_id);
+            assert_eq!(100001, query.subject.tenant_id);
+            let page_no = query.page_no;
+            let page_size = query.page_size;
             self.list_queries.lock().unwrap().push(query);
-            Ok(vec![base_user()])
+            Ok(AdminUserListPage {
+                items: vec![base_user()],
+                total: 1,
+                page_no,
+                page_size,
+            })
         })
     }
 
     fn list_api_keys<'a>(
         &'a self,
         query: ListAdminUserApiKeysQuery,
-    ) -> AdminUserCommandFuture<'a, Vec<AdminUserApiKeyItem>> {
+    ) -> AdminUserCommandFuture<'a, AdminUserApiKeyListPage> {
         Box::pin(async move {
-            assert_eq!(20, query.subject.organization_id);
-            Ok(vec![AdminUserApiKeyItem {
-                id: 100,
-                user_id: 30,
-                name: "Production".to_owned(),
-                key: "sk-live********".to_owned(),
-                used: "1.250000".to_owned(),
-                status: "active".to_owned(),
-            }])
+            assert_eq!(0, query.subject.organization_id);
+            let page_no = query.page_no;
+            let page_size = query.page_size;
+            Ok(AdminUserApiKeyListPage {
+                items: vec![AdminUserApiKeyItem {
+                    id: 100,
+                    user_id: 30,
+                    name: "Production".to_owned(),
+                    key: "sk-live********".to_owned(),
+                    used: "1.250000".to_owned(),
+                    status: "active".to_owned(),
+                }],
+                total: 1,
+                page_no,
+                page_size,
+            })
         })
     }
 

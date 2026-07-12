@@ -26,12 +26,61 @@ tables:
     columns:
     - alert_no
   indexes:
-  - name: idx_ops_alert_event_status_severity
+  - name: idx_ops_alert_event_tenant_status_latest
     columns:
-    - alert_status
-    - severity
+    - tenant_id
+    - organization_id
+    - status
     - last_seen_at
     - id
+  - name: idx_ops_alert_event_retention
+    columns:
+    - retention_until
+    - id
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: clawrouter-ops-runtime
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: clawrouter-ops-runtime
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false"
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
 - table: ops_audit_log
   domain: ops
   profile: audit_event
@@ -103,8 +152,54 @@ tables:
     - tenant_id
     - organization_id
     - request_id
+  - name: idx_ops_audit_log_retention
+    columns:
+    - retention_until
+    - id
   lifecycle:
     storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: clawrouter-ops-runtime
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: clawrouter-ops-runtime
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false"
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
 - table: ops_config_snapshot
   domain: ops
   profile: audit_event
@@ -140,6 +235,54 @@ tables:
     - config_type
     - created_at
     - id
+  - name: idx_ops_config_snapshot_retention
+    columns:
+    - retention_until
+    - id
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: clawrouter-ops-runtime
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: clawrouter-ops-runtime
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false"
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
 - table: ops_gateway_heartbeat
   domain: ops
   profile: operational_state
@@ -165,13 +308,60 @@ tables:
     thread_count: int64
     payload: json
   indexes:
-  - name: idx_ops_gateway_heartbeat_instance_time
+  - name: idx_ops_gateway_heartbeat_instance_status_time
     columns:
     - instance_id
+    - status
     - heartbeat_at
+    - id
+  - name: idx_ops_gateway_heartbeat_retention
+    columns:
+    - retention_until
     - id
   lifecycle:
     storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: clawrouter-ops-runtime
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: clawrouter-ops-runtime
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false"
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
 - table: ops_gateway_instance
   domain: ops
   profile: operational_state
@@ -207,12 +397,15 @@ tables:
     columns:
     - instance_code
   indexes:
-  - name: idx_ops_gateway_instance_region_status
+  - name: idx_ops_gateway_instance_tenant_status_heartbeat
     columns:
-    - region
-    - cell
-    - health_status
+    - tenant_id
+    - organization_id
+    - status
+    - deleted_at
     - last_heartbeat_at
+    - updated_at
+    - id
 - table: ops_job_execution
   domain: ops
   profile: operational_state
@@ -316,6 +509,54 @@ tables:
     - job_name
     - started_at
     - id
+  - name: idx_ops_job_execution_retention
+    columns:
+    - retention_until
+    - id
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: clawrouter-ops-runtime
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: clawrouter-ops-runtime
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false"
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
 - table: ops_metric_snapshot
   domain: ops
   profile: read_model

@@ -7,27 +7,7 @@ use crate::types::{
     AppGatewayTracesSubject,
 };
 
-fn gateway_traces_select_sql() -> &'static str {
-    r#"
-WITH current_gateway AS (
-    SELECT
-        id AS gateway_id,
-        deployment_mode,
-        region,
-        node_name,
-        health_status,
-        last_heartbeat_at
-    FROM ops_gateway_instance
-    WHERE status = 1
-      AND deleted_at IS NULL
-      AND (tenant_id IS NULL OR tenant_id = 0 OR tenant_id = ?1)
-      AND (organization_id IS NULL OR organization_id = 0 OR organization_id = ?2)
-    ORDER BY
-        CASE WHEN health_status = 1 THEN 0 ELSE 1 END,
-        last_heartbeat_at DESC,
-        id DESC
-    LIMIT 1
-)
+const GATEWAY_TRACES_SELECT_SQL: &str = r#"
 SELECT
     COALESCE(NULLIF(t.trace_id, ''), NULLIF(t.request_id, ''), CAST(t.id AS TEXT)) AS id,
     CAST(COALESCE(t.started_at, t.created_at) AS TEXT) AS time,
@@ -37,30 +17,86 @@ SELECT
     t.http_status AS status,
     t.latency_ms AS latency_ms,
     COALESCE(NULLIF(t.channel_name_snapshot, ''), '') AS channel_name_snapshot,
-    CAST(cg.gateway_id AS TEXT) AS gateway_id,
-    cg.deployment_mode AS deployment_mode,
-    COALESCE(NULLIF(cg.region, ''), '') AS region,
-    COALESCE(NULLIF(cg.node_name, ''), '') AS node_name,
-    cg.health_status AS health_status,
-    CAST(cg.last_heartbeat_at AS TEXT) AS last_heartbeat_at,
+    CAST(t.gateway_instance_id AS TEXT) AS gateway_instance_id,
+    COALESCE(NULLIF(t.gateway_instance_code_snapshot, ''), '') AS gateway_instance_code_snapshot,
+    COALESCE(NULLIF(t.gateway_region_code_snapshot, ''), '') AS gateway_region_code_snapshot,
+    COALESCE(NULLIF(t.gateway_node_name_snapshot, ''), '') AS gateway_node_name_snapshot,
     CAST(t.started_at AS TEXT) AS cursor_started_at,
     t.id AS cursor_id
 FROM ai_request_trace t
-LEFT JOIN current_gateway cg ON 1 = 1
 WHERE t.status = 1
   AND t.tenant_id = ?1
   AND t.organization_id = ?2
   AND t.user_id = ?3
   AND t.started_at IS NOT NULL
-  AND (?4 IS NULL
-       OR lower(COALESCE(NULLIF(t.trace_id, ''), NULLIF(t.request_id, ''), CAST(t.id AS TEXT))) LIKE lower(?4) ESCAPE '\'
-       OR lower(COALESCE(NULLIF(t.request_path, ''), NULLIF(t.endpoint, ''), '')) LIKE lower(?4) ESCAPE '\'
-       OR lower(COALESCE(t.channel_name_snapshot, '')) LIKE lower(?4) ESCAPE '\')
+  AND ?4 IS NULL
   AND (?5 IS NULL OR t.started_at < ?5 OR (t.started_at = ?5 AND t.id < ?6))
 ORDER BY t.started_at DESC, t.id DESC
 LIMIT ?7
-"#
-}
+"#;
+
+const GATEWAY_TRACES_EXACT_SEARCH_SQL: &str = r#"
+SELECT
+    COALESCE(NULLIF(t.trace_id, ''), NULLIF(t.request_id, ''), CAST(t.id AS TEXT)) AS id,
+    CAST(COALESCE(t.started_at, t.created_at) AS TEXT) AS time,
+    COALESCE(NULLIF(t.client_ip_masked, ''), '-') AS ip,
+    COALESCE(NULLIF(t.request_path, ''), NULLIF(t.endpoint, ''), '-') AS endpoint,
+    COALESCE(NULLIF(t.http_method, ''), 'POST') AS method,
+    t.http_status AS status,
+    t.latency_ms AS latency_ms,
+    COALESCE(NULLIF(t.channel_name_snapshot, ''), '') AS channel_name_snapshot,
+    CAST(t.gateway_instance_id AS TEXT) AS gateway_instance_id,
+    COALESCE(NULLIF(t.gateway_instance_code_snapshot, ''), '') AS gateway_instance_code_snapshot,
+    COALESCE(NULLIF(t.gateway_region_code_snapshot, ''), '') AS gateway_region_code_snapshot,
+    COALESCE(NULLIF(t.gateway_node_name_snapshot, ''), '') AS gateway_node_name_snapshot,
+    CAST(t.started_at AS TEXT) AS cursor_started_at,
+    t.id AS cursor_id
+FROM ai_request_trace t
+WHERE t.status = 1
+  AND t.tenant_id = ?1
+  AND t.organization_id = ?2
+  AND t.user_id = ?3
+  AND t.started_at IS NOT NULL
+  AND (t.trace_id = ?4 OR t.request_id = ?4)
+  AND (?5 IS NULL OR t.started_at < ?5 OR (t.started_at = ?5 AND t.id < ?6))
+ORDER BY t.started_at DESC, t.id DESC
+LIMIT ?7
+"#;
+
+const GATEWAY_TRACES_FUZZY_SEARCH_SQL: &str = r#"
+SELECT
+    COALESCE(NULLIF(t.trace_id, ''), NULLIF(t.request_id, ''), CAST(t.id AS TEXT)) AS id,
+    CAST(COALESCE(t.started_at, t.created_at) AS TEXT) AS time,
+    COALESCE(NULLIF(t.client_ip_masked, ''), '-') AS ip,
+    COALESCE(NULLIF(t.request_path, ''), NULLIF(t.endpoint, ''), '-') AS endpoint,
+    COALESCE(NULLIF(t.http_method, ''), 'POST') AS method,
+    t.http_status AS status,
+    t.latency_ms AS latency_ms,
+    COALESCE(NULLIF(t.channel_name_snapshot, ''), '') AS channel_name_snapshot,
+    CAST(t.gateway_instance_id AS TEXT) AS gateway_instance_id,
+    COALESCE(NULLIF(t.gateway_instance_code_snapshot, ''), '') AS gateway_instance_code_snapshot,
+    COALESCE(NULLIF(t.gateway_region_code_snapshot, ''), '') AS gateway_region_code_snapshot,
+    COALESCE(NULLIF(t.gateway_node_name_snapshot, ''), '') AS gateway_node_name_snapshot,
+    CAST(t.started_at AS TEXT) AS cursor_started_at,
+    t.id AS cursor_id
+FROM ai_request_trace t
+WHERE t.status = 1
+  AND t.tenant_id = ?1
+  AND t.organization_id = ?2
+  AND t.user_id = ?3
+  AND t.started_at IS NOT NULL
+  AND t.started_at >= strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '-7 days')
+  AND (lower(COALESCE(t.trace_id, '')) LIKE lower(?4) ESCAPE '\'
+       OR lower(COALESCE(t.request_id, '')) LIKE lower(?4) ESCAPE '\'
+       OR lower(COALESCE(NULLIF(t.request_path, ''), NULLIF(t.endpoint, ''), '')) LIKE lower(?4) ESCAPE '\'
+       OR lower(COALESCE(t.channel_name_snapshot, '')) LIKE lower(?4) ESCAPE '\'
+       OR lower(COALESCE(t.gateway_instance_code_snapshot, '')) LIKE lower(?4) ESCAPE '\'
+       OR lower(COALESCE(t.gateway_region_code_snapshot, '')) LIKE lower(?4) ESCAPE '\'
+       OR lower(COALESCE(t.gateway_node_name_snapshot, '')) LIKE lower(?4) ESCAPE '\')
+  AND (?5 IS NULL OR t.started_at < ?5 OR (t.started_at = ?5 AND t.id < ?6))
+ORDER BY t.started_at DESC, t.id DESC
+LIMIT ?7
+"#;
 
 #[derive(Debug, Clone)]
 pub struct SqliteAppGatewayTracesReadStore {
@@ -89,24 +125,63 @@ async fn load_gateway_traces(
     query: AppGatewayTracesListQuery,
 ) -> RepositoryResult<AppGatewayTracesListPage> {
     let subject = require_subject(subject)?;
-    let search = query.search_pattern();
+    let exact_search = query.search_query();
+    let mut rows = fetch_gateway_trace_rows(
+        pool,
+        &subject,
+        &query,
+        if exact_search.is_some() {
+            GATEWAY_TRACES_EXACT_SEARCH_SQL
+        } else {
+            GATEWAY_TRACES_SELECT_SQL
+        },
+        exact_search,
+    )
+    .await?;
+
+    if exact_search.is_some() && rows.is_empty() {
+        let fuzzy_search = query.search_pattern();
+        rows = fetch_gateway_trace_rows(
+            pool,
+            &subject,
+            &query,
+            GATEWAY_TRACES_FUZZY_SEARCH_SQL,
+            fuzzy_search.as_deref(),
+        )
+        .await?;
+    }
+
+    page_from_rows(rows, query.page_size())
+}
+
+async fn fetch_gateway_trace_rows(
+    pool: &SqlitePool,
+    subject: &AppGatewayTracesSubject,
+    query: &AppGatewayTracesListQuery,
+    sql: &str,
+    search: Option<&str>,
+) -> RepositoryResult<Vec<sqlx::sqlite::SqliteRow>> {
     let (cursor_started_at, cursor_id) = query
         .cursor_key()
         .map(|(started_at, id)| (Some(started_at), Some(id)))
         .unwrap_or((None, None));
-    let page_size = query.page_size();
-    let mut rows = sqlx::query(gateway_traces_select_sql())
+    sqlx::query(sql)
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(subject.user_id)
         .bind(search)
         .bind(cursor_started_at)
         .bind(cursor_id)
-        .bind(page_size + 1)
+        .bind(query.page_size() + 1)
         .fetch_all(pool)
         .await
-        .map_err(sql_error)?;
+        .map_err(sql_error)
+}
 
+fn page_from_rows(
+    mut rows: Vec<sqlx::sqlite::SqliteRow>,
+    page_size: i64,
+) -> RepositoryResult<AppGatewayTracesListPage> {
     let has_more = rows.len() > page_size as usize;
     if has_more {
         rows.truncate(page_size as usize);
@@ -139,8 +214,6 @@ struct AppGatewayTraceRow {
 fn row_to_gateway_trace(row: sqlx::sqlite::SqliteRow) -> RepositoryResult<AppGatewayTraceRow> {
     let status = gateway_http_status(required_integer_cell(&row, "status")?)?;
     let latency_ms = gateway_latency_ms(optional_integer_cell(&row, "latency_ms").unwrap_or(0))?;
-    let health_status = gateway_health_status(&row)?;
-    let deployment_mode = gateway_deployment_mode(&row)?;
     Ok(AppGatewayTraceRow {
         item: AppGatewayTraceItem {
             id: string_cell(&row, "id"),
@@ -152,11 +225,10 @@ fn row_to_gateway_trace(row: sqlx::sqlite::SqliteRow) -> RepositoryResult<AppGat
             duration: latency_label(latency_ms),
             channel: gateway_channel_label(
                 &string_cell(&row, "channel_name_snapshot"),
-                &string_cell(&row, "node_name"),
-                &string_cell(&row, "region"),
-                deployment_mode,
-                health_status,
-                &string_cell(&row, "last_heartbeat_at"),
+                &string_cell(&row, "gateway_instance_id"),
+                &string_cell(&row, "gateway_instance_code_snapshot"),
+                &string_cell(&row, "gateway_node_name_snapshot"),
+                &string_cell(&row, "gateway_region_code_snapshot"),
             ),
         },
         cursor_started_at: string_cell(&row, "cursor_started_at"),
@@ -193,37 +265,37 @@ fn latency_label(value: i64) -> String {
 
 fn gateway_channel_label(
     channel_name_snapshot: &str,
-    node_name: &str,
-    region: &str,
-    deployment_mode: i64,
-    health_status: i64,
-    last_heartbeat_at: &str,
+    gateway_instance_id: &str,
+    gateway_instance_code_snapshot: &str,
+    gateway_node_name_snapshot: &str,
+    gateway_region_code_snapshot: &str,
 ) -> String {
     if !channel_name_snapshot.trim().is_empty() {
         return channel_name_snapshot.trim().to_owned();
     }
-    let node_name = node_name.trim();
-    let region = region.trim();
-    if !node_name.is_empty() && !region.is_empty() {
-        return format!("{node_name}@{region}");
+    let instance_code = gateway_instance_code_snapshot.trim();
+    let node_name = gateway_node_name_snapshot.trim();
+    let region_code = gateway_region_code_snapshot.trim();
+    if !instance_code.is_empty() && !region_code.is_empty() {
+        return format!("{instance_code}@{region_code}");
+    }
+    if !node_name.is_empty() && !region_code.is_empty() {
+        return format!("{node_name}@{region_code}");
+    }
+    if !instance_code.is_empty() {
+        return instance_code.to_owned();
     }
     if !node_name.is_empty() {
         return node_name.to_owned();
     }
-    if !region.is_empty() {
-        return format!("gateway-{region}");
+    if !region_code.is_empty() {
+        return format!("gateway-{region_code}");
     }
-    let mode = match deployment_mode {
-        1 => "desktop",
-        2 => "server",
-        3 => "docker",
-        4 => "kubernetes",
-        _ => "gateway",
-    };
-    if health_status > 0 && !last_heartbeat_at.trim().is_empty() {
-        return format!("{mode}-node");
+    let gateway_instance_id = gateway_instance_id.trim();
+    if !gateway_instance_id.is_empty() {
+        return format!("gateway-{gateway_instance_id}");
     }
-    mode.to_owned()
+    "unknown".to_owned()
 }
 
 fn string_cell(row: &sqlx::sqlite::SqliteRow, column: &str) -> String {
@@ -270,40 +342,6 @@ fn gateway_latency_ms(value: i64) -> RepositoryResult<i64> {
     }
 }
 
-fn gateway_health_status(row: &sqlx::sqlite::SqliteRow) -> RepositoryResult<i64> {
-    if string_cell(row, "gateway_id").trim().is_empty() {
-        return Ok(0);
-    }
-    let value = required_integer_cell(row, "health_status")?;
-    match value {
-        1 | 2 => Ok(value),
-        value => Err(RepositoryError::new(format!(
-            "invalid gateway trace health_status from database row: {value}"
-        ))),
-    }
-}
-
-fn gateway_deployment_mode(row: &sqlx::sqlite::SqliteRow) -> RepositoryResult<i64> {
-    if string_cell(row, "gateway_id").trim().is_empty() {
-        return Ok(0);
-    }
-    let value = required_integer_cell(row, "deployment_mode")?;
-    match value {
-        1..=4 => Ok(value),
-        value => Err(RepositoryError::new(format!(
-            "invalid gateway trace deployment_mode from database row: {value}"
-        ))),
-    }
-}
-
 fn missing_integer_cell_error(column: &str) -> RepositoryError {
-    match column {
-        "health_status" => {
-            RepositoryError::new("missing gateway trace health_status from database row")
-        }
-        "deployment_mode" => {
-            RepositoryError::new("missing gateway trace deployment_mode from database row")
-        }
-        column => RepositoryError::new(format!("missing gateway trace {column} from database row")),
-    }
+    RepositoryError::new(format!("missing gateway trace {column} from database row"))
 }

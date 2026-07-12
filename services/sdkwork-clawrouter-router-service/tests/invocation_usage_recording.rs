@@ -5,11 +5,11 @@ use sdkwork_clawrouter_router_service::application::{
     AuthenticatedApiKeyContext, BillingMode, BillingQuantitySource, Invocation, InvocationAccount,
     InvocationBilling, InvocationBody, InvocationDispatch, InvocationError, InvocationErrorKind,
     InvocationFuture, InvocationInterceptor, InvocationPipeline, InvocationRequest,
-    InvocationResource, InvocationSubject, InvocationSurface, ResourceType,
+    InvocationResource, InvocationSubject, InvocationSurface, InvocationUsageLine, ResourceType,
     ResponseNormalizationInterceptor, TraceTelemetryInterceptor, UsageRecordingInterceptor,
 };
 use sdkwork_clawrouter_router_service::domain::{
-    AiRouteModelRequirement, BillingMeter, RoutingCapability,
+    AiRouteModelRequirement, BillingMeter, DomainError, RoutingCapability,
 };
 use sdkwork_clawrouter_router_service::ports::{
     GatewayRequestTraceCommand, GatewayUsageQuantity, GatewayUsageRecordCommand,
@@ -25,6 +25,9 @@ struct RecordingGatewayUsageRecorder {
 
 #[derive(Debug, Clone)]
 struct FailingDispatchInterceptor;
+
+#[derive(Debug, Default)]
+struct FailingGatewayUsageRecorder;
 
 impl InvocationInterceptor for FailingDispatchInterceptor {
     fn name(&self) -> &str {
@@ -76,6 +79,22 @@ impl GatewayUsageRecorder for RecordingGatewayUsageRecorder {
                 .push(command);
             Ok(())
         })
+    }
+}
+
+impl GatewayUsageRecorder for FailingGatewayUsageRecorder {
+    fn record_gateway_trace<'a>(
+        &'a self,
+        _command: GatewayRequestTraceCommand,
+    ) -> GatewayUsageRecordFuture<'a> {
+        Box::pin(async { Err(DomainError::new("database unavailable")) })
+    }
+
+    fn record_gateway_usage<'a>(
+        &'a self,
+        _command: GatewayUsageRecordCommand,
+    ) -> GatewayUsageRecordFuture<'a> {
+        Box::pin(async { Err(DomainError::new("database unavailable")) })
     }
 }
 
@@ -252,9 +271,13 @@ fn usage_command() -> GatewayUsageRecordCommand {
 }
 
 #[tokio::test]
-async fn usage_recording_records_settlement_commands_without_separate_trace_call() {
+async fn usage_recording_records_settlement_commands_and_final_aggregate_trace() {
     let recorder = Arc::new(RecordingGatewayUsageRecorder::default());
     let mut invocation = model_invocation();
+    invocation.usage.lines.push(InvocationUsageLine::new(
+        BillingMeter::LlmInputToken,
+        GatewayUsageQuantity::tokens(3).unwrap(),
+    ));
     invocation.usage.settlement_commands.push(usage_command());
 
     UsageRecordingInterceptor::new(recorder.clone())
@@ -263,8 +286,100 @@ async fn usage_recording_records_settlement_commands_without_separate_trace_call
         .expect("record usage");
 
     assert_eq!(1, recorder.usage_commands().len());
-    assert!(recorder.trace_commands().is_empty());
+    let traces = recorder.trace_commands();
+    assert_eq!(1, traces.len());
+    assert_eq!(3, traces[0].prompt_tokens);
+    assert_eq!(0, traces[0].completion_tokens);
+    assert_eq!(3, traces[0].total_tokens);
     assert!(invocation.usage.trace_recorded);
+}
+
+#[tokio::test]
+async fn usage_recording_projects_multi_line_tokens_into_one_complete_trace() {
+    let recorder = Arc::new(RecordingGatewayUsageRecorder::default());
+    let mut invocation = model_invocation();
+    for (meter, tokens) in [
+        (BillingMeter::LlmInputToken, 3),
+        (BillingMeter::LlmCacheReadToken, 1),
+        (BillingMeter::LlmOutputToken, 2),
+    ] {
+        invocation.usage.lines.push(InvocationUsageLine::new(
+            meter,
+            GatewayUsageQuantity::tokens(tokens).unwrap(),
+        ));
+    }
+
+    let input = usage_command();
+    let mut cache = input.clone();
+    cache.usage_type = 3;
+    cache.billing_meter_code = "llm_cache_read_token".to_owned();
+    cache.apply_quantity(GatewayUsageQuantity::tokens(1).unwrap());
+    cache.prompt_tokens = 0;
+    cache.cached_tokens = 1;
+    cache.total_tokens = 1;
+    let mut output = input.clone();
+    output.usage_type = 2;
+    output.billing_meter_code = "llm_output_token".to_owned();
+    output.apply_quantity(GatewayUsageQuantity::tokens(2).unwrap());
+    output.prompt_tokens = 0;
+    output.completion_tokens = 2;
+    output.total_tokens = 2;
+    invocation
+        .usage
+        .settlement_commands
+        .extend([input, cache, output]);
+
+    UsageRecordingInterceptor::new(recorder.clone())
+        .after(&mut invocation)
+        .await
+        .expect("record multi-line usage and trace");
+
+    assert_eq!(3, recorder.usage_commands().len());
+    let traces = recorder.trace_commands();
+    assert_eq!(1, traces.len());
+    assert_eq!(3, traces[0].prompt_tokens);
+    assert_eq!(1, traces[0].cached_tokens);
+    assert_eq!(2, traces[0].completion_tokens);
+    assert_eq!(6, traces[0].total_tokens);
+    assert!(invocation.usage.trace_recorded);
+}
+
+#[tokio::test]
+async fn usage_recording_failure_does_not_replace_a_successful_provider_response() {
+    let pipeline = InvocationPipeline::new().with_interceptor(UsageRecordingInterceptor::new(
+        Arc::new(FailingGatewayUsageRecorder),
+    ));
+    let mut invocation = model_invocation();
+    invocation.usage.settlement_commands.push(usage_command());
+
+    pipeline
+        .execute(&mut invocation)
+        .await
+        .expect("accounting persistence must fail open after provider success");
+
+    assert_eq!(2, invocation.usage.recording_failure_count);
+    assert!(!invocation.usage.trace_recorded);
+    assert_eq!(
+        Some(200),
+        invocation
+            .dispatch
+            .response
+            .as_ref()
+            .map(|response| response.status_code)
+    );
+}
+
+#[tokio::test]
+async fn trace_only_recording_failure_is_observable_but_non_fatal() {
+    let mut invocation = model_invocation();
+
+    UsageRecordingInterceptor::new(Arc::new(FailingGatewayUsageRecorder))
+        .after(&mut invocation)
+        .await
+        .expect("trace persistence must not replace a successful response");
+
+    assert_eq!(1, invocation.usage.recording_failure_count);
+    assert!(!invocation.usage.trace_recorded);
 }
 
 #[tokio::test]
@@ -289,8 +404,8 @@ async fn usage_recording_records_trace_only_when_no_settlement_command_exists() 
     let trace = traces.first().unwrap();
     assert_eq!("req-usage-recording", trace.request_id);
     assert_eq!(Some("trace-usage-recording"), trace.trace_id.as_deref());
-    assert_eq!(10, trace.tenant_id);
-    assert_eq!(20, trace.organization_id);
+    assert_eq!(100001, trace.tenant_id);
+    assert_eq!(0, trace.organization_id);
     assert_eq!(30, trace.user_id);
     assert_eq!(101, trace.api_key_id);
     assert_eq!("openai/gpt-4o-mini", trace.catalog_key);
@@ -307,6 +422,29 @@ async fn usage_recording_records_trace_only_when_no_settlement_command_exists() 
     assert_eq!(3, trace.total_tokens);
     assert_eq!(Some(42), trace.latency_ms);
     assert!(invocation.usage.trace_recorded);
+}
+
+#[tokio::test]
+async fn usage_recording_excludes_embedding_image_counts_from_trace_tokens() {
+    let recorder = Arc::new(RecordingGatewayUsageRecorder::default());
+    let mut invocation = model_invocation();
+    invocation.usage.lines.push(
+        sdkwork_clawrouter_router_service::application::InvocationUsageLine::new(
+            BillingMeter::EmbeddingImage,
+            GatewayUsageQuantity::images(2).unwrap(),
+        ),
+    );
+
+    UsageRecordingInterceptor::new(recorder.clone())
+        .after(&mut invocation)
+        .await
+        .expect("record trace");
+
+    let trace = recorder.trace_commands().pop().unwrap();
+    assert_eq!(0, trace.prompt_tokens);
+    assert_eq!(0, trace.completion_tokens);
+    assert_eq!(0, trace.cached_tokens);
+    assert_eq!(0, trace.total_tokens);
 }
 
 #[tokio::test]

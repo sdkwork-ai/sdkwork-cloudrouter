@@ -227,7 +227,7 @@ modules:
     - ai_routing_rule
     - ai_site
     - ai_site_service
-    ddl_location: database/migrations/ai-routing.sql
+    ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
   ai-metering:
     owner: claw-router-platform
     description: AI usage facts, service-provider usage edges, and request traces.
@@ -237,7 +237,7 @@ modules:
     - ai_usage
     - ai_usage_service_provider_edge
     - ai_request_trace
-    ddl_location: database/migrations/ai-metering.sql
+    ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
   ai-pricing:
     owner: claw-router-platform
     description: AI pricing plans, bindings, rules, tiers, and import snapshots.
@@ -249,7 +249,7 @@ modules:
     - ai_pricing_plan_binding
     - ai_pricing_rule
     - ai_pricing_tier
-    ddl_location: database/migrations/ai-pricing.sql
+    ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
   iam-gateway:
     owner: claw-router-platform
     description: Gateway-owned IAM API key, access policy, channel-group binding, and risk rule tables used by Claw Router
@@ -261,7 +261,7 @@ modules:
     - iam_gateway_api_key
     - iam_gateway_api_key_channel_group
     - iam_gateway_risk_rule
-    ddl_location: database/migrations/iam-gateway.sql
+    ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
   ops-runtime:
     owner: claw-router-platform
     description: Claw Router-owned operational runtime tables for audit logs, job execution history, gateway health,
@@ -279,7 +279,7 @@ modules:
     - ops_notification_message
     - ops_notification_recipient
     - ops_notification_delivery
-    ddl_location: database/migrations/ops-runtime.sql
+    ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
 registry_dependencies:
 - module_id: sdkwork-iam
   locator: ../sdkwork-iam
@@ -414,10 +414,27 @@ registry_dependencies:
   registry_path: docs/schema-registry/sdkwork-models.tables.yaml
   description: "\u6A21\u578B\u76EE\u5F55\u3001\u6A21\u578B\u4FE1\u606F\u3001\u6A21\u578B\u5B9A\u4EF7\n\n\u884C\u4E1A\u5BF9\
     \u6807: OpenAI Models API\n"
-  tables_count: 2
+  tables_count: 19
   tables:
-  - ai_model_catalog
-  - ai_model_mapping
+  - ai_api_endpoint
+  - ai_billing_meter
+  - ai_modality
+  - ai_modality_api_endpoint
+  - ai_model
+  - ai_model_api_endpoint
+  - ai_model_capability
+  - ai_model_catalog_source
+  - ai_model_catalog_sync_run
+  - ai_model_family
+  - ai_model_modality
+  - ai_model_pricing
+  - ai_model_rank_snapshot
+  - ai_model_vendor
+  - ai_resource
+  - ai_resource_group
+  - ai_resource_group_item
+  - ai_vendor_api_endpoint
+  - ai_vendor_modality
   ownership: independent
   access: install_import
 - module_id: sdkwork-analytics

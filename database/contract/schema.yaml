@@ -27,7 +27,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -473,7 +473,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -694,7 +694,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -950,7 +950,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -1173,7 +1173,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -1423,7 +1423,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -1619,7 +1619,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -1822,7 +1822,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -1989,10 +1989,59 @@ tables:
     - id
     unique: false
     where: null
+  - name: idx_ai_config_change_event_retention
+    columns:
+    - retention_until
+    - id
+    unique: false
+    where: null
   source_tables: []
   source_refs: []
   projection_policy: null
-  lifecycle: null
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: ai-routing-service
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: ai-routing-service
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   semantic_contracts: null
 - name: ai_config_version
   domain: ai
@@ -2007,7 +2056,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -2172,7 +2221,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -2350,7 +2399,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -2574,7 +2623,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -2772,7 +2821,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -2991,10 +3040,59 @@ tables:
     - id
     unique: false
     where: null
+  - name: idx_ai_pricing_import_snapshot_retention
+    columns:
+    - retention_until
+    - id
+    unique: false
+    where: null
   source_tables: []
   source_refs: []
   projection_policy: null
-  lifecycle: null
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: ai-pricing-service
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: ai-pricing-service
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   semantic_contracts: null
 - name: ai_pricing_plan
   domain: ai
@@ -3009,7 +3107,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -3271,7 +3369,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -3500,7 +3598,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -3962,7 +4060,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -4305,7 +4403,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -4528,7 +4626,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -4787,7 +4885,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -5055,7 +5153,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -5231,6 +5329,30 @@ tables:
       postgres_type: VARCHAR(256)
       sqlite_type: VARCHAR(256)
       constraints: ''
+    gateway_instance_id:
+      type: int64
+      required: false
+      postgres_type: BIGINT
+      sqlite_type: INTEGER
+      constraints: ''
+    gateway_instance_code_snapshot:
+      type: string(128)
+      required: false
+      postgres_type: VARCHAR(128)
+      sqlite_type: VARCHAR(128)
+      constraints: ''
+    gateway_region_code_snapshot:
+      type: string(64)
+      required: false
+      postgres_type: VARCHAR(64)
+      sqlite_type: VARCHAR(64)
+      constraints: ''
+    gateway_node_name_snapshot:
+      type: string(128)
+      required: false
+      postgres_type: VARCHAR(128)
+      sqlite_type: VARCHAR(128)
+      constraints: ''
     region_code:
       type: string(64)
       required: false
@@ -5268,10 +5390,10 @@ tables:
       sqlite_type: VARCHAR(128)
       constraints: ''
     error_type:
-      type: int32
+      type: string(128)
       required: false
-      postgres_type: INTEGER
-      sqlite_type: INTEGER
+      postgres_type: VARCHAR(128)
+      sqlite_type: VARCHAR(128)
       constraints: ''
     started_at:
       type: instant
@@ -5469,11 +5591,59 @@ tables:
     - id
     unique: false
     where: null
+  - name: idx_ai_request_trace_retention
+    columns:
+    - retention_until
+    - id
+    unique: false
+    where: null
   source_tables: []
   source_refs: []
   projection_policy: null
   lifecycle:
     storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: router-service
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: router-service
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   semantic_contracts: null
 - name: ai_routing_decision_log
   domain: ai
@@ -5488,7 +5658,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -5690,11 +5860,59 @@ tables:
     - id
     unique: false
     where: null
+  - name: idx_ai_routing_decision_log_retention
+    columns:
+    - retention_until
+    - id
+    unique: false
+    where: null
   source_tables: []
   source_refs: []
   projection_policy: null
   lifecycle:
     storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: ai-routing-service
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: ai-routing-service
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   semantic_contracts: null
 - name: ai_routing_policy
   domain: ai
@@ -5709,7 +5927,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -5895,7 +6113,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -6080,7 +6298,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -6283,7 +6501,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -6539,7 +6757,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -6817,7 +7035,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -7358,11 +7576,59 @@ tables:
     - id
     unique: false
     where: null
+  - name: idx_ai_usage_retention
+    columns:
+    - retention_until
+    - id
+    unique: false
+    where: null
   source_tables: []
   source_refs: []
   projection_policy: null
   lifecycle:
     storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: router-service
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: router-service
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   semantic_contracts:
     ranking_refresh_source_fact:
       time_field: occurred_at
@@ -7384,7 +7650,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -7666,11 +7932,59 @@ tables:
     - id
     unique: false
     where: null
+  - name: idx_ai_usage_service_provider_edge_retention
+    columns:
+    - retention_until
+    - id
+    unique: false
+    where: null
   source_tables: []
   source_refs: []
   projection_policy: null
   lifecycle:
     storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: router-service
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: router-service
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   semantic_contracts: null
 - name: iam_gateway_access_policy
   domain: iam_gateway
@@ -7685,7 +7999,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -7915,7 +8229,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -8218,7 +8532,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -8455,7 +8769,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -8730,7 +9044,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -8885,18 +9199,68 @@ tables:
     columns: *id055
     unique: true
     where: null
-  - name: idx_ops_alert_event_status_severity
+  - name: idx_ops_alert_event_tenant_status_latest
     columns:
-    - alert_status
-    - severity
+    - tenant_id
+    - organization_id
+    - status
     - last_seen_at
+    - id
+    unique: false
+    where: null
+  - name: idx_ops_alert_event_retention
+    columns:
+    - retention_until
     - id
     unique: false
     where: null
   source_tables: []
   source_refs: []
   projection_policy: null
-  lifecycle: null
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: clawrouter-ops-runtime
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: clawrouter-ops-runtime
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   semantic_contracts: null
 - name: ops_audit_log
   domain: ops
@@ -8911,7 +9275,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -9090,11 +9454,59 @@ tables:
     - request_id
     unique: false
     where: null
+  - name: idx_ops_audit_log_retention
+    columns:
+    - retention_until
+    - id
+    unique: false
+    where: null
   source_tables: []
   source_refs: []
   projection_policy: null
   lifecycle:
     storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: clawrouter-ops-runtime
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: clawrouter-ops-runtime
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   semantic_contracts: null
 - name: ops_config_snapshot
   domain: ops
@@ -9109,7 +9521,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -9274,10 +9686,59 @@ tables:
     - id
     unique: false
     where: null
+  - name: idx_ops_config_snapshot_retention
+    columns:
+    - retention_until
+    - id
+    unique: false
+    where: null
   source_tables: []
   source_refs: []
   projection_policy: null
-  lifecycle: null
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: clawrouter-ops-runtime
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: clawrouter-ops-runtime
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   semantic_contracts: null
 - name: ops_gateway_heartbeat
   domain: ops
@@ -9292,7 +9753,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -9450,10 +9911,17 @@ tables:
     - organization_id
     expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
   indexes:
-  - name: idx_ops_gateway_heartbeat_instance_time
+  - name: idx_ops_gateway_heartbeat_instance_status_time
     columns:
     - instance_id
+    - status
     - heartbeat_at
+    - id
+    unique: false
+    where: null
+  - name: idx_ops_gateway_heartbeat_retention
+    columns:
+    - retention_until
     - id
     unique: false
     where: null
@@ -9462,6 +9930,48 @@ tables:
   projection_policy: null
   lifecycle:
     storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: clawrouter-ops-runtime
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: clawrouter-ops-runtime
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   semantic_contracts: null
 - name: ops_gateway_instance
   domain: ops
@@ -9476,7 +9986,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -9673,12 +10183,15 @@ tables:
     columns: *id057
     unique: true
     where: null
-  - name: idx_ops_gateway_instance_region_status
+  - name: idx_ops_gateway_instance_tenant_status_heartbeat
     columns:
-    - region
-    - cell
-    - health_status
+    - tenant_id
+    - organization_id
+    - status
+    - deleted_at
     - last_heartbeat_at
+    - updated_at
+    - id
     unique: false
     where: null
   source_tables: []
@@ -9699,7 +10212,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -9882,10 +10395,59 @@ tables:
     - id
     unique: false
     where: null
+  - name: idx_ops_job_execution_retention
+    columns:
+    - retention_until
+    - id
+    unique: false
+    where: null
   source_tables: []
   source_refs: []
   projection_policy: null
-  lifecycle: null
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: clawrouter-ops-runtime
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: clawrouter-ops-runtime
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
   semantic_contracts:
     model_ranking_refresh:
       job_name: model_ranking_refresh
@@ -9958,7 +10520,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -10163,7 +10725,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -10378,7 +10940,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)
@@ -10581,7 +11143,7 @@ tables:
       type: int64
       required: true
       postgres_type: BIGINT
-      sqlite_type: INTEGER
+      sqlite_type: BIGINT
       constraints: NOT NULL PRIMARY KEY
     uuid:
       type: string(64)

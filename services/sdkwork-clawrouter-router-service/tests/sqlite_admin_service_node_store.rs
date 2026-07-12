@@ -17,20 +17,26 @@ async fn sqlite_admin_service_node_store_manages_gateway_instance_configuration(
     let listed = store
         .list_service_nodes(ListAdminServiceNodesQuery {
             subject: subject(),
+            page_no: 1,
+            page_size: 20,
+            offset: 0,
             search: Some("shanghai".to_owned()),
             status: Some("enabled".to_owned()),
         })
         .await
         .unwrap();
 
-    assert_eq!(1, listed.len());
-    assert_eq!("node-shanghai", listed[0].id);
-    assert_eq!("edge-shanghai-01", listed[0].name);
-    assert_eq!("edge-shanghai.example.com", listed[0].domain);
-    assert_eq!("10.0.0.10", listed[0].ip);
-    assert_eq!("Shanghai relay node", listed[0].remark);
-    assert_eq!("enabled", listed[0].status);
-    assert_eq!("online", listed[0].health_status);
+    assert_eq!(1, listed.total);
+    assert_eq!(1, listed.page_no);
+    assert_eq!(20, listed.page_size);
+    assert_eq!(1, listed.items.len());
+    assert_eq!("node-shanghai", listed.items[0].id);
+    assert_eq!("edge-shanghai-01", listed.items[0].name);
+    assert_eq!("edge-shanghai.example.com", listed.items[0].domain);
+    assert_eq!("10.0.0.10", listed.items[0].ip);
+    assert_eq!("Shanghai relay node", listed.items[0].remark);
+    assert_eq!("enabled", listed.items[0].status);
+    assert_eq!("online", listed.items[0].health_status);
 
     let created = store
         .create_service_node(CreateAdminServiceNodeCommand {
@@ -91,12 +97,16 @@ async fn sqlite_admin_service_node_store_manages_gateway_instance_configuration(
     let after_delete = store
         .list_service_nodes(ListAdminServiceNodesQuery {
             subject: subject(),
+            page_no: 1,
+            page_size: 20,
+            offset: 0,
             search: Some("beijing".to_owned()),
             status: None,
         })
         .await
         .unwrap();
-    assert!(after_delete.is_empty());
+    assert_eq!(0, after_delete.total);
+    assert!(after_delete.items.is_empty());
 }
 
 async fn sqlite_pool() -> SqlitePool {

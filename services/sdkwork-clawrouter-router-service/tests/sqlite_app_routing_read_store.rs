@@ -3,7 +3,9 @@ use std::sync::Arc;
 use sdkwork_clawrouter_router_service::application::ApiKeySecretCodec;
 use sdkwork_clawrouter_router_service::infrastructure::crypto::RingAeadApiKeySecretCodec;
 use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::SqliteAppRoutingReadStore;
-use sdkwork_clawrouter_router_service::ports::{AppRoutingReadStore, AppRoutingSubject};
+use sdkwork_clawrouter_router_service::ports::{
+    AppRoutingListQuery, AppRoutingReadStore, AppRoutingSubject,
+};
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::SqlitePool;
 
@@ -40,25 +42,25 @@ async fn sqlite_routing_channels_do_not_return_account_model_allowlists() {
 
     let store = SqliteAppRoutingReadStore::new(pool);
     let channels = store
-        .load_routing_channels(Some(owner_subject()))
+        .load_routing_channels(Some(owner_subject()), list_query())
         .await
         .unwrap();
 
-    assert_eq!(1, channels.len());
+    assert_eq!(1, channels.items.len());
     assert!(
-        channels[0].models.is_empty(),
+        channels.items[0].models.is_empty(),
         "accounts expose resource/capability routing state, not model allowlists"
     );
-    assert_eq!("active", channels[0].status);
-    assert_eq!(Some(60_000), channels[0].timeout_ms);
-    let retry_policy = channels[0]
+    assert_eq!("active", channels.items[0].status);
+    assert_eq!(Some(60_000), channels.items[0].timeout_ms);
+    let retry_policy = channels.items[0]
         .retry_policy
         .as_ref()
         .expect("retry policy should be projected from ai_channel");
     assert_eq!(3, retry_policy.max_attempts);
     assert_eq!(vec![429, 503], retry_policy.retryable_status_codes);
     assert_eq!(25, retry_policy.backoff_ms);
-    let circuit_breaker_policy = channels[0]
+    let circuit_breaker_policy = channels.items[0]
         .circuit_breaker_policy
         .as_ref()
         .expect("circuit breaker policy should be projected from ai_channel");
@@ -75,15 +77,15 @@ async fn sqlite_routing_api_keys_return_display_and_copyable_owner_key_material(
 
     let store = SqliteAppRoutingReadStore::with_api_key_secret_codec(pool, codec);
     let keys = store
-        .load_routing_api_keys(Some(owner_subject()))
+        .load_routing_api_keys(Some(owner_subject()), list_query())
         .await
         .unwrap();
 
-    assert_eq!(1, keys.len());
-    assert_eq!("Owner Key", keys[0].name);
-    assert_eq!("sk-owner********ABCD", keys[0].display_key);
-    assert_eq!(Some("sk-owner-secret".to_owned()), keys[0].copyable_key);
-    assert_eq!("5", keys[0].total_usage);
+    assert_eq!(1, keys.items.len());
+    assert_eq!("Owner Key", keys.items[0].name);
+    assert_eq!("sk-owner********ABCD", keys.items[0].display_key);
+    assert_eq!(Some("sk-owner-secret".to_owned()), keys.items[0].copyable_key);
+    assert_eq!("5", keys.items[0].total_usage);
 }
 
 #[tokio::test]
@@ -100,13 +102,13 @@ async fn sqlite_routing_api_keys_do_not_expose_prefix_as_missing_name() {
 
     let store = SqliteAppRoutingReadStore::with_api_key_secret_codec(pool, codec);
     let keys = store
-        .load_routing_api_keys(Some(owner_subject()))
+        .load_routing_api_keys(Some(owner_subject()), list_query())
         .await
         .unwrap();
 
-    assert_eq!(1, keys.len());
-    assert_eq!("API Key #100", keys[0].name);
-    assert_eq!("sk-owner********ABCD", keys[0].display_key);
+    assert_eq!(1, keys.items.len());
+    assert_eq!("API Key #100", keys.items[0].name);
+    assert_eq!("sk-owner********ABCD", keys.items[0].display_key);
 }
 
 #[tokio::test]
@@ -120,7 +122,7 @@ async fn sqlite_routing_api_keys_fail_closed_when_copyable_key_exists_without_co
 
     let store = SqliteAppRoutingReadStore::new(pool);
     let error = store
-        .load_routing_api_keys(Some(owner_subject()))
+        .load_routing_api_keys(Some(owner_subject()), list_query())
         .await
         .unwrap_err();
 
@@ -157,23 +159,23 @@ async fn sqlite_routing_request_traces_expose_safe_audit_metadata_without_payloa
 
     let store = SqliteAppRoutingReadStore::new(pool);
     let traces = store
-        .load_routing_request_traces(Some(owner_subject()))
+        .load_routing_request_traces(Some(owner_subject()), list_query())
         .await
         .unwrap();
 
-    assert_eq!(1, traces.len());
-    assert_eq!("trace-safe-audit", traces[0].trace_id);
-    assert_eq!("req-safe-audit", traces[0].request_id);
-    assert_eq!("/v1/chat/completions", traces[0].request_path);
-    assert_eq!("POST", traces[0].http_method);
-    assert_eq!("sha256:req", traces[0].request_payload_hash);
-    assert_eq!("sha256:res", traces[0].response_payload_hash);
-    assert_eq!(512, traces[0].request_bytes);
-    assert_eq!(4096, traces[0].response_bytes);
-    assert_eq!("provider timeout", traces[0].error_message_masked);
-    assert!(traces[0].streaming);
-    assert_eq!("2026-05-03 10:00:00", traces[0].started_at);
-    assert_eq!("2026-05-03 10:00:00.345", traces[0].ended_at);
+    assert_eq!(1, traces.items.len());
+    assert_eq!("trace-safe-audit", traces.items[0].trace_id);
+    assert_eq!("req-safe-audit", traces.items[0].request_id);
+    assert_eq!("/v1/chat/completions", traces.items[0].request_path);
+    assert_eq!("POST", traces.items[0].http_method);
+    assert_eq!("sha256:req", traces.items[0].request_payload_hash);
+    assert_eq!("sha256:res", traces.items[0].response_payload_hash);
+    assert_eq!(512, traces.items[0].request_bytes);
+    assert_eq!(4096, traces.items[0].response_bytes);
+    assert_eq!("provider timeout", traces.items[0].error_message_masked);
+    assert!(traces.items[0].streaming);
+    assert_eq!("2026-05-03 10:00:00", traces.items[0].started_at);
+    assert_eq!("2026-05-03 10:00:00.345", traces.items[0].ended_at);
 }
 
 #[tokio::test]
@@ -184,13 +186,13 @@ async fn sqlite_routing_request_traces_tolerate_missing_latency() {
 
     let store = SqliteAppRoutingReadStore::new(pool);
     let traces = store
-        .load_routing_request_traces(Some(owner_subject()))
+        .load_routing_request_traces(Some(owner_subject()), list_query())
         .await
         .unwrap();
 
-    assert_eq!(1, traces.len());
-    assert_eq!("req-missing-latency", traces[0].request_id);
-    assert_eq!("0ms", traces[0].duration);
+    assert_eq!(1, traces.items.len());
+    assert_eq!("req-missing-latency", traces.items[0].request_id);
+    assert_eq!("0ms", traces.items[0].duration);
 }
 
 async fn sqlite_pool() -> SqlitePool {
@@ -206,6 +208,15 @@ fn owner_subject() -> AppRoutingSubject {
         tenant_id: 100001,
         organization_id: 0,
         user_id: 30,
+    }
+}
+
+fn list_query() -> AppRoutingListQuery {
+    AppRoutingListQuery {
+        page_no: 1,
+        page_size: 20,
+        offset: 0,
+        q: None,
     }
 }
 
@@ -302,7 +313,7 @@ async fn create_routing_usage_tables(pool: &SqlitePool) {
             request_path TEXT,
             http_method TEXT,
             http_status INTEGER,
-            error_type INTEGER,
+            error_type VARCHAR(128),
             provider_error_code TEXT,
             error_message_masked TEXT,
             request_payload_hash TEXT,
@@ -487,7 +498,7 @@ async fn insert_trace(
             channel_name_snapshot, requested_model, provider_model, http_status, error_type, provider_error_code,
             latency_ms, total_tokens
         )
-        VALUES (10, 20, 30, ?, 1, ?, ?, 'OpenAI primary', 'openai/gpt-4o-mini', '', 200, NULL, NULL, ?, 9)
+        VALUES (100001, 0, 30, ?, 1, ?, ?, 'OpenAI primary', 'openai/gpt-4o-mini', '', 200, NULL, NULL, ?, 9)
         "#,
     )
     .bind(request_id)
@@ -503,7 +514,7 @@ async fn insert_trace(
         INSERT INTO ai_usage (
             tenant_id, organization_id, user_id, status, request_id, catalog_key, model, total_tokens
         )
-        VALUES (10, 20, 30, 1, ?, 'openai/gpt-4o-mini', 'gpt-4o-mini', 9)
+        VALUES (100001, 0, 30, 1, ?, 'openai/gpt-4o-mini', 'gpt-4o-mini', 9)
         "#,
     )
     .bind(request_id)

@@ -5,11 +5,12 @@ use axum::http::{StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::Router;
+use sdkwork_claw_security::redact_error_message;
 use sdkwork_utils_rust::{cursor_window_page_info, SdkWorkResultCode};
 
 use crate::api::app_sql_subject::{map_optional_app_sql_subject, ResolvedAppSqlScopedSubject};
 use crate::api::query_string::{parse_i64_query_param, query_pairs};
-use crate::api::response::{json_success_list_response, platform_problem, problem_from_wire_code};
+use crate::api::response::{internal_problem, json_success_list_response, platform_problem};
 use crate::ports::{AppGatewayTracesListQuery, AppGatewayTracesReadStore, AppGatewayTracesSubject};
 
 #[derive(Clone)]
@@ -243,12 +244,30 @@ mod tests {
         let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
         assert_eq!(40003, payload["code"]);
     }
+
+    #[tokio::test]
+    async fn gateway_traces_read_failure_uses_standard_internal_problem_detail() {
+        let response = app_gateway_traces_read_model_error("database connection failed");
+        assert_eq!(StatusCode::INTERNAL_SERVER_ERROR, response.status());
+        assert_eq!(
+            Some("application/problem+json"),
+            response
+                .headers()
+                .get(axum::http::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+        );
+        let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(50001, payload["code"]);
+        assert_eq!("An internal error occurred", payload["detail"]);
+        assert_ne!("database connection failed", payload["detail"]);
+    }
 }
 
 fn app_gateway_traces_read_model_error(error: impl std::fmt::Display) -> Response {
-    problem_from_wire_code(
-        "5000",
-        format!("app gateway traces read model is unavailable: {error}"),
-    )
-    .into_response()
+    tracing::error!(
+        error = %redact_error_message(&error),
+        "app gateway traces read model failed"
+    );
+    internal_problem("app gateway traces read model is unavailable").into_response()
 }

@@ -2316,6 +2316,7 @@ dependencies = [
 name = "sdkwork-api-cloud-gateway"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "async-trait",
  "axum",
  "bytes",
@@ -2342,6 +2343,7 @@ dependencies = [
  "tower",
  "tower-http",
  "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -2779,6 +2781,7 @@ dependencies = [
  "sdkwork-models-database-bootstrap",
  "sdkwork-payment-service",
  "sdkwork-promotion-repository-sqlx",
+ "sdkwork-promotion-service",
  "sdkwork-sdk-generator-client",
  "sdkwork-utils-rust",
  "sdkwork-web-core",
@@ -2914,6 +2917,7 @@ dependencies = [
  "sha2",
  "sqlx",
  "thiserror 2.0.18",
+ "tokio",
 ]
 
 [[package]]

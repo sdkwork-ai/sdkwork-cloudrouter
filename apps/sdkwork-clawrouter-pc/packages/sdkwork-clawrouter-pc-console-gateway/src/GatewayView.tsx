@@ -49,18 +49,6 @@ function summarizeTraces(traces: GatewayTrace[]): GatewaySummary {
   );
 }
 
-function mergeUniqueTraces(current: GatewayTrace[], incoming: GatewayTrace[]): GatewayTrace[] {
-  const seen = new Set(current.map((trace) => trace.id));
-  const appended = incoming.filter((trace) => {
-    if (seen.has(trace.id)) {
-      return false;
-    }
-    seen.add(trace.id);
-    return true;
-  });
-  return appended.length === 0 ? current : [...current, ...appended];
-}
-
 export function GatewayView() {
   const { t } = useTranslation();
   const [traces, setTraces] = useState<GatewayTrace[]>([]);
@@ -120,7 +108,7 @@ export function GatewayView() {
         requestGeneration === requestGenerationRef.current
         && continuationTokenRef.current === continuationToken
       ) {
-        setTraces((current) => mergeUniqueTraces(current, page.items));
+        setTraces((current) => [...current, ...page.items]);
         setPageInfo(page.pageInfo);
       }
     } catch (error) {
@@ -282,8 +270,8 @@ function GatewayTraceTable({ traces }: { traces: GatewayTrace[] }) {
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200 dark:divide-white/5 text-slate-700 dark:text-slate-300">
-          {traces.map((trace) => (
-            <tr key={trace.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors font-mono text-xs">
+          {traces.map((trace, index) => (
+            <tr key={`${trace.id}:${trace.time}:${index}`} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors font-mono text-xs">
               <td className="px-5 py-3 font-bold text-slate-900 dark:text-white">{trace.id}</td>
               <td className="px-5 py-3 text-slate-500">{trace.time}</td>
               <td className="px-5 py-3 text-slate-500">{trace.ip}</td>

@@ -301,7 +301,7 @@ async fn create_analytics_tables(pool: &SqlitePool) {
             request_id TEXT,
             status INTEGER NOT NULL,
             http_status INTEGER,
-            error_type INTEGER,
+            error_type VARCHAR(128),
             provider_error_code TEXT,
             started_at TEXT
         )

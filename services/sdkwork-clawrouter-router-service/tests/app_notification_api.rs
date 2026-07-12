@@ -53,6 +53,10 @@ async fn app_notification_route_uses_notification_domain_and_store_contract() {
     assert_eq!("claw-router", payload["data"]["items"][0]["appId"]);
     assert_eq!(true, payload["data"]["items"][0]["showAsPopup"]);
     assert_eq!(false, payload["data"]["items"][0]["popupSeen"]);
+    assert_eq!("offset", payload["data"]["pageInfo"]["mode"]);
+    assert_eq!(1, payload["data"]["pageInfo"]["page"]);
+    assert_eq!(20, payload["data"]["pageInfo"]["pageSize"]);
+    assert_eq!("1", payload["data"]["pageInfo"]["totalItems"]);
 
     let queries = store.queries.lock().unwrap();
     assert_eq!(
@@ -106,6 +110,10 @@ async fn app_notification_route_allows_console_reads_without_frontend_app_id() {
     let payload = response_json(response).await;
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("global-notification", payload["data"]["items"][0]["id"]);
+    assert_eq!("offset", payload["data"]["pageInfo"]["mode"]);
+    assert_eq!(1, payload["data"]["pageInfo"]["page"]);
+    assert_eq!(20, payload["data"]["pageInfo"]["pageSize"]);
+    assert_eq!("1", payload["data"]["pageInfo"]["totalItems"]);
 
     let queries = store.queries.lock().unwrap();
     assert_eq!(
@@ -285,8 +293,16 @@ impl AppNotificationStore for TestAppNotificationStore {
         query: AppNotificationQuery,
     ) -> AppNotificationFuture<'a, AppNotificationItems> {
         Box::pin(async move {
+            let total = self.items.len() as i64;
+            let page = query.page;
+            let page_size = query.page_size;
             self.queries.lock().unwrap().push(query);
-            Ok(AppNotificationItems::new(self.items.clone()))
+            Ok(AppNotificationItems::new(
+                self.items.clone(),
+                total,
+                page,
+                page_size,
+            ))
         })
     }
 

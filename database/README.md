@@ -10,12 +10,14 @@ Canonical lifecycle assets for `sdkwork-clawrouter` per `DATABASE_FRAMEWORK_SPEC
 
 Claw-router **generated schema** (`generated/schema/postgres/schema.sql`) owns gateway, routing, usage settlement projections, and claw-router operational tables only.
 
-Sibling product domains are declared in `database.manifest.json` `composeDependencies` for **install-time composition** through `sdkwork-database` (IAM bootstrap, models catalog, commerce). Those tables are not duplicated inside the generated claw-router baseline DDL; they are applied by the database framework during `db:init` / `db:migrate` according to each dependency's ownership mode:
+`database.manifest.json` describes only the Claw Router-owned database module. Sibling modules keep independent manifests, migrations, history, and ownership; they are not duplicated in the Claw Router baseline.
 
-| Dependency | Ownership in manifest | Runtime role |
+The product installer performs explicit lifecycle orchestration. It migrates `sdkwork-models` first and then the Claw Router database host before application-data bootstrap. IAM and other product domains remain independent service or SDK boundaries.
+
+| Dependency | Lifecycle owner | Runtime role |
 | --- | --- | --- |
-| `sdkwork-models` | `compose_at_install` | Models catalog tables composed at install |
-| `iam` | `bootstrap_standalone` | IAM base tables bootstrapped for standalone |
+| `sdkwork-models` | `sdkwork-models` database host | Model catalog tables migrated before Claw Router bootstrap |
+| `sdkwork-iam` | IAM service/database host | Authentication and identity data consumed through IAM boundaries |
 
 Gateway / routing / ops tables remain owned by `clawrouter` in `generated/schema/postgres/schema.sql`.
 
@@ -26,8 +28,10 @@ See `docs/31-product-composition-model.md`.
 This module is in **initialization state** for greenfield deployments:
 
 1. **Baseline** — `database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql` contains the full DDL snapshot.
-2. **Migrations** — `database/migrations/{engine}/` is reserved for post-GA incremental schema changes only. It is intentionally empty at initialization.
+2. **Migrations** — `database/migrations/{engine}/` contains paired incremental changes after the folded baseline. Migration `0002_ai_request_trace_gateway_attribution` adds immutable gateway attribution, normalizes `ai_request_trace.error_type`, and adds retention/operations indexes.
 3. **Drift** — run `pnpm db:drift:check` before release.
+
+Migration `0002` is conditionally reversible: rollback refuses to discard non-empty gateway attribution snapshots. Production recovery should prefer a reviewed forward fix after data has been written.
 
 ## Commands
 

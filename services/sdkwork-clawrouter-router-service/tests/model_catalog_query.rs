@@ -146,7 +146,7 @@ fn lists_models_with_customer_price_provider_count_and_vendor_filter() {
             categories: Vec::new(),
             groups: Vec::new(),
             search_query: None,
-            limit: None,
+            page_size: None,
             offset: None,
         })
         .unwrap();
@@ -215,7 +215,7 @@ fn list_keeps_unpriced_models_explicitly_unavailable_instead_of_fake_success() {
             categories: Vec::new(),
             groups: Vec::new(),
             search_query: None,
-            limit: None,
+            page_size: None,
             offset: None,
         })
         .unwrap();
@@ -258,7 +258,7 @@ fn list_models_reads_backend_group_bindings_and_applies_catalog_filters() {
             categories: vec!["Recommended".to_owned(), "Proprietary".to_owned()],
             groups: vec!["premium-lab".to_owned()],
             search_query: Some("gpt".to_owned()),
-            limit: Some(10),
+            page_size: Some(10),
             offset: None,
         })
         .unwrap();
@@ -295,7 +295,7 @@ fn list_models_matches_resource_scoped_group_binding_against_capabilities() {
             categories: Vec::new(),
             groups: vec!["standard-group".to_owned()],
             search_query: None,
-            limit: Some(10),
+            page_size: Some(10),
             offset: None,
         })
         .unwrap();
@@ -336,7 +336,7 @@ fn list_models_returns_complete_admin_group_catalog_independent_of_item_filters(
             categories: Vec::new(),
             groups: vec!["premium-lab".to_owned()],
             search_query: Some("gpt".to_owned()),
-            limit: Some(10),
+            page_size: Some(10),
             offset: None,
         })
         .unwrap();
@@ -371,7 +371,7 @@ fn list_models_applies_offset_after_filtering() {
             categories: Vec::new(),
             groups: Vec::new(),
             search_query: None,
-            limit: Some(1),
+            page_size: Some(1),
             offset: None,
         })
         .unwrap();
@@ -386,7 +386,7 @@ fn list_models_applies_offset_after_filtering() {
             categories: Vec::new(),
             groups: Vec::new(),
             search_query: None,
-            limit: Some(1),
+            page_size: Some(1),
             offset: Some(1),
         })
         .unwrap();

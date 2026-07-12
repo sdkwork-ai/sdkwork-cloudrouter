@@ -1,11 +1,11 @@
 mod common;
-use common::InternalTrustedSubjectHeaders;
+use common::web_framework_backend_request;
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
 use axum::body::Body;
-use axum::http::{Request, StatusCode};
+use axum::http::{header::CONTENT_TYPE, HeaderValue, Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::{
     default_desktop_cache_manager, AiRoutingCacheInvalidatingAdminAiResourceStore,
     EntityUuidGenerator, ROUTING_CONFIG_VERSION_CACHE_NAMESPACE,
@@ -13,9 +13,10 @@ use sdkwork_clawrouter_router_service::application::{
 };
 use sdkwork_clawrouter_router_service::domain::DomainError;
 use sdkwork_clawrouter_router_service::ports::{
-    AdminAiResourceGroupItem, AdminAiResourceGroupResourceItem, AdminAiResourceItem,
-    AdminAiResourceMemberItem, AdminAiResourceReadFuture, AdminAiResourceStore,
-    AdminAiResourceSubject, CreateAdminAiResourceCommand, CreateAdminAiResourceGroupCommand,
+    AdminAiResourceGroupItem, AdminAiResourceGroupResourceItem, AdminAiResourceGroupResourcesPage,
+    AdminAiResourceItem, AdminAiResourceListPage, AdminAiResourceMemberItem,
+    AdminAiResourceReadFuture, AdminAiResourceStore, AdminAiResourceSubject,
+    CreateAdminAiResourceCommand, CreateAdminAiResourceGroupCommand,
     DeleteAdminAiResourceGroupCommand, ListAdminAiResourceGroupResourcesQuery,
     ListAdminAiResourceGroupsQuery, ListAdminAiResourcesQuery, UpdateAdminAiResourceCommand,
     UpdateAdminAiResourceGroupCommand,
@@ -31,14 +32,11 @@ async fn admin_ai_resource_route_lists_resources_with_members() {
     );
 
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/backend/v3/api/ai/resources")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(backend_request(
+            "GET",
+            "/backend/v3/api/ai/resources",
+            Body::empty(),
+        ))
         .await
         .unwrap();
 
@@ -67,14 +65,11 @@ async fn admin_ai_resource_group_route_manages_groups_and_static_all_api_resourc
 
     let list_response = router
         .clone()
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/backend/v3/api/ai/resource_groups")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(backend_request(
+            "GET",
+            "/backend/v3/api/ai/resource_groups",
+            Body::empty(),
+        ))
         .await
         .unwrap();
 
@@ -91,14 +86,11 @@ async fn admin_ai_resource_group_route_manages_groups_and_static_all_api_resourc
 
     let all_resources_response = router
         .clone()
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/backend/v3/api/ai/resource_groups/api.all/resources")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(backend_request(
+            "GET",
+            "/backend/v3/api/ai/resource_groups/api.all/resources",
+            Body::empty(),
+        ))
         .await
         .unwrap();
 
@@ -116,21 +108,17 @@ async fn admin_ai_resource_group_route_manages_groups_and_static_all_api_resourc
 
     let create_response = router
         .clone()
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/backend/v3/api/ai/resource_groups")
-                .internal_trusted_subject(100001, 0, 30)
-                .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{"groupCode":" API.Custom.Chat ","groupName":"Custom Chat API","groupType":"api_group","selectionMode":"manual","description":"Custom group","sortOrder":30,"status":"active","members":[{"resourceCode":"api.openai.chat_completions","itemRole":"included","sortOrder":1}]}"#,
-                ))
-                .unwrap(),
-        )
+        .oneshot(backend_request(
+            "POST",
+            "/backend/v3/api/ai/resource_groups",
+            Body::from(
+                r#"{"groupCode":" API.Custom.Chat ","groupName":"Custom Chat API","groupType":"api_group","selectionMode":"manual","description":"Custom group","sortOrder":30,"status":"active","members":[{"resourceCode":"api.openai.chat_completions","itemRole":"included","sortOrder":1}]}"#,
+            ),
+        ))
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, create_response.status());
+    assert_eq!(StatusCode::CREATED, create_response.status());
     let create_payload = json_payload(create_response).await;
     assert_eq!(
         "api.custom.chat",
@@ -140,17 +128,13 @@ async fn admin_ai_resource_group_route_manages_groups_and_static_all_api_resourc
 
     let update_response = router
         .clone()
-        .oneshot(
-            Request::builder()
-                .method("PATCH")
-                .uri("/backend/v3/api/ai/resource_groups/3")
-                .internal_trusted_subject(100001, 0, 30)
-                .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{"groupName":"Custom Chat API v2","members":[{"resourceCode":"api.openai.responses","itemRole":"optional","sortOrder":2}]}"#,
-                ))
-                .unwrap(),
-        )
+        .oneshot(backend_request(
+            "PATCH",
+            "/backend/v3/api/ai/resource_groups/3",
+            Body::from(
+                r#"{"groupName":"Custom Chat API v2","members":[{"resourceCode":"api.openai.responses","itemRole":"optional","sortOrder":2}]}"#,
+            ),
+        ))
         .await
         .unwrap();
 
@@ -163,20 +147,19 @@ async fn admin_ai_resource_group_route_manages_groups_and_static_all_api_resourc
     assert_eq!(1, update_payload["data"]["item"]["resourceCount"]);
 
     let delete_response = router
-        .oneshot(
-            Request::builder()
-                .method("DELETE")
-                .uri("/backend/v3/api/ai/resource_groups/3")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(backend_request(
+            "DELETE",
+            "/backend/v3/api/ai/resource_groups/3",
+            Body::empty(),
+        ))
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, delete_response.status());
-    let delete_payload = json_payload(delete_response).await;
-    assert_eq!(true, delete_payload["data"]["deleted"]);
+    assert_eq!(StatusCode::NO_CONTENT, delete_response.status());
+    let delete_body = axum::body::to_bytes(delete_response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    assert!(delete_body.is_empty());
 }
 
 #[tokio::test]
@@ -188,21 +171,17 @@ async fn admin_ai_resource_route_creates_and_updates_resources() {
 
     let create_response = router
         .clone()
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/backend/v3/api/ai/resources")
-                .internal_trusted_subject(100001, 0, 30)
-                .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{"resourceCode":" Bundle.OpenRouter.OpenAI.Standard ","resourceType":"bundle","displayName":"OpenRouter OpenAI Standard","vendorCode":" OpenAI ","compositionMode":"all","status":"active","sortOrder":5,"members":[{"memberResourceCode":"model.openai.gpt-4o-mini.chat","memberRole":"included","required":true,"sortOrder":1}]}"#,
-                ))
-                .unwrap(),
-        )
+        .oneshot(backend_request(
+            "POST",
+            "/backend/v3/api/ai/resources",
+            Body::from(
+                r#"{"resourceCode":" Bundle.OpenRouter.OpenAI.Standard ","resourceType":"bundle","displayName":"OpenRouter OpenAI Standard","vendorCode":" OpenAI ","compositionMode":"all","status":"active","sortOrder":5,"members":[{"memberResourceCode":"model.openai.gpt-4o-mini.chat","memberRole":"included","required":true,"sortOrder":1}]}"#,
+            ),
+        ))
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, create_response.status());
+    assert_eq!(StatusCode::CREATED, create_response.status());
     let create_payload = json_payload(create_response).await;
     assert_eq!(0, create_payload["code"].as_i64().unwrap());
     assert_eq!(
@@ -217,17 +196,13 @@ async fn admin_ai_resource_route_creates_and_updates_resources() {
     );
 
     let update_response = router
-        .oneshot(
-            Request::builder()
-                .method("PUT")
-                .uri("/backend/v3/api/ai/resources/5")
-                .internal_trusted_subject(100001, 0, 30)
-                .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{"displayName":"OpenRouter OpenAI Bundle","status":"disabled","members":[]}"#,
-                ))
-                .unwrap(),
-        )
+        .oneshot(backend_request(
+            "PUT",
+            "/backend/v3/api/ai/resources/5",
+            Body::from(
+                r#"{"displayName":"OpenRouter OpenAI Bundle","status":"disabled","members":[]}"#,
+            ),
+        ))
         .await
         .unwrap();
 
@@ -283,21 +258,17 @@ async fn admin_ai_resource_route_invalidates_routing_cache_after_successful_muta
     );
 
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/backend/v3/api/ai/resources")
-                .internal_trusted_subject(100001, 0, 30)
-                .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{"resourceCode":"bundle.openrouter.openai.standard","resourceType":"bundle","displayName":"OpenRouter OpenAI Standard","vendorCode":"OpenAI","compositionMode":"all","status":"active","sortOrder":5,"members":[{"memberResourceCode":"model.openai.gpt-4o-mini.chat"}]}"#,
-                ))
-                .unwrap(),
-        )
+        .oneshot(backend_request(
+            "POST",
+            "/backend/v3/api/ai/resources",
+            Body::from(
+                r#"{"resourceCode":"bundle.openrouter.openai.standard","resourceType":"bundle","displayName":"OpenRouter OpenAI Standard","vendorCode":"OpenAI","compositionMode":"all","status":"active","sortOrder":5,"members":[{"memberResourceCode":"model.openai.gpt-4o-mini.chat"}]}"#,
+            ),
+        ))
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, response.status());
+    assert_eq!(StatusCode::CREATED, response.status());
     assert!(manager
         .get_json(ROUTING_SNAPSHOT_CACHE_NAMESPACE, "tenant:10:org:20")
         .await
@@ -315,7 +286,7 @@ async fn admin_ai_resource_route_invalidates_routing_cache_after_successful_muta
         )
         .await
         .unwrap()
-        .is_some());
+        .is_none());
 }
 
 #[tokio::test]
@@ -327,17 +298,13 @@ async fn admin_ai_resource_route_maps_missing_member_resource_to_not_found() {
 
     let create_response = router
         .clone()
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/backend/v3/api/ai/resources")
-                .internal_trusted_subject(100001, 0, 30)
-                .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{"resourceCode":"bundle.openrouter.openai.invalid","resourceType":"bundle","displayName":"Invalid Bundle","members":[{"memberResourceCode":"model.openai.missing.chat"}]}"#,
-                ))
-                .unwrap(),
-        )
+        .oneshot(backend_request(
+            "POST",
+            "/backend/v3/api/ai/resources",
+            Body::from(
+                r#"{"resourceCode":"bundle.openrouter.openai.invalid","resourceType":"bundle","displayName":"Invalid Bundle","members":[{"memberResourceCode":"model.openai.missing.chat"}]}"#,
+            ),
+        ))
         .await
         .unwrap();
 
@@ -350,17 +317,11 @@ async fn admin_ai_resource_route_maps_missing_member_resource_to_not_found() {
         .contains("model.openai.missing.chat"));
 
     let update_response = router
-        .oneshot(
-            Request::builder()
-                .method("PUT")
-                .uri("/backend/v3/api/ai/resources/5")
-                .internal_trusted_subject(100001, 0, 30)
-                .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{"members":[{"memberResourceCode":"model.openai.missing.chat"}]}"#,
-                ))
-                .unwrap(),
-        )
+        .oneshot(backend_request(
+            "PUT",
+            "/backend/v3/api/ai/resources/5",
+            Body::from(r#"{"members":[{"memberResourceCode":"model.openai.missing.chat"}]}"#),
+        ))
         .await
         .unwrap();
 
@@ -380,13 +341,21 @@ async fn json_payload(response: axum::response::Response) -> Value {
     serde_json::from_slice(&body).unwrap()
 }
 
+fn backend_request(method: &str, path: &str, body: Body) -> Request<Body> {
+    let mut request = web_framework_backend_request(method, path, body, "100001", Some("0"), "30");
+    request
+        .headers_mut()
+        .insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+    request
+}
+
 struct TestAiResourceStore;
 
 impl AdminAiResourceStore for TestAiResourceStore {
     fn list_ai_resources<'a>(
         &'a self,
         query: ListAdminAiResourcesQuery,
-    ) -> AdminAiResourceReadFuture<'a, Vec<AdminAiResourceItem>> {
+    ) -> AdminAiResourceReadFuture<'a, AdminAiResourceListPage> {
         Box::pin(async move {
             assert_eq!(
                 AdminAiResourceSubject {
@@ -397,7 +366,7 @@ impl AdminAiResourceStore for TestAiResourceStore {
                 },
                 query.subject
             );
-            Ok(vec![
+            let items = vec![
                 AdminAiResourceItem {
                     id: 1,
                     resource_code: "vendor.openai".to_owned(),
@@ -447,7 +416,24 @@ impl AdminAiResourceStore for TestAiResourceStore {
                         sort_order: Some(1),
                     }],
                 },
-            ])
+            ];
+            let q = query.q.as_deref().map(str::to_ascii_lowercase);
+            let items = items
+                .into_iter()
+                .filter(|item| {
+                    q.as_ref().map_or(true, |q| {
+                        item.resource_code.to_ascii_lowercase().contains(q)
+                            || item.display_name.to_ascii_lowercase().contains(q)
+                    })
+                })
+                .collect::<Vec<_>>();
+            let total_count = items.len() as i64;
+            let items = items
+                .into_iter()
+                .skip(query.normalized_offset() as usize)
+                .take(query.normalized_limit() as usize)
+                .collect();
+            Ok(AdminAiResourceListPage { items, total_count })
         })
     }
 
@@ -584,10 +570,10 @@ impl AdminAiResourceStore for TestAiResourceStore {
     fn list_ai_resource_group_resources<'a>(
         &'a self,
         query: ListAdminAiResourceGroupResourcesQuery,
-    ) -> AdminAiResourceReadFuture<'a, Vec<AdminAiResourceGroupResourceItem>> {
+    ) -> AdminAiResourceReadFuture<'a, AdminAiResourceGroupResourcesPage> {
         assert_eq!("api.all", query.group_id_or_code);
-        Box::pin(async {
-            Ok(vec![
+        Box::pin(async move {
+            let items = vec![
                 AdminAiResourceGroupResourceItem {
                     id: 11,
                     resource_code: "api.openai.chat_completions".to_owned(),
@@ -618,7 +604,24 @@ impl AdminAiResourceStore for TestAiResourceStore {
                     sort_order: Some(2),
                     member_role: "included".to_owned(),
                 },
-            ])
+            ];
+            let q = query.q.as_deref().map(str::to_ascii_lowercase);
+            let items = items
+                .into_iter()
+                .filter(|item| {
+                    q.as_ref().map_or(true, |q| {
+                        item.resource_code.to_ascii_lowercase().contains(q)
+                            || item.display_name.to_ascii_lowercase().contains(q)
+                    })
+                })
+                .collect::<Vec<_>>();
+            let total_count = items.len() as i64;
+            let items = items
+                .into_iter()
+                .skip(query.normalized_offset() as usize)
+                .take(query.normalized_limit() as usize)
+                .collect();
+            Ok(AdminAiResourceGroupResourcesPage { items, total_count })
         })
     }
 
@@ -698,8 +701,13 @@ impl AdminAiResourceStore for MissingMemberAiResourceStore {
     fn list_ai_resources<'a>(
         &'a self,
         _query: ListAdminAiResourcesQuery,
-    ) -> AdminAiResourceReadFuture<'a, Vec<AdminAiResourceItem>> {
-        Box::pin(async { Ok(Vec::new()) })
+    ) -> AdminAiResourceReadFuture<'a, AdminAiResourceListPage> {
+        Box::pin(async {
+            Ok(AdminAiResourceListPage {
+                items: Vec::new(),
+                total_count: 0,
+            })
+        })
     }
 
     fn create_ai_resource<'a>(
@@ -726,8 +734,13 @@ impl AdminAiResourceStore for MissingMemberAiResourceStore {
     fn list_ai_resource_group_resources<'a>(
         &'a self,
         _query: ListAdminAiResourceGroupResourcesQuery,
-    ) -> AdminAiResourceReadFuture<'a, Vec<AdminAiResourceGroupResourceItem>> {
-        Box::pin(async { Ok(Vec::new()) })
+    ) -> AdminAiResourceReadFuture<'a, AdminAiResourceGroupResourcesPage> {
+        Box::pin(async {
+            Ok(AdminAiResourceGroupResourcesPage {
+                items: Vec::new(),
+                total_count: 0,
+            })
+        })
     }
 
     fn create_ai_resource_group<'a>(

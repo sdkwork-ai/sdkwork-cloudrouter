@@ -978,9 +978,14 @@ use placeholder values and startup refuses server configurations that still use
 `db.example.com` or `change-me`.
 
 Redis configuration is part of the standard runtime TOML but is disabled by
-default. Current installs do not require Redis and do not start a Redis client
-unless a future runtime capability explicitly enables it. When Redis is enabled,
-set `[redis].enabled = true`, configure `[redis].host`, `[redis].port`, and
+default. When Redis is enabled, the gateway uses a fenced Redis Streams queue
+for durable trace and usage retries; otherwise it uses the independent
+`gateway-accounting-retry.sqlite3` WAL database under `[paths].data_directory`.
+A provider success response is preserved when accounting persistence fails,
+while queue failure or any dead-letter entry makes readiness degraded until the
+records are reconciled. Redis mode does not automatically switch to SQLite
+after startup, so production Redis requires its normal HA and persistence
+policy. Set `[redis].enabled = true`, configure `[redis].host`, `[redis].port`, and
 `[redis].database`, and prefer `[redis].password_file` over `[redis].password`.
 Use `[redis].url` only as an advanced override for managed Redis endpoints that
 cannot be represented cleanly with separate fields. Standard optional secret

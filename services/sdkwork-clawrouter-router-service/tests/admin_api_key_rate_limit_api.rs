@@ -7,8 +7,9 @@ use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::EntityUuidGenerator;
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
-    AdminApiKeyRateLimitCommandFuture, AdminApiKeyRateLimitItem, AdminApiKeyRateLimitStore,
-    CreateAdminApiKeyRateLimitCommand, ListAdminApiKeyRateLimitsQuery,
+    AdminApiKeyRateLimitCommandFuture, AdminApiKeyRateLimitItem, AdminApiKeyRateLimitListPage,
+    AdminApiKeyRateLimitStore, CreateAdminApiKeyRateLimitCommand,
+    ListAdminApiKeyRateLimitsQuery,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -37,7 +38,7 @@ async fn admin_api_key_rate_limit_route_creates_and_lists_token_limits() {
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, create_response.status());
+    assert_eq!(StatusCode::CREATED, create_response.status());
     let create_payload = json_payload(create_response).await;
     assert_eq!(0, create_payload["code"].as_i64().unwrap());
     assert_eq!("sk-test", create_payload["data"]["item"]["keyPrefix"]);
@@ -139,9 +140,9 @@ impl AdminApiKeyRateLimitStore for TestApiKeyRateLimitStore {
     fn list_api_key_rate_limits<'a>(
         &'a self,
         query: ListAdminApiKeyRateLimitsQuery,
-    ) -> AdminApiKeyRateLimitCommandFuture<'a, Vec<AdminApiKeyRateLimitItem>> {
+    ) -> AdminApiKeyRateLimitCommandFuture<'a, AdminApiKeyRateLimitListPage> {
         Box::pin(async move {
-            Ok(self
+            let items = self
                 .items
                 .lock()
                 .unwrap()
@@ -150,9 +151,24 @@ impl AdminApiKeyRateLimitStore for TestApiKeyRateLimitStore {
                     item.tenant_id == query.subject.tenant_id
                         && item.organization_id == query.subject.organization_id
                         && item.deleted_at.is_none()
+                        && query.q.as_ref().is_none_or(|q| {
+                            item.key_prefix.contains(q) || item.user.contains(q)
+                        })
                 })
                 .cloned()
-                .collect())
+                .collect::<Vec<_>>();
+            let total = i64::try_from(items.len()).unwrap_or(i64::MAX);
+            let items = items
+                .into_iter()
+                .skip(usize::try_from(query.offset).unwrap_or(usize::MAX))
+                .take(usize::try_from(query.page_size).unwrap_or_default())
+                .collect();
+            Ok(AdminApiKeyRateLimitListPage {
+                items,
+                total,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
         })
     }
 

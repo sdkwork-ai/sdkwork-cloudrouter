@@ -14,7 +14,7 @@ use serde_json::Value;
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
     json_created_response, json_success_list_response, no_content_response, offset_page_info,
-    parse_offset_list_query, problem_from_wire_code, success_envelope,
+    parse_offset_list_query, problem_from_wire_code, success_envelope, validation_problem,
 };
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
@@ -856,7 +856,7 @@ fn command_build_error_response(error: SiteCommandBuildError) -> Response {
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    problem_from_wire_code("4000", message.into()).into_response()
+    validation_problem(message).into_response()
 }
 
 fn not_found_response(message: impl Into<String>) -> Response {

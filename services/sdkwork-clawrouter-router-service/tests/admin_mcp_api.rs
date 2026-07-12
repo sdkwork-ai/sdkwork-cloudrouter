@@ -7,11 +7,11 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::ports::{
     AdminMcpBindingItem, AdminMcpCommandFuture, AdminMcpDiscoveryResult, AdminMcpHealthCheckItem,
-    AdminMcpServerItem, AdminMcpServerRevisionItem, AdminMcpStore, AdminMcpToolItem,
-    CreateAdminMcpBindingCommand, CreateAdminMcpServerCommand, CreateAdminMcpServerRevisionCommand,
-    DiscoverAdminMcpToolsCommand, GetAdminMcpServerQuery, ListAdminMcpBindingsQuery,
-    ListAdminMcpServerRevisionsQuery, ListAdminMcpServersQuery, ListAdminMcpToolsQuery,
-    PublishAdminMcpServerRevisionCommand, TestAdminMcpServerHealthCommand,
+    AdminMcpListPage, AdminMcpServerItem, AdminMcpServerRevisionItem, AdminMcpStore,
+    AdminMcpToolItem, CreateAdminMcpBindingCommand, CreateAdminMcpServerCommand,
+    CreateAdminMcpServerRevisionCommand, DiscoverAdminMcpToolsCommand, GetAdminMcpServerQuery,
+    ListAdminMcpBindingsQuery, ListAdminMcpServerRevisionsQuery, ListAdminMcpServersQuery,
+    ListAdminMcpToolsQuery, PublishAdminMcpServerRevisionCommand, TestAdminMcpServerHealthCommand,
     UpdateAdminMcpBindingCommand, UpdateAdminMcpServerCommand, UpdateAdminMcpToolCommand,
 };
 use serde_json::{json, Value};
@@ -213,10 +213,26 @@ impl AdminMcpStore for TestAdminMcpStore {
     fn list_servers<'a>(
         &'a self,
         query: ListAdminMcpServersQuery,
-    ) -> AdminMcpCommandFuture<'a, Vec<AdminMcpServerItem>> {
+    ) -> AdminMcpCommandFuture<'a, AdminMcpListPage<AdminMcpServerItem>> {
         Box::pin(async move {
-            assert_eq!(10, query.subject.tenant_id);
-            Ok(self.servers.lock().unwrap().clone())
+            assert_eq!(100_001, query.subject.tenant_id);
+            let items = self
+                .servers
+                .lock()
+                .unwrap()
+                .iter()
+                .filter(|item| {
+                    item.tenant_id == query.subject.tenant_id
+                        && item.organization_id == query.subject.organization_id
+                })
+                .cloned()
+                .collect();
+            Ok(test_mcp_page(
+                items,
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
         })
     }
 
@@ -296,16 +312,26 @@ impl AdminMcpStore for TestAdminMcpStore {
     fn list_revisions<'a>(
         &'a self,
         query: ListAdminMcpServerRevisionsQuery,
-    ) -> AdminMcpCommandFuture<'a, Vec<AdminMcpServerRevisionItem>> {
+    ) -> AdminMcpCommandFuture<'a, AdminMcpListPage<AdminMcpServerRevisionItem>> {
         Box::pin(async move {
-            Ok(self
+            let items = self
                 .revisions
                 .lock()
                 .unwrap()
                 .iter()
-                .filter(|item| item.server_id == query.server_id)
+                .filter(|item| {
+                    item.tenant_id == query.subject.tenant_id
+                        && item.organization_id == query.subject.organization_id
+                        && item.server_id == query.server_id
+                })
                 .cloned()
-                .collect())
+                .collect();
+            Ok(test_mcp_page(
+                items,
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
         })
     }
 
@@ -397,16 +423,26 @@ impl AdminMcpStore for TestAdminMcpStore {
     fn list_tools<'a>(
         &'a self,
         query: ListAdminMcpToolsQuery,
-    ) -> AdminMcpCommandFuture<'a, Vec<AdminMcpToolItem>> {
+    ) -> AdminMcpCommandFuture<'a, AdminMcpListPage<AdminMcpToolItem>> {
         Box::pin(async move {
-            Ok(self
+            let items = self
                 .tools
                 .lock()
                 .unwrap()
                 .iter()
-                .filter(|item| item.server_id == query.server_id)
+                .filter(|item| {
+                    item.tenant_id == query.subject.tenant_id
+                        && item.organization_id == query.subject.organization_id
+                        && item.server_id == query.server_id
+                })
                 .cloned()
-                .collect())
+                .collect();
+            Ok(test_mcp_page(
+                items,
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
         })
     }
 
@@ -438,16 +474,26 @@ impl AdminMcpStore for TestAdminMcpStore {
     fn list_bindings<'a>(
         &'a self,
         query: ListAdminMcpBindingsQuery,
-    ) -> AdminMcpCommandFuture<'a, Vec<AdminMcpBindingItem>> {
+    ) -> AdminMcpCommandFuture<'a, AdminMcpListPage<AdminMcpBindingItem>> {
         Box::pin(async move {
-            Ok(self
+            let items = self
                 .bindings
                 .lock()
                 .unwrap()
                 .iter()
-                .filter(|item| item.server_id == query.server_id)
+                .filter(|item| {
+                    item.tenant_id == query.subject.tenant_id
+                        && item.organization_id == query.subject.organization_id
+                        && item.server_id == query.server_id
+                })
                 .cloned()
-                .collect())
+                .collect();
+            Ok(test_mcp_page(
+                items,
+                query.page_no,
+                query.page_size,
+                query.offset,
+            ))
         })
     }
 
@@ -526,6 +572,26 @@ impl AdminMcpStore for TestAdminMcpStore {
             item.updated_at = "2026-05-26 11:06:00".to_owned();
             Ok(Some(item.clone()))
         })
+    }
+}
+
+fn test_mcp_page<T>(
+    items: Vec<T>,
+    page_no: i64,
+    page_size: i64,
+    offset: i64,
+) -> AdminMcpListPage<T> {
+    let total = i64::try_from(items.len()).unwrap_or(i64::MAX);
+    let items = items
+        .into_iter()
+        .skip(offset.max(0) as usize)
+        .take(page_size.max(0) as usize)
+        .collect();
+    AdminMcpListPage {
+        items,
+        total,
+        page_no,
+        page_size,
     }
 }
 

@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::ports::{
-    AdminRecordLogItem, AdminRecordLogsPage, AdminRecordReadFuture, AdminRecordStore,
+    AdminRecordListPage, AdminRecordLogItem, AdminRecordReadFuture, AdminRecordStore,
     ListAdminRecordLogsQuery,
 };
 use serde_json::Value;
@@ -27,58 +27,57 @@ async fn admin_record_route_lists_logs_and_normalizes_filters() {
     .await;
 
     assert_eq!(0, payload["code"].as_i64().unwrap());
-    assert_eq!(7, payload["data"]["total"]);
-    assert_eq!(2, payload["data"]["page"]);
-    assert_eq!(50, payload["data"]["pageSize"]);
-    assert!(payload["data"]["pageNo"].is_null());
-    assert_eq!("trace-100", payload["data"]["logs"][0]["id"]);
-    assert_eq!("owner@example.com", payload["data"]["logs"][0]["user"]);
+    assert_eq!("7", payload["data"]["pageInfo"]["totalItems"]);
+    assert_eq!(2, payload["data"]["pageInfo"]["page"]);
+    assert_eq!(50, payload["data"]["pageInfo"]["pageSize"]);
+    assert_eq!("trace-100", payload["data"]["items"][0]["id"]);
+    assert_eq!("owner@example.com", payload["data"]["items"][0]["user"]);
     assert_eq!(
         "req-admin-record-1",
-        payload["data"]["logs"][0]["requestId"]
+        payload["data"]["items"][0]["requestId"]
     );
-    assert_eq!("2026-04-29 09:30:00", payload["data"]["logs"][0]["time"]);
-    assert_eq!("Production", payload["data"]["logs"][0]["tokenName"]);
-    assert_eq!("standard-group", payload["data"]["logs"][0]["group"]);
-    assert_eq!("text", payload["data"]["logs"][0]["type"]);
-    assert_eq!("gpt-4o-mini", payload["data"]["logs"][0]["model"]);
+    assert_eq!("2026-04-29 09:30:00", payload["data"]["items"][0]["time"]);
+    assert_eq!("Production", payload["data"]["items"][0]["tokenName"]);
+    assert_eq!("standard-group", payload["data"]["items"][0]["group"]);
+    assert_eq!("text", payload["data"]["items"][0]["type"]);
+    assert_eq!("gpt-4o-mini", payload["data"]["items"][0]["model"]);
     assert_eq!(
         "gpt-4o-mini-2026-05-13",
-        payload["data"]["logs"][0]["providerNativeModel"]
+        payload["data"]["items"][0]["providerNativeModel"]
     );
     assert_eq!(
         "openai/gpt-4o-mini",
-        payload["data"]["logs"][0]["requestedModelCatalogKey"]
+        payload["data"]["items"][0]["requestedModelCatalogKey"]
     );
-    assert_eq!("success", payload["data"]["logs"][0]["status"]);
-    assert_eq!(200, payload["data"]["logs"][0]["httpStatus"]);
-    assert_eq!("POST", payload["data"]["logs"][0]["httpMethod"]);
-    assert_eq!("", payload["data"]["logs"][0]["errorCode"]);
-    assert_eq!("", payload["data"]["logs"][0]["errorType"]);
-    assert_eq!("", payload["data"]["logs"][0]["errorMessage"]);
-    assert_eq!("842ms", payload["data"]["logs"][0]["totalTime"]);
-    assert_eq!("120ms", payload["data"]["logs"][0]["ttft"]);
-    assert_eq!(true, payload["data"]["logs"][0]["isStream"]);
-    assert_eq!(1200, payload["data"]["logs"][0]["inputTokens"]);
-    assert_eq!(128, payload["data"]["logs"][0]["cacheReadTokens"]);
-    assert_eq!(300, payload["data"]["logs"][0]["outputTokens"]);
-    assert_eq!("0.012300", payload["data"]["logs"][0]["cost"]);
-    assert_eq!("1.200000", payload["data"]["logs"][0]["multiplier"]);
-    assert_eq!("0.150000", payload["data"]["logs"][0]["baseInputPrice"]);
-    assert_eq!("0.600000", payload["data"]["logs"][0]["baseOutputPrice"]);
-    assert_eq!("0.030000", payload["data"]["logs"][0]["cacheReadPrice"]);
-    assert_eq!("/v1/chat/completions", payload["data"]["logs"][0]["path"]);
-    assert_eq!("medium", payload["data"]["logs"][0]["reasoningEffort"]);
-    assert_eq!("203.0.113.***", payload["data"]["logs"][0]["ip"]);
+    assert_eq!("success", payload["data"]["items"][0]["status"]);
+    assert_eq!(200, payload["data"]["items"][0]["httpStatus"]);
+    assert_eq!("POST", payload["data"]["items"][0]["httpMethod"]);
+    assert_eq!("", payload["data"]["items"][0]["errorCode"]);
+    assert_eq!("", payload["data"]["items"][0]["errorType"]);
+    assert_eq!("", payload["data"]["items"][0]["errorMessage"]);
+    assert_eq!("842ms", payload["data"]["items"][0]["totalTime"]);
+    assert_eq!("120ms", payload["data"]["items"][0]["ttft"]);
+    assert_eq!(true, payload["data"]["items"][0]["isStream"]);
+    assert_eq!(1200, payload["data"]["items"][0]["inputTokens"]);
+    assert_eq!(128, payload["data"]["items"][0]["cacheReadTokens"]);
+    assert_eq!(300, payload["data"]["items"][0]["outputTokens"]);
+    assert_eq!("0.012300", payload["data"]["items"][0]["cost"]);
+    assert_eq!("1.200000", payload["data"]["items"][0]["multiplier"]);
+    assert_eq!("0.150000", payload["data"]["items"][0]["baseInputPrice"]);
+    assert_eq!("0.600000", payload["data"]["items"][0]["baseOutputPrice"]);
+    assert_eq!("0.030000", payload["data"]["items"][0]["cacheReadPrice"]);
+    assert_eq!("/v1/chat/completions", payload["data"]["items"][0]["path"]);
+    assert_eq!("medium", payload["data"]["items"][0]["reasoningEffort"]);
+    assert_eq!("203.0.113.***", payload["data"]["items"][0]["ip"]);
     assert_eq!(
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126.0.0.0",
-        payload["data"]["logs"][0]["userAgent"]
+        payload["data"]["items"][0]["userAgent"]
     );
 
     let captured = store.captured.lock().unwrap();
     let query = captured.as_ref().expect("store should be called");
-    assert_eq!(10, query.subject.tenant_id);
-    assert_eq!(20, query.subject.organization_id);
+    assert_eq!(100001, query.subject.tenant_id);
+    assert_eq!(0, query.subject.organization_id);
     assert_eq!(30, query.subject.operator_id);
     assert_eq!(2, query.page_no);
     assert_eq!(50, query.page_size);
@@ -165,11 +164,11 @@ impl AdminRecordStore for TestAdminRecordStore {
     fn list_logs<'a>(
         &'a self,
         query: ListAdminRecordLogsQuery,
-    ) -> AdminRecordReadFuture<'a, AdminRecordLogsPage> {
+    ) -> AdminRecordReadFuture<'a, AdminRecordListPage> {
         Box::pin(async move {
             *self.captured.lock().unwrap() = Some(query.clone());
-            Ok(AdminRecordLogsPage {
-                logs: vec![AdminRecordLogItem {
+            Ok(AdminRecordListPage {
+                items: vec![AdminRecordLogItem {
                     id: "trace-100".to_owned(),
                     user: "owner@example.com".to_owned(),
                     request_id: "req-admin-record-1".to_owned(),

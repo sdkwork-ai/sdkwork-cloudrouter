@@ -572,12 +572,23 @@ async fn load_user_model_distributions(
             HAVING sdkwork_decimal_order_key(sdkwork_decimal_sum(value))
                 > sdkwork_decimal_order_key('0')
         )
-        SELECT user_id, name, CAST(value AS TEXT) AS value
-        FROM top_rows
-        UNION ALL
-        SELECT user_id, name, CAST(value AS TEXT) AS value
-        FROM others
-        ORDER BY user_id ASC, sdkwork_decimal_order_key(value) DESC, name ASC
+        SELECT user_id, name, value
+        FROM (
+            SELECT
+                user_id,
+                name,
+                CAST(value AS TEXT) AS value,
+                sdkwork_decimal_order_key(value) AS value_sort
+            FROM top_rows
+            UNION ALL
+            SELECT
+                user_id,
+                name,
+                CAST(value AS TEXT) AS value,
+                sdkwork_decimal_order_key(value) AS value_sort
+            FROM others
+        )
+        ORDER BY user_id ASC, value_sort DESC, name ASC
         "#,
         USER_ID_EXPR = USER_ID_EXPR,
         MODEL_KEY_EXPR = MODEL_KEY_EXPR,
@@ -647,13 +658,16 @@ async fn load_model_distribution(
             FROM ordered
             WHERE rn > {PI_LIMIT}
         )
-        SELECT name, CAST(value AS TEXT) AS value
-        FROM top_rows
-        UNION ALL
-        SELECT name, CAST(value AS TEXT) AS value
-        FROM others
-        WHERE value > 0
-        ORDER BY CAST(value AS REAL) DESC, name ASC
+        SELECT name, value
+        FROM (
+            SELECT name, CAST(value AS TEXT) AS value, value AS value_sort
+            FROM top_rows
+            UNION ALL
+            SELECT name, CAST(value AS TEXT) AS value, value AS value_sort
+            FROM others
+            WHERE value > 0
+        )
+        ORDER BY value_sort DESC, name ASC
         "#,
         MODEL_KEY_EXPR = MODEL_KEY_EXPR,
         REQUEST_COUNT_EXPR = REQUEST_COUNT_EXPR,
@@ -709,13 +723,16 @@ async fn load_modality_distribution(
             FROM ordered
             WHERE rn > {PI_LIMIT}
         )
-        SELECT name_key, CAST(value AS TEXT) AS value
-        FROM top_rows
-        UNION ALL
-        SELECT name_key, CAST(value AS TEXT) AS value
-        FROM others
-        WHERE value > 0
-        ORDER BY CAST(value AS REAL) DESC, name_key ASC
+        SELECT name_key, value
+        FROM (
+            SELECT name_key, CAST(value AS TEXT) AS value, value AS value_sort
+            FROM top_rows
+            UNION ALL
+            SELECT name_key, CAST(value AS TEXT) AS value, value AS value_sort
+            FROM others
+            WHERE value > 0
+        )
+        ORDER BY value_sort DESC, name_key ASC
         "#,
         REQUEST_COUNT_EXPR = REQUEST_COUNT_EXPR,
         usage_scope = scope_filter("tenant_id", "organization_id", "?1", "?2"),

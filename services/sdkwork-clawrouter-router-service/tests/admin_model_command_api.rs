@@ -15,6 +15,7 @@ use sdkwork_clawrouter_router_service::ports::{
     ResolveAdminModelMappingQuery, ResolveAdminModelMappingResult, SyncAdminModelCatalogCommand,
     UpdateAdminAiModelCommand, UpdateAdminModelMappingCommand,
 };
+use sdkwork_models_contract_service::AdminModelMappingListPage;
 use serde_json::Value;
 use tower::ServiceExt;
 
@@ -524,8 +525,13 @@ impl AdminModelStore for TestAdminModelStore {
     fn list_model_mappings<'a>(
         &'a self,
         _query: ListAdminModelMappingsQuery,
-    ) -> AdminModelCommandFuture<'a, Vec<AdminModelMappingRuleItem>> {
-        Box::pin(async move { Ok(Vec::new()) })
+    ) -> AdminModelCommandFuture<'a, AdminModelMappingListPage> {
+        Box::pin(async move {
+            Ok(AdminModelMappingListPage {
+                items: Vec::new(),
+                total_count: 0,
+            })
+        })
     }
 
     fn create_model<'a>(
@@ -633,6 +639,9 @@ impl AdminModelStore for TestAdminModelStore {
                 capability_count: 6,
                 price_count: 7,
                 ranking_count: 8,
+                voice_count: 0,
+                voice_binding_count: 0,
+                video_profile_count: 0,
                 accepted_count: 35,
                 snapshot_id: Some("snapshot-1".to_owned()),
                 sync_run_id: Some("sync-run-1".to_owned()),

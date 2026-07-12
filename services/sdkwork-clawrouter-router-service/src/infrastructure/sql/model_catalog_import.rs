@@ -305,6 +305,9 @@ pub(crate) struct CatalogScopeCounts {
     pub capability_count: usize,
     pub price_count: usize,
     pub ranking_count: usize,
+    pub voice_count: usize,
+    pub voice_binding_count: usize,
+    pub video_profile_count: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -330,7 +333,10 @@ impl CatalogScopeCounts {
             + self.model_count
             + self.capability_count
             + self.price_count
-            + self.ranking_count) as i64
+            + self.ranking_count
+            + self.voice_count
+            + self.voice_binding_count
+            + self.video_profile_count) as i64
     }
 }
 
@@ -380,6 +386,23 @@ pub(crate) fn catalog_scope_counts(catalog: &ModelCatalog) -> CatalogScopeCounts
         })
         .filter(|(model_catalog_key, _)| model_catalog_keys.contains(model_catalog_key))
         .count();
+    let voice_count = catalog
+        .vendors
+        .iter()
+        .map(|vendor| vendor.voices.len())
+        .sum();
+    let voice_binding_count = catalog
+        .vendors
+        .iter()
+        .flat_map(|vendor| vendor.model_voice_bindings.iter())
+        .map(|binding_file| binding_file.bindings.iter().count())
+        .sum();
+    let video_profile_count = catalog
+        .vendors
+        .iter()
+        .flat_map(|vendor| vendor.model_video_profiles.iter())
+        .map(|profile_file| profile_file.profiles.len())
+        .sum();
     CatalogScopeCounts {
         meter_count: catalog.meters.len(),
         vendor_count: catalog_scope_vendor_codes(catalog).len(),
@@ -400,6 +423,9 @@ pub(crate) fn catalog_scope_counts(catalog: &ModelCatalog) -> CatalogScopeCounts
         capability_count,
         price_count,
         ranking_count,
+        voice_count,
+        voice_binding_count,
+        video_profile_count,
     }
 }
 

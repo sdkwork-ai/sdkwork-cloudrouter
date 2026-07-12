@@ -1,12 +1,12 @@
 -- Generated from docs/schema-registry/sdkwork-clawrouter.tables.yaml.
 -- Registry version: 0.3.0.
--- Registry SHA-256: ee1fee765634f3721de4c9a16102900dab8ecf540ac189a3295e1fab890fd82a.
+-- Registry SHA-256: e488b562ba6285144585ad352ade6bca9b3c5699af75a79e591c61f24b391cfb.
 -- Dialect: sqlite.
 -- Materialize: python -B -m tools.schema_compiler --dialect all --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
 
 CREATE TABLE IF NOT EXISTS ai_channel (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -79,7 +79,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_channel_site_service_status ON ai_channel (ten
 CREATE INDEX IF NOT EXISTS idx_ai_channel_site_code ON ai_channel (tenant_id, organization_id, site_code, site_service_code, status, id);
 
 CREATE TABLE IF NOT EXISTS ai_channel_credential (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -115,7 +115,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_channel_credential_channel ON ai_channel_crede
 CREATE INDEX IF NOT EXISTS idx_ai_channel_credential_ref ON ai_channel_credential (tenant_id, organization_id, credential_ref);
 
 CREATE TABLE IF NOT EXISTS ai_channel_group (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -157,7 +157,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_channel_group_tenant_status_updated ON ai_chan
 CREATE INDEX IF NOT EXISTS idx_ai_channel_group_pricing ON ai_channel_group (tenant_id, organization_id, pricing_plan_id, status, updated_at, id);
 
 CREATE TABLE IF NOT EXISTS ai_channel_group_member (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -190,7 +190,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_channel_group_member_group ON ai_channel_group
 CREATE INDEX IF NOT EXISTS idx_ai_channel_group_member_channel ON ai_channel_group_member (tenant_id, organization_id, channel_id, status, id);
 
 CREATE TABLE IF NOT EXISTS ai_channel_group_metric_snapshot (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -230,7 +230,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_channel_group_metric_tenant_status ON ai_chann
 CREATE INDEX IF NOT EXISTS idx_ai_channel_group_metric_status ON ai_channel_group_metric_snapshot (tenant_id, organization_id, provider_code, health_status, snapshot_at, id);
 
 CREATE TABLE IF NOT EXISTS ai_channel_group_resource (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -260,7 +260,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_channel_group_resource_status ON ai_channel_gr
 CREATE INDEX IF NOT EXISTS idx_ai_channel_group_resource_lookup ON ai_channel_group_resource (tenant_id, organization_id, channel_group_id, status, grant_type, priority, id);
 
 CREATE TABLE IF NOT EXISTS ai_channel_resource (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -292,7 +292,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_resource ON ai_channel_resource 
 CREATE INDEX IF NOT EXISTS idx_ai_channel_resource_lookup ON ai_channel_resource (tenant_id, organization_id, status, channel_id, grant_type, priority, id);
 
 CREATE TABLE IF NOT EXISTS ai_config_change_event (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -320,9 +320,10 @@ CREATE TABLE IF NOT EXISTS ai_config_change_event (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_config_change_event_uuid ON ai_config_change_event (uuid);
 CREATE INDEX IF NOT EXISTS idx_ai_config_change_event_pending ON ai_config_change_event (tenant_id, organization_id, event_status, created_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_config_change_event_scope_version ON ai_config_change_event (tenant_id, organization_id, config_scope, config_version, id);
+CREATE INDEX IF NOT EXISTS idx_ai_config_change_event_retention ON ai_config_change_event (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ai_config_version (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -348,7 +349,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_config_version_scope_updated ON ai_config_vers
 CREATE INDEX IF NOT EXISTS idx_ai_config_version_scope_status ON ai_config_version (config_scope, status, deleted_at, id);
 
 CREATE TABLE IF NOT EXISTS ai_model_mapping_rule (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -376,7 +377,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_model_mapping_rule_target_vendor ON ai_model_m
 CREATE INDEX IF NOT EXISTS idx_ai_model_mapping_rule_enabled ON ai_model_mapping_rule (tenant_id, organization_id, status, enabled, id);
 
 CREATE TABLE IF NOT EXISTS ai_model_mapping_rule_binding (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -408,7 +409,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_model_mapping_rule_binding_vendor_lookup ON ai
 CREATE INDEX IF NOT EXISTS idx_ai_model_mapping_rule_binding_global_lookup ON ai_model_mapping_rule_binding (tenant_id, organization_id, binding_type, status, enabled, id);
 
 CREATE TABLE IF NOT EXISTS ai_model_mapping_rule_item (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -439,7 +440,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_model_mapping_rule_item_source_lookup ON ai_mo
 CREATE INDEX IF NOT EXISTS idx_ai_model_mapping_rule_item_target_lookup ON ai_model_mapping_rule_item (tenant_id, organization_id, target_catalog_key, target_model, status, id);
 
 CREATE TABLE IF NOT EXISTS ai_pricing_import_snapshot (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -475,9 +476,10 @@ CREATE TABLE IF NOT EXISTS ai_pricing_import_snapshot (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_pricing_import_snapshot_uuid ON ai_pricing_import_snapshot (uuid);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_pricing_import_snapshot_hash ON ai_pricing_import_snapshot (tenant_id, organization_id, import_source, source_hash);
 CREATE INDEX IF NOT EXISTS idx_ai_pricing_import_snapshot_tenant_latest ON ai_pricing_import_snapshot (tenant_id, organization_id, status, import_source, observed_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_pricing_import_snapshot_retention ON ai_pricing_import_snapshot (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ai_pricing_plan (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -522,7 +524,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_pricing_plan_scope_status ON ai_pricing_plan (
 CREATE INDEX IF NOT EXISTS idx_ai_pricing_plan_effective ON ai_pricing_plan (tenant_id, organization_id, status, effective_from, effective_to, id);
 
 CREATE TABLE IF NOT EXISTS ai_pricing_plan_binding (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -558,7 +560,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_pricing_plan_binding_subject_effective ON ai_p
 CREATE INDEX IF NOT EXISTS idx_ai_pricing_plan_binding_plan ON ai_pricing_plan_binding (tenant_id, organization_id, pricing_plan_id, status, priority, id);
 
 CREATE TABLE IF NOT EXISTS ai_pricing_rule (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -637,7 +639,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_pricing_rule_meter_lookup ON ai_pricing_rule (
 CREATE INDEX IF NOT EXISTS idx_ai_pricing_rule_reference ON ai_pricing_rule (tenant_id, organization_id, reference_price_side, reference_pricing_id, status, id);
 
 CREATE TABLE IF NOT EXISTS ai_pricing_tier (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -703,7 +705,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_pricing_tier_rule_range ON ai_pricing_tier (te
 CREATE INDEX IF NOT EXISTS idx_ai_pricing_tier_model_pricing ON ai_pricing_tier (tenant_id, organization_id, model_pricing_id, price_item_type, sort_order, id);
 
 CREATE TABLE IF NOT EXISTS ai_provider (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -739,7 +741,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_provider_tenant_code ON ai_provider (ten
 CREATE INDEX IF NOT EXISTS idx_ai_provider_status_sort ON ai_provider (tenant_id, organization_id, status, sort_order, id);
 
 CREATE TABLE IF NOT EXISTS ai_provider_object_route (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -779,7 +781,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_provider_object_route_channel ON ai_provider_o
 CREATE INDEX IF NOT EXISTS idx_ai_provider_object_route_expiry ON ai_provider_object_route (tenant_id, organization_id, expires_at, status, id);
 
 CREATE TABLE IF NOT EXISTS ai_quota_policy (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -824,7 +826,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_quota_policy_subject_ref ON ai_quota_policy (t
 CREATE INDEX IF NOT EXISTS idx_ai_quota_policy_model_channel_group ON ai_quota_policy (tenant_id, organization_id, model, channel_group_id, status);
 
 CREATE TABLE IF NOT EXISTS ai_request_trace (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -854,13 +856,17 @@ CREATE TABLE IF NOT EXISTS ai_request_trace (
     requested_model_catalog_key VARCHAR(256),
     provider_model VARCHAR(256),
     provider_native_model VARCHAR(256),
+    gateway_instance_id INTEGER,
+    gateway_instance_code_snapshot VARCHAR(128),
+    gateway_region_code_snapshot VARCHAR(64),
+    gateway_node_name_snapshot VARCHAR(128),
     region_code VARCHAR(64),
     endpoint VARCHAR(256),
     request_path VARCHAR(256),
     http_method VARCHAR(16),
     http_status INTEGER,
     provider_error_code VARCHAR(128),
-    error_type INTEGER,
+    error_type VARCHAR(128),
     started_at TEXT NOT NULL,
     ended_at TEXT,
     latency_ms INTEGER,
@@ -892,9 +898,10 @@ CREATE INDEX IF NOT EXISTS idx_ai_request_trace_api_key_started ON ai_request_tr
 CREATE INDEX IF NOT EXISTS idx_ai_request_trace_model_started ON ai_request_trace (tenant_id, organization_id, requested_model, started_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_request_trace_tenant_status_started ON ai_request_trace (tenant_id, organization_id, status, started_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_request_trace_user_status_started ON ai_request_trace (tenant_id, organization_id, user_id, status, started_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_request_trace_retention ON ai_request_trace (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ai_routing_decision_log (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -928,9 +935,10 @@ CREATE TABLE IF NOT EXISTS ai_routing_decision_log (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_decision_log_request ON ai_routing_decision_log (tenant_id, organization_id, request_id);
 CREATE INDEX IF NOT EXISTS idx_ai_routing_decision_tenant_model_created ON ai_routing_decision_log (tenant_id, organization_id, requested_model, created_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_routing_decision_log_retention ON ai_routing_decision_log (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ai_routing_policy (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -963,7 +971,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_policy_tenant_code ON ai_routing
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_policy_scope_id ON ai_routing_policy (tenant_id, organization_id, id);
 
 CREATE TABLE IF NOT EXISTS ai_routing_profile (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -994,7 +1002,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_profile_policy_version ON ai_rou
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_profile_scope_id ON ai_routing_profile (tenant_id, organization_id, id);
 
 CREATE TABLE IF NOT EXISTS ai_routing_rule (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -1027,7 +1035,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_rule_profile_code ON ai_routing_
 CREATE INDEX IF NOT EXISTS idx_ai_routing_rule_tenant_profile_priority ON ai_routing_rule (tenant_id, organization_id, profile_id, priority, status);
 
 CREATE TABLE IF NOT EXISTS ai_site (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -1068,7 +1076,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_site_status_sort ON ai_site (tenant_id, organi
 CREATE INDEX IF NOT EXISTS idx_ai_site_health_status ON ai_site (tenant_id, organization_id, status, health_status, id);
 
 CREATE TABLE IF NOT EXISTS ai_site_service (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -1112,7 +1120,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_site_service_type_status ON ai_site_service (t
 CREATE INDEX IF NOT EXISTS idx_ai_site_service_health_status ON ai_site_service (tenant_id, organization_id, status, health_status, id);
 
 CREATE TABLE IF NOT EXISTS ai_usage (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -1210,9 +1218,10 @@ CREATE INDEX IF NOT EXISTS idx_ai_usage_model_occurred ON ai_usage (tenant_id, o
 CREATE INDEX IF NOT EXISTS idx_ai_usage_pricing_plan_occurred ON ai_usage (tenant_id, organization_id, pricing_plan_id, occurred_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_usage_meter_occurred ON ai_usage (tenant_id, organization_id, billing_meter_code, occurred_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_usage_settlement_status ON ai_usage (tenant_id, organization_id, settlement_status, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_retention ON ai_usage (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ai_usage_service_provider_edge (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -1264,9 +1273,10 @@ CREATE TABLE IF NOT EXISTS ai_usage_service_provider_edge (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_usage_service_provider_edge_usage_depth ON ai_usage_service_provider_edge (tenant_id, organization_id, usage_fact_id, edge_depth, amount_role);
 CREATE INDEX IF NOT EXISTS idx_ai_usage_service_provider_edge_seller_time ON ai_usage_service_provider_edge (tenant_id, organization_id, seller_provider_id, occurred_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_usage_service_provider_edge_buyer_time ON ai_usage_service_provider_edge (tenant_id, organization_id, buyer_provider_id, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_service_provider_edge_retention ON ai_usage_service_provider_edge (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS iam_gateway_access_policy (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -1304,7 +1314,7 @@ CREATE INDEX IF NOT EXISTS idx_iam_gateway_access_policy_tenant_subject_status O
 CREATE INDEX IF NOT EXISTS idx_iam_gateway_access_policy_subject_ref ON iam_gateway_access_policy (tenant_id, organization_id, subject_type, subject_ref_hash, status);
 
 CREATE TABLE IF NOT EXISTS iam_gateway_api_key (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -1352,7 +1362,7 @@ CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_tenant_user_status ON iam_gat
 CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_ai_channel_group_status ON iam_gateway_api_key (tenant_id, organization_id, channel_group_id, status, updated_at, id);
 
 CREATE TABLE IF NOT EXISTS iam_gateway_api_key_channel_group (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -1389,7 +1399,7 @@ CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_channel_group_active ON iam_g
 CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_channel_group_group ON iam_gateway_api_key_channel_group (tenant_id, organization_id, channel_group_id, status, priority, id);
 
 CREATE TABLE IF NOT EXISTS iam_gateway_risk_rule (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -1434,7 +1444,7 @@ CREATE INDEX IF NOT EXISTS idx_iam_gateway_risk_rule_scope_priority ON iam_gatew
 CREATE INDEX IF NOT EXISTS idx_iam_gateway_risk_rule_target_hash ON iam_gateway_risk_rule (tenant_id, organization_id, target_type, target_value_hash, status);
 
 CREATE TABLE IF NOT EXISTS ops_alert_event (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -1461,10 +1471,11 @@ CREATE TABLE IF NOT EXISTS ops_alert_event (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_alert_event_no ON ops_alert_event (alert_no);
-CREATE INDEX IF NOT EXISTS idx_ops_alert_event_status_severity ON ops_alert_event (alert_status, severity, last_seen_at, id);
+CREATE INDEX IF NOT EXISTS idx_ops_alert_event_tenant_status_latest ON ops_alert_event (tenant_id, organization_id, status, last_seen_at, id);
+CREATE INDEX IF NOT EXISTS idx_ops_alert_event_retention ON ops_alert_event (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ops_audit_log (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid VARCHAR(64) NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -1494,9 +1505,10 @@ CREATE TABLE IF NOT EXISTS ops_audit_log (
 CREATE INDEX IF NOT EXISTS idx_ops_audit_log_tenant_operator_created ON ops_audit_log (tenant_id, organization_id, operator_type, operator_id, created_at, id);
 CREATE INDEX IF NOT EXISTS idx_ops_audit_log_tenant_target_created ON ops_audit_log (tenant_id, organization_id, target_type, target_id, created_at, id);
 CREATE INDEX IF NOT EXISTS idx_ops_audit_log_request ON ops_audit_log (tenant_id, organization_id, request_id);
+CREATE INDEX IF NOT EXISTS idx_ops_audit_log_retention ON ops_audit_log (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ops_config_snapshot (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -1524,9 +1536,10 @@ CREATE TABLE IF NOT EXISTS ops_config_snapshot (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_config_snapshot_no ON ops_config_snapshot (snapshot_no);
 CREATE INDEX IF NOT EXISTS idx_ops_config_snapshot_tenant_scope ON ops_config_snapshot (tenant_id, organization_id, config_scope, config_type, created_at, id);
+CREATE INDEX IF NOT EXISTS idx_ops_config_snapshot_retention ON ops_config_snapshot (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ops_gateway_heartbeat (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -1557,10 +1570,11 @@ CREATE TABLE IF NOT EXISTS ops_gateway_heartbeat (
     CONSTRAINT ck_ops_gateway_heartbeat_disk_percent_decimal CHECK (disk_percent IS NULL OR (typeof(disk_percent) = 'text' AND length(disk_percent) BETWEEN 1 AND 40 AND disk_percent NOT GLOB '*[^0-9.-]*' AND disk_percent GLOB '*[0-9]*' AND (instr(disk_percent, '-') = 0 OR (substr(disk_percent, 1, 1) = '-' AND instr(substr(disk_percent, 2), '-') = 0)) AND length(disk_percent) - length(replace(disk_percent, '.', '')) <= 1 AND substr(ltrim(disk_percent, '-'), 1, 1) <> '.' AND substr(disk_percent, -1, 1) <> '.' AND length(replace(replace(disk_percent, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(disk_percent, '.') = 0 THEN 0 ELSE length(disk_percent) - instr(disk_percent, '.') END <= 12 AND (length(ltrim(disk_percent, '-')) = 1 OR substr(ltrim(disk_percent, '-'), 1, 1) <> '0' OR substr(ltrim(disk_percent, '-'), 2, 1) = '.')))
 );
 
-CREATE INDEX IF NOT EXISTS idx_ops_gateway_heartbeat_instance_time ON ops_gateway_heartbeat (instance_id, heartbeat_at, id);
+CREATE INDEX IF NOT EXISTS idx_ops_gateway_heartbeat_instance_status_time ON ops_gateway_heartbeat (instance_id, status, heartbeat_at, id);
+CREATE INDEX IF NOT EXISTS idx_ops_gateway_heartbeat_retention ON ops_gateway_heartbeat (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ops_gateway_instance (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -1594,10 +1608,10 @@ CREATE TABLE IF NOT EXISTS ops_gateway_instance (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_gateway_instance_code ON ops_gateway_instance (instance_code);
-CREATE INDEX IF NOT EXISTS idx_ops_gateway_instance_region_status ON ops_gateway_instance (region, cell, health_status, last_heartbeat_at);
+CREATE INDEX IF NOT EXISTS idx_ops_gateway_instance_tenant_status_heartbeat ON ops_gateway_instance (tenant_id, organization_id, status, deleted_at, last_heartbeat_at, updated_at, id);
 
 CREATE TABLE IF NOT EXISTS ops_job_execution (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -1628,9 +1642,10 @@ CREATE TABLE IF NOT EXISTS ops_job_execution (
 CREATE INDEX IF NOT EXISTS idx_ops_job_execution_name_started ON ops_job_execution (job_name, started_at, id);
 CREATE INDEX IF NOT EXISTS idx_ops_job_execution_status_started ON ops_job_execution (execution_status, started_at, id);
 CREATE INDEX IF NOT EXISTS idx_ops_job_execution_model_ranking_scope_started ON ops_job_execution (tenant_id, organization_id, status, job_type, job_name, started_at, id);
+CREATE INDEX IF NOT EXISTS idx_ops_job_execution_retention ON ops_job_execution (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ops_metric_snapshot (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -1660,7 +1675,7 @@ CREATE TABLE IF NOT EXISTS ops_metric_snapshot (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_metric_snapshot ON ops_metric_snapshot (tenant_id, organization_id, metric_scope, metric_name, metric_period, period_start, dimension_key, dimension_value);
 
 CREATE TABLE IF NOT EXISTS ops_notification_delivery (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid VARCHAR(64) NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -1693,7 +1708,7 @@ CREATE INDEX IF NOT EXISTS idx_ops_notification_delivery_user_read ON ops_notifi
 CREATE INDEX IF NOT EXISTS idx_ops_notification_delivery_popup_seen ON ops_notification_delivery (tenant_id, organization_id, user_id, app_id, popup_seen_at, id);
 
 CREATE TABLE IF NOT EXISTS ops_notification_message (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,
@@ -1726,7 +1741,7 @@ CREATE INDEX IF NOT EXISTS idx_ops_notification_message_scope ON ops_notificatio
 CREATE INDEX IF NOT EXISTS idx_ops_notification_message_popup ON ops_notification_message (tenant_id, organization_id, show_as_popup, published_at, id);
 
 CREATE TABLE IF NOT EXISTS ops_notification_recipient (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
     organization_id INTEGER NOT NULL DEFAULT 0,

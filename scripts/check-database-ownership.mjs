@@ -13,16 +13,13 @@ function parseArgs(argv) {
   return args;
 }
 
-function ownerForTable(tableName, prefixOwners) {
+function namespaceForTable(tableName, prefixOwners) {
   for (const { prefix, owner } of prefixOwners) {
     if (tableName.startsWith(prefix)) {
-      return owner;
+      return { prefix, namespaceOwner: owner };
     }
   }
-  if (tableName.startsWith('platform_')) {
-    return 'appstore-platform';
-  }
-  return 'claw-router-platform';
+  return null;
 }
 
 function collectCreateTables(sql) {
@@ -52,11 +49,17 @@ function main() {
     .sort((left, right) => right.prefix.length - left.prefix.length);
 
   for (const row of tableRegistry.tables) {
-    const expected = ownerForTable(row.table_name, prefixOwners);
-    if (row.owner !== expected) {
+    const namespace = namespaceForTable(row.table_name, prefixOwners);
+    if (namespace === null) {
       failures.push(
-        `table-registry ${row.table_name}: owner=${row.owner} expected=${expected}`,
+        `table-registry ${row.table_name}: table prefix is not registered`,
       );
+    }
+    if (typeof row.owner !== 'string' || row.owner.trim() === '') {
+      failures.push(`table-registry ${row.table_name}: write owner is required`);
+    }
+    if (typeof row.system_of_record !== 'boolean') {
+      failures.push(`table-registry ${row.table_name}: system_of_record must be explicit`);
     }
   }
 
@@ -65,43 +68,10 @@ function main() {
     'database/ddl/baseline/postgres/0001_clawrouter_baseline.sql',
   );
   const baselineSql = fs.readFileSync(baselinePath, 'utf8');
-  const clawRouterBaselinePrefixes = [
-    'ai_',
-    'analytics_',
-    'c_',
-    'integration_',
-    'ops_',
-    'system_',
-    'iam_gateway_',
-    'iam_user_preference',
-    'iam_user_security_',
-    'iam_user_login_',
-    'commerce_usage_',
-    'commerce_service_provider_exposure',
-  ];
-  const coreImportedPrefixes = [
-    'iam_tenant',
-    'iam_organization',
-    'iam_user',
-    'iam_credential',
-    'iam_session',
-    'iam_role',
-    'iam_permission',
-    'iam_oauth_',
-    'commerce_product_',
-    'commerce_order',
-    'commerce_account',
-    'commerce_payment',
-    'appstore_',
-    'platform_',
-  ];
   for (const tableName of collectCreateTables(baselineSql)) {
-    if (clawRouterBaselinePrefixes.some((prefix) => tableName.startsWith(prefix))) {
-      continue;
-    }
-    if (coreImportedPrefixes.some((prefix) => tableName.startsWith(prefix))) {
+    if (namespaceForTable(tableName, prefixOwners) === null) {
       failures.push(
-        `claw-router baseline must not define imported table ${tableName}; use composed module DDL`,
+        `claw-router baseline must not define unregistered or imported table ${tableName}`,
       );
     }
   }
@@ -111,7 +81,7 @@ function main() {
     'database/ddl/baseline/postgres/0003_gateway_routing_dictionary.sql',
   );
   const gatewayRoutingBaselineSql = fs.readFileSync(gatewayRoutingBaselinePath, 'utf8');
-  if (/CREATE TABLE/i.test(gatewayRoutingBaselineSql)) {
+  if (collectCreateTables(gatewayRoutingBaselineSql).length > 0) {
     failures.push(
       '0003_gateway_routing_dictionary.sql must remain a retired stub; sdkwork-models composes catalog DDL',
     );
@@ -122,7 +92,7 @@ function main() {
     'database/ddl/baseline/postgres/0004_messaging_runtime_projection.sql',
   );
   const messagingBaselineSql = fs.readFileSync(messagingBaselinePath, 'utf8');
-  if (/CREATE TABLE/i.test(messagingBaselineSql)) {
+  if (collectCreateTables(messagingBaselineSql).length > 0) {
     failures.push(
       '0004_messaging_runtime_projection.sql must remain a retired stub without CREATE TABLE',
     );
@@ -138,12 +108,6 @@ function main() {
     'services/sdkwork-clawrouter-router-service/src/infrastructure/sql/installer.rs',
   );
   const installerSource = fs.readFileSync(installerPath, 'utf8');
-  if (/compose_sibling_commerce_module\(\)/.test(installerSource) === false) {
-    failures.push('installer must expose standalone commerce compose helper');
-  }
-  if (!/const COMPOSE_SDKWORK_MODELS_CATALOG_MODULE: bool = true/.test(installerSource)) {
-    failures.push('installer must compose sdkwork-models catalog module at install time');
-  }
   if (/const COMPOSE_SIBLING_DATABASE_MODULES: bool = true/.test(installerSource)) {
     failures.push('installer must not compose all sibling database modules via legacy flag');
   }

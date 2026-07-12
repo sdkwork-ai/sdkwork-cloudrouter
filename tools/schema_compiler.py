@@ -166,6 +166,7 @@ class SchemaCompiler:
 
             policy = self.resolve_table_policy(table, profile_policies)
             columns = self._collect_columns(table, common_column_groups, dialect)
+            self._validate_lifecycle_contract(table, set(columns))
             statements.append(self._compile_table(table, dialect, policy, columns))
             generated_table_count += 1
             index_sql = self._compile_indexes(table, dialect, policy, set(columns))
@@ -330,6 +331,19 @@ class SchemaCompiler:
             if column is None:
                 raise SchemaCompileError(f"{table_name}.required_columns references unknown column: {column_name}")
             collected[column_name] = self._with_not_null(column)
+
+        sqlite_id = collected.get("id")
+        if (
+            dialect == "sqlite"
+            and sqlite_id is not None
+            and sqlite_id.sql_type == "INTEGER"
+            and "PRIMARY KEY" in sqlite_id.constraints.upper()
+        ):
+            collected["id"] = ColumnDefinition(
+                sqlite_id.name,
+                "BIGINT",
+                sqlite_id.constraints,
+            )
 
         primary_key = self._primary_key(table_name, table)
         if primary_key:
@@ -641,6 +655,176 @@ class SchemaCompiler:
                 policy[key] = table[key]
         return policy
 
+    def _validate_lifecycle_contract(self, table: dict[str, Any], column_names: set[str]) -> None:
+        """Require a bounded, auditable cleanup contract for retention-bearing tables."""
+        if "retention_until" not in column_names:
+            return
+
+        table_name = self._require_identifier(table.get("table"), "table")
+        if "legal_hold" not in column_names:
+            raise SchemaCompileError(
+                f"{table_name} has retention_until but no legal_hold column"
+            )
+
+        lifecycle = table.get("lifecycle")
+        if not isinstance(lifecycle, dict):
+            raise SchemaCompileError(
+                f"{table_name} has retention_until but no lifecycle contract"
+            )
+        if (
+            not isinstance(lifecycle.get("storage_strategy"), str)
+            or not lifecycle["storage_strategy"].strip()
+        ):
+            raise SchemaCompileError(f"{table_name}.lifecycle.storage_strategy is required")
+
+        retention = lifecycle.get("retention")
+        if not isinstance(retention, dict):
+            raise SchemaCompileError(f"{table_name}.lifecycle.retention is required")
+        for key in ("online_retention", "archive_retention", "grace_period"):
+            value = retention.get(key)
+            if not isinstance(value, str) or not value.strip():
+                raise SchemaCompileError(
+                    f"{table_name}.lifecycle.retention.{key} is required"
+                )
+
+        cleanup = lifecycle.get("cleanup")
+        if not isinstance(cleanup, dict):
+            raise SchemaCompileError(f"{table_name}.lifecycle.cleanup is required")
+        owner = cleanup.get("owner")
+        if not isinstance(owner, str) or not owner.strip():
+            raise SchemaCompileError(f"{table_name}.lifecycle.cleanup.owner is required")
+        if cleanup.get("scope") != "platform_cross_tenant":
+            raise SchemaCompileError(
+                f"{table_name}.lifecycle.cleanup.scope must be platform_cross_tenant"
+            )
+        authorization = cleanup.get("authorization")
+        if not isinstance(authorization, dict):
+            raise SchemaCompileError(
+                f"{table_name}.lifecycle.cleanup.authorization is required"
+            )
+        if authorization.get("mode") != "service_identity":
+            raise SchemaCompileError(
+                f"{table_name}.lifecycle.cleanup.authorization.mode must be service_identity"
+            )
+        if authorization.get("service") != owner:
+            raise SchemaCompileError(
+                f"{table_name}.lifecycle.cleanup.authorization.service must match cleanup owner"
+            )
+        if authorization.get("audit_required") is not True:
+            raise SchemaCompileError(
+                f"{table_name}.lifecycle.cleanup.authorization.audit_required must be true"
+            )
+
+        candidate_recheck = cleanup.get("candidate_recheck")
+        if not isinstance(candidate_recheck, dict):
+            raise SchemaCompileError(
+                f"{table_name}.lifecycle.cleanup.candidate_recheck is required"
+            )
+        if candidate_recheck.get("required") is not True:
+            raise SchemaCompileError(
+                f"{table_name}.lifecycle.cleanup.candidate_recheck.required must be true"
+            )
+        operations = candidate_recheck.get("operations")
+        if (
+            not isinstance(operations, list)
+            or not all(isinstance(operation, str) for operation in operations)
+            or set(operations) != {"archive", "delete"}
+        ):
+            raise SchemaCompileError(
+                f"{table_name}.lifecycle.cleanup.candidate_recheck.operations must contain archive and delete"
+            )
+        recheck_columns = ["tenant_id", "organization_id", "id"]
+        if not set(recheck_columns).issubset(column_names):
+            raise SchemaCompileError(
+                f"{table_name} must define tenant_id, organization_id, and id for lifecycle recheck"
+            )
+        if candidate_recheck.get("key_columns") != [
+            "tenant_id",
+            "organization_id",
+            "id",
+        ]:
+            raise SchemaCompileError(
+                f"{table_name}.lifecycle.cleanup.candidate_recheck.key_columns must be "
+                "tenant_id, organization_id, id"
+            )
+        batch_size = cleanup.get("batch_size")
+        if isinstance(batch_size, bool) or not isinstance(batch_size, int) or batch_size <= 0:
+            raise SchemaCompileError(
+                f"{table_name}.lifecycle.cleanup.batch_size must be a positive integer"
+            )
+        predicate = cleanup.get("predicate")
+        if (
+            not isinstance(predicate, str)
+            or not re.search(
+                r"\bretention_until\s*<=\s*:now\b",
+                predicate,
+                flags=re.IGNORECASE,
+            )
+            or not re.search(r"\blegal_hold\s*=\s*false\b", predicate, flags=re.IGNORECASE)
+        ):
+            raise SchemaCompileError(
+                f"{table_name}.lifecycle.cleanup.predicate must enforce legal_hold = false"
+            )
+        if cleanup.get("archive_before_delete") is not True:
+            raise SchemaCompileError(
+                f"{table_name}.lifecycle.cleanup.archive_before_delete must be true"
+            )
+
+        retry = cleanup.get("retry")
+        if not isinstance(retry, dict):
+            raise SchemaCompileError(f"{table_name}.lifecycle.cleanup.retry is required")
+        max_attempts = retry.get("max_attempts")
+        if isinstance(max_attempts, bool) or not isinstance(max_attempts, int) or max_attempts <= 0:
+            raise SchemaCompileError(
+                f"{table_name}.lifecycle.cleanup.retry.max_attempts must be a positive integer"
+            )
+        backoff = retry.get("backoff")
+        if not isinstance(backoff, dict):
+            raise SchemaCompileError(
+                f"{table_name}.lifecycle.cleanup.retry.backoff is required"
+            )
+        for key in ("strategy", "initial", "maximum"):
+            value = backoff.get(key)
+            if not isinstance(value, str) or not value.strip():
+                raise SchemaCompileError(
+                    f"{table_name}.lifecycle.cleanup.retry.backoff.{key} is required"
+                )
+
+        monitoring = cleanup.get("monitoring")
+        if not isinstance(monitoring, dict):
+            raise SchemaCompileError(
+                f"{table_name}.lifecycle.cleanup.monitoring is required"
+            )
+        for key in ("metrics", "alerts"):
+            values = monitoring.get(key)
+            if not isinstance(values, list) or not values or not all(
+                isinstance(value, str) and value.strip() for value in values
+            ):
+                raise SchemaCompileError(
+                    f"{table_name}.lifecycle.cleanup.monitoring.{key} must be a non-empty string list"
+                )
+
+        dry_run = cleanup.get("dry_run")
+        if not isinstance(dry_run, dict) or dry_run.get("supported") is not True:
+            raise SchemaCompileError(
+                f"{table_name}.lifecycle.cleanup.dry_run.supported must be true"
+            )
+        if dry_run.get("default") is not True:
+            raise SchemaCompileError(
+                f"{table_name}.lifecycle.cleanup.dry_run.default must be true"
+            )
+
+        indexes = table.get("indexes") or []
+        has_retention_index = any(
+            isinstance(index, dict)
+            and index.get("columns") == ["retention_until", "id"]
+            for index in indexes
+        )
+        if not has_retention_index:
+            raise SchemaCompileError(
+                f"{table_name} must define an index on (retention_until, id)"
+            )
+
     @staticmethod
     def _foreign_key_action(value: Any, context: str) -> str:
         if value is None:
@@ -668,6 +852,8 @@ class SchemaCompiler:
             return None
         if dialect == "postgres":
             return definition
+        if definition.name == "id":
+            return ColumnDefinition(definition.name, "BIGINT", definition.constraints)
         sqlite_types = {
             "BIGINT": "INTEGER",
             "INTEGER": "INTEGER",

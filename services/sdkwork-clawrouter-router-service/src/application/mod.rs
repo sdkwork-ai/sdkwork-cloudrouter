@@ -4,6 +4,7 @@ mod alipay_payment_adapter;
 mod api_key_secret_generator;
 mod cache_runtime;
 mod category_seed;
+mod gateway_accounting_retry;
 mod gateway_invocation_policy;
 mod gateway_invocation_rate_limit;
 mod iam_runtime_context;
@@ -57,6 +58,10 @@ pub use cache_runtime::{
 };
 pub use category_seed::{
     c_category_type_scope, load_admin_category_seed_bundles, DEFAULT_ADMIN_CATEGORY_SEED_DATASETS,
+};
+pub use gateway_accounting_retry::{
+    GatewayAccountingRetryHealth, GatewayAccountingRetryRecorderConfig,
+    GatewayAccountingRetryWorker, GatewayAccountingRetryWorkerConfig, RetryingGatewayUsageRecorder,
 };
 pub use gateway_invocation_policy::{
     client_ip_allowed_by_allowlist, GatewayInvocationPolicyGuard, GatewayInvocationPolicyViolation,

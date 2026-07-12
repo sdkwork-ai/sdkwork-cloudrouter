@@ -295,13 +295,20 @@ pub fn normalize_list_search_query(
     let Some(value) = value else {
         return Ok(None);
     };
+    let contains_control_character = value.chars().any(char::is_control);
     let value = value.trim();
     if value.is_empty() {
-        return Ok(None);
+        return if contains_control_character {
+            Err(format!(
+                "{field} must be visible text and at most {MAX_LIST_SEARCH_LEN} characters"
+            ))
+        } else {
+            Ok(None)
+        };
     }
-    if value.chars().count() > MAX_LIST_SEARCH_LEN {
+    if contains_control_character || value.chars().count() > MAX_LIST_SEARCH_LEN {
         return Err(format!(
-            "{field} must be at most {MAX_LIST_SEARCH_LEN} characters"
+            "{field} must be visible text and at most {MAX_LIST_SEARCH_LEN} characters"
         ));
     }
     Ok(Some(value.to_owned()))
@@ -373,6 +380,33 @@ mod tests {
     fn wire_code_4004_maps_to_not_found() {
         let response = problem_from_wire_code("4004", "missing resource");
         assert_eq!(40401, response.problem.code);
+    }
+
+    #[test]
+    fn normalize_list_search_query_rejects_control_characters() {
+        let expected = Err("q must be visible text and at most 256 characters".to_owned());
+
+        assert_eq!(
+            expected,
+            normalize_list_search_query(Some("bad\nterm".to_owned()), "q")
+        );
+        assert_eq!(
+            Err("q must be visible text and at most 256 characters".to_owned()),
+            normalize_list_search_query(Some("\t".to_owned()), "q")
+        );
+    }
+
+    #[test]
+    fn normalize_list_search_query_trims_visible_text_and_accepts_absence() {
+        assert_eq!(
+            Ok(Some("edge-node".to_owned())),
+            normalize_list_search_query(Some(" edge-node ".to_owned()), "q")
+        );
+        assert_eq!(Ok(None), normalize_list_search_query(None, "q"));
+        assert_eq!(
+            Ok(None),
+            normalize_list_search_query(Some("   ".to_owned()), "q")
+        );
     }
 
     #[test]

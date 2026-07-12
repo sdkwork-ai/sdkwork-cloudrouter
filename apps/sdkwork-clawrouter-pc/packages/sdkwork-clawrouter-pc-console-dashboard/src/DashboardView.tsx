@@ -450,10 +450,10 @@ export function DashboardView() {
                       <td className="px-6 py-8 text-center text-slate-400" colSpan={5}>{t("console.dashboard.dashboardview.text.12269p7", "暂无模型排行数据")}</td>
                     </tr>
                   ) : (
-                    snapshot.topModels.map((row) => {
+                    snapshot.topModels.map((row, index) => {
                       const widthPercent = maxModelRequests > 0 ? Math.max(2, Math.round((row.requests / maxModelRequests) * 100)) : 0;
                       return (
-                        <tr key={`${row.rank}-${row.name}`} className="transition-colors hover:bg-slate-50 dark:hover:bg-white/5">
+                        <tr key={`${row.rank}-${row.name}-${row.supplier}-${index}`} className="transition-colors hover:bg-slate-50 dark:hover:bg-white/5">
                           <td className="px-6 py-4 text-center">
                             <span className="inline-block h-6 w-6 rounded-md bg-slate-100 text-center text-xs font-bold leading-6 text-slate-500 dark:bg-white/5 dark:text-slate-400">{row.rank}</span>
                           </td>

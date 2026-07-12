@@ -386,6 +386,7 @@ Detailed deployment: [TECH-09-deploymentarchitecturedesign.md](TECH-09-deploymen
 | 0010 | Single shared HMAC for app session (0.3.x) | Accepted, sunset | [docs/standard-alignment-audit.md](../../standard-alignment-audit.md) |
 
 | 0011 | Commercial gateway safety boundaries | Accepted | [ADR-20260710](../decisions/ADR-20260710-commercial-gateway-safety-boundaries.md) |
+| 0012 | High-volume ledger and trace evolution | Proposed, migration review required | [TECH-35-high-volume-ledger-evolution.md](TECH-35-high-volume-ledger-evolution.md) |
 
 Full ADR list: [TECH-changelog.md](TECH-changelog.md)
 
@@ -548,6 +549,7 @@ Deep-dive TECH shards (linked by topic, not required reading for orientation):
 - [TECH-32-sdkwork-models-standard.md](TECH-32-sdkwork-models-standard.md)
 - [TECH-33-sdkwork-models-install-flow.md](TECH-33-sdkwork-models-install-flow.md)
 - [TECH-34-login-qrcode-system.md](TECH-34-login-qrcode-system.md)
+- [TECH-35-high-volume-ledger-evolution.md](TECH-35-high-volume-ledger-evolution.md)
 - [TECH-changelog.md](TECH-changelog.md)
 - [TECH-deployment-modes-2.md](TECH-deployment-modes-2.md)
 - [TECH-deployment-modes.md](TECH-deployment-modes.md)

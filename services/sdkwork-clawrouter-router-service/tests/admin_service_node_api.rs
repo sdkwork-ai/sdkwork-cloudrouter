@@ -6,9 +6,9 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::ports::{
     AdminServiceNodeCommandFuture, AdminServiceNodeDeleteOutcome, AdminServiceNodeItem,
-    AdminServiceNodeStore, AdminServiceNodeSubject, CreateAdminServiceNodeCommand,
-    DeleteAdminServiceNodeCommand, ListAdminServiceNodesQuery, UpdateAdminServiceNodeCommand,
-    UpdateAdminServiceNodeStatusCommand,
+    AdminServiceNodeListPage, AdminServiceNodeStore, AdminServiceNodeSubject,
+    CreateAdminServiceNodeCommand, DeleteAdminServiceNodeCommand, ListAdminServiceNodesQuery,
+    UpdateAdminServiceNodeCommand, UpdateAdminServiceNodeStatusCommand,
 };
 use serde_json::{json, Value};
 use tower::ServiceExt;
@@ -53,7 +53,7 @@ async fn admin_service_node_routes_support_full_crud() {
         ))
         .await
         .unwrap();
-    assert_eq!(StatusCode::OK, create_response.status());
+    assert_eq!(StatusCode::CREATED, create_response.status());
     let create_payload = json_payload(create_response).await;
     assert_eq!("node-created", create_payload["data"]["item"]["id"]);
 
@@ -72,7 +72,7 @@ async fn admin_service_node_routes_support_full_crud() {
         ))
         .await
         .unwrap();
-    assert_eq!(StatusCode::OK, localized_create_response.status());
+    assert_eq!(StatusCode::CREATED, localized_create_response.status());
     let localized_create_payload = json_payload(localized_create_response).await;
     assert_eq!(
         "Beijing-Relay-01",
@@ -138,9 +138,7 @@ async fn admin_service_node_routes_support_full_crud() {
         ))
         .await
         .unwrap();
-    assert_eq!(StatusCode::OK, delete_response.status());
-    let delete_payload = json_payload(delete_response).await;
-    assert_eq!(true, delete_payload["data"]["deleted"]);
+    assert_eq!(StatusCode::NO_CONTENT, delete_response.status());
 }
 
 #[tokio::test]
@@ -186,7 +184,7 @@ async fn admin_service_node_routes_reject_invalid_management_inputs() {
         .unwrap();
     assert_eq!(StatusCode::BAD_REQUEST, bad_domain.status());
     assert_eq!(
-        50001,
+        40001,
         json_payload(bad_domain).await["code"].as_i64().unwrap()
     );
 
@@ -206,7 +204,7 @@ async fn admin_service_node_routes_reject_invalid_management_inputs() {
     assert_eq!(StatusCode::BAD_REQUEST, bad_ip.status());
     assert_eq!(
         "ip must be a valid IPv4 or IPv6 address",
-        json_payload(bad_ip).await["msg"]
+        json_payload(bad_ip).await["detail"]
     );
 
     let bad_search = router
@@ -220,8 +218,8 @@ async fn admin_service_node_routes_reject_invalid_management_inputs() {
         .unwrap();
     assert_eq!(StatusCode::BAD_REQUEST, bad_search.status());
     assert_eq!(
-        "q must be visible text and at most 128 characters",
-        json_payload(bad_search).await["msg"]
+        "q must be visible text and at most 256 characters",
+        json_payload(bad_search).await["detail"]
     );
 
     let bad_name = router
@@ -240,7 +238,7 @@ async fn admin_service_node_routes_reject_invalid_management_inputs() {
     assert_eq!(StatusCode::BAD_REQUEST, bad_name.status());
     assert_eq!(
         "name must be visible text and at most 128 characters",
-        json_payload(bad_name).await["msg"]
+        json_payload(bad_name).await["detail"]
     );
 
     let empty_update = router
@@ -255,7 +253,7 @@ async fn admin_service_node_routes_reject_invalid_management_inputs() {
     assert_eq!(StatusCode::BAD_REQUEST, empty_update.status());
     assert_eq!(
         "service node update fields are required",
-        json_payload(empty_update).await["msg"]
+        json_payload(empty_update).await["detail"]
     );
 
     let status_on_update = router
@@ -269,7 +267,7 @@ async fn admin_service_node_routes_reject_invalid_management_inputs() {
     assert_eq!(StatusCode::BAD_REQUEST, status_on_update.status());
     assert_eq!(
         "status must be changed through status endpoint",
-        json_payload(status_on_update).await["msg"]
+        json_payload(status_on_update).await["detail"]
     );
 }
 
@@ -311,21 +309,26 @@ impl AdminServiceNodeStore for TestAdminServiceNodeStore {
     fn list_service_nodes<'a>(
         &'a self,
         query: ListAdminServiceNodesQuery,
-    ) -> AdminServiceNodeCommandFuture<'a, Vec<AdminServiceNodeItem>> {
+    ) -> AdminServiceNodeCommandFuture<'a, AdminServiceNodeListPage> {
         Box::pin(async move {
-            assert_eq!(10, query.subject.tenant_id);
-            assert_eq!(20, query.subject.organization_id);
+            assert_eq!(100_001, query.subject.tenant_id);
+            assert_eq!(0, query.subject.organization_id);
             assert_eq!(Some("shanghai".to_owned()), query.search);
             assert_eq!(Some("enabled".to_owned()), query.status);
-            Ok(vec![service_node_item(
-                "node-1",
-                "edge-shanghai-01",
-                "edge-shanghai.example.com",
-                "10.0.0.10",
-                "Shanghai relay node",
-                "enabled",
-                "online",
-            )])
+            Ok(AdminServiceNodeListPage {
+                items: vec![service_node_item(
+                    "node-1",
+                    "edge-shanghai-01",
+                    "edge-shanghai.example.com",
+                    "10.0.0.10",
+                    "Shanghai relay node",
+                    "enabled",
+                    "online",
+                )],
+                total: 1,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
         })
     }
 

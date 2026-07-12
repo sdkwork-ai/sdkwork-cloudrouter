@@ -529,7 +529,7 @@ async fn cache_namespace_key_listing_returns_safe_metadata_only() {
     assert_eq!(2, keys.scanned_items);
     assert!(keys.scan_complete);
     assert_eq!(2, keys.returned_items);
-    assert_eq!(None, keys.limit);
+    assert_eq!(None, keys.page_size);
     assert!(!keys.has_more);
     assert_eq!(2, keys.items.len());
     assert_eq!("qr-list-1", keys.items[0].key);
@@ -639,7 +639,7 @@ async fn cache_namespace_key_listing_respects_limit_and_reports_has_more() {
     assert_eq!(3, keys.scanned_items);
     assert!(!keys.scan_complete);
     assert_eq!(2, keys.returned_items);
-    assert_eq!(Some(2), keys.limit);
+    assert_eq!(Some(2), keys.page_size);
     assert!(keys.has_more);
     assert_eq!("qr-page-1", keys.items[0].key);
     assert_eq!("qr-page-2", keys.items[1].key);

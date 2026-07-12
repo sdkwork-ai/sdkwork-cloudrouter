@@ -1,4 +1,3 @@
-use serde_json::json;
 use sha2::{Digest, Sha256};
 use sqlx::{PgConnection, PgPool};
 
@@ -6,8 +5,8 @@ use crate::domain::DomainError;
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    GatewayRequestTraceCommand, GatewayUsageRecordCommand, GatewayUsageRecordFuture,
-    GatewayUsageRecorder,
+    GatewayAccountingRecordContext, GatewayRequestTraceCommand, GatewayTraceAttribution,
+    GatewayUsageRecordCommand, GatewayUsageRecordFuture, GatewayUsageRecorder,
 };
 
 const OWNER_TYPE_USER: i64 = 1;
@@ -19,13 +18,17 @@ INSERT INTO ai_request_trace
      api_key_id, api_key_name_snapshot, channel_group_id, channel_group_snapshot,
      owner_type, owner_id, channel_id, channel_name_snapshot, requested_model,
      requested_model_catalog_key, provider_model, provider_native_model,
+     gateway_instance_id, gateway_instance_code_snapshot, gateway_region_code_snapshot,
+     gateway_node_name_snapshot,
      region_code, endpoint, request_path, http_method, http_status, started_at, ended_at, streaming,
      prompt_tokens, cached_tokens, completion_tokens, total_tokens, latency_ms, ttft_ms,
      provider_error_code, error_type, error_message_masked, metadata, user_agent_hash)
 VALUES
     ($1, $2, $3, $4, $5, $6, $7, 1, 1, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
-     $18, $19, $20, $21, $22, $23, $24, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $25, $26, $27, $28,
-     $29, $30, $31, $32, $33, $34, $35::jsonb, $36)
+     $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28,
+     to_timestamp($29::double precision / 1000.0),
+     to_timestamp($30::double precision / 1000.0),
+     $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41::jsonb, $42)
 ON CONFLICT (tenant_id, organization_id, request_id, attempt_no) DO UPDATE SET
     trace_id = excluded.trace_id,
     api_key_id = excluded.api_key_id,
@@ -40,12 +43,16 @@ ON CONFLICT (tenant_id, organization_id, request_id, attempt_no) DO UPDATE SET
     requested_model_catalog_key = excluded.requested_model_catalog_key,
     provider_model = excluded.provider_model,
     provider_native_model = excluded.provider_native_model,
+    gateway_instance_id = COALESCE(ai_request_trace.gateway_instance_id, excluded.gateway_instance_id),
+    gateway_instance_code_snapshot = COALESCE(ai_request_trace.gateway_instance_code_snapshot, excluded.gateway_instance_code_snapshot),
+    gateway_region_code_snapshot = COALESCE(ai_request_trace.gateway_region_code_snapshot, excluded.gateway_region_code_snapshot),
+    gateway_node_name_snapshot = COALESCE(ai_request_trace.gateway_node_name_snapshot, excluded.gateway_node_name_snapshot),
     region_code = excluded.region_code,
     endpoint = excluded.endpoint,
     request_path = excluded.request_path,
     http_method = excluded.http_method,
     http_status = excluded.http_status,
-    ended_at = CURRENT_TIMESTAMP,
+    ended_at = excluded.ended_at,
     streaming = excluded.streaming,
     prompt_tokens = excluded.prompt_tokens,
     cached_tokens = excluded.cached_tokens,
@@ -85,7 +92,7 @@ VALUES
      $18, $19, $20, $21, $22, $23::numeric, $24, $25, $26, $27, $28, $29, $30, $31, $32,
      $33::numeric, $34::numeric, $35::numeric, $36::numeric, $37::numeric, $38::numeric,
      $39::numeric, $40::numeric, $41::numeric, $42::numeric,
-     $43, $44, $45::jsonb, CURRENT_TIMESTAMP, $46, $47)
+     $43, $44, $45::jsonb, to_timestamp($46::double precision / 1000.0), $47, $48)
 ON CONFLICT (tenant_id, organization_id, request_id, usage_type) DO UPDATE SET
     trace_id = excluded.trace_id,
     api_key_id = excluded.api_key_id,
@@ -126,7 +133,7 @@ ON CONFLICT (tenant_id, organization_id, request_id, usage_type) DO UPDATE SET
     pricing_plan_code = excluded.pricing_plan_code,
     pricing_snapshot = excluded.pricing_snapshot,
     idempotency_key = excluded.idempotency_key,
-    occurred_at = CURRENT_TIMESTAMP,
+    occurred_at = excluded.occurred_at,
     settlement_status = excluded.settlement_status
 WHERE ai_usage.settlement_status = 0
 "#;
@@ -134,11 +141,19 @@ WHERE ai_usage.settlement_status = 0
 #[derive(Debug, Clone)]
 pub struct PostgresGatewayUsageRecorder {
     pool: PgPool,
+    attribution: GatewayTraceAttribution,
 }
 
 impl PostgresGatewayUsageRecorder {
     pub fn new(pool: PgPool) -> Self {
-        Self { pool }
+        Self {
+            pool,
+            attribution: GatewayTraceAttribution::default(),
+        }
+    }
+
+    pub fn new_with_attribution(pool: PgPool, attribution: GatewayTraceAttribution) -> Self {
+        Self { pool, attribution }
     }
 }
 
@@ -148,12 +163,13 @@ impl GatewayUsageRecorder for PostgresGatewayUsageRecorder {
         command: GatewayRequestTraceCommand,
     ) -> GatewayUsageRecordFuture<'a> {
         Box::pin(async move {
-            command.validate()?;
-            let mut connection = self.pool.acquire().await.map_err(|error| {
-                store_error("failed to acquire gateway trace connection", error)
-            })?;
-            upsert_trace(&mut connection, &command).await?;
-            Ok(())
+            let context = GatewayAccountingRecordContext::from_trace(
+                &command,
+                self.attribution.clone(),
+                current_epoch_millis(),
+            )?;
+            self.record_gateway_trace_with_context(command, context)
+                .await
         })
     }
 
@@ -162,14 +178,47 @@ impl GatewayUsageRecorder for PostgresGatewayUsageRecorder {
         command: GatewayUsageRecordCommand,
     ) -> GatewayUsageRecordFuture<'a> {
         Box::pin(async move {
+            let context = GatewayAccountingRecordContext::from_usage(
+                &command,
+                self.attribution.clone(),
+                current_epoch_millis(),
+            )?;
+            self.record_gateway_usage_with_context(command, context)
+                .await
+        })
+    }
+
+    fn record_gateway_trace_with_context<'a>(
+        &'a self,
+        command: GatewayRequestTraceCommand,
+        context: GatewayAccountingRecordContext,
+    ) -> GatewayUsageRecordFuture<'a> {
+        Box::pin(async move {
             command.validate()?;
+            context.validate()?;
+            let mut connection = self.pool.acquire().await.map_err(|error| {
+                store_error("failed to acquire gateway trace connection", error)
+            })?;
+            upsert_trace(&mut connection, &command, &context).await?;
+            Ok(())
+        })
+    }
+
+    fn record_gateway_usage_with_context<'a>(
+        &'a self,
+        command: GatewayUsageRecordCommand,
+        context: GatewayAccountingRecordContext,
+    ) -> GatewayUsageRecordFuture<'a> {
+        Box::pin(async move {
+            command.validate()?;
+            context.validate()?;
             let trace_command = command.trace_command();
             let mut transaction =
                 self.pool.begin().await.map_err(|error| {
                     store_error("failed to begin gateway usage transaction", error)
                 })?;
-            upsert_trace(&mut transaction, &trace_command).await?;
-            upsert_usage_fact(&mut transaction, &command).await?;
+            upsert_trace(&mut transaction, &trace_command, &context).await?;
+            upsert_usage_fact(&mut transaction, &command, &context).await?;
             transaction.commit().await.map_err(|error| {
                 store_error("failed to commit gateway usage transaction", error)
             })?;
@@ -181,9 +230,10 @@ impl GatewayUsageRecorder for PostgresGatewayUsageRecorder {
 async fn upsert_trace(
     connection: &mut PgConnection,
     command: &GatewayRequestTraceCommand,
+    context: &GatewayAccountingRecordContext,
 ) -> Result<(), DomainError> {
-    let metadata = trace_metadata_json(command);
-    let user_agent_hash = user_agent_hash(command);
+    let metadata = trace_metadata_json();
+    let attribution = &context.attribution;
     sqlx::query(UPSERT_TRACE)
         .bind(next_claw_runtime_id("ai_request_trace")?)
         .bind(trace_uuid(command))
@@ -202,13 +252,19 @@ async fn upsert_trace(
         .bind(&command.provider_code)
         .bind(&command.requested_model)
         .bind(&command.requested_model_catalog_key)
+        .bind(&command.provider_model)
         .bind(&command.provider_native_model)
-        .bind(&command.provider_native_model)
+        .bind(attribution.gateway_instance_id)
+        .bind(attribution.gateway_instance_code_snapshot.as_deref())
+        .bind(attribution.gateway_region_code_snapshot.as_deref())
+        .bind(attribution.gateway_node_name_snapshot.as_deref())
         .bind(&command.region_code)
         .bind(&command.request_path)
         .bind(&command.request_path)
         .bind(&command.http_method)
         .bind(command.http_status.map(i64::from))
+        .bind(context.started_at_epoch_millis)
+        .bind(context.ended_at_epoch_millis)
         .bind(command.streaming)
         .bind(command.prompt_tokens)
         .bind(command.cached_tokens)
@@ -217,10 +273,10 @@ async fn upsert_trace(
         .bind(command.latency_ms)
         .bind(command.ttft_ms)
         .bind(command.provider_error_code.as_deref())
-        .bind(error_type_code(command.error_type.as_deref()))
+        .bind(command.error_type.as_deref())
         .bind(command.error_message_masked.as_deref())
         .bind(&metadata)
-        .bind(user_agent_hash.as_deref())
+        .bind(context.user_agent_hash.as_deref())
         .execute(&mut *connection)
         .await
         .map_err(|error| store_error("failed to upsert gateway request trace", error))?;
@@ -230,6 +286,7 @@ async fn upsert_trace(
 async fn upsert_usage_fact(
     connection: &mut PgConnection,
     command: &GatewayUsageRecordCommand,
+    context: &GatewayAccountingRecordContext,
 ) -> Result<(), DomainError> {
     sqlx::query(UPSERT_USAGE_FACT)
         .bind(next_claw_runtime_id("ai_usage")?)
@@ -277,6 +334,7 @@ async fn upsert_usage_fact(
         .bind(&command.currency)
         .bind(&command.pricing_plan_code)
         .bind(&command.pricing_snapshot)
+        .bind(context.ended_at_epoch_millis)
         .bind(SETTLEMENT_PENDING)
         .bind(usage_idempotency_key(command))
         .execute(&mut *connection)
@@ -320,22 +378,19 @@ fn usage_idempotency_key(command: &GatewayUsageRecordCommand) -> String {
     )
 }
 
-fn trace_metadata_json(command: &GatewayRequestTraceCommand) -> String {
-    command
-        .user_agent
-        .as_deref()
-        .map(|user_agent| json!({ "userAgent": user_agent }).to_string())
-        .unwrap_or_else(|| "{}".to_owned())
+fn trace_metadata_json() -> String {
+    // User-Agent is sensitive telemetry. Keep only the separately hashed value
+    // in user_agent_hash and leave the extension metadata object empty.
+    "{}".to_owned()
 }
 
-fn user_agent_hash(command: &GatewayRequestTraceCommand) -> Option<String> {
-    command.user_agent.as_deref().map(sha256_hex)
-}
-
-fn sha256_hex(value: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(value.as_bytes());
-    hex::encode(hasher.finalize())
+fn current_epoch_millis() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis()
+        .try_into()
+        .unwrap_or(i64::MAX)
 }
 
 fn stable_uuid(
@@ -384,19 +439,6 @@ fn stable_identity_digest(
 fn update_identity_component(hasher: &mut Sha256, value: &[u8]) {
     hasher.update((value.len() as u64).to_be_bytes());
     hasher.update(value);
-}
-
-fn error_type_code(value: Option<&str>) -> Option<i64> {
-    let value = value?.trim().to_ascii_lowercase();
-    if value.is_empty() {
-        return None;
-    }
-    Some(match value.as_str() {
-        "provider_error" | "server_error" | "upstream_error" => 1,
-        "invalid_request_error" | "client_error" => 2,
-        "billing_error" | "insufficient_quota" => 3,
-        _ => 1,
-    })
 }
 
 fn store_error(context: &str, error: sqlx::Error) -> DomainError {

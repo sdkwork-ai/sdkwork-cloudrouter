@@ -8,6 +8,7 @@ pub struct InvocationUsage {
     pub pricing_quotes: Vec<InvocationPricingQuote>,
     pub settlement_commands: Vec<GatewayUsageRecordCommand>,
     pub trace_recorded: bool,
+    pub recording_failure_count: usize,
 }
 
 impl InvocationUsage {

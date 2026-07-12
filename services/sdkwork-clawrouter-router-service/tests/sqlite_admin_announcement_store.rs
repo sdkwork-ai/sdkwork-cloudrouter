@@ -38,7 +38,7 @@ async fn sqlite_admin_announcement_store_uses_standard_notification_tables() {
         .await
         .unwrap();
 
-    assert_eq!(1, created.id);
+    assert!(created.id > 0);
     assert_eq!("Gateway maintenance", created.title);
     assert_eq!("all", created.target);
     assert_eq!("published", created.status);
@@ -55,7 +55,8 @@ async fn sqlite_admin_announcement_store_uses_standard_notification_tables() {
     );
 
     let standard_message_count: i64 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM ops_notification_message WHERE id = 1")
+        sqlx::query_scalar("SELECT COUNT(*) FROM ops_notification_message WHERE id = ?")
+            .bind(created.id)
             .fetch_one(&pool)
             .await
             .unwrap();
@@ -65,9 +66,10 @@ async fn sqlite_admin_announcement_store_uses_standard_notification_tables() {
         r#"
         SELECT recipient_type, recipient_value
         FROM ops_notification_recipient
-        WHERE message_id = 1
+        WHERE message_id = ?
         "#,
     )
+    .bind(created.id)
     .fetch_one(&pool)
     .await
     .unwrap();
@@ -97,11 +99,20 @@ async fn sqlite_admin_announcement_store_uses_standard_notification_tables() {
     assert_eq!(false, updated.show_as_popup);
 
     let listed = store
-        .list_announcements(ListAdminAnnouncementsQuery { subject })
+        .list_announcements(ListAdminAnnouncementsQuery {
+            subject,
+            page_no: 1,
+            page_size: 20,
+            offset: 0,
+            q: None,
+        })
         .await
         .unwrap();
-    assert_eq!(1, listed.len());
-    assert_eq!("vip", listed[0].target);
+    assert_eq!(1, listed.total);
+    assert_eq!(1, listed.page_no);
+    assert_eq!(20, listed.page_size);
+    assert_eq!(1, listed.items.len());
+    assert_eq!("vip", listed.items[0].target);
 
     assert!(store
         .delete_announcement(DeleteAdminAnnouncementCommand {
@@ -115,10 +126,17 @@ async fn sqlite_admin_announcement_store_uses_standard_notification_tables() {
         .unwrap());
 
     let visible = store
-        .list_announcements(ListAdminAnnouncementsQuery { subject })
+        .list_announcements(ListAdminAnnouncementsQuery {
+            subject,
+            page_no: 1,
+            page_size: 20,
+            offset: 0,
+            q: None,
+        })
         .await
         .unwrap();
-    assert!(visible.is_empty());
+    assert_eq!(0, visible.total);
+    assert!(visible.items.is_empty());
 
     let audit_count: i64 =
         sqlx::query_scalar("SELECT COUNT(*) FROM ops_audit_log WHERE target_type = 21")

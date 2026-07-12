@@ -125,30 +125,39 @@ async fn sqlite_admin_marketing_coupon_flow_uses_appbase_promotion_tables() {
     let coupons = store
         .list_promotion_offers(ListPromotionOffersQuery {
             subject: admin_subject(),
+            page_no: 1,
+            page_size: 20,
+            offset: 0,
         })
         .await
         .unwrap();
-    assert_eq!(1, coupons.len());
-    assert_eq!("coupon-launch", coupons[0].id);
+    assert_eq!(1, coupons.items.len());
+    assert_eq!("coupon-launch", coupons.items[0].id);
 
     let batches = store
         .list_promotion_coupon_stocks(ListPromotionCouponStocksQuery {
             subject: admin_subject(),
+            page_no: 1,
+            page_size: 20,
+            offset: 0,
         })
         .await
         .unwrap();
-    assert_eq!(1, batches.len());
-    assert_eq!("Launch public codes", batches[0].name);
+    assert_eq!(1, batches.items.len());
+    assert_eq!("Launch public codes", batches.items[0].name);
 
     let listed_codes = store
         .list_promotion_codes(ListPromotionCodesQuery {
             subject: admin_subject(),
+            page_no: 1,
+            page_size: 20,
+            offset: 0,
         })
         .await
         .unwrap();
-    assert_eq!(2, listed_codes.len());
-    assert_eq!("available", listed_codes[0].status);
-    assert_eq!("available", listed_codes[1].status);
+    assert_eq!(2, listed_codes.items.len());
+    assert_eq!("available", listed_codes.items[0].status);
+    assert_eq!("available", listed_codes.items[1].status);
 }
 
 #[tokio::test]
@@ -296,13 +305,16 @@ async fn sqlite_admin_marketing_coupon_update_publishes_immutable_offer_versions
     let coupons = store
         .list_promotion_offers(ListPromotionOffersQuery {
             subject: admin_subject(),
+            page_no: 1,
+            page_size: 20,
+            offset: 0,
         })
         .await
         .unwrap();
-    assert_eq!(1, coupons.len());
-    assert_eq!("coupon-versioned", coupons[0].id);
-    assert_eq!("discount", coupons[0].discount_type);
-    assert_eq!("15.00%", coupons[0].value);
+    assert_eq!(1, coupons.items.len());
+    assert_eq!("coupon-versioned", coupons.items[0].id);
+    assert_eq!("discount", coupons.items[0].discount_type);
+    assert_eq!("15.00%", coupons.items[0].value);
 }
 
 async fn migrated_pool() -> SqlitePool {
