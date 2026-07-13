@@ -3,7 +3,7 @@
 
 > Version: 0.1
 > Date: 2026-05-08
-> Scope: `data/sdkwork-models`, ClawRouter model catalog import, and language SDKs
+> Scope: `../sdkwork-models`, ClawRouter model catalog import, and language SDKs
 > Status: Draft standard for implementation
 
 ## 1. Purpose
@@ -42,7 +42,7 @@ The same catalog must support two usage modes:
 ## 3. Project Layout
 
 ```text
-data/sdkwork-models/
+../sdkwork-models/
   README.md
   LICENSE
   CHANGELOG.md
@@ -1280,7 +1280,7 @@ https://github.com/Sdkwork-Cloud/sdkwork-models.git
 When embedded in ClawRouter, it should be mounted as:
 
 ```text
-data/sdkwork-models
+../sdkwork-models
 ```
 
 ClawRouter must treat this path as a data dependency. Product logic must not

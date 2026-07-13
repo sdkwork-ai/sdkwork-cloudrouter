@@ -117,7 +117,7 @@ def link_catalog_node_modules(temp_root: Path) -> None:
     source = (SDKWORK_MODELS / "node_modules").resolve()
     target = temp_root / "node_modules"
     if not source.is_dir():
-        raise unittest.SkipTest("data/sdkwork-models node_modules missing; run pnpm install")
+        raise unittest.SkipTest("../sdkwork-models node_modules missing; run pnpm install")
     if target.exists():
         return
     if os.name == "nt":

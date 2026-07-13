@@ -12,7 +12,7 @@ use sqlx::{Row, SqlitePool};
 const CLAW_ROUTER_TABLE_REGISTRY: &str =
     include_str!("../../../database/contract/table-registry.json");
 const MODELS_TABLE_REGISTRY: &str =
-    include_str!("../../../data/sdkwork-models/database/contract/table-registry.json");
+    include_str!("../../../../sdkwork-models/database/contract/table-registry.json");
 const STANDARD_HISTORY_TABLES: [&str; 3] = [
     "ops_schema_migration_history",
     "ops_seed_history",

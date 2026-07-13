@@ -108,13 +108,8 @@ function workspaceCargoFmtArgs(args) {
 }
 
 function shouldFormatWorkspacePackage(pkg) {
-  const manifestPath = pkg.manifest_path.replace(/\\/g, '/');
-  // Packages under data/sdkwork-models resolve through the nested sdkwork-models
-  // workspace when formatted with --manifest-path, which requires optional data/*
-  // sibling repos. Format them from the repository root with cargo fmt -p instead.
-  if (manifestPath.includes('/data/sdkwork-models/')) {
-    return false;
-  }
+  // sdkwork-models is now a sibling repo referenced via ../sdkwork-models/
+  // and is formatted by its own workspace. No special handling needed.
   return true;
 }
 

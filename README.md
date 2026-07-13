@@ -223,7 +223,7 @@ Additional repository-local directories remain scoped by their README or compone
 
 - `packages/` - governed shared TypeScript and React package families only. Rust route/API crates must not live here.
 - `services/` - existing Rust service and host crates used by the product runtime. New router API route crates belong under `crates/`.
-- `data/sdkwork-models/` - standalone model catalog submodule mount point for vendor-scoped JSON model facts, pricing data, overlays, and language SDK loaders. See `docs/32-sdkwork-models-standard.md` and `docs/33-sdkwork-models-install-flow.md`.
+- `../sdkwork-models/` - standalone model catalog submodule mount point for vendor-scoped JSON model facts, pricing data, overlays, and language SDK loaders. See `docs/32-sdkwork-models-standard.md` and `docs/33-sdkwork-models-install-flow.md`.
 - `generated/` - generated OpenAPI, schema, audit, and manifest outputs.
 - `specs/` - local component contracts and repository-specific narrowing rules that link back to `../sdkwork-specs/`.
 
@@ -275,11 +275,11 @@ Validate the standalone model catalog before installer or release work:
 
 ```bash
 pnpm models:check
-node data/sdkwork-models/tools/build-index.mjs --check
-node data/sdkwork-models/tools/validate-catalog.mjs
-node data/sdkwork-models/tools/freshness-report.mjs --max-age-policy catalog-freshness-policy.json --as-of 2026-05-08
-node data/sdkwork-models/tools/catalog-audit.mjs --as-of 2026-05-08
-node data/sdkwork-models/tools/release-catalog.mjs --check --as-of 2026-05-08
+node ../sdkwork-models/tools/build-index.mjs --check
+node ../sdkwork-models/tools/validate-catalog.mjs
+node ../sdkwork-models/tools/freshness-report.mjs --max-age-policy catalog-freshness-policy.json --as-of 2026-05-08
+node ../sdkwork-models/tools/catalog-audit.mjs --as-of 2026-05-08
+node ../sdkwork-models/tools/release-catalog.mjs --check --as-of 2026-05-08
 cargo test -p sdkwork-models --offline
 cargo test -p sdkwork-clawrouter-router-service --test database_installer --offline
 ```
@@ -304,7 +304,7 @@ catalog artifact or updated submodule checkout instead of the bundled local
 catalog:
 
 ```powershell
-$env:SDKWORK_MODELS_CATALOG_ROOT = Join-Path (Get-Location) "data/sdkwork-models"
+$env:SDKWORK_MODELS_CATALOG_ROOT = Join-Path (Get-Location) "../sdkwork-models"
 ```
 
 Refresh installed catalog rows without reinstalling the database:
@@ -351,9 +351,9 @@ should preserve the full report, including counts, `snapshotId`, and
 `syncRunId`, instead of collapsing the response to only `vendors` and `models`.
 
 Explicit product server commands such as `pnpm dev:server` use the
-workspace-local `data/sdkwork-models` directory as
+workspace-local `../sdkwork-models` directory as
 `SDKWORK_MODELS_CATALOG_ROOT` by default and run a blocking
-`refresh-catalog --catalog-root data/sdkwork-models --force` step after
+`refresh-catalog --catalog-root ../sdkwork-models --force` step after
 `ensure`. Local JSON model or pricing edits are therefore imported into the dev
 database on every server-mode startup. Default workspace commands
 (`pnpm dev`, `pnpm dev:server`) start the topology-aware integrated
@@ -1484,15 +1484,15 @@ support.
 
 Detailed commercial documents:
 
-- [Commercial Pricing Model](./docs/commercial/PRICING.md) â€” license tiers,
+- [Commercial Pricing Model](./docs/commercial/PRICING.md) â€?license tiers,
   pricing matrix, token metering, additional services, payment, and refund
   policy.
-- [Service Level Agreement](./docs/legal/SLA.md) â€” uptime commitments,
+- [Service Level Agreement](./docs/legal/SLA.md) â€?uptime commitments,
   incident response times, service credits, rate-limit tiers, and support
   channels.
-- [Edition Tier Matrix](./docs/legal/TIER_MATRIX.md) â€” full capability
+- [Edition Tier Matrix](./docs/legal/TIER_MATRIX.md) â€?full capability
   comparison across Community, Pro, Enterprise, and OEM editions.
-- [COMMERCIAL-LICENSE.md](./COMMERCIAL-LICENSE.md) â€” commercial authorization
+- [COMMERCIAL-LICENSE.md](./COMMERCIAL-LICENSE.md) â€?commercial authorization
   terms.
 
 Contact `sales@sdkwork.com` to request commercial authorization, request a

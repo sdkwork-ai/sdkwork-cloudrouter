@@ -2216,7 +2216,7 @@ class FrontendContractGuardian:
                 )
                 continue
 
-            if evidence.startswith("sdkwork-documents/") or evidence.startswith("data/sdkwork-models/"):
+            if evidence.startswith("sdkwork-documents/") or evidence.startswith("../sdkwork-models/"):
                 resolved = self._resolve_workspace_sibling_path(evidence)
             elif ".." in evidence_path.parts:
                 messages.append(

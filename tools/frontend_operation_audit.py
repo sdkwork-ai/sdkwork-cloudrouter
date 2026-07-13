@@ -142,7 +142,7 @@ class FrontendOperationAudit:
     MODELS_BACKEND_SDK_CLIENT = "getModelsBackendSdkClient"
     MODELS_BACKEND_SDK_PATTERN = re.compile(r"\bgetModelsBackendSdkClient\s*\(")
     MODELS_APP_SDK_PATTERN = re.compile(r"\bgetModelsAppSdkClient\s*\(")
-    MODELS_SOURCE_PREFIX = "data/sdkwork-models/"
+    MODELS_SOURCE_PREFIX = "../sdkwork-models/"
     CLAWROUTER_PORTAL_MODELS_SOURCE_PREFIX = (
         "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/"
     )

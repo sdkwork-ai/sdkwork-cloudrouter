@@ -43,13 +43,13 @@ members = [
     "crates/sdkwork-clawrouter-app-providers-repository-sqlx",
     "crates/sdkwork-clawrouter-settlements-dashboard-repository-sqlx",
     "crates/sdkwork-clawrouter-app-gateway-traces-repository-sqlx",
-    "data/sdkwork-models/sdks/sdkwork-models-sdk/sdkwork-models-sdk-rust",
-    "data/sdkwork-models/crates/sdkwork-models-contract-service",
-    "data/sdkwork-models/crates/sdkwork-models-database-host",
-    "data/sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx",
-    "data/sdkwork-models/crates/sdkwork-models-catalog-service",
-    "data/sdkwork-models/crates/sdkwork-routes-catalog-backend-api",
-    "data/sdkwork-models/crates/sdkwork-routes-catalog-app-api",
+    "../sdkwork-models/sdks/sdkwork-models-sdk/sdkwork-models-sdk-rust",
+    "../sdkwork-models/crates/sdkwork-models-contract-service",
+    "../sdkwork-models/crates/sdkwork-models-database-host",
+    "../sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx",
+    "../sdkwork-models/crates/sdkwork-models-catalog-service",
+    "../sdkwork-models/crates/sdkwork-routes-catalog-backend-api",
+    "../sdkwork-models/crates/sdkwork-routes-catalog-app-api",
 ]
 default-members = [
     "crates/sdkwork-claw-contract",
@@ -88,8 +88,8 @@ default-members = [
     "services/sdkwork-claw-installer",
     "services/sdkwork-claw-provider-adapter",
     "crates/sdkwork-clawrouter-database-host",
-    "data/sdkwork-models/sdks/sdkwork-models-sdk/sdkwork-models-sdk-rust",
-    "data/sdkwork-models/crates/sdkwork-models-database-host",
+    "../sdkwork-models/sdks/sdkwork-models-sdk/sdkwork-models-sdk-rust",
+    "../sdkwork-models/crates/sdkwork-models-database-host",
 ]
 resolver = "2"
 
@@ -179,14 +179,14 @@ sdkwork-claw-provider-adapter-registry = { path = "crates/sdkwork-claw-provider-
 sdkwork-claw-provider-adapter-host = { path = "services/sdkwork-claw-provider-adapter" }
 sdkwork-provider-adapter-alicloud = { path = "crates/provider-adapters/alicloud" }
 sdkwork-provider-adapter-tencent-cloud = { path = "crates/provider-adapters/tencent-cloud" }
-sdkwork-models = { path = "data/sdkwork-models/sdks/sdkwork-models-sdk/sdkwork-models-sdk-rust" }
-sdkwork_models_contract_service = { package = "sdkwork-models-contract-service", path = "data/sdkwork-models/crates/sdkwork-models-contract-service" }
-sdkwork-models-database-host = { path = "data/sdkwork-models/crates/sdkwork-models-database-host" }
-sdkwork_models_database_bootstrap = { package = "sdkwork-models-database-bootstrap", path = "data/sdkwork-models/crates/sdkwork-models-database-bootstrap" }
-sdkwork_models_catalog_repository_sqlx = { package = "sdkwork-models-catalog-repository-sqlx", path = "data/sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx" }
-sdkwork_models_catalog_service = { package = "sdkwork-models-catalog-service", path = "data/sdkwork-models/crates/sdkwork-models-catalog-service" }
-sdkwork_routes_models_catalog_app_api = { package = "sdkwork-routes-models-catalog-app-api", path = "data/sdkwork-models/crates/sdkwork-routes-catalog-app-api" }
-sdkwork_routes_models_catalog_backend_api = { package = "sdkwork-routes-models-catalog-backend-api", path = "data/sdkwork-models/crates/sdkwork-routes-catalog-backend-api" }
+sdkwork-models = { path = "../sdkwork-models/sdks/sdkwork-models-sdk/sdkwork-models-sdk-rust" }
+sdkwork_models_contract_service = { package = "sdkwork-models-contract-service", path = "../sdkwork-models/crates/sdkwork-models-contract-service" }
+sdkwork-models-database-host = { path = "../sdkwork-models/crates/sdkwork-models-database-host" }
+sdkwork_models_database_bootstrap = { package = "sdkwork-models-database-bootstrap", path = "../sdkwork-models/crates/sdkwork-models-database-bootstrap" }
+sdkwork_models_catalog_repository_sqlx = { package = "sdkwork-models-catalog-repository-sqlx", path = "../sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx" }
+sdkwork_models_catalog_service = { package = "sdkwork-models-catalog-service", path = "../sdkwork-models/crates/sdkwork-models-catalog-service" }
+sdkwork_routes_models_catalog_app_api = { package = "sdkwork-routes-models-catalog-app-api", path = "../sdkwork-models/crates/sdkwork-routes-catalog-app-api" }
+sdkwork_routes_models_catalog_backend_api = { package = "sdkwork-routes-models-catalog-backend-api", path = "../sdkwork-models/crates/sdkwork-routes-catalog-backend-api" }
 sdkwork-id-core = { path = "../sdkwork-id/crates/sdkwork-id-core" }
 sdkwork_iam_context_service = { package = "sdkwork-iam-context-service", path = "../sdkwork-iam/crates/sdkwork-iam-context-service" }
 sdkwork_iam_directory_repository_sqlx = { package = "sdkwork-iam-directory-repository-sqlx", path = "../sdkwork-iam/crates/sdkwork-iam-directory-repository-sqlx" }

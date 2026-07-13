@@ -8547,7 +8547,7 @@ frontend_models:
   fields: *id001
   data_sources: *id002
 - route: /admin/model
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   interface: InitializedModelCatalog
   fields:
   - initialized
@@ -8603,7 +8603,7 @@ frontend_models:
   - ai_pricing_import_snapshot
   - ops_audit_log
 - route: /admin/model
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   interface: Model
   fields:
   - id
@@ -8646,7 +8646,7 @@ frontend_models:
   - ai_model_pricing
   - ai_model_rank_snapshot
 - route: /admin/model
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   interface: ModelCatalogSyncReport
   fields:
   - acceptedCount
@@ -8719,7 +8719,7 @@ frontend_models:
   - ai_pricing_import_snapshot
   - ops_audit_log
 - route: /admin/model
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   interface: ModelCreateInput
   fields:
   - vendorId
@@ -8749,7 +8749,7 @@ frontend_models:
   - ai_model_capability
   - ai_model_pricing
 - route: /admin/model/mappings
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   interface: ModelMappingCreateInput
   fields:
   - sourceVendorId
@@ -8776,7 +8776,7 @@ frontend_models:
   - ai_model_mapping_rule_binding
   - ai_model_mapping_rule_item
 - route: /admin/model/mappings
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   interface: ModelMappingModelOption
   fields:
   - id
@@ -8791,7 +8791,7 @@ frontend_models:
   - ai_model
   - ai_model_vendor
 - route: /admin/model/mappings
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   interface: ModelMappingModelOptionsCatalog
   fields:
   - vendors
@@ -8814,7 +8814,7 @@ frontend_models:
   - ai_model
   - ai_model_vendor
 - route: /admin/model/mappings
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   interface: ModelMappingResolveInput
   fields:
   - sourceModel
@@ -8826,7 +8826,7 @@ frontend_models:
   - ai_model_mapping_rule_binding
   - ai_model_mapping_rule_item
 - route: /admin/model/mappings
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   interface: ModelMappingResolveResult
   fields:
   - matched
@@ -8843,7 +8843,7 @@ frontend_models:
   - ai_model_mapping_rule_binding
   - ai_model_mapping_rule_item
 - route: /admin/model/mappings
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   interface: ModelMappingRule
   fields:
   - id
@@ -8884,7 +8884,7 @@ frontend_models:
   - ai_model_mapping_rule_binding
   - ai_model_mapping_rule_item
 - route: /admin/model/mappings
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   interface: ModelMappingRuleBinding
   fields:
   - id
@@ -8900,7 +8900,7 @@ frontend_models:
   - ai_model_mapping_rule
   - ai_model_mapping_rule_binding
 - route: /admin/model/mappings
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   interface: ModelMappingRuleItem
   fields:
   - id
@@ -8918,7 +8918,7 @@ frontend_models:
   - ai_model_mapping_rule
   - ai_model_mapping_rule_item
 - route: /admin/model/mappings
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   interface: ModelMappingUpdateInput
   fields:
   - sourceVendorId
@@ -8947,7 +8947,7 @@ frontend_models:
   - ai_model_mapping_rule_binding
   - ai_model_mapping_rule_item
 - route: /admin/model
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   interface: ModelRankingRefreshStatusView
   fields:
   - cacheMaxAgeSeconds
@@ -8970,7 +8970,7 @@ frontend_models:
   - ai_model_rank_snapshot
   - ops_job_execution
 - route: /admin/model
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   interface: ModelRegionPriceInput
   fields:
   - regionCode
@@ -8985,7 +8985,7 @@ frontend_models:
   - ai_model_capability
   - ai_model_pricing
 - route: /admin/model
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   interface: Vendor
   fields:
   - id
@@ -8997,7 +8997,7 @@ frontend_models:
   data_sources:
   - ai_model_vendor
 - route: /admin/model
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   interface: VendorCreateInput
   fields:
   - name
@@ -9007,7 +9007,7 @@ frontend_models:
   data_sources:
   - ai_model_vendor
 - route: /admin/model/resources
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
   interface: ResourceGroupAssignableResourceItem
   fields:
   - id
@@ -9025,7 +9025,7 @@ frontend_models:
   - ai_resource
   - ai_resource_group_item
 - route: /admin/model/resources
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
   interface: ResourceGroupCreateInput
   fields:
   - groupCode
@@ -9044,7 +9044,7 @@ frontend_models:
   - ai_resource_group_item
   - ai_resource
 - route: /admin/model/resources
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
   interface: ResourceGroupItem
   fields:
   - id
@@ -9062,7 +9062,7 @@ frontend_models:
   - ai_resource_group_item
   - ai_resource
 - route: /admin/model/resources
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
   interface: ResourceGroupMemberInput
   fields:
   - resourceCode
@@ -9071,7 +9071,7 @@ frontend_models:
   data_sources:
   - ai_resource_group_item
 - route: /admin/model/resources
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
   interface: ResourceGroupResourceItem
   fields:
   - id
@@ -9092,7 +9092,7 @@ frontend_models:
   - ai_resource_group_item
   - ai_resource
 - route: /admin/model/resources
-  source: data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
   interface: ResourceGroupUpdateInput
   fields:
   - groupCode

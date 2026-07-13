@@ -4,7 +4,7 @@
 
 **Goal:** Implement the standalone `sdkwork-models` catalog standard and migrate ClawRouter installation so model, pricing, meter, and ranking initialization comes from the new vendor-scoped JSON catalog.
 
-**Architecture:** `data/sdkwork-models` becomes the portable catalog project and owns JSON model facts, prices, schemas, validators, and language SDKs. ClawRouter depends on the Rust catalog loader and imports catalog data into canonical `ai_*` tables during `DatabaseInstaller::ensure_installed`; ClawRouter-specific providers, channels, routes, secrets, and tenant policies remain in overlays or existing runtime config.
+**Architecture:** `../sdkwork-models` becomes the portable catalog project and owns JSON model facts, prices, schemas, validators, and language SDKs. ClawRouter depends on the Rust catalog loader and imports catalog data into canonical `ai_*` tables during `DatabaseInstaller::ensure_installed`; ClawRouter-specific providers, channels, routes, secrets, and tenant policies remain in overlays or existing runtime config.
 
 **Tech Stack:** JSON Schema, Node.js ESM tooling, Python unittest contract guards, TypeScript SDK package, Python/Java/Rust/Flutter SDK skeletons, Rust 2021, serde, serde_json, sqlx, SQLite, PostgreSQL, ClawRouter installer tests.
 
@@ -16,7 +16,7 @@ This plan implements the standard described in `docs/32-sdkwork-models-standard.
 
 In scope:
 
-- catalog directory and schema files under `data/sdkwork-models`
+- catalog directory and schema files under `../sdkwork-models`
 - vendor-scoped model and pricing JSON
 - catalog validation and index generation tools
 - continuous catalog update workflow, freshness policy, diff reports, and
@@ -40,86 +40,86 @@ Out of scope for this plan:
 
 ### Catalog Project
 
-- Create `data/sdkwork-models/sdkwork-models.json`
+- Create `../sdkwork-models/sdkwork-models.json`
   Project manifest: schema version, catalog version, generated time, roots, locales.
 
-- Create `data/sdkwork-models/package.json`
+- Create `../sdkwork-models/package.json`
   Local scripts for validation, index generation, and catalog checks.
 
-- Create `data/sdkwork-models/CHANGELOG.md`
+- Create `../sdkwork-models/CHANGELOG.md`
   Data release history.
 
-- Create `data/sdkwork-models/LICENSE`
+- Create `../sdkwork-models/LICENSE`
   License placeholder for the standalone repository.
 
-- Create `data/sdkwork-models/schemas/*.schema.json`
+- Create `../sdkwork-models/schemas/*.schema.json`
   JSON contracts for catalog, meter, vendor, family, model, pricing, ranking, and provider overlay files.
 
-- Create `data/sdkwork-models/models/index.json`
+- Create `../sdkwork-models/models/index.json`
   Generated catalog index with vendor counts and hashes.
 
-- Create `data/sdkwork-models/models/meters.json`
+- Create `../sdkwork-models/models/meters.json`
   Global canonical billing meter definitions.
 
-- Create `data/sdkwork-models/models/vendors.json`
+- Create `../sdkwork-models/models/vendors.json`
   Lightweight vendor list for application filters.
 
-- Create `data/sdkwork-models/models/<vendorCode>/...`
+- Create `../sdkwork-models/models/<vendorCode>/...`
   Vendor-specific `vendor.json`, `families.json`, `models/<modelId>.json`, `pricing/<modelId>.json`, and `rankings.json`.
 
-- Create `data/sdkwork-models/overlays/clawrouter/*.json`
+- Create `../sdkwork-models/overlays/clawrouter/*.json`
   ClawRouter provider/channel/route/ranking overlay data. Public model facts must not be defined here.
 
 ### Catalog Tooling
 
-- Create `data/sdkwork-models/tools/catalog-lib.mjs`
+- Create `../sdkwork-models/tools/catalog-lib.mjs`
   Shared filesystem, JSON parsing, decimal, enum, reference, and hash helpers.
 
-- Create `data/sdkwork-models/tools/validate-catalog.mjs`
+- Create `../sdkwork-models/tools/validate-catalog.mjs`
   CLI validator that returns all catalog issues and exits non-zero on errors.
 
-- Create `data/sdkwork-models/tools/build-index.mjs`
+- Create `../sdkwork-models/tools/build-index.mjs`
   Deterministically rebuilds `models/index.json` and `models/vendors.json`.
 
-- Create `data/sdkwork-models/tools/export-clawrouter-seed.mjs`
+- Create `../sdkwork-models/tools/export-clawrouter-seed.mjs`
   Optional development tool that summarizes the catalog rows ClawRouter will import. It must not become the runtime importer.
 
-- Create `data/sdkwork-models/tools/catalog-diff.mjs`
+- Create `../sdkwork-models/tools/catalog-diff.mjs`
   Compares two catalog versions and emits added, changed, deprecated, retired,
   and price-changed models per vendor.
 
-- Create `data/sdkwork-models/tools/freshness-report.mjs`
+- Create `../sdkwork-models/tools/freshness-report.mjs`
   Reports stale model and pricing sources based on per-source and per-vendor
   freshness policy.
 
-- Create `data/sdkwork-models/tools/release-catalog.mjs`
+- Create `../sdkwork-models/tools/release-catalog.mjs`
   Local release helper that validates, rebuilds index, writes release metadata,
   and refuses to publish when sources are stale or hashes drift.
 
 ### Language SDKs
 
-- Create `data/sdkwork-models/sdkwork-models-typescript/package.json`
-- Create `data/sdkwork-models/sdkwork-models-typescript/tsconfig.json`
-- Create `data/sdkwork-models/sdkwork-models-typescript/src/{index.ts,types.ts,loaders.ts,query.ts,validation.ts,catalog.ts}`
-- Create `data/sdkwork-models/sdkwork-models-typescript/test/catalog.test.ts`
+- Create `../sdkwork-models/sdkwork-models-typescript/package.json`
+- Create `../sdkwork-models/sdkwork-models-typescript/tsconfig.json`
+- Create `../sdkwork-models/sdkwork-models-typescript/src/{index.ts,types.ts,loaders.ts,query.ts,validation.ts,catalog.ts}`
+- Create `../sdkwork-models/sdkwork-models-typescript/test/catalog.test.ts`
 
-- Create `data/sdkwork-models/sdkwork-models-python/pyproject.toml`
-- Create `data/sdkwork-models/sdkwork-models-python/sdkwork_models/{__init__.py,types.py,loaders.py,query.py,validation.py}`
-- Create `data/sdkwork-models/sdkwork-models-python/tests/test_catalog.py`
+- Create `../sdkwork-models/sdkwork-models-python/pyproject.toml`
+- Create `../sdkwork-models/sdkwork-models-python/sdkwork_models/{__init__.py,types.py,loaders.py,query.py,validation.py}`
+- Create `../sdkwork-models/sdkwork-models-python/tests/test_catalog.py`
 
-- Create `data/sdkwork-models/sdkwork-models-java/pom.xml`
-- Create `data/sdkwork-models/sdkwork-models-java/src/main/java/com/sdkwork/models/*.java`
-- Create `data/sdkwork-models/sdkwork-models-java/src/test/java/com/sdkwork/models/ModelCatalogTest.java`
+- Create `../sdkwork-models/sdkwork-models-java/pom.xml`
+- Create `../sdkwork-models/sdkwork-models-java/src/main/java/com/sdkwork/models/*.java`
+- Create `../sdkwork-models/sdkwork-models-java/src/test/java/com/sdkwork/models/ModelCatalogTest.java`
 
-- Create `data/sdkwork-models/sdkwork-models-rust/Cargo.toml`
-- Create `data/sdkwork-models/sdkwork-models-rust/build.rs`
-- Create `data/sdkwork-models/sdkwork-models-rust/src/{lib.rs,types.rs,loader.rs,query.rs,validation.rs,bundled.rs}`
-- Create `data/sdkwork-models/sdkwork-models-rust/tests/catalog.rs`
+- Create `../sdkwork-models/sdkwork-models-rust/Cargo.toml`
+- Create `../sdkwork-models/sdkwork-models-rust/build.rs`
+- Create `../sdkwork-models/sdkwork-models-rust/src/{lib.rs,types.rs,loader.rs,query.rs,validation.rs,bundled.rs}`
+- Create `../sdkwork-models/sdkwork-models-rust/tests/catalog.rs`
 
-- Create `data/sdkwork-models/sdkwork-models-flutter/pubspec.yaml`
-- Create `data/sdkwork-models/sdkwork-models-flutter/lib/sdkwork_models.dart`
-- Create `data/sdkwork-models/sdkwork-models-flutter/lib/src/{types.dart,loaders.dart,query.dart,validation.dart}`
-- Create `data/sdkwork-models/sdkwork-models-flutter/test/catalog_test.dart`
+- Create `../sdkwork-models/sdkwork-models-flutter/pubspec.yaml`
+- Create `../sdkwork-models/sdkwork-models-flutter/lib/sdkwork_models.dart`
+- Create `../sdkwork-models/sdkwork-models-flutter/lib/src/{types.dart,loaders.dart,query.dart,validation.dart}`
+- Create `../sdkwork-models/sdkwork-models-flutter/test/catalog_test.dart`
 
 ### ClawRouter Runtime
 
@@ -173,7 +173,7 @@ Out of scope for this plan:
   update workflow.
 
 - Modify `tests/test_model_catalog_standard_contract.py`
-  Move environment seed expectations from legacy `spring-ai-plus-server-application/src/main/resources/data/model-catalog` to `apps/sdkwork-clawrouter/data/sdkwork-models`.
+  Move environment seed expectations from legacy `spring-ai-plus-server-application/src/main/resources/data/model-catalog` to `apps/sdkwork-clawrouter/../sdkwork-models`.
 
 - Modify `scripts/verify-claw-router-application.mjs`
   Add `sdkwork-models` validation to the standard verification sequence.
@@ -270,18 +270,18 @@ git commit -m "add sdkwork-models standard guards"
 ### Task 2: Catalog Project Metadata and JSON Schemas
 
 **Files:**
-- Create: `data/sdkwork-models/sdkwork-models.json`
-- Create: `data/sdkwork-models/package.json`
-- Create: `data/sdkwork-models/CHANGELOG.md`
-- Create: `data/sdkwork-models/LICENSE`
-- Create: `data/sdkwork-models/schemas/catalog.schema.json`
-- Create: `data/sdkwork-models/schemas/meter.schema.json`
-- Create: `data/sdkwork-models/schemas/vendor.schema.json`
-- Create: `data/sdkwork-models/schemas/family.schema.json`
-- Create: `data/sdkwork-models/schemas/model.schema.json`
-- Create: `data/sdkwork-models/schemas/pricing.schema.json`
-- Create: `data/sdkwork-models/schemas/ranking.schema.json`
-- Create: `data/sdkwork-models/schemas/provider-overlay.schema.json`
+- Create: `../sdkwork-models/sdkwork-models.json`
+- Create: `../sdkwork-models/package.json`
+- Create: `../sdkwork-models/CHANGELOG.md`
+- Create: `../sdkwork-models/LICENSE`
+- Create: `../sdkwork-models/schemas/catalog.schema.json`
+- Create: `../sdkwork-models/schemas/meter.schema.json`
+- Create: `../sdkwork-models/schemas/vendor.schema.json`
+- Create: `../sdkwork-models/schemas/family.schema.json`
+- Create: `../sdkwork-models/schemas/model.schema.json`
+- Create: `../sdkwork-models/schemas/pricing.schema.json`
+- Create: `../sdkwork-models/schemas/ranking.schema.json`
+- Create: `../sdkwork-models/schemas/provider-overlay.schema.json`
 
 - [ ] **Step 1: Add the project manifest**
 
@@ -303,7 +303,7 @@ Use catalog version `2026.05.07.1` for the first standards-based catalog.
 
 - [ ] **Step 2: Add package scripts**
 
-`data/sdkwork-models/package.json`:
+`../sdkwork-models/package.json`:
 
 ```json
 {
@@ -357,17 +357,17 @@ Expected: schema and metadata existence checks pass; catalog data checks still f
 - [ ] **Step 6: Commit**
 
 ```powershell
-git add data/sdkwork-models tests/test_sdkwork_models_standard.py
+git add ../sdkwork-models tests/test_sdkwork_models_standard.py
 git commit -m "add sdkwork-models catalog schema"
 ```
 
 ### Task 3: Validator and Index Builder
 
 **Files:**
-- Create: `data/sdkwork-models/tools/catalog-lib.mjs`
-- Create: `data/sdkwork-models/tools/validate-catalog.mjs`
-- Create: `data/sdkwork-models/tools/build-index.mjs`
-- Create: `data/sdkwork-models/tools/export-clawrouter-seed.mjs`
+- Create: `../sdkwork-models/tools/catalog-lib.mjs`
+- Create: `../sdkwork-models/tools/validate-catalog.mjs`
+- Create: `../sdkwork-models/tools/build-index.mjs`
+- Create: `../sdkwork-models/tools/export-clawrouter-seed.mjs`
 - Modify: `tests/test_sdkwork_models_standard.py`
 - Modify: `package.json`
 - Modify: `scripts/verify-claw-router-application.mjs`
@@ -467,7 +467,7 @@ sdkwork-models index is current
 Add a root script:
 
 ```json
-"models:check": "node data/sdkwork-models/tools/build-index.mjs --check && node data/sdkwork-models/tools/validate-catalog.mjs"
+"models:check": "node ../sdkwork-models/tools/build-index.mjs --check && node ../sdkwork-models/tools/validate-catalog.mjs"
 ```
 
 Update `scripts/verify-claw-router-application.mjs` to run this check in normal verification.
@@ -477,8 +477,8 @@ Update `scripts/verify-claw-router-application.mjs` to run this check in normal 
 Run:
 
 ```powershell
-node data/sdkwork-models/tools/build-index.mjs --check
-node data/sdkwork-models/tools/validate-catalog.mjs
+node ../sdkwork-models/tools/build-index.mjs --check
+node ../sdkwork-models/tools/validate-catalog.mjs
 python -B -m unittest tests.test_sdkwork_models_standard
 ```
 
@@ -487,34 +487,34 @@ Expected: fails until Task 4 adds valid catalog data.
 - [ ] **Step 7: Commit**
 
 ```powershell
-git add data/sdkwork-models/tools package.json scripts/verify-claw-router-application.mjs tests/test_sdkwork_models_standard.py
+git add ../sdkwork-models/tools package.json scripts/verify-claw-router-application.mjs tests/test_sdkwork_models_standard.py
 git commit -m "add sdkwork-models validation tooling"
 ```
 
 ### Task 4: Build the First Vendor-Scoped Catalog
 
 **Files:**
-- Create: `data/sdkwork-models/models/meters.json`
-- Create: `data/sdkwork-models/models/vendors.json`
-- Create: `data/sdkwork-models/models/index.json`
-- Create: `data/sdkwork-models/models/openai/*`
-- Create: `data/sdkwork-models/models/anthropic/*`
-- Create: `data/sdkwork-models/models/google/*`
-- Create: `data/sdkwork-models/models/xai/*`
-- Create: `data/sdkwork-models/models/alibaba/cn/*`
-- Create: `data/sdkwork-models/models/deepseek/*`
-- Create: `data/sdkwork-models/models/moonshot/*`
-- Create: `data/sdkwork-models/models/zhipu/*`
-- Create: `data/sdkwork-models/models/baidu/*`
-- Create: `data/sdkwork-models/models/tencent/*`
-- Create: `data/sdkwork-models/models/bytedance/*`
-- Create: `data/sdkwork-models/models/minimax/*`
-- Create: `data/sdkwork-models/models/kuaishou/*`
-- Create: `data/sdkwork-models/models/stability_ai/*`
-- Create: `data/sdkwork-models/models/black_forest_labs/*`
-- Create: `data/sdkwork-models/models/suno/*`
-- Create: `data/sdkwork-models/models/elevenlabs/*`
-- Create: `data/sdkwork-models/overlays/clawrouter/*.json`
+- Create: `../sdkwork-models/models/meters.json`
+- Create: `../sdkwork-models/models/vendors.json`
+- Create: `../sdkwork-models/models/index.json`
+- Create: `../sdkwork-models/models/openai/*`
+- Create: `../sdkwork-models/models/anthropic/*`
+- Create: `../sdkwork-models/models/google/*`
+- Create: `../sdkwork-models/models/xai/*`
+- Create: `../sdkwork-models/models/alibaba/cn/*`
+- Create: `../sdkwork-models/models/deepseek/*`
+- Create: `../sdkwork-models/models/moonshot/*`
+- Create: `../sdkwork-models/models/zhipu/*`
+- Create: `../sdkwork-models/models/baidu/*`
+- Create: `../sdkwork-models/models/tencent/*`
+- Create: `../sdkwork-models/models/bytedance/*`
+- Create: `../sdkwork-models/models/minimax/*`
+- Create: `../sdkwork-models/models/kuaishou/*`
+- Create: `../sdkwork-models/models/stability_ai/*`
+- Create: `../sdkwork-models/models/black_forest_labs/*`
+- Create: `../sdkwork-models/models/suno/*`
+- Create: `../sdkwork-models/models/elevenlabs/*`
+- Create: `../sdkwork-models/overlays/clawrouter/*.json`
 
 - [ ] **Step 1: Port canonical meters**
 
@@ -595,8 +595,8 @@ Move current `global_model_ranking_seed_sql()` rows into `rankings.json` files o
 Run:
 
 ```powershell
-node data/sdkwork-models/tools/build-index.mjs
-node data/sdkwork-models/tools/validate-catalog.mjs
+node ../sdkwork-models/tools/build-index.mjs
+node ../sdkwork-models/tools/validate-catalog.mjs
 python -B -m unittest tests.test_sdkwork_models_standard
 ```
 
@@ -605,21 +605,21 @@ Expected: all `sdkwork-models` standard tests pass.
 - [ ] **Step 6: Commit**
 
 ```powershell
-git add data/sdkwork-models tests/test_sdkwork_models_standard.py
+git add ../sdkwork-models tests/test_sdkwork_models_standard.py
 git commit -m "add vendor-scoped sdkwork model catalog"
 ```
 
 ### Task 5: TypeScript SDK Minimum Implementation
 
 **Files:**
-- Create: `data/sdkwork-models/sdkwork-models-typescript/package.json`
-- Create: `data/sdkwork-models/sdkwork-models-typescript/tsconfig.json`
-- Create: `data/sdkwork-models/sdkwork-models-typescript/src/index.ts`
-- Create: `data/sdkwork-models/sdkwork-models-typescript/src/types.ts`
-- Create: `data/sdkwork-models/sdkwork-models-typescript/src/loaders.ts`
-- Create: `data/sdkwork-models/sdkwork-models-typescript/src/query.ts`
-- Create: `data/sdkwork-models/sdkwork-models-typescript/src/validation.ts`
-- Create: `data/sdkwork-models/sdkwork-models-typescript/test/catalog.test.ts`
+- Create: `../sdkwork-models/sdkwork-models-typescript/package.json`
+- Create: `../sdkwork-models/sdkwork-models-typescript/tsconfig.json`
+- Create: `../sdkwork-models/sdkwork-models-typescript/src/index.ts`
+- Create: `../sdkwork-models/sdkwork-models-typescript/src/types.ts`
+- Create: `../sdkwork-models/sdkwork-models-typescript/src/loaders.ts`
+- Create: `../sdkwork-models/sdkwork-models-typescript/src/query.ts`
+- Create: `../sdkwork-models/sdkwork-models-typescript/src/validation.ts`
+- Create: `../sdkwork-models/sdkwork-models-typescript/test/catalog.test.ts`
 
 - [ ] **Step 1: Write SDK behavior tests**
 
@@ -664,7 +664,7 @@ export function getModelPrices(catalog: ModelCatalog, modelId: string): ModelPri
 
 - [ ] **Step 4: Run tests**
 
-Run from `data/sdkwork-models/sdkwork-models-typescript`:
+Run from `../sdkwork-models/sdkwork-models-typescript`:
 
 ```powershell
 pnpm.cmd install
@@ -677,20 +677,20 @@ Expected: TypeScript SDK tests and build pass.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add data/sdkwork-models/sdkwork-models-typescript
+git add ../sdkwork-models/sdkwork-models-typescript
 git commit -m "add sdkwork models TypeScript loader"
 ```
 
 ### Task 6: Python, Java, and Flutter SDK Skeletons
 
 **Files:**
-- Create: `data/sdkwork-models/sdkwork-models-python/pyproject.toml`
-- Create: `data/sdkwork-models/sdkwork-models-python/sdkwork_models/*.py`
-- Create: `data/sdkwork-models/sdkwork-models-python/tests/test_catalog.py`
-- Create: `data/sdkwork-models/sdkwork-models-java/pom.xml`
-- Create: `data/sdkwork-models/sdkwork-models-java/src/main/java/com/sdkwork/models/*.java`
-- Create: `data/sdkwork-models/sdkwork-models-flutter/pubspec.yaml`
-- Create: `data/sdkwork-models/sdkwork-models-flutter/lib/**/*.dart`
+- Create: `../sdkwork-models/sdkwork-models-python/pyproject.toml`
+- Create: `../sdkwork-models/sdkwork-models-python/sdkwork_models/*.py`
+- Create: `../sdkwork-models/sdkwork-models-python/tests/test_catalog.py`
+- Create: `../sdkwork-models/sdkwork-models-java/pom.xml`
+- Create: `../sdkwork-models/sdkwork-models-java/src/main/java/com/sdkwork/models/*.java`
+- Create: `../sdkwork-models/sdkwork-models-flutter/pubspec.yaml`
+- Create: `../sdkwork-models/sdkwork-models-flutter/lib/**/*.dart`
 
 - [ ] **Step 1: Implement Python loader minimum**
 
@@ -730,9 +730,9 @@ final model = catalog.findModel('gpt-5.2');
 Run:
 
 ```powershell
-python -B -m unittest discover data/sdkwork-models/sdkwork-models-python/tests
-mvn test -f data/sdkwork-models/sdkwork-models-java/pom.xml
-dart test data/sdkwork-models/sdkwork-models-flutter
+python -B -m unittest discover ../sdkwork-models/sdkwork-models-python/tests
+mvn test -f ../sdkwork-models/sdkwork-models-java/pom.xml
+dart test ../sdkwork-models/sdkwork-models-flutter
 ```
 
 If Maven or Dart is unavailable in the environment, record the exact missing tool and keep the source-level tests in CI documentation.
@@ -740,22 +740,22 @@ If Maven or Dart is unavailable in the environment, record the exact missing too
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add data/sdkwork-models/sdkwork-models-python data/sdkwork-models/sdkwork-models-java data/sdkwork-models/sdkwork-models-flutter
+git add ../sdkwork-models/sdkwork-models-python ../sdkwork-models/sdkwork-models-java ../sdkwork-models/sdkwork-models-flutter
 git commit -m "add portable sdkwork models SDK skeletons"
 ```
 
 ### Task 7: Rust SDK Loader for ClawRouter
 
 **Files:**
-- Create: `data/sdkwork-models/sdkwork-models-rust/Cargo.toml`
-- Create: `data/sdkwork-models/sdkwork-models-rust/build.rs`
-- Create: `data/sdkwork-models/sdkwork-models-rust/src/lib.rs`
-- Create: `data/sdkwork-models/sdkwork-models-rust/src/types.rs`
-- Create: `data/sdkwork-models/sdkwork-models-rust/src/loader.rs`
-- Create: `data/sdkwork-models/sdkwork-models-rust/src/query.rs`
-- Create: `data/sdkwork-models/sdkwork-models-rust/src/validation.rs`
-- Create: `data/sdkwork-models/sdkwork-models-rust/src/bundled.rs`
-- Create: `data/sdkwork-models/sdkwork-models-rust/tests/catalog.rs`
+- Create: `../sdkwork-models/sdkwork-models-rust/Cargo.toml`
+- Create: `../sdkwork-models/sdkwork-models-rust/build.rs`
+- Create: `../sdkwork-models/sdkwork-models-rust/src/lib.rs`
+- Create: `../sdkwork-models/sdkwork-models-rust/src/types.rs`
+- Create: `../sdkwork-models/sdkwork-models-rust/src/loader.rs`
+- Create: `../sdkwork-models/sdkwork-models-rust/src/query.rs`
+- Create: `../sdkwork-models/sdkwork-models-rust/src/validation.rs`
+- Create: `../sdkwork-models/sdkwork-models-rust/src/bundled.rs`
+- Create: `../sdkwork-models/sdkwork-models-rust/tests/catalog.rs`
 
 - [ ] **Step 1: Write Rust loader tests**
 
@@ -796,7 +796,7 @@ pub fn load_vendor_catalog(path: impl AsRef<std::path::Path>, vendor_code: &str)
 The loader order for ClawRouter later will be:
 
 1. explicit `SDKWORK_MODELS_CATALOG_ROOT`
-2. `data/sdkwork-models` relative to workspace root
+2. `../sdkwork-models` relative to workspace root
 3. bundled catalog from the Rust crate
 
 - [ ] **Step 5: Run Rust SDK tests**
@@ -804,7 +804,7 @@ The loader order for ClawRouter later will be:
 Run:
 
 ```powershell
-cargo test --manifest-path data/sdkwork-models/sdkwork-models-rust/Cargo.toml
+cargo test --manifest-path ../sdkwork-models/sdkwork-models-rust/Cargo.toml
 ```
 
 Expected: tests pass.
@@ -812,7 +812,7 @@ Expected: tests pass.
 - [ ] **Step 6: Commit**
 
 ```powershell
-git add data/sdkwork-models/sdkwork-models-rust
+git add ../sdkwork-models/sdkwork-models-rust
 git commit -m "add sdkwork models Rust loader"
 ```
 
@@ -832,7 +832,7 @@ git commit -m "add sdkwork models Rust loader"
 In `services/sdkwork-clawrouter-router-service/Cargo.toml`:
 
 ```toml
-sdkwork-models = { path = "../../data/sdkwork-models/sdkwork-models-rust" }
+sdkwork-models = { path = "../../../sdkwork-models/sdkwork-models-rust" }
 ```
 
 - [ ] **Step 2: Write focused SQLite importer test**
@@ -906,7 +906,7 @@ Expected: importer test passes for SQLite. PostgreSQL-specific SQL contract can 
 - [ ] **Step 8: Commit**
 
 ```powershell
-git add services/sdkwork-clawrouter-router-service data/sdkwork-models/sdkwork-models-rust Cargo.toml Cargo.lock
+git add services/sdkwork-clawrouter-router-service ../sdkwork-models/sdkwork-models-rust Cargo.toml Cargo.lock
 git commit -m "add ClawRouter sdkwork models importer"
 ```
 
@@ -1091,14 +1091,14 @@ git commit -m "migrate installer to sdkwork-models catalog"
 
 **Files:**
 - Create: `tests/test_sdkwork_models_update_workflow.py`
-- Create: `data/sdkwork-models/catalog-freshness-policy.json`
-- Create: `data/sdkwork-models/releases/README.md`
-- Create: `data/sdkwork-models/releases/2026.05.07.1.json`
-- Create: `data/sdkwork-models/tools/catalog-diff.mjs`
-- Create: `data/sdkwork-models/tools/freshness-report.mjs`
-- Create: `data/sdkwork-models/tools/release-catalog.mjs`
-- Modify: `data/sdkwork-models/package.json`
-- Modify: `data/sdkwork-models/README.md`
+- Create: `../sdkwork-models/catalog-freshness-policy.json`
+- Create: `../sdkwork-models/releases/README.md`
+- Create: `../sdkwork-models/releases/2026.05.07.1.json`
+- Create: `../sdkwork-models/tools/catalog-diff.mjs`
+- Create: `../sdkwork-models/tools/freshness-report.mjs`
+- Create: `../sdkwork-models/tools/release-catalog.mjs`
+- Modify: `../sdkwork-models/package.json`
+- Modify: `../sdkwork-models/README.md`
 - Modify: `docs/32-sdkwork-models-standard.md`
 
 - [ ] **Step 1: Write failing update workflow tests**
@@ -1249,7 +1249,7 @@ It must refuse release when:
 
 - [ ] **Step 6: Add package scripts**
 
-Update `data/sdkwork-models/package.json`:
+Update `../sdkwork-models/package.json`:
 
 ```json
 {
@@ -1280,8 +1280,8 @@ Update docs to require:
 Run:
 
 ```powershell
-node data/sdkwork-models/tools/freshness-report.mjs --max-age-policy data/sdkwork-models/catalog-freshness-policy.json --as-of 2026-05-07
-node data/sdkwork-models/tools/release-catalog.mjs --check
+node ../sdkwork-models/tools/freshness-report.mjs --max-age-policy ../sdkwork-models/catalog-freshness-policy.json --as-of 2026-05-07
+node ../sdkwork-models/tools/release-catalog.mjs --check
 python -B -m unittest tests.test_sdkwork_models_update_workflow
 ```
 
@@ -1290,7 +1290,7 @@ Expected: update workflow tests pass.
 - [ ] **Step 9: Commit**
 
 ```powershell
-git add data/sdkwork-models tests/test_sdkwork_models_update_workflow.py docs/32-sdkwork-models-standard.md
+git add ../sdkwork-models tests/test_sdkwork_models_update_workflow.py docs/32-sdkwork-models-standard.md
 git commit -m "add sdkwork models update workflow"
 ```
 
@@ -1353,7 +1353,7 @@ It must support:
 Update `sdkwork-claw-installer`:
 
 ```powershell
-sdkwork-claw-installer refresh-catalog --catalog-root data/sdkwork-models --vendor openai
+sdkwork-claw-installer refresh-catalog --catalog-root ../sdkwork-models --vendor openai
 ```
 
 Keep existing commands:
@@ -1462,10 +1462,10 @@ git commit -m "enforce sdkwork-models catalog contract"
 ### Task 13: Release, Submodule, and Install Documentation
 
 **Files:**
-- Modify: `data/sdkwork-models/README.md`
+- Modify: `../sdkwork-models/README.md`
 - Modify: `docs/32-sdkwork-models-standard.md`
 - Modify: `README.md`
-- Create: `data/sdkwork-models/RELEASE.md`
+- Create: `../sdkwork-models/RELEASE.md`
 - Create: `docs/33-sdkwork-models-install-flow.md`
 - Modify: `scripts/release-preflight.mjs`
 
@@ -1483,7 +1483,7 @@ Create `docs/33-sdkwork-models-install-flow.md` covering:
 
 - [ ] **Step 2: Document independent repository setup**
 
-Add local commands in `data/sdkwork-models/RELEASE.md`:
+Add local commands in `../sdkwork-models/RELEASE.md`:
 
 ```powershell
 git init
@@ -1497,7 +1497,7 @@ git push -u origin main
 Document ClawRouter submodule usage:
 
 ```powershell
-git submodule add https://github.com/Sdkwork-Cloud/sdkwork-models.git data/sdkwork-models
+git submodule add https://github.com/Sdkwork-Cloud/sdkwork-models.git ../sdkwork-models
 git submodule update --init --recursive
 ```
 
@@ -1517,8 +1517,8 @@ Run:
 
 ```powershell
 pnpm.cmd models:check
-node data/sdkwork-models/tools/freshness-report.mjs --max-age-policy data/sdkwork-models/catalog-freshness-policy.json --as-of 2026-05-07
-node data/sdkwork-models/tools/release-catalog.mjs --check
+node ../sdkwork-models/tools/freshness-report.mjs --max-age-policy ../sdkwork-models/catalog-freshness-policy.json --as-of 2026-05-07
+node ../sdkwork-models/tools/release-catalog.mjs --check
 python -B -m unittest tests.test_sdkwork_models_standard tests.test_sdkwork_models_update_workflow tests.test_model_catalog_standard_contract
 cargo test -p sdkwork-clawrouter-router-service --test sdkwork_models_catalog_import
 cargo test -p sdkwork-clawrouter-router-service --test database_installer
@@ -1531,7 +1531,7 @@ Expected: all commands pass. If `pnpm.cmd verify:fast` is too broad for the curr
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add README.md docs data/sdkwork-models scripts/release-preflight.mjs package.json
+git add README.md docs ../sdkwork-models scripts/release-preflight.mjs package.json
 git commit -m "document sdkwork models install flow"
 ```
 
@@ -1543,12 +1543,12 @@ Before calling the migration complete, run and record:
 
 ```powershell
 pnpm.cmd models:check
-node data/sdkwork-models/tools/freshness-report.mjs --max-age-policy data/sdkwork-models/catalog-freshness-policy.json --as-of 2026-05-07
-node data/sdkwork-models/tools/release-catalog.mjs --check
+node ../sdkwork-models/tools/freshness-report.mjs --max-age-policy ../sdkwork-models/catalog-freshness-policy.json --as-of 2026-05-07
+node ../sdkwork-models/tools/release-catalog.mjs --check
 python -B -m unittest tests.test_sdkwork_models_standard
 python -B -m unittest tests.test_sdkwork_models_update_workflow
 python -B -m unittest tests.test_model_catalog_standard_contract
-cargo test --manifest-path data/sdkwork-models/sdkwork-models-rust/Cargo.toml
+cargo test --manifest-path ../sdkwork-models/sdkwork-models-rust/Cargo.toml
 cargo test -p sdkwork-clawrouter-router-service --test sdkwork_models_catalog_import
 cargo test -p sdkwork-clawrouter-router-service --test database_installer
 cargo test -p sdkwork-clawrouter-router-service --test admin_model_command_api
@@ -1559,9 +1559,9 @@ pnpm.cmd verify:fast
 
 Expected final state:
 
-- `data/sdkwork-models` contains the canonical vendor-scoped catalog.
-- `node data/sdkwork-models/tools/validate-catalog.mjs` passes.
-- `node data/sdkwork-models/tools/build-index.mjs --check` passes.
+- `../sdkwork-models` contains the canonical vendor-scoped catalog.
+- `node ../sdkwork-models/tools/validate-catalog.mjs` passes.
+- `node ../sdkwork-models/tools/build-index.mjs --check` passes.
 - Language SDK skeletons expose the required standard APIs.
 - The Rust SDK can load local and bundled catalog data.
 - `DatabaseInstaller::ensure_installed()` imports model facts, meters, pricing, and rankings from `sdkwork-models`.

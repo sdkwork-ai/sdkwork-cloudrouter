@@ -100,6 +100,3 @@ Thumbs.db
 **/.sdkwork/sdkwork-generator-changes.json
 **/.sdkwork/sdkwork-generator-manifest.json
 **/.sdkwork/sdkwork-generator-report.json
-
-# sdkwork-models is now an independent module, no longer a nested submodule
-data/sdkwork-models/

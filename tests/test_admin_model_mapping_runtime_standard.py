@@ -8,7 +8,7 @@ from tools.api_contract_manifest import ApiContractManifestGenerator
 
 ROOT = Path(__file__).resolve().parents[1]
 MODEL_SERVICE_SOURCE = (
-    "data/sdkwork-models/apps/sdkwork-models-pc/packages/"
+    "../sdkwork-models/apps/sdkwork-models-pc/packages/"
     "sdkwork-models-pc-admin-catalog/src/modelService.ts"
 )
 

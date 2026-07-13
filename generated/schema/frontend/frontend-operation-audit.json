@@ -2841,7 +2841,7 @@
         "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -2858,7 +2858,7 @@
         "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -2877,7 +2877,7 @@
         "ai_model_mapping_rule_item"
       ],
       "route": "/admin/model/mappings",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
         "ai_model_mapping_rule",
         "ai_model_mapping_rule_binding",
@@ -2897,7 +2897,7 @@
         "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -2916,7 +2916,7 @@
         "ai_model_mapping_rule_item"
       ],
       "route": "/admin/model/mappings",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
         "ai_model_mapping_rule",
         "ai_model_mapping_rule_binding",
@@ -2936,7 +2936,7 @@
         "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": []
     },
     {
@@ -2951,7 +2951,7 @@
         "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": []
     },
     {
@@ -2968,7 +2968,7 @@
         "ai_model_mapping_rule_item"
       ],
       "route": "/admin/model/mappings",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": []
     },
     {
@@ -2983,7 +2983,7 @@
         "ai_model_mapping_rule"
       ],
       "route": "/admin/model/mappings",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": []
     },
     {
@@ -2998,7 +2998,7 @@
         "ops_job_execution"
       ],
       "route": "/admin/model",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": []
     },
     {
@@ -3013,7 +3013,7 @@
         "ops_job_execution"
       ],
       "route": "/admin/model",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": []
     },
     {
@@ -3028,7 +3028,7 @@
         "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": []
     },
     {
@@ -3043,7 +3043,7 @@
         "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": []
     },
     {
@@ -3058,7 +3058,7 @@
         "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": []
     },
     {
@@ -3073,7 +3073,7 @@
         "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": []
     },
     {
@@ -3090,7 +3090,7 @@
         "ai_model_mapping_rule_item"
       ],
       "route": "/admin/model/mappings",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -3107,7 +3107,7 @@
         "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
         "ai_pricing_import_snapshot",
         "ops_audit_log"
@@ -3125,7 +3125,7 @@
         "ai_usage"
       ],
       "route": "/admin/model",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
         "ops_job_execution"
       ]
@@ -3142,7 +3142,7 @@
         "ai_pricing_import_snapshot"
       ],
       "route": "/admin/model",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -3161,7 +3161,7 @@
         "ai_model_mapping_rule_item"
       ],
       "route": "/admin/model/mappings",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
         "ai_model_mapping_rule",
         "ai_model_mapping_rule_binding",
@@ -3182,7 +3182,7 @@
         "ai_resource_group_item"
       ],
       "route": "/admin/model/resources",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
       "write_tables": [
         "ai_resource_group",
         "ai_resource_group_item",
@@ -3201,7 +3201,7 @@
         "ai_resource_group"
       ],
       "route": "/admin/model/resources",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
       "write_tables": [
         "ai_resource_group",
         "ai_resource_group_item",
@@ -3221,7 +3221,7 @@
         "ai_resource_group_item"
       ],
       "route": "/admin/model/resources",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
       "write_tables": []
     },
     {
@@ -3238,7 +3238,7 @@
         "ai_resource"
       ],
       "route": "/admin/model/resources",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
       "write_tables": []
     },
     {
@@ -3254,7 +3254,7 @@
         "ai_resource_group_item"
       ],
       "route": "/admin/model/resources",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
       "write_tables": []
     },
     {
@@ -3270,7 +3270,7 @@
         "ai_resource_group_item"
       ],
       "route": "/admin/model/resources",
-      "source": "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
       "write_tables": [
         "ai_resource_group",
         "ai_resource_group_item",

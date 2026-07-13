@@ -43,7 +43,7 @@ class ClawRouterOpenApiGenerator:
         "backend": "clawrouter-models-catalog-backend-openapi.json",
     }
     MODELS_CATALOG_SOURCE_MARKERS = (
-        "data/sdkwork-models/",
+        "../sdkwork-models/",
         "sdkwork-models-pc-admin-catalog",
         "sdkwork-models-pc-admin-resource",
     )

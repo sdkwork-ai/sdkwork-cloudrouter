@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
-const MODELS_ROOT = path.join(REPO_ROOT, 'data', 'sdkwork-models');
+const MODELS_ROOT = path.join(REPO_ROOT, '..', 'sdkwork-models');
 const UTILS_PACKAGE_ROOT = path.resolve(
   REPO_ROOT,
   '..',
@@ -32,7 +32,7 @@ export function ensureModelsCatalogDeps({
   if (!existsSync(path.join(modelsRoot, 'package.json'))) {
     throw new Error(
       `Missing sdkwork-models catalog at ${modelsRoot}. `
-      + 'Ensure data/sdkwork-models is linked to the sdkwork-models repository.',
+      'Ensure ../sdkwork-models is cloned as a sibling repository.',
     );
   }
   if (!existsSync(path.join(utilsPackageRoot, 'package.json'))) {

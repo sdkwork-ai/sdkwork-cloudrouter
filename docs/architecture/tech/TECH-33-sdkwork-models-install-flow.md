@@ -7,7 +7,7 @@
 
 ClawRouter no longer owns public model facts, billing meters, official prices,
 or default ranking rows inside Rust installer seed arrays. Those facts live in
-the standalone `data/sdkwork-models` catalog and are imported during install or
+the standalone `../sdkwork-models` catalog and are imported during install or
 catalog refresh.
 
 This keeps model data independently versioned, reviewable, releasable, and
@@ -24,7 +24,7 @@ The installer resolves the catalog in this order:
 `models/` directory:
 
 ```powershell
-$env:SDKWORK_MODELS_CATALOG_ROOT = Join-Path (Get-Location) "data/sdkwork-models"
+$env:SDKWORK_MODELS_CATALOG_ROOT = Join-Path (Get-Location) "../sdkwork-models"
 ```
 
 The target directory must contain:
@@ -130,9 +130,9 @@ the catalog rows.
 
 For local development, `pnpm dev` and `pnpm dev:server` must not stop at
 `ensure_installed()`. The workspace launcher sets `SDKWORK_MODELS_CATALOG_ROOT`
-to the checkout-local `data/sdkwork-models` directory when the variable is not
+to the checkout-local `../sdkwork-models` directory when the variable is not
 already set, then runs a blocking `sdkwork-claw-installer refresh-catalog
---catalog-root <workspace>/data/sdkwork-models --force` before starting the
+--catalog-root <workspace>/../sdkwork-models --force` before starting the
 Rust services. This guarantees model JSON and pricing changes are imported into
 the SQLite dev database on every server-mode startup.
 
@@ -142,7 +142,7 @@ The admin model sync path and installer CLI use the same Rust importer as
 installation. This is the standard refresh path for ongoing model data
 iteration:
 
-1. Update `data/sdkwork-models` to a newer submodule commit or set
+1. Update `../sdkwork-models` to a newer submodule commit or set
    `SDKWORK_MODELS_CATALOG_ROOT` to a newer catalog artifact.
 2. Run catalog validation and freshness checks.
 3. Trigger admin model catalog sync.
@@ -221,7 +221,7 @@ Admin API example:
   "mode": "vendor_refresh",
   "vendorCodes": ["openai"],
   "force": true,
-  "catalogRoot": "./data/sdkwork-models",
+  "catalogRoot": "./../sdkwork-models",
   "catalogVersion": "2026.05.08.1"
 }
 ```
@@ -274,18 +274,18 @@ catalog data.
 
 ## Independent Repository and Submodule
 
-`data/sdkwork-models` is the ClawRouter mount point for the independent catalog
+`../sdkwork-models` is the ClawRouter mount point for the independent catalog
 repository:
 
 ```powershell
-git submodule add https://github.com/Sdkwork-Cloud/sdkwork-models.git data/sdkwork-models
+git submodule add https://github.com/Sdkwork-Cloud/sdkwork-models.git ../sdkwork-models
 git submodule update --init --recursive
 ```
 
 For a fresh standalone repository:
 
 ```powershell
-cd data/sdkwork-models
+cd ../sdkwork-models
 git init
 git add .
 git commit -m "first commit"
@@ -303,11 +303,11 @@ Every catalog update must run:
 
 ```powershell
 pnpm models:check
-node data/sdkwork-models/tools/build-index.mjs --check
-node data/sdkwork-models/tools/validate-catalog.mjs
-node data/sdkwork-models/tools/freshness-report.mjs --max-age-policy catalog-freshness-policy.json --as-of 2026-05-08
-node data/sdkwork-models/tools/catalog-audit.mjs --as-of 2026-05-08
-node data/sdkwork-models/tools/release-catalog.mjs --check --as-of 2026-05-08
+node ../sdkwork-models/tools/build-index.mjs --check
+node ../sdkwork-models/tools/validate-catalog.mjs
+node ../sdkwork-models/tools/freshness-report.mjs --max-age-policy catalog-freshness-policy.json --as-of 2026-05-08
+node ../sdkwork-models/tools/catalog-audit.mjs --as-of 2026-05-08
+node ../sdkwork-models/tools/release-catalog.mjs --check --as-of 2026-05-08
 cargo test -p sdkwork-models --offline
 cargo test -p sdkwork-clawrouter-router-service --test database_installer --offline
 cargo test -p sdkwork-clawrouter-router-service --test admin_model_store --offline

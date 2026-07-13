@@ -103,7 +103,7 @@
     "api:standard-extensions:write": "node tools/sync-clawrouter-api-standard-extensions.mjs --apply",
     "api:http-route-manifest:check": "node tools/generate-clawrouter-http-route-manifest-rs.mjs --check",
     "api:http-route-manifest:write": "node tools/generate-clawrouter-http-route-manifest-rs.mjs --apply",
-    "models:check": "node scripts/lib/ensure-models-catalog-deps.mjs && node data/sdkwork-models/tools/build-index.mjs --check && node data/sdkwork-models/tools/validate-catalog.mjs && node data/sdkwork-models/tools/freshness-report.mjs --max-age-policy catalog-freshness-policy.json --as-of-catalog-generated-at && node data/sdkwork-models/tools/catalog-audit.mjs && node data/sdkwork-models/tools/release-catalog.mjs --check",
+    "models:check": "node scripts/lib/ensure-models-catalog-deps.mjs && node ../sdkwork-models/tools/build-index.mjs --check && node ../sdkwork-models/tools/validate-catalog.mjs && node ../sdkwork-models/tools/freshness-report.mjs --max-age-policy catalog-freshness-policy.json --as-of-catalog-generated-at && node ../sdkwork-models/tools/catalog-audit.mjs && node ../sdkwork-models/tools/release-catalog.mjs --check",
     "downloads:update": "node scripts/update-claw-router-downloads.mjs",
     "downloads:check": "node scripts/update-claw-router-downloads.mjs --check",
     "skills:seed:mirror-clawhub": "node scripts/mirror-clawhub-skills-seed.mjs --fetch",

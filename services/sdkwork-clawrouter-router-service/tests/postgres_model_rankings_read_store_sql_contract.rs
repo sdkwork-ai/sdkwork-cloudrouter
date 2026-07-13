@@ -1,5 +1,5 @@
 const POSTGRES_MODEL_RANKINGS_READ_STORE: &str = include_str!(
-    "../../../data/sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx/src/postgres/model_rankings_read_store.rs"
+    "../../../../sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx/src/postgres/model_rankings_read_store.rs"
 );
 
 fn compact_sql(value: &str) -> String {

@@ -18,7 +18,7 @@ use std::collections::BTreeSet;
 
 fn sdkwork_models_pinned_catalog_version() -> String {
     let index_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../data/sdkwork-models/models/index.json");
+        .join("../../../sdkwork-models/models/index.json");
     let raw = std::fs::read_to_string(&index_path).unwrap_or_else(|error| {
         panic!(
             "read sdkwork-models catalog index failed at {}: {error}",

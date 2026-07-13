@@ -222,7 +222,7 @@ MANUAL_OPERATION_SPECS: dict[str, tuple[str, str, str, str]] = {
 
 
 DEFAULT_ROUTES_BY_SOURCE: dict[str, str] = {
-    "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts": "/admin/model",
+    "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts": "/admin/model",
 }
 
 

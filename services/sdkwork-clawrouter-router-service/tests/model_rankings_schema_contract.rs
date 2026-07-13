@@ -1,7 +1,7 @@
 const GENERATED_POSTGRES_SCHEMA: &str =
     include_str!("../../../generated/schema/postgres/schema.sql");
 const MODELS_CATALOG_FOUNDATION_SQL: &str = include_str!(
-    "../../../data/sdkwork-models/database/ddl/baseline/postgres/0001_sdkwork-models_baseline.sql"
+    "../../../../sdkwork-models/database/ddl/baseline/postgres/0001_sdkwork-models_baseline.sql"
 );
 const SCHEMA_MANIFEST: &str =
     include_str!("../../../generated/schema/manifest/schema-manifest.json");

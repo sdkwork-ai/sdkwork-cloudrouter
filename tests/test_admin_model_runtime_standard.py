@@ -12,7 +12,7 @@ class AdminModelRuntimeStandardTest(unittest.TestCase):
     def test_admin_model_write_contracts_use_operation_specific_payloads(self) -> None:
         manifest = ApiContractManifestGenerator(root=ROOT).generate()
         operations = {operation["key"]: operation for operation in manifest["operations"]}
-        source = "data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts"
+        source = "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts"
 
         sync_models = operations[f"{source}#syncVendorsAndModels@/admin/model"]
         add_vendor = operations[f"{source}#addVendor@/admin/model"]
@@ -315,8 +315,8 @@ class AdminModelRuntimeStandardTest(unittest.TestCase):
 
     def test_admin_model_read_model_validates_modalities_json(self) -> None:
         store_paths = [
-            "data/sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx/src/sqlite/model_catalog_admin_store.rs",
-            "data/sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx/src/postgres/model_catalog_admin_store.rs",
+            "../sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx/src/sqlite/model_catalog_admin_store.rs",
+            "../sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx/src/postgres/model_catalog_admin_store.rs",
         ]
 
         for relative_path in store_paths:
@@ -338,8 +338,8 @@ class AdminModelRuntimeStandardTest(unittest.TestCase):
 
     def test_admin_model_read_model_fails_closed_for_vendor_and_model_status(self) -> None:
         store_paths = [
-            "data/sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx/src/sqlite/model_catalog_admin_store.rs",
-            "data/sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx/src/postgres/model_catalog_admin_store.rs",
+            "../sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx/src/sqlite/model_catalog_admin_store.rs",
+            "../sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx/src/postgres/model_catalog_admin_store.rs",
         ]
 
         for relative_path in store_paths:

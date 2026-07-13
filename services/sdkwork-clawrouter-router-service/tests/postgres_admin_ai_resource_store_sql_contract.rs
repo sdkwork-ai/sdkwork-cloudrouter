@@ -1,5 +1,5 @@
 const POSTGRES_ADMIN_AI_RESOURCE_STORE: &str = include_str!(
-    "../../../data/sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx/src/postgres/admin_ai_resource_store.rs"
+    "../../../../sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx/src/postgres/admin_ai_resource_store.rs"
 );
 const POSTGRES_SCHEMA: &str = include_str!("../../../generated/schema/postgres/schema.sql");
 

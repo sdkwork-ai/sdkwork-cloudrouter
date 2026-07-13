@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const modelsServicePath = join(
   dirname(fileURLToPath(import.meta.url)),
-  "../../../data/sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+  "../../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
 );
 const lines = readFileSync(modelsServicePath, "utf8").split("\n");
 

@@ -1,5 +1,5 @@
 const SQLITE_MODEL_RANKING_REFRESH_STORE: &str = include_str!(
-    "../../../data/sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx/src/sqlite/model_ranking_refresh_store.rs"
+    "../../../../sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx/src/sqlite/model_ranking_refresh_store.rs"
 );
 
 fn compact_sql(value: &str) -> String {
